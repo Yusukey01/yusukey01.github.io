@@ -1,0 +1,558 @@
+---
+layout: default
+title: "Time-Dependent Flows"
+topic_id: calc-68
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Time-Dependent Flows</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#need-for-generalization">Time-Dependent Vector Fields and the Need for Generalization</a>
+            <a href="#lifting-trick">The Lifting Trick</a>
+            <a href="#time-dependent-fundamental-theorem">The Fundamental Theorem on Time-Dependent Flows</a>
+            <a href="#flow-matching">Flow Matching and the Time-Dependent Flow</a>
+        </div>
+
+        <div class="container">
+
+            <section id="need-for-generalization" class="section-content">
+                <h2>Time-Dependent Vector Fields and the Need for Generalization</h2>
+
+                <p>
+                    The
+                    <a href="../Calculus/flow_theorem.html#T-fundamental_theorem_on_flows" class="ref-link"><strong>fundamental theorem on flows</strong></a>
+                    of the previous development settled the existence and uniqueness theory for systems
+                    of ordinary differential equations on a smooth manifold in the autonomous case —
+                    that is, when the law specifying the velocity at each point depends only on the
+                    point and not on the moment of time at which the trajectory passes through it. The
+                    autonomous restriction is natural for the geometric content of the theory (a
+                    <a href="../Calculus/vector_fields_on_manifolds.html#D-vector_field" class="ref-link"><strong>vector field</strong></a>
+                    on \(M\) assigns a single vector to each point), and it covers most of the
+                    constructions encountered so far. There are, however, several settings in which an
+                    explicit time-dependence in the velocity law cannot be removed by reformulation:
+                    classical mechanics with externally driven forces, control systems with prescribed
+                    time-varying inputs, and — more recently — flow-based generative models in machine
+                    learning, in which a neural network produces a time-dependent velocity field whose
+                    flow transports a base probability distribution into a target one. The present
+                    section establishes the existence and uniqueness theory in this non-autonomous
+                    regime, and identifies the time-dependent flow that takes the role played by the
+                    autonomous flow in the previous theorem.
+                </p>
+
+                <h3>Time-Dependent Vector Fields</h3>
+
+                <div class="theorem" id="D-time_dependent_vector_field">
+                    <span class="theorem-title">Definition: Time-Dependent Vector Field</span>
+                    <p>
+                        Let \(M\) be a smooth manifold and \(J \subseteq \mathbb{R}\) an open interval.
+                        A <strong>time-dependent vector field on \(M\)</strong> with parameter interval
+                        \(J\) is a smooth map
+                        \[
+                            V : J \times M \to TM
+                        \]
+                        such that \(V(t, p) \in T_p M\) for every \((t, p) \in J \times M\). For each
+                        fixed \(t \in J\), the assignment \(V_t : p \mapsto V(t, p)\) is then an
+                        ordinary smooth vector field on \(M\).
+                    </p>
+                </div>
+
+                <p>
+                    The map \(V_t\) is a vector field on \(M\) — a slice through the time-dependent
+                    field at time \(t\) — and the family \(\{ V_t : t \in J \}\) is the data that
+                    replaces a single vector field when the velocity law is allowed to vary with time.
+                    Every ordinary smooth vector field \(X \in \mathfrak{X}(M)\) determines a
+                    time-dependent vector field on \(\mathbb{R} \times M\) by the constant assignment
+                    \(V(t, p) = X_p\); the autonomous theory is therefore contained in the
+                    non-autonomous theory as the special case in which \(V_t\) does not depend on \(t\).
+                </p>
+
+                <h3>Integral Curves of a Time-Dependent Vector Field</h3>
+
+                <p>
+                    The differential equation that an integral curve of a time-dependent vector field
+                    must satisfy is the natural one. At each parameter value \(t\), the curve must have
+                    velocity equal to the value of the time-dependent vector field at the pair
+                    \((t, \gamma(t))\) — that is, evaluated both at the current time and at the current
+                    point.
+                </p>
+
+                <div class="theorem" id="D-integral_curve_time_dependent">
+                    <span class="theorem-title">Definition: Integral Curve of a Time-Dependent Vector Field</span>
+                    <p>
+                        Let \(V : J \times M \to TM\) be a time-dependent vector field on \(M\). A
+                        differentiable curve \(\gamma : J_0 \to M\), defined on an open subinterval
+                        \(J_0 \subseteq J\), is an <strong>integral curve of \(V\)</strong> if
+                        \[
+                            \gamma'(t) = V\bigl(t, \, \gamma(t)\bigr)
+                                \qquad \text{for every } t \in J_0 .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    When \(V\) is the time-dependent extension of an autonomous vector field
+                    \(X\) — that is, when \(V(t, p) = X_p\) — the equation
+                    \(\gamma'(t) = V(t, \gamma(t)) = X_{\gamma(t)}\) reduces to the definition of an
+                    <a href="../Calculus/integral_curves.html#D-integral_curve" class="ref-link"><strong>integral curve</strong></a>
+                    of \(X\). The non-autonomous definition is therefore a genuine generalization of the
+                    autonomous one, recovering the latter as a special case.
+                </p>
+
+                <h3>Why a Time-Dependent Vector Field Need Not Generate a Flow</h3>
+
+                <p>
+                    The autonomous fundamental theorem produced not merely an integral curve through
+                    each point, but a smooth flow whose trajectories were the integral curves and whose
+                    composition was governed by the group law of \(\mathbb{R}\). The flow assembled the
+                    family of integral curves into a single map \(\theta : \mathcal{D} \to M\) with the
+                    property that for each point of \(M\), only one trajectory passes through it. In the
+                    time-dependent case this consolidation fails at a basic level: two integral curves
+                    of \(V\) that pass through the same point \(p\) at different starting times can
+                    leave \(p\) in different directions, because the velocity at \(p\) is a function of
+                    the time at which the trajectory arrives there.
+                </p>
+
+                <p>
+                    Concretely, suppose \(\gamma_1\) and \(\gamma_2\) are two integral curves of
+                    \(V\) — each with its own parameter interval — that both pass through the same
+                    point \(p\) but at different parameter values: \(\gamma_1(t_0) = \gamma_2(s_0) = p\)
+                    for some \(t_0 \neq s_0\). The integral-curve equation forces their velocities at
+                    \(p\) to be the values of \(V\) at the corresponding parameter values, namely
+                    \(\gamma_1'(t_0) = V(t_0, p)\) and \(\gamma_2'(s_0) = V(s_0, p)\); these two
+                    velocities need not agree, so the two curves depart from \(p\) along different
+                    paths. In the autonomous case this cannot happen, because the velocity at \(p\)
+                    is a single vector \(X_p\) independent of any time parameter; in the
+                    time-dependent case the same point \(p\) carries a whole one-parameter family of
+                    possible departure velocities.
+                </p>
+
+                <p>
+                    The object that replaces the autonomous flow in this setting is therefore not a
+                    map parametrized by a single time variable \(t\), but a map parametrized by a pair
+                    of time variables \((t, t_0)\) — the current time and the starting time — together
+                    with the starting point. The next two sections produce this object as a
+                    well-defined smooth map and establish its basic properties; the construction
+                    proceeds by a single technical reduction that transports the entire non-autonomous
+                    theory back to the autonomous theorem already proved.
+                </p>
+
+            </section>
+
+            <section id="lifting-trick" class="section-content">
+                <h2>The Lifting Trick</h2>
+
+                <p>
+                    The reduction from time-dependent to autonomous is geometric in nature: we enlarge
+                    the manifold by one dimension to include the time variable as an additional
+                    coordinate, and construct on the enlarged manifold an honest autonomous vector
+                    field whose flow encodes both the passage of time and the motion produced by the
+                    time-dependent field on the original manifold. This is the lifting trick: the
+                    non-autonomous problem on \(M\) is lifted to an autonomous problem on
+                    \(J \times M\), and the answer on \(J \times M\) is then projected back down to a
+                    time-dependent flow on \(M\).
+                </p>
+
+                <h3>Construction of the Lifted Vector Field</h3>
+
+                <p>
+                    Let \(V : J \times M \to TM\) be a time-dependent vector field, and let
+                    \(s\) denote the standard coordinate on the open interval \(J \subseteq \mathbb{R}\).
+                    The
+                    <a href="../Calculus/tangent_vectors.html#T-tangent_space_product" class="ref-link"><strong>product manifold tangent space identification</strong></a>
+                    decomposes the tangent space at each point of \(J \times M\) as a direct sum,
+                    \[
+                        T_{(s, p)} (J \times M) \cong T_s J \oplus T_p M ,
+                    \]
+                    so a tangent vector at \((s, p)\) is specified by giving a tangent vector to \(J\)
+                    at \(s\) and a tangent vector to \(M\) at \(p\). Define
+                    \(\tilde V \in \mathfrak{X}(J \times M)\) by assigning to each point \((s, p)\) the
+                    tangent vector
+                    \[
+                        \tilde V_{(s, p)}
+                        = \left( \frac{\partial}{\partial s}\bigg|_s , \, V(s, p) \right)
+                        \in T_s J \oplus T_p M .
+                    \]
+                    The first component selects the unit tangent vector to \(J\), and the second
+                    component is the value of the time-dependent field at the pair \((s, p)\).
+                    Smoothness of \(V\) as a map \(J \times M \to TM\) implies smoothness of
+                    \(\tilde V\) as a section of \(T(J \times M)\), so \(\tilde V\) is a genuine smooth
+                    autonomous vector field on \(J \times M\).
+                </p>
+
+                <h3>The Flow of the Lifted Field</h3>
+
+                <p>
+                    Applying the
+                    <a href="../Calculus/flow_theorem.html#T-fundamental_theorem_on_flows" class="ref-link"><strong>fundamental theorem on flows</strong></a>
+                    to the autonomous field \(\tilde V\) on the manifold \(J \times M\) produces an
+                    open subset \(\tilde{\mathcal{D}} \subseteq \mathbb{R} \times (J \times M)\) and a
+                    smooth flow
+                    \[
+                        \tilde \theta : \tilde{\mathcal{D}} \to J \times M ,
+                    \]
+                    with the usual properties: \(\tilde \theta(0, (s, p)) = (s, p)\) for every initial
+                    condition, and \(t \mapsto \tilde \theta(t, (s, p))\) is the maximal integral
+                    curve of \(\tilde V\) starting at \((s, p)\). Write the components of
+                    \(\tilde \theta\) explicitly as
+                    \[
+                        \tilde \theta\bigl(t, \, (s, p)\bigr)
+                        = \bigl( \alpha(t, (s, p)), \, \beta(t, (s, p)) \bigr) ,
+                    \]
+                    where \(\alpha : \tilde{\mathcal{D}} \to J\) and
+                    \(\beta : \tilde{\mathcal{D}} \to M\) are smooth.
+                </p>
+
+                <p>
+                    Substituting the integral-curve equation \(\tilde \theta'(t) = \tilde V_{\tilde
+                    \theta(t)}\) into the definition of \(\tilde V\) and reading off the two components
+                    yields a coupled system for \(\alpha\) and \(\beta\):
+                    \[
+                        \frac{\partial \alpha}{\partial t}(t, (s, p)) = 1 ,
+                            \qquad \alpha\bigl(0, (s, p)\bigr) = s ,
+                    \]
+                    \[
+                        \frac{\partial \beta}{\partial t}(t, (s, p))
+                            = V\bigl( \alpha(t, (s, p)), \, \beta(t, (s, p)) \bigr) ,
+                            \qquad \beta\bigl(0, (s, p)\bigr) = p .
+                    \]
+                    The equation for \(\alpha\) is decoupled and integrates immediately to give
+                    \(\alpha(t, (s, p)) = t + s\). Substituting this into the equation for \(\beta\)
+                    yields
+                    \[
+                        \frac{\partial \beta}{\partial t}(t, (s, p))
+                            = V\bigl( t + s, \, \beta(t, (s, p)) \bigr) .
+                    \]
+                </p>
+
+                <p>
+                    The reading of the result is geometric. The first component
+                    \(\alpha(t, (s, p)) = t + s\) records that the time coordinate of an integral curve
+                    of \(\tilde V\) advances at unit rate, so that the parameter \(t\) on the integral
+                    curve is identified directly with the elapsed time. The second component \(\beta\)
+                    is a curve in \(M\) whose velocity at parameter \(t\) is the value of the original
+                    time-dependent field at the lifted time \(t + s\) and the current point
+                    \(\beta(t, (s, p))\) — exactly the integral-curve condition for \(V\), starting
+                    from \(p\) at time \(s\).
+                </p>
+
+                <h3>The Time-Dependent Flow Domain</h3>
+
+                <p>
+                    The starting time of the integral curve in the lifted picture is the first
+                    coordinate \(s\) of the initial condition \((s, p)\). Renaming this coordinate
+                    \(t_0\) — the starting time of the time-dependent integral curve in the original
+                    manifold \(M\) — and writing the elapsed-time parameter \(t\) of the lifted flow as
+                    a current-time parameter via the relation \(t_{\text{current}} = t_0 + t\), the
+                    parameter triple \((t_{\text{current}}, t_0, p)\) replaces the lifted parameters
+                    \((t, (t_0, p)) \in \tilde{\mathcal{D}}\). The subset of
+                    \(\mathbb{R} \times J \times M\) on which this reparametrization makes sense is
+                    \[
+                        \mathcal{E}
+                        = \bigl\{ (t, t_0, p) \in \mathbb{R} \times J \times M
+                            : (t - t_0, \, (t_0, p)) \in \tilde{\mathcal{D}} \bigr\} .
+                    \]
+                    Openness of \(\tilde{\mathcal{D}}\) in
+                    \(\mathbb{R} \times (J \times M)\) and continuity of the map
+                    \((t, t_0, p) \mapsto (t - t_0, (t_0, p))\) imply openness of \(\mathcal{E}\) in
+                    \(\mathbb{R} \times J \times M\). Moreover, the membership
+                    \((t - t_0, (t_0, p)) \in \tilde{\mathcal{D}} \subseteq \mathbb{R} \times
+                    (J \times M)\) forces the initial-condition component to lie in \(J \times M\),
+                    so \(t_0 \in J\) automatically; and the identity \(\alpha(t - t_0, (t_0, p)) =
+                    (t - t_0) + t_0 = t\) — combined with the fact that \(\alpha\) takes values in
+                    \(J\) — shows that whenever \((t, t_0, p) \in \mathcal{E}\) the current time
+                    \(t\) lies in \(J\) as well. Hence
+                    \[
+                        \mathcal{E} \subseteq J \times J \times M ,
+                    \]
+                    and the time-dependent flow we are about to define will take \((t, t_0, p)\) with
+                    \(t, t_0 \in J\). The construction of the flow itself, together with the statement
+                    and proof of its defining properties, is the subject of the next section.
+                </p>
+
+            </section>
+
+            <section id="time-dependent-fundamental-theorem" class="section-content">
+                <h2>The Fundamental Theorem on Time-Dependent Flows</h2>
+
+                <p>
+                    The lifted construction produces, by projection onto the second factor, the map
+                    that plays the role of the flow in the time-dependent regime. Where the autonomous
+                    flow is parametrized by a single time variable, the time-dependent flow is
+                    parametrized by current time, starting time, and starting point: the trajectory
+                    that passes through \(p\) at time \(t_0\) is a function of where we are and how
+                    long we have been moving.
+                </p>
+
+                <div class="theorem" id="D-time_dependent_flow">
+                    <span class="theorem-title">Definition: Time-Dependent Flow</span>
+                    <p>
+                        Let \(V : J \times M \to TM\) be a smooth time-dependent vector field, and let
+                        \(\tilde V\) be the lifted vector field on \(J \times M\) with flow
+                        \(\tilde \theta = (\alpha, \beta) : \tilde{\mathcal{D}} \to J \times M\)
+                        constructed in the previous section. The <strong>time-dependent flow of
+                        \(V\)</strong> is the map
+                        \[
+                            \psi : \mathcal{E} \to M , \qquad
+                            \psi(t, t_0, p) = \beta\bigl( t - t_0, \, (t_0, p) \bigr) ,
+                        \]
+                        where \(\mathcal{E} \subseteq J \times J \times M\) is the open subset defined
+                        in the lifting construction.
+                    </p>
+                </div>
+
+                <p>
+                    Smoothness of \(\beta\) on \(\tilde{\mathcal{D}}\) and openness of \(\mathcal{E}\)
+                    imply smoothness of \(\psi\) on \(\mathcal{E}\). The differential equation
+                    satisfied by \(\beta\) translates directly into an equation for \(\psi\). For fixed
+                    starting data \((t_0, p)\) and varying current time \(t\), set
+                    \(\psi^{(t_0, p)}(t) = \psi(t, t_0, p) = \beta(t - t_0, (t_0, p))\). After the
+                    renaming \(s = t_0\) of the lifting construction, the equation derived in the
+                    previous section reads
+                    \(\partial \beta / \partial \tau (\tau, (t_0, p)) = V(\tau + t_0, \beta(\tau,
+                    (t_0, p)))\). Applying the chain rule to the composition
+                    \(t \mapsto \beta(t - t_0, (t_0, p))\) — whose inner derivative is
+                    \(d(t - t_0)/dt = 1\) — and substituting \(\tau = t - t_0\) gives
+                    \[
+                        \bigl( \psi^{(t_0, p)} \bigr)'(t)
+                        = \frac{\partial \beta}{\partial \tau}(t - t_0, (t_0, p))
+                        = V\bigl( (t - t_0) + t_0, \, \beta(t - t_0, (t_0, p)) \bigr)
+                        = V\bigl( t, \, \psi^{(t_0, p)}(t) \bigr) ,
+                    \]
+                    with initial value \(\psi^{(t_0, p)}(t_0) = \beta(0, (t_0, p)) = p\), so
+                    \(\psi^{(t_0, p)}\) is an integral curve of \(V\) with starting time \(t_0\) and
+                    starting point \(p\). The defining properties of \(\psi\) are collected in the
+                    theorem below.
+                </p>
+
+                <h3>The Fundamental Theorem</h3>
+
+                <p>
+                    The autonomous fundamental theorem produced a maximal flow with three structural
+                    properties: smoothness, the group law, and characterization of each trajectory as
+                    a maximal integral curve. The time-dependent theorem records the corresponding
+                    structural data, with the group law replaced by a two-parameter cocycle relation
+                    that reflects the non-autonomous nature of the trajectories.
+                </p>
+
+                <div class="theorem" id="T-fundamental_theorem_time_dependent_flows">
+                    <span class="theorem-title">Theorem (Fundamental Theorem on Time-Dependent Flows)</span>
+                    <p>
+                        Let \(M\) be a smooth manifold, let \(J \subseteq \mathbb{R}\) be an open
+                        interval, and let \(V : J \times M \to TM\) be a smooth time-dependent vector
+                        field on \(M\). There exist an open subset
+                        \(\mathcal{E} \subseteq J \times J \times M\) and a smooth map
+                        \(\psi : \mathcal{E} \to M\) — the time-dependent flow of \(V\) — with the
+                        following properties.
+                    </p>
+                    <ul>
+                        <li>
+                            <strong>(a) Existence and uniqueness of trajectories.</strong> For every
+                            \(t_0 \in J\) and \(p \in M\), the set
+                            \(\mathcal{E}^{(t_0, p)} = \{ t \in J : (t, t_0, p) \in \mathcal{E} \}\) is
+                            an open interval containing \(t_0\), and the smooth curve
+                            \(\psi^{(t_0, p)} : \mathcal{E}^{(t_0, p)} \to M\) defined by
+                            \(\psi^{(t_0, p)}(t) = \psi(t, t_0, p)\) is the unique maximal integral
+                            curve of \(V\) satisfying \(\psi^{(t_0, p)}(t_0) = p\).
+                        </li>
+                        <li>
+                            <strong>(b) Reparametrization invariance.</strong> If
+                            \(t_1 \in \mathcal{E}^{(t_0, p)}\) and \(q = \psi^{(t_0, p)}(t_1)\), then
+                            \(\mathcal{E}^{(t_1, q)} = \mathcal{E}^{(t_0, p)}\) and
+                            \(\psi^{(t_1, q)} = \psi^{(t_0, p)}\).
+                        </li>
+                        <li>
+                            <strong>(c) Time-slice diffeomorphisms.</strong> For each \((t_1, t_0) \in
+                            J \times J\), the set
+                            \(M_{t_1, t_0} = \{ p \in M : (t_1, t_0, p) \in \mathcal{E} \}\) is open in
+                            \(M\), and the map \(\psi_{t_1, t_0} : M_{t_1, t_0} \to M\) defined by
+                            \(\psi_{t_1, t_0}(p) = \psi(t_1, t_0, p)\) is a diffeomorphism onto
+                            \(M_{t_0, t_1}\), with inverse \(\psi_{t_0, t_1}\).
+                        </li>
+                        <li>
+                            <strong>(d) Cocycle relation.</strong> Whenever \(p \in M_{t_1, t_0}\) and
+                            \(\psi_{t_1, t_0}(p) \in M_{t_2, t_1}\), we have \(p \in M_{t_2, t_0}\) and
+                            \[
+                                \psi_{t_2, t_1} \circ \psi_{t_1, t_0}(p)
+                                = \psi_{t_2, t_0}(p) .
+                            \]
+                        </li>
+                    </ul>
+                </div>
+
+                <p>
+                    The cocycle relation in (d) is the two-parameter replacement for the group law
+                    \(\theta_{t_2} \circ \theta_{t_1} = \theta_{t_1 + t_2}\) of an autonomous flow. The
+                    autonomous flow can be recovered from the time-dependent flow when \(V\) is
+                    constant in \(t\): the time-slice diffeomorphism \(\psi_{t_1, t_0}\) then depends
+                    only on the difference \(t_1 - t_0\), and the cocycle relation collapses to the
+                    additive group law in that difference.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (outline):</span>
+                    <p>
+                        Every assertion is read off from the corresponding property of the lifted flow
+                        \(\tilde \theta = (\alpha, \beta)\) on \(J \times M\), which exists and is
+                        smooth by the autonomous
+                        <a href="../Calculus/flow_theorem.html#T-fundamental_theorem_on_flows" class="ref-link"><strong>fundamental theorem on flows</strong></a>
+                        applied to the lifted field.
+                    </p>
+                    <p>
+                        <strong>(a).</strong> The map \(t \mapsto \psi^{(t_0, p)}(t)\) is an integral
+                        curve of \(V\) starting at \(p\) at time \(t_0\) by the differential equation
+                        derived above. For uniqueness and maximality, suppose
+                        \(\gamma : J_0 \to M\) is any integral curve of \(V\) with
+                        \(\gamma(t_0) = p\), and define a lifted curve \(\tilde \gamma : J_0 \to
+                        J \times M\) by \(\tilde \gamma(t) = (t, \gamma(t))\). The velocity of
+                        \(\tilde \gamma\) at \(t\) is
+                        \(\bigl(\partial / \partial s |_t, \, \gamma'(t)\bigr) =
+                        \bigl(\partial / \partial s |_t, \, V(t, \gamma(t))\bigr) =
+                        \tilde V_{\tilde \gamma(t)}\), so \(\tilde \gamma\) is an integral curve of
+                        \(\tilde V\) starting at \((t_0, p)\) when \(t = t_0\). The shifted curve
+                        \(t \mapsto \tilde \theta(t - t_0, (t_0, p))\) is also an integral curve of
+                        \(\tilde V\) — its parameter \(s = t - t_0\) ranges through the lifted
+                        maximal interval \(\tilde{\mathcal{D}}^{(t_0, p)}\) — and it too takes the
+                        value \((t_0, p)\) at \(t = t_0\), since \(\tilde \theta(0, (t_0, p)) = (t_0,
+                        p)\). Uniqueness and maximality of integral curves of \(\tilde V\) therefore
+                        identify \(\tilde \gamma\) as the restriction of
+                        \(t \mapsto \tilde \theta(t - t_0, (t_0, p))\) to \(J_0\), with
+                        \(J_0 \subseteq t_0 + \tilde{\mathcal{D}}^{(t_0, p)} = \mathcal{E}^{(t_0,
+                        p)}\). Projecting to the \(M\)-component gives \(\gamma\) as the restriction
+                        of \(\psi^{(t_0, p)}\) to \(J_0\). The set \(\mathcal{E}^{(t_0, p)}\) is
+                        therefore the maximal interval on which the integral curve through
+                        \((t_0, p)\) exists, and is an open interval containing \(t_0\) since it is
+                        the affine shift of an open interval in the lifted flow domain.
+                    </p>
+                    <p>
+                        <strong>(b).</strong> Suppose \(t_1 \in \mathcal{E}^{(t_0, p)}\) and set
+                        \(q = \psi^{(t_0, p)}(t_1)\). Both \(\psi^{(t_0, p)}\) and \(\psi^{(t_1, q)}\)
+                        are integral curves of \(V\) that pass through \(q\) at time \(t_1\), so by the
+                        uniqueness clause of (a) applied at time \(t_1\), they coincide on the
+                        intersection of their domains, and by maximality they have the same domain.
+                    </p>
+                    <p>
+                        <strong>(d).</strong> Suppose \(p \in M_{t_1, t_0}\) and
+                        \(\psi_{t_1, t_0}(p) \in M_{t_2, t_1}\), and set \(q = \psi_{t_1, t_0}(p) =
+                        \psi^{(t_0, p)}(t_1)\). Part (b) gives
+                        \(\psi^{(t_1, q)}(t_2) = \psi^{(t_0, p)}(t_2)\), which unwinds to
+                        \(\psi_{t_2, t_1} \circ \psi_{t_1, t_0}(p) = \psi_{t_2, t_0}(p)\); in
+                        particular \(t_2 \in \mathcal{E}^{(t_0, p)}\), so
+                        \(p \in M_{t_2, t_0}\).
+                    </p>
+                    <p>
+                        <strong>(c).</strong> Openness of \(M_{t_1, t_0}\) in \(M\) follows from
+                        openness of \(\mathcal{E}\). The containment
+                        \(\psi_{t_1, t_0}(M_{t_1, t_0}) \subseteq M_{t_0, t_1}\) is part (b) read as a
+                        statement on domains: for \(p \in M_{t_1, t_0}\) and
+                        \(q = \psi_{t_1, t_0}(p)\), part (b) gives
+                        \(\mathcal{E}^{(t_1, q)} = \mathcal{E}^{(t_0, p)}\), so
+                        \(t_0 \in \mathcal{E}^{(t_1, q)}\), which is exactly
+                        \(q \in M_{t_0, t_1}\). Reversing the roles of \(t_0\) and \(t_1\) gives the
+                        opposite containment
+                        \(\psi_{t_0, t_1}(M_{t_0, t_1}) \subseteq M_{t_1, t_0}\), and the cocycle
+                        relation (d) applied with \(t_2 = t_0\) yields
+                        \(\psi_{t_0, t_1} \circ \psi_{t_1, t_0} = \psi_{t_0, t_0} = \mathrm{id}\) on
+                        \(M_{t_1, t_0}\) — using that \(\psi_{t_0, t_0}(p) = \psi^{(t_0, p)}(t_0) = p\)
+                        by (a). Together these identify \(\psi_{t_1, t_0}\) as a smooth bijection
+                        \(M_{t_1, t_0} \to M_{t_0, t_1}\) with smooth inverse \(\psi_{t_0, t_1}\),
+                        which is the definition of a diffeomorphism.
+                    </p>
+                </div>
+
+                <p>
+                    The order in which the four parts are proved — (a), (b), (d), (c), rather than the
+                    order in which they are stated — reflects their logical dependence. Existence and
+                    uniqueness in (a) is the input that makes the reparametrization identity in (b)
+                    available; the cocycle relation in (d) is a corollary of (b) read at the level of
+                    time-slice maps; and the diffeomorphism property in (c) is then a consequence of
+                    (b) and (d) combined. The interlocking of the four properties is exactly what
+                    makes the time-dependent flow a coherent geometric object rather than a loose
+                    collection of integral curves.
+                </p>
+
+            </section>
+
+            <section id="flow-matching" class="section-content">
+                <h2>Flow Matching and the Time-Dependent Flow</h2>
+
+                <p>
+                    A modern application in which the time-dependent flow plays an essential role lies
+                    outside classical mechanics or control theory altogether: in the construction of
+                    generative models in machine learning. The strategy is to learn a time-dependent
+                    velocity field whose flow transports a base probability distribution onto a target
+                    one — the distribution of natural images, of natural-language text, or of any
+                    other complex data type — and to sample from the target by integrating the learned
+                    field from a sample of the base distribution. The theorem of the previous section
+                    is precisely the rigorous foundation on which this construction rests: it
+                    guarantees that the learned velocity field generates a well-defined two-parameter
+                    family of diffeomorphisms whose time-slice map can be evaluated by ODE integration,
+                    and that the cocycle relation ensures consistency when these integrations are
+                    composed.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Time-Dependent Flow in Generative Modeling</h3>
+                    <p>
+                        In the
+                        <a href="../Machine_learning/flow_matching.html"><strong>flow-matching
+                        construction</strong></a>
+                        for generative models, a neural network is trained to approximate a
+                        time-dependent velocity field \(\mathbf{u}_t(\mathbf{x})\) on
+                        \(J \times \mathbb{R}^n\) — a time-dependent vector field in the sense of this
+                        page, with \(J = (0, 1)\). The generative procedure is the time-slice
+                        diffeomorphism \(\psi_{1, 0}\) of the corresponding time-dependent flow: a
+                        sample \(\mathbf{x}_0\) drawn from the base distribution at time \(0\) is
+                        carried by the flow to \(\psi_{1, 0}(\mathbf{x}_0)\), a sample from the target
+                        distribution at time \(1\). The well-posedness of this procedure was
+                        previously available through the
+                        <a href="../Calculus/continuity.html#D-Lipschitz_Continuous_Function" class="ref-link"><strong>Lipschitz</strong></a>
+                        version of the Picard–Lindelöf theorem on Euclidean space, which gives
+                        existence and uniqueness of integral curves for each fixed sample but treats
+                        each trajectory in isolation. The fundamental theorem of this page does more:
+                        it produces \(\psi_{1, 0}\) as a single smooth diffeomorphism between open
+                        subsets of the data manifold, with composition behavior governed by the
+                        cocycle relation. The diffeomorphism property underlies the change-of-variables
+                        formula for probability densities under the flow, the cocycle relation
+                        underlies the consistency of partial integrations, and the smoothness of
+                        \(\psi\) jointly in current time, starting time, and starting point —
+                        combined with the standard smooth dependence of solutions to ODEs on
+                        parameters — underlies the differentiability of the generative procedure
+                        with respect to the parameters of the learned field, which is the property
+                        exploited by backpropagation through the flow during training.
+                    </p>
+                </div>
+
+                <p>
+                    The connection runs in both directions, and the geometric content of the
+                    time-dependent flow has a corresponding payoff outside Euclidean settings. When
+                    the data are naturally modeled as a manifold rather than as
+                    \(\mathbb{R}^n\) — for example, when the data are rotations, points on a sphere,
+                    or probability distributions over a finite set — the Euclidean Picard–Lindelöf
+                    statement no longer applies directly, but the manifold-level fundamental theorem of
+                    this page does. The same flow-matching construction can therefore be transferred
+                    to manifold-valued data, with the time-dependent flow producing a diffeomorphism
+                    between open subsets of the data manifold by exactly the same mechanism. The
+                    technical apparatus developed here is, in this sense, the manifold-level
+                    foundation that flow-based generative modeling needs in order to make the leap from
+                    Euclidean to geometric data — and it is the structural endpoint of the present
+                    chapter, the place where the theory of flows on smooth manifolds becomes the
+                    apparatus on which a current branch of machine learning runs.
+                </p>
+
+            </section>
+
+        </div>
+
+    </body>
+</html>

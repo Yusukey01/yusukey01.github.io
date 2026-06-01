@@ -1,0 +1,976 @@
+---
+layout: default
+title: "The Fundamental Theorem on Flows"
+topic_id: calc-65
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Fundamental Theorem on Flows</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#the-need-for-local-flows">The Need for Local Flows</a>
+            <a href="#the-fundamental-theorem">The Fundamental Theorem on Flows</a>
+            <a href="#naturality-of-flows">Naturality and Diffeomorphism Invariance</a>
+            <a href="#complete-vector-fields">Complete Vector Fields</a>
+        </div>
+
+        <div class="container">
+
+            <section id="the-need-for-local-flows" class="section-content">
+                <h2>The Need for Local Flows</h2>
+
+                <p>
+                    The constructions of the previous development tied together two pictures of a smooth
+                    vector field. On the geometric side, each smooth vector field admits an integral curve
+                    through every point, defined on some open interval around \(t = 0\). On the dynamical
+                    side, a smooth global flow on \(M\) is determined entirely by its
+                    <a href="../Calculus/integral_curves.html#D-infinitesimal_generator" class="ref-link"><strong>infinitesimal generator</strong></a>,
+                    a smooth vector field whose integral curves are the trajectories of the flow. The
+                    natural question is whether the correspondence runs in the opposite direction as well:
+                    given a smooth vector field, can we always produce a smooth global flow whose
+                    infinitesimal generator it is?
+                </p>
+
+                <p>
+                    The answer is no, and the obstruction is not a defect of the abstract machinery but a
+                    feature of the underlying differential equations. There exist smooth vector fields
+                    whose integral curves cannot be continued for all real time — either because the
+                    trajectory runs out of the manifold in finite time, or because a coordinate component
+                    of the trajectory becomes unbounded. Two examples on subsets of \(\mathbb{R}^2\) make
+                    both failure modes explicit.
+                </p>
+
+                <h3>Two Counterexamples</h3>
+
+                <div class="proof">
+                    <span class="proof-title">Example (A Hole in the Manifold):</span>
+                    <p>
+                        Let \(M = \mathbb{R}^2 \setminus \{0\}\) with the standard coordinates inherited
+                        from the plane, and let \(V = \partial / \partial x\). The integral curve of \(V\)
+                        starting at the point \((-1, 0)\) is given by \(\gamma(t) = (t - 1, \, 0)\) for
+                        \(t \in (-\infty, 1)\); at \(t = 1\) the curve would reach the origin, which has
+                        been deleted from \(M\). Suppose, for contradiction, that
+                        \(\tilde\gamma : (-\infty, 1 + \varepsilon) \to M\) is a continuous extension of
+                        \(\gamma\) past \(t = 1\); by definition of extension,
+                        \(\tilde\gamma(t) = \gamma(t) = (t - 1, 0)\) for \(t < 1\). Composing with the
+                        inclusion \(M \hookrightarrow \mathbb{R}^2\) and taking the limit \(t \nearrow 1\)
+                        in \(\mathbb{R}^2\) gives \(\tilde\gamma(t) \to (0, 0)\). Limits in
+                        \(\mathbb{R}^2\) are unique and \(\tilde\gamma\) is continuous, so
+                        \(\tilde\gamma(1) = (0, 0) \notin M\), contradicting the codomain of
+                        \(\tilde\gamma\). The integral curve through \((-1, 0)\) is therefore maximally
+                        defined on \((-\infty, 1)\), and \(V\) does not generate a global flow on \(M\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Example (Finite-Time Blow-Up):</span>
+                    <p>
+                        Let \(M = \mathbb{R}^2\) and \(W = x^2 \, \partial / \partial x\). The integral
+                        curve starting at \((1, 0)\) is the solution of \(\dot x = x^2\) with \(x(0) = 1\),
+                        which by separation of variables is \(x(t) = 1 / (1 - t)\). Thus
+                        \(\gamma(t) = \bigl( 1 / (1 - t), \, 0 \bigr)\) is defined on \((-\infty, 1)\) and
+                        cannot be continued to \(t = 1\): its \(x\)-coordinate diverges as \(t \nearrow 1\).
+                        Here the manifold is complete (it is the whole plane), and the failure is not a
+                        geometric defect but a consequence of the right-hand side of the differential
+                        equation growing too rapidly along the trajectory.
+                    </p>
+                </div>
+
+                <p>
+                    Together, the two examples display a general phenomenon: a smooth vector field whose
+                    integral curves are perfectly well-defined on each maximal existence interval need not
+                    extend to a global flow on \(\mathbb{R} \times M\). The right framework for accommodating
+                    this is to allow the time variable to range over an open subset of
+                    \(\mathbb{R} \times M\) that depends on the starting point.
+                </p>
+
+                <h3>Flow Domains and Local Flows</h3>
+
+                <p>
+                    The structure that emerges from the two examples is captured by the following
+                    definition.
+                </p>
+
+                <div class="theorem" id="D-flow_domain">
+                    <span class="theorem-title">Definition: Flow Domain</span>
+                    <p>
+                        A <strong>flow domain</strong> on a smooth manifold \(M\) is an open subset
+                        \(\mathcal{D} \subseteq \mathbb{R} \times M\) with the property that, for every
+                        \(p \in M\), the set
+                        \[
+                            \mathcal{D}^{(p)} = \{ t \in \mathbb{R} : (t, p) \in \mathcal{D} \}
+                        \]
+                        is an open interval containing \(0\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-local_flow">
+                    <span class="theorem-title">Definition: Flow on a Flow Domain</span>
+                    <p>
+                        A <strong>flow</strong> (also called a <strong>local flow</strong> or <strong>local
+                        one-parameter group action</strong>) on \(M\) is a continuous map
+                        \(\theta : \mathcal{D} \to M\), where \(\mathcal{D}\) is a flow domain on \(M\),
+                        satisfying
+                        \[
+                            \theta(0, p) = p \qquad \text{for all } p \in M ,
+                        \]
+                        and the group law
+                        \[
+                            \theta\bigl( t, \theta(s, p) \bigr) = \theta(t + s, p)
+                        \]
+                        whenever both sides are defined — that is, whenever \(s \in \mathcal{D}^{(p)}\) and
+                        \(t \in \mathcal{D}^{(\theta(s, p))}\) and the sum \(t + s\) likewise lies in
+                        \(\mathcal{D}^{(p)}\).
+                    </p>
+                </div>
+
+                <p>
+                    For each \(t \in \mathbb{R}\), the partial map \(\theta_t\) is defined on the open set
+                    \[
+                        M_t = \{ p \in M : (t, p) \in \mathcal{D} \} ,
+                    \]
+                    where it acts as \(\theta_t(p) = \theta(t, p)\). The group law has a clean
+                    interpretation in terms of these maps: where defined, \(\theta_t \circ \theta_s = \theta_{t + s}\),
+                    and \(\theta_0 = \mathrm{Id}_M\) globally. A smooth flow on \(\mathcal{D}\) is one for
+                    which the underlying map \(\theta\) is smooth as a map of manifolds.
+                </p>
+
+                <p>
+                    For each \(p \in M\), the trajectory of \(p\) under the flow is the smooth curve
+                    \(\theta^{(p)} : \mathcal{D}^{(p)} \to M\) defined by \(\theta^{(p)}(t) = \theta(t, p)\),
+                    and the infinitesimal generator of a smooth flow is defined as before by
+                    \(V_p = (\theta^{(p)})'(0) \in T_p M\). When \(\mathcal{D} = \mathbb{R} \times M\) and
+                    each \(\mathcal{D}^{(p)} = \mathbb{R}\), the flow is global in the sense of the
+                    previous development; the cases of the two examples above are decidedly not of this
+                    form.
+                </p>
+
+                <h3>Maximal Integral Curves and Maximal Flows</h3>
+
+                <p>
+                    Among the integral curves through a fixed point, one is naturally distinguished: the
+                    one whose domain cannot be enlarged.
+                </p>
+
+                <div class="theorem" id="D-maximal_integral_curve">
+                    <span class="theorem-title">Definition: Maximal Integral Curve</span>
+                    <p>
+                        Let \(V\) be a smooth vector field on \(M\). A
+                        <a href="../Calculus/integral_curves.html#D-integral_curve" class="ref-link"><strong>integral curve</strong></a>
+                        \(\gamma : J \to M\) of \(V\) is <strong>maximal</strong> if it admits no
+                        extension to an integral curve of \(V\) on an open interval strictly containing
+                        \(J\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-maximal_flow">
+                    <span class="theorem-title">Definition: Maximal Flow</span>
+                    <p>
+                        A flow \(\theta : \mathcal{D} \to M\) is <strong>maximal</strong> if it admits no
+                        extension to a flow on a flow domain strictly larger than \(\mathcal{D}\).
+                    </p>
+                </div>
+
+                <p>
+                    These definitions describe the right way to package the integral curves of a smooth
+                    vector field: each starting point should be assigned its uniquely largest existence
+                    interval, and the resulting curves should be collected into a single map on the largest
+                    flow domain compatible with the dynamics. The central result of this development, the
+                    fundamental theorem on flows, asserts that this packaging always succeeds.
+                </p>
+
+                <h3>The Infinitesimal Generator of a Smooth Flow</h3>
+
+                <p>
+                    The first step toward that result is a small extension of an earlier observation. The
+                    proposition that a smooth global flow has a smooth infinitesimal generator carries over
+                    verbatim to the local setting: the proof used only the openness of the time domain,
+                    never the assumption that the flow was defined for all real \(t\).
+                </p>
+
+                <div class="theorem" id="T-local_infinitesimal_generator">
+                    <span class="theorem-title">Proposition (Infinitesimal Generator of a Smooth Flow)</span>
+                    <p>
+                        Let \(\theta : \mathcal{D} \to M\) be a smooth flow on a smooth manifold \(M\), and
+                        let \(V\) be its infinitesimal generator. Then \(V\) is a smooth vector field on
+                        \(M\), and for each \(p \in M\) the trajectory \(\theta^{(p)}\) is an integral
+                        curve of \(V\) on \(\mathcal{D}^{(p)}\).
+                    </p>
+                </div>
+
+                <p>
+                    The argument is essentially the same as for a smooth global flow. For smoothness, one
+                    checks that for every open \(U \subseteq M\) and \(f \in C^\infty(U)\), the function
+                    \(Vf\) on \(U\) equals the partial derivative of \(f \circ \theta\) with respect to
+                    \(t\) at \((0, p)\), which is smooth in \(p\) because \(\mathcal{D}\) is open and
+                    \(\theta\) is smooth; the
+                    <a href="../Calculus/vector_fields_on_manifolds.html#T-smoothness_criterion_xf" class="ref-link"><strong>smoothness criterion for vector fields via their action on functions</strong></a>
+                    then identifies \(V\) as smooth. For the integral-curve property, the group law gives
+                    \(\theta^{(p)}(t + t_0) = \theta^{(\theta(t_0, p))}(t)\) on an open neighborhood of
+                    \(t = 0\) in \(\mathcal{D}^{(p)} - t_0\); differentiating at \(t = 0\) yields
+                    \((\theta^{(p)})'(t_0) = V_{\theta(t_0, p)}\), which is the integral-curve condition
+                    at \(t_0\).
+                </p>
+
+                <p>
+                    With these definitions in hand, the central question becomes: does every smooth vector
+                    field on \(M\) arise as the infinitesimal generator of a unique maximal smooth flow on
+                    some flow domain \(\mathcal{D}\)? The next section answers this question
+                    affirmatively.
+                </p>
+
+            </section>
+
+            <section id="the-fundamental-theorem" class="section-content">
+                <h2>The Fundamental Theorem on Flows</h2>
+
+                <p>
+                    The fundamental theorem of this section asserts that every smooth vector field on a
+                    smooth manifold determines a unique maximal smooth flow, and identifies the structural
+                    properties of that flow. The statement has three parts: maximality and uniqueness of
+                    the integral curve through each point, a group law tying the maximal existence
+                    intervals of different starting points, and a diffeomorphism property of the time-\(t\)
+                    maps. The proof is correspondingly organized in stages, the first three of which
+                    construct the maximal flow as a set-theoretic object, the fourth of which proves it is
+                    smooth on an open domain, and the fifth of which deduces the diffeomorphism property
+                    as an immediate corollary.
+                </p>
+
+                <div class="theorem" id="T-fundamental_theorem_on_flows">
+                    <span class="theorem-title">Theorem (Fundamental Theorem on Flows)</span>
+                    <p>
+                        Let \(V\) be a smooth vector field on a smooth manifold \(M\). There is a unique
+                        smooth maximal flow \(\theta : \mathcal{D} \to M\) whose infinitesimal generator
+                        is \(V\). This flow has the following properties:
+                    </p>
+                    <p>
+                        <strong>(a)</strong> For each \(p \in M\), the trajectory
+                        \(\theta^{(p)} : \mathcal{D}^{(p)} \to M\) is the unique maximal integral curve of
+                        \(V\) starting at \(p\).
+                    </p>
+                    <p>
+                        <strong>(b)</strong> If \(s \in \mathcal{D}^{(p)}\), then
+                        \(\mathcal{D}^{(\theta(s, p))} = \mathcal{D}^{(p)} - s\), the set obtained by
+                        subtracting \(s\) from every element of \(\mathcal{D}^{(p)}\).
+                    </p>
+                    <p>
+                        <strong>(c)</strong> For each \(t \in \mathbb{R}\), the set \(M_t\) is open in
+                        \(M\), and the map \(\theta_t : M_t \to M_{-t}\) is a diffeomorphism with inverse
+                        \(\theta_{-t}\).
+                    </p>
+                </div>
+
+                <p>
+                    The proof divides naturally into five steps. We carry out each in turn.
+                </p>
+
+                <h3>Step 1: Uniqueness of Integral Curves</h3>
+
+                <p>
+                    The first step rules out a phenomenon the local existence statement leaves open: two
+                    distinct integral curves passing through the same point with the same velocity. Once
+                    this is excluded, the maximal integral curve through a point is well-defined.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Lemma (Uniqueness of Integral Curves):</span>
+                    <p>
+                        Let \(V\) be a smooth vector field on \(M\), and suppose
+                        \(\gamma, \tilde\gamma : J \to M\) are two integral curves of \(V\) defined on the
+                        same open interval \(J \subseteq \mathbb{R}\). If \(\gamma(t_0) = \tilde\gamma(t_0)\)
+                        for some \(t_0 \in J\), then \(\gamma = \tilde\gamma\) on all of \(J\).
+                    </p>
+                    <p>
+                        Define
+                        \[
+                            S = \{ t \in J : \gamma(t) = \tilde\gamma(t) \} .
+                        \]
+                        The set \(S\) is nonempty because \(t_0 \in S\) by hypothesis, and \(S\) is closed
+                        in \(J\) because \(\gamma\) and \(\tilde\gamma\) are continuous and \(M\) is
+                        Hausdorff.
+                    </p>
+                    <p>
+                        We show \(S\) is also open in \(J\). Let \(t_1 \in S\), and set
+                        \(p = \gamma(t_1) = \tilde\gamma(t_1)\). Choose a smooth chart \((U, (x^i))\)
+                        centered at \(p\). On the open subset of \(J\) where both curves lie in \(U\), the
+                        coordinate representations \(\gamma^i\) and \(\tilde\gamma^i\) satisfy the same
+                        autonomous system of ordinary differential equations \(\dot u^i(t) = V^i(u(t))\)
+                        with the same initial condition \(u(t_1) = 0\). The uniqueness statement for
+                        solutions of smooth autonomous systems of ordinary differential equations, part
+                        of the same classical existence-uniqueness-smoothness package invoked earlier for
+                        existence, forces \(\gamma^i \equiv \tilde\gamma^i\) on an open
+                        interval around \(t_1\); equivalently, \(\gamma = \tilde\gamma\) on an open
+                        neighborhood of \(t_1\) in \(J\). Hence \(t_1\) is an interior point of \(S\).
+                    </p>
+                    <p>
+                        The set \(S\) is therefore a nonempty, open, and closed subset of the connected
+                        space \(J\), so \(S = J\), which is the claim.
+                    </p>
+                </div>
+
+                <h3>Step 2: Construction of the Maximal Integral Curve</h3>
+
+                <p>
+                    With uniqueness in hand, the integral curves through a fixed point can be assembled
+                    into a single maximal one. For each \(p \in M\), let
+                    \[
+                        \mathcal{D}^{(p)} = \bigcup_{\gamma} \mathrm{dom}(\gamma) ,
+                    \]
+                    where the union ranges over all integral curves \(\gamma\) of \(V\) starting at \(p\)
+                    and defined on an open interval containing \(0\). The local existence theorem of the
+                    previous development guarantees that this collection is nonempty, so
+                    \(\mathcal{D}^{(p)}\) is a nonempty union of open intervals all containing \(0\), hence
+                    is itself an open interval containing \(0\).
+                </p>
+
+                <p>
+                    Define \(\theta^{(p)} : \mathcal{D}^{(p)} \to M\) by setting
+                    \(\theta^{(p)}(t) = \gamma(t)\) for any integral curve \(\gamma\) of \(V\) starting at
+                    \(p\) and defined at \(t\). The Step 1 uniqueness lemma applied to any two such
+                    curves \(\gamma_1, \gamma_2\) shows that they agree on their common domain — both
+                    pass through \(p\) at time \(0\) — so the value \(\theta^{(p)}(t)\) does not depend on
+                    the choice of \(\gamma\). The resulting map \(\theta^{(p)}\) is visibly an integral
+                    curve of \(V\) starting at \(p\): for each \(t \in \mathcal{D}^{(p)}\) and each
+                    \(\gamma\) defined at \(t\), the velocity \((\theta^{(p)})'(t) = \gamma'(t) = V_{\gamma(t)} = V_{\theta^{(p)}(t)}\).
+                </p>
+
+                <p>
+                    The interval \(\mathcal{D}^{(p)}\) is maximal among the domains of integral curves
+                    starting at \(p\): any such curve has domain contained in \(\mathcal{D}^{(p)}\) by
+                    construction, and any extension of \(\theta^{(p)}\) to a strictly larger open interval
+                    would be an integral curve starting at \(p\), hence its domain would already be
+                    contained in \(\mathcal{D}^{(p)}\), a contradiction. The trajectory \(\theta^{(p)}\)
+                    is therefore the unique maximal integral curve of \(V\) starting at \(p\), and
+                    property (a) of the theorem statement is established.
+                </p>
+
+                <h3>Step 3: The Group Law</h3>
+
+                <p>
+                    Property (b) records how the maximal existence intervals of different starting points
+                    relate to one another along a single trajectory. The translation lemma of the
+                    integral-curve development is the essential tool.
+                </p>
+
+                <p>
+                    Fix \(p \in M\) and \(s \in \mathcal{D}^{(p)}\), and set \(q = \theta^{(p)}(s)\). The
+                    goal is the equality \(\mathcal{D}^{(q)} = \mathcal{D}^{(p)} - s\). We prove the two
+                    inclusions in turn.
+                </p>
+
+                <p>
+                    For one inclusion, consider the curve
+                    \[
+                        \gamma : \mathcal{D}^{(p)} - s \to M , \qquad \gamma(t) = \theta^{(p)}(t + s) .
+                    \]
+                    The domain \(\mathcal{D}^{(p)} - s\) is an open interval containing \(0\) (it is the
+                    translate of an open interval containing \(s\) by \(-s\)). The
+                    <a href="../Calculus/integral_curves.html#T-translation_lemma_integral_curve" class="ref-link"><strong>translation lemma</strong></a>
+                    asserts that \(\gamma\) is an integral curve of \(V\), and by construction
+                    \(\gamma(0) = \theta^{(p)}(s) = q\), so \(\gamma\) is an integral curve of \(V\)
+                    starting at \(q\). By the maximality of \(\theta^{(q)}\), the domain of \(\gamma\) is
+                    contained in \(\mathcal{D}^{(q)}\), and the Step 1 uniqueness lemma forces
+                    \(\gamma(t) = \theta^{(q)}(t)\) on that domain. The inclusion of domains says
+                    \[
+                        \mathcal{D}^{(p)} - s \subseteq \mathcal{D}^{(q)} ,
+                    \]
+                    and the equality of values says that on this common interval,
+                    \[
+                        \theta^{(q)}(t) = \theta^{(p)}(t + s) ,
+                    \]
+                    which is the group law of the maximal flow.
+                </p>
+
+                <p>
+                    For the reverse inclusion, apply the same construction to the pair \((-s, q)\) in
+                    place of \((s, p)\): noting that \(-s \in \mathcal{D}^{(q)}\) and
+                    \(\theta^{(q)}(-s) = p\) by the group law just established, the same argument yields
+                    \(\mathcal{D}^{(q)} - (-s) \subseteq \mathcal{D}^{(p)}\), which is to say
+                    \(\mathcal{D}^{(q)} + s \subseteq \mathcal{D}^{(p)}\), or equivalently
+                    \(\mathcal{D}^{(q)} \subseteq \mathcal{D}^{(p)} - s\). Combining the two inclusions
+                    gives \(\mathcal{D}^{(q)} = \mathcal{D}^{(p)} - s\), which is property (b).
+                </p>
+
+                <p>
+                    With (a) and (b) in hand, the maximal flow as a set-theoretic object is fully
+                    constructed: take
+                    \[
+                        \mathcal{D} = \{ (t, p) \in \mathbb{R} \times M : t \in \mathcal{D}^{(p)} \} ,
+                    \]
+                    and define \(\theta : \mathcal{D} \to M\) by \(\theta(t, p) = \theta^{(p)}(t)\). The
+                    identity \(\theta(0, p) = p\) holds by the definition of an integral curve, and the
+                    group law \(\theta(t, \theta(s, p)) = \theta(t + s, p)\) is exactly the equality
+                    \(\theta^{(q)}(t) = \theta^{(p)}(t + s)\) just derived, valid wherever both sides are
+                    defined. What remains to verify is that \(\mathcal{D}\) is open in
+                    \(\mathbb{R} \times M\) and that \(\theta\) is smooth on it — both of which are
+                    established in the next step.
+                </p>
+
+                <h3>Step 4: The Flow Domain is Open and the Flow is Smooth</h3>
+
+                <p>
+                    The Step 2 and Step 3 constructions yield a map \(\theta : \mathcal{D} \to M\) and a
+                    set \(\mathcal{D} \subseteq \mathbb{R} \times M\) satisfying the algebraic properties
+                    required of a flow. To complete the proof of existence, we must show that
+                    \(\mathcal{D}\) is open in \(\mathbb{R} \times M\) — so that it is a flow domain in the
+                    sense of the definition above — and that \(\theta\) is smooth as a map between
+                    manifolds.
+                </p>
+
+                <p>
+                    The strategy is to identify the largest subset of \(\mathcal{D}\) on which the desired
+                    smoothness is already known, and to use the group law to propagate that smoothness
+                    along trajectories until it fills \(\mathcal{D}\). Let \(W \subseteq \mathcal{D}\)
+                    consist of all points \((t, p) \in \mathcal{D}\) such that \(\theta\) is defined and
+                    smooth on some product neighborhood of \((t, p)\) of the form \(J \times U \subseteq
+                    \mathcal{D}\), where \(J\) is an open interval containing both \(0\) and \(t\) and
+                    \(U\) is a neighborhood of \(p\). By construction \(W\) is open in \(\mathbb{R} \times M\),
+                    and \(\theta\) is smooth on \(W\). We claim \(W = \mathcal{D}\).
+                </p>
+
+                <p>
+                    The smooth-dependence statement for solutions of smooth autonomous systems of ordinary
+                    differential equations — the companion of the existence and uniqueness statements
+                    invoked earlier, with the same underlying analytical origin — produces a product
+                    neighborhood of \((0, p)\) inside \(\mathcal{D}\) on which \(\theta\) is defined and
+                    smooth, for every \(p \in M\). The slice \(\{0\} \times M\) is therefore contained in
+                    \(W\). Suppose for contradiction that \(W \neq \mathcal{D}\), and pick
+                    \((\tau, p_0) \in \mathcal{D} \setminus W\); by considering \(-\tau\) and the flow of
+                    \(-V\) if necessary, we may assume \(\tau > 0\). Let
+                    \[
+                        t_0 = \inf \{ t \in (0, \tau] : (t, p_0) \notin W \} ,
+                    \]
+                    the smallest positive time at which the smoothness produced by the local statement
+                    fails to extend along the trajectory through \(p_0\). Since \(\{0\} \times M \subseteq W\),
+                    one has \(t_0 > 0\), and \((t_0, p_0)\) lies on the boundary of \(W\) in the closed
+                    subinterval \([0, \tau] \times \{p_0\}\).
+                </p>
+
+                <p>
+                    The contradiction is engineered by extending the smoothness across \(t_0\). Choose
+                    \(t_1 < t_0\) close enough to \(t_0\) that \(\theta(t_1, p_0)\) lies in a neighborhood
+                    where the local smoothness statement applies, and a positive \(\varepsilon\) with
+                    \(t_1 + \varepsilon > t_0\). Because \((t_1, p_0) \in W\), there is a product
+                    neighborhood \((t_1 - \delta, t_1 + \delta) \times U_1 \subseteq W\) on which
+                    \(\theta\) is smooth, and \(U_1\) may be shrunk so that \(\theta(\{t_1\} \times U_1)\)
+                    lies in the local-smoothness neighborhood of \(\theta(t_1, p_0)\). The group law
+                    \(\theta(t, p) = \theta\bigl( t - t_1, \, \theta(t_1, p) \bigr)\) then expresses
+                    \(\theta\) on a product neighborhood \([0, t_1 + \varepsilon) \times U_1\) as a
+                    composition of two maps each known to be smooth on the relevant domain — the inner
+                    map \((t, p) \mapsto \theta(t_1, p)\) is smooth on \(\{t_1\} \times U_1\) by the
+                    inclusion of this product in \(W\), and the outer map
+                    \((s, q) \mapsto \theta(s, q)\) is smooth on the product
+                    \([0, \varepsilon) \times \theta(\{t_1\} \times U_1)\) by the local-smoothness
+                    statement at \(\theta(t_1, p_0)\). Hence \(\theta\) is defined and smooth on an open
+                    neighborhood of \((t_0, p_0)\), contradicting the choice of \(t_0\). Thus
+                    \(W = \mathcal{D}\), the set \(\mathcal{D}\) is open, and \(\theta\) is smooth on it.
+                </p>
+
+                <h3>Step 5: The Time-\(t\) Maps Are Diffeomorphisms</h3>
+
+                <p>
+                    Property (c) is now an immediate corollary of (b). Fix \(t \in \mathbb{R}\). The
+                    equivalence \(p \in M_t \iff t \in \mathcal{D}^{(p)}\) and property (b) give
+                    \[
+                        \begin{align*}
+                            p \in M_t
+                                &\iff t \in \mathcal{D}^{(p)} \\\\
+                                &\iff -t \in \mathcal{D}^{(p)} - t = \mathcal{D}^{(\theta(t, p))} \\\\
+                                &\iff \theta(t, p) \in M_{-t} ,
+                        \end{align*}
+                    \]
+                    so \(\theta_t\) is a map \(M_t \to M_{-t}\). The openness of \(M_t\) is the assertion
+                    that the slice of \(\mathcal{D}\) at height \(t\) is open in \(M\), which follows from
+                    Step 4. Applying the same reasoning with \(-t\) in place of \(t\) and using the group
+                    laws \(\theta_{-t} \circ \theta_t = \theta_0 = \mathrm{Id}\) on \(M_t\) and
+                    \(\theta_t \circ \theta_{-t} = \mathrm{Id}\) on \(M_{-t}\) shows that
+                    \(\theta_t : M_t \to M_{-t}\) is a bijection with two-sided inverse \(\theta_{-t}\).
+                    Both maps are smooth as restrictions of the smooth map \(\theta\) of Step 4 to slices
+                    of \(\mathcal{D}\), so each is a diffeomorphism.
+                </p>
+
+                <p>
+                    The uniqueness of the flow follows from the uniqueness of its trajectories. If
+                    \(\tilde\theta : \tilde{\mathcal{D}} \to M\) is another smooth maximal flow with
+                    infinitesimal generator \(V\), then for each \(p \in M\) the trajectory
+                    \(\tilde\theta^{(p)}\) is an integral curve of \(V\) starting at \(p\). By maximality,
+                    \(\tilde{\mathcal{D}}^{(p)} \subseteq \mathcal{D}^{(p)}\), and by the Step 1
+                    uniqueness lemma the values agree on \(\tilde{\mathcal{D}}^{(p)}\). Maximality of
+                    \(\tilde\theta\) forces equality of domains, hence \(\tilde\theta = \theta\). This
+                    completes the proof of the theorem.
+                </p>
+
+                <p>
+                    The flow whose existence and uniqueness the theorem asserts is called the
+                    <strong>flow generated by</strong> \(V\), or simply the <strong>flow of</strong>
+                    \(V\). The name "infinitesimal generator" reflects the picture the theorem makes
+                    rigorous: in a smooth chart, a good approximation to an integral curve of \(V\) on a
+                    short time interval is the straight-line motion in the direction of \(V_p\) starting
+                    at \(p\), and the full integral curve is built up by composing many such infinitesimal
+                    motions, with the direction of each motion determined by the value of \(V\) at the
+                    point arrived at in the previous step. The vector field at \(p\) sets the initial
+                    velocity; the field along the trajectory determines its continuation.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Flow of an Autonomous Vector Field, and the Limits of That Setting</h3>
+                    <p>
+                        Constructions in machine learning that build models of continuous-time dynamics
+                        on top of flows of vector fields rely on the well-posedness of an ordinary
+                        differential equation \(\dot{\mathbf{x}} = \mathbf{u}(\mathbf{x})\) — that
+                        distinct trajectories do not cross, that solutions depend smoothly on initial
+                        conditions, and that the time-\(t\) map is a diffeomorphism. The
+                        <a href="../Machine_learning/flow_matching.html"><strong>flow-matching construction
+                        in generative modeling</strong></a>, for instance, invokes the Picard–Lindelöf
+                        theorem as a forward-declared regularity input under a Lipschitz assumption.
+                        Under the smoothness hypothesis on \(V\), the present theorem establishes the
+                        autonomous, manifold-level realization of that input.
+                    </p>
+                    <p>
+                        What is <em>not</em> settled here is the case actually used in such constructions,
+                        where the velocity field \(\mathbf{u}_t(\mathbf{x})\) depends nontrivially on
+                        the time parameter \(t\). A time-dependent velocity field is not a vector field
+                        on the ambient space alone but a smooth map \(\mathbb{R} \times M \to TM\)
+                        covering the projection onto the second factor, and its well-posedness theory
+                        parallels but does not coincide with the autonomous one. A future development of
+                        this series will establish the corresponding theorem for time-dependent smooth
+                        vector fields; the present theorem covers the autonomous regime only.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="naturality-of-flows" class="section-content">
+                <h2>Naturality and Diffeomorphism Invariance</h2>
+
+                <p>
+                    The flow construction associates to each smooth vector field on a smooth manifold a
+                    canonical maximal flow. The next question — typical for any construction with a claim
+                    to being canonical — is how this association interacts with smooth maps between
+                    manifolds. The
+                    <a href="../Calculus/integral_curves.html#T-naturality_integral_curves" class="ref-link"><strong>naturality of integral curves</strong></a>
+                    asserted that, for an \(F\)-related pair of vector fields, \(F\) sends integral curves
+                    of one to integral curves of the other. Translated into the language of flows, this
+                    becomes a commutation relation between the flows themselves.
+                </p>
+
+                <div class="theorem" id="T-naturality_of_flows">
+                    <span class="theorem-title">Proposition (Naturality of Flows)</span>
+                    <p>
+                        Let \(F : M \to N\) be a smooth map between smooth manifolds, \(X \in \mathfrak{X}(M)\),
+                        \(Y \in \mathfrak{X}(N)\), and suppose \(X\) and \(Y\) are
+                        <a href="../Calculus/vector_fields_under_maps.html#D-F_related_vector_fields" class="ref-link"><strong>\(F\)-related</strong></a>.
+                        Let \(\theta : \mathcal{D} \to M\) be the flow of \(X\), and \(\eta : \mathcal{E} \to N\)
+                        the flow of \(Y\). Then for each \(t \in \mathbb{R}\),
+                        \[
+                            F(M_t) \subseteq N_t , \qquad \eta_t \circ F = F \circ \theta_t \quad \text{on } M_t .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Fix \(p \in M\) and let \(\theta^{(p)} : \mathcal{D}^{(p)} \to M\) be the maximal
+                        integral curve of \(X\) starting at \(p\). The naturality of integral curves applied
+                        to \(\theta^{(p)}\) shows that \(F \circ \theta^{(p)} : \mathcal{D}^{(p)} \to N\) is
+                        an integral curve of \(Y\), starting at the point \(F(\theta^{(p)}(0)) = F(p)\). The
+                        maximal integral curve of \(Y\) starting at \(F(p)\) is \(\eta^{(F(p))}\), defined
+                        on the maximal interval \(\mathcal{E}^{(F(p))}\). Maximality of
+                        \(\eta^{(F(p))}\) forces the domain inclusion
+                        \(\mathcal{D}^{(p)} \subseteq \mathcal{E}^{(F(p))}\); the uniqueness lemma of
+                        Step 1 of the fundamental theorem then identifies the two integral curves of \(Y\)
+                        that pass through \(F(p)\) at time \(0\) on this common interval,
+                        \[
+                            F \circ \theta^{(p)} = \eta^{(F(p))} \qquad \text{on } \mathcal{D}^{(p)} .
+                        \]
+                    </p>
+                    <p>
+                        The inclusion \(F(M_t) \subseteq N_t\) and the commutation relation now follow by
+                        bookkeeping. For \(p \in M_t\) we have \(t \in \mathcal{D}^{(p)}\), hence
+                        \(t \in \mathcal{E}^{(F(p))}\) by the just-established containment, hence
+                        \(F(p) \in N_t\). Evaluating the equality of trajectories at \(t\) gives
+                        \(F(\theta_t(p)) = \eta_t(F(p))\), which is the commutation relation.
+                    </p>
+                </div>
+
+                <p>
+                    The content of the proposition is captured by the commutative diagram of smooth maps
+                    \[
+                        \begin{array}{ccc}
+                            M_t & \xrightarrow{F} & N_t \\\\
+                            {\scriptstyle \theta_t} \downarrow & & \downarrow {\scriptstyle \eta_t} \\\\
+                            M_{-t} & \xrightarrow{F} & N_{-t} .
+                        \end{array}
+                    \]
+                    The horizontal arrows are restrictions of \(F\); the vertical arrows are the
+                    time-\(t\) maps of the two flows, which are diffeomorphisms by part (c) of the
+                    fundamental theorem. The diagram says exactly that following \(X\) for time \(t\) and
+                    then applying \(F\) gives the same result as first applying \(F\) and then following
+                    \(Y\) for time \(t\) — the operation of "flow for time \(t\)" commutes with \(F\)
+                    whenever \(X\) and \(Y\) are \(F\)-related.
+                </p>
+
+                <p>
+                    The special case in which \(F\) is itself a diffeomorphism deserves a separate
+                    statement, because in that case the \(F\)-relatedness condition can be packaged as a
+                    pushforward of vector fields.
+                </p>
+
+                <div class="theorem" id="T-diffeomorphism_invariance_flow">
+                    <span class="theorem-title">Corollary (Diffeomorphism Invariance of Flows)</span>
+                    <p>
+                        Let \(F : M \to N\) be a diffeomorphism between smooth manifolds and let
+                        \(X \in \mathfrak{X}(M)\). If \(\theta\) is the flow of \(X\) on the flow domain
+                        \(\mathcal{D} \subseteq \mathbb{R} \times M\), then the flow of the
+                        <a href="../Calculus/vector_fields_under_maps.html#D-pushforward_vector_field" class="ref-link"><strong>pushforward vector field</strong></a>
+                        \(F_* X \in \mathfrak{X}(N)\) is the map \(\eta : F(\mathcal{D}) \to N\) defined by
+                        \[
+                            \eta_t = F \circ \theta_t \circ F^{-1} ,
+                        \]
+                        with \(N_t = F(M_t)\) for each \(t \in \mathbb{R}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Because \(F\) is a diffeomorphism, \(X\) and \(F_* X\) are \(F\)-related by the
+                        defining property of the pushforward. The previous proposition therefore gives
+                        \(F(M_t) \subseteq N_t\) and \(\eta_t \circ F = F \circ \theta_t\) on \(M_t\),
+                        where \(\eta\) is the maximal flow of \(F_* X\) on its own flow domain. Applying
+                        the same proposition to \(F^{-1}\), which pulls \(F_* X\) back to \(X\), yields
+                        \(F^{-1}(N_t) \subseteq M_t\) and \(\theta_t \circ F^{-1} = F^{-1} \circ \eta_t\)
+                        on \(N_t\). The two inclusions combine to give \(F(M_t) = N_t\), and the
+                        commutation relation rearranges to \(\eta_t = F \circ \theta_t \circ F^{-1}\).
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="complete-vector-fields" class="section-content">
+                <h2>Complete Vector Fields</h2>
+
+                <p>
+                    The counterexamples of the first section showed that not every smooth vector field
+                    generates a global flow: integral curves can run off the manifold in finite time, or
+                    blow up to infinity along a coordinate direction. The vector fields that do generate
+                    global flows form a distinguished class, and many structural statements about flows
+                    on a manifold depend on identifying when a given field belongs to that class.
+                </p>
+
+                <div class="theorem" id="D-complete_vector_field">
+                    <span class="theorem-title">Definition: Complete Vector Field</span>
+                    <p>
+                        A smooth vector field \(V\) on a smooth manifold \(M\) is <strong>complete</strong>
+                        if its flow is a
+                        <a href="../Calculus/integral_curves.html#D-global_flow" class="ref-link"><strong>global flow</strong></a>:
+                        equivalently, if the maximal flow domain of \(V\) is all of
+                        \(\mathbb{R} \times M\), or equivalently, if every maximal integral curve of \(V\)
+                        is defined on the whole real line.
+                    </p>
+                </div>
+
+                <p>
+                    The vector fields whose global flows were written down explicitly earlier are
+                    complete; the two counterexamples of the first section, in contrast, are incomplete
+                    — one because the manifold loses a point along the trajectory, the other because the
+                    coordinate escapes to infinity in finite time. The general question is asymmetric:
+                    to show that a vector field is incomplete, a single maximal integral curve with
+                    bounded domain suffices, typically produced by solving the equation in closed form;
+                    to show that a vector field is complete, one must control every maximal integral
+                    curve, which in general cannot be done by explicit integration. The remainder of
+                    this section develops criteria that extract completeness from structural features of
+                    the manifold or of the vector field — compact support, or invariance under a group
+                    of translations — without solving the differential equation.
+                </p>
+
+                <h3>A Uniform Lower Bound on Existence Times</h3>
+
+                <p>
+                    The first criterion records a useful general principle: if there is a single
+                    \(\varepsilon > 0\) that lower-bounds the existence interval of every trajectory, then
+                    every trajectory in fact exists for all time. The bound need not be tight, and the
+                    \(\varepsilon\) does not appear in the conclusion; what matters is that one such
+                    \(\varepsilon\) exists, uniformly across the manifold.
+                </p>
+
+                <div class="theorem" id="T-uniform_time_lemma">
+                    <span class="theorem-title">Lemma (Uniform Time)</span>
+                    <p>
+                        Let \(V\) be a smooth vector field on a smooth manifold \(M\), with maximal flow
+                        \(\theta : \mathcal{D} \to M\). Suppose there exists \(\varepsilon > 0\) such that
+                        for every \(p \in M\),
+                        \[
+                            \mathcal{D}^{(p)} \supseteq (-\varepsilon, \varepsilon) .
+                        \]
+                        Then \(V\) is complete.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Suppose for contradiction that \(V\) is not complete. Then there is some
+                        \(p \in M\) for which the maximal existence interval \(\mathcal{D}^{(p)}\) is a
+                        proper subinterval of \(\mathbb{R}\). Assume \(\mathcal{D}^{(p)}\) is bounded
+                        above; the case in which it is bounded below is handled by the same argument
+                        applied to the time-reversed flow. Let \(b = \sup \mathcal{D}^{(p)} < +\infty\),
+                        and choose \(t_0 \in \mathcal{D}^{(p)}\) with
+                        \[
+                            b - \varepsilon < t_0 < b .
+                        \]
+                        Set \(q = \theta^{(p)}(t_0) \in M\).
+                    </p>
+                    <p>
+                        The hypothesis applied at \(q\) gives
+                        \(\mathcal{D}^{(q)} \supseteq (-\varepsilon, \varepsilon)\), so the trajectory
+                        \(\theta^{(q)}\) is defined on this open interval. Define a curve
+                        \(\gamma : \mathcal{D}^{(p)} \cup (t_0 - \varepsilon, t_0 + \varepsilon) \to M\)
+                        by patching two pieces:
+                        \[
+                            \gamma(t) =
+                            \begin{cases}
+                                \theta^{(p)}(t) , & t \in \mathcal{D}^{(p)} , \\\\
+                                \theta^{(q)}(t - t_0) , & t \in (t_0 - \varepsilon, \, t_0 + \varepsilon) .
+                            \end{cases}
+                        \]
+                        The two pieces overlap on the open interval
+                        \((t_0 - \varepsilon, \, b)\), which is contained in \(\mathcal{D}^{(p)}\): the
+                        uniform-time hypothesis applied at \(p\) gives
+                        \(\mathcal{D}^{(p)} \supseteq (-\varepsilon, \varepsilon)\), hence \(b \geq
+                        \varepsilon\), and the choice \(t_0 > b - \varepsilon\) together with
+                        \(\inf \mathcal{D}^{(p)} \leq -\varepsilon\) forces \(t_0 - \varepsilon >
+                        \inf \mathcal{D}^{(p)}\), so \((t_0 - \varepsilon, b) \subseteq \mathcal{D}^{(p)}\).
+                        On this overlap, the
+                        <a href="../Calculus/integral_curves.html#T-translation_lemma_integral_curve" class="ref-link"><strong>translation lemma</strong></a>
+                        identifies \(t \mapsto \theta^{(q)}(t - t_0)\) as an integral curve of \(V\)
+                        starting at \(q = \theta^{(p)}(t_0)\) when \(t = t_0\); the same is true of
+                        \(\theta^{(p)}\) on \(\mathcal{D}^{(p)}\), restricted near \(t_0\). The
+                        uniqueness of integral curves established earlier therefore forces the two pieces
+                        to coincide on the overlap, so \(\gamma\) is well-defined.
+                    </p>
+                    <p>
+                        The curve \(\gamma\) is an integral curve of \(V\) on its open domain: on each of
+                        the two pieces it is, and the pieces glue smoothly along the overlap. Its starting
+                        point is \(\gamma(0) = \theta^{(p)}(0) = p\), since \(0 \in \mathcal{D}^{(p)}\) by
+                        the definition of a flow domain. The domain of \(\gamma\) is the union
+                        \(\mathcal{D}^{(p)} \cup (t_0 - \varepsilon, t_0 + \varepsilon)\), which by the
+                        overlap inclusion just established equals
+                        \((\inf \mathcal{D}^{(p)}, \, t_0 + \varepsilon)\); the choice of \(t_0\)
+                        guarantees \(t_0 + \varepsilon > b\), so this interval strictly contains
+                        \(\mathcal{D}^{(p)} = (\inf \mathcal{D}^{(p)}, b)\). Thus \(\gamma\) is an
+                        integral curve of \(V\) starting at \(p\) and defined on an open interval
+                        strictly containing \(\mathcal{D}^{(p)}\). This contradicts the maximality of
+                        \(\theta^{(p)}\). The contradiction shows \(\mathcal{D}^{(p)}\) is not bounded
+                        above; the symmetric argument shows it is not bounded below; hence
+                        \(\mathcal{D}^{(p)} = \mathbb{R}\) for every \(p \in M\), and \(V\) is complete.
+                    </p>
+                </div>
+
+                <p>
+                    The uniform time lemma reduces the question of completeness to the question of a
+                    single uniform bound on existence intervals. In the applications that follow, this
+                    bound is produced by very different mechanisms — by compactness of the support of
+                    the vector field, by compactness of the underlying manifold, or by group-theoretic
+                    homogeneity — but in each case the lemma serves as the universal final step that
+                    turns local-in-time information into a global flow.
+                </p>
+
+                <h3>Compact Support and Compact Manifolds</h3>
+
+                <p>
+                    The first geometric application of the uniform time lemma applies whenever the region
+                    on which the vector field is nonzero is compact. Outside that region the trajectories
+                    are constant, and inside it a single \(\varepsilon\) can be extracted from a finite
+                    cover of local flow domains.
+                </p>
+
+                <div class="theorem" id="T-compactly_supported_vf_complete">
+                    <span class="theorem-title">Theorem (Compactly Supported Vector Fields Are Complete)</span>
+                    <p>
+                        Every compactly supported smooth vector field on a smooth manifold is complete.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(V\) be a smooth vector field on \(M\) with
+                        <a href="../Calculus/vector_fields_on_manifolds.html#D-vector_field_support" class="ref-link"><strong>compact support</strong></a>
+                        \(K = \mathrm{supp}\, V\). For each \(p \in K\), the fundamental theorem provides
+                        an open neighborhood of \((0, p)\) inside the flow domain \(\mathcal{D}\) on
+                        which \(\theta\) is defined and smooth; such a neighborhood may be taken of
+                        product form \((-\varepsilon_p, \varepsilon_p) \times U_p\), where
+                        \(\varepsilon_p > 0\) and \(U_p\) is an open neighborhood of \(p\). The
+                        collection \(\{ U_p \}_{p \in K}\) is an open cover of \(K\) by open subsets of
+                        \(M\). By the
+                        <a href="../Calculus/compactness.html#D-compact_space" class="ref-link"><strong>defining property of compactness</strong></a>,
+                        there is a finite subcover \(U_{p_1}, \ldots, U_{p_n}\) of \(K\); set
+                        \[
+                            \varepsilon = \min \{ \varepsilon_{p_1}, \ldots, \varepsilon_{p_n} \} > 0 .
+                        \]
+                    </p>
+                    <p>
+                        We verify that \(\mathcal{D}^{(q)} \supseteq (-\varepsilon, \varepsilon)\) for
+                        every \(q \in M\), in two cases.
+                    </p>
+                    <p>
+                        <em>Case 1:</em> \(q \in K\). Then \(q \in U_{p_i}\) for some \(i\), and the
+                        product neighborhood \((-\varepsilon_{p_i}, \varepsilon_{p_i}) \times U_{p_i}\)
+                        is contained in \(\mathcal{D}\) by construction. In particular
+                        \(\{ t \in \mathbb{R} : (t, q) \in \mathcal{D} \} \supseteq (-\varepsilon_{p_i}, \varepsilon_{p_i}) \supseteq (-\varepsilon, \varepsilon)\),
+                        which is the inclusion claimed.
+                    </p>
+                    <p>
+                        <em>Case 2:</em> \(q \notin K\). Then \(V\) vanishes on an open neighborhood of
+                        \(q\) (the complement of \(K\) is open, and \(K\) contains the closure of the
+                        set on which \(V \neq 0\)). The constant curve \(\gamma : \mathbb{R} \to M\) with
+                        \(\gamma(t) \equiv q\) has velocity zero everywhere, so
+                        \(\gamma'(t) = 0 = V_{\gamma(t)}\) for all \(t\); hence \(\gamma\) is an integral
+                        curve of \(V\) defined on all of \(\mathbb{R}\), and the maximal integral curve
+                        through \(q\) has \(\mathcal{D}^{(q)} = \mathbb{R}\), which certainly contains
+                        \((-\varepsilon, \varepsilon)\).
+                    </p>
+                    <p>
+                        The hypothesis of the uniform time lemma is therefore satisfied, and \(V\) is
+                        complete.
+                    </p>
+                </div>
+
+                <p>
+                    On a compact manifold every smooth vector field has compact support — its support is
+                    a closed subset of a compact space — so the theorem specializes to a striking
+                    statement: compactness of the underlying manifold by itself forces completeness of
+                    every smooth dynamical system one can write down.
+                </p>
+
+                <div class="theorem" id="T-vf_on_compact_manifold_complete">
+                    <span class="theorem-title">Corollary (Completeness on Compact Manifolds)</span>
+                    <p>
+                        Every smooth vector field on a compact smooth manifold is complete.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(M\) be a compact smooth manifold and \(V \in \mathfrak{X}(M)\). The support
+                        \(\mathrm{supp}\, V\) is a closed subset of \(M\), and every closed subset of a
+                        compact space is compact, so \(V\) is compactly supported. The previous theorem
+                        applies.
+                    </p>
+                </div>
+
+                <p>
+                    Compactness of the manifold eliminates by hand both modes of incompleteness
+                    encountered in the counterexamples — the manifold is too large to be exited in
+                    finite time, and there is no infinity toward which a coordinate could escape.
+                </p>
+
+                <h3>Left-Invariant Vector Fields on Lie Groups</h3>
+
+                <p>
+                    The second geometric application of the uniform time lemma replaces compactness by a
+                    different structural hypothesis: invariance under a transitive group of
+                    diffeomorphisms of the manifold. On a Lie group, the left translations supply such a
+                    group, and the corresponding distinguished class of vector fields is the
+                    left-invariant ones. The conclusion is that every such field — without any compactness
+                    or boundedness assumption on the group — is complete.
+                </p>
+
+                <div class="theorem" id="T-left_invariant_vf_complete">
+                    <span class="theorem-title">Theorem (Left-Invariant Vector Fields Are Complete)</span>
+                    <p>
+                        Every
+                        <a href="../Calculus/lie_algebra_of_lie_group.html#D-left_invariant_vector_field" class="ref-link"><strong>left-invariant vector field</strong></a>
+                        on a
+                        <a href="../Calculus/lie_groups_smooth.html#D-lie_group" class="ref-link"><strong>Lie group</strong></a>
+                        is complete.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(G\) be a Lie group and \(X\) a left-invariant smooth vector field on \(G\),
+                        with maximal flow \(\theta : \mathcal{D} \to G\). The local existence statement of
+                        the earlier development applied at the identity element \(e \in G\) yields some
+                        \(\varepsilon > 0\) and a smooth integral curve
+                        \(\theta^{(e)} : (-\varepsilon, \varepsilon) \to G\) of \(X\) starting at \(e\).
+                        We propagate this \(\varepsilon\) to every other point of \(G\) by left
+                        translation.
+                    </p>
+                    <p>
+                        Fix \(g \in G\) and let
+                        <a href="../Calculus/lie_groups_smooth.html#D-translation_maps" class="ref-link"><strong>\(L_g : G \to G\)</strong></a>
+                        be left translation by \(g\). The defining property of a left-invariant vector
+                        field is that \(X\) and itself are \(L_g\)-related — that is, \(X\) is
+                        \(L_g\)-related to itself for every \(g \in G\). The
+                        <a href="../Calculus/integral_curves.html#T-naturality_integral_curves" class="ref-link"><strong>naturality of integral curves</strong></a>
+                        applied to \(L_g\), \(X\), and \(X\) itself shows that
+                        \(L_g \circ \theta^{(e)} : (-\varepsilon, \varepsilon) \to G\) is an integral
+                        curve of \(X\); its starting value is
+                        \[
+                            L_g \bigl( \theta^{(e)}(0) \bigr) = L_g(e) = g \cdot e = g .
+                        \]
+                        Thus \(L_g \circ \theta^{(e)}\) is an integral curve of \(X\) starting at \(g\),
+                        defined on the open interval \((-\varepsilon, \varepsilon)\).
+                    </p>
+                    <p>
+                        By the maximality of \(\theta^{(g)}\), the domain of any integral curve of \(X\)
+                        starting at \(g\) is contained in \(\mathcal{D}^{(g)}\); in particular,
+                        \[
+                            (-\varepsilon, \varepsilon) \subseteq \mathcal{D}^{(g)} .
+                        \]
+                        The element \(g \in G\) was arbitrary, so the inclusion holds for every \(g\),
+                        with the same \(\varepsilon\) throughout. The hypothesis of the
+                        <a href="#T-uniform_time_lemma" class="ref-link"><strong>uniform time lemma</strong></a>
+                        is therefore satisfied, and \(X\) is complete.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>One-Parameter Subgroups, Revisited</h3>
+                    <p>
+                        The earlier development of matrix Lie groups established that every
+                        <a href="../Linear_algebra/matrix_exponential.html#D-one_parameter_subgroup" class="ref-link"><strong>one-parameter subgroup</strong></a>
+                        of a matrix Lie group has the form \(\gamma(t) = \exp(tA)\) for a unique matrix
+                        \(A = \gamma'(0)\), defined for every \(t \in \mathbb{R}\). The completeness
+                        statement just proved is the corresponding result in the abstract setting: for
+                        any Lie group \(G\) and any left-invariant smooth vector field \(X\), the
+                        trajectory \(\theta^{(e)} : \mathbb{R} \to G\) through the identity is a smooth
+                        group homomorphism — a one-parameter subgroup of \(G\) — and conversely every
+                        smooth one-parameter subgroup arises this way. The
+                        <a href="../Linear_algebra/matrix_exponential.html#T-one_param_exp" class="ref-link"><strong>matrix-exponential identification</strong></a>
+                        is the matrix-group instance of an abstract object whose existence rests on the
+                        present completeness theorem.
+                    </p>
+                    <p>
+                        This is the construction known in the general case as the <em>exponential map of
+                        the Lie group</em>: a tangent vector at the identity determines a left-invariant
+                        vector field, whose flow is global by the theorem above, and whose time-\(1\)
+                        value gives back the exponential of the original tangent vector. The
+                        differential at the origin and the compatibility with the bracket on the Lie
+                        algebra belong to later stages of the development; the existence and global
+                        character of the underlying one-parameter subgroups have now been settled in
+                        full generality.
+                    </p>
+                </div>
+
+            </section>
+
+        </div>
+
+    </body>
+</html>
