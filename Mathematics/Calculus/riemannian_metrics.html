@@ -1,0 +1,698 @@
+---
+layout: default
+title: "Riemannian Metrics"
+topic_id: calc-78
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Riemannian Metrics</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#defining">Defining Riemannian Metrics</a>
+            <a href="#existence">Existence on Every Manifold</a>
+            <a href="#geometry">Length, Angle, and Orthogonality</a>
+            <a href="#frames">Orthonormal Frames</a>
+            <a href="#pullback">Pullback Metrics and Isometries</a>
+            <a href="#flatness">Flatness and Local Isometry</a>
+        </div>
+
+        <div class="container">
+            <section id="defining" class="section-content">
+                <h2>Defining Riemannian Metrics</h2>
+
+                <p>
+                    Everything built so far has concerned the differentiable structure of a manifold: how to
+                    differentiate functions and maps, how vectors and covectors transform, how tensor fields are
+                    pulled back and differentiated along flows. None of it measures anything. A smooth manifold by
+                    itself has no notion of the length of a tangent vector, the angle between two directions, or the
+                    distance between two points; a diffeomorphism may stretch and bend it arbitrarily, and nothing in
+                    the smooth structure objects. To introduce geometry, in the metric sense of lengths and angles, we
+                    must add one more piece of data. The model for what to add comes from linear algebra: on a single
+                    vector space, the structure that produces lengths and angles is an inner product, and the symmetric
+                    covariant \(2\)-tensors that carry such geometric content are exactly the inner products. The
+                    construction of this section attaches one such tensor to every tangent space at once, smoothly,
+                    placing an inner product on each \(T_pM\) that varies from point to point. It is one of the central
+                    applications of the tensor machinery developed in the previous pages.
+                </p>
+
+                <p>
+                    A choice of such a structure is the central object of this chapter. It is the smallest addition to
+                    the smooth structure that turns a manifold into a space one can measure, and it is the foundation
+                    on which the deeper theory rests. That deeper theory, the study of curvature, geodesics, and the
+                    connections that relate nearby tangent spaces, is a subject of its own and lies beyond what we
+                    develop here. Our aim is more contained: to define the structure precisely, to prove that every
+                    manifold admits one, to extract from it the basic measurements of length and angle, and to see how
+                    it transfers across maps. With these in hand we will reach, in the pages that follow, the result
+                    that a connected manifold carrying such a structure becomes a metric space in the sense of analysis,
+                    and we will see the first geometric obstructions that a single such structure cannot remove.
+                </p>
+
+                <div class="theorem" id="D-riemannian_metric">
+                    <span class="theorem-title">Definition: Riemannian Metric</span>
+                    <p>
+                        Let \(M\) be a smooth manifold with or without boundary. A <strong>Riemannian metric</strong> on
+                        \(M\) is a smooth
+                        <a href="symmetric_tensors_tensor_fields.html#D-symmetric_tensor" class="ref-link"><strong>symmetric</strong></a>
+                        covariant
+                        <a href="symmetric_tensors_tensor_fields.html#D-tensor_field" class="ref-link"><strong>\(2\)-tensor field</strong></a>
+                        \(g\) on \(M\) that is positive definite at each point: for every \(p \in M\) and every nonzero
+                        \(v \in T_pM\),
+                        \[
+                            g_p(v, v) > 0 .
+                        \]
+                        A <strong>Riemannian manifold</strong> is a pair \((M, g)\) consisting of a smooth manifold
+                        \(M\) and a Riemannian metric \(g\) on \(M\); when the metric is understood, one says simply
+                        that \(M\) is a Riemannian manifold. A <strong>Riemannian manifold with boundary</strong> is
+                        defined in the same way, with \(M\) a smooth manifold with boundary.
+                    </p>
+                </div>
+
+                <p>
+                    Because \(g\) is symmetric and positive definite at each point, the value \(g_p\) is precisely an
+                    <a href="intro_analysis.html#D-inner_product_space" class="ref-link"><strong>inner product</strong></a>
+                    on the tangent space \(T_pM\), a real inner product in the sense of the general axioms with the
+                    scalar field taken to be \(\mathbb{R}\). For this reason the real number \(g_p(v, w)\) is often written
+                    \(\langle v, w \rangle_g\), the subscript recording which metric supplies the pairing. A Riemannian
+                    metric is thus a smoothly varying field of inner products, one on each tangent space.
+                </p>
+
+                <p>
+                    A word on terminology is in order, because the word "metric" now carries two meanings. A Riemannian
+                    metric is not a metric in the sense of metric spaces, where a metric is a distance function on a
+                    set. The two are related, and a later section makes the relation precise by producing a genuine
+                    distance function from a Riemannian metric. To keep them apart we reserve "metric" for the
+                    Riemannian object and use "distance function" for the metric-space notion; the context will always
+                    make clear which is meant.
+                </p>
+
+                <p>
+                    In any smooth local coordinates \((x^i)\), a covariant \(2\)-tensor field is determined by its
+                    component functions, and a Riemannian metric is written
+                    \[
+                        g = g_{ij}\, dx^i \otimes dx^j ,
+                    \]
+                    where \((g_{ij})\) is a matrix of smooth functions that is symmetric and positive definite at each
+                    point. Symmetry of \(g\) lets us rewrite this in terms of the
+                    <a href="symmetric_tensors_tensor_fields.html#T-symmetric_product" class="ref-link"><strong>symmetric product</strong></a>:
+                    averaging the expression with its transpose and relabeling the summation indices in the second copy
+                    gives
+                    \[
+                        \begin{align*}
+                            g
+                                &= g_{ij}\, dx^i \otimes dx^j \\\\
+                                &= \tfrac{1}{2}\big(g_{ij}\, dx^i \otimes dx^j + g_{ji}\, dx^i \otimes dx^j\big) \\\\
+                                &= \tfrac{1}{2}\big(g_{ij}\, dx^i \otimes dx^j + g_{ij}\, dx^j \otimes dx^i\big) \\\\
+                                &= g_{ij}\, dx^i\, dx^j ,
+                        \end{align*}
+                    \]
+                    where the second line uses \(g_{ij} = g_{ji}\), the third relabels \(i \leftrightarrow j\) in the
+                    second term, and the last line writes the symmetric product \(dx^i\, dx^j = \tfrac{1}{2}(dx^i
+                    \otimes dx^j + dx^j \otimes dx^i)\). This is the form in which a metric is most often displayed in
+                    coordinates.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example (The Euclidean Metric):</span>
+                    <p>
+                        The simplest Riemannian metric is the <strong>Euclidean metric</strong> \(\bar{g}\) on
+                        \(\mathbb{R}^n\), given in standard coordinates by
+                        \[
+                            \bar{g} = \delta_{ij}\, dx^i\, dx^j = \big(dx^1\big)^2 + \cdots + \big(dx^n\big)^2 ,
+                        \]
+                        where \(\delta_{ij}\) is the Kronecker delta and \(\big(dx^i\big)^2\) abbreviates the symmetric
+                        product \(dx^i\, dx^i\). Applied to tangent vectors \(v, w \in T_p\mathbb{R}^n\) with components
+                        \(v^i\) and \(w^i\), it returns
+                        \[
+                            \bar{g}_p(v, w) = \delta_{ij}\, v^i w^j = \sum_{i=1}^{n} v^i w^i = v \cdot w ,
+                        \]
+                        the ordinary dot product. In other words \(\bar{g}\) is the \(2\)-tensor field whose value at
+                        every point is the Euclidean inner product. The matrix \((\bar{g}_{ij}) = (\delta_{ij})\) is the
+                        identity, which is symmetric and positive definite, so \(\bar{g}\) is indeed a Riemannian
+                        metric. The explicit summation sign is written because the repeated upper index in \(v^i w^i\)
+                        does not match the summation convention's pairing of one upper with one lower index; writing the
+                        metric coefficients \(\delta_{ij}\) explicitly restores the convention.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Example (Product Metrics):</span>
+                    <p>
+                        If \((M, g)\) and \((\widetilde{M}, \widetilde{g})\) are Riemannian manifolds, the product
+                        manifold \(M \times \widetilde{M}\) carries a natural Riemannian metric \(g \oplus \widetilde{g}\),
+                        called the
+                        <strong>product metric</strong>, defined on the tangent space \(T_{(p,q)}(M \times
+                        \widetilde{M}) \cong T_pM \oplus T_q\widetilde{M}\) by
+                        \[
+                            (g \oplus \widetilde{g})\big((v, \tilde{v}), (w, \tilde{w})\big) = g(v, w) + \widetilde{g}(\tilde{v}, \tilde{w}) .
+                        \]
+                        Given local coordinates \((x^1, \ldots, x^n)\) for \(M\) and \((y^1, \ldots, y^m)\) for
+                        \(\widetilde{M}\), the pair \((x^1, \ldots, x^n, y^1, \ldots, y^m)\) is a coordinate system for
+                        the product, and in these coordinates \(g \oplus \widetilde{g}\) is represented by the block
+                        diagonal matrix
+                        \[
+                            \begin{pmatrix} g_{ij} & 0 \\ 0 & \widetilde{g}_{ij} \end{pmatrix} .
+                        \]
+                        A direct consequence is that the Euclidean metric on \(\mathbb{R}^{n+m}\) is the product of the
+                        Euclidean metrics on \(\mathbb{R}^n\) and \(\mathbb{R}^m\), since the identity matrix of size
+                        \(n + m\) is the block diagonal assembly of the two smaller identity matrices.
+                    </p>
+                </div>
+            </section>
+
+            <section id="existence" class="section-content">
+                <h2>Existence on Every Manifold</h2>
+
+                <p>
+                    Before measuring anything, one must know that there is something to measure with. It is not obvious
+                    that an arbitrary smooth manifold carries any Riemannian metric at all: the definition demands a
+                    field of inner products that is simultaneously positive definite at every point and smooth across
+                    the whole manifold, and a manifold is in general assembled from coordinate patches with no
+                    preferred way to reconcile the geometries they would each suggest. The resolution is that local
+                    geometries can always be blended into a global one, and the device that performs the blending is a
+                    partition of unity. The conclusion is unconditional.
+                </p>
+
+                <div class="theorem" id="T-riemannian_existence">
+                    <span class="theorem-title">Theorem: Existence of Riemannian Metrics</span>
+                    <p>
+                        Every smooth manifold with or without boundary admits a Riemannian metric.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Let \(M\) be a smooth manifold, and cover it by smooth coordinate charts \((U_\alpha,
+                        \varphi_\alpha)\), where each \(\varphi_\alpha : U_\alpha \to \widehat{U}_\alpha \subseteq
+                        \mathbb{R}^n\) is a diffeomorphism onto an open subset of \(\mathbb{R}^n\). On each coordinate
+                        domain, transport the Euclidean metric back to \(U_\alpha\) by setting
+                        \[
+                            g_\alpha = \varphi_\alpha^*\, \bar{g} ,
+                        \]
+                        the pullback of the Euclidean metric \(\bar{g}\) under \(\varphi_\alpha\). Because
+                        \(\varphi_\alpha\) is a diffeomorphism, its
+                        <a href="tangent_vectors.html#T-differential_properties" class="ref-link"><strong>differential</strong></a>
+                        is a linear isomorphism at each point,
+                        so \(g_\alpha\) is a smooth symmetric \(2\)-tensor field on \(U_\alpha\) that is positive
+                        definite: for nonzero \(v \in T_pU_\alpha\),
+                        \[
+                            (g_\alpha)_p(v, v) = \bar{g}\big(d(\varphi_\alpha)_p(v),\, d(\varphi_\alpha)_p(v)\big)
+                                = \big| d(\varphi_\alpha)_p(v) \big|^2 > 0 ,
+                        \]
+                        the last inequality because \(d(\varphi_\alpha)_p\) is injective and so sends the nonzero \(v\)
+                        to a nonzero vector. In coordinates \(g_\alpha\) is simply \(\delta_{ij}\, dx^i\, dx^j\). Each
+                        \(U_\alpha\) thus carries a Riemannian metric of its own; what remains is to assemble these into
+                        a single metric on all of \(M\).
+                    </p>
+                    <p>
+                        Let \((\psi_\alpha)\) be a smooth
+                        <a href="partitions_of_unity.html#D-partition_of_unity" class="ref-link"><strong>partition of unity</strong></a>
+                        subordinate to the cover \((U_\alpha)\), which exists by the
+                        <a href="partitions_of_unity.html#T-existence_of_partitions_of_unity" class="ref-link"><strong>existence of partitions of unity</strong></a>,
+                        and define
+                        \[
+                            g = \sum_\alpha \psi_\alpha\, g_\alpha ,
+                        \]
+                        each term interpreted as zero outside \(\operatorname{supp}\psi_\alpha \subseteq U_\alpha\), so
+                        that it extends smoothly by zero to all of \(M\). The defining property of a partition of unity
+                        is that its supports are locally finite, so in a neighborhood of any point only finitely many
+                        terms are nonzero; the sum is therefore a finite sum near each point and defines a smooth
+                        \(2\)-tensor field on \(M\). It is symmetric, being a sum of symmetric tensors. Only positive
+                        definiteness remains to be checked.
+                    </p>
+                    <p>
+                        Fix \(p \in M\) and a nonzero \(v \in T_pM\). Evaluating the field on the pair \((v, v)\) gives
+                        \[
+                            g_p(v, v) = \sum_\alpha \psi_\alpha(p)\, (g_\alpha)_p(v, v) .
+                        \]
+                        Every term is nonnegative: \(\psi_\alpha(p) \ge 0\) by the partition-of-unity conditions, and
+                        \((g_\alpha)_p(v, v) > 0\) wherever \(\psi_\alpha(p) \neq 0\), since there \(p \in U_\alpha\) and
+                        \(g_\alpha\) is positive definite. The functions \(\psi_\alpha\) sum to \(1\) at \(p\), so at
+                        least one of them is strictly positive there; for that index the corresponding term is strictly
+                        positive, and the whole sum is therefore strictly positive. Hence \(g_p(v, v) > 0\), and \(g\)
+                        is a Riemannian metric on \(M\). The construction is identical on a manifold with boundary, using
+                        charts into the half-space and the partition of unity that exists in that setting as well.
+                    </p>
+                </div>
+
+                <p>
+                    The construction makes a structural point that survives long after the proof. The metric produced
+                    depends on every arbitrary choice along the way: which charts cover the manifold, how the partition
+                    of unity is built, how the local pieces overlap. Different choices yield genuinely different metrics,
+                    and there is nothing canonical about any of them. The same manifold can be given metrics whose
+                    geometries differ as widely as one likes, and a manifold therefore does not come with a metric the
+                    way it comes with its smooth structure; a metric is extra data, freely chosen. This abundance is the
+                    source of a question that recurs whenever geometry is brought to bear on a concrete problem: among
+                    the supply of metrics a space admits, is there one the situation itself singles out? When a
+                    manifold arises as a family of probability distributions, imposing natural invariance requirements
+                    singles out a metric essentially uniquely, and that metric is the subject toward which a later part
+                    of this development is aimed.
+                </p>
+            </section>
+
+            <section id="geometry" class="section-content">
+                <h2>Length, Angle, and Orthogonality</h2>
+
+                <p>
+                    A Riemannian metric was introduced to make geometric measurement possible, and the measurements it
+                    supports are exactly those that an inner product supplies on a single vector space, now available on
+                    every tangent space at once. The length of a tangent vector, the angle between two of them, and the
+                    relation of being perpendicular all transfer verbatim from linear algebra, with the fixed Euclidean
+                    inner product replaced by the metric's pairing \(\langle \cdot, \cdot \rangle_g\) at the point in
+                    question.
+                </p>
+
+                <div class="theorem" id="D-norm_angle_orthogonality">
+                    <span class="theorem-title">Definition: Length, Angle, and Orthogonality</span>
+                    <p>
+                        Let \((M, g)\) be a Riemannian manifold and \(p \in M\).
+                    </p>
+                    <p>
+                        <strong>(i)</strong> The <strong>length</strong> or <strong>norm</strong> of a tangent vector
+                        \(v \in T_pM\) is
+                        \[
+                            |v|_g = \langle v, v \rangle_g^{1/2} = g_p(v, v)^{1/2} .
+                        \]
+                    </p>
+                    <p>
+                        <strong>(ii)</strong> The <strong>angle</strong> between two nonzero tangent vectors \(v, w \in
+                        T_pM\) is the unique \(\theta \in [0, \pi]\) satisfying
+                        \[
+                            \cos\theta = \frac{\langle v, w \rangle_g}{|v|_g\, |w|_g} .
+                        \]
+                    </p>
+                    <p>
+                        <strong>(iii)</strong> Two tangent vectors \(v, w \in T_pM\) are <strong>orthogonal</strong> if
+                        \(\langle v, w \rangle_g = 0\). This holds when one or both vectors are zero, or when the angle
+                        between them is \(\pi/2\).
+                    </p>
+                </div>
+
+                <p>
+                    The length is well defined because \(g_p(v, v) \ge 0\), with equality only when \(v = 0\), so the
+                    square root is real and vanishes precisely on the zero vector. The angle requires slightly more: for
+                    the prescription to determine a genuine angle, the ratio defining \(\cos\theta\) must lie in the
+                    interval \([-1, 1]\), so that exactly one \(\theta \in [0, \pi]\) has the required cosine. Since
+                    \(g_p\) is an inner product on \(T_pM\), the
+                    <a href="intro_analysis.html#T-Cauchy-Schwarz_Inequality" class="ref-link"><strong>Cauchy-Schwarz inequality</strong></a>
+                    applies to it directly, giving
+                    \[
+                        \big| \langle v, w \rangle_g \big| \le |v|_g\, |w|_g
+                    \]
+                    for all \(v, w \in T_pM\). For nonzero \(v\) and \(w\), dividing by the positive product \(|v|_g\,
+                    |w|_g\) places the ratio in the definition of the angle in \([-1, 1]\), so a unique \(\theta \in [0,
+                    \pi]\) realizes it and the angle is well defined. With lengths and angles in hand, the metric
+                    delivers on every plane of measurement that an inner product offers on a vector space, now varying
+                    smoothly across the manifold.
+                </p>
+            </section>
+
+            <section id="frames" class="section-content">
+                <h2>Orthonormal Frames</h2>
+
+                <p>
+                    On a vector space with an inner product, the most convenient bases are the orthonormal ones, in
+                    which the inner product reduces to the identity matrix and computations become transparent. The
+                    same convenience is available locally on a Riemannian manifold, through frames of vector fields
+                    that are orthonormal with respect to the metric at every point. Such frames are the working tool
+                    for much of the local theory, and they always exist near any point, though, as we will see, only
+                    rarely as the coordinate frame of a chart.
+                </p>
+
+                <p>
+                    Recall that a smooth local
+                    <a href="vector_fields_on_manifolds.html#D-frame_local_global" class="ref-link"><strong>frame</strong></a>
+                    for \(M\) over an open set \(U\) is an ordered tuple of smooth vector fields whose values form a
+                    basis of the tangent space at each point of \(U\). The metric singles out those frames for which
+                    that basis is orthonormal.
+                </p>
+
+                <div class="theorem" id="D-orthonormal_frame_riemannian">
+                    <span class="theorem-title">Definition: Orthonormal Frame on a Riemannian Manifold</span>
+                    <p>
+                        Let \((M, g)\) be an \(n\)-dimensional Riemannian manifold with or without boundary, and let
+                        \(U \subseteq M\) be open. A smooth local frame \((E_1, \ldots, E_n)\) for \(M\) over \(U\) is an
+                        <strong>orthonormal frame</strong> if at every point \(p \in U\) the vectors \(E_1|_p, \ldots,
+                        E_n|_p\) form an orthonormal basis of \(T_pM\) with respect to \(g_p\); equivalently, if
+                        \[
+                            \langle E_i, E_j \rangle_g = \delta_{ij}
+                        \]
+                        as functions on \(U\), for all \(i, j\).
+                    </p>
+                </div>
+
+                <p>
+                    When \(M = \mathbb{R}^n\) carries the Euclidean metric, this reduces to the notion of an orthonormal
+                    frame already familiar in the ambient setting, where orthonormality is measured by the dot product.
+                    The metric version replaces that fixed product with the pointwise pairing \(\langle \cdot, \cdot
+                    \rangle_g\), and the construction that produces such frames is the same Gram-Schmidt process, applied
+                    fiber by fiber.
+                </p>
+
+                <div class="theorem" id="T-orthonormal_frame_riemannian">
+                    <span class="theorem-title">Theorem: Existence of Local Orthonormal Frames</span>
+                    <p>
+                        Let \((M, g)\) be a Riemannian manifold with or without boundary. If \((X_1, \ldots, X_n)\) is a
+                        smooth local frame for \(M\) over an open set \(U\), then there is a smooth orthonormal frame
+                        \((E_1, \ldots, E_n)\) over \(U\) satisfying
+                        \[
+                            \operatorname{span}\big(E_1|_p, \ldots, E_j|_p\big)
+                                = \operatorname{span}\big(X_1|_p, \ldots, X_j|_p\big)
+                        \]
+                        for each \(j = 1, \ldots, n\) and each \(p \in U\). Consequently, every point of \(M\) has a
+                        neighborhood on which a smooth orthonormal frame exists.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Apply the
+                        <a href="../Linear_algebra/orthogonality.html#T-gram_schmidt" class="ref-link"><strong>Gram-Schmidt process</strong></a>
+                        to the given frame at each point, but with the Euclidean inner product replaced throughout by
+                        the metric pairing \(\langle \cdot, \cdot \rangle_g\). Concretely, define vector fields
+                        \(V_1, \ldots, V_n\) and \(E_1, \ldots, E_n\) on \(U\) by the recursion
+                        \[
+                            \begin{align*}
+                                V_1 &= X_1, &\quad E_1 &= \frac{V_1}{|V_1|_g}, \\\\
+                                V_j &= X_j - \sum_{i=1}^{j-1} \langle X_j, E_i \rangle_g\, E_i, &\quad E_j &= \frac{V_j}{|V_j|_g}
+                                    \qquad (j = 2, \ldots, n).
+                            \end{align*}
+                        \]
+                        Each step is well posed. Inductively, \(\operatorname{span}(E_1|_p, \ldots, E_{j-1}|_p) =
+                        \operatorname{span}(X_1|_p, \ldots, X_{j-1}|_p)\), and the vectors \(X_1|_p, \ldots, X_j|_p\) are
+                        linearly independent, so \(X_j|_p\) lies outside that span; hence \(V_j|_p\), which differs from
+                        \(X_j|_p\) by a combination of the earlier \(E_i|_p\), is nonzero. Thus \(|V_j|_g\)
+                        is nowhere zero on \(U\) and the division is legitimate. The resulting fields are smooth: the
+                        coefficients \(\langle X_j, E_i \rangle_g\) are smooth functions because \(g\), \(X_j\), and the
+                        already-constructed \(E_i\) are smooth, and the norm \(|V_j|_g = \langle V_j, V_j
+                        \rangle_g^{1/2}\) is a smooth, nowhere-vanishing function whose reciprocal is therefore smooth.
+                    </p>
+                    <p>
+                        A direct induction shows the frame is orthonormal. Each \(E_j\) is a unit vector by
+                        construction, and for \(i < j\) the defining sum subtracts off precisely the components of
+                        \(X_j\) along \(E_1, \ldots, E_{j-1}\), so
+                        \[
+                            \langle V_j, E_k \rangle_g
+                                = \langle X_j, E_k \rangle_g - \sum_{i=1}^{j-1} \langle X_j, E_i \rangle_g\, \langle E_i, E_k \rangle_g
+                                = \langle X_j, E_k \rangle_g - \langle X_j, E_k \rangle_g = 0
+                        \]
+                        for each \(k < j\), using the inductive hypothesis \(\langle E_i, E_k \rangle_g = \delta_{ik}\).
+                        Dividing by \(|V_j|_g\) preserves this, so \(\langle E_j, E_k \rangle_g = 0\) for \(k < j\), and
+                        together with \(|E_j|_g = 1\) this gives \(\langle E_i, E_j \rangle_g = \delta_{ij}\) throughout.
+                        Finally, each \(E_j\) is a nonzero multiple of \(V_j\), itself \(X_j\) plus a combination of the
+                        earlier \(E_i\), so the spans coincide stagewise as claimed. The last assertion follows by
+                        starting from any smooth coordinate frame on a chart around a given point.
+                    </p>
+                </div>
+
+                <p>
+                    One feature of these frames carries a warning that the next stage of the theory will make precise.
+                    Producing an orthonormal frame does not produce coordinates whose coordinate frame is orthonormal.
+                    The fields \(E_i\) constructed above are seldom of the form \(\partial/\partial x^i\) for any chart;
+                    the coordinate frame of a chart is orthonormal only in special circumstances, and demanding that
+                    such a chart exist near every point turns out to be a strong restriction on the metric rather than a
+                    general fact. The question of which metrics admit such charts is exactly the question of whether the
+                    metric is, in a sense to be defined, geometrically trivial, and it is the entry point to the study
+                    of curvature.
+                </p>
+            </section>
+
+            <section id="pullback" class="section-content">
+                <h2>Pullback Metrics and Isometries</h2>
+
+                <p>
+                    A metric on one manifold can be carried to another along a smooth map, by the same pullback
+                    operation that transports any covariant tensor field. The result is always a smooth symmetric
+                    \(2\)-tensor field, but it need not be a metric: positive definiteness can fail. Determining exactly
+                    when it survives identifies a familiar class of maps and supplies the mechanism by which curved
+                    surfaces inherit geometry from the space around them.
+                </p>
+
+                <p>
+                    Let \(M\) and \(N\) be smooth manifolds, let \(g\) be a Riemannian metric on \(N\), and let \(F : M
+                    \to N\) be smooth. The
+                    <a href="symmetric_tensors_tensor_fields.html#T-pullback_tensor_field" class="ref-link"><strong>pullback</strong></a>
+                    \(F^*g\) is a smooth covariant \(2\)-tensor field on \(M\), symmetric because \(g\) is. Its value on
+                    a pair of tangent vectors is, by definition of the pullback,
+                    \[
+                        (F^*g)_p(v, w) = g_{F(p)}\big(dF_p(v),\, dF_p(w)\big) ,
+                    \]
+                    where \(dF_p\) is the
+                    <a href="tangent_vectors.html#D-differential_of_smooth_map" class="ref-link"><strong>differential</strong></a>
+                    of \(F\) at \(p\). Whether \(F^*g\) is a Riemannian metric depends entirely on whether this form is
+                    positive definite, and the answer is governed by a single condition on \(F\).
+                </p>
+
+                <div class="theorem" id="T-pullback_metric">
+                    <span class="theorem-title">Theorem: Pullback Metric Criterion</span>
+                    <p>
+                        Let \(F : M \to N\) be a smooth map and let \(g\) be a Riemannian metric on \(N\). Then \(F^*g\)
+                        is a Riemannian metric on \(M\) if and only if \(F\) is a smooth
+                        <a href="maps_of_constant_rank.html#D-smooth_immersion" class="ref-link"><strong>immersion</strong></a>.
+                        When this holds, \(F^*g\) is called the <strong>pullback metric</strong> determined by \(F\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The field \(F^*g\) is a smooth symmetric \(2\)-tensor for any smooth \(F\), so the only question
+                        is positive definiteness, which we examine point by point. Fix \(p \in M\) and a nonzero \(v \in
+                        T_pM\). From the formula above,
+                        \[
+                            (F^*g)_p(v, v) = g_{F(p)}\big(dF_p(v),\, dF_p(v)\big) = \big| dF_p(v) \big|_g^2 .
+                        \]
+                        Since \(g_{F(p)}\) is positive definite, this is nonnegative, and it is strictly positive
+                        exactly when \(dF_p(v) \neq 0\). Thus \((F^*g)_p\) is positive definite if and only if \(dF_p\)
+                        sends every nonzero vector to a nonzero vector, that is, if and only if \(dF_p\) is injective.
+                        Requiring this at every \(p\) is precisely the condition that \(F\) be a smooth immersion, and so
+                        \(F^*g\) is positive definite at every point, hence a Riemannian metric, if and only if \(F\) is
+                        an immersion.
+                    </p>
+                </div>
+
+                <p>
+                    When \(F\) is itself a diffeomorphism, the pullback not only produces a metric on \(M\) but matches
+                    the geometries of the two manifolds exactly. Maps with this property are the structure-preserving
+                    maps of Riemannian geometry, and they are what it means for two such manifolds to be
+                    indistinguishable as geometric objects.
+                </p>
+
+                <div class="theorem" id="D-riemannian_isometry">
+                    <span class="theorem-title">Definition: Isometry and Local Isometry</span>
+                    <p>
+                        Let \((M, g)\) and \((\widetilde{M}, \widetilde{g})\) be Riemannian manifolds. A smooth map \(F
+                        : M \to \widetilde{M}\) is a <strong>(Riemannian) isometry</strong> if it is a
+                        <a href="smooth_functions_and_maps.html#D-diffeomorphism_manifolds" class="ref-link"><strong>diffeomorphism</strong></a>
+                        satisfying \(F^*\widetilde{g} = g\). If such a map exists, \((M, g)\) and \((\widetilde{M},
+                        \widetilde{g})\) are said to be <strong>isometric</strong>. More generally, \(F\) is a
+                        <strong>local isometry</strong> if every point of \(M\) has a neighborhood \(U\) on which
+                        \(F|_U\) is an isometry onto an open subset of \(\widetilde{M}\). This holds precisely when \(F\)
+                        is a
+                        <a href="maps_of_constant_rank.html#D-local_diffeomorphism" class="ref-link"><strong>local diffeomorphism</strong></a>
+                        satisfying \(F^*\widetilde{g} = g\): the pullback condition is pointwise, so once \(F\) restricts
+                        to a diffeomorphism on a neighborhood of each point, \(F^*\widetilde{g} = g\) there is exactly the
+                        statement that each such restriction is an isometry. Two manifolds are <strong>locally
+                        isometric</strong> if each point of one has a neighborhood isometric to an open subset of the
+                        other.
+                    </p>
+                </div>
+
+                <p>
+                    The condition \(F^*\widetilde{g} = g\) says exactly that \(F\) preserves the inner products of
+                    tangent vectors: \(\widetilde{g}\big(dF_p(v), dF_p(w)\big) = g_p(v, w)\) for all \(v, w \in T_pM\).
+                    Lengths, angles, and ultimately distances are therefore unchanged by an isometry, and the study of
+                    the properties left invariant by all isometries, local and global, is the substance of Riemannian
+                    geometry.
+                </p>
+
+                <p>
+                    Pullback metrics are easy to compute once a coordinate expression for the map is known: by the
+                    <a href="symmetric_tensors_tensor_fields.html#T-pullback_tensor_coord" class="ref-link"><strong>coordinate formula for tensor pullbacks</strong></a>,
+                    the computation amounts to substituting the component functions of \(F\) for the coordinates of
+                    \(N\) in the expression for \(g\). Two examples illustrate the procedure.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example (The Helicoid):</span>
+                    <p>
+                        Consider the smooth map \(F : \mathbb{R}^2 \to \mathbb{R}^3\) given by
+                        \[
+                            F(u, v) = (u \cos v,\, u \sin v,\, v) .
+                        \]
+                        Its differential has matrix with columns \(\partial F/\partial u = (\cos v, \sin v, 0)\) and
+                        \(\partial F/\partial v = (-u\sin v, u\cos v, 1)\), which are linearly independent at every
+                        point, so \(F\) is an immersion; its image is a surface
+                        called a <strong>helicoid</strong>, an endlessly winding spiral ramp. To find the pullback of
+                        the Euclidean metric \(\bar{g} = dx^2 + dy^2 + dz^2\), substitute \(x = u\cos v\), \(y = u\sin
+                        v\), \(z = v\):
+                        \[
+                            \begin{align*}
+                                F^*\bar{g}
+                                    &= d(u\cos v)^2 + d(u\sin v)^2 + d(v)^2 \\\\
+                                    &= (\cos v\, du - u\sin v\, dv)^2 + (\sin v\, du + u\cos v\, dv)^2 + dv^2 \\\\
+                                    &= \cos^2 v\, du^2 - 2u\sin v\cos v\, du\, dv + u^2\sin^2 v\, dv^2 \\\\
+                                    &\qquad + \sin^2 v\, du^2 + 2u\sin v\cos v\, du\, dv + u^2\cos^2 v\, dv^2 + dv^2 \\\\
+                                    &= du^2 + (u^2 + 1)\, dv^2 .
+                            \end{align*}
+                        \]
+                        The cross terms cancel and the squared coefficients combine through \(\cos^2 v + \sin^2 v = 1\),
+                        leaving a metric on \(\mathbb{R}^2\) that differs from the Euclidean one by the factor \(u^2 + 1\)
+                        on the \(dv^2\) term. Here, by the convention for symmetric products, \(du^2\) abbreviates the
+                        symmetric product \(du\, du\), not the differential of \(u^2\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Example (Polar Coordinates):</span>
+                    <p>
+                        The same substitution mechanism expresses a fixed metric in new coordinates, viewing the change
+                        of coordinates as the identity map written in two coordinate systems. To express the Euclidean
+                        metric \(\bar{g} = dx^2 + dy^2\) on \(\mathbb{R}^2\) in polar coordinates, substitute \(x = r\cos
+                        \theta\), \(y = r\sin\theta\):
+                        \[
+                            \begin{align*}
+                                \bar{g}
+                                    &= d(r\cos\theta)^2 + d(r\sin\theta)^2 \\\\
+                                    &= (\cos\theta\, dr - r\sin\theta\, d\theta)^2 + (\sin\theta\, dr + r\cos\theta\, d\theta)^2 \\\\
+                                    &= (\cos^2\theta + \sin^2\theta)\, dr^2 + (r^2\sin^2\theta + r^2\cos^2\theta)\, d\theta^2 \\\\
+                                    &\qquad + (-2r\cos\theta\sin\theta + 2r\sin\theta\cos\theta)\, dr\, d\theta \\\\
+                                    &= dr^2 + r^2\, d\theta^2 .
+                            \end{align*}
+                        \]
+                        This is the polar form of the Euclidean metric, valid where \((r, \theta)\) are genuine
+                        coordinates. The coefficient \(r^2\) on \(d\theta^2\) records that a fixed change \(d\theta\) in
+                        angle corresponds to an arc whose length grows with the radius.
+                    </p>
+                </div>
+            </section>
+
+            <section id="flatness" class="section-content">
+                <h2>Flatness and Local Isometry</h2>
+
+                <p>
+                    With isometries defined, we can name the most basic geometric property a Riemannian metric can
+                    have: agreement, locally, with the flat geometry of Euclidean space. The orthonormal frames of an
+                    earlier section raised the question implicitly. Such frames always exist near a point, yet the
+                    coordinate frame of a chart is rarely orthonormal; the metrics for which a chart with orthonormal
+                    coordinate frame does exist near every point are exactly those that are locally indistinguishable
+                    from Euclidean space, and they form the trivial case against which all curvature is measured.
+                </p>
+
+                <div class="theorem" id="D-flat_metric">
+                    <span class="theorem-title">Definition: Flat Metric</span>
+                    <p>
+                        A Riemannian manifold \((M, g)\) is <strong>flat</strong>, and \(g\) is a <strong>flat
+                        metric</strong>, if \((M, g)\) is locally isometric to \((\mathbb{R}^n, \bar{g})\) with its
+                        Euclidean metric: every point of \(M\) has a neighborhood isometric to an open subset of
+                        Euclidean space.
+                    </p>
+                </div>
+
+                <p>
+                    Flatness is defined through isometries, but it can be detected by criteria that are far easier to
+                    check in practice, phrased in terms of coordinates and frames. The following theorem assembles
+                    them; it is the tool used to decide whether a given metric is flat.
+                </p>
+
+                <div class="theorem" id="T-flatness_criterion">
+                    <span class="theorem-title">Theorem: Characterization of Flat Metrics</span>
+                    <p>
+                        For a Riemannian manifold \((M, g)\), the following are equivalent.
+                    </p>
+                    <p>
+                        <strong>(a)</strong> \(g\) is flat.
+                    </p>
+                    <p>
+                        <strong>(b)</strong> Each point of \(M\) lies in the domain of a smooth coordinate chart in
+                        which \(g\) has the coordinate representation \(g = \delta_{ij}\, dx^i\, dx^j\).
+                    </p>
+                    <p>
+                        <strong>(c)</strong> Each point of \(M\) lies in the domain of a smooth coordinate chart whose
+                        coordinate frame is orthonormal.
+                    </p>
+                    <p>
+                        <strong>(d)</strong> Each point of \(M\) lies in the domain of a commuting orthonormal frame.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        We prove the implications in the cycle (a) \(\Rightarrow\) (b) \(\Rightarrow\) (c)
+                        \(\Rightarrow\) (d) \(\Rightarrow\) (a).
+                    </p>
+                    <p>
+                        <strong>(a) \(\Rightarrow\) (b).</strong> Suppose \(g\) is flat, and let \(p \in M\). By
+                        definition there is a neighborhood \(U\) of \(p\) and an isometry \(\varphi : U \to V\) onto an
+                        open subset \(V \subseteq \mathbb{R}^n\), meaning \(\varphi\) is a diffeomorphism with
+                        \(\varphi^*\bar{g} = g\). Such a \(\varphi\) is a smooth coordinate chart on \(U\). In the
+                        standard coordinates of \(\mathbb{R}^n\) the Euclidean metric is \(\bar{g} = \delta_{ij}\, dx^i\,
+                        dx^j\), and pulling back replaces those coordinates by the coordinate functions of \(\varphi\),
+                        so in this chart \(g = \varphi^*\bar{g} = \delta_{ij}\, dx^i\, dx^j\). This is the
+                        representation required by (b).
+                    </p>
+                    <p>
+                        <strong>(b) \(\Rightarrow\) (c).</strong> In a chart where \(g = \delta_{ij}\, dx^i\, dx^j\), the
+                        metric evaluated on the coordinate frame \((\partial/\partial x^i)\) gives \(\langle
+                        \partial/\partial x^i,\, \partial/\partial x^j \rangle_g = g_{ij} = \delta_{ij}\), so the
+                        coordinate frame is orthonormal. This is (c).
+                    </p>
+                    <p>
+                        <strong>(c) \(\Rightarrow\) (d).</strong> The
+                        <a href="vector_fields_under_maps.html#T-coordinate_vf_bracket_zero" class="ref-link"><strong>coordinate vector fields</strong></a>
+                        \((\partial/\partial x^i)\) of any chart commute, satisfying \([\partial/\partial x^i,\,
+                        \partial/\partial x^j] = 0\) for all \(i, j\), since acting on a smooth function they reproduce
+                        the equality of mixed second partial derivatives. If in addition this frame is orthonormal, as
+                        (c) provides, then it is a commuting orthonormal frame containing the given point in its domain,
+                        which is (d).
+                    </p>
+                    <p>
+                        <strong>(d) \(\Rightarrow\) (a).</strong> Let \((E_1, \ldots, E_n)\) be a commuting orthonormal
+                        frame on a neighborhood \(W\) of a point \(p\). Because the fields commute and are linearly
+                        independent, the
+                        <a href="lie_derivatives_commuting_vf.html#T-canonical_form_commuting_vf" class="ref-link"><strong>canonical form for commuting vector fields</strong></a>
+                        provides a smooth chart \((U, (s^1, \ldots, s^n))\) centered at \(p\) in which \(E_i =
+                        \partial/\partial s^i\) for each \(i\). In this chart the metric components are
+                        \[
+                            g_{ij} = \langle \partial/\partial s^i,\, \partial/\partial s^j \rangle_g
+                                = \langle E_i,\, E_j \rangle_g = \delta_{ij} ,
+                        \]
+                        using orthonormality of the frame, so \(g = \delta_{ij}\, ds^i\, ds^j\) on \(U\). The chart
+                        \(\sigma = (s^1, \ldots, s^n) : U \to \sigma(U) \subseteq \mathbb{R}^n\) is a diffeomorphism
+                        onto an open subset, and the identity \(g = \delta_{ij}\, ds^i\, ds^j\) says exactly that
+                        \(\sigma^*\bar{g} = g\), since \(\bar{g} = \delta_{ij}\, dx^i\, dx^j\) pulls back to
+                        \(\delta_{ij}\, ds^i\, ds^j\) under \(\sigma\). Hence \(\sigma\) is an isometry of \(U\) onto an
+                        open subset of \((\mathbb{R}^n, \bar{g})\). Every point thus has a neighborhood isometric to an
+                        open subset of Euclidean space, so \(g\) is flat. This closes the cycle.
+                    </p>
+                </div>
+
+                <p>
+                    The criterion makes flatness a property one can test, but it should not suggest that flatness is
+                    common. In dimension one it is automatic: every Riemannian metric on a curve can be straightened to
+                    the Euclidean one by an arc-length parameter, so there is no one-dimensional obstruction. Beginning
+                    in dimension two the situation changes, and most metrics are not flat. We are not yet in a position
+                    to exhibit the obstruction, because the quantity that measures the failure of flatness, the
+                    curvature, lies beyond the constructions developed here. What the present criterion does supply is
+                    the means to recognize the obstruction once a concrete metric is in hand: a surface for which no
+                    chart can make the coordinate frame orthonormal cannot be flat. The round sphere is the standard
+                    example, and showing that it admits no such chart, and is therefore not flat, is the goal toward
+                    which the next stage of examples is directed.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>
