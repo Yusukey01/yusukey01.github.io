@@ -1,0 +1,660 @@
+---
+layout: default
+title: "Symmetric Tensors and Tensor Fields on Manifolds"
+topic_id: calc-76
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Symmetric Tensors and Tensor Fields on Manifolds</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#symmetric-tensors">Symmetric Tensors</a>
+            <a href="#symmetric-product">The Symmetric Product</a>
+            <a href="#tensor-fields">Tensor Bundles and Tensor Fields</a>
+            <a href="#pullback">The Pullback of Tensor Fields</a>
+        </div>
+
+        <div class="container">
+            <section id="symmetric-tensors" class="section-content">
+                <h2>Symmetric Tensors</h2>
+
+                <p>
+                    Among covariant tensors, those whose value is unaffected by reordering their arguments form a
+                    distinguished class. An inner product has this property, and so does any object that measures a
+                    quantity attached symmetrically to a collection of vectors. Isolating this property algebraically is
+                    the first step toward the tensor that carries the geometry of lengths and angles on a manifold.
+                </p>
+
+                <div class="theorem" id="D-symmetric_tensor">
+                    <span class="theorem-title">Definition: Symmetric Tensor</span>
+                    <p>
+                        Let \(V\) be a finite-dimensional real vector space. A
+                        <a href="multilinear_algebra_tensor_products.html#D-covariant_tensor" class="ref-link"><strong>covariant \(k\)-tensor</strong></a>
+                        \(\alpha\) on \(V\) is <strong>symmetric</strong> if its value is unchanged whenever any two of
+                        its arguments are interchanged: for all vectors and every pair of indices \(i &lt; j\),
+                        \[
+                            \alpha(v_1, \ldots, v_i, \ldots, v_j, \ldots, v_k)
+                                = \alpha(v_1, \ldots, v_j, \ldots, v_i, \ldots, v_k) .
+                        \]
+                        The symmetric covariant \(k\)-tensors form a linear subspace of the space of all covariant
+                        \(k\)-tensors, denoted \(\Sigma^k(V^*)\).
+                    </p>
+                </div>
+
+                <p>
+                    Interchanging a single adjacent pair is enough to control every reordering, because an arbitrary
+                    permutation of the arguments is a composition of transpositions. To make this precise, the group of
+                    all permutations acts on tensors. Let \(S_k\) denote the
+                    <a href="../Linear_algebra/cyclic_groups.html#D-symmetric_group" class="ref-link"><strong>symmetric group</strong></a>
+                    on \(k\) elements, the group of permutations of \(\{1, \ldots, k\}\). Given a covariant \(k\)-tensor
+                    \(\alpha\) and a permutation \(\sigma \in S_k\), define a new covariant \(k\)-tensor
+                    \({}^{\sigma}\alpha\) by reindexing the arguments,
+                    \[
+                        {}^{\sigma}\alpha(v_1, \ldots, v_k) = \alpha\big(v_{\sigma(1)}, \ldots, v_{\sigma(k)}\big) .
+                    \]
+                    Placing \(\sigma\) as a left superscript records the order of composition correctly. Writing out
+                    both sides on arguments \((v_1, \ldots, v_k)\),
+                    \[
+                        {}^{\tau}({}^{\sigma}\alpha)(v_1, \ldots, v_k)
+                            = {}^{\sigma}\alpha\big(v_{\tau(1)}, \ldots, v_{\tau(k)}\big)
+                            = \alpha\big(v_{\tau(\sigma(1))}, \ldots, v_{\tau(\sigma(k))}\big)
+                            = {}^{\tau\sigma}\alpha(v_1, \ldots, v_k) ,
+                    \]
+                    where the middle equality applies the definition of \({}^{\sigma}(\,\cdot\,)\) to the relabelled
+                    arguments \(w_i = v_{\tau(i)}\). Thus \({}^{\tau}({}^{\sigma}\alpha) = {}^{\tau\sigma}\alpha\), where
+                    \(\tau\sigma\) is the permutation \(i \mapsto \tau(\sigma(i))\), so the assignment
+                    \(\sigma \mapsto {}^{\sigma}\alpha\) is a genuine left action of \(S_k\). A tensor is symmetric
+                    exactly when \({}^{\sigma}\alpha = \alpha\) for every \(\sigma \in S_k\), since the transpositions
+                    generate the whole group.
+                </p>
+
+                <p>
+                    Averaging a tensor over the action of \(S_k\) produces a symmetric tensor and fixes those that are
+                    already symmetric. This averaging is a projection onto the symmetric subspace.
+                </p>
+
+                <div class="theorem" id="T-symmetrization">
+                    <span class="theorem-title">Theorem: Symmetrization</span>
+                    <p>
+                        The <strong>symmetrization</strong> of a covariant \(k\)-tensor \(\alpha\) on \(V\) is the tensor
+                        \[
+                            \operatorname{Sym}\alpha = \frac{1}{k!} \sum_{\sigma \in S_k} {}^{\sigma}\alpha ,
+                        \]
+                        so that on vectors
+                        \[
+                            (\operatorname{Sym}\alpha)(v_1, \ldots, v_k)
+                                = \frac{1}{k!} \sum_{\sigma \in S_k}
+                                    \alpha\big(v_{\sigma(1)}, \ldots, v_{\sigma(k)}\big) .
+                        \]
+                        Then \(\operatorname{Sym}\alpha\) is symmetric, and \(\operatorname{Sym}\alpha = \alpha\) if and
+                        only if \(\alpha\) is symmetric. Consequently \(\operatorname{Sym}\) is a projection of the space
+                        of covariant \(k\)-tensors onto the subspace \(\Sigma^k(V^*)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        To see that \(\operatorname{Sym}\alpha\) is symmetric, apply an arbitrary permutation
+                        \(\tau \in S_k\) to its arguments:
+                        \[
+                            {}^{\tau}(\operatorname{Sym}\alpha)
+                                = \frac{1}{k!} \sum_{\sigma \in S_k} {}^{\tau}({}^{\sigma}\alpha)
+                                = \frac{1}{k!} \sum_{\sigma \in S_k} {}^{\tau\sigma}\alpha
+                                = \frac{1}{k!} \sum_{\eta \in S_k} {}^{\eta}\alpha
+                                = \operatorname{Sym}\alpha ,
+                        \]
+                        where the substitution \(\eta = \tau\sigma\) is a bijection of \(S_k\) onto itself, so the sum
+                        runs over the same set of permutations. Since \({}^{\tau}(\operatorname{Sym}\alpha)\) equals
+                        \(\operatorname{Sym}\alpha\) for every \(\tau\), the tensor \(\operatorname{Sym}\alpha\) is
+                        symmetric. If \(\alpha\) is itself symmetric, then \({}^{\sigma}\alpha = \alpha\) for every
+                        \(\sigma\), so the sum has \(k!\) equal terms and \(\operatorname{Sym}\alpha = \alpha\).
+                        Conversely, if \(\operatorname{Sym}\alpha = \alpha\), then \(\alpha\) is symmetric because
+                        \(\operatorname{Sym}\alpha\) is. Applying \(\operatorname{Sym}\) once lands in
+                        \(\Sigma^k(V^*)\), and applying it again changes nothing, so \(\operatorname{Sym}\) is a
+                        projection onto that subspace.
+                    </p>
+                </div>
+            </section>
+
+            <section id="symmetric-product" class="section-content">
+                <h2>The Symmetric Product</h2>
+
+                <p>
+                    The tensor product of two symmetric tensors need not be symmetric: interchanging an argument from the
+                    first factor with one from the second generally changes the value. Composing the tensor product with
+                    the symmetrization projection repairs this and yields a product that stays within the symmetric
+                    tensors.
+                </p>
+
+                <div class="theorem" id="D-symmetric_product_def">
+                    <span class="theorem-title">Definition: Symmetric Product</span>
+                    <p>
+                        Let \(\alpha \in \Sigma^k(V^*)\) and \(\beta \in \Sigma^l(V^*)\) be symmetric tensors. Their
+                        <strong>symmetric product</strong> is the symmetric \((k+l)\)-tensor obtained by symmetrizing
+                        their tensor product, written by juxtaposition with no intervening symbol,
+                        \[
+                            \alpha\beta = \operatorname{Sym}(\alpha \otimes \beta) .
+                        \]
+                        Writing out the symmetrization, its value on vectors \(v_1, \ldots, v_{k+l}\) is
+                        \[
+                            \alpha\beta(v_1, \ldots, v_{k+l})
+                                = \frac{1}{(k+l)!} \sum_{\sigma \in S_{k+l}}
+                                    \alpha\big(v_{\sigma(1)}, \ldots, v_{\sigma(k)}\big)\,
+                                    \beta\big(v_{\sigma(k+1)}, \ldots, v_{\sigma(k+l)}\big) .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The symmetric product behaves like the multiplication of polynomials: it is commutative, distributes
+                    over addition, and is compatible with scalars. The proof of these properties, together with a closed
+                    form in the most important special case, completes the algebraic picture.
+                </p>
+
+                <div class="theorem" id="T-symmetric_product">
+                    <span class="theorem-title">Theorem: Properties of the Symmetric Product</span>
+                    <p>
+                        Let \(\alpha, \beta, \gamma\) be symmetric covariant tensors on a finite-dimensional real vector
+                        space \(V\), and let \(a, b \in \mathbb{R}\).
+                    </p>
+                    <p>
+                        (a) The symmetric product is symmetric and bilinear:
+                        \[
+                            \alpha\beta = \beta\alpha, \qquad
+                            (a\alpha + b\beta)\gamma = a\,\alpha\gamma + b\,\beta\gamma
+                                = \gamma(a\alpha + b\beta) .
+                        \]
+                    </p>
+                    <p>
+                        (b) If \(\alpha\) and \(\beta\) are covectors, then
+                        \[
+                            \alpha\beta = \tfrac{1}{2}\big(\alpha \otimes \beta + \beta \otimes \alpha\big) .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For part (a), commutativity follows from reindexing the symmetrizing sum. The map that splits the
+                        first \(k\) arguments from the last \(l\) for \(\alpha \otimes \beta\) is converted into the
+                        splitting for \(\beta \otimes \alpha\) by composing each \(\sigma\) with the permutation that
+                        swaps the first \(k\) positions with the last \(l\); this composition is a bijection of
+                        \(S_{k+l}\), so the two symmetrized sums agree and \(\alpha\beta = \beta\alpha\). Bilinearity is
+                        inherited from the tensor product: \(\otimes\) is bilinear and \(\operatorname{Sym}\) is linear,
+                        so their composite is bilinear in each factor, which gives the displayed identities. (The second
+                        equality uses commutativity already established.)
+                    </p>
+                    <p>
+                        For part (b), take \(k = l = 1\), so \(S_{k+l} = S_2 = \{e, \tau\}\) with \(\tau\) the
+                        transposition. The defining sum has \((k+l)! = 2\) terms,
+                        \[
+                            \alpha\beta(v_1, v_2)
+                                = \tfrac{1}{2}\big(\alpha(v_1)\beta(v_2) + \alpha(v_2)\beta(v_1)\big)
+                                = \tfrac{1}{2}\big((\alpha \otimes \beta)(v_1, v_2)
+                                    + (\beta \otimes \alpha)(v_1, v_2)\big) ,
+                        \]
+                        the identity term contributing \(\alpha(v_1)\beta(v_2) = (\alpha \otimes \beta)(v_1, v_2)\) and
+                        the transposition contributing \(\alpha(v_2)\beta(v_1) = (\beta \otimes \alpha)(v_1, v_2)\). Since
+                        this holds for all \(v_1, v_2\), the tensors agree.
+                    </p>
+                </div>
+
+                <p>
+                    The normalization adopted here defines the symmetric product as \(\operatorname{Sym}\) applied to the
+                    tensor product, with the factor \(1/(k+l)!\) built into \(\operatorname{Sym}\); some sources instead
+                    insert a binomial factor \(\binom{k+l}{k}\), under which the rank-two identity reads
+                    \(\alpha\beta = \alpha \otimes \beta + \beta \otimes \alpha\) without the factor \(\tfrac{1}{2}\).
+                    The convention chosen here is the one for which a symmetric \(2\)-tensor with components
+                    \(\beta_{ij}\) satisfies \(\beta = \beta_{ij}\,\varepsilon^i\varepsilon^j\) and
+                    \(\beta(v, v) = \beta_{ij} v^i v^j\), the form in which the symmetric product will be used to write a
+                    metric.
+                </p>
+
+                <p>
+                    The rank-two case in part (b) is that form. A symmetric covariant \(2\)-tensor built from coordinate
+                    differentials is a symmetric product of two covectors, and the symmetrized combination
+                    \(\tfrac{1}{2}(\alpha \otimes \beta + \beta \otimes \alpha)\) is precisely what is needed so that the
+                    off-diagonal coordinate components of such a tensor pair correctly. When this construction is
+                    performed fiberwise over a manifold, the symmetric product of coordinate differentials produces the
+                    standard coordinate expression for a field of inner products.
+                </p>
+            </section>
+
+            <section id="tensor-fields" class="section-content">
+                <h2>Tensor Bundles and Tensor Fields</h2>
+
+                <p>
+                    Everything established so far is pointwise linear algebra on a single vector space. On a smooth
+                    manifold the relevant vector space is the tangent space, which varies from point to point. Performing
+                    the tensor constructions in each tangent space and assembling the results into a single smooth object
+                    produces the tensor bundles, of which the
+                    <a href="tangent_bundle.html#D-tangent_bundle" class="ref-link"><strong>tangent bundle</strong></a>
+                    and the
+                    <a href="covectors_cotangent_bundle.html#D-cotangent_bundle" class="ref-link"><strong>cotangent bundle</strong></a>
+                    are the simplest cases.
+                </p>
+
+                <h3>Tensor bundles</h3>
+
+                <p>
+                    Let \(M\) be a smooth manifold with or without boundary. The <strong>bundle of covariant
+                    \(k\)-tensors</strong> on \(M\) is the disjoint union of the covariant tensor spaces over all points,
+                    \[
+                        T^k T^* M = \coprod_{p \in M} T^k\big(T_p^* M\big) ,
+                    \]
+                    where \(T^k(T_p^* M)\) is the space of covariant \(k\)-tensors on the tangent space \(T_p M\); the
+                    bracket-free symbol \(T^k T^* M\) denotes the bundle assembled from these fibers.
+                    Replacing covariant tensors by contravariant or mixed tensors gives the <strong>bundle of
+                    contravariant \(k\)-tensors</strong> \(T^k TM = \coprod_p T^k(T_p M)\) and the <strong>bundle of mixed
+                    \((k,l)\)-tensors</strong> \(T^{(k,l)} TM = \coprod_p T^{(k,l)}(T_p M)\). Each is called a
+                    <strong>tensor bundle</strong> over \(M\). The low-rank cases recover familiar bundles: there are
+                    natural identifications
+                    \[
+                        T^{(0,0)} TM = M \times \mathbb{R}, \qquad
+                        T^{(0,1)} TM = T^1 T^* M = T^* M, \qquad
+                        T^{(1,0)} TM = T^1 TM = TM ,
+                    \]
+                    and more generally \(T^{(0,k)} TM = T^k T^* M\) and \(T^{(k,0)} TM = T^k TM\), so the tangent and
+                    cotangent bundles are the rank-one tensor bundles.
+                </p>
+
+                <div class="theorem" id="T-tensor_bundle_structure">
+                    <span class="theorem-title">Theorem: Tensor Bundles are Smooth Vector Bundles</span>
+                    <p>
+                        For a smooth manifold \(M\) of dimension \(n\), each tensor bundle \(T^k T^* M\), \(T^k TM\), and
+                        \(T^{(k,l)} TM\) has a natural structure as a smooth
+                        <a href="vector_bundles.html#D-vector_bundle" class="ref-link"><strong>vector bundle</strong></a>
+                        over \(M\), of rank \(n^k\), \(n^k\), and \(n^{k+l}\) respectively.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Treat \(T^k T^* M\); the other cases are identical with the roles of \(T_p M\) and \(T_p^* M\)
+                        adjusted. Each fiber \(T^k(T_p^* M)\) is a real vector space of dimension \(n^k\), since the
+                        tensor spaces over an \(n\)-dimensional space have that dimension. To produce local
+                        trivializations, fix a smooth coordinate chart on an open set \(U \subseteq M\), giving at each
+                        \(p \in U\) the coordinate basis \((\partial/\partial x^i|_p)\) of \(T_p M\) and the dual basis of
+                        coordinate covectors of \(T_p^* M\). The tensor products of \(k\) coordinate covectors form a
+                        basis of \(T^k(T_p^* M)\) at each point, depending smoothly on \(p\), and assigning to each
+                        tensor its \(n^k\) components in this basis defines a bijection from \(T^k T^* M|_U\) to
+                        \(U \times \mathbb{R}^{n^k}\) that is linear on fibers. On an overlap of two such charts the
+                        transition map is built from tensor products of the cotangent transition functions, hence is
+                        smooth and invertible. The hypotheses of the
+                        <a href="vector_bundles.html#T-vector_bundle_chart_lemma_vb" class="ref-link"><strong>vector bundle chart lemma</strong></a>
+                        are therefore met, so the local trivializations assemble \(T^k T^* M\)
+                        into a smooth vector bundle of rank \(n^k\). The mixed bundle uses \(k\) tangent and \(l\)
+                        cotangent factors, giving rank \(n^{k+l}\).
+                    </p>
+                </div>
+
+                <h3>Tensor fields</h3>
+
+                <p>
+                    A
+                    <a href="vector_bundle_sections.html#D-smooth_section_vb" class="ref-link"><strong>section</strong></a>
+                    of a tensor bundle assigns to each point of \(M\) a tensor on the tangent space at that point, of the
+                    appropriate variance. Such a section is a tensor field.
+                </p>
+
+                <div class="theorem" id="D-tensor_field">
+                    <span class="theorem-title">Definition: Tensor Field</span>
+                    <p>
+                        Let \(M\) be a smooth manifold with or without boundary. A <strong>tensor field</strong> on \(M\)
+                        is a section of a tensor bundle: a covariant, contravariant, or mixed tensor field is a section
+                        of \(T^k T^* M\), \(T^k TM\), or \(T^{(k,l)} TM\) respectively. A <strong>smooth tensor
+                        field</strong> is one that is smooth as a section of a smooth vector bundle. The space of smooth
+                        covariant \(k\)-tensor fields is denoted \(\mathcal{T}^k(M)\); it is a real vector space and a
+                        module over the ring of smooth functions on \(M\).
+                    </p>
+                </div>
+
+                <p>
+                    The rank-one and rank-zero cases reduce to objects already studied. Under the identifications above,
+                    a contravariant \(1\)-tensor field is a vector field, a covariant \(1\)-tensor field is a covector
+                    field, and a \(0\)-tensor field is a continuous real-valued function. The covariant tensor fields
+                    receive most of the attention because they admit a pullback under arbitrary smooth maps, as the final
+                    section shows.
+                </p>
+
+                <h3>Smoothness criteria</h3>
+
+                <p>
+                    A section of a tensor bundle is smooth precisely when its components in coordinates are smooth, in
+                    direct generalization of the criterion for vector fields. Expressing a covariant \(k\)-tensor field
+                    in coordinates uses the
+                    <a href="multilinear_algebra_tensor_products.html#D-tensor_coordinate_representation" class="ref-link"><strong>component representation</strong></a>
+                    of a tensor at each point, with the coordinate differentials playing the role of the dual basis.
+                </p>
+
+                <div class="theorem" id="T-tensor_field_coord">
+                    <span class="theorem-title">Proposition: Coordinate Representation of a Tensor Field</span>
+                    <p>
+                        In any smooth local coordinates \((x^i)\) on an open set \(U \subseteq M\), a covariant
+                        \(k\)-tensor field \(A\) is written using the
+                        <a href="multilinear_algebra_tensor_products.html#T-tensor_basis" class="ref-link"><strong>coordinate tensor basis</strong></a>
+                        as
+                        \[
+                            A = A_{i_1 \cdots i_k}\, dx^{i_1} \otimes \cdots \otimes dx^{i_k} ,
+                        \]
+                        with the summation convention in force and the component functions given pointwise by
+                        \[
+                            A_{i_1 \cdots i_k} = A\left(
+                                \frac{\partial}{\partial x^{i_1}}, \ldots, \frac{\partial}{\partial x^{i_k}}
+                            \right) .
+                        \]
+                        The contravariant and mixed cases are written the same way with coordinate vector fields
+                        \(\partial/\partial x^i\) in the contravariant slots and coordinate differentials \(dx^i\) in the
+                        covariant slots.
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-tensor_field_smoothness">
+                    <span class="theorem-title">Theorem: Smoothness Criteria for Tensor Fields</span>
+                    <p>
+                        Let \(M\) be a smooth manifold with or without boundary, and let \(A\) be a section of the
+                        covariant tensor bundle \(T^k T^* M\). The following are equivalent.
+                    </p>
+                    <p>
+                        (a) \(A\) is smooth.
+                    </p>
+                    <p>
+                        (b) In every smooth coordinate chart, the component functions of \(A\) are smooth.
+                    </p>
+                    <p>
+                        (c) Each point of \(M\) lies in some coordinate chart in which \(A\) has smooth component
+                        functions.
+                    </p>
+                    <p>
+                        Moreover, if \(A\) is a smooth covariant \(k\)-tensor field and \(X_1, \ldots, X_k\) are smooth
+                        vector fields, then the function
+                        \[
+                            A(X_1, \ldots, X_k) : M \to \mathbb{R}, \qquad
+                            p \mapsto A_p\big(X_1|_p, \ldots, X_k|_p\big) ,
+                        \]
+                        is smooth.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The coordinate tensor products \(dx^{i_1} \otimes \cdots \otimes dx^{i_k}\) form a smooth local
+                        frame for \(T^k T^* M\) over the chart domain, by the construction of the bundle structure. With
+                        respect to this frame the components of \(A\) are exactly the functions \(A_{i_1 \cdots i_k}\) of
+                        the coordinate representation. The general criterion for a section of a smooth vector bundle to
+                        be smooth, namely that its component functions relative to a smooth local frame be smooth,
+                        applied to this frame, gives the equivalence of (a), (b), and (c); the only point to check beyond
+                        the general statement is that smoothness in one chart of an atlas propagates, which holds because
+                        the transition functions between coordinate tensor frames are smooth. For the last assertion, in
+                        a chart write \(X_j = X_j^{\,i}\, \partial/\partial x^i\) with smooth components; then
+                        multilinearity gives
+                        \(A(X_1, \ldots, X_k) = A_{i_1 \cdots i_k}\, X_1^{\,i_1} \cdots X_k^{\,i_k}\), a sum of products
+                        of smooth functions, hence smooth on the chart domain, and therefore smooth on \(M\).
+                    </p>
+                </div>
+
+                <h3>The tensor characterization lemma</h3>
+
+                <p>
+                    Pairing a smooth covariant \(k\)-tensor field with \(k\) smooth vector fields produces a smooth
+                    function, and the resulting operation on vector fields is linear over the ring of smooth functions,
+                    not merely over the reals. This stronger linearity characterizes exactly those operations that arise
+                    from tensor fields, and provides a coordinate-free test for tensoriality.
+                </p>
+
+                <div class="theorem" id="T-tensor_characterization">
+                    <span class="theorem-title">Lemma: Tensor Characterization</span>
+                    <p>
+                        Let \(M\) be a smooth manifold with or without boundary, and let
+                        \[
+                            \mathcal{A} : \mathfrak{X}(M) \times \cdots \times \mathfrak{X}(M) \to C^\infty(M)
+                        \]
+                        be a map of \(k\) smooth vector field arguments to smooth functions. Then \(\mathcal{A}\) is
+                        induced by a smooth covariant \(k\)-tensor field \(A\), through
+                        \(\mathcal{A}(X_1, \ldots, X_k) = A(X_1, \ldots, X_k)\), if and only if \(\mathcal{A}\) is
+                        multilinear over the ring of smooth functions: for all smooth functions \(f, f'\) and all smooth
+                        vector fields,
+                        \[
+                            \mathcal{A}(X_1, \ldots, f X_i + f' X_i', \ldots, X_k)
+                                = f\, \mathcal{A}(X_1, \ldots, X_i, \ldots, X_k)
+                                + f'\, \mathcal{A}(X_1, \ldots, X_i', \ldots, X_k) .
+                        \]
+                        When it exists, the tensor field \(A\) is unique.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        If \(\mathcal{A}\) comes from a smooth tensor field \(A\), then at each point the value depends
+                        multilinearly on the argument vectors, and a scalar function multiplying a vector field factors
+                        out pointwise, so \(\mathcal{A}\) is multilinear over smooth functions. The substance is the
+                        converse. Assume \(\mathcal{A}\) is multilinear over smooth functions. The key step is that the
+                        value \(\mathcal{A}(X_1, \ldots, X_k)\) at a point \(p\) depends only on the values
+                        \(X_1|_p, \ldots, X_k|_p\), not on the fields away from \(p\).
+                    </p>
+                    <p>
+                        First, the value at \(p\) is unchanged if one argument is altered outside a neighborhood of
+                        \(p\). Suppose \(X_i\) vanishes on a neighborhood \(U\) of \(p\). Choose a smooth bump function
+                        \(\psi\) supported in \(U\) with \(\psi(p) = 1\). Then \(\psi X_i\) is identically zero, so by
+                        multilinearity \(0 = \mathcal{A}(\ldots, \psi X_i, \ldots) = \psi\, \mathcal{A}(\ldots, X_i,
+                        \ldots)\); evaluating at \(p\) and using \(\psi(p) = 1\) shows
+                        \(\mathcal{A}(\ldots, X_i, \ldots)(p) = 0\). By linearity the value at \(p\) depends only on the
+                        \(X_i\) near \(p\).
+                    </p>
+                    <p>
+                        Next, the value depends only on the \(X_i\) at \(p\). Suppose \(X_i|_p = 0\). In a coordinate
+                        chart centered at \(p\) write \(X_i = X_i^{\,j}\, \partial/\partial x^j\) with component functions
+                        \(X_i^{\,j}\) vanishing at \(p\). Fix a closed coordinate ball \(\overline{B}\) around \(p\)
+                        contained in the chart domain; the coordinate vector fields \(\partial/\partial x^j\) and the
+                        components \(X_i^{\,j}\), restricted to \(\overline{B}\), are smooth data on a closed set, so the
+                        <a href="vector_fields_on_manifolds.html#T-extension_lemma_vector_fields" class="ref-link"><strong>extension lemma for vector fields</strong></a>
+                        (and its analogue for functions) produces global smooth fields \(E_j\) and functions
+                        \(f_i^{\,j}\) on \(M\) agreeing with \(\partial/\partial x^j\) and \(X_i^{\,j}\) throughout
+                        \(\overline{B}\), hence on a neighborhood of \(p\); there \(f_i^{\,j} E_j = X_i\).
+                        Multilinearity over smooth functions gives, near \(p\),
+                        \[
+                            \mathcal{A}(\ldots, X_i, \ldots)
+                                = \mathcal{A}(\ldots, f_i^{\,j} E_j, \ldots)
+                                = f_i^{\,j}\, \mathcal{A}(\ldots, E_j, \ldots) ,
+                        \]
+                        and evaluating at \(p\), where every \(f_i^{\,j}(p) = X_i^{\,j}(p) = 0\), yields zero. By
+                        linearity the value at \(p\) depends only on \(X_i|_p\).
+                    </p>
+                    <p>
+                        Consequently, for tangent vectors \(v_1, \ldots, v_k \in T_p M\), choose smooth vector fields
+                        \(V_1, \ldots, V_k\) with \(V_j|_p = v_j\) &mdash; such fields exist, since any tangent vector is
+                        the value at \(p\) of a smooth field, for instance the one obtained by extending a constant
+                        coordinate field with a bump function &mdash; and set
+                        \[
+                            A_p(v_1, \ldots, v_k) = \mathcal{A}(V_1, \ldots, V_k)(p) .
+                        \]
+                        This is well defined: by the pointwise dependence just established, the right-hand side is
+                        unchanged if any \(V_j\) is replaced by another smooth field with the same value at \(p\), so it
+                        depends only on \(v_1, \ldots, v_k\). The assignment is multilinear on \(T_p M\), so it defines a
+                        covariant \(k\)-tensor at each point and hence a rough tensor field \(A\). Its component functions
+                        in any chart are
+                        \(\mathcal{A}(\partial/\partial x^{i_1}, \ldots, \partial/\partial x^{i_k})\), which are smooth,
+                        so \(A\) is smooth by the smoothness criteria. Uniqueness is immediate, since the values of \(A\)
+                        on coordinate vector fields are determined by \(\mathcal{A}\).
+                    </p>
+                </div>
+            </section>
+
+            <section id="pullback" class="section-content">
+                <h2>The Pullback of Tensor Fields</h2>
+
+                <p>
+                    A smooth map carries covectors backward by composition with its differential, and the same mechanism
+                    extends to covariant tensors of every rank. This is the operation that transports a field of inner
+                    products from one manifold to another, and it is the reason the covariant tensors are the natural
+                    setting for the geometry to come: unlike vectors, covariant tensors require no inverse and no
+                    diffeomorphism hypothesis to be pulled back.
+                </p>
+
+                <h3>Pointwise pullback</h3>
+
+                <p>
+                    Let \(F : M \to N\) be a smooth map, with
+                    <a href="tangent_vectors.html#D-differential_of_smooth_map" class="ref-link"><strong>differential</strong></a>
+                    \(dF_p : T_p M \to T_{F(p)} N\) at each point. Given a covariant \(k\)-tensor \(\alpha\) on
+                    \(T_{F(p)} N\), the
+                    <a href="pullbacks_restriction_covector_fields.html#D-pointwise_pullback" class="ref-link"><strong>pointwise pullback</strong></a>
+                    of a covector extends to a covariant \(k\)-tensor \(dF_p^*(\alpha)\) on \(T_p M\) by precomposing
+                    each argument with the differential,
+                    \[
+                        dF_p^*(\alpha)(v_1, \ldots, v_k) = \alpha\big(dF_p(v_1), \ldots, dF_p(v_k)\big),
+                        \qquad v_1, \ldots, v_k \in T_p M .
+                    \]
+                    Because the differential needs no inverse, this is defined for any smooth map, and it reduces to the
+                    pullback of a covector when \(k = 1\).
+                </p>
+
+                <div class="theorem" id="D-pullback_tensor_field">
+                    <span class="theorem-title">Definition: Pullback of a Tensor Field</span>
+                    <p>
+                        Let \(F : M \to N\) be smooth and \(A\) a covariant \(k\)-tensor field on \(N\). The
+                        <strong>pullback</strong> \(F^* A\) is the covariant \(k\)-tensor field on \(M\) whose value at
+                        each point is the pointwise pullback of the value of \(A\) at the image point,
+                        \[
+                            (F^* A)_p = dF_p^*\big(A_{F(p)}\big) .
+                        \]
+                        Equivalently, on vectors \(v_1, \ldots, v_k \in T_p M\),
+                        \[
+                            (F^* A)_p(v_1, \ldots, v_k)
+                                = A_{F(p)}\big(dF_p(v_1), \ldots, dF_p(v_k)\big) .
+                        \]
+                    </p>
+                </div>
+
+                <h3>Properties</h3>
+
+                <p>
+                    The pullback respects the entire algebraic structure of covariant tensor fields, is functorial in the
+                    map, and preserves smoothness.
+                </p>
+
+                <div class="theorem" id="T-pullback_tensor_field">
+                    <span class="theorem-title">Theorem: Properties of Tensor Pullbacks</span>
+                    <p>
+                        Let \(F : M \to N\) and \(G : N \to P\) be smooth maps, let \(A\) and \(B\) be covariant tensor
+                        fields on \(N\), and let \(f\) be a real-valued function on \(N\).
+                    </p>
+                    <p>
+                        (a) \(F^*(f B) = (f \circ F)\, F^* B\).
+                    </p>
+                    <p>
+                        (b) \(F^*(A \otimes B) = F^* A \otimes F^* B\).
+                    </p>
+                    <p>
+                        (c) \(F^*(A + B) = F^* A + F^* B\).
+                    </p>
+                    <p>
+                        (d) \(F^* B\) is a continuous tensor field, and is smooth if \(B\) is smooth.
+                    </p>
+                    <p>
+                        (e) \((G \circ F)^* B = F^*(G^* B)\).
+                    </p>
+                    <p>
+                        (f) \((\operatorname{Id}_N)^* B = B\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Parts (a), (b), (c) are pointwise identities of the linear-algebraic pullback \(dF_p^*\), checked
+                        on arbitrary vectors. For (b), with \(A\) of rank \(k\) and \(B\) of rank \(l\), evaluating both
+                        sides on \(v_1, \ldots, v_{k+l} \in T_p M\) gives
+                        \(A_{F(p)}(dF_p v_1, \ldots, dF_p v_k)\, B_{F(p)}(dF_p v_{k+1}, \ldots, dF_p v_{k+l})\) either
+                        way, since the tensor product splits the arguments and \(dF_p\) is applied to each. Part (a) is
+                        the rank-zero case of (b), reading the function \(f\) as a \(0\)-tensor field and noting that its
+                        pullback is the composition \(f \circ F\); part (c) is the linearity of \(dF_p^*\). For (e), the
+                        chain rule \(d(G \circ F)_p = dG_{F(p)} \circ dF_p\) gives, on vectors,
+                        \[
+                            (G \circ F)^* B_p(v_1, \ldots, v_k)
+                                = B_{G(F(p))}\big(d(G \circ F)_p v_1, \ldots\big)
+                                = B_{G(F(p))}\big(dG_{F(p)} dF_p v_1, \ldots\big)
+                                = \big(F^*(G^* B)\big)_p(v_1, \ldots, v_k) ,
+                        \]
+                        and (f) holds because the differential of the identity is the identity of each tangent space.
+                        For (d), smoothness is local, so it suffices to check it in coordinates; the coordinate formula
+                        established next exhibits the components of \(F^* B\) as smooth functions whenever those of \(B\)
+                        are, which gives the claim.
+                    </p>
+                </div>
+
+                <h3>Computation in coordinates</h3>
+
+                <p>
+                    In coordinates the pullback is computed by the same substitution rule used for covector fields:
+                    replace each coordinate function of \(N\) by its expression in terms of \(F\), and replace each
+                    coordinate differential by the differential of that expression. The
+                    <a href="pullbacks_restriction_covector_fields.html#T-pullback_coord_formula" class="ref-link"><strong>coordinate formula</strong></a>
+                    for the pullback of a covector field is the rank-one instance of the following.
+                </p>
+
+                <div class="theorem" id="T-pullback_tensor_coord">
+                    <span class="theorem-title">Proposition: Coordinate Formula for Tensor Pullbacks</span>
+                    <p>
+                        Let \(F : M \to N\) be smooth and let \(B\) be a covariant \(k\)-tensor field on \(N\). If
+                        \((y^i)\) are smooth coordinates on an open subset of \(N\) and
+                        \(B = B_{i_1 \cdots i_k}\, dy^{i_1} \otimes \cdots \otimes dy^{i_k}\) there, then on the preimage
+                        \[
+                            F^* B = \big(B_{i_1 \cdots i_k} \circ F\big)\,
+                                d\big(y^{i_1} \circ F\big) \otimes \cdots \otimes d\big(y^{i_k} \circ F\big) .
+                        \]
+                        In practice one substitutes the component functions of \(F\) for the coordinates \(y^i\)
+                        throughout the expression for \(B\) and expands each \(d(y^i \circ F)\) in the coordinates of
+                        \(M\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The pullback is linear and multiplicative over tensor products by the properties just proved, so
+                        it suffices to pull back each factor. A function pulls back by composition, giving the
+                        coefficient \(B_{i_1 \cdots i_k} \circ F\) by part (a). Each coordinate differential \(dy^i\),
+                        being the differential of the coordinate function \(y^i\), pulls back to the differential of the
+                        composite, \(F^*(dy^i) = d(y^i \circ F)\), since pullback commutes with the differential of a
+                        function. Assembling the factors with the tensor-product compatibility of part (b) yields the
+                        stated expression. The coefficients \(B_{i_1 \cdots i_k} \circ F\) are continuous, and smooth
+                        when \(B\) is smooth, while the differentials \(d(y^i \circ F)\) are smooth; a sum of products of
+                        such fields is continuous in general and smooth when the coefficients are, which settles the
+                        regularity claim (d) left open above.
+                    </p>
+                </div>
+
+                <p>
+                    The pullback closes the algebraic development of covariant tensors and prepares their geometric use.
+                    A field of symmetric, positive-definite covariant \(2\)-tensors transported by this operation retains
+                    its symmetry automatically, since precomposition with \(dF_p\) treats the two arguments alike. Its
+                    positive-definiteness, however, is not automatic: from
+                    \((F^* g)_p(v, v) = g_{F(p)}(dF_p v,\, dF_p v)\) and the positivity of \(g\), the pulled-back tensor
+                    satisfies \((F^* g)_p(v, v) > 0\) for \(v \neq 0\) exactly when \(dF_p v \neq 0\) for \(v \neq 0\),
+                    that is, exactly when \(dF_p\) is injective at every point &mdash; the condition that \(F\) be an
+                    immersion. At points where the differential has a kernel the pullback is only positive
+                    semidefinite. Thus an immersion transports a field of inner products to a genuine field of inner
+                    products on the source, the mechanism by which an ambient metric induces one on a submanifold, the
+                    construction at the foundation of the geometry of curved spaces.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>
