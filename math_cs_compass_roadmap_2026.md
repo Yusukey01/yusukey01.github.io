@@ -27,7 +27,7 @@ stochastic analysis).
 `curriculum.json` is authoritative for the count.)
 
 **Five active tracks (planned in one pass on 2026/6/3)**; detail in the Part 2 overview:
-- Phase 2e (continuous-time generative foundations, Section III) — ready to start
+- Phase 2e (continuous-time generative foundations, Section III) — awaiting Øksendal purchase
 - Rep Theory (GDL continuous leg, Section I+V) — awaiting Hall 2nd ed. purchase
 - CDL (category theory, Section IV+V) — awaiting Leinster reading
 - Crypto (through PQC, Section IV+I) — mood-driven
@@ -78,7 +78,7 @@ A unified view of the five tracks. Per-track detail is authoritative in the indi
 
 | Track | GDL relation | Section | Start status | Purchase | Handout |
 |---|---|---|---|---|---|
-| **Phase 2e** continuous-time generative | — | III | **ready** (from Page1 BM+Itō) | none | `phase2e_handout_v1` |
+| **Phase 2e** continuous-time generative | — | III | **awaiting Øksendal purchase** (then Page1 BM+Itō) | **Øksendal 6th ed.** | `phase2e_handout_v1` |
 | **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **awaiting Hall** | **Hall 2nd ed.** | `representation_theory_track_handout_v1` |
 | **CDL** category theory | — | IV (cats) + V (CDL bridge) | **awaiting Leinster reading** (Stage 0) | none | `cdl_track_handout_v1` |
 | **Crypto** through PQC | — | IV (s1) + I (s2-7) | **mood-driven** | none | `crypto_track_handout_v1` |
@@ -215,12 +215,13 @@ strengthened, not weakened, in the FM era.
 prereqs: Page1 <- prob-23, prob-21, calc-23 / Page2 <- Page1, prob-24 / Page3 <- Page2, calc-33.
 
 ### 4.4 Reference / start
-- primary: Øksendal (SDE proper) + Durrett (measure-theoretic substrate) + Holderrieth-Erives
-  (FM/diffusion unification, the V-side bridge, already used on the ML side). **All on hand/free,
-  no purchase.**
+- primary: Øksendal (SDE proper, **purchase required** — Springer Universitext 6th ed.,
+  ISBN 978-3-540-04758-2) + Durrett (measure-theoretic substrate, on hand) + Holderrieth-Erives
+  (FM/diffusion unification, the V-side bridge, free, already used on the ML side).
 - No OT book -> FM/rectified flow/OT are forward-pointers only (no href).
 - Rigor calibration (whether to add Karatzas-Shreve) decided after seeing scope. On hold.
-- **Start status: ready** (from Page1 BM+Itō). Zero new prereqs.
+- **Start status: awaiting Øksendal purchase** (then Page1 BM+Itō). Zero new prereqs;
+  the only blocker is acquiring Øksendal. Dependency audit already complete.
 - track-character: a CS author learning pure math while writing (same class as CDL).
 - Detail: `phase2e_handout_v1`.
 
@@ -396,14 +397,14 @@ bridge of Part 6.4).
 
 ## Part 8 — Reference Acquisition Status (new in v2)
 
-References for the five tracks plus existing ones, by acquisition status. **The only purchase is
-Hall 2nd ed.**
+References for the five tracks plus existing ones, by acquisition status. **Two purchases needed:
+Hall 2nd ed. (Rep Theory) and Øksendal 6th ed. (Phase 2e).** All other references are free.
 
 ### 8.1 Active-track references (status)
 
 | Track | reference | status |
 |---|---|---|
-| Phase 2e | Øksendal *SDE* (registered III) / Durrett (registered III) / Holderrieth-Erives *FM & Diffusion* (registered V, arXiv:2506.02070) | ✅ all on hand/free |
+| Phase 2e | **Øksendal *SDE*** (registered III, Springer Universitext 6th ed., ISBN 978-3-540-04758-2) / Durrett (registered III, on hand) / Holderrieth-Erives *FM & Diffusion* (registered V, arXiv:2506.02070, free) | ⚠️ **Øksendal purchase required**; Durrett + Holderrieth free |
 | Rep Theory | **Hall *Lie Groups…* 2nd ed.** (registered I, GTM 222, ISBN 9783319134666) | ⚠️ **purchase required** (no institutional access, no official free PDF, 2nd ed. mandatory) |
 | Rep Theory | Gerken et al. (AI Review 2023, DOI 10.1007/s10462-023-10502-7 / arXiv:2105.13926) / Esteves (arXiv:2004.05154) | unregistered -> add at start, free |
 | CDL | Leinster *Basic Category Theory* (registered IV, arXiv:1612.09375, v2 2025/8) / Fong-Spivak *Seven Sketches* (registered IV/V, arXiv:1803.05316 <- url to add) | ✅ both free |
@@ -451,7 +452,7 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 | Equivariant NN | 1 | V | `equivariant_nn.html` | after rep theory |
 | TDL: Simplicial NN | 1 | V | TBD | mood/GDL (GDL discrete leg, Part 3.4; Hodge exists) |
 | TDL: Persistent Homology | ~1 | IV | TBD | optional branch (disc-15 forecast) |
-| Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **ready** (Part 4; splits anticipated) |
+| Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **awaiting Øksendal purchase** (Part 4; splits anticipated) |
 | CDL Track | ~6–9 | IV + V | TBD | awaiting Leinster reading (Part 5) |
 | Crypto Track | varies (7 stages) | **IV(s1) + I(s2-7)** | TBD (entry linalg-26) | mood-driven (Part 6, stage 7 terminal) |
 | Section V Quantum (A+B) | 1 | V | TBD | after Crypto stage 1–4 (Part 7.4) |
