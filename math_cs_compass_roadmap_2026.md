@@ -1,472 +1,554 @@
-# MATH-CS COMPASS: Curriculum Roadmap & Development Plan
+# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v2)
 
 **Author:** Yusuke Yokota
 **Last Updated:** 6/3/2026
 **Website:** https://math-cs-compass.com
 
+**v1 -> v2 changes**: Reflects the 2026/6/3 session that fixed the references, placement, and
+dependency audits for five tracks (Phase 2e / Rep Theory / CDL / Crypto / TDL) in one pass.
+Main structural changes: (1) tracks previously scattered across Parts are now consolidated into
+**Part 2, an active-track overview**; (2) the GDL pillar is unified in Part 3 as a **two-leg
+structure: continuous leg (Rep Theory) + discrete leg (TDL)**; (3) two new index layers,
+**Reference acquisition status** (Part 8) and **Overload ledger** (Part 9). Per-track detail
+lives in the individual handouts (`*_handout_v1.md`), which are the single source of truth; this
+roadmap is the index layer over them.
+
 ---
 
 ## Project Overview
 
-MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science, addressing the gap where CS students struggle with mathematical foundations while math students lack awareness of practical applications. The primary focus is providing rigorous mathematical foundations for modern AI/ML, with continuous expansion into adjacent domains (geometric deep learning, categorical deep learning, cryptography, stochastic analysis).
+MATH-CS COMPASS is an educational platform bridging pure mathematics and computer science,
+addressing the gap where CS students struggle with mathematical foundations while math students
+lack awareness of applications. The primary focus is rigorous mathematical foundations for
+modern AI/ML, with continuous expansion into adjacent domains (GDL, CDL, cryptography,
+stochastic analysis).
 
-**Total: 169 pages as of 6/3/2026.** (linalg 30 / calc 81 / prob 26 / disc 17 / ml 15; per `curriculum.json`, which is authoritative for the count.)
+**Total: 169 pages as of 6/3/2026.** (linalg 30 / calc 81 / prob 26 / disc 17 / ml 15;
+`curriculum.json` is authoritative for the count.)
+
+**Five active tracks (planned in one pass on 2026/6/3)**; detail in the Part 2 overview:
+- Phase 2e (continuous-time generative foundations, Section III) — ready to start
+- Rep Theory (GDL continuous leg, Section I+V) — awaiting Hall 2nd ed. purchase
+- CDL (category theory, Section IV+V) — awaiting Leinster reading
+- Crypto (through PQC, Section IV+I) — mood-driven
+- TDL (GDL discrete leg, Section IV+V) — mood / GDL progress
 
 ---
 
 ## Part 1 — Application Domains: Pillar vs. Viewpoint
 
-An earlier framing treated **GDL, CDL, and Quantum** uniformly as "viewpoints, not terminal goals." The three domains are **not symmetric** in 2026, and this roadmap reflects that asymmetry.
+(v1 Part 1 retained. GDL two-leg structure added to 1.2.)
 
 ### 1.1 Two orthogonal axes
+- **Pillar (vertical thread)**: a structural thread that multiple Sections converge into; a
+  load-bearing column.
+- **Viewpoint (re-visit at different heights)**: a perspective returned to repeatedly at higher
+  mathematical altitude, never "completed."
+These are independent. A domain can be Pillar and Viewpoint / Viewpoint only / Pillar only / neither.
 
-A clean separation of two concepts that were previously conflated:
-
-- **Pillar (vertical thread)**: Whether the domain functions as a structural thread that multiple Sections converge into. A pillar is a load-bearing column — site geometry depends on it.
-- **Viewpoint (re-visit at different heights)**: Whether the domain is encountered repeatedly across the curriculum, each time from a different mathematical altitude, without ever being "completed." A viewpoint is open-ended; the reader returns to it after acquiring more mathematical machinery and sees it differently.
-
-These are **independent**. A domain can be:
-- Pillar ∧ Viewpoint (structurally central AND open-ended)
-- Viewpoint only (recurring perspective without dedicated structural thread)
-- Pillar only (structural backbone with a clear endpoint) — this case rarely fits MATH-CS COMPASS philosophy
-- Neither (peripheral application reference)
-
-### 1.2 Classification of the three domains
+### 1.2 Classification of the three domains (GDL two-leg added)
 
 | Domain | Pillar? | Viewpoint? | Production maturity (2026) | Site treatment |
 |---|---|---|---|---|
-| **GDL** | ✅ Yes | ✅ Yes | High (AlphaFold, MACE, equivariant robotics) | **Pillar ∧ Viewpoint** — full track |
-| **CDL** | ⚠️ Pre-pillar (will likely become pillar within ~2–3 yr) | ✅ Yes | R&D stage (Coend $31M funding; no deployed product) | **Slow-burn parallel track** — start now, do not wait for production maturity |
-| **Quantum** | ⚠️ Latent | ✅ Yes | Limited (error-correction codes; molecular simulation niches) | **Viewpoint via Insight Boxes** — no dedicated track planned |
+| **GDL** | ✅ | ✅ | High (AlphaFold, MACE, EquiformerV3, equivariant robotics) | **Pillar and Viewpoint** — **two-leg** (below) |
+| **CDL** | ⚠️ Pre-pillar | ✅ | R&D (Coend $31M, no product) | Slow-burn parallel track |
+| **Quantum** | ⚠️ Latent | ✅ | Limited (PQC is separate, see Crypto) | Viewpoint via Insight Box |
 
-The asymmetry reflects empirical reality, not stylistic preference.
+**GDL two-leg structure (made explicit in v2, detailed in Part 3)**:
+- **Continuous leg**: manifold -> Riemannian -> representation theory -> Equivariant NN
+  (SO(3)/SE(3) continuous symmetry) = Rep Theory track.
+- **Discrete leg**: GNN (ml-13) -> simplicial complexes / Hodge (disc-13~15) -> SNN/TDL
+  (higher-order interactions) = TDL track. TDL is a subfield of GDL (confirmed 2026).
+- The two legs will eventually **rejoin via Hodge theory** (continuous Hodge = differential
+  forms / discrete Hodge = simplicial complexes, bridged by DEC).
 
 ### 1.3 Authorial scale
-
-**Background**: Yusuke holds a US double major in mathematics and computer science from a non-elite institution; self-described as broad-but-shallow undergraduate coverage.
-
-**Operational implication**: prior knowledge varies sharply by topic. Lie theory was familiar (linalg-27~30 ran in expert-reviewer mode); category theory and continuous-time stochastic analysis are not (CDL and Phase 2e are learn-while-writing). Track-character assignments must be calibrated per topic, not against a global expertise label.
-
----
-
-## Part 2 — GDL: Pillar AND Viewpoint
-
-### 2.1 Why GDL is a pillar
-
-Three independent reasons (any one would suffice; together they are decisive):
-
-1. **Mathematical thickness**: Lie groups, Riemannian geometry, fiber bundles, representation theory, and graph spectral theory all converge into GDL. No other application domain on the site has this many distinct mathematical threads naturally pointing at it.
-
-2. **Production maturity (2026)**: equivariant networks, GNNs, SE(3)-Transformers, neural operators on manifolds have moved from research stage into deployed applications (AlphaFold, MACE/Allegro for molecular design, SE(3)-equivariant robotics policies). This is empirical fact, independent of any "Physical AI" marketing framing.
-
-3. **Independent forward growth**: robotics × ML will continue expanding for reasons grounded in information theory, not market trend. Manipulation tasks have geometric structure that is physical, not coordinate-system-dependent — architectures lacking equivariance pay a sample-efficiency cost for principled reasons. This argument does not require predicting any specific company or product trajectory.
-
-### 2.2 Why GDL is also a viewpoint (not a destination)
-
-The "pillar" framing does not contradict the original viewpoint principle. The two coexist because **a thick pillar looks different at different heights**:
-
-- A reader at ml-13 (GNN) sees only "permutation-equivariant message passing on discrete graphs."
-- After the manifold series, the same reader can revisit GDL and ask about continuous symmetries.
-- After representation theory, irreducible decomposition reframes equivariance.
-- After calc-32 (Fourier on Hilbert spaces), Peter-Weyl bridges GDL back to harmonic analysis on groups.
-
-Each return visit happens at a higher mathematical altitude. The pillar is not climbed-and-finished; it is **passed through repeatedly, at progressively deeper levels of understanding**.
-
-### 2.3 Open-ended GDL (forward-pointer obligation)
-
-Every GDL-related page must include forward-pointers to "the next mathematics" the reader could pursue from there:
-
-- **ml-13 (GNN)** → manifold series, representation theory, spectral graph theory
-- **ml-XX (Equivariant NN)** → fiber bundles, gauge theory, information geometry
-- **ml-XX (GDL Overview)** → Hodge theory, stochastic geometry, geometric measure theory
-
-This obligation is **not stated explicitly in each page**. Readers will infer the open-endedness from the forward-pointer structure across pages without need for a meta-declaration.
-
-### 2.4 Track sequencing (already in current roadmap; no change)
-
-`ml-13 (GNN) → manifold series (calc-XX, ~3 pages) → representation theory (linalg-XX, ~3–4 pages) → ml-XX (Equivariant NN) → ml-XX (GDL Overview)`
-
-The earlier-planned `calc-32 (Fourier in Hilbert Spaces)` has been completed and remains a prerequisite capstone for the Peter-Weyl bridge later in the sequence. With `ml-13` and `calc-32` already complete, the active ordering from here is: manifold series → representation theory → `ml-XX` (Equivariant NN). As of 6/3/2026 the manifold series is **complete through Lee Ch.1–13 (calc-36~81 published)**, reaching Riemannian metrics, the distance/metric-space structure, and the musical isomorphisms that ground the natural gradient; see Part 7. Next active track is representation theory.
+Yusuke holds a US double major in math and CS (non-elite institution), self-described as
+broad-but-shallow. Prior knowledge varies sharply by topic: Lie theory was familiar
+(expert-reviewer mode); category theory, stochastic analysis, representation theory, and TDL are
+learn-while-writing. Track-character is calibrated per topic, not against a global label.
 
 ---
 
-## Part 3 — CDL: Pre-Pillar Slow-Burn Track
+## Part 2 — Active-Track Overview (new in v2, index layer)
 
-### 3.1 Status (verified by web search)
+A unified view of the five tracks. Per-track detail is authoritative in the individual handouts.
 
-- **Research front**: ICML 2024 position paper (Gavranović, Lessard, Dudzik, von Glehn, Araújo, Veličković — "Categorical Deep Learning is an Algebraic Theory of All Architectures"); active research community at ACT (Applied Category Theory) annual conferences (ACT 2025 Florida; ACT 2026 Tallinn scheduled July).
-- **Industry transition signal**: Bruno Gavranović founded **Coend**, a company dedicated to CDL R&D, with reported $31M funding. CV claim, not press release; treated as a non-trivial signal but not as production-deployment evidence.
-- **Production deployment**: **None as of 2026/5/9**. CDL does not appear in standard 2026 industrial deep-learning use-case surveys; PyTorch/TensorFlow/JAX do not treat categorical structures as first-class primitives.
+### 2.1 Track table
 
-### 3.2 Why CDL must be developed now, not later
+| Track | GDL relation | Section | Start status | Purchase | Handout |
+|---|---|---|---|---|---|
+| **Phase 2e** continuous-time generative | — | III | **ready** (from Page1 BM+Itō) | none | `phase2e_handout_v1` |
+| **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **awaiting Hall** | **Hall 2nd ed.** | `representation_theory_track_handout_v1` |
+| **CDL** category theory | — | IV (cats) + V (CDL bridge) | **awaiting Leinster reading** (Stage 0) | none | `cdl_track_handout_v1` |
+| **Crypto** through PQC | — | IV (s1) + I (s2-7) | **mood-driven** | none | `crypto_track_handout_v1` |
+| **TDL** | **discrete leg** | IV (existing Hodge) + V (SNN) | **mood / GDL progress** | none | `tdl_track_handout_v1` |
 
-Two independent arguments converge:
+### 2.2 Shared structural pattern (this session's finding)
 
-**(a) Convergence of the mathematics**: Continuing to deepen Section IV (graph theory → simplicial complexes → homology), Section I (groups → rings → fields → Lie groups), and Section II (continuous maps → functional analysis) **inevitably leads into the language of categories**. The site already implicitly contains category-theoretic structure (functors between Set, Grp, Ring, Vect_F, Top, Ban, Hilb are all latent); not naming these is a deliberate scope discipline that becomes harder to maintain as the curriculum deepens.
+All five tracks share the same shape:
+- **"The mathematical content is owned by its native Section; identity shifts to Section V at
+  the ML/application point."** Rep (math=I, Equiv NN=V) / CDL (cats=IV, bridge=V) / Crypto
+  (math=I, quantum=V bridge) / TDL (Hodge=IV, SNN=V) / Phase 2e (math=III, landing ml-14/15 = existing V).
+- This is a consistent expression of the site principle "application is viewpoint, mathematics
+  is owner" (Part 1).
+- **Obsolescence-resistance principle** (established in Crypto §0.5 / Phase 2e): write the
+  enduring mathematics thickly (continuous-time generation, LWE hardness), not the individual
+  method (diffusion, ML-KEM). When methods are replaced, the foundation survives.
 
-**(b) Asymmetry of preparation cost**: The mathematical preparation for CDL is **deep and not skippable**. There is no shortcut to the mathematics. If CDL applications begin maturing in 2027–2028 (a plausible scenario given the Coend trajectory), retroactively building category theory at speed would be infeasible. Pre-positioning the mathematics is the only viable strategy.
+### 2.3 Start priority (mood-driven dispatch; no single order enforced)
 
-These arguments together establish CDL as **MUST cover, but slow**. It cannot be added to Section V proactively (no production applications yet to reference), but the mathematical foundations in Section IV must be built starting now.
+- **External deadline pressure**: CDL (asymmetric preparation cost, MUST cover but slow).
+- **Application in current production**: Phase 2e (diffusion/FM), Crypto stage 7 (PQC deploying now).
+- **GDL pillar internal progress**: Rep Theory (designated next active), TDL (discrete leg).
+- All mood-driven. If one track stalls, others proceed (Part 13 principle 7).
 
-### 3.3 Yusuke's prerequisite state and pace strategy
+### 2.4 The only hard ordering constraint
 
-**Important context**: Yusuke does not currently know category theory. Unlike the Lie group series (where Yusuke had prior knowledge and operated in fact-check mode), the CDL track requires Yusuke to **learn alongside the writing process**.
+Section V quantum page (Part 7) <- Crypto stage 1–4 (establishing what Shor breaks). No forced
+order between any other tracks.
 
-Pace strategy adopted: **(γ) Trial parallel mode** — start with Stage 1's first page in parallel-learning mode (Yusuke reads Leinster Ch.1, Claude proposes site adaptation, Yusuke reviews as learner-reviewer rather than expert-reviewer). After this first page, reassess whether to continue parallel or shift mode.
+---
 
-Rationale: Yusuke's own learning rhythm with category theory is unknown; cannot be predicted from Lie theory experience. The first page acts as calibration probe.
+## Part 3 — GDL Pillar (two-leg: continuous Rep + discrete TDL)
 
-### 3.4 Reference acquisition
+In v1 the GDL discussion (old Part 2) and Rep Theory (old Part 8) were separate; v2 consolidates
+them under the GDL pillar. GDL stands on two legs (Part 1.2).
 
-Both primary references are **freely available as official PDFs** (verified):
+### 3.1 Why GDL is a pillar (three independent reasons)
+1. **Mathematical thickness**: Lie groups, Riemannian geometry, fiber bundles, representation
+   theory, and spectral graph theory all converge into GDL.
+2. **Production maturity (2026)**: equivariant nets, GNNs, SE(3)-Transformers, EquiformerV3, MACE
+   have moved from research to deployment (AlphaFold, molecular design, equivariant robotics).
+3. **Independent forward growth**: robotics × ML keeps expanding for information-theoretic
+   reasons; architectures lacking equivariance pay a principled sample-efficiency cost.
 
-| Reference | Status | Access |
+### 3.2 Why it is also a viewpoint
+A thick pillar looks different at different heights. At ml-13 (GNN) the reader sees only
+"permutation-equivariant message passing on discrete graphs"; after the manifold series,
+continuous symmetry; after representation theory, irreducible decomposition; after calc-32,
+Peter-Weyl bridges to harmonic analysis. The pillar is passed through repeatedly, each time at
+deeper understanding.
+
+### 3.3 Continuous leg — Representation Theory track
+
+**Placement**: Section I (rep theory linalg-XX, ~3-4p) + Section V (Equivariant NN, ml-XX).
+**Wiring**: Lie groups (linalg-27~30) -> group representations -> irreducible decomposition -> 
+Schur -> Equivariant NN. Peter-Weyl reclaims calc-32 Fourier (callback point).
+**Core tools (GDL-relevant)**: irreducible representations (SO(3) = spherical-harmonic degrees =
+MACE type-ℓ features); Schur's lemma (constrains equivariant-layer weights = mathematical basis
+for sample efficiency); Peter-Weyl (Fourier on groups).
+**Reference split**: Hall 2nd ed. (rigorous, linalg-XX, **purchase required**) / arXiv notes
+(applied, ml-XX, free).
+**Start status**: awaiting Hall 2nd ed. purchase. Dependency audit can proceed without the book.
+**2026 check**: CERTAIN. Current via EquiformerV3 etc.; representation theory is the theoretical
+core of equivariant nets.
+**Detail**: `representation_theory_track_handout_v1`.
+
+prereqs: linalg-27~30, linalg-22. Scope: finite groups (stepping stone) -> Lie group
+representations -> Peter-Weyl. Route A/B (finite groups thick / GDL-direct) decided after Hall
+inspection.
+
+### 3.4 Discrete leg — TDL (Topological Deep Learning) track
+
+**Placement**: Section IV (Hodge already exists in disc-13/15) + Section V (SNN, ml-XX).
+**Wiring**: GNN (ml-13) -> simplicial complexes / Hodge Laplacian (disc-13~15, **existing**) -> 
+SNN/TDL.
+**Key existing asset**: `D-hodge_laplacian` (disc-13) and `T-discrete_hodge` (disc-15,
+\(\ker L_k \cong H_k\)) are **already implemented**. disc-13/14/15 are complete through Hodge.
+**True gap**: the SNN page (ml-XX) only (persistent homology is an optional branch off disc-15's
+forecast). Shorter than initially expected — one SNN page lands the discrete leg of GDL.
+**Reference**: TDL book (tdlbook.org, free, SNN primary) / Lim *Hodge Laplacians on Graphs*
+(corroborates existing Hodge) / Edelsbrunner-Harer (existing, TDA base). **All free.**
+**Start status**: mood / GDL progress.
+**2026 check**: TDL is a subfield of GDL. GNNs are limited to pairwise interactions; TDL models
+n-body (higher-order) interactions over simplicial/cellular complexes.
+**Detail**: `tdl_track_handout_v1`.
+
+prereqs: SNN <- disc-15, disc-13, ml-13.
+
+### 3.5 Rejoining of the two legs (Hodge, future deep connection)
+Continuous Hodge (differential forms, Lee Ch.14+, not yet started) and discrete Hodge
+(simplicial complexes, disc-13/15 existing) share the same structure. DEC (Part 12 deferred)
+will be the reclamation hub bridging both legs. Recorded for now; the relevant Part 12 entries
+are "Spectral Laplacian" and "DEC."
+
+### 3.6 GDL track sequencing (current)
+With the manifold series complete (calc-36~81, Part 11), the continuous leg's mathematical
+foundation is in place. Active order:
+- Continuous leg: representation theory (next active) -> Equivariant NN.
+- Discrete leg: existing disc-13~15 -> SNN (mood).
+Forward-pointer obligation: each GDL page carries forward-pointers to "the next mathematics"
+(not explicitly declared; readers infer open-endedness from the structure).
+
+---
+
+## Part 4 — Phase 2e: Continuous-Time Generative Foundations (Active Slow-Burn)
+
+Build stochastic analysis (Brownian motion -> Itō -> SDE -> Fokker-Planck) in Section III, to
+justify from below the continuous-time machinery that ml-14 (diffusion) / ml-15 (flow matching)
+use as given.
+
+### 4.1 Role update (v1 -> v2)
+v1 framed this as "continuous-time basis for diffusion, landing at ml-14." But **ml-15
+flow_matching already exists** and fully develops the continuous-time machinery in ML language
+(its body performs the calculation where the score term cancels the diffusion term, collapsing
+the Fokker-Planck equation to the continuity equation).
+ -> Role purified to "**justify from below the continuous-time objects ml-14/15 use as given.**"
+Landing point ml-14 -> **ml-14 + ml-15**. The biggest callback is the FP page proving ml-15's
+cancellation calculation from below.
+
+### 4.2 Significance in the Flow Matching era
+Diffusion is being displaced by FM in practice (FLUX, SD3 are rectified flow), but **both are
+ODE/SDE representations of the same object** (Stochastic Interpolants). Phase 2e is not
+diffusion-specific but "the continuous-time basis unifying diffusion and FM." Its significance
+strengthened, not weakened, in the FM era.
+
+### 4.3 Three-page structure (Section III, prob-XX)
+
+| Page | scope | downstream callback |
 |---|---|---|
-| Leinster, *Basic Category Theory* (CUP 2014) | Already in `references.json`, `url` field populated | https://arxiv.org/abs/1612.09375 |
-| Fong & Spivak, *Seven Sketches in Compositionality* (CUP 2019) | In `references.json`, **but `url` field missing** — needs update | https://arxiv.org/abs/1803.05316 (also: https://dspivak.net/7Sketches.pdf, http://brendanfong.com/fong_spivak_an_invitation.pdf) |
+| 1 `brownian_motion_ito.html` | Wiener-process axioms, existence (Kolmogorov+Čentsov), path pathology, Itō integral L² construction, Itō formula | ml-15's \(\mathbf{w}_t, d\mathbf{w}_t\) |
+| 2 `sde_diffusion.html` | SDE definition, existence-uniqueness (Lipschitz/Picard), OU/Langevin, generator, Dynkin, Girsanov | ml-15's σ_t-tuned SDE |
+| 3 `fokker_planck_diffusion_model.html` | FP = adjoint of generator, heat eq (calc-33), score, reverse-time SDE | **justifies ml-15's special-case machinery from below (biggest callback)** |
 
-**Action item**: Add Fong & Spivak `url` field to `references.json` (low priority; cosmetic).
+prereqs: Page1 <- prob-23, prob-21, calc-23 / Page2 <- Page1, prob-24 / Page3 <- Page2, calc-33.
 
-Roles:
-- **Leinster**: Primary for the rigorous-pure side. Yoneda, adjunction, limits, Kan extension. The CDL paper's mathematical machinery (2-categories, monads on Para) sits on top of Leinster's Chapter 1–6 as bedrock.
-- **Fong & Spivak**: Primary for the applied / intuitive side. Database functors, Petri nets, monoidal categories, string diagrams. Provides the "what is this for" complement to Leinster's "what does this mean."
+### 4.4 Reference / start
+- primary: Øksendal (SDE proper) + Durrett (measure-theoretic substrate) + Holderrieth-Erives
+  (FM/diffusion unification, the V-side bridge, already used on the ML side). **All on hand/free,
+  no purchase.**
+- No OT book -> FM/rectified flow/OT are forward-pointers only (no href).
+- Rigor calibration (whether to add Karatzas-Shreve) decided after seeing scope. On hold.
+- **Start status: ready** (from Page1 BM+Itō). Zero new prereqs.
+- track-character: a CS author learning pure math while writing (same class as CDL).
+- Detail: `phase2e_handout_v1`.
 
-Both books are necessary; they are not redundant. Standard pairing in the ACT community.
-
-### 3.5 CDL track structure (proposed, not yet ratified)
-
-Six stages, ~6–9 total pages, estimated 6 months to 1+ year of slow-burn parallel work:
-
-| Stage | Est. pages | Content | Site location |
-|---|---|---|---|
-| **Stage 0** | 0 | Yusuke reads Leinster Ch.1–2 (most of investment cost lives here) | — |
-| **Stage 1** | 2–3 | Categories, functors, natural transformations / Yoneda / adjunction (intro level) | `disc-XX` (Section IV) |
-| **Stage 2** | 1–2 | Limits & colimits / monads / Kan extensions (as needed) | `disc-XX` |
-| **Stage 3** | 1–2 | Applied flavor: quivers as functors / database functors / string diagrams | `disc-XX` |
-| **Stage 4** | 1 | CDL bridge: 2-categories of Para, lenses, monads on Para — primer for the Gavranović paper | `ml-XX` |
-| **Stage 5** (future) | 1 | CDL Overview: revisit the entire site from a categorical viewpoint | `ml-XX` |
-
-Total: **6–9 pages**, larger than the Lie group series (4 pages). Page-count expansion is expected — the Lie series went 2 → 4; the CDL series may go 6 → 12. Page IDs (`XX`) deferred until drafting.
-
-### 3.6 Site existing content as concrete-example library
-
-A non-obvious strategic advantage: when Stage 1 begins, the site already contains a rich library of category-theoretic examples. The Stage 1 pages can use these as **already-familiar concrete instances**, dramatically lowering the explanatory burden:
-
-- **Monoid as one-object category** — invoke linalg-15 (groups) for objects/morphisms/composition
-- **Poset as thin category** — invoke disc-1 / disc-2 / disc-3 lattice content
-- **Vect_F as canonical category** — invoke any Section I page
-- **Top, Ban, Hilb as categories** — invoke calc-29, calc-23, etc.
-- **Set, Grp, Ring functors** — invoke linalg-15 ~ linalg-22 as object library
-
-This is an **originality opportunity**: rather than "introducing categories abstractly then giving examples," the site can introduce categories **as the language that names what readers have already been working with for 100+ pages**. This framing is rare in standard textbooks and aligns with the site's principle of using delayed payoff and retroactive recognition as a primary source of pedagogical originality.
-
-### 3.7 Monitoring obligation
-
-Yusuke's stated commitment: periodic monitoring of CDL project trajectory (Coend, ACT conferences, ICML/NeurIPS CDL papers). When production deployment signals appear, **the CDL track shifts from slow-burn to active**, and Section V CDL pages move from `[deferred]` to `[next]` status.
-
-Trigger candidates for status shift:
-- Coend ships first deployable product
-- A CDL-based architecture wins on a standard benchmark
-- A major framework (PyTorch, JAX, equinox, etc.) adds first-class categorical primitives
-- A second well-funded company enters the CDL space
-
-Until then: parallel slow-burn, mathematics-only.
+### 4.5 Notes (overload, see Part 9 ledger)
+- `D-infinitesimal_generator` exists on the Lie side -> SDE generator must use `D-sde_generator`.
+- `score_function` triple collision (Fisher/data/continuous) -> Page3 ref-links ml-14's
+  `D-score_function_data_gradient`, does not define a new one.
 
 ---
 
-## Part 4 — Quantum: Three Sub-Domains, Section V Single-Page Treatment
+## Part 5 — CDL: Pre-Pillar Slow-Burn Track
 
-"Quantum" as a single application domain is misleading: **what is called "Quantum" is actually three sub-domains with very different mathematical requirements and very different production-maturity levels**. Treating them uniformly would either over-invest in immature areas or under-invest in already-deployed ones.
+Build category theory in Section IV and name the categorical structure already latent across the
+site (the culmination of the callback philosophy). Pre-position the mathematics before CDL
+applications mature.
 
-### 4.1 Three sub-domains
+### 5.1 Why now (MUST cover but slow)
+- **Convergence of the mathematics**: deepening Section IV (graph -> simplicial -> homology),
+  I (group -> ring -> field -> Lie), II (continuous map -> FA) leads inevitably into the language of categories.
+- **Asymmetric preparation cost**: category-theory preparation is deep and not skippable. If CDL
+  applications mature in 2027-2028, building it at speed is infeasible -> pre-positioning is the
+  only strategy.
+- **The structural deadline is starting slowly now itself**. Unlike other tracks, deferring this
+  one creates a trap later.
 
-| Sub-domain | Mathematical core | 2026 production status |
+### 5.2 Placement decision (v2, resolving the ultimate question)
+**owner = Section IV**. Applying the topicGroup principle — a category-theory page's identity is
+"a discrete/combinatorial algebraic structure with composition" (a category = objects + morphisms
++ composition), which is Section IV's identity itself. That category theory cites Vect/Hilb as
+examples is *usage*, not the object. Corroboration: formal methods (disc-16/17 Lean) = type
+theory = the twin of category theory (Curry-Howard-Lambek).
+
+**"Cross-Section spanning" is not a placement problem but a ref-link direction problem**: a
+category page (IV) citing examples from I/II just means ref-links pointing outward; the owner
+stays IV (precedents: Crypto stage4 -> V, Peter-Weyl -> II).
+
+**Spanning is the greatest weapon — reclamation hub design**: the stage 1 page **intentionally
+bundles** ref-links to examples in Sections I/II/IV, letting the reader see at a glance "the
+groups from Section I, the Banach spaces from Section II — they were all categories." The Section
+IV category page becomes the site-wide callback hub. The manifold Q7 (differential \(dF_p\) =
+functor; calc-45/46 `T-differential_properties`/`T-global_differential_properties`) connects here.
+
+### 5.3 Track structure (per handout §3, ~6-9p, expansion expected)
+
+| Stage | Placement | Content |
 |---|---|---|
-| **A — Quantum theory (physics)** | Hilbert space + spectral theory + Fourier; unitary evolution; observables as self-adjoint operators; measurement | 100-year-established classical theory; no novelty |
-| **B — Quantum computation** | Sub-domain A + tensor product structure (qubits) + quantum circuits + algorithms (Shor, Grover, VQE) + error correction | NISQ era; first documented practical quantum advantage cases (e.g., IonQ × Ansys medical-device simulation, 2025); Harvard/QuEra: fault-tolerant systems plausibly arrive late this decade. **No production deployment yet.** |
-| **C — Post-quantum cryptography (PQC)** | Lattice theory + LWE / Module-LWE problem + coding theory + hash functions + elliptic curves | **Already production-deployed**: NIST finalized FIPS 203 (ML-KEM), 204 (ML-DSA), 205 (SLH-DSA) in August 2024; Google has enabled ML-KEM in Chrome; Microsoft deployed PQC in Azure and Windows; AWS likewise. End users already use it daily. CNSA 2.0 mandates quantum-safe systems for new US national-security deployments by January 2027. |
+| 0 | — | Yusuke reads Leinster Ch.1–2 (**start trigger**, bulk of the investment cost) |
+| 1 | disc-XX (IV) | categories/functors/natural transformations / Yoneda / adjunction (+ site-wide hub ref-links) |
+| 2 | disc-XX (IV) | limits/colimits / monads / Kan extensions |
+| 3 | disc-XX (IV) | applied: quivers/database functors / string diagrams |
+| 4 | ml-XX (V) | CDL bridge: Para, lenses, monad on Para (primer for the Gavranović paper) |
+| 5 | ml-XX (V) | CDL Overview: revisit the whole site from a categorical viewpoint |
 
-The asymmetry is decisive: **A is mathematically settled but applied; B is research-active but not deployed; C is mathematically novel for the site AND already deployed at planet scale**.
+stage 3 -> 4 is the IV -> V crossing (identity shifts from math to ML application).
 
-### 4.2 Site placement decision
+### 5.4 Reference / start
+- Leinster *Basic Category Theory* (rigorous, IV, **free** arXiv:1612.09375, CC BY-NC-SA, v2 2025/8)
+- Fong & Spivak *Seven Sketches* (applied, **free** arXiv:1803.05316, CC BY 4.0; v1's missing url resolved)
+- **Both free, no purchase.** Leinster himself includes poset/monoid examples in the book (an
+  entry-design option).
+- **Start status: awaiting Leinster reading (Stage 0).** Learn-while-writing (Yusuke new to it).
+- Detail: `cdl_track_handout_v1`.
 
-**Sub-domain A + B**: combined into **a single Section V viewpoint page** ("Quantum Information Science Overview" or similar — `ml-XX`).
-- Rationale: A's mathematics is fully covered by the existing FA block (calc-23, 25, 27, 32); a dedicated math page is unnecessary. B introduces tensor product structure, qubit encoding, and headline algorithms (Shor, Grover, VQE) at a viewpoint level. One Section V page suffices to give the reader a structured tour of both, with ref-links back into Section II for the underlying machinery.
-- Position alongside ml-13 (GNN) and ml-XX (Equivariant NN) as a Section V viewpoint, **not** a pillar.
-- **Pace**: not on the active path. Trigger-tolerant; can be written when GDL main-track work creates breathing room.
+### 5.5 Status monitoring (as of 2026/5/9, re-verify via web)
+Research front: ICML 2024 position paper (Gavranović et al.), ACT 2025/2026. Industry: Coend
+($31M). **No production deployment.** -> slow-burn continues. Status-shift triggers: Coend ships a
+product / a CDL architecture wins a benchmark / a major framework adds categorical primitives /
+a second well-funded entrant.
 
-**Sub-domain C**: belongs in **Section I**, as an extension of the existing crypto entry point at linalg-26 (Finite Fields).
-- Rationale: linalg-26 already establishes the algebraic groundwork for cryptography; Menezes et al. *Handbook of Applied Cryptography* is already in `references.json` (currently tagged niche — **this tag must be lifted if the crypto track is activated**).
-- Section I post-30 expansion is a structurally natural site location; no Section IV detour needed.
-- **Pace**: see Part 5 (Crypto Track).
-
-### 4.3 What is NOT done
-
-- **No "Quantum Section"**. The architectural principle "no isolated Geometry / Physics section" applies. Quantum content distributes across existing sections.
-- **No `ml-XX (Quantum Overview)` separate from the A+B combined page**. One page covers the viewpoint.
-- **No pillar status for Quantum overall**. The C sub-domain (PQC) might mature into a pillar-grade track via the Crypto Track (Part 5), but that is a Crypto Track question, not a Quantum question.
-
-### 4.4 Sub-domain B → Crypto Track dependency (important)
-
-The Section V quantum page (A+B) must explain Shor's algorithm, which requires the reader to know **what Shor breaks**. This forces a dependency:
-
-> **Before the Section V quantum page can be written, the Crypto Track must have covered classical encryption + public-key cryptography + at minimum a description of what RSA / ECDH protect.**
-
-This is a hard prerequisite. Without it, Shor's algorithm reduces to "this breaks something" with no concrete referent, and the page fails its viewpoint role.
-
-The reverse is not required: the Crypto Track does **not** need to reach PQC before the quantum page is written. Coverage stages 1–3 (and stage 4's Shor description) of the Crypto Track suffice.
+### 5.6 Notes (Part 9 ledger)
+- `adjoint` triple overload (Lie adjoint representation / FA operator adjoint / CDL adjoint
+  functor) -> CDL uses `D-adjoint_functor`.
+- v1 Part 3.6 correction: "lattice in disc-1/2/3" is wrong (actually Graph/Combi/ToC).
+  No poset/lattice page exists; monoid undefined -> entry via Leinster examples or existing assets
+  (Set/Grp/Vect/Ban/Hilb/Top).
 
 ---
 
-## Part 5 — Crypto Track (Low Priority, Mood-Driven)
+## Part 6 — Crypto Track (stage 7 completion assumed, (C) Section split)
 
-### 5.1 Position and self-assessment
+The site's most under-covered area relative to importance (a canonical math <-> CS bridge). Upgraded
+to assume stage 7 (PQC capstone) completion, driven by 2026 PQC production deployment.
 
-The Crypto Track sits at low priority in the roadmap — below GDL main-track, below CDL slow-burn — and is **mood-driven** in the precise sense: it is neither scheduled nor trigger-based, but driven by Yusuke's interest level on a given day. It functions as a switch destination when CDL slow-burn fatigue accumulates, or when GDL main-track work needs a contrast.
+### 6.1 Placement decision (v2, (C) stage split)
+Applying the topicGroup principle per stage -> a single Section is untenable; identity splits:
 
-**Self-assessment (recorded explicitly, not a passing remark)**: cryptography is, by any reasonable measure, the **most under-covered area of the entire site relative to its importance**. It is unambiguously mathematics; it is unambiguously CS; it is unambiguously a math ↔ CS bridge — exactly the kind of content the site name *MATH-CS COMPASS* points at. That it is currently untouched reflects an honest accident of curriculum sequencing, not a principled exclusion. The roadmap acknowledges this asymmetry explicitly so future decisions are anchored against it: **"low priority" does not mean "low importance" — it means "deferred for reasons of bandwidth, not principle."**
-
-### 5.2 Why it is nonetheless low priority
-
-Three reasons converge:
-
-1. **Long mathematical runway**: PQC requires understanding what classical cryptography is, why it works, what RSA / ECDH are, and only then does the lattice-based path become meaningful. Without classical cryptography first, there is nowhere to start — the path is unexpectedly long. Like CDL, this track has no shortcut: each layer requires the one below it.
-
-2. **No structural blocker**: unlike CDL (which the site's deepening curriculum will inevitably collide with), the Crypto Track can be deferred indefinitely without breaking other tracks. The site's other content does not flow toward cryptography in the way it flows toward category theory.
-
-3. **Hard dependency only with Section V quantum page**: see §4.4. The Crypto Track must reach a minimum coverage point before the Section V quantum page can be written, but that quantum page itself is also low-priority, so the constraint propagates naturally without forcing premature work.
-
-### 5.3 Coverage outline (page-count estimates deferred)
-
-The full track, if completed end-to-end, has seven natural stages. **Page counts are not estimated** — Yusuke may stop the track at any stage, and the right cutoff depends on developments not visible in 2026/5/9:
-
-| Stage | Topic | Mathematical content | Section placement |
-|---|---|---|---|
-| **1** | Classical cryptography foundations | Symmetric encryption, encryption / decryption duality, Kerckhoffs's principle, computational-complexity-based security definitions | Section I (extension of linalg-26 or new dedicated page) |
-| **2** | Public-key cryptography & number-theoretic foundations | Diffie-Hellman, RSA, discrete logarithm problem, integer factorization problem, modular arithmetic in cryptographic context | Section I |
-| **3** | Elliptic curve cryptography (ECC) | Elliptic curve groups, ECDH, ECDSA, modern usage (TLS, Bitcoin) | Section I |
-| **4** | Quantum threat & Shor's algorithm | Shor's algorithm sketch, what it breaks (RSA, ECDH), Grover's bound on symmetric ciphers — **interfaces with Section V quantum page** | Section I (with cross-link to Section V) |
-| **5** | Lattice theory foundations | Lattices in ℝⁿ, SVP / CVP problems, LLL algorithm, lattice-based hardness assumptions | Section I |
-| **6** | LWE / Module-LWE | Learning With Errors problem, Module-LWE, security reductions, structured-lattice variants | Section I |
-| **7** | NIST PQC standards overview | ML-KEM (FIPS 203), ML-DSA (FIPS 204), SLH-DSA (FIPS 205); deployment context | Section I (capstone) |
-
-**Realistic stop-points** (any of these is a legitimate end-state for the track):
-- **After stage 3**: classical cryptography is complete; site has rounded out its CS-bridge coverage; PQC remains forward-pointer only.
-- **After stage 4**: stages 1–3 + Shor's description; minimum required to write the Section V quantum page; no PQC.
-- **After stage 7**: full track; Section I has a substantial crypto sub-track of 6–10 pages; PQC is a site capstone.
-
-### 5.4 Reference status
-
-Already in `references.json`:
-- **Menezes, van Oorschot, Vanstone**, *Handbook of Applied Cryptography* (CRC, 1997) — currently sections: ["I"], tagged as niche entry for linalg-26. **Action when Crypto Track activates**: lift the niche tag in roadmap.
-
-Not yet in `references.json`, **likely needed when track reaches stage 5+**:
-- A standard lattice cryptography reference. Options to evaluate at activation time: *Lattice-Based Cryptography* (Nguyen-Vallée 2010), Peikert's *A Decade of Lattice Cryptography* (2016 survey), or the Bernstein-Lange survey work. **Decision deferred to track activation**.
-
-### 5.5 Pace and ownership
-
-- **Owner**: Yusuke's mood. No schedule.
-- **Failure mode to avoid**: starting the track ambitiously, then abandoning mid-stage, leaving Section I in an asymmetric state. Mitigation: **respect natural stop-points (stage 3, stage 4, stage 7)**. Closing at one of these leaves Section I in a coherent state regardless of whether the track ever resumes.
-- **Coordination with Section V quantum page**: if Yusuke decides to write the Section V quantum page, stages 1–4 of the Crypto Track must be complete first. This is the only hard ordering constraint involving the Crypto Track.
-
----
-
-## Part 6 — Phase 2e: Stochastic Calculus (Active Slow-Burn)
-
-**Promotion**: trigger-based → active slow-burn track. Joins CDL as the second concurrent slow-burn track running parallel to the GDL main track.
-
-**Yusuke's familiarity level (β)**: name-recognition and concept-level grasp of Brownian motion, Itō integral, SDE — but no prior structured reading of Durrett's later chapters or Karatzas-Shreve. Yusuke's self-assessment: trivia-level familiarity, not domain expertise. Yusuke is a CS author, not a probabilist by training.
-
-**Mode: Trial Parallel** (same protocol as CDL):
-- Start with one page (Brownian motion) and assess pace before committing to the full track.
-- Yusuke learns the material alongside the writing process; Claude's role is closer to learner-reviewer's reference than expert-reviewer's verifier.
-- After the first page, decide whether to continue parallel or shift to focused-burst mode.
-
-**Starting point rationale**: BM is the natural foundation because
-- prob-23 carries a forward-reference to Kolmogorov extension theorem that the BM treatment retroactively closes.
-- BM construction is the gateway to the entire stochastic-calculus track.
-- No prereq dependencies on other active tracks — BM can proceed independently.
-
-Combining BM with the Itō integral on a single nominal page reflects the structural logic: the pathological path properties of BM (nowhere differentiability, non-zero quadratic variation) are exactly what motivate the L² construction of the Itō integral.
-
-**Track scope**: nominally three pages, but the page count is **not fixed** — the track follows the precedent of recent multi-page tracks (Lie groups 2→4, Lp spaces 1→2, Fourier-PDE 1→3) where conceptual paradigm shifts expand the initial estimate by a factor of 1.5–3×. The expectation here is that one or more of the three nominal pages will split as the material is developed. The structure below states **scope and sequence**, not a page-count commitment.
-
-| Nominal page | Filename | Scope |
+| Stage | Section | identity |
 |---|---|---|
-| 1 | `brownian_motion_ito.html` | Axiomatic BM (Gaussian process + independent increments + continuity); existence (Kolmogorov extension + Čentsov, statement-level with proof pushed to Durrett); path properties (quadratic variation, nowhere differentiability); Itō integral construction via L² isometry; Itō formula (1D). May split into BM page + Itō page if the L² isometry construction expands. |
-| 2 | `sde_diffusion.html` | SDE definition; existence-uniqueness (Lipschitz drift/diffusion); canonical examples (geometric BM, Ornstein–Uhlenbeck, Langevin); infinitesimal generator; Dynkin's formula; Girsanov theorem (statement + intuition). |
-| 3 | `fokker_planck_diffusion_model.html` | Fokker-Planck equation as the generator's adjoint; heat equation as the special case (calc-33 back-link); score function and Stein's identity (with optional ml-11 NGD back-link); reverse-time SDE (Anderson 1982); diffusion-model bridge to ml-14. |
+| 1 classical crypto foundations | **IV** | computational security (application of complexity, disc-7/9) |
+| 2 public-key & number theory (DH/RSA/DLP) | **I** | group structure, Euler φ, CRT, finite fields |
+| 3 ECC | **I** | elliptic-curve group |
+| 4 quantum threat | **I** | crypto compromise + PQC motivation (Shor proper in Section V, below) |
+| 5 lattice foundations | **I** | lattices = discrete modules / geometry |
+| 6 LWE/Module-LWE | **I** | error-perturbed linear algebra over modules |
+| 7 NIST PQC standards | **I** | specs / deployment (viewpoint, thin) |
 
-**First page priority**: `brownian_motion_ito.html`. Even if it splits during writing, BM + Itō are conceptually one unit (path pathology motivates the L² construction), so they are written together and split only if section count forces it.
+Entry point = existing linalg-26 (Finite Fields). stage 1(IV) -> 2(I) is the only Section crossing,
+bridged with forward/back-links. Double callback: complexity theory reclaimed at stage 1, algebra
+at stage 2+.
 
-**Application priority anchor**: diffusion models are currently in production (Stable Diffusion, DALL-E, Sora, Veo), and the site already covers them at the discrete-DDPM/DDIM level in `ml-14` (Intro to Diffusion Models). Phase 2e provides the continuous-time foundations — Brownian motion, Itō calculus, Fokker-Planck — that `ml-14` deliberately defers; together the two complete what Murphy MLBook2 Ch.25 compresses.
+### 6.2 Stage 7 upgrade rationale (2026 PQC production deployment)
+ML-KEM ships in production at AWS default, Chromium default TLS, Apple PQ3, Microsoft SymCrypt.
+FIPS 140-2 sunsets 2026/9, CNSA 2.0 at 2027/1, Google deadline 2029. HNDL threat. -> Stopping at
+stage 3/4 means "not covering PQC that is in live production," conflicting with the mission.
+**Terminal = stage 7 fixed.**
 
-**Track-character note (recorded explicitly)**: Phase 2e is structurally a **CS-author-learns-pure-math project**, not a "CS author writes pure math from prior knowledge" project. This places it in the same category as the CDL slow-burn track:
+### 6.3 ⚠️ Obsolescence-resistance design principle (most important, shared core of all tracks)
+Individual algorithms go obsolete (FIPS 206/FALCON added 2026, HQC selected 2025/3, parameters
+revised).
+- **Enduring layer (thick, stage 5–6)**: the hardness mathematics. Why LWE/Module-LWE is hard =
+  reduction to worst-case lattice problems (SVP/CVP), lattice geometry. Unchanged since Regev 2005.
+- **Obsolescing layer (thin, viewpoint, stage 7)**: individual specs (Kyber parameters, FIPS
+  numbers). Forward-pointer marking "the 2026 standards," not cataloged.
 
-| Track | Out-of-specialty domain for Yusuke | Authoring mode |
+Same shape as Phase 2e (math, not method). The answer to "where to go after learning the
+concepts" = root deeply in the hardness mathematics, keep individual specs as viewpoint.
+
+### 6.4 ⚠️ stage 4 / quantum owner separation
+- The Shor/Grover quantum-algorithm proper -> **owned by the Section V quantum page** (Part 7).
+- stage 4 (Section I) identity = "the result that crypto is broken by quantum + PQC motivation"
+  only. Shor's quantum detail is not written; ref-link to Section V. It is the consequence of the
+  "why will the RSA/ECC built in stage 2-3 break" story.
+- **Bidirectional bridge**: stage4 -> V (Shor detail), V -> stage2-3 (the target RSA/ECDH). Consistent
+  with Part 7's hard dependency (quantum page <- Crypto stage 1-4).
+
+### 6.5 Reference / start
+- stage 1-4 primary: Menezes *Handbook of Applied Cryptography* (**free** cacr.uwaterloo.ca/hac/,
+  all 15 chapters, author-sanctioned). 1996, so lattice/PQC are out of scope.
+- stage 5-6 primary: **Peikert *A Decade of Lattice Cryptography*** (**free** IACR ePrint
+  2015/939). SIS/LWE/Module-LWE hardness and worst-case reduction = heart of PQC mathematics.
+- stage 7 specs: FIPS 203/204/205 documents + CACR PQC materials (specs not math, thin).
+- **All free, no purchase.** Nguyen-Vallée/Bernstein-Lange consolidated into Peikert after review.
+- **Start status: mood-driven** (timing by interest, terminal at stage 7). Pause only at the
+  coherent points stage 3/4/7 (Part 13 failure-mode avoidance).
+- Detail: `crypto_track_handout_v1`.
+
+### 6.6 Notes (Part 9 ledger)
+`lattice` is polysemous (order-theoretic lattice vs integer lattice) -> crypto side uses
+`D-integer_lattice` etc. explicitly.
+
+---
+
+## Part 7 — Quantum: Three Sub-Domains, Section V Single-Page
+
+(v1 Part 4 retained. Bridge with Crypto stage 4 made explicit in 7.4.)
+
+### 7.1 Three sub-domains
+| Sub-domain | Mathematical core | 2026 production |
 |---|---|---|
-| **CDL slow-burn** | Category theory | Learning = writing (trial parallel) |
-| **Phase 2e slow-burn** | Stochastic analysis | Learning = writing (trial parallel) |
+| A quantum theory (physics) | Hilbert space + spectral theory + Fourier; unitary evolution; observables | 100-year established |
+| B quantum computation | A + tensor product (qubits) + circuits + Shor/Grover/VQE + error correction | NISQ; no production deployment |
+| C PQC | lattices + LWE/Module-LWE + codes + hashes + elliptic curves | **production-deployed** ( -> Crypto Part 6, stage 5-7) |
 
-Both contrast with the **Lie group series** (linalg-27~30), where Yusuke had prior knowledge and operated in expert-reviewer / fact-check mode. The two slow-burn tracks share a different rhythm: slower per-page progress, more dialog at the conceptual layer, and page-count expansion expected (CDL: 6→9 anticipated; Phase 2e: page splits anticipated as the L² construction, Fokker-Planck adjoint argument, and reverse-time SDE bridge each surface their own complexities).
+### 7.2 Placement
+- **A+B**: a single Section V viewpoint page (ml-XX). A's mathematics is covered by the existing
+  FA block (calc-23/25/27/32), so no dedicated math page is needed. B covers qubits, circuits,
+  Shor/Grover/VQE at viewpoint level. A Section V viewpoint alongside ml-13/Equivariant NN, not a pillar.
+- **C (PQC)**: belongs to the **Crypto Track (Part 6), stages 5-7**. Section I. Crypto, not Quantum.
+- **pace**: A+B off the active path, trigger-tolerant.
 
-**Soft prereq from the Fourier-PDE pages (calc-33/34/35, completed)**: the Fokker-Planck page builds directly on calc-33 (heat equation) — Fokker-Planck is a parabolic PDE, the heat equation generalized with a drift term. The completed heat equation page already covers the spectral and kernel machinery the Fokker-Planck page will cite.
+### 7.3 What is NOT done
+- No standalone "Quantum Section" (the no-isolated-Geometry/Physics-section principle).
+- No pillar status for Quantum overall (whether C grows to pillar grade is a Crypto Track matter).
 
-**Bandwidth note**: with Phase 2e promoted, the active track inventory is:
-1. **GDL main track** (manifolds → rep theory → ml-XX (Equivariant NN)); ml-13 and calc-32 already complete
-2. **CDL slow-burn** (Stage 0: Yusuke reads Leinster Ch.1)
-3. **Phase 2e slow-burn** (BM page first)
-4. **Crypto Track** (mood-driven, no schedule)
-
-This is a **4-track configuration**. Sustainability check is implicitly delegated to Yusuke's mood-driven prioritization across sessions; if any one track stalls, the others continue. The roadmap does not enforce a single sequence.
-
-## Part 7 — Phase 3: Smooth Manifolds — COMPLETE
-
-**Status: complete through Lee Ch.1–13 (calc-36~81 published, 6/3/2026).** Series
-scope, notation overload notes, future-track open items, and the Lee 2nd-ed. full
-table of contents are in **`manifold_series_design_handout_v19.md`**.
-
-- **Primary reference**: Lee, *Introduction to Smooth Manifolds*, 2nd ed.
-- **Scope realized**: Lee Ch.1–13 (Ch.1–12 core + Ch.13 Riemannian Metrics, added
-  as the GDL-pillar landing point).
-- **Rigor calibration**: Lee single-reference, graduate-textbook standard.
-- **Boundary**: Lee's "with or without boundary" framework throughout.
-
-The series spans topological/smooth manifolds, tangent vectors, immersions and
-embeddings, submanifolds, Sard/Whitney, Lie groups, vector fields and flows, vector
-bundles, the cotangent bundle, tensors, and Riemannian metrics, closing at the
-tangent–cotangent (musical) isomorphism and pseudo-Riemannian metrics. Related
-extension pages (calc-42 Homotopy and the Fundamental Group; supporting topology
-calc-47) sit outside the spine. Per-page IDs, splits, prereqs, and topicGroups are
-authoritative in `curriculum.json`; this roadmap no longer enumerates them.
-
-**Downstream now unblocked**: Ch.13 supplies the Riemannian foundation for the
-GDL pillar (round metric on \(S^n\), \(S^2\) not flat as the curvature motivation),
-the retroactive strengthening of ml-12 NGD (Fisher metric as a Riemannian metric;
-musical isomorphism and \(\operatorname{grad} f = (df)^\sharp\)), and the entry
-point to information geometry. Curvature, geodesics, the exponential map, and the
-Levi-Civita connection are out of scope here (Lee *Introduction to Riemannian
-Manifolds* territory), to be acquired when GDL-pillar curvature work begins.
+### 7.4 ⚠️ hard dependency (the only forced order)
+The Section V quantum page (A+B) must explain Shor, assuming the reader knows "what Shor breaks."
+ -> **Crypto stage 1–4 must be complete before the quantum page is written.** The reverse is not
+required (no need to reach PQC=stage5+ before the quantum page). stage 4 establishes "what is
+broken" in Section I -> the quantum page develops Shor proper in Section V (the bidirectional
+bridge of Part 6.4).
 
 ---
 
-## Part 8 — Phase 4: Representation Theory & Equivariance
+## Part 8 — Reference Acquisition Status (new in v2)
 
-### 8.1 linalg-XX: Representation Theory (~3–4 pages)
+References for the five tracks plus existing ones, by acquisition status. **The only purchase is
+Hall 2nd ed.**
 
-Group representations, subrepresentations, irreducibility, Maschke, Schur, character theory (finite groups), Lie group representations, Peter-Weyl. Finite group representations fill ≥2 pages; Lie group representations add 1–2 more. **Connection:** Peter-Weyl bridges back to calc-32 (Fourier as harmonic analysis on groups). **Prereqs:** linalg-27~30, linalg-22.
+### 8.1 Active-track references (status)
 
-### 8.2 ml-XX: Equivariant Neural Networks (`equivariant_nn.html`)
+| Track | reference | status |
+|---|---|---|
+| Phase 2e | Øksendal *SDE* (registered III) / Durrett (registered III) / Holderrieth-Erives *FM & Diffusion* (registered V, arXiv:2506.02070) | ✅ all on hand/free |
+| Rep Theory | **Hall *Lie Groups…* 2nd ed.** (registered I, GTM 222, ISBN 9783319134666) | ⚠️ **purchase required** (no institutional access, no official free PDF, 2nd ed. mandatory) |
+| Rep Theory | Gerken et al. (AI Review 2023, DOI 10.1007/s10462-023-10502-7 / arXiv:2105.13926) / Esteves (arXiv:2004.05154) | unregistered -> add at start, free |
+| CDL | Leinster *Basic Category Theory* (registered IV, arXiv:1612.09375, v2 2025/8) / Fong-Spivak *Seven Sketches* (registered IV/V, arXiv:1803.05316 <- url to add) | ✅ both free |
+| Crypto | Menezes *Handbook* (registered I, cacr.uwaterloo.ca/hac/) / **Peikert** *Decade of Lattice Crypto* (unregistered, IACR ePrint 2015/939) / FIPS 203-205 + CACR materials | ✅ all free |
+| TDL | Hajij et al. *Topological Deep Learning* (unregistered, tdlbook.org) / Lim *Hodge Laplacians on Graphs* (unregistered, SIAM Review 62(3) 2020) / Edelsbrunner-Harer (registered IV) | ✅ all free |
 
-Generalize from permutation invariance (GNN) to continuous group equivariance (SO(3), SE(3)). **Key insight:** "The architecture encodes the symmetry." **Prereqs:** linalg-27~30, linalg-XX (rep theory), ml-13.
+### 8.2 Pending references.json additions (at start)
+- Gerken et al. / Esteves (Rep, at ml-XX start)
+- Fong-Spivak url field (CDL, edit existing entry)
+- Peikert (Crypto, at stage 5 start, url=eprint.iacr.org/2015/939)
+- Hajij et al. *Topological Deep Learning* / Lim *Hodge Laplacians on Graphs* (at TDL start)
+- (conditional) Serre *Linear Representations of Finite Groups* (only if Rep route A is chosen)
 
-At this point, readers have seen permutation equivariance (GNN), rotation/translation equivariance (Equivariant NN), and Riemannian structure (NGD). The unifying language is GDL — which becomes not a lesson to teach but a pattern the reader has already experienced.
-
----
-
-## Part 9 — Filename Registry
-
-Forward-link target reservations for **planned pages**. Completed pages are tracked in `curriculum.json` (authoritative); this registry exists to lock in filenames before drafting so cross-page references can be written ahead of time.
-
-### Planned Pages (ID deferred — assigned at drafting time)
-
-| Track | Est. Pages | Planned Filenames | Trigger / status |
-|--------|-----------|-------------------|--------|
-| Representation Theory (linalg-XX) | ~3–4 | TBD | After manifold series (now complete); next active track |
-| Equivariant NN (ml-XX) | 1 | `equivariant_nn.html` | After rep theory |
-| Section V Quantum Page (ml-XX) | 1 | TBD | After Crypto Track stages 1–4 |
-| Stochastic Calculus (prob-XX) | 3+ | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` (splits anticipated) | Active slow-burn (Part 6) |
-| CDL Track (disc-XX, ml-XX) | ~6–9 | TBD | Active slow-burn (Part 3) |
-| Crypto Track (linalg-XX) | varies | TBD | Mood-driven (Part 5) |
-| Regular Conditional Distributions (prob-XX) | ~1 | `regular_conditional_distributions.html` | Phase 2e prerequisite (SDE / path-space measures) |
-| Advanced VI topics (prob-XX) | ~1–2 | TBD | Triggered individually by ML-application pressure |
-| DEC (disc-XX) | ~1–2 | TBD | Backlog |
-| GDL Overview (ml-XX) | 1 | TBD | Backlog |
+### 8.3 Trigger-based, not yet acquired (future)
+- Amari *Information Geometry* (when an information-geometry page is planned; entry point calc-81 secured)
+- Nielsen-Chuang *Quantum Computation* (if the Section V quantum page is written)
 
 ---
 
-## Part 10 — Reference Map: Books × Pages
+## Part 9 — Overload Ledger (new in v2)
 
-This map tracks primary usage for development planning. The site-wide reference index (`data/references.json`) is authoritative for bibliography format.
+Collected homonyms (the same symbol used for different concepts across Sections/contexts). Always
+cross-check before naming a new anchor. The manifold handout §2 overload notes are merged here.
 
-### Currently active for in-progress / planned tracks
-
-| Book | Pages (existing → planned) | Role |
-|------|----------------------------|------|
-| **Conway — *A Course in Functional Analysis*** | calc-23~28, calc-30~32 | Primary for all of Section II advanced analysis |
-| **Durrett — *Probability: Theory and Examples*** | prob-13, prob-22~26 → Phase 2e | Primary for measure-theoretic probability and stochastic calculus |
-| **Stein & Shakarchi — *Fourier Analysis*** | calc-14, calc-15, calc-32, calc-33, calc-34, calc-35 | Primary for Fourier and classical PDE applications |
-| **Stillwell — *Naive Lie Theory*** | linalg-24, linalg-27~30 | Primary for Lie group series; supplement with Lee Ch.7+ for rigorous treatment |
-| **Leinster — *Basic Category Theory*** | → CDL track Stages 1–2 | Primary for rigorous-pure side of CDL track; free PDF on arXiv |
-| **Fong & Spivak — *Seven Sketches in Compositionality*** | → CDL track Stages 3 (and motivation throughout) | Primary for applied / intuitive side of CDL track; free PDF on arXiv |
-| **Menezes et al. — *Handbook of Applied Cryptography*** | linalg-26 → Crypto Track (Part 5) | Primary for Crypto Track; previously tagged niche, lifted as of 5/9/2026 |
-| Bronstein et al. — *Geometric Deep Learning* | Insight Boxes site-wide, ml-13 → ml-XX (Equivariant NN), ml-XX (GDL overview) | "Destination viewpoint" text; referenced not followed |
-| Murphy Book 1 — *Probabilistic ML: Introduction* | ml-01~08, ml-13 | General ML reference |
-| Murphy Book 2 — *Probabilistic ML: Advanced* | ml-09~12, ml-14, prob-16, prob-26 → Phase 2e (continuous-time diffusion) | Information geometry at applied level; sufficient until Amari is needed |
-
-### Completed tracks (no planned pages; on index.html)
-
-- **Lay** *Linear Algebra* → linalg-01~10
-- **Gallian** *Contemporary Abstract Algebra* → linalg-15~22
-- **Horn & Johnson** *Matrix Analysis* → linalg-09~13
-- **Boyd & Vandenberghe** *Convex Optimization* → calc-07, calc-08
-- **O'Searcoid** *Metric Spaces* → calc-16~22
-- **Lee** *Introduction to Smooth Manifolds* → calc-29, calc-36~81 (Ch.1–13), calc-42 (related); see `manifold_series_design_handout_v19.md`
-- **Cormen et al.** *Introduction to Algorithms* → disc-01~11
-- **Sipser** *Theory of Computation* → disc-05~09
-- **Diestel** *Graph Theory* → disc-01, disc-12
-- **Merris** *Combinatorics* → disc-02
-- **Edelsbrunner & Harer** *Computational Topology* → disc-14, disc-15
-- **Avigad et al.** *Theorem Proving in Lean 4* + **Avigad-Massot** *Mathematics in Lean* → disc-16, disc-17
-
-### Not yet on index.html (acquire when triggered)
-
-- **Amari** *Information Geometry and Its Applications* (2016) — manifold series now complete; entry point established at calc-81 (musical isomorphism, gradient, NGD insight-box). Acquire when a dedicated information-geometry page (dual connections, Čencov uniqueness) is planned.
-- **Nielsen & Chuang** *Quantum Computation* (2010) — if Section V quantum page (Part 4) is written (supplements calc-32)
-- **Lattice cryptography reference** (Nguyen-Vallée, Peikert survey, or Bernstein-Lange) — when Crypto Track reaches stage 5+ (lattice foundations)
+| Symbol/term | Use 1 | Use 2 | Use 3 | Handling |
+|---|---|---|---|---|
+| `adjoint` | Lie adjoint representation `D-adjoint_representation_Ad/ad` | FA operator adjoint `T-existence_of_adjoint`/`D-self_adjoint_operator` | CDL adjoint functor (new) | CDL uses `D-adjoint_functor`/`T-adjunction` |
+| `infinitesimal_generator` | Lie one-param subgroup `D-infinitesimal_generator` | SDE generator (new) | — | SDE uses `D-sde_generator` |
+| `score_function` | Fisher `D-score_function` (∇_θ) | data `D-score_function_data_gradient` (∇_x, ml-14) | continuous score (Phase2e Page3) | Page3 ref-links ml-14, no new one |
+| `lattice` | order-theoretic lattice (future FA) | integer lattice (crypto, new) | — | crypto uses `D-integer_lattice` |
+| `\hat{g}` | tangent-cotangent map (calc-81) | product metric (calc-78 separated to `g(+)g̃`) | — | already separated (manifold §2) |
+| `F_*` | pushforward (calc-61) | induced Lie alg hom (calc-63) | — | state assumption (manifold §2) |
+| `character` | (planned in rep theory) | possibly existing in coding theory etc. | — | grep required at Rep start |
 
 ---
 
-## Part 10.5 — Completed Tracks Log
+## Part 10 — Filename Registry (planned pages)
 
+Completed pages are authoritative in `curriculum.json`. This table reserves filenames before
+drafting so cross-page references can be written ahead. IDs assigned at drafting time.
+
+| Track | Est. Pages | Section | Planned Filenames | Trigger / status |
+|---|---|---|---|---|
+| Representation Theory | ~3–4 | I | TBD | awaiting Hall (GDL continuous leg, Part 3.3) |
+| Equivariant NN | 1 | V | `equivariant_nn.html` | after rep theory |
+| TDL: Simplicial NN | 1 | V | TBD | mood/GDL (GDL discrete leg, Part 3.4; Hodge exists) |
+| TDL: Persistent Homology | ~1 | IV | TBD | optional branch (disc-15 forecast) |
+| Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **ready** (Part 4; splits anticipated) |
+| CDL Track | ~6–9 | IV + V | TBD | awaiting Leinster reading (Part 5) |
+| Crypto Track | varies (7 stages) | **IV(s1) + I(s2-7)** | TBD (entry linalg-26) | mood-driven (Part 6, stage 7 terminal) |
+| Section V Quantum (A+B) | 1 | V | TBD | after Crypto stage 1–4 (Part 7.4) |
+| Regular Conditional Distributions | ~1 | III | `regular_conditional_distributions.html` | Phase 2e prereq (SDE/path-space measure) |
+| Advanced VI topics | ~1–2 | III | TBD | individually triggered by ML-application pressure |
+| DEC | ~1–2 | IV | TBD | continuous <-> discrete Hodge bridge (Part 3.5); backlog |
+| GDL Overview | 1 | V | TBD | backlog |
+
+---
+
+## Part 11 — Completed Tracks Log
+
+Completed tracks (on index.html, no planned pages).
+
+### Major completed tracks
 | Track | Pages | Completed | Notes |
 |---|---|---|---|
-| Formal Methods | disc-16 (`formal_methods.html`), disc-17 (`lean_in_practice.html`) | 5/14/2026 | Section IV third pillar (disc-4, 16, 17) established. Bidirectional bridge with disc-12 (Four Color Theorem) via `T-four_color_theorem` anchor. Full continuity in `formal_methods_track_handout_v3.md`. |
-| Smooth Manifolds (Lee Ch.1–13) | calc-36~81 (spine) + calc-42, calc-47 (related/supporting) | 6/3/2026 | Phase 3 complete. Topological/smooth manifolds → tangent vectors → immersions/embeddings → submanifolds → Sard/Whitney → Lie groups → vector fields/flows → vector bundles → cotangent bundle → tensors → Riemannian metrics (Ch.13: calc-78~81). Landing point for the GDL pillar; retroactively strengthens ml-12 NGD. New topicGroup `riemannian-geometry` for calc-78~81. Continuity in `manifold_series_design_handout_v19.md`. Curvature/geodesics deferred to a future LeeRM-based series. |
+| Smooth Manifolds (Lee Ch.1–13) | calc-36~81 (spine) + calc-42, calc-47 | 6/3/2026 | Phase 3 complete. Topological/smooth manifolds -> tangent vectors -> immersions/embeddings -> submanifolds -> Sard/Whitney -> Lie groups -> vector fields/flows -> vector bundles -> cotangent bundle -> tensors -> Riemannian metrics (Ch.13: calc-78~81). Mathematical landing point of the GDL continuous leg. New topicGroup `riemannian-geometry`. Curvature/geodesics deferred to a future LeeRM series. Detail `manifold_series_design_handout_v19`. |
+| Formal Methods | disc-16, disc-17 | 5/14/2026 | Section IV third pillar (disc-4,16,17). Bidirectional bridge with disc-12 (Four Color Theorem). The Curry-Howard-Lambek connection point for CDL. |
+
+### Completed reference -> page mapping
+- Lay *Linear Algebra* -> linalg-01~10
+- Gallian *Contemporary Abstract Algebra* -> linalg-15~22
+- Horn & Johnson *Matrix Analysis* -> linalg-09~13
+- Boyd & Vandenberghe *Convex Optimization* -> calc-07, calc-08
+- O'Searcoid *Metric Spaces* -> calc-16~22
+- Lee *Introduction to Smooth Manifolds* -> calc-29, calc-36~81, calc-42
+- Conway *Functional Analysis* -> calc-23~28, calc-30~32
+- Stein & Shakarchi *Fourier Analysis* -> calc-14, calc-15, calc-32~35
+- Stillwell *Naive Lie Theory* -> linalg-24, linalg-27~30
+- Durrett *Probability* -> prob-13, prob-22~26
+- Cormen *Introduction to Algorithms* -> disc-01~11
+- Sipser *Theory of Computation* -> disc-05~09
+- Diestel *Graph Theory* -> disc-01, disc-12
+- Merris *Combinatorics* -> disc-02
+- Edelsbrunner & Harer *Computational Topology* -> disc-14, disc-15
+- Avigad et al. *Lean* -> disc-16, disc-17
+- Murphy Book1/Book2 *Probabilistic ML* -> ml-01~12, prob-16, prob-26 etc.
 
 ---
 
-## Part 11 — Deferred Items (Non-Blocking)
-
-Topics explicitly deferred — not forgotten, but not on the critical path.
+## Part 12 — Deferred Items (Non-Blocking)
 
 | Item | Trigger to Revisit |
-|------|-------------------|
-| Schwartz Space & Distributions | If a PDE or generalized function page is planned beyond calc-33/34/35 |
-| Pontryagin Duality (Fourier on groups) | After linalg-27~30 + calc-32 + linalg-XX (rep theory), if harmonic analysis track emerges |
-| Spectral Theory of the Laplacian (continuous) | After calc-XX (Riemannian Metrics), as bridge to geometric spectral theory |
-| Regular Conditional Distributions | Phase 2e companion — required for SDE / Itô filtration. Not blocking prob-26 (VI works under density assumption). |
-| Fiber Bundles & Gauge Theory | If GDL viewpoint page demands gauge equivariance machinery |
-| String Diagrams | After CDL Stage 4 (CDL bridge page); part of Stage 4 if applicable |
-| Advanced VI topics (normalizing flows, IWAE, EP, wake-sleep, hierarchical / structured / implicit posteriors) | Triggered individually by ML-application pressure |
-| Uniform Integrability & Martingale Convergence | Triggered by RL theory / stochastic approximation / bandit algorithms. Resolves prob-23 UI forward-reference. |
-| Variational Representations & f-Divergences | Triggered by contrastive learning / MI estimation / generalization theory (foundation for MINE, f-GAN, InfoNCE, PAC-Bayes) |
-| Characteristic Functions & CLT (Rigorous) | Triggered by advanced asymptotic statistics; prereq: calc-32 |
+|---|---|
+| Schwartz Space & Distributions | a PDE/generalized-function page beyond calc-33/34/35 |
+| Pontryagin Duality | after rep theory + calc-32, if a harmonic-analysis track emerges |
+| **Spectral Theory of the Laplacian (continuous)** | **continuous <-> discrete Hodge bridge (Part 3.5); precursor to GDL two-leg rejoining** |
+| **DEC (Discrete Exterior Calculus)** | **reclamation hub for continuous Hodge (Lee Ch.14+) + discrete Hodge (disc-13/15 existing); bridges both GDL legs** |
+| Regular Conditional Distributions | Phase 2e companion (SDE/Itō filtration); non-blocking for prob-26 |
+| Fiber Bundles & Gauge Theory | when a GDL viewpoint demands gauge equivariance; manifold Q8 |
+| **Optimal Transport** | **FM straight-path optimality. Phase 2e uses forward-pointers only; OT-book acquisition is the trigger** |
+| String Diagrams | after CDL Stage 4 (or part of Stage 4) |
+| Persistent Homology | TDL optional branch (disc-15 forecast, Part 3.4) |
+| Uniform Integrability & Martingale Convergence | RL theory / stochastic approximation; resolves prob-23 UI forward-ref |
+| Variational Representations & f-Divergences | contrastive learning / MI estimation (MINE, f-GAN, InfoNCE, PAC-Bayes) |
+| Characteristic Functions & CLT (rigorous) | advanced asymptotic statistics; prereq calc-32 |
+| Information Geometry (Amari) | an information-geometry page; entry point calc-81 secured (musical iso, NGD insight-box) |
 
 ---
 
-## Part 12 — Key Learnings & Development Principles
+## Part 13 — Key Learnings & Development Principles
 
-1. **Notation Consistency is Non-Negotiable:** Calligraphic letters for spaces (\(\mathcal{X}, \mathcal{Y}, \mathcal{Z}, \mathcal{H}, \mathcal{X}^*, \mathcal{X}^{**}\)); functionals as \(\varphi\); operator norm as \(\|\varphi\|_{\mathcal{X}^*}\). All new Section II pages match the notation in calc-23~28.
+1. **Notation consistency is non-negotiable**: calligraphic for spaces (𝒳,𝒴,𝒵,ℋ,𝒳*,𝒳**),
+   functionals as φ, operator norm ‖φ‖_𝒳*. New Section II pages match calc-23~28.
+2. **Cross-page linking**: verify filenames/anchors against reality before linking. No in-body
+   citations. Forward links use descriptive text (no href) until the target exists.
+3. **Application-viewpoint philosophy**: use Insight Boxes and the Tessera to connect abstract
+   theorems to applications without breaking main-text proofs. Application domains introduced when
+   tools are ready (asymmetric, Parts 1-7).
+4. **Fisher vs Hessian**: the real distinction is reparametrization invariance (Čencov) vs
+   loss-dependence and non-guaranteed positive-definiteness, not "global vs local."
+5. **Page count estimation**: new conceptual paradigms expand 1.5–4×. Defer ID assignment to
+   drafting. Calibrations: Lie groups 2 -> 4, calc-30 1 -> 2, Phase 2c 2 -> 3, Fourier-PDE 1 -> 3, CDL 6 -> 12 anticipated.
+6. **Per-topic prior-knowledge calibration**: set track-character per topic (Lie=expert,
+   CDL/Phase2e/Rep/TDL=learn-while-writing).
+7. **Mood-driven dispatch**: no single order enforced. If one track stalls, others proceed. The
+   only hard ordering is Section V quantum <- Crypto stage 1-4 (Part 7.4).
+8. **[v2 added] All-tracks isomorphic structure**: "mathematical content owned by its native
+   Section; identity moves to Section V at the ML/application point." Rep/CDL/Crypto/TDL/Phase2e
+   all take this shape (Part 2.2).
+9. **[v2 added] Obsolescence-resistance principle**: write the enduring mathematics thickly, not
+   the individual method. diffusion -> FM, ML-KEM -> next-gen: when methods swap, the foundation
+   survives (Parts 4.2, 6.3).
+10. **[v2 added] topicGroup is decided by identity**: place a page by what it *is* (its
+    mathematical object), not what it is *used for*. The Crypto (C) split, CDL Section IV, and
+    quantum owner separation are all applications of this principle.
+11. **Single ownership**: each T-/D- anchor has exactly one owner site-wide. grep previews.json +
+    HTML before assigning. Overloads are managed in the Part 9 ledger.
+12. **Handout-driven continuity**: session state is authoritative in this roadmap and the
+    handouts; memory carries protocol/philosophy only. Per-track detail is single-source-of-truth
+    in `*_handout_v1.md`.
 
-2. **Cross-Page Linking & References:** Links verified against actual filenames and anchor IDs before inclusion. No in-body citations — references handled in the site-wide reference index only. Forward links use descriptive text only (no `<a href>`) until target page exists.
+---
 
-3. **Application Viewpoint Philosophy:** Use Insight Boxes and the map's Tessera to connect abstract theorems to applications without breaking formal proofs in main text. Application domains introduced when tools are ready — not forced prematurely. (Asymmetric across domains: see Parts 1–5.)
-
-4. **Fisher Information vs. Hessian Distinction:** The real distinction is reparametrization invariance (Čencov's theorem) vs. loss-dependence and non-guaranteed positive definiteness — not "global vs. local."
-
-5. **Page Count Estimation:** Topics requiring new conceptual paradigms consistently expand 1.5–4× initial estimates. Plan for expansion and defer ID assignment until drafting begins. Calibrations: Lie group series (planned 2 → actual 4), calc-30 split (1 → 2), Phase 2c (planned 2 → actual 3), Fourier-PDE pages (Claude initially proposed 1 → ratified as 3, delivered as calc-33/34/35). The CDL track is expected to follow this pattern (proposed ~6–9, may grow to 9–12+).
-
-6. **Per-topic prior-knowledge calibration (added 2026/5/9):** Yusuke's prior knowledge varies sharply by topic. Lie theory was familiar (linalg-27~30 ran in expert-reviewer mode); category theory and continuous-time stochastic analysis are not (CDL and Phase 2e are learn-while-writing). Track-character assignments must be calibrated per topic, not against a global expertise label.
-
-7. **Mood-driven dispatch over forced sequencing (added 2026/5/9):** the active 4-track configuration (GDL main + CDL + Phase 2e + Crypto) does not enforce a single sequence. Yusuke prioritizes per session; if any one track stalls, the others continue.
+**This roadmap (v2) is the index layer.** Per-track prereq verification, collisions, owner
+candidates, physical-book inspection items, and resume-time greps are authoritative in the
+individual handouts: `phase2e_handout_v1` / `representation_theory_track_handout_v1` /
+`cdl_track_handout_v1` / `crypto_track_handout_v1` / `tdl_track_handout_v1` /
+`manifold_series_design_handout_v19`.
