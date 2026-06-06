@@ -1,0 +1,476 @@
+---
+layout: default
+title: "Representations and Irreducibility"
+topic_id: linalg-32
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Representations and Irreducibility</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#intro">Introduction</a>
+            <a href="#representations">Representations</a>
+            <a href="#irreducibility">Irreducibility</a>
+            <a href="#intertwining">Intertwining Maps</a>
+            <a href="#group-algebra">Group and Lie Algebra</a>
+            <a href="#complexification-unitary">Complexification and Unitarity</a>
+        </div>
+
+        <div class="container">
+
+            <section id="intro" class="section-content">
+                <h2>Introduction</h2>
+
+                <p>
+                    When a Lie group acts on a space, we have so far asked what the action does to
+                    <em>points</em>: which points move where, which stay fixed, how orbits foliate the space.
+                    But many of the spaces that matter in applications are not just sets of points; they are
+                    <strong>vector spaces</strong>, and the group acts on them
+                    <a href="../Calculus/group_actions_smooth.html#T-linear_action_is_representation" class="ref-link"><strong>linearly</strong></a>.
+                    A rotation does not merely permute the vectors of \(\mathbb{R}^3\); it acts on them by a
+                    linear map, and that map can be written as a matrix. The study of how a group acts by
+                    linear maps on vector spaces is <strong>representation theory</strong>, and it is the
+                    subject of this page.
+                </p>
+
+                <p>
+                    There is a subtlety hidden in the familiar shorthand \(g \cdot x\) for a group action.
+                    Consider a single rotation \(R \in SO(3)\) acting on different kinds of data attached to a
+                    point in space. On a scalar quantity — a temperature, a mass density — the rotation does
+                    nothing at all: the number is unchanged. On a vector quantity — a velocity, a force — the
+                    rotation acts by the usual \(3 \times 3\) rotation matrix. On a quantity built from
+                    products of vectors — a stress tensor, a moment of inertia — it acts by a more elaborate
+                    rule. The same group element \(R\) thus produces <em>genuinely different linear maps</em>
+                    depending on the type of object it acts on, even though we write \(g \cdot x\) the same way
+                    in each case. Making this precise — cataloguing the distinct ways a single group can act
+                    linearly — is exactly what representation theory provides.
+                </p>
+
+                <p>
+                    This question is not merely organizational. In the
+                    <a href="dihedral_group.html#D-dihedral_group" class="ref-link"><strong>discrete symmetry</strong></a>
+                    of a regular polygon, the symmetry group \(D_n\) acts on the plane and preserves the shape;
+                    passing to the continuous limit gave us the rotation groups \(SO(2)\) and \(SO(3)\) as
+                    matrix Lie groups. Now we ask how those continuous groups act not on a single fixed object
+                    but on the various feature spaces that data can inhabit. The answer organizes those feature
+                    spaces into irreducible building blocks, and the way a group acts on each block is the
+                    information a symmetry-aware computation must respect. We will develop the vocabulary —
+                    representation, irreducibility, intertwining map — that makes this organization possible,
+                    and that the later pages on tensor products and compact groups will build upon.
+                </p>
+            </section>
+
+
+            <section id="representations" class="section-content">
+                <h2>Representations</h2>
+
+                <p>
+                    We met representations once before, in the abstract setting of a Lie group acting
+                    smoothly on a vector space: a
+                    <a href="../Calculus/group_actions_smooth.html#D-lie_group_representation" class="ref-link"><strong>representation</strong></a>
+                    was a Lie group homomorphism \(\rho : G \to GL(V)\), and a smooth linear action turned
+                    out to be exactly such a homomorphism. Here we specialize to the setting of this section
+                    of the curriculum — <strong>matrix Lie groups</strong> — and adopt the concrete viewpoint
+                    that will carry us through irreducibility, tensor products, and the representation theory
+                    of compact groups. The abstract definition and the matrix definition agree wherever both
+                    apply; we keep them as two layers of one idea, writing \(\rho\) for the abstract action
+                    and \(\Pi\) for its matrix-group incarnation.
+                </p>
+
+                <p>
+                    Throughout, if \(V\) is a finite-dimensional real or complex vector space, \(GL(V)\)
+                    denotes the group of invertible linear transformations of \(V\). A choice of basis
+                    identifies \(GL(V)\) with \(GL(n, \mathbb{R})\) or \(GL(n, \mathbb{C})\), and the
+                    resulting topology on \(GL(V)\) does not depend on that choice; we regard \(GL(V)\) as a
+                    matrix Lie group. Similarly, \(\mathfrak{gl}(V) = \operatorname{End}(V)\) denotes the
+                    space of all linear operators from \(V\) to itself, a Lie algebra under the commutator
+                    bracket \([X, Y] = XY - YX\).
+                </p>
+
+                <div class="theorem" id="D-matrix_lie_group_representation">
+                    <span class="theorem-title">Definition: Representation of a Matrix Lie Group</span>
+                    <p>
+                        Let \(G\) be a
+                        <a href="lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>matrix Lie group</strong></a>.
+                        A <strong>finite-dimensional complex representation</strong> of \(G\) is a Lie group
+                        homomorphism
+                        \[
+                            \Pi : G \to GL(V),
+                        \]
+                        where \(V\) is a finite-dimensional complex vector space with \(\dim(V) \geq 1\). A
+                        <strong>finite-dimensional real representation</strong> of \(G\) is defined in the same
+                        way, with \(V\) a finite-dimensional real vector space. The space \(V\) is the
+                        <strong>representation space</strong>, and we say \(\Pi\) is a representation of \(G\)
+                        <strong>acting on</strong> \(V\).
+                    </p>
+                </div>
+
+                <p>
+                    Unless we say otherwise, "representation" will mean finite-dimensional complex
+                    representation: the complex case is where the structure theory is cleanest, and it is the
+                    setting in which we will classify the irreducible representations of \(\mathfrak{sl}(2;
+                    \mathbb{C})\) and the compact groups later in the track. The real case is recovered as a
+                    special situation whenever a complex representation happens to preserve a real subspace.
+                </p>
+
+                <p>
+                    The same definition has a Lie-algebra counterpart, obtained by replacing the group
+                    homomorphism with a
+                    <a href="lie_correspondence.html#D-lie_algebra_homomorphism" class="ref-link"><strong>Lie algebra homomorphism</strong></a>.
+                    This is the form in which representations of the
+                    <a href="lie_algebras.html#D-lie_algebra_matrix" class="ref-link"><strong>Lie algebra</strong></a>
+                    of \(G\) will appear, and the two are linked by the exponential map in a way we make
+                    precise on the companion page.
+                </p>
+
+                <div class="theorem" id="D-lie_algebra_representation">
+                    <span class="theorem-title">Definition: Representation of a Lie Algebra</span>
+                    <p>
+                        Let \(\mathfrak{g}\) be a real or complex Lie algebra. A
+                        <strong>finite-dimensional complex representation</strong> of \(\mathfrak{g}\) is a
+                        Lie algebra homomorphism
+                        \[
+                            \pi : \mathfrak{g} \to \mathfrak{gl}(V),
+                        \]
+                        where \(V\) is a finite-dimensional complex vector space; that is, \(\pi\) is linear
+                        and satisfies \(\pi([X, Y]) = \pi(X)\pi(Y) - \pi(Y)\pi(X)\) for all
+                        \(X, Y \in \mathfrak{g}\). A <strong>finite-dimensional real representation</strong>
+                        of a real Lie algebra \(\mathfrak{g}\) is defined in the same way, with \(V\) a
+                        finite-dimensional real vector space.
+                    </p>
+                </div>
+
+                <p>
+                    A representation is called <strong>faithful</strong> if \(\Pi\) (or \(\pi\)) is one-to-one.
+                    A faithful representation of a matrix Lie group \(G\) lets us recover \(G\), up to
+                    isomorphism, as the group of matrices \(\{\Pi(A) : A \in G\}\); this is the historical
+                    origin of the word "representation," since \(\Pi\) lets us <em>represent</em> the group as
+                    a group of matrices. The aim of the theory, however, is not merely to exhibit a group as
+                    matrices — the groups we study are already matrix groups — but to determine, up to
+                    isomorphism, <em>all</em> the ways a fixed group can act linearly. Following the alternative
+                    notation \(g \cdot v\) for \(\Pi(g)v\) introduced for group actions, this is the precise
+                    sense in which the shorthand \(g \cdot v\) can stand for different linear maps on different
+                    representation spaces: each representation is one such way.
+                </p>
+            </section>
+
+
+            <section id="irreducibility" class="section-content">
+                <h2>Irreducibility</h2>
+
+                <p>
+                    Having a representation \(\Pi\) of \(G\) on \(V\), the first structural question is whether
+                    \(V\) can be broken into smaller pieces that the group respects. A piece the group respects
+                    is a subspace that \(\Pi\) never maps outside of itself.
+                </p>
+
+                <div class="theorem" id="D-irreducible_representation">
+                    <span class="theorem-title">Definition: Invariant Subspace and Irreducibility</span>
+                    <p>
+                        Let \(\Pi\) be a finite-dimensional representation of a matrix Lie group \(G\) acting
+                        on a space \(V\). A subspace \(W \subseteq V\) is <strong>invariant</strong> if
+                        \[
+                            \Pi(A) w \in W \quad \text{for all } w \in W \text{ and all } A \in G.
+                        \]
+                        An invariant subspace \(W\) is <strong>nontrivial</strong> if \(W \neq \{0\}\) and
+                        \(W \neq V\). A representation with no nontrivial invariant subspaces is called
+                        <strong>irreducible</strong>. The terms are defined in the same way for a
+                        representation \(\pi\) of a Lie algebra \(\mathfrak{g}\), with \(\pi(X)\) in place of
+                        \(\Pi(A)\) and the requirement holding for all \(X \in \mathfrak{g}\).
+                    </p>
+                </div>
+
+                <p>
+                    The two trivial invariant subspaces \(\{0\}\) and \(V\) are present for every
+                    representation, which is why they are excluded: irreducibility asks that there be
+                    <em>nothing else</em>. An irreducible representation is thus an atom of the theory — a
+                    feature type that cannot be split into smaller group-respecting pieces — and the
+                    classification problem for a group is, in essence, the problem of finding all of its
+                    irreducible representations.
+                </p>
+
+                <p>
+                    One point of care attends the complex setting we have adopted as primary. When \(\Pi\) is
+                    a complex representation, \(V\) is a complex vector space, and an invariant subspace
+                    \(W\) is required to be a <strong>complex</strong> subspace — closed under multiplication
+                    by complex scalars, not merely real ones. The same applies to complex representations of
+                    a real Lie algebra: even though the algebra is real, the invariant subspaces relevant to
+                    irreducibility live in the complex space \(V\) and must be complex subspaces of it. This
+                    is not a technicality to be waved away; whether a representation is irreducible can depend
+                    on whether one allows real or complex subspaces, and we will always mean complex unless
+                    the real case is named explicitly.
+                </p>
+            </section>
+
+
+            <section id="intertwining" class="section-content">
+                <h2>Intertwining Maps</h2>
+
+                <p>
+                    Irreducibility tells us when a single representation cannot be broken apart. To compare
+                    two representations, we need a notion of a map that respects both group actions at once.
+                    Such a map is the representation-theoretic analogue of the
+                    <a href="../Calculus/group_actions_smooth.html#D-equivariant_map" class="ref-link"><strong>equivariant map</strong></a>
+                    between spaces carrying a group action: there, a map commuted with two actions on
+                    manifolds; here, the map is linear and commutes with two <em>linear</em> actions.
+                </p>
+
+                <div class="theorem" id="D-intertwining_map">
+                    <span class="theorem-title">Definition: Intertwining Map</span>
+                    <p>
+                        Let \(G\) be a matrix Lie group, let \(\Pi\) be a representation of \(G\) acting on a
+                        space \(V\), and let \(\Sigma\) be a representation of \(G\) acting on a space \(W\). A
+                        linear map \(\phi : V \to W\) is an <strong>intertwining map</strong> of
+                        representations if
+                        \[
+                            \phi(\Pi(A) v) = \Sigma(A) \phi(v) \quad \text{for all } A \in G
+                            \text{ and all } v \in V.
+                        \]
+                        If \(\phi\) is in addition invertible, it is an <strong>isomorphism</strong> of
+                        representations, and \(\Pi\) and \(\Sigma\) are said to be <strong>isomorphic</strong>.
+                        The analogous property, with \(\pi(X)\) and \(\sigma(X)\) for \(X \in \mathfrak{g}\),
+                        defines intertwining maps of representations of a Lie algebra.
+                    </p>
+                </div>
+
+                <p>
+                    Written in the action notation \(g \cdot v\), the defining identity reads
+                    \(\phi(A \cdot v) = A \cdot \phi(v)\): the map \(\phi\) <strong>commutes with the action
+                    of \(G\)</strong>. This is precisely the equivariance condition from the theory of group
+                    actions, now demanded of a <em>linear</em> map between two representation spaces. An
+                    intertwining map is, in a word, a linear equivariant map — the morphism that makes
+                    representations into a category, and the object through which the comparison "are these
+                    two representations the same?" is posed and answered.
+                </p>
+
+                <p>
+                    Two representations being isomorphic means there is an invertible linear dictionary
+                    translating one action into the other; isomorphic representations are the same
+                    representation in different coordinates. A central problem of the theory — the one we take
+                    up for \(\mathfrak{sl}(2; \mathbb{C})\) and for the compact groups in the pages ahead — is
+                    to determine, up to isomorphism, all the irreducible representations of a given group, and
+                    intertwining maps are the tool that gives the phrase "up to isomorphism" its meaning.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why Equivariant Networks Are Built From Representations</h3>
+                    <p>
+                        The vocabulary of this page is exactly the vocabulary used to design neural networks
+                        that respect a continuous symmetry. When a network processes data living in
+                        three-dimensional space — atoms in a molecule, points in a scene — one asks that
+                        rotating the input rotate the output correspondingly. A layer of such a network is a
+                        map between feature spaces, and the requirement that it commute with the rotation
+                        action on input and output is the intertwining condition stated above. The feature
+                        spaces themselves are organized into irreducible representations of the rotation
+                        group — the scalars, vectors, and higher tensors with which we opened — so that the
+                        single shorthand \(g \cdot x\) resolves into a definite linear action on each feature
+                        type. The classification of irreducible representations and the maps between them,
+                        developed abstractly here, is the design space of symmetry-respecting architectures.
+                    </p>
+                </div>
+            </section>
+
+            <section id="group-algebra" class="section-content">
+                <h2>Representations of the Group and of Its Lie Algebra</h2>
+
+                <p>
+                    A representation of a matrix Lie group \(G\) and a representation of its Lie algebra
+                    \(\mathfrak{g}\) are not independent objects. The
+                    <a href="lie_correspondence.html#T-exp_local_diffeo" class="ref-link"><strong>exponential map</strong></a>
+                    that ties \(G\) to \(\mathfrak{g}\) carries one to the other, in the same way it carries
+                    the group law to the bracket. The following proposition makes the link precise: every
+                    group representation differentiates to an algebra representation, related by the
+                    exponential.
+                </p>
+
+                <div class="theorem" id="T-group_rep_induces_algebra_rep">
+                    <span class="theorem-title">Proposition (Differentiating a Representation)</span>
+                    <p>
+                        Let \(G\) be a matrix Lie group with Lie algebra \(\mathfrak{g}\), and let \(\Pi\) be a
+                        finite-dimensional representation of \(G\) acting on a space \(V\). Then there is a
+                        unique representation \(\pi\) of \(\mathfrak{g}\) acting on the same space such that
+                        \[
+                            \Pi(e^X) = e^{\pi(X)} \quad \text{for all } X \in \mathfrak{g}.
+                        \]
+                        The representation \(\pi\) is given by
+                        \[
+                            \pi(X) = \left. \frac{d}{dt} \Pi(e^{tX}) \right|_{t=0},
+                        \]
+                        and satisfies \(\pi(AXA^{-1}) = \Pi(A)\pi(X)\Pi(A)^{-1}\) for all \(X \in \mathfrak{g}\)
+                        and all \(A \in G\).
+                    </p>
+                </div>
+
+                <p>
+                    We call \(\pi\) the representation of \(\mathfrak{g}\) <strong>associated</strong> to
+                    \(\Pi\). It is the differential of \(\Pi\) at the identity, and the relation
+                    \(\Pi(e^X) = e^{\pi(X)}\) is the representation-level shadow of the
+                    <a href="lie_correspondence.html#D-lie_algebra_homomorphism" class="ref-link"><strong>Lie algebra homomorphism</strong></a>
+                    induced by a Lie group homomorphism. The converse question — whether every representation
+                    \(\pi\) of \(\mathfrak{g}\) arises from a representation \(\Pi\) of \(G\) — is more
+                    delicate; it holds when \(G\) is simply connected, and fails in general, a phenomenon tied
+                    to the fundamental group of \(G\).
+                </p>
+
+                <p>
+                    When \(G\) is connected, the passage from \(\Pi\) to \(\pi\) loses no structural
+                    information: the two see exactly the same invariant subspaces, hence the same
+                    irreducibility, and the same isomorphisms.
+                </p>
+
+                <div class="theorem" id="T-rep_irreducibility_correspondence">
+                    <span class="theorem-title">Proposition (Group&ndash;Algebra Correspondence)</span>
+                    <p>
+                        Let \(G\) be a connected matrix Lie group with Lie algebra \(\mathfrak{g}\).
+                    </p>
+                    <ol>
+                        <li>
+                            Let \(\Pi\) be a representation of \(G\) and \(\pi\) the associated representation
+                            of \(\mathfrak{g}\). Then \(\Pi\) is irreducible if and only if \(\pi\) is
+                            irreducible.
+                        </li>
+                        <li>
+                            Let \(\Pi_1\) and \(\Pi_2\) be representations of \(G\), with associated algebra
+                            representations \(\pi_1\) and \(\pi_2\). Then \(\pi_1\) and \(\pi_2\) are
+                            isomorphic if and only if \(\Pi_1\) and \(\Pi_2\) are isomorphic.
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (Part 1)</span>
+                    <p>
+                        Suppose \(\Pi\) is irreducible, and let \(W\) be a subspace invariant under
+                        \(\pi(X)\) for all \(X \in \mathfrak{g}\). For \(A \in G\), connectedness lets us
+                        write \(A = e^{X_1} \cdots e^{X_m}\) for some \(X_1, \dots, X_m \in \mathfrak{g}\).
+                        Since \(W\) is invariant under each \(\pi(X_j)\), it is invariant under
+                        \(\exp(\pi(X_j)) = I + \pi(X_j) + \pi(X_j)^2/2 + \cdots\), and hence under
+                        \[
+                            \Pi(A) = \Pi(e^{X_1}) \cdots \Pi(e^{X_m})
+                                   = e^{\pi(X_1)} \cdots e^{\pi(X_m)}.
+                        \]
+                        As \(\Pi\) is irreducible and \(W\) is invariant under every \(\Pi(A)\), we conclude
+                        \(W = \{0\}\) or \(W = V\); thus \(\pi\) is irreducible. Conversely, if \(\pi\) is
+                        irreducible and \(W\) is invariant under \(\Pi\), then \(W\) is invariant under
+                        \(\Pi(e^{tX})\) for all \(X\), hence under \(\pi(X) = \frac{d}{dt}\Pi(e^{tX})|_{t=0}\);
+                        so \(W = \{0\}\) or \(W = V\), and \(\Pi\) is irreducible. Part 2 follows by the same
+                        connectedness argument applied to an intertwining map.
+                    </p>
+                </div>
+
+                <p>
+                    The hypothesis that \(G\) be connected is essential: the argument turns on writing every
+                    group element as a product of exponentials, which
+                    <a href="lie_correspondence.html#T-bch_formula" class="ref-link"><strong>holds precisely on the identity component</strong></a>.
+                    With it, the study of a connected group's representations reduces to the linear-algebraic
+                    study of its Lie algebra's representations — the strategy underlying nearly every explicit
+                    classification, including the one for \(\mathfrak{sl}(2; \mathbb{C})\) we take up next.
+                </p>
+            </section>
+
+
+            <section id="complexification-unitary" class="section-content">
+                <h2>Complexification and Unitarity</h2>
+
+                <p>
+                    Two further facts complete the basic dictionary, both reflecting the primacy of the
+                    complex case. The first says that working with complex representations of a real Lie
+                    algebra is the same as working with complex-linear representations of its
+                    <a href="lie_complexification.html#D-complexification" class="ref-link"><strong>complexification</strong></a>
+                    \(\mathfrak{g}_{\mathbb{C}}\) — the complex Lie algebra obtained by allowing complex
+                    coefficients, in which a real algebra such as \(\mathfrak{su}(2)\) becomes
+                    \(\mathfrak{sl}(2; \mathbb{C})\).
+                </p>
+
+                <div class="theorem" id="T-complexification_representation">
+                    <span class="theorem-title">Proposition (Extension to the Complexification)</span>
+                    <p>
+                        Let \(\mathfrak{g}\) be a real Lie algebra and \(\mathfrak{g}_{\mathbb{C}}\) its
+                        complexification. Then every finite-dimensional complex representation \(\pi\) of
+                        \(\mathfrak{g}\) has a unique extension to a complex-linear representation of
+                        \(\mathfrak{g}_{\mathbb{C}}\), also denoted \(\pi\), given by
+                        \[
+                            \pi(X + iY) = \pi(X) + i\,\pi(Y) \quad \text{for } X, Y \in \mathfrak{g}.
+                        \]
+                        Moreover, \(\pi\) is irreducible as a representation of \(\mathfrak{g}_{\mathbb{C}}\)
+                        if and only if it is irreducible as a representation of \(\mathfrak{g}\).
+                    </p>
+                </div>
+
+                <p>
+                    The two have precisely the same invariant subspaces — a complex subspace \(W\) is
+                    invariant under \(\pi(X + iY)\) exactly when it is invariant under both \(\pi(X)\) and
+                    \(\pi(Y)\) — so irreducibility is unaffected by the passage to
+                    \(\mathfrak{g}_{\mathbb{C}}\). This is what licenses replacing a real algebra such as
+                    \(\mathfrak{su}(2)\) by its
+                    <a href="lie_complexification.html#su2-sl2"><strong>complexification \(\mathfrak{sl}(2; \mathbb{C})\)</strong></a>
+                    when classifying representations, a substitution we will rely on directly.
+                </p>
+
+                <p>
+                    The second fact concerns representations that preserve an inner product. On a
+                    finite-dimensional inner product space, a unitary operator is one preserving the inner
+                    product; a representation built from such operators is the symmetry-respecting analogue of
+                    an orthogonal transformation.
+                </p>
+
+                <div class="theorem" id="D-unitary_representation">
+                    <span class="theorem-title">Definition: Unitary Representation</span>
+                    <p>
+                        Let \(V\) be a finite-dimensional inner product space and \(G\) a matrix Lie group. A
+                        representation \(\Pi : G \to GL(V)\) is <strong>unitary</strong> if \(\Pi(A)\) is a
+                        unitary operator on \(V\) for every \(A \in G\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-unitary_iff_skew_self_adjoint">
+                    <span class="theorem-title">Proposition (Unitary Representations and Skew-Adjointness)</span>
+                    <p>
+                        Let \(G\) be a matrix Lie group with Lie algebra \(\mathfrak{g}\), let \(V\) be a
+                        finite-dimensional inner product space, let \(\Pi\) be a representation of \(G\) acting
+                        on \(V\), and let \(\pi\) be the associated representation of \(\mathfrak{g}\). If
+                        \(\Pi\) is unitary, then \(\pi(X)\) is skew self-adjoint — that is,
+                        \(\pi(X)^* = -\pi(X)\) — for all \(X \in \mathfrak{g}\). Conversely, if \(G\) is
+                        connected and \(\pi(X)\) is skew self-adjoint for all \(X \in \mathfrak{g}\), then
+                        \(\Pi\) is unitary.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (Sketch)</span>
+                    <p>
+                        If \(\Pi\) is unitary, then for all \(X \in \mathfrak{g}\) and \(t \in \mathbb{R}\),
+                        \[
+                            (e^{t\pi(X)})^* = \Pi(e^{tX})^* = \Pi(e^{tX})^{-1} = e^{-t\pi(X)}.
+                        \]
+                        Differentiating at \(t = 0\) gives \(\pi(X)^* = -\pi(X)\). Conversely, if
+                        \(\pi(X)^* = -\pi(X)\), the same computation shows each \(\Pi(e^{tX}) = e^{t\pi(X)}\)
+                        is unitary; when \(G\) is connected, every element is a product of such exponentials,
+                        so \(\Pi(A)\) is unitary for all \(A \in G\).
+                    </p>
+                </div>
+
+                <p>
+                    These two results round out the language of the theory: representations can be transported
+                    between a real algebra and its complexification without disturbing irreducibility, and the
+                    representations that preserve an inner product are exactly those whose algebra operators
+                    are skew self-adjoint. The vocabulary is now complete — representations, irreducibility,
+                    intertwining maps, the group&ndash;algebra correspondence, and the passage to the
+                    complexification.
+                </p>
+            </section>
+
+        </div>
+
+</body>
+</html>
