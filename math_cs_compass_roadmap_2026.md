@@ -1,8 +1,17 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v2)
 
 **Author:** Yusuke Yokota
-**Last Updated:** 6/3/2026
+**Last Updated:** 6/8/2026
 **Website:** https://math-cs-compass.com
+
+**6/8/2026 progress update**: The **Representation Theory track is complete through its main
+line** — linalg-31~39 (9 pages, Hall 2nd ed., complexification through Clebsch-Gordan /
+Wigner-Eckart), plus the Section II differential-forms support calc-82~84 (3 pages, Lee Ch.14;
+prerequisite for the Weyl unitarian trick used in linalg-34). Hall 2nd ed. was acquired and used;
+Phase 2e (Øksendal) remains the only outstanding purchase. Page total 169 -> **181**. The
+remaining GDL continuous-leg scope is Peter-Weyl (Section I) and the Equivariant NN landing
+(Section V, ml-XX) only. Track tables, the filename registry, the reference-acquisition status,
+and the completed-tracks log are updated below to reflect this.
 
 **v1 -> v2 changes**: Reflects the 2026/6/3 session that fixed the references, placement, and
 dependency audits for five tracks (Phase 2e / Rep Theory / CDL / Crypto / TDL) in one pass.
@@ -23,12 +32,12 @@ lack awareness of applications. The primary focus is rigorous mathematical found
 modern AI/ML, with continuous expansion into adjacent domains (GDL, CDL, cryptography,
 stochastic analysis).
 
-**Total: 169 pages as of 6/3/2026.** (linalg 30 / calc 81 / prob 26 / disc 17 / ml 15;
+**Total: 181 pages as of 6/8/2026.** (linalg 39 / calc 84 / prob 26 / disc 17 / ml 15;
 `curriculum.json` is authoritative for the count.)
 
 **Five active tracks (planned in one pass on 2026/6/3)**; detail in the Part 2 overview:
 - Phase 2e (continuous-time generative foundations, Section III) — awaiting Øksendal purchase
-- Rep Theory (GDL continuous leg, Section I+V) — awaiting Hall 2nd ed. purchase
+- Rep Theory (GDL continuous leg, Section I+V) — **main line complete (linalg-31~39 + calc-82~84); remaining: Peter-Weyl + Equivariant NN landing**
 - CDL (category theory, Section IV+V) — awaiting Leinster reading
 - Crypto (through PQC, Section IV+I) — mood-driven
 - TDL (GDL discrete leg, Section IV+V) — mood / GDL progress
@@ -79,7 +88,7 @@ A unified view of the five tracks. Per-track detail is authoritative in the indi
 | Track | GDL relation | Section | Start status | Purchase | Handout |
 |---|---|---|---|---|---|
 | **Phase 2e** continuous-time generative | — | III | **awaiting Øksendal purchase** (then Page1 BM+Itō) | **Øksendal 6th ed.** | `phase2e_handout_v1` |
-| **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **awaiting Hall** | **Hall 2nd ed.** | `representation_theory_track_handout_v1` |
+| **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **main line complete** (linalg-31~39); remaining Peter-Weyl + ml-XX | **Hall 2nd ed. (acquired)** | `representation_theory_track_handout_v7` |
 | **CDL** category theory | — | IV (cats) + V (CDL bridge) | **awaiting Leinster reading** (Stage 0) | none | `cdl_track_handout_v1` |
 | **Crypto** through PQC | — | IV (s1) + I (s2-7) | **mood-driven** | none | `crypto_track_handout_v1` |
 | **TDL** | **discrete leg** | IV (existing Hodge) + V (SNN) | **mood / GDL progress** | none | `tdl_track_handout_v1` |
@@ -100,7 +109,7 @@ All five tracks share the same shape:
 
 - **External deadline pressure**: CDL (asymmetric preparation cost, MUST cover but slow).
 - **Application in current production**: Phase 2e (diffusion/FM), Crypto stage 7 (PQC deploying now).
-- **GDL pillar internal progress**: Rep Theory (designated next active), TDL (discrete leg).
+- **GDL pillar internal progress**: Rep Theory (**main line complete; remaining Peter-Weyl + Equivariant NN landing**), TDL (discrete leg).
 - All mood-driven. If one track stalls, others proceed (Part 13 principle 7).
 
 ### 2.4 The only hard ordering constraint
@@ -132,22 +141,30 @@ deeper understanding.
 
 ### 3.3 Continuous leg — Representation Theory track
 
-**Placement**: Section I (rep theory linalg-XX, ~3-4p) + Section V (Equivariant NN, ml-XX).
+**Placement**: Section I (rep theory linalg-31~39, **complete**) + Section V (Equivariant NN, ml-XX, planned).
 **Wiring**: Lie groups (linalg-27~30) -> group representations -> irreducible decomposition -> 
-Schur -> Equivariant NN. Peter-Weyl reclaims calc-32 Fourier (callback point).
+Schur -> CG/Wigner-Eckart -> Equivariant NN. Peter-Weyl reclaims calc-32 Fourier (callback point).
 **Core tools (GDL-relevant)**: irreducible representations (SO(3) = spherical-harmonic degrees =
-MACE type-ℓ features); Schur's lemma (constrains equivariant-layer weights = mathematical basis
-for sample efficiency); Peter-Weyl (Fourier on groups).
-**Reference split**: Hall 2nd ed. (rigorous, linalg-XX, **purchase required**) / arXiv notes
-(applied, ml-XX, free).
-**Start status**: awaiting Hall 2nd ed. purchase. Dependency audit can proceed without the book.
+type-ℓ features); Schur's lemma (constrains equivariant-layer weights = mathematical basis
+for sample efficiency); Clebsch-Gordan (type-ℓ feature coupling rule); Wigner-Eckart (reduced
+matrix element = one scalar per irrep pair); Peter-Weyl (Fourier on groups, **not yet started**).
+**Reference split**: Hall 2nd ed. (rigorous, linalg-31~39, **acquired and used**) / arXiv notes
+(applied, ml-XX, free, unregistered until ml-XX start).
+**Completed**: linalg-31~39 (Hall §3.6 complexification + §4.1–4.7 + App C). Route B adopted
+(minimal finite-group treatment, direct to Lie-group representations). The Section II
+differential-forms support calc-82~84 (Lee Ch.14) is also complete, supplying the alternating
+tensors / forms / exterior-derivative infrastructure that linalg-34's Weyl unitarian trick
+requires.
+**Remaining**: Peter-Weyl (Part III + App D, Section I; App B integration is a prerequisite and a
+scope-expansion risk) and the ml-XX Equivariant NN landing (Section V; spherical harmonics /
+Wigner D-matrices / Clebsch-Gordan as type-ℓ features, supplied by Gerken/Esteves).
 **2026 check**: CERTAIN. Current via EquiformerV3 etc.; representation theory is the theoretical
 core of equivariant nets.
-**Detail**: `representation_theory_track_handout_v1`.
+**Detail**: `representation_theory_track_handout_v7`.
 
 prereqs: linalg-27~30, linalg-22. Scope: finite groups (stepping stone) -> Lie group
-representations -> Peter-Weyl. Route A/B (finite groups thick / GDL-direct) decided after Hall
-inspection.
+representations -> Peter-Weyl. **Route B adopted** (finite groups minimal, GDL-direct; Hall alone
+suffices).
 
 ### 3.4 Discrete leg — TDL (Topological Deep Learning) track
 
@@ -174,9 +191,10 @@ will be the reclamation hub bridging both legs. Recorded for now; the relevant P
 are "Spectral Laplacian" and "DEC."
 
 ### 3.6 GDL track sequencing (current)
-With the manifold series complete (calc-36~81, Part 11), the continuous leg's mathematical
-foundation is in place. Active order:
-- Continuous leg: representation theory (next active) -> Equivariant NN.
+With the manifold series complete (calc-36~81, Part 11) and the representation theory main line
+complete (linalg-31~39), the continuous leg's mathematical foundation is largely in place. Active
+order:
+- Continuous leg: representation theory (**main line done**) -> Peter-Weyl -> Equivariant NN.
 - Discrete leg: existing disc-13~15 -> SNN (mood).
 Forward-pointer obligation: each GDL page carries forward-pointers to "the next mathematics"
 (not explicitly declared; readers infer open-endedness from the structure).
@@ -397,15 +415,16 @@ bridge of Part 6.4).
 
 ## Part 8 — Reference Acquisition Status (new in v2)
 
-References for the five tracks plus existing ones, by acquisition status. **Two purchases needed:
-Hall 2nd ed. (Rep Theory) and Øksendal 6th ed. (Phase 2e).** All other references are free.
+References for the five tracks plus existing ones, by acquisition status. **One purchase still
+needed: Øksendal 6th ed. (Phase 2e).** Hall 2nd ed. (Rep Theory) has been acquired and used
+(linalg-31~39). All other references are free.
 
 ### 8.1 Active-track references (status)
 
 | Track | reference | status |
 |---|---|---|
 | Phase 2e | **Øksendal *SDE*** (registered III, Springer Universitext 6th ed., ISBN 978-3-540-04758-2) / Durrett (registered III, on hand) / Holderrieth-Erives *FM & Diffusion* (registered V, arXiv:2506.02070, free) | ⚠️ **Øksendal purchase required**; Durrett + Holderrieth free |
-| Rep Theory | **Hall *Lie Groups…* 2nd ed.** (registered I, GTM 222, ISBN 9783319134666) | ⚠️ **purchase required** (no institutional access, no official free PDF, 2nd ed. mandatory) |
+| Rep Theory | **Hall *Lie Groups…* 2nd ed.** (registered I, GTM 222, ISBN 9783319134666) | ✅ **acquired and used** (linalg-31~39) |
 | Rep Theory | Gerken et al. (AI Review 2023, DOI 10.1007/s10462-023-10502-7 / arXiv:2105.13926) / Esteves (arXiv:2004.05154) | unregistered -> add at start, free |
 | CDL | Leinster *Basic Category Theory* (registered IV, arXiv:1612.09375, v2 2025/8) / Fong-Spivak *Seven Sketches* (registered IV/V, arXiv:1803.05316 <- url to add) | ✅ both free |
 | Crypto | Menezes *Handbook* (registered I, cacr.uwaterloo.ca/hac/) / **Peikert** *Decade of Lattice Crypto* (unregistered, IACR ePrint 2015/939) / FIPS 203-205 + CACR materials | ✅ all free |
@@ -448,8 +467,9 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 
 | Track | Est. Pages | Section | Planned Filenames | Trigger / status |
 |---|---|---|---|---|
-| Representation Theory | ~3–4 | I | TBD | awaiting Hall (GDL continuous leg, Part 3.3) |
-| Equivariant NN | 1 | V | `equivariant_nn.html` | after rep theory |
+| Representation Theory | ~3–4 -> **9 done** | I | linalg-31~39 (**complete**) | **complete** (Hall acquired; calibration 3–4 -> 9, Part 13.5) |
+| Peter-Weyl | ~1–2 | I | TBD | GDL continuous leg remaining (App B integration prereq, scope risk) |
+| Equivariant NN | 1 | V | `equivariant_nn.html` | after Peter-Weyl (Gerken/Esteves to register) |
 | TDL: Simplicial NN | 1 | V | TBD | mood/GDL (GDL discrete leg, Part 3.4; Hodge exists) |
 | TDL: Persistent Homology | ~1 | IV | TBD | optional branch (disc-15 forecast) |
 | Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **awaiting Øksendal purchase** (Part 4; splits anticipated) |
@@ -471,6 +491,8 @@ Completed tracks (on index.html, no planned pages).
 | Track | Pages | Completed | Notes |
 |---|---|---|---|
 | Smooth Manifolds (Lee Ch.1–13) | calc-36~81 (spine) + calc-42, calc-47 | 6/3/2026 | Phase 3 complete. Topological/smooth manifolds -> tangent vectors -> immersions/embeddings -> submanifolds -> Sard/Whitney -> Lie groups -> vector fields/flows -> vector bundles -> cotangent bundle -> tensors -> Riemannian metrics (Ch.13: calc-78~81). Mathematical landing point of the GDL continuous leg. New topicGroup `riemannian-geometry`. Curvature/geodesics deferred to a future LeeRM series. Detail `manifold_series_design_handout_v19`. |
+| Representation Theory (Hall, main line) | linalg-31~39 | 6/8/2026 | GDL continuous-leg representation theory. Hall §3.6 complexification + §4.1–4.7 + App C: complexification -> group/Lie-algebra representations & irreducibility -> constructions -> complete reducibility / Schur -> sl(2;C) & su(2) irreducible classification -> SO(3) representations -> Clebsch-Gordan -> Wigner-Eckart. Route B (minimal finite groups, GDL-direct). Two-layer with Section II (calc-59 owns the abstract/smooth representation defs; linalg side owns matrix-Lie-group representations). §4.8 (A Nonmatrix Lie Group) dropped; that slot reassigned to CG. Remaining GDL scope: Peter-Weyl + Equivariant NN landing. Detail `representation_theory_track_handout_v7`. |
+| Differential Forms (Lee Ch.14, support) | calc-82~84 | 6/8/2026 | Alternating tensors / wedge products -> differential forms on manifolds -> exterior derivative (incl. Lie derivative). Manifold-series frontier extension; prerequisite infrastructure for linalg-34's Weyl unitarian trick (Hall App B uses right-invariant differential forms for compact-group complete reducibility). Forward callback target for the eventual Peter-Weyl integration page and for de Rham cohomology (calc-85 next). |
 | Formal Methods | disc-16, disc-17 | 5/14/2026 | Section IV third pillar (disc-4,16,17). Bidirectional bridge with disc-12 (Four Color Theorem). The Curry-Howard-Lambek connection point for CDL. |
 
 ### Completed reference -> page mapping
@@ -479,10 +501,11 @@ Completed tracks (on index.html, no planned pages).
 - Horn & Johnson *Matrix Analysis* -> linalg-09~13
 - Boyd & Vandenberghe *Convex Optimization* -> calc-07, calc-08
 - O'Searcoid *Metric Spaces* -> calc-16~22
-- Lee *Introduction to Smooth Manifolds* -> calc-29, calc-36~81, calc-42
+- Lee *Introduction to Smooth Manifolds* -> calc-29, calc-36~81, calc-42, calc-82~84 (Ch.14 differential forms)
 - Conway *Functional Analysis* -> calc-23~28, calc-30~32
 - Stein & Shakarchi *Fourier Analysis* -> calc-14, calc-15, calc-32~35
 - Stillwell *Naive Lie Theory* -> linalg-24, linalg-27~30
+- Hall *Lie Groups, Lie Algebras, and Representations* 2nd ed. -> linalg-31~39
 - Durrett *Probability* -> prob-13, prob-22~26
 - Cormen *Introduction to Algorithms* -> disc-01~11
 - Sipser *Theory of Computation* -> disc-05~09
@@ -526,7 +549,7 @@ Completed tracks (on index.html, no planned pages).
 4. **Fisher vs Hessian**: the real distinction is reparametrization invariance (Čencov) vs
    loss-dependence and non-guaranteed positive-definiteness, not "global vs local."
 5. **Page count estimation**: new conceptual paradigms expand 1.5–4×. Defer ID assignment to
-   drafting. Calibrations: Lie groups 2 -> 4, calc-30 1 -> 2, Phase 2c 2 -> 3, Fourier-PDE 1 -> 3, CDL 6 -> 12 anticipated.
+   drafting. Calibrations: Lie groups 2 -> 4, calc-30 1 -> 2, Phase 2c 2 -> 3, Fourier-PDE 1 -> 3, CDL 6 -> 12 anticipated, **Rep Theory 3–4 -> 9 (plus 3 differential-forms support pages)**.
 6. **Per-topic prior-knowledge calibration**: set track-character per topic (Lie=expert,
    CDL/Phase2e/Rep/TDL=learn-while-writing).
 7. **Mood-driven dispatch**: no single order enforced. If one track stalls, others proceed. The
@@ -550,6 +573,6 @@ Completed tracks (on index.html, no planned pages).
 
 **This roadmap (v2) is the index layer.** Per-track prereq verification, collisions, owner
 candidates, physical-book inspection items, and resume-time greps are authoritative in the
-individual handouts: `phase2e_handout_v1` / `representation_theory_track_handout_v1` /
+individual handouts: `phase2e_handout_v1` / `representation_theory_track_handout_v7` /
 `cdl_track_handout_v1` / `crypto_track_handout_v1` / `tdl_track_handout_v1` /
 `manifold_series_design_handout_v19`.
