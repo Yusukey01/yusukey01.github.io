@@ -1,0 +1,362 @@
+---
+layout: default
+title: "Differential Forms on Manifolds"
+topic_id: calc-83
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Differential Forms on Manifolds</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#differential-forms">Differential Forms</a>
+            <a href="#pullbacks">Pullbacks of Differential Forms</a>
+            <a href="#top-degree">The Pullback Formula for Top-Degree Forms</a>
+        </div>
+
+        <div class="container">
+            <section id="differential-forms" class="section-content">
+                <h2>Differential Forms</h2>
+
+                <p>
+                    The alternating tensors built in the preceding development live on a single vector space. 
+                    To do calculus we let them vary from point to point across a manifold, exactly as covectors became covector fields. 
+                    The result is a differential form: a smoothly varying choice of alternating tensor on each tangent space. 
+                    These are the objects that integrate over curved spaces and whose derivative encodes the classical operators of vector calculus.
+                </p>
+
+                <p>
+                    Recall that a
+                    <a href="covectors_cotangent_bundle.html#D-covector_field" class="ref-link"><strong>covector field</strong></a>
+                    assigns to each point of a manifold a linear functional on the tangent space there. A differential 
+                    form generalizes this by replacing the single covector with an alternating tensor of arbitrary degree.
+                </p>
+
+                <div class="theorem" id="D-differential_form">
+                    <span class="theorem-title">Definition: Differential Form</span>
+                    <p>
+                        Let \(M\) be a smooth manifold. The <strong>bundle of alternating \(k\)-tensors</strong> on \(M\) is the disjoint union
+                        \[
+                        \Lambda^k T^*M = \coprod_{p \in M} \Lambda^k(T^*_p M),
+                        \]
+                        whose fiber over \(p\) is the space of alternating \(k\)-tensors on the tangent space \(T_p M\). 
+                        A <strong>differential \(k\)-form</strong> is a smooth section of this bundle: a smooth assignment 
+                        \(\omega\) of an alternating \(k\)-tensor \(\omega_p \in \Lambda^k(T^*_p M)\) to each point \(p\). 
+                        The real vector space of all differential \(k\)-forms on \(M\) is denoted \(\Omega^k(M)\).
+                    </p>
+                </div>
+
+                <p>
+                    The extreme degrees recover familiar objects. A \(0\)-form is a smooth real-valued function, since 
+                    \(\Lambda^0(T^*_p M) = \mathbb{R}\); thus \(\Omega^0(M) = C^\infty(M)\). A \(1\)-form is exactly a covector field, 
+                    so \(\Omega^1(M)\) is the space of smooth covector fields already studied. For \(k \geq 2\), 
+                    differential forms are the genuinely new objects, and they vanish identically once \(k\) exceeds the dimension of \(M\), 
+                    because the fiber \(\Lambda^k(T^*_p M)\) is then the zero space.
+                </p>
+
+                <p>
+                    In any smooth chart with coordinates \((x^1, \dots, x^n)\), the coordinate differentials \(dx^1, \dots, dx^n\) form a coframe 
+                    — a basis of \(T^*_p M\) at each point of the chart. The
+                    <a href="alternating_tensors.html#T-basis_alternating_tensors" class="ref-link"><strong>elementary alternating tensors</strong></a>
+                    built from this coframe, indexed by increasing multi-indices \(I = (i_1, \dots, i_k)\), give a pointwise basis for \(\Lambda^k(T^*_p M)\):
+                    \[
+                    dx^I = dx^{i_1} \wedge \cdots \wedge dx^{i_k}.
+                    \]
+                    Every \(k\)-form therefore has a unique local expression
+                    \[
+                    \omega = {\sum_I}'\, \omega_I\, dx^I,
+                    \]
+                    the primed sum running over increasing multi-indices of length \(k\), with smooth coefficient functions 
+                    \(\omega_I = \omega\bigl(\tfrac{\partial}{\partial x^{i_1}}, \dots, \tfrac{\partial}{\partial x^{i_k}}\bigr)\). 
+                    The form is smooth precisely when all coefficient functions \(\omega_I\) are smooth.
+                </p>
+
+                <p>
+                    The wedge product extends to differential forms by performing it pointwise: \((\omega \wedge \eta)_p = \omega_p \wedge \eta_p\). All the
+                    <a href="alternating_tensors.html#T-wedge_product_properties" class="ref-link"><strong>algebraic properties of the wedge product</strong></a>
+                    — bilinearity, associativity, and the anticommutativity \(\omega \wedge \eta = (-1)^{kl}\eta \wedge \omega\) 
+                    — hold verbatim for differential forms, since they hold at every point. The forms of all degrees on \(M\) 
+                    thus assemble into an algebra under the wedge product, the smoothly varying counterpart of the exterior algebra of a single tangent space.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Forms in Low Degree on \(\mathbb{R}^3\)</span>
+                    <p>
+                        A \(0\)-form is just a smooth real-valued function, and a \(1\)-form is a covector field. On \(\mathbb{R}^3\) 
+                        with coordinates \((x, y, z)\), some smooth \(2\)-forms are
+                        \[
+                        \begin{align*}
+                        \omega &= (\sin xy)\, dy \wedge dz, \\\\
+                        \eta &= dx \wedge dy + dx \wedge dz + dy \wedge dz,
+                        \end{align*}
+                        \]
+                        and every \(3\)-form on \(\mathbb{R}^3\) is a smooth function times the single top-degree basis element \(dx \wedge dy \wedge dz\). 
+                        The pattern reflects the dimension count from the algebra of alternating tensors: on a \(3\)-dimensional space there are 
+                        three independent \(2\)-forms and exactly one independent \(3\)-form.
+                    </p>
+                </div>
+            </section>
+
+            <section id="pullbacks" class="section-content">
+                <h2>Pullbacks of Differential Forms</h2>
+
+                <p>
+                    A smooth map between manifolds transports differential forms backward, from the target to the source. 
+                    This pullback operation is the mechanism through which forms change coordinates, restrict to submanifolds, 
+                    and ultimately acquire the change-of-variables factor in integration. Because a differential 
+                    form is a covariant tensor field that happens to be alternating, its pullback is a special case of the pullback already defined 
+                    for tensor fields.
+                </p>
+
+                <div class="theorem" id="T-pullback_differential_form">
+                    <span class="theorem-title">Theorem: Pullback of a Differential Form</span>
+                    <p>
+                        Let \(F : M \to N\) be a smooth map and let \(\omega \in \Omega^k(N)\). 
+                        The <strong>pullback</strong> \(F^*\omega \in \Omega^k(M)\) is the \(k\)-form on \(M\) defined pointwise by
+                        \[
+                        (F^*\omega)_p(v_1, \dots, v_k) = \omega_{F(p)}\bigl(dF_p(v_1), \dots, dF_p(v_k)\bigr),
+                        \]
+                        where \(dF_p : T_p M \to T_{F(p)} N\) is the differential of \(F\). This is the restriction to alternating tensors of the
+                        <a href="symmetric_tensors_tensor_fields.html#T-pullback_tensor_field" class="ref-link"><strong>pullback of covariant tensor fields</strong></a>,
+                        and it has the following properties:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>\(F^*\) is linear over \(\mathbb{R}\).</li>
+                        <li>\(F^*\) respects the wedge product: \(F^*(\omega \wedge \eta) = (F^*\omega) \wedge (F^*\eta)\) for all \(\omega, \eta\).</li>
+                        <li>In any smooth chart \((y^j)\) on \(N\), if \(\omega = {\sum_J}'\, \omega_J\, dy^J\), then
+                        \[
+                        F^*\omega = {\sum_J}'\, (\omega_J \circ F)\, d(y^{j_1} \circ F) \wedge \cdots \wedge d(y^{j_k} \circ F).
+                        \]</li>
+                    </ol>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        That \(F^*\omega\) is alternating, smooth, and depends \(\mathbb{R}\)-linearly on \(\omega\) follows 
+                        from the corresponding facts for the pullback of covariant tensor fields, since inserting the same vector 
+                        into two slots of \(F^*\omega\) inserts the same image vector into two slots of \(\omega\), which vanishes. 
+                        This gives Part (1).
+                    </p>
+                    <p>
+                        <strong>Part (2).</strong><br> 
+                        The wedge product is built from the tensor product by alternation, and the pullback commutes 
+                        with the tensor product of covariant tensors, \(F^*(\alpha \otimes \beta) = (F^*\alpha) \otimes (F^*\beta)\), 
+                        because \(dF_p\) is applied slot by slot in both factors. Alternation is defined by averaging over permutations 
+                        with signs, an operation that commutes with \(F^*\) since \(F^*\) acts identically on each permuted term. 
+                        The normalizing coefficient \((k+l)!/(k!\,l!)\) is the same on both sides. 
+                        Combining these, \(F^*\) carries 
+                        \[
+                        \omega \wedge \eta = \tfrac{(k+l)!}{k!\,l!}\operatorname{Alt}(\omega \otimes \eta)
+                        \]
+                        to 
+                        \[
+                        (F^*\omega) \wedge (F^*\eta).
+                        \]
+                    </p>
+                    <p>
+                        <strong>Part (3).</strong><br> 
+                        For a \(0\)-form, that is a function \(u\), the pullback is composition: \(F^*u = u \circ F\). 
+                        For a coordinate differential \(dy^j\), the pullback is the differential of the composite, 
+                        \(F^*(dy^j) = d(y^j \circ F)\). To see this, evaluate both sides on a coordinate vector \(\partial/\partial x^i\). 
+                        Writing \(F^k = y^k \circ F\) for the component functions, the differential sends 
+                        \[
+                        dF_p(\partial/\partial x^i) = \sum_k (\partial F^k/\partial x^i)\, \partial/\partial y^k,
+                        \]
+                        so
+                        \[
+                        \begin{align*}
+                        \bigl(F^*(dy^j)\bigr)\!\left(\frac{\partial}{\partial x^i}\right) 
+                        &= dy^j\!\left(dF_p\!\left(\frac{\partial}{\partial x^i}\right)\right) \\\\
+                        &= \frac{\partial F^j}{\partial x^i} = \frac{\partial (y^j \circ F)}{\partial x^i} \\\\
+                        &= \bigl(d(y^j \circ F)\bigr)\!\left(\frac{\partial}{\partial x^i}\right).
+                        \end{align*}
+                        \]
+                        Both sides agree on every coordinate vector, hence are equal; this is exactly the chain rule. 
+                        Applying Part (2) to a wedge of coordinate differentials and linearity from Part (1) to the sum yields
+                        \[
+                        F^*\Bigl({\sum_J}'\, \omega_J\, dy^J\Bigr) = {\sum_J}'\, (\omega_J \circ F)\, d(y^{j_1} \circ F) \wedge \cdots \wedge d(y^{j_k} \circ F),
+                        \]
+                        the claimed coordinate formula.
+                    </p>
+                </div>
+
+                <p>
+                    The third property is what makes pullbacks computable: one substitutes the component functions of \(F\) for the target coordinates 
+                    and replaces each \(dy^j\) by the differential of the corresponding component.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Computing a Pullback</span>
+                    <p>
+                        Let \(F : \mathbb{R}^2 \to \mathbb{R}^3\) be \(F(u, v) = (u,\, v,\, u^2 - v^2)\), 
+                        and let \(\omega = y\, dx \wedge dz + x\, dy \wedge dz\) be a \(2\)-form on \(\mathbb{R}^3\). 
+                        Writing the target coordinates as \((x, y, z)\), the chart formula replaces each coefficient 
+                        by its composition with \(F\) and each differential by the differential of the corresponding component:
+                        \[
+                        dx = du, \qquad dy = dv, \qquad dz = d(u^2 - v^2) = 2u\, du - 2v\, dv.
+                        \]
+                        Substituting \(dx = du\), \(dy = dv\), and \(dz = 2u\, du - 2v\, dv\) into \(\omega\) 
+                        gives 
+                        \[
+                        F^*\omega = v\, du \wedge (2u\, du - 2v\, dv) + u\, dv \wedge (2u\, du - 2v\, dv).
+                        \]
+                        We expand each wedge by distributing over the sum and pulling the scalar coefficients out front:
+                        \[
+                        \begin{align*}
+                        v\, du \wedge (2u\, du - 2v\, dv) &= 2uv\, (du \wedge du) - 2v^2\, (du \wedge dv),\\\\
+                        u\, dv \wedge (2u\, du - 2v\, dv) &= 2u^2\, (dv \wedge du) - 2uv\, (dv \wedge dv).
+                        \end{align*}
+                        \]
+                        The terms \(du \wedge du\) and \(dv \wedge dv\) vanish, because the wedge of a \(1\)-form with itself is zero. 
+                        In the surviving term \(dv \wedge du\), anticommutativity of \(1\)-forms gives \(dv \wedge du = -\,du \wedge dv\). 
+                        Collecting the two nonzero contributions over the common basis element \(du \wedge dv\),
+                        \[
+                        \begin{align*}
+                        F^*\omega 
+                        &= -2v^2\, du \wedge dv - 2u^2\, du \wedge dv \\\\
+                        &= -2\bigl(u^2 + v^2\bigr)\, du \wedge dv.
+                        \end{align*}
+                        \]
+                        The same technique computes the expression for a form in any second chart, by reading the change 
+                        of coordinates as the identity map written with different coordinates on its domain and codomain.
+                    </p>
+                </div>
+
+                <p>
+                    The next section pushes this computation to its sharpest form, where the source and target have the same dimension 
+                    and the wedge of all the differentials collapses into a single determinant.
+                </p>
+            </section>
+
+            <section id="top-degree" class="section-content">
+                <h2>The Pullback Formula for Top-Degree Forms</h2>
+
+                <p>
+                    When a smooth map relates two manifolds of the same dimension and we pull back a form of top degree, 
+                    the chart formula simplifies sharply: the entire wedge of pulled-back differentials reduces to multiplication 
+                    by a single scalar, the Jacobian determinant of the map. This is the precise sense in which the determinant 
+                    of the earlier algebra reappears as the change-of-variables factor, and it is the result on which the integration of forms 
+                    — and the construction of invariant integrals on groups — ultimately rests.
+                </p>
+
+                <div class="theorem" id="T-pullback_top_form">
+                    <span class="theorem-title">Theorem: Pullback of a Top-Degree Form</span>
+                    <p>
+                        Let \(F : M \to N\) be a smooth map between \(n\)-dimensional manifolds. 
+                        Suppose \((x^i)\) and \((y^j)\) are smooth coordinates on open subsets of \(M\) and \(N\) respectively, 
+                        and write \(F\) in these coordinates with component functions \(F^j = y^j \circ F\). 
+                        Then for any smooth function \(u\) on the target chart,
+                        \[
+                        F^*\bigl(u\, dy^1 \wedge \cdots \wedge dy^n\bigr) = (u \circ F)\,(\det DF)\; dx^1 \wedge \cdots \wedge dx^n,
+                        \]
+                        where \(DF = \bigl(\partial F^j / \partial x^i\bigr)\) is the Jacobian matrix of \(F\) in these coordinates.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        By the coordinate formula for pullbacks and the fact that \(F^*u = u \circ F\),
+                        \[
+                        F^*\bigl(u\, dy^1 \wedge \cdots \wedge dy^n\bigr) = (u \circ F)\; d F^1 \wedge \cdots \wedge dF^n,
+                        \]
+                        where \(dF^j = d(y^j \circ F) = \sum_i \dfrac{\partial F^j}{\partial x^i}\, dx^i\) is the differential 
+                        of the \(j\)th component. It remains to evaluate the wedge \(dF^1 \wedge \cdots \wedge dF^n\).
+                    </p>
+                    <p>
+                        Each \(dF^j\) is a covector with components \(\partial F^j/\partial x^i\) in the coframe \((dx^i)\); 
+                        equivalently, the \(n\) covectors \(dF^1, \dots, dF^n\) are obtained from the basis covectors \(dx^1, \dots, dx^n\) 
+                        by the linear map whose matrix is \(DF\). Now \(dx^1 \wedge \cdots \wedge dx^n\) is an alternating \(n\)-tensor 
+                        on an \(n\)-dimensional space, the top degree, where the space of such tensors is one-dimensional. On that one-dimensional space, 
+                        applying a linear map to all \(n\) arguments simply scales the tensor by the
+                        <a href="alternating_tensors.html#T-determinant_alternating_top" class="ref-link"><strong>determinant of the map</strong></a>.
+                        Feeding the \(dF^j\), which are the \(dx^i\) transformed by \(DF\), into the top-degree wedge 
+                        therefore reproduces \(dx^1 \wedge \cdots \wedge dx^n\) scaled by \(\det DF\):
+                        \[
+                        dF^1 \wedge \cdots \wedge dF^n = (\det DF)\; dx^1 \wedge \cdots \wedge dx^n.
+                        \]
+                        Substituting into the previous display yields the stated formula.
+                    </p>
+                </div>
+
+                <p>
+                    The factor \(\det DF\) is exactly the Jacobian determinant that governs the change of variables in multiple integrals. 
+                    Pulling back a top-degree form and integrating reproduces the classical substitution rule with the Jacobian appearing 
+                    automatically — no separate correction term is needed, because the determinant is already built into how top-degree forms transform. 
+                    The following example shows this mechanism in a standard change of coordinates.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Polar Coordinates</span>
+                    <p>
+                        Let \(F(r, \theta) = (r\cos\theta,\, r\sin\theta)\) be the polar-coordinate map, 
+                        with \(x = r\cos\theta\) and \(y = r\sin\theta\). Its differentials are
+                        \[
+                        dx = \cos\theta\, dr - r\sin\theta\, d\theta, \qquad dy = \sin\theta\, dr + r\cos\theta\, d\theta.
+                        \]
+                        Wedging the two and distributing, the terms \(dr \wedge dr\) and \(d\theta \wedge d\theta\) vanish, 
+                        leaving only the mixed products. Using \(d\theta \wedge dr = -\,dr \wedge d\theta\) to bring both 
+                        onto the basis element \(dr \wedge d\theta\),
+                        \[
+                        \begin{align*}
+                        dx \wedge dy &= \cos\theta\,(r\cos\theta)\, dr \wedge d\theta + (-r\sin\theta)(\sin\theta)\, d\theta \wedge dr\\\\
+                        &= \bigl(r\cos^2\theta + r\sin^2\theta\bigr)\, dr \wedge d\theta\\\\
+                        &= r\, dr \wedge d\theta.
+                        \end{align*}
+                        \]
+                        The coefficient \(r\) is the Jacobian determinant of the polar map, recovering the factor that appears 
+                        when a double integral is rewritten in polar coordinates. The wedge product produces it without any separate computation.
+                    </p>
+                </div>
+
+                <p>
+                    The same reasoning applies in any dimension and for any change of coordinates. 
+                    A particularly important instance arises when the map is the identity, expressed in two different coordinate systems 
+                    on an overlap.
+                </p>
+
+                <div class="theorem" id="T-top_form_chart_change">
+                    <span class="theorem-title">Corollary: Change-of-Coordinates Formula for Top-Degree Forms</span>
+                    <p>
+                        Let \((x^i)\) and \((\tilde{x}^j)\) be overlapping smooth coordinate systems on a manifold of dimension \(n\). 
+                        On their common domain,
+                        \[
+                        d\tilde{x}^1 \wedge \cdots \wedge d\tilde{x}^n = \det\!\left(\frac{\partial \tilde{x}^j}{\partial x^i}\right) dx^1 \wedge \cdots \wedge dx^n.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Apply the top-degree pullback formula to the identity map, written with coordinates \((x^i)\) 
+                        on its domain and \((\tilde{x}^j)\) on its codomain. Although the map is the identity on points, 
+                        its coordinate expression is the genuine coordinate-change function \(\tilde{x}^j = \tilde{x}^j(x^1, \dots, x^n)\), 
+                        so its Jacobian is not the identity matrix but the matrix \((\partial \tilde{x}^j / \partial x^i)\) of partial derivatives 
+                        of the new coordinates with respect to the old. The function \(u\) is \(1\), its composition with the identity is again \(1\), 
+                        and substituting this Jacobian into the pullback formula gives the stated identity.
+                    </p>
+                </div>
+
+                <p>
+                    This is the precise sense in which a top-degree form carries an intrinsic transformation law: its single coefficient 
+                    is multiplied by the Jacobian determinant of the coordinate change. That determinant — rather than its absolute value — is 
+                    what distinguishes a top-degree form from a density, and it is the algebraic seed of orientation. This identity is the bridge 
+                    between the linear-algebraic determinant and the analytic change-of-variables formula, and it is the form 
+                    in which top-degree forms feed into integration over manifolds and the averaging constructions used to build invariant structures 
+                    on Lie groups.
+                </p>
+            </section>
+        </div>
+    </body>
+</html>
