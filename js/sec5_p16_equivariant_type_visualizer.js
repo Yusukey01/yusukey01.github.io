@@ -187,8 +187,32 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // ============================================================
+  // THREE.JS LOADER (site convention: visualizer loads its own Three.js)
+  // r128 core + matching OrbitControls, mirroring the linalg-24 demo.
+  // ============================================================
+  if (!window.THREE) {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    s.onload = function () {
+      const o = document.createElement('script');
+      o.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+      o.onload = initThree;
+      document.head.appendChild(o);
+    };
+    document.head.appendChild(s);
+  } else if (!THREE.OrbitControls) {
+    const o = document.createElement('script');
+    o.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+    o.onload = initThree;
+    document.head.appendChild(o);
+  } else {
+    initThree();
+  }
+
+  // ============================================================
   // M3 — THREE.JS SCENE
   // ============================================================
+  function initThree() {
   const three = container.querySelector('#eqv-three');
   const W0 = three.clientWidth, H0 = 450;
   const scene = new THREE.Scene();
@@ -323,4 +347,5 @@ document.addEventListener('DOMContentLoaded', function () {
   })();
 
   update();
+  } // end initThree
 });
