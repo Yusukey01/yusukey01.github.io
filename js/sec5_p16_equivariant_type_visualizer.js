@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
       <div class="eqv-layout">
         <div class="eqv-canvas-area">
           <div class="eqv-instruction" id="eqv-instruction">
-            Rotate with the sliders. <strong>Drag = orbit camera</strong> &nbsp;|&nbsp; scroll / pinch = zoom.
+            Move the <strong>Roll / Pitch / Yaw</strong> sliders to set the rotation <em>R</em>.
             Watch each type respond to the <em>same</em> rotation in its own way.
           </div>
           <div id="eqv-canvas-wrapper"><div id="eqv-three"></div></div>
@@ -176,23 +176,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ============================================================
   // THREE.JS LOADER (site convention: visualizer loads its own Three.js)
-  // r128 core + matching OrbitControls, mirroring the linalg-24 demo.
+  // r128 core only. Camera is fixed (no OrbitControls): the only thing that
+  // moves the scene is R, set by the sliders, so "something moved" always
+  // means "R changed" — keeping the geometry <-> matrix correspondence exact.
   // ============================================================
   if (!window.THREE) {
     const s = document.createElement('script');
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-    s.onload = function () {
-      const o = document.createElement('script');
-      o.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
-      o.onload = initThree;
-      document.head.appendChild(o);
-    };
+    s.onload = initThree;
     document.head.appendChild(s);
-  } else if (!THREE.OrbitControls) {
-    const o = document.createElement('script');
-    o.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
-    o.onload = initThree;
-    document.head.appendChild(o);
   } else {
     initThree();
   }
@@ -206,15 +198,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, W0/H0, 0.1, 100);
   camera.position.set(3.2, 2.2, 3.6);
+  camera.lookAt(0, 0, 0);
   const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
   renderer.setSize(W0, H0);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
   three.appendChild(renderer.domElement);
-
-  let controls=null;
-  if (THREE.OrbitControls){ controls=new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping=true; controls.dampingFactor=0.08; controls.enablePan=false;
-    controls.minDistance=2.2; controls.maxDistance=9; }
 
   scene.add(new THREE.AmbientLight(0xffffff,0.65));
   const dl=new THREE.DirectionalLight(0xffffff,0.7); dl.position.set(4,6,5); scene.add(dl);
@@ -330,7 +318,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   (function animate(){
     requestAnimationFrame(animate);
-    if(controls) controls.update();
     renderer.render(scene,camera);
   })();
 
