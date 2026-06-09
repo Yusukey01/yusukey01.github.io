@@ -74,12 +74,6 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="eqv-grid-note">off-block entries &equiv; 0 for every R &mdash; types never mix</div>
           </div>
 
-          <div class="eqv-card eqv-badges">
-            <div class="eqv-badge"><span class="bt b0">type-0</span> 1&times;1 &nbsp;&middot;&nbsp; <span id="eqv-b0">invariant</span></div>
-            <div class="eqv-badge"><span class="bt b1">type-1</span> 3&times;3 &nbsp;&middot;&nbsp; <span id="eqv-b1">&rho;<sub>1</sub>&rho;<sub>1</sub><sup>&#8868;</sup>=I &#10003;</span></div>
-            <div class="eqv-badge"><span class="bt b2">type-2</span> 5&times;5 &nbsp;&middot;&nbsp; <span id="eqv-b2">&rho;<sub>2</sub>&rho;<sub>2</sub><sup>&#8868;</sup>=I &#10003;</span></div>
-          </div>
-
           <div class="eqv-controls">
             <div class="eqv-card-title">Rotation R &isin; SO(3)</div>
             <div class="eqv-slider-row">
@@ -148,12 +142,6 @@ document.addEventListener('DOMContentLoaded', function () {
     .eqv-cell.b1{background:rgba(66,165,245,0.16);color:#9ed0ff;}
     .eqv-cell.b2{background:rgba(243,156,18,0.15);color:#ffcf7a;}
     .eqv-grid-note{text-align:center;font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:10px;font-style:italic;}
-    .eqv-badges{display:flex;flex-direction:column;gap:6px;font-size:0.78rem;color:rgba(255,255,255,0.75);}
-    .eqv-badge{display:flex;align-items:center;gap:6px;}
-    .bt{font-weight:bold;padding:1px 6px;border-radius:3px;font-size:0.72rem;}
-    .bt.b0{background:rgba(154,165,177,0.25);color:#cdd5de;}
-    .bt.b1{background:rgba(66,165,245,0.25);color:#9ed0ff;}
-    .bt.b2{background:rgba(243,156,18,0.22);color:#ffcf7a;}
     .eqv-controls{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;margin-bottom:12px;}
     .eqv-slider-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
     .eqv-slider-row label{width:70px;font-size:0.8rem;color:rgba(255,255,255,0.7);}
