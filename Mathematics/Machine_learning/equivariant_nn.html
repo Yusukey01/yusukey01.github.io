@@ -1,0 +1,412 @@
+---
+layout: default
+title: "Symmetry and Representation Theory in Machine Learning"
+topic_id: ml-16
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Symmetry and Representation Theory in Machine Learning</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#symmetry-as-prior">Symmetry as an Inductive Bias</a>
+            <a href="#features-as-representations">Features as Group Representations</a>
+            <a href="#schur-as-constraint">Schur's Lemma as a Weight Constraint</a>
+            <a href="#coupling">Coupling Representations</a>
+            <a href="#in-practice">Symmetry in Practice</a>
+        </div>
+
+        <div class="container">  
+
+            <section id="symmetry-as-prior" class="section-content">
+                <h2>Symmetry as an Inductive Bias</h2>
+
+                <p>
+                    On the page introducing <a href="intro_gdl.html"><strong>geometric deep learning</strong></a>
+                    we saw a single design principle behind convolutional networks, Transformers, and graph
+                    neural networks: each architecture is built to respect a <em>symmetry</em> of its input
+                    domain, and an architecture that respects its domain's symmetry generalizes from far less
+                    data than one that does not. There the symmetries were discrete — translations of a pixel
+                    grid, permutations of a set of nodes. We closed by pointing past that case, toward the
+                    continuous symmetries of three-dimensional space. This page takes up that thread and asks
+                    what mathematics is actually required to build a layer that respects a continuous symmetry,
+                    and the answer turns out to be the
+                    <a href="../Linear_algebra/representations_irreducibility.html"><strong>representation theory of Lie groups</strong></a>.
+                </p>
+
+                <p>
+                    The motivating situation is concrete. Consider a model that predicts the energy of a
+                    molecule from the positions of its atoms, or the force on each atom, or a segmentation of
+                    a spherical panoramic image. In each case the data lives in physical three-dimensional
+                    space, and there is a transformation that ought to leave the problem unchanged. If we rotate
+                    a molecule in space, its total energy does not change; the predicted energy should be
+                    <em>invariant</em> under rotation. If instead we predict a force vector on each atom, then
+                    rotating the molecule should rotate every predicted force in exactly the same way; the
+                    prediction should be <em>equivariant</em> under rotation. A network that does not know this
+                    must discover it from data — it must see the same molecule in many orientations
+                    before it learns that orientation does not matter — whereas a network whose every layer
+                    respects rotation by construction knows it for free.
+                </p>
+
+                <p>
+                    Let us make the two words precise, since the whole development rests on the distinction.
+                    Let \(G\) be a group acting on an input space \(\mathcal{X}\) and on an output space
+                    \(\mathcal{Y}\); write \(g \cdot x\) for the action of \(g \in G\) on \(x\). A map
+                    \(\Phi : \mathcal{X} \to \mathcal{Y}\) is <strong>\(G\)-equivariant</strong> if it commutes
+                    with the action,
+                    \[
+                        \Phi(g \cdot x) = g \cdot \Phi(x) \qquad \text{for all } g \in G,\ x \in \mathcal{X},
+                    \]
+                    so that transforming the input and then applying \(\Phi\) gives the same result as applying
+                    \(\Phi\) and then transforming the output. One says that \(\Phi\)
+                    <a href="../Calculus/group_actions_smooth.html#D-equivariant_map" class="ref-link"><strong>intertwines</strong></a>
+                    the two actions. <strong>Invariance</strong> is the special case
+                    in which the group acts trivially on the output, \(\Phi(g \cdot x) = \Phi(x)\). Equivariance
+                    is the more fundamental notion: a network's hidden layers must be equivariant, carrying the
+                    symmetry forward intact, and invariance is imposed only at the top where a single symmetric
+                    quantity is finally read off.
+                </p>
+
+                <p>
+                    The promise of building symmetry into the architecture is improved sample efficiency: the
+                    network does not spend capacity, or training data, learning a regularity that the designer
+                    already knows. This is the same bargain that makes a
+                    <a href="deep_nn.html#CNN"><strong>convolutional layer</strong></a> so much more
+                    data-efficient than a fully connected one on images — weight sharing across spatial
+                    positions is exactly the statement that the layer is translation-equivariant. The question
+                    this page answers is what the analogous construction is when the symmetry is the continuous
+                    <a href="../Linear_algebra/lie_groups.html"><strong>rotation group</strong></a>
+                    rather than discrete translation, and the answer is considerably richer,
+                    because the rotation group acts on features in a way that the integer-translation group does
+                    not: it mixes their components.
+                </p>
+
+                <p>
+                    It is worth flagging at the outset that whether one <em>should</em> hard-code a symmetry
+                    into the architecture, rather than let the model learn it from data and augmentation, is a
+                    live and unsettled empirical question in current practice. We will return to that debate at
+                    the end of the page, once the mathematical picture is in place, because the debate cannot
+                    even be stated precisely without the representation theory developed in between — both sides
+                    of the argument are about how representations decompose and how much a network is forced to
+                    learn once that decomposition is fixed.
+                </p>
+            </section>
+
+            <section id="features-as-representations" class="section-content">
+                <h2>Features as Group Representations</h2>
+
+                <p>
+                    To build a rotation-equivariant layer we must first decide how the data it processes
+                    transforms under rotation, and this is exactly the question representation theory was built
+                    to answer. A feature attached to a point in space is not just a list of numbers; it is a
+                    list of numbers <em>together with a rule</em> for how those numbers change when space is
+                    rotated. A scalar quantity — the mass of an atom, a predicted energy density — does not
+                    change at all when the molecule is rotated. A vector quantity — a velocity, a force, a
+                    dipole — rotates rigidly with the molecule. A symmetric-matrix quantity, such as a moment
+                    of inertia or a stress, transforms by conjugation. These are three different transformation
+                    rules, and a
+                    <a href="../Calculus/group_actions_smooth.html#D-lie_group_representation" class="ref-link"><strong>representation</strong></a>
+                    of \(SO(3)\) is precisely the data of such a rule: a way of assigning to each rotation
+                    \(R \in SO(3)\) a linear map \(\rho(R)\) on the feature space, compatibly with composition,
+                    \(\rho(R_1 R_2) = \rho(R_1)\rho(R_2)\).
+                </p>
+
+                <p>
+                    Once features are viewed this way, the central structural fact of the theory does the
+                    organizing work for us. Every finite-dimensional representation of \(SO(3)\) decomposes into
+                    a <a href="../Linear_algebra/representation_constructions.html#D-direct_sum_representation" class="ref-link"><strong>direct sum</strong></a>
+                    of <a href="../Linear_algebra/representations_irreducibility.html#D-irreducible_representation" class="ref-link"><strong>irreducible representations</strong></a>
+                    — the indivisible building blocks out of which every transformation rule is assembled. For
+                    \(SO(3)\) these irreducibles are completely classified, and the classification is the
+                    centrepiece of the
+                    <a href="../Linear_algebra/sl2_representations.html"><strong>representation theory of \(\mathfrak{sl}(2;\mathbb{C})\)</strong></a>
+                    worked out in the representation track: for each non-negative integer \(\ell\) there is
+                    exactly one irreducible representation, of dimension \(2\ell+1\), and there are no others.
+                    We call \(\ell\) the <strong>type</strong> (or degree); in the representation track this is
+                    \(\Sigma_m\) with \(m = 2\ell\), the half-integer values corresponding to odd \(m\) being
+                    exactly the ones that fail to descend from \(SU(2)\) to \(SO(3)\). The low types are
+                    familiar: \(\ell = 0\) is the scalars, \(\ell = 1\) the vectors \(SO(3)\) acts on in
+                    \(\mathbb{R}^3\), \(\ell = 2\) the five-dimensional traceless symmetric matrices, and the
+                    ladder continues one irreducible per \(\ell\).
+                </p>
+
+                <p>
+                    A feature in an equivariant network is therefore organized not as a flat vector but as a
+                    collection of <strong>type-\(\ell\) pieces</strong>, each transforming under the
+                    corresponding irreducible \(\rho_\ell\): so many scalars, so many vectors, so many type-2
+                    fragments, and so on. This is the continuous-symmetry analogue of the channels of a
+                    convolutional network, but now each channel carries a definite transformation law rather
+                    than being an inert number. The reason the classification matters so directly is that it is
+                    forced upon us: whatever representation the raw data happens to carry, decomposing it into
+                    irreducibles tells us exactly which types are present and with what multiplicity, and the
+                    network can then be built to act on each type appropriately.
+                </p>
+
+                <div class="theorem" id="D-spherical_harmonics">
+                    <span class="theorem-title">Definition (Spherical Harmonics as the Type-\(\ell\) Representation)</span>
+                    <p>
+                        For each integer \(\ell \geq 0\), the <strong>spherical harmonics</strong> of degree
+                        \(\ell\) are the \(2\ell+1\) functions \(Y^\ell_m : S^2 \to \mathbb{C}\), for
+                        \(m = -\ell, \dots, \ell\), forming an orthonormal basis for the space of degree-\(\ell\)
+                        harmonic polynomials restricted to the sphere. Under a rotation \(R \in SO(3)\) they
+                        transform among themselves by the type-\(\ell\) irreducible representation:
+                        \[
+                            Y^\ell_m(R^{-1} x) = \sum_{n=-\ell}^{\ell} \rho_\ell(R)_{mn}\, Y^\ell_n(x),
+                            \qquad x \in S^2,
+                        \]
+                        where \(\rho_\ell\) is the \((2\ell+1)\)-dimensional irreducible representation of
+                        \(SO(3)\) — the representation \(\Sigma_{2\ell}\) of the representation track. Equivalently,
+                        the degree-\(\ell\) spherical harmonics span an invariant
+                        subspace of \(L^2(S^2)\) on which \(SO(3)\) acts irreducibly as \(\rho_\ell\); they are
+                        the concrete realization, as functions on the sphere, of the abstract type-\(\ell\)
+                        irreducible.
+                    </p>
+                </div>
+
+                <p>
+                    This identification is the bridge between the abstract classification and the data a network
+                    actually sees. A signal on the sphere — a panoramic image, an angular distribution of mass,
+                    a directional field of measurements — is a function in \(L^2(S^2)\), and expanding it in
+                    spherical harmonics sorts its content by type exactly as a Fourier series sorts a periodic
+                    signal by frequency. The coefficients at degree \(\ell\) form a \((2\ell+1)\)-dimensional
+                    vector that transforms under rotation by \(\rho_\ell\); they are a type-\(\ell\) feature in
+                    the precise sense above. The matrices \(\rho_\ell(R)\) effecting this transformation are the
+                    Wigner \(D\)-matrices, and they are nothing other than the matrix entries of the
+                    <a href="../Linear_algebra/group_vs_lie_algebra_representations.html#T-so3_representation_lifting" class="ref-link"><strong>\(SO(3)\) irreducible representations</strong></a>
+                    constructed earlier from the
+                    <a href="../Linear_algebra/su2_representations.html#D-su2_polynomial_representation" class="ref-link"><strong>polynomial representations of \(SU(2)\)</strong></a>
+                    by way of the double cover. The spherical harmonics are where that abstract construction
+                    becomes a concrete, computable basis.
+                </p>
+            </section>
+
+            <section id="schur-as-constraint" class="section-content">
+                <h2>Schur's Lemma as a Weight Constraint</h2>
+
+                <p>
+                    We now have a language for the data: a feature is a direct sum of type-\(\ell\) pieces, each
+                    transforming by the irreducible \(\rho_\ell\). The next question is what a <em>layer</em> may
+                    look like. A linear layer is a linear map \(W\) from the input feature space to the output
+                    feature space, and the requirement that the layer be equivariant is exactly the requirement
+                    that \(W\) be an
+                    <a href="../Linear_algebra/representations_irreducibility.html#D-intertwining_map" class="ref-link"><strong>intertwining map</strong></a>:
+                    it must satisfy \(W \rho_{\text{in}}(R) = \rho_{\text{out}}(R)\, W\) for every rotation
+                    \(R\), so that rotating the input and then applying the layer agrees with applying the layer
+                    and then rotating the output. Equivariant linear layers and intertwiners are the same thing.
+                    The entire content of an equivariant linear layer is therefore the question: which linear
+                    maps intertwine two given representations? And this is the question
+                    <a href="../Linear_algebra/complete_reducibility_schur.html#T-schur_lemma" class="ref-link"><strong>Schur's lemma</strong></a>
+                    answers completely.
+                </p>
+
+                <p>
+                    Suppose the input and output features are decomposed into irreducibles,
+                    \[
+                        \rho_{\text{in}} = \bigoplus_{\ell} m_\ell\, \rho_\ell,
+                        \qquad
+                        \rho_{\text{out}} = \bigoplus_{\ell} n_\ell\, \rho_\ell,
+                    \]
+                    where \(m_\ell\) is the number of type-\(\ell\) channels in the input and \(n_\ell\) the
+                    number in the output. An intertwiner \(W\) respects this block structure, and we can read
+                    off its possible form block by block. Restricted to a single input copy of \(\rho_\ell\) and
+                    a single output copy of \(\rho_{\ell'}\), the corresponding block of \(W\) is itself an
+                    intertwiner between the irreducibles \(\rho_\ell\) and \(\rho_{\ell'}\). Schur's lemma now
+                    forces two things. When \(\ell \neq \ell'\) the two irreducibles are inequivalent, so the
+                    only intertwiner between them is zero: <strong>a layer cannot move information between
+                    features of different type.</strong> When \(\ell = \ell'\), the block is a self-intertwiner
+                    of the complex irreducible \(\rho_\ell\), and over \(\mathbb{C}\) Schur's lemma says every
+                    such map is a scalar multiple of the identity. Each pairing of an input copy with an output
+                    copy of the same type therefore contributes exactly <em>one</em> free scalar.
+                </p>
+
+                <p>
+                    The consequence for the layer's parameter count is dramatic, and it is the precise
+                    mathematical statement of why equivariance buys sample efficiency. An unconstrained linear
+                    map between the same two feature spaces would have a number of free parameters equal to the
+                    product of their dimensions, \(\bigl(\sum_\ell m_\ell (2\ell+1)\bigr)\bigl(\sum_\ell n_\ell
+                    (2\ell+1)\bigr)\). The equivariant layer, by contrast, has exactly \(\sum_\ell m_\ell n_\ell\)
+                    free scalars — one per matched pair of same-type channels, with every cross-type and
+                    within-type-off-diagonal entry forced to a fixed multiple of the identity or to zero. The
+                    \((2\ell+1)\times(2\ell+1)\) machinery inside each type is not learned; it is dictated by the
+                    representation. The network learns only how much of each type flows into each output type,
+                    not the orientation-dependent details, because those details are precisely what the symmetry
+                    fixes. The reduction from a product of dimensions to \(\sum_\ell m_\ell n_\ell\) is not a
+                    heuristic compression; it is exactly the dimension of the space of intertwiners, so for the
+                    linear layer there is provably nothing more to learn.
+                </p>
+
+                <p>
+                    One subtlety is worth a word, and it is where the real-versus-complex distinction of the
+                    representation track earns its keep. The clean statement "every self-intertwiner is a single
+                    scalar" holds over \(\mathbb{C}\); over \(\mathbb{R}\) an irreducible may in general have a
+                    larger endomorphism algebra, so that the count per matched pair exceeds one. The rotation
+                    group is better behaved than the general case: its irreducibles \(\rho_\ell\) — the
+                    odd-dimensional representations realized by the spherical harmonics — are absolutely
+                    irreducible, remaining irreducible even after extension to \(\mathbb{C}\), and for such a
+                    representation the self-intertwiner is exactly one scalar over \(\mathbb{R}\) just as over
+                    \(\mathbb{C}\). This is what makes the one-scalar-per-pair count safe to use in the
+                    real-valued arithmetic that practical networks are built on, where the features are real
+                    spherical-harmonic coefficients rather than complex amplitudes. The general bookkeeping,
+                    valid for any compact group and either field, is governed by
+                    <a href="../Linear_algebra/complete_reducibility_schur.html#D-completely_reducible" class="ref-link"><strong>complete reducibility</strong></a>
+                    together with Schur's lemma.
+                </p>
+            </section>
+
+            <section id="coupling" class="section-content">
+                <h2>Coupling Representations: Clebsch-Gordan and Wigner-Eckart</h2>
+
+                <p>
+                    Schur's lemma settles the linear layers, but a network of only linear layers is just one big
+                    linear map. Expressivity requires combining features nonlinearly, and here a new question
+                    arises: if we multiply a type-\(\ell_1\) feature by a type-\(\ell_2\) feature, what type is
+                    the result? The product of two features lives in the
+                    <a href="../Linear_algebra/representation_constructions.html#D-tensor_product_representation_group" class="ref-link"><strong>tensor product</strong></a>
+                    representation \(\rho_{\ell_1} \otimes \rho_{\ell_2}\), and the tensor product of two
+                    irreducibles is in general no longer irreducible. To restore the type-indexed bookkeeping we
+                    must decompose it back into irreducibles, and that decomposition is the
+                    <a href="../Linear_algebra/clebsch_gordan_sl2.html#T-clebsch_gordan_sl2" class="ref-link"><strong>Clebsch-Gordan theorem</strong></a>.
+                </p>
+
+                <p>
+                    In the type indexing, with \(\rho_\ell\) corresponding to \(V_{2\ell}\) in the representation
+                    track, the decomposition reads
+                    \[
+                        \rho_{\ell_1} \otimes \rho_{\ell_2}
+                        \;\cong\;
+                        \bigoplus_{\ell = |\ell_1 - \ell_2|}^{\ell_1 + \ell_2} \rho_\ell,
+                    \]
+                    a single copy of each type from \(|\ell_1 - \ell_2|\) up to \(\ell_1 + \ell_2\), the
+                    decomposition being multiplicity-free. The change of basis effecting this isomorphism is
+                    carried out by the Clebsch-Gordan coefficients: the linear map
+                    \(C_{\ell_1 \ell_2 \ell}\) that projects the tensor product onto its type-\(\ell\) summand.
+                    Concretely, a nonlinear coupling layer takes a type-\(\ell_1\) feature and a type-\(\ell_2\)
+                    feature, forms their tensor product, and reads off the type-\(\ell\) component
+                    \[
+                        f^{\ell} = \bigl(f^{\ell_1} \otimes f^{\ell_2}\bigr) C_{\ell_1 \ell_2 \ell},
+                    \]
+                    which is again a clean type-\(\ell\) feature, transforming by \(\rho_\ell\). Because the
+                    tensor product of two equivariant inputs transforms by \(\rho_{\ell_1} \otimes \rho_{\ell_2}\)
+                    and \(C_{\ell_1 \ell_2 \ell}\) is by construction the intertwiner onto \(\rho_\ell\), the
+                    output is equivariant: this is a genuine nonlinearity that nonetheless preserves the type
+                    structure. Clebsch-Gordan is the multiplication table of the type-\(\ell\) features.
+                </p>
+
+                <p>
+                    The closing observation of the representation track tightens this picture into its sharpest
+                    form. Once the types of the input, the output, and the operator being applied are fixed,
+                    how much freedom remains in an equivariant map between them? The
+                    <a href="../Linear_algebra/wigner_eckart.html#T-wigner_eckart" class="ref-link"><strong>Wigner-Eckart theorem</strong></a>
+                    answers: essentially none. In its cleanest case it states that any two vector operators on a
+                    fixed irreducible representation are proportional — given one nonzero such operator, a single
+                    complex constant, the reduced matrix element, determines the entire operator, with all of its
+                    orientation-dependent structure fixed by the representation theory. The general form extends this to operators of
+                    any type: an equivariant map carrying type-\(\ell_1\) features through a type-\(k\) operator
+                    to type-\(\ell_2\) features is determined, up to one scalar per allowed type channel, by
+                    Clebsch-Gordan coefficients alone.
+                </p>
+
+                <div class="insight-box">
+                    <h3>One Scalar Per Channel, Again</h3>
+                    <p>
+                        Wigner-Eckart extends the lesson of Schur's lemma to the nonlinear couplings: the
+                        learnable content of an equivariant architecture is a thin layer of reduced scalars,
+                        while the rich orientation-dependent machinery is computed once from the representation
+                        theory of \(SO(3)\) rather than learned. A reader who has followed the representation
+                        track will recognize that the whole apparatus an equivariant network needs — the
+                        irreducible classification, complete reducibility, Schur's lemma, Clebsch-Gordan, and
+                        Wigner-Eckart — was assembled there, for its own reasons, before any network was in view.
+                    </p>
+                </div>
+            </section>
+
+            <section id="in-practice" class="section-content">
+                <h2>Symmetry in Practice</h2>
+
+                <p>
+                    Assembling the pieces gives the shape of an equivariant network for three-dimensional data.
+                    Inputs are organized into type-\(\ell\) features; linear layers are Schur-constrained
+                    intertwiners; nonlinear couplings tensor features together and re-sort the result by
+                    Clebsch-Gordan; and where a single rotation-invariant prediction is finally wanted — a total
+                    energy, a class label — the network keeps only the type-\(\ell = 0\) part. The same
+                    representation theory that classifies the irreducibles of \(SO(3)\) is, layer by layer, the
+                    design manual for the architecture.
+                </p>
+
+                <p>
+                    It would misrepresent the current state of the field to present this as the settled or only
+                    way to handle symmetric data. Whether to build the symmetry into the architecture, as
+                    described here, or instead to use a more generic architecture and let it learn the symmetry
+                    from data — typically by augmenting the training set with transformed copies of each example
+                    — is an active and genuinely open question, and the answer appears to depend on the regime.
+                    Both approaches are principled, and both are in serious use.
+                </p>
+
+                <div class="insight-box">
+                    <h3>An Open Question: Build the Symmetry In, or Learn It?</h3>
+                    <p>
+                        Careful empirical study of this trade-off — comparing equivariant architectures against
+                        general-purpose ones on tasks with a known symmetry, across a range of model and dataset
+                        sizes — finds considerations on both sides rather than a verdict. Building the symmetry
+                        in improves data efficiency: such a model reaches a given accuracy from fewer training
+                        examples, because it does not spend data discovering a regularity it was told. Yet a
+                        general architecture trained with data augmentation can close much of that gap when
+                        enough data and training are available, since augmentation lets it learn the same
+                        invariance approximately. The two also scale differently in compute and allocate a fixed
+                        compute budget differently between model size and training length. Brehmer and
+                        collaborators give a careful empirical treatment of exactly this comparison.
+                    </p>
+                    <p>
+                        Whichever approach proves preferable for a given problem, the comparison is conducted
+                        <em>in the language of this page</em>: stating what an equivariant model gains and what
+                        an augmented one approximates requires speaking of how representations decompose and how
+                        many degrees of freedom a symmetry constraint removes.
+                    </p>
+                </div>
+
+                <p>
+                    There is also a thread that runs forward from here rather than back. The expansion of a
+                    spherical signal into type-\(\ell\) components is a Fourier analysis on the sphere, and the
+                    same idea — decomposing functions on a space with symmetry into pieces indexed by the
+                    irreducible representations of the acting group — extends far beyond \(SO(3)\) to general
+                    compact groups. The theorem that guarantees this, identifying the matrix entries of the
+                    irreducible representations as a complete orthonormal system for square-integrable functions
+                    on the group, is the natural next destination: it is what turns the representation theory of
+                    this page into a full harmonic analysis, and it is the bridge by which the Fourier analysis
+                    met earlier in the curriculum reappears in the setting of groups. That development is left
+                    for a later page.
+                </p>
+
+                <h3>Interactive Demo</h3>
+
+                <div id="equivariant_demo"></div>
+
+                <p>
+                    The demonstration accompanying this section drives a single rotation \(R \in SO(3)\) with the
+                    sliders and shows its action on three features at once: a type-\(0\) scalar, which never moves;
+                    a type-\(1\) vector, which rotates rigidly as \(R\) acts on \(\mathbb{R}^3\); and a type-\(2\)
+                    feature, drawn as a triaxial body that reorients without changing shape. Beside the geometry
+                    the same rotation is shown as the block-diagonal matrix
+                    \(\rho(R) = \rho_0(R) \oplus \rho_1(R) \oplus \rho_2(R)\): rotating \(R\) reshuffles the entries
+                    inside each diagonal block, while every entry between blocks remains exactly zero. The dark,
+                    permanently empty region between the blocks is the visible form of the statement that an
+                    intertwiner cannot move information between features of different type — the left-hand geometry
+                    and the right-hand matrix are the same fact seen two ways.
+                </p>
+            </section>
+
+        </div>
+
+        <script src="/js/sec5_p16_equivariant_type_visualizer.js"></script>
+
+    </body>
+</html>
