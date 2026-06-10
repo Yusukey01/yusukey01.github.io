@@ -1,6 +1,6 @@
 // sec5_p16_equivariant_type_visualizer.js
 // Representation-theory visualizer for ml-16
-// "Symmetry and Representation Theory in Machine Learning"
+// "Symmetry & Representation Theory in ML"
 //
 // Shows ONE neutral fact: under a single rotation R in SO(3), features of
 // different type transform WITHIN their own type only. Left = geometry
