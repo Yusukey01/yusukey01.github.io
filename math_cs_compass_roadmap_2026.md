@@ -1,8 +1,16 @@
 # MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v3)
 
 **Author:** Yusuke Yokota
-**Last Updated:** 6/9/2026
+**Last Updated:** 6/10/2026
 **Website:** https://math-cs-compass.com
+
+**v3 update (6/10/2026)**: **Manifold series Ch.15 (Orientations) completed** — calc-85~89
+(topicGroup `orientations`: vector-space orientation -> manifold orientation -> induced/Stokes
+orientation -> Riemannian volume form -> orientation covering) plus three augmentation pages
+(calc-45/52/59). Verified against Lee originals, sign conventions machine-checked. The next
+manifold scope is now **Ch.16 (Integration, through Stokes)** alone; detail in
+`manifold_series_design_handout_v22`. calc-89 (\(\mathbb{RP}^2\) / orientation double cover)
+supplies part of the gauge-equivariant-NN geometric stage (Part 12, Fiber Bundles trigger).
 
 **v2 -> v3 changes**: Reflects the 2026/6/9 session. (1) Rep Theory track's GDL landing
 **Equivariant NN (ml-16) is complete** — title "Symmetry & Representation Theory in ML", in-page
@@ -11,6 +19,7 @@ demo, curriculum/previews/in-page references all settled; detail in `representat
 which requires manifold integration as its foundation. (3) **Manifold series Ch.15 (Orientations) /
 Ch.16 (Integration, through Stokes) decided as the next manifold scope** to supply that integration
 substrate; Corners/Densities tentatively deferred; detail in `manifold_series_design_handout_v21`.
+(Ch.15 now completed — see v3 update above.)
 
 **v1 -> v2 changes**: Reflects the 2026/6/3 session that fixed the references, placement, and
 dependency audits for five tracks (Phase 2e / Rep Theory / CDL / Crypto / TDL) in one pass.
@@ -31,10 +40,10 @@ lack awareness of applications. The primary focus is rigorous mathematical found
 modern AI/ML, with continuous expansion into adjacent domains (GDL, CDL, cryptography,
 stochastic analysis).
 
-**Total: 182 pages as of 6/9/2026.** Breakdown: I (linalg) 39 / II (calc) 84 / III (prob) 26 /
-IV (disc) 17 / V (ml) 16. The v2 header figures (linalg 30 / calc 81) were stale — they predated
-the rep-track linalg-31~39 and the Ch.14 calc-82/83/84 additions; corrected here. `curriculum.json`
-is authoritative once the ml-16 entry is registered locally.
+**Total: 187 pages as of 6/10/2026.** Breakdown: I (linalg) 39 / II (calc) 89 / III (prob) 26 /
+IV (disc) 17 / V (ml) 16. The II (calc) figure includes the Ch.15 orientation pages calc-85~89
+(+5 this session); the augmentation edits to existing pages calc-45/52/59 do not add to the count.
+`curriculum.json` is authoritative once the calc-85~89 entries are registered locally.
 
 **Five active tracks (planned in one pass on 2026/6/3)**; detail in the Part 2 overview:
 - Phase 2e (continuous-time generative foundations, Section III) — awaiting Øksendal purchase
@@ -152,8 +161,10 @@ for sample efficiency); Peter-Weyl (Fourier on groups).
 (applied; for ml-16, Esteves / Gerken et al. / Brehmer et al. placed as in-page References —
 `references.json` has no papers category, so they are not added to the site-wide index).
 **Status**: linalg-31~39 + ml-16 complete. **Next active = Peter–Weyl** (compact-group harmonic
-analysis), which requires manifold integration (Lee Ch.15/16) as its foundation — that manifold
-scope is the immediate next step (Part 3.6 / manifold handout v21).
+analysis), which requires manifold integration (Lee Ch.15/16) as its foundation. Ch.15 Orientations
+(calc-85~89) is now complete, supplying the orientation / Riemannian volume form substrate; the
+remaining prerequisite is Ch.16 Integration (through Stokes), the immediate next manifold step
+(Part 3.6 / manifold handout v22).
 **2026 check**: CERTAIN. Peter–Weyl confirmed as the theoretical core of equivariant nets in
 current literature (2025 PNAS review, 2026 surveys): equivariant layers express variables in the
 generalized Fourier space of the group; for SO(3) the irreducible matrix entries are the Wigner
@@ -182,18 +193,20 @@ n-body (higher-order) interactions over simplicial/cellular complexes.
 prereqs: SNN <- disc-15, disc-13, ml-13.
 
 ### 3.5 Rejoining of the two legs (Hodge, future deep connection)
-Continuous Hodge (differential forms: Lee Ch.14 complete = calc-82/83/84; integration Ch.15/16
-next) and discrete Hodge (simplicial complexes, disc-13/15 existing) share the same structure.
+Continuous Hodge (differential forms: Lee Ch.14 complete = calc-82/83/84; orientations Ch.15
+complete = calc-85~89; integration Ch.16 next) and discrete Hodge (simplicial complexes,
+disc-13/15 existing) share the same structure.
 DEC (Part 12 deferred) will be the reclamation hub bridging both legs. The Ch.16 Stokes scope
-decided this session sits on the de Rham / DEC critical path (manifold handout v21). Recorded for
+sits on the de Rham / DEC critical path (manifold handout v22). Recorded for
 now; the relevant Part 12 entries are "Spectral Laplacian" and "DEC."
 
 ### 3.6 GDL track sequencing (current)
-With the manifold spine complete (calc-36~81) and Ch.14 forms added (calc-82/83/84), the
-continuous leg's algebraic foundation is in place. Active order:
+With the manifold spine complete (calc-36~81), Ch.14 forms (calc-82/83/84), and Ch.15
+orientations (calc-85~89) added, the continuous leg's algebraic and orientation foundation is
+in place. Active order:
 - Continuous leg: representation theory + Equivariant NN (ml-16) **complete** -> manifold
-  integration (Ch.15 Orientations / Ch.16 Integration through Stokes, **next active**) ->
-  Peter–Weyl (needs that integration substrate for Haar).
+  orientations (Ch.15, **complete**) -> manifold integration (Ch.16 Integration through Stokes,
+  **next active**) -> Peter–Weyl (needs that integration substrate for Haar).
 - Discrete leg: existing disc-13~15 -> SNN (mood).
 Forward-pointer obligation: each GDL page carries forward-pointers to "the next mathematics"
 (not explicitly declared; readers infer open-endedness from the structure).
@@ -470,9 +483,9 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 | Representation Theory | linalg-31~39 (done) | I | (complete) | ✅ complete (GDL continuous leg, Part 3.3) |
 | Equivariant NN | ml-16 (done) | V | `equivariant_nn.html` | ✅ complete (title "Symmetry & Representation Theory in ML") |
 | Manifold Ch.14 Differential Forms | calc-82/83/84 (done) | II | (complete) | ✅ complete (topicGroup `differential-forms`) |
-| Manifold Ch.15 Orientations | ~2 | II | TBD | **next active** (Peter–Weyl integration substrate, manifold handout v21) |
-| Manifold Ch.16 Integration (through Stokes) | ~4 | II | TBD | **next active**; Corners/Densities tentatively deferred |
-| Peter–Weyl | TBD | I | TBD | after manifold Ch.15/16 (needs Haar integration) |
+| Manifold Ch.15 Orientations | calc-85~89 (done) | II | (complete) | ✅ complete (topicGroup `orientations`; + augmentations calc-45/52/59) |
+| Manifold Ch.16 Integration (through Stokes) | ~4 | II | TBD | **next active** (Peter–Weyl integration substrate, manifold handout v22); Corners/Densities tentatively deferred |
+| Peter–Weyl | TBD | I | TBD | after manifold Ch.16 (needs Haar integration; Ch.15 orientation/volume-form substrate now complete) |
 | TDL: Simplicial NN | 1 | V | TBD | mood/GDL (GDL discrete leg, Part 3.4; Hodge exists) |
 | TDL: Persistent Homology | ~1 | IV | TBD | optional branch (disc-15 forecast) |
 | Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **awaiting Øksendal purchase** (Part 4; splits anticipated) |
@@ -493,8 +506,8 @@ Completed tracks (on index.html, no planned pages).
 ### Major completed tracks
 | Track | Pages | Completed | Notes |
 |---|---|---|---|
-| Smooth Manifolds (Lee Ch.1–14) | calc-36~81 (spine) + calc-42, calc-47 + calc-82/83/84 (Ch.14 forms) | 6/3/2026 (Ch.1–13); 6/7/2026 (Ch.14) | Topological/smooth manifolds -> tangent vectors -> immersions/embeddings -> submanifolds -> Sard/Whitney -> Lie groups -> vector fields/flows -> vector bundles -> cotangent bundle -> tensors -> Riemannian metrics (Ch.13: calc-78~81) -> differential forms (Ch.14: calc-82/83/84, topicGroup `differential-forms`, through Cartan's formula). Mathematical landing point of the GDL continuous leg. topicGroups `riemannian-geometry`, `differential-forms`. Integration (Ch.15/16) is the next active scope. Curvature/geodesics deferred to a future LeeRM series. Detail `manifold_series_design_handout_v21`. |
-| Representation Theory (Hall) | linalg-31~39 + ml-16 | 6/8/2026 (ml-16); rep mainline earlier | Complexification + group/Lie-algebra representations -> irreducible classification -> complete reducibility / Schur -> Clebsch-Gordan -> Wigner-Eckart (linalg-31~39), landing at Equivariant NN (ml-16, Section V). GDL continuous leg's representation-theory spine. Next: Peter–Weyl (needs manifold integration). Detail `representation_theory_track_handout_v8`. |
+| Smooth Manifolds (Lee Ch.1–15) | calc-36~81 (spine) + calc-42, calc-47 + calc-82/83/84 (Ch.14 forms) + calc-85~89 (Ch.15 orientations) + calc-45/52/59 (augmentations) | 6/3/2026 (Ch.1–13); 6/7/2026 (Ch.14); 6/10/2026 (Ch.15) | Topological/smooth manifolds -> tangent vectors -> immersions/embeddings -> submanifolds -> Sard/Whitney -> Lie groups -> vector fields/flows -> vector bundles -> cotangent bundle -> tensors -> Riemannian metrics (Ch.13: calc-78~81) -> differential forms (Ch.14: calc-82/83/84, topicGroup `differential-forms`, through Cartan's formula) -> orientations (Ch.15: calc-85~89, topicGroup `orientations`, vector-space orientation through orientation covering, incl. Riemannian volume form and Stokes orientation). Mathematical landing point of the GDL continuous leg. topicGroups `riemannian-geometry`, `differential-forms`, `orientations`. Integration (Ch.16, through Stokes) is the next active scope. Curvature/geodesics deferred to a future LeeRM series. Detail `manifold_series_design_handout_v22`. |
+| Representation Theory (Hall) | linalg-31~39 + ml-16 | 6/8/2026 (ml-16); rep mainline earlier | Complexification + group/Lie-algebra representations -> irreducible classification -> complete reducibility / Schur -> Clebsch-Gordan -> Wigner-Eckart (linalg-31~39), landing at Equivariant NN (ml-16, Section V). GDL continuous leg's representation-theory spine. Next: Peter–Weyl (needs manifold integration; Ch.15 orientations now complete, Ch.16 integration remaining). Detail `representation_theory_track_handout_v8`. |
 | Formal Methods | disc-16, disc-17 | 5/14/2026 | Section IV third pillar (disc-4,16,17). Bidirectional bridge with disc-12 (Four Color Theorem). The Curry-Howard-Lambek connection point for CDL. |
 
 ### Completed reference -> page mapping
@@ -503,7 +516,7 @@ Completed tracks (on index.html, no planned pages).
 - Horn & Johnson *Matrix Analysis* -> linalg-09~13
 - Boyd & Vandenberghe *Convex Optimization* -> calc-07, calc-08
 - O'Searcoid *Metric Spaces* -> calc-16~22
-- Lee *Introduction to Smooth Manifolds* -> calc-29, calc-36~81, calc-42
+- Lee *Introduction to Smooth Manifolds* -> calc-29, calc-36~81, calc-42, calc-82~89 (Ch.14 forms + Ch.15 orientations)
 - Conway *Functional Analysis* -> calc-23~28, calc-30~32
 - Stein & Shakarchi *Fourier Analysis* -> calc-14, calc-15, calc-32~35
 - Stillwell *Naive Lie Theory* -> linalg-24, linalg-27~30
@@ -527,7 +540,7 @@ Completed tracks (on index.html, no planned pages).
 | **Spectral Theory of the Laplacian (continuous)** | **continuous <-> discrete Hodge bridge (Part 3.5); precursor to GDL two-leg rejoining** |
 | **DEC (Discrete Exterior Calculus)** | **reclamation hub for continuous Hodge (Lee Ch.14+) + discrete Hodge (disc-13/15 existing); bridges both GDL legs** |
 | Regular Conditional Distributions | Phase 2e companion (SDE/Itō filtration); non-blocking for prob-26 |
-| Fiber Bundles & Gauge Theory | when a GDL viewpoint demands gauge equivariance; manifold Q8 |
+| Fiber Bundles & Gauge Theory | when a GDL viewpoint demands gauge equivariance; manifold Q8. calc-89 (\(\mathbb{RP}^2\) nonorientable, orientation double cover \(S^2 \to \mathbb{RP}^2\)) now supplies the topological stage for the diffusion-MRI gauge-equivariant-CNN example (both the direct-on-\(\mathbb{RP}^2\) and lift-to-\(S^2\) approaches); frame/principal bundle itself remains out of Lee scope and needs a separate resource |
 | **Optimal Transport** | **FM straight-path optimality. Phase 2e uses forward-pointers only; OT-book acquisition is the trigger** |
 | String Diagrams | after CDL Stage 4 (or part of Stage 4) |
 | Persistent Homology | TDL optional branch (disc-15 forecast, Part 3.4) |
@@ -576,4 +589,4 @@ Completed tracks (on index.html, no planned pages).
 candidates, physical-book inspection items, and resume-time greps are authoritative in the
 individual handouts: `phase2e_handout_v1` / `representation_theory_track_handout_v8` /
 `cdl_track_handout_v1` / `crypto_track_handout_v1` / `tdl_track_handout_v1` /
-`manifold_series_design_handout_v21`.
+`manifold_series_design_handout_v22`.
