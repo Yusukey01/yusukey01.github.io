@@ -1,0 +1,864 @@
+---
+layout: default
+title: "Integration of Differential Forms"
+topic_id: calc-90
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Integration of Differential Forms</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#why-forms">Why Differential Forms Are the Right Objects to Integrate</a>
+            <a href="#domains">Integrating an \(n\)-Form over a Domain in \(\mathbb{R}^n\)</a>
+            <a href="#manifolds">Integration on Manifolds</a>
+            <a href="#properties">Properties of the Integral</a>
+            <a href="#parametrizations">Computing Integrals: Parametrizations and the Sphere</a>
+            <a href="#lie-groups">Integration on Lie Groups: the Haar Volume Form</a>
+        </div>
+
+        <div class="container">
+
+            <section id="why-forms" class="section-content">
+                <h2>Why Differential Forms Are the Right Objects to Integrate</h2>
+
+                <p>
+                    We already know how to integrate a covector field along a curve: the line integral evaluates a \(1\)-form on the velocity
+                    vector at each point of an oriented curve and accumulates the readings, depending only on the curve and the form, not on
+                    any choice of coordinates. This chapter generalizes that construction to oriented \(k\)-dimensional submanifolds. The
+                    question is which kind of field can play the role covector fields played for curves; the answer, motivated here, is the
+                    differential form.
+                </p>
+
+                <h3>Functions Cannot Be Integrated Intrinsically</h3>
+
+                <p>
+                    One might expect the object to be integrated to be a function, as in elementary calculus. But a function is not the right
+                    object once coordinates are allowed to change, and that failure is what forces differential forms upon us. Consider the
+                    simplest case. Let \(C \subseteq \mathbb{R}^n\) be a closed ball and let \(f : C \to \mathbb{R}\)
+                    be the constant function \(f(x) \equiv 1\). Integrating it against the ordinary volume element gives the volume of the
+                    ball,
+                    \[
+                    \int_C f\, dV = \operatorname{Vol}(C).
+                    \]
+                    Now apply a linear change of coordinates — say, a map that stretches one axis by a factor of \(2\). The set \(C\) and the
+                    function \(f \equiv 1\) are unchanged as geometric data, yet the volume of the image is twice that of \(C\): the integral
+                    has changed even though we did nothing to the function. The culprit is the determinant of the coordinate change, which
+                    rescales \(dV\) but which the bare symbol \(f\) carries no record of. So \(\int_C f\, dV\) is not an invariant of the
+                    function and the set alone; it depends on the coordinates in which the volume element was written, and for nonlinear
+                    changes the rescaling factor even varies from point to point. A function carries no instruction for how to respond when
+                    the measuring scale is deformed, so there is no coordinate-independent way to integrate it over a region of a manifold.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why a Riemannian Metric Rescues Functions</h3>
+                    <p>
+                        The obstruction is the absence of a built-in volume scale, not anything pathological about functions. On an oriented
+                        manifold a Riemannian metric supplies a canonical positively oriented \(n\)-form, the Riemannian volume form, against which
+                        a function can be integrated unambiguously — the route taken in the Riemannian integration developed later in this chapter.
+                        On a bare smooth manifold there is no preferred scale, so one must look instead for fields that carry their own.
+                    </p>
+                </div>
+
+                <h3>A Covector Field Is a Signed Length Meter</h3>
+
+                <p>
+                    The line integral succeeds where the function integral fails, and seeing why points at the general construction. A
+                    covector field assigns to each tangent vector a number, linearly. At each point a covector thus reads off a tangent
+                    vector and returns a signed length — signed because reversing the vector reverses the sign, a "meter" because it measures
+                    every vector in a given direction on a common scale. The word "length" here is not metric length, which would require a
+                    Riemannian metric; it is the reading on the scale the covector itself carries, a coordinate-independent proportionality
+                    factor along each direction. A covector field is a field of such meters, one per tangent space, and the line integral
+                    measures a curve by applying the meter at each point to the velocity and summing. The meter is intrinsic to the form and
+                    consults no coordinate system, so its reading is coordinate-independent — exactly the property the function integral lacked.
+                </p>
+
+                <h3>Seeking a Signed Volume Meter in Higher Dimensions</h3>
+
+                <p>
+                    To integrate over a \(k\)-dimensional submanifold with \(k \gt 1\), we need the analogous device one dimension higher: a
+                    machine that at each point reads off a \(k\)-tuple of tangent vectors and returns a number we interpret as the signed
+                    \(k\)-dimensional volume of the parallelepiped they span. Write \(\omega(v_1, \dots, v_k)\) for that signed volume. What
+                    algebraic properties must \(\omega\) have to behave like a volume?
+                </p>
+
+                <p>
+                    The prototype already exists: on \(\mathbb{R}^n\), the determinant returns, up to sign, the volume of the parallelepiped
+                    spanned by \(n\) vectors — for \(n = 2\), the signed area of a parallelogram, and likewise in every dimension. It is no
+                    accident that the determinant is the standard example of an
+                    <a href="alternating_tensors.html#D-alternating_tensor" class="ref-link"><strong>alternating tensor</strong></a>:
+                    the properties we are about to demand of a general volume meter are exactly the ones the determinant already enjoys.
+                </p>
+
+                <h3>Volume Forces Multilinearity, and Then Alternation</h3>
+
+                <p>
+                    Two demands pin down the algebraic form of \(\omega\). Scaling one edge by a constant should scale the volume by that
+                    constant; and a parallelepiped whose \(i\)th edge is a sum \(v_i + v_i'\) should have volume equal to the sum of the
+                    volumes built from \(v_i\) and from \(v_i'\) separately, the other edges fixed. In symbols, for each index \(i\),
+                    \[
+                    \begin{align*}
+                    \omega(v_1, \dots, c\,v_i, \dots, v_k) &= c\,\omega(v_1, \dots, v_i, \dots, v_k),\\\\
+                    \omega(v_1, \dots, v_i + v_i', \dots, v_k) &= \omega(v_1, \dots, v_i, \dots, v_k)\\\\
+                    &\quad{} + \omega(v_1, \dots, v_i', \dots, v_k).
+                    \end{align*}
+                    \]
+                    In every slot, these say that \(\omega\) is linear in each argument separately: it is a covariant \(k\)-tensor.
+                </p>
+
+                <p>
+                    One further property is forced. A linearly dependent \(k\)-tuple spans a degenerate parallelepiped, flattened into fewer
+                    than \(k\) dimensions and so of zero \(k\)-volume; a faithful volume meter must return zero on it. For a covariant
+                    \(k\)-tensor this is no mild side condition: by the
+                    <a href="alternating_tensors.html#T-alternating_characterizations" class="ref-link"><strong>characterization of alternating tensors</strong></a>,
+                    a \(k\)-tensor vanishing on every linearly dependent \(k\)-tuple is necessarily alternating — its value reverses sign
+                    when two arguments are interchanged. That sign reversal is welcome: it encodes orientation, the higher-dimensional
+                    analogue of the sign distinguishing forward from backward traversal of a curve.
+                </p>
+
+                <p>
+                    The conclusion is decisive: a signed volume meter must be, at each point, an alternating covariant tensor — and a smoothly
+                    varying field of alternating \(k\)-tensors on a manifold is exactly a differential \(k\)-form. The rest of the chapter
+                    makes this good: we define the integral of an \(n\)-form over a domain in Euclidean space, transport it to oriented
+                    manifolds, and connect it through Stokes's theorem to the classical integral theorems of vector calculus.
+                </p>
+            </section>
+
+            <section id="domains" class="section-content">
+                <h2>Integrating an \(n\)-Form over a Domain in \(\mathbb{R}^n\)</h2>
+
+                <p>
+                    The construction proceeds in stages, exactly as the line integral did: we first integrate over the most concrete domains
+                    in Euclidean space, then extend to open sets, and only afterward transport everything to a manifold. The reason for this
+                    order is that integration of a function over a region of \(\mathbb{R}^n\) is already understood from multivariable
+                    calculus; our task here is only to attach that machinery to forms in the right way and check that it respects
+                    coordinate changes. Throughout, we work with top-degree forms — \(n\)-forms on an open subset of \(\mathbb{R}^n\) — since
+                    those are the forms that have a chance of being integrated over an \(n\)-dimensional region.
+                </p>
+
+                <p>
+                    The regions we integrate over must be tame enough for multiple integrals to make sense. We need them bounded, so that
+                    the integral is finite, and we need their boundaries to be negligible, so that it does not matter whether boundary
+                    points are included.
+                </p>
+
+                <div class="theorem" id="D-domain_of_integration">
+                    <span class="theorem-title">Definition: Domain of Integration</span>
+                    <p>
+                        A <strong>domain of integration</strong> in \(\mathbb{R}^n\) is a bounded subset \(D \subseteq \mathbb{R}^n\) whose
+                        boundary \(\partial D\) is a
+                        <a href="sards_theorem.html#D-measure_zero_set" class="ref-link"><strong>set of measure zero</strong></a>.
+                    </p>
+                </div>
+
+                <p>
+                    The measure-zero condition is what makes the integral insensitive to the exact specification of the region. A bounded
+                    continuous function is Riemann integrable over such a set, and changing the function on \(\partial D\) — for instance, by
+                    deciding whether the boundary belongs to \(D\) — leaves the integral unchanged, because a set of measure zero contributes
+                    nothing. Rectangles, balls, and the bounded regions of elementary calculus are all domains of integration; their
+                    boundaries are lower-dimensional and hence negligible.
+                </p>
+
+                <h3>Integration over a Domain: Erasing the Wedges</h3>
+
+                <p>
+                    On a domain of integration the definition of the integral of a top form is as simple as possible. Any \(n\)-form on an open
+                    set containing \(\overline{D}\) can be written in standard coordinates as \(\omega = f\, dx^1 \wedge \cdots \wedge dx^n\)
+                    for a single continuous coefficient function \(f\), since the space of alternating \(n\)-tensors on \(\mathbb{R}^n\) is
+                    one-dimensional. We integrate the form by integrating that coefficient.
+                </p>
+
+                <div class="theorem" id="D-integral_over_domain">
+                    <span class="theorem-title">Definition: Integral of an \(n\)-Form over a Domain</span>
+                    <p>
+                        Let \(D \subseteq \mathbb{R}^n\) be a domain of integration and let \(\omega = f\, dx^1 \wedge \cdots \wedge dx^n\) be an
+                        \(n\)-form with \(f\) continuous on \(\overline{D}\). The <strong>integral of \(\omega\) over \(D\)</strong> is
+                        \[
+                        \int_D \omega := \int_D f\, dV,
+                        \]
+                        the ordinary multiple integral of \(f\) over \(D\) against Lebesgue volume \(dV\).
+                    </p>
+                </div>
+
+                <p>
+                    In words: to integrate \(f\, dx^1 \wedge \cdots \wedge dx^n\), one erases the wedges and computes the multiple integral of
+                    \(f\). The wedge symbols are not decorative — they record the ordering of the coordinates, which is what carries the sign
+                    information once coordinates are changed.
+                </p>
+
+                <h3>Diffeomorphism Invariance: the Pullback Carries the Jacobian</h3>
+
+                <p>
+                    The definition above is stated in one fixed coordinate system, so its naturality is not yet visible. The decisive fact,
+                    the next proposition, is that pulling a form back through a coordinate change reproduces the change-of-variables factor
+                    automatically — which is what makes the integral of a form coordinate-independent.
+                </p>
+
+                <div class="theorem" id="T-form_integral_domain_invariance">
+                    <span class="theorem-title">Proposition (Diffeomorphism Invariance on Domains)</span>
+                    <p>
+                        Let \(D\) and \(E\) be open domains of integration in \(\mathbb{R}^n\), and let \(G : \overline{D} \to \overline{E}\) be a
+                        smooth map that restricts to an orientation-preserving or orientation-reversing diffeomorphism from \(D\) to \(E\). If
+                        \(\omega\) is an \(n\)-form on \(\overline{E}\), then
+                        \[
+                        \int_D G^*\omega =
+                        \begin{cases}
+                        \phantom{-}\displaystyle\int_E \omega & \text{if } G \text{ is orientation-preserving,}\\\\
+                        -\displaystyle\int_E \omega & \text{if } G \text{ is orientation-reversing.}
+                        \end{cases}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Write \((y^1, \dots, y^n)\) for the standard coordinates on \(E\) and \((x^1, \dots, x^n)\) for those on \(D\), and write
+                        \(\omega = f\, dy^1 \wedge \cdots \wedge dy^n\). Suppose first that \(G\) is orientation-preserving, so that its Jacobian
+                        determinant \(\det DG\) is positive throughout \(D\). The classical change-of-variables formula for multiple integrals
+                        relates the integral over \(E\) to an integral over \(D\) weighted by the absolute value of the Jacobian:
+                        \[
+                        \begin{align*}
+                        \int_E \omega
+                        &= \int_E f\, dV\\\\
+                        &= \int_D (f \circ G)\,\lvert \det DG \rvert\, dV.
+                        \end{align*}
+                        \]
+                        Because \(G\) is orientation-preserving, \(\lvert \det DG \rvert = \det DG\), so the absolute value may be dropped. On the
+                        other hand, the
+                        <a href="differential_forms.html#T-pullback_top_form" class="ref-link"><strong>pullback of a top-degree form</strong></a>
+                        is computed by exactly the same Jacobian factor,
+                        \[
+                        G^*\omega = (f \circ G)\,(\det DG)\; dx^1 \wedge \cdots \wedge dx^n,
+                        \]
+                        and integrating this over \(D\) — again by erasing the wedges — gives \(\int_D (f \circ G)\,(\det DG)\, dV\). Comparing
+                        the two displays, the right-hand sides agree, so
+                        \[
+                        \begin{align*}
+                        \int_D G^*\omega
+                        &= \int_D (f \circ G)\,(\det DG)\, dV\\\\
+                        &= \int_E \omega.
+                        \end{align*}
+                        \]
+                        If \(G\) is orientation-reversing, then \(\det DG \lt 0\), so removing the absolute value in the change-of-variables
+                        formula introduces a sign: \(\lvert \det DG \rvert = -\det DG\). Every step above is unchanged except for this one factor,
+                        and the result is \(\int_D G^*\omega = -\int_E \omega\).
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why the Jacobian Appears Twice — and Cancels</h3>
+                    <p>
+                        The proof turns on a coincidence that is no coincidence. The change-of-variables formula produces a factor
+                        \(\lvert \det DG \rvert\) from the geometry of how volume distorts under \(G\); the pullback of a top form produces a
+                        factor \(\det DG\) from the algebra of how the wedge \(dy^1 \wedge \cdots \wedge dy^n\) transforms. These two factors are
+                        the same up to sign, and that is exactly why integrating a form is coordinate-independent while integrating a function is
+                        not. The bare function notation drops the Jacobian; the wedge notation carries it. The only discrepancy is the sign,
+                        which is precisely the data of orientation — the form integral remembers the direction in which coordinates are traversed,
+                        whereas unsigned volume forgets it.
+                    </p>
+                </div>
+
+                <p>
+                    Here we have taken the change-of-variables formula for multiple integrals as known background from multivariable calculus,
+                    rather than proving it; it is the foundation on which integration of forms is built, not a theorem of this development. What
+                    the proposition adds is the observation that the language of forms encodes that formula automatically, sign included.
+                </p>
+
+                <h3>Extending to Compactly Supported Forms on Open Sets</h3>
+
+                <p>
+                    Before integrating over a manifold we need one intermediate setting: a form on an open set, not just on a domain of
+                    integration. The natural class is the compactly supported forms. The idea is to enclose the support inside a domain of
+                    integration and integrate there, so we first record that such an enclosing domain always exists.
+                </p>
+
+                <div class="theorem" id="T-enclosing_domain">
+                    <span class="theorem-title">Lemma (Existence of an Enclosing Domain)</span>
+                    <p>
+                        Let \(U \subseteq \mathbb{R}^n\) be open and let \(K \subseteq U\) be compact. Then there is an open domain of integration
+                        \(D\) with \(K \subseteq D \subseteq \overline{D} \subseteq U\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Each point of \(K\) lies in an open ball whose closure is contained in \(U\); since \(K\) is compact, finitely many such
+                        balls \(B_1, \dots, B_m\) cover it. Let \(D = B_1 \cup \cdots \cup B_m\). This set is open, bounded, and satisfies
+                        \(K \subseteq D \subseteq \overline{D} \subseteq U\) by construction. It remains to check that \(\partial D\) has measure
+                        zero. The boundary of \(D\) is contained in the union of the boundaries of the balls, and the boundary of each ball is a
+                        sphere, a
+                        <a href="sards_theorem.html#T-lower_dim_submanifold_measure_zero" class="ref-link"><strong>lower-dimensional submanifold</strong></a>
+                        of \(\mathbb{R}^n\) and therefore of measure zero. A finite union of measure-zero sets has measure zero, so \(\partial D\)
+                        has measure zero and \(D\) is a domain of integration.
+                    </p>
+                </div>
+
+                <p>
+                    With this in hand, the integral of a compactly supported \(n\)-form \(\omega\) on an open set \(U \subseteq \mathbb{R}^n\) is
+                    defined by choosing any domain of integration \(D\) containing the support and setting \(\int_U \omega := \int_D \omega\),
+                    where \(\omega\) is taken to be zero outside its support. Two different enclosing domains agree on the support and differ only
+                    where \(\omega\) vanishes, so the value does not depend on the choice of \(D\). This is the form in which the definition is
+                    ready to be transported to a manifold, one chart at a time — the construction taken up in the next section.
+                </p>
+            </section>
+
+            <section id="manifolds" class="section-content">
+                <h2>Integration on Manifolds</h2>
+
+                <p>
+                    We can now define the integral of a top-degree form over an oriented manifold. The work of the previous section pays off
+                    here: integration in a single chart is just integration over an open subset of \(\mathbb{R}^n\), pulled back through the
+                    coordinate map, and diffeomorphism invariance is exactly what guarantees that the answer does not depend on which chart we
+                    used. We treat one chart first, then patch charts together with a partition of unity.
+                </p>
+
+                <h3>Integration in a Single Chart</h3>
+
+                <p>
+                    Let \(M\) be an oriented smooth \(n\)-manifold, with or without boundary, and let \(\omega\) be an \(n\)-form on \(M\).
+                    Suppose for the moment that \(\omega\) is compactly supported inside the domain of a single smooth chart \((U, \varphi)\).
+                    The coordinate map \(\varphi\) carries \(U\) to an open subset \(\varphi(U) \subseteq \mathbb{R}^n\) (or \(\mathbb{H}^n\) if
+                    \(U\) meets the boundary), and pushes the form there: the inverse map \(\varphi^{-1}\) pulls \(\omega\) back to a compactly
+                    supported \(n\)-form \((\varphi^{-1})^*\omega\) on \(\varphi(U)\), which we already know how to integrate. We integrate
+                    \(\omega\) by integrating its coordinate representative, attaching a sign according to whether the chart respects the
+                    orientation.
+                </p>
+
+                <div class="theorem" id="D-integral_single_chart">
+                    <span class="theorem-title">Definition: Integral over a Single Chart</span>
+                    <p>
+                        With \(M\), \(\omega\), and \((U, \varphi)\) as above, where the chart is either positively or negatively
+                        <a href="orientations_of_manifolds.html#T-orientation_from_atlas" class="ref-link"><strong>oriented</strong></a>, the
+                        <strong>integral of \(\omega\) over \(M\)</strong> is
+                        \[
+                        \int_M \omega := \pm \int_{\varphi(U)} \bigl(\varphi^{-1}\bigr)^*\omega,
+                        \]
+                        with the positive sign when \((U, \varphi)\) is positively oriented and the negative sign when it is negatively
+                        oriented.
+                    </p>
+                </div>
+
+                <p>
+                    The sign is essential. A positively oriented chart presents \(M\) as its orientation prescribes, and the Euclidean integral
+                    then reads off the correctly signed volume; a negatively oriented chart reverses that presentation, and the compensating
+                    minus sign undoes the reversal. Without it the value would flip according to the handedness of the chart, and the integral
+                    would not be well defined.
+                </p>
+
+                <h3>Independence of the Chart</h3>
+
+                <p>
+                    For this definition to be legitimate, two charts containing the support of \(\omega\) must give the same value. This is
+                    where the diffeomorphism invariance established earlier does its work.
+                </p>
+
+                <div class="theorem" id="T-chart_independence">
+                    <span class="theorem-title">Proposition (Independence of Chart)</span>
+                    <p>
+                        With \(\omega\) compactly supported in the domain of a single chart, the value of \(\int_M \omega\) given by the
+                        definition above does not depend on which such chart is used.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Let \((U, \varphi)\) and \((\tilde U, \tilde\varphi)\) be two smooth charts whose domains both contain the support of
+                        \(\omega\). Consider first the case where the two charts have the same orientation — both positively oriented or both
+                        negatively oriented. Then the transition map \(\tilde\varphi \circ \varphi^{-1}\) is an orientation-preserving
+                        diffeomorphism between open subsets of \(\mathbb{R}^n\) (or \(\mathbb{H}^n\)), since same-handedness charts have
+                        <a href="orientations_of_manifolds.html#D-oriented_atlas" class="ref-link"><strong>positive transition Jacobian</strong></a>.
+                        Both definitions carry the same sign, so it suffices to show that the two Euclidean integrals agree:
+                        \[
+                        \begin{align*}
+                        \int_{\tilde\varphi(\tilde U)} \bigl(\tilde\varphi^{-1}\bigr)^*\omega
+                        = \int_{\varphi(U)} \bigl(\varphi^{-1}\bigr)^*\omega.
+                        \end{align*}
+                        \]
+                        Set \(G = \tilde\varphi \circ \varphi^{-1}\). A short pullback computation rewrites the left-hand integrand in terms of
+                        the right one. Since \(\tilde\varphi^{-1} = \varphi^{-1} \circ G^{-1}\), functoriality of the pullback gives
+                        \(\bigl(\tilde\varphi^{-1}\bigr)^* = (G^{-1})^* \circ \bigl(\varphi^{-1}\bigr)^*\) — equivalently, applying \(G^*\) to the
+                        right-hand integrand returns the left-hand one. By the
+                        <a href="#T-form_integral_domain_invariance" class="ref-link"><strong>diffeomorphism invariance on domains</strong></a>,
+                        and because \(G\) is orientation-preserving,
+                        \[
+                        \begin{align*}
+                        \int_{\varphi(U)} \bigl(\varphi^{-1}\bigr)^*\omega
+                        &= \int_{\varphi(U)} G^*\Bigl(\bigl(\tilde\varphi^{-1}\bigr)^*\omega\Bigr)\\\\
+                        &= \int_{\tilde\varphi(\tilde U)} \bigl(\tilde\varphi^{-1}\bigr)^*\omega,
+                        \end{align*}
+                        \]
+                        which is the desired equality.
+                    </p>
+                    <p>
+                        If instead the two charts have opposite orientations, the two definitions carry opposite signs. But now
+                        \(G = \tilde\varphi \circ \varphi^{-1}\) is orientation-reversing, so the same invariance introduces a compensating
+                        minus sign into the computation above. The two sign reversals cancel, and the two definitions again agree.
+                    </p>
+                </div>
+
+                <h3>Integration over the Whole Manifold</h3>
+
+                <p>
+                    A general compactly supported form need not live inside one chart, but it can always be cut into pieces that do. The tool
+                    for this is a partition of unity: a family of functions, each supported in a chart, that sum to \(1\). Multiplying
+                    \(\omega\) by each function localizes it to a chart, where the single-chart integral applies, and summing the pieces
+                    reassembles the whole.
+                </p>
+
+                <div class="theorem" id="D-integral_over_manifold">
+                    <span class="theorem-title">Definition: Integral over an Oriented Manifold</span>
+                    <p>
+                        Let \(M\) be an oriented smooth \(n\)-manifold, with or without boundary, and let \(\omega\) be a compactly supported
+                        \(n\)-form on \(M\). Choose a finite open cover \(\{U_i\}\) of \(\operatorname{supp}\omega\) by domains of positively or
+                        negatively oriented smooth charts, and let \(\{\psi_i\}\) be a smooth
+                        <a href="partitions_of_unity.html#D-partition_of_unity" class="ref-link"><strong>partition of unity</strong></a>
+                        subordinate to this cover. The <strong>integral of \(\omega\) over \(M\)</strong> is
+                        \[
+                        \int_M \omega := \sum_i \int_M \psi_i\, \omega.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Each summand makes sense: the form \(\psi_i\,\omega\) is supported inside the single chart \(U_i\), so its integral is the
+                    single-chart integral already defined, and the finiteness of the cover keeps the sum finite. Two features of the setup
+                    deserve comment. A partition of unity subordinate to the cover always
+                    <a href="partitions_of_unity.html#T-existence_of_partitions_of_unity" class="ref-link"><strong>exists</strong></a>, so the
+                    construction is never vacuous. And negatively oriented charts are deliberately allowed, because on some manifolds with
+                    boundary — a closed interval, for instance — it is not always possible to cover the boundary with positively oriented
+                    charts; permitting either handedness, with the sign convention built into the single-chart integral, sidesteps that
+                    obstruction.
+                </p>
+
+                <h3>Independence of the Cover and Partition</h3>
+
+                <p>
+                    The definition refers to a choice of cover and partition of unity, so once more we must check that the value is independent
+                    of those choices.
+                </p>
+
+                <div class="theorem" id="T-integral_well_defined">
+                    <span class="theorem-title">Proposition (Independence of Cover and Partition)</span>
+                    <p>
+                        The value of \(\int_M \omega\) defined above does not depend on the choice of open cover or subordinate partition of
+                        unity.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Let \(\{U_i\}\) with partition \(\{\psi_i\}\) and \(\{\tilde U_j\}\) with partition \(\{\tilde\psi_j\}\) be two such
+                        choices. Because each \(\psi_i\,\omega\) is supported in the single chart \(U_i\), and \(\sum_j \tilde\psi_j = 1\) on
+                        \(\operatorname{supp}\omega\), we may insert the second partition inside the integral of \(\psi_i\,\omega\) and split the
+                        sum, each term \(\tilde\psi_j\,\psi_i\,\omega\) being supported in a single chart and hence unambiguously integrable:
+                        \[
+                        \begin{align*}
+                        \int_M \psi_i\, \omega
+                        &= \int_M \Bigl(\sum_j \tilde\psi_j\Bigr) \psi_i\, \omega\\\\
+                        &= \sum_j \int_M \tilde\psi_j\, \psi_i\, \omega.
+                        \end{align*}
+                        \]
+                        Summing over \(i\) gives
+                        \[
+                        \sum_i \int_M \psi_i\, \omega = \sum_{i,j} \int_M \tilde\psi_j\, \psi_i\, \omega.
+                        \]
+                        The right-hand side is symmetric in the two partitions: running the identical argument starting from
+                        \(\sum_j \int_M \tilde\psi_j\, \omega\), and using \(\sum_i \psi_i = 1\), produces the same double sum. Therefore the two
+                        choices yield the same value for \(\int_M \omega\).
+                    </p>
+                </div>
+
+                <h3>Boundaries, Submanifolds, and the Zero-Dimensional Case</h3>
+
+                <p>
+                    Three conventions extend the reach of the definition and will be used repeatedly. First, when \(S \subseteq M\) is an
+                    oriented immersed \(k\)-dimensional submanifold and \(\omega\) is a \(k\)-form on \(M\) whose restriction to \(S\) is
+                    compactly supported, we write \(\int_S \omega\) to mean \(\int_S \iota_S^*\omega\), where \(\iota_S : S \hookrightarrow M\)
+                    is the inclusion and \(\iota_S^*\omega\) is the pullback of \(\omega\) to \(S\). Integration over a submanifold is thus
+                    integration of the restricted form on the submanifold in its own right.
+                </p>
+
+                <p>
+                    Second, in the most important instance of this, \(M\) is a compact oriented \(n\)-manifold with boundary and \(\omega\) is an
+                    \((n-1)\)-form on \(M\). The boundary \(\partial M\) is an \((n-1)\)-dimensional manifold, and we always give it the induced
+                    orientation. Then \(\int_{\partial M}\omega\) is unambiguous: it is the integral over \(\partial M\), with that orientation,
+                    of the pullback of \(\omega\) under the boundary inclusion. This is the integral that will appear on the right-hand side of
+                    Stokes's theorem.
+                </p>
+
+                <p>
+                    Third, the zero-dimensional case is handled by a special convention, since a \(0\)-manifold has no coordinate charts in the
+                    usual sense. An oriented \(0\)-manifold is a discrete set of points, each tagged with a sign \(+\) or \(-\) as its
+                    orientation, and a compactly supported \(0\)-form is just a function \(f\) that is nonzero at finitely many of them. Its
+                    integral is the signed sum
+                    \[
+                    \int_M f = \sum_{p \in M} \pm f(p),
+                    \]
+                    taking \(+f(p)\) at positively oriented points and \(-f(p)\) at negatively oriented ones. This is the degenerate case in
+                    which integration reduces to addition, and it is exactly what makes the one-dimensional Stokes's theorem reproduce the
+                    fundamental theorem of calculus, with the two endpoints of an interval serving as an oriented \(0\)-manifold.
+                </p>
+            </section>
+
+            <section id="properties" class="section-content">
+                <h2>Properties of the Integral</h2>
+
+                <p>
+                    With the integral now defined on every oriented manifold, we record the basic properties it satisfies. Each follows
+                    directly from the definition, but each will be used silently in later computations, so it is worth stating them precisely
+                    and seeing why they hold. Throughout, \(M\) and \(N\) are nonempty oriented smooth \(n\)-manifolds, with or without boundary,
+                    and \(\omega, \eta\) are compactly supported \(n\)-forms on \(M\).
+                </p>
+
+                <div class="theorem" id="T-integral_properties">
+                    <span class="theorem-title">Proposition (Properties of the Integral)</span>
+                    <p>
+                        The integral of compactly supported top-degree forms has the following properties.
+                    </p>
+                    <p>
+                        <strong>(a) Linearity.</strong><br> For all \(a, b \in \mathbb{R}\),
+                        \[
+                        \int_M (a\,\omega + b\,\eta) = a \int_M \omega + b \int_M \eta.
+                        \]
+                    </p>
+                    <p>
+                        <strong>(b) Orientation reversal.</strong><br> If \(-M\) denotes \(M\) with the opposite orientation, then
+                        \[
+                        \int_{-M} \omega = -\int_M \omega.
+                        \]
+                    </p>
+                    <p>
+                        <strong>(c) Positivity.</strong><br> If \(\omega\) is everywhere non-negative with respect to the orientation — meaning
+                        that in every positively oriented chart its coefficient function is \(\ge 0\) — and is strictly positive at some point,
+                        then \(\int_M \omega \gt 0\).
+                    </p>
+                    <p>
+                        <strong>(d) Diffeomorphism invariance.</strong><br> If \(F : N \to M\) is an
+                        <a href="orientations_of_manifolds.html#D-orientation_preserving" class="ref-link"><strong>orientation-preserving or orientation-reversing</strong></a>
+                        diffeomorphism, then
+                        \[
+                        \int_N F^*\omega =
+                        \begin{cases}
+                        \phantom{-}\displaystyle\int_M \omega & \text{if } F \text{ is orientation-preserving,}\\\\
+                        -\displaystyle\int_M \omega & \text{if } F \text{ is orientation-reversing.}
+                        \end{cases}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Each property reduces to the single-chart case, where it follows from the corresponding statement for integrals over
+                        domains in \(\mathbb{R}^n\); the partition of unity then carries it to all of \(M\) by linearity of the finite sum
+                        defining \(\int_M\).
+                    </p>
+                    <p>
+                        <strong>(a)</strong> In a single chart the integral is the Euclidean integral of the coefficient function, and
+                        \((a\,\omega + b\,\eta)\) has coefficient \(a\,f + b\,g\) when \(\omega, \eta\) have coefficients \(f, g\); ordinary
+                        integrals are linear, so the single-chart integral is linear in the form. Summing the partition-of-unity pieces, which
+                        is again a linear operation, gives linearity on \(M\).
+                    </p>
+                    <p>
+                        <strong>(b)</strong> Reversing the orientation of \(M\) turns every positively oriented chart into a negatively oriented
+                        one and vice versa. In the single-chart definition this flips the sign attached to each Euclidean integral, so each term
+                        in the partition-of-unity sum changes sign, and therefore so does the total.
+                    </p>
+                    <p>
+                        <strong>(c)</strong> Suppose \(\omega\) is non-negative with respect to the orientation and strictly positive at some
+                        point \(p\). In a positively oriented chart the coefficient of \((\varphi^{-1})^*\omega\) is \(\ge 0\), and the single-chart
+                        integral takes the positive sign; in a negatively oriented chart the coefficient is \(\le 0\) and the compensating negative
+                        sign again makes the contribution \(\ge 0\). For a subordinate partition of unity \(\{\psi_i\}\) with \(\psi_i \ge 0\), each
+                        term \(\int_M \psi_i\,\omega\) is therefore nonnegative, so \(\int_M \omega \ge 0\). At the point \(p\) the coefficient is
+                        strictly positive, and some \(\psi_i\) is positive near \(p\) since the \(\psi_i\) sum to \(1\); that term contributes a
+                        strictly positive integral. Hence \(\int_M \omega \gt 0\).
+                    </p>
+                    <p>
+                        <strong>(d)</strong> It suffices to treat the case where \(\omega\) is supported in a single positively oriented chart
+                        \((U, \varphi)\) of \(M\), since the general case follows by applying this to each piece of a partition of unity and using
+                        linearity. When \(F\) is orientation-preserving, \(\bigl(F^{-1}(U), \varphi \circ F\bigr)\) is a positively oriented chart
+                        of \(N\) whose domain contains the support of \(F^*\omega\). Computing both integrals in these charts reduces the claim to
+                        the
+                        <a href="#T-form_integral_domain_invariance" class="ref-link"><strong>diffeomorphism invariance on domains</strong></a>
+                        established earlier, which gives \(\int_N F^*\omega = \int_M \omega\). If \(F\) is orientation-reversing, the chart
+                        \(\varphi \circ F\) is negatively oriented, and the extra sign in the single-chart definition — equivalently, property
+                        (b) — produces \(\int_N F^*\omega = -\int_M \omega\).
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>The Integral Sees Only the Form and the Orientation</h3>
+                    <p>
+                        Taken together, these properties say that the integral is a linear functional on compactly supported top forms that
+                        depends on the manifold through nothing but its smooth structure and its orientation. Property (d) is the precise sense
+                        in which the integral is coordinate-free: any orientation-preserving diffeomorphism — a relabeling of points that respects
+                        handedness — leaves it unchanged, and reversing handedness merely flips the sign. This is exactly the invariance that the
+                        function integral failed to have, now secured for every oriented manifold.
+                    </p>
+                </div>
+            </section>
+
+            <section id="parametrizations" class="section-content">
+                <h2>Computing Integrals: Parametrizations and the Sphere</h2>
+
+                <p>
+                    The partition-of-unity definition is ideal for proving theorems but useless for computing a specific integral: writing down
+                    an explicit smooth partition of unity is rarely feasible, and integrating against one is harder still. In practice one
+                    computes an integral by cutting the manifold into a few pieces, each the image of a single parametrization from a domain in
+                    \(\mathbb{R}^n\), and integrating on each piece by pulling the form back to that domain. The next proposition justifies this,
+                    and an example then carries it out.
+                </p>
+
+                <div class="theorem" id="T-integration_over_parametrizations">
+                    <span class="theorem-title">Proposition (Integration over Parametrizations)</span>
+                    <p>
+                        Let \(M\) be an oriented smooth \(n\)-manifold, with or without boundary, and let \(\omega\) be a compactly supported
+                        \(n\)-form on \(M\). Suppose \(D_1, \dots, D_k\) are open domains of integration in \(\mathbb{R}^n\), and for each \(i\) we
+                        are given a smooth map \(F_i : \overline{D_i} \to M\) such that
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>\(F_i\) restricts to an orientation-preserving diffeomorphism from \(D_i\) onto an open subset \(W_i \subseteq M\);</li>
+                        <li>\(W_i \cap W_j = \varnothing\) when \(i \neq j\);</li>
+                        <li>\(\operatorname{supp}\omega \subseteq \overline{W_1} \cup \cdots \cup \overline{W_k}\).</li>
+                    </ol>
+                    <p>
+                        Then
+                        \[
+                        \int_M \omega = \sum_{i=1}^{k} \int_{D_i} F_i^*\omega.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        The images \(W_i\) are pairwise disjoint open sets whose closures cover the support of \(\omega\), and the leftover set
+                        \(M \setminus (W_1 \cup \cdots \cup W_k)\) is contained in the union of the boundaries \(\partial W_i\). Each
+                        \(\partial W_i\) is the image under \(F_i\) of \(\partial D_i\), a set of measure zero, and
+                        <a href="sards_theorem.html#T-smooth_maps_preserve_measure_zero_manifold" class="ref-link"><strong>smooth maps send sets of measure zero to sets of measure zero</strong></a>;
+                        so the part of \(M\) not covered by the open pieces is itself negligible and contributes
+                        nothing to the integral. Restricted to each \(W_i\), the integral of \(\omega\) is the integral over a set parametrized by
+                        the single orientation-preserving diffeomorphism \(F_i : D_i \to W_i\). By the
+                        <a href="#T-form_integral_domain_invariance" class="ref-link"><strong>diffeomorphism invariance on domains</strong></a>,
+                        pulling back through \(F_i\) converts the integral over \(W_i\) into one over \(D_i\),
+                        \[
+                        \int_{W_i} \omega = \int_{D_i} F_i^*\omega,
+                        \]
+                        with no sign because \(F_i\) is orientation-preserving. Summing over the pieces, and using that the overlaps and the
+                        uncovered remainder have measure zero, gives \(\int_M \omega = \sum_i \int_{D_i} F_i^*\omega\).
+                    </p>
+                </div>
+
+                <p>
+                    The proposition says exactly what one would hope: to integrate over a region covered by a parametrization \(F\), pull the
+                    form back to the parameter domain and integrate there. The pullback \(F^*\omega\) is again a top form on a domain in
+                    \(\mathbb{R}^n\), so its integral is computed by erasing the wedges. The only bookkeeping is to check that the
+                    parametrization preserves orientation; if it reverses orientation, a single minus sign is attached.
+                </p>
+
+                <h3>Worked Example: A Two-Form on the Sphere</h3>
+
+                <p>
+                    We compute the integral over the unit sphere \(S^2\) of a particular \(2\)-form, giving \(S^2\) the orientation it inherits
+                    as the
+                    <a href="induced_orientations.html#D-stokes_orientation" class="ref-link"><strong>boundary</strong></a>
+                    of the closed unit ball \(\overline{\mathbb{B}}^3\) — the outward-pointing orientation. Let
+                    \[
+                    \omega = x\, dy \wedge dz + y\, dz \wedge dx + z\, dx \wedge dy
+                    \]
+                    on \(\mathbb{R}^3\), and integrate its restriction to \(S^2\).
+                </p>
+
+                <p>
+                    Parametrize the sphere, away from a set of measure zero, by spherical coordinates. Let
+                    \(D = (0, \pi) \times (0, 2\pi)\) and define \(F : \overline{D} \to S^2\) by
+                    \[
+                    F(\varphi, \theta) = (\sin\varphi \cos\theta,\ \sin\varphi \sin\theta,\ \cos\varphi).
+                    \]
+                    The map \(F\) restricted to \(D\) is an orientation-preserving diffeomorphism onto the sphere minus a half-meridian (a
+                    measure-zero arc), so it meets the hypotheses of the previous proposition with a single parametrization. To pull \(\omega\)
+                    back we first pull back the coordinate differentials. Differentiating each component,
+                    \[
+                    \begin{align*}
+                    F^*dx &= \cos\varphi \cos\theta\, d\varphi - \sin\varphi \sin\theta\, d\theta,\\\\
+                    F^*dy &= \cos\varphi \sin\theta\, d\varphi + \sin\varphi \cos\theta\, d\theta,\\\\
+                    F^*dz &= -\sin\varphi\, d\varphi.
+                    \end{align*}
+                    \]
+                    Wedging these in pairs and substituting the coordinate functions \(x = \sin\varphi\cos\theta\), and so on, every term
+                    combines into a single multiple of \(d\varphi \wedge d\theta\). Carrying out the algebra, the three contributions add to
+                    \[
+                    F^*\omega = \sin\varphi\, d\varphi \wedge d\theta.
+                    \]
+                    The coefficient is the familiar area element of the sphere in spherical coordinates, which is a reassuring sign that the
+                    form \(\omega\) is measuring surface area correctly.
+                </p>
+
+                <p>
+                    The integral is now an ordinary double integral, obtained by erasing the wedge:
+                    \[
+                    \begin{align*}
+                    \int_{S^2} \omega
+                    &= \int_D \sin\varphi\, d\varphi \wedge d\theta\\\\
+                    &= \int_0^{2\pi} \int_0^{\pi} \sin\varphi\, d\varphi\, d\theta\\\\
+                    &= \int_0^{2\pi} 2\, d\theta = 4\pi.
+                    \end{align*}
+                    \]
+                    The value \(4\pi\) is the surface area of the unit sphere, which is what this particular \(\omega\) was built to compute: it
+                    is the restriction to \(S^2\) of the form whose integral over any closed surface returns the flux of the radial field
+                    through it, and for the unit sphere that flux equals the area.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why This Is the Practical Method</h3>
+                    <p>
+                        Notice what the computation did not require: no partition of unity, no atlas, no abstract machinery — only one
+                        parametrization, three derivatives, a wedge product, and a double integral from elementary calculus. This is the pattern
+                        for essentially every concrete integral over a manifold. The theoretical definition guarantees that the answer is
+                        well defined and orientation-invariant; the parametrization method is how one actually produces the number. The single
+                        check that cannot be skipped is orientation: had we parametrized \(S^2\) with \(\varphi\) and \(\theta\) interchanged, the
+                        map would reverse orientation and the same arithmetic would yield \(-4\pi\), the correct integral with respect to the
+                        opposite orientation.
+                    </p>
+                </div>
+            </section>
+
+            <section id="lie-groups" class="section-content">
+                <h2>Integration on Lie Groups: the Haar Volume Form</h2>
+
+                <p>
+                    There is one class of manifolds on which a canonical integral exists, requiring no metric and no arbitrary choices: a Lie
+                    group. The symmetry of the group singles out a preferred top-degree form, unique once we ask that the total volume be one,
+                    and integrating against it is the construction on which harmonic analysis on groups — and, further along the curriculum, the
+                    representation theory behind equivariant neural networks — is built. The key is to look for forms that are unchanged when
+                    the group acts on itself by translation.
+                </p>
+
+                <p>
+                    Recall that left translation by a group element \(g\) is the diffeomorphism \(L_g : G \to G\) given by \(L_g(h) = gh\). A
+                    covariant tensor field \(A\) on \(G\) — in particular, a differential form — is called <strong>left-invariant</strong> if it
+                    is unchanged by pulling back along every left translation:
+                    \[
+                    L_g^* A = A \qquad \text{for all } g \in G.
+                    \]
+                    A left-invariant form is completely determined by its value at the identity, since left translation carries that value to
+                    every other point; this is what makes left-invariant forms rigid enough to be unique.
+                </p>
+
+                <div class="theorem" id="T-haar_volume_form">
+                    <span class="theorem-title">Proposition (Existence and Uniqueness of the Haar Volume Form)</span>
+                    <p>
+                        Let \(G\) be a compact Lie group endowed with a left-invariant orientation. Then \(G\) has a unique positively oriented
+                        left-invariant \(n\)-form \(\omega_G\) satisfying
+                        \[
+                        \int_G \omega_G = 1.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        If \(\dim G = 0\) the group is a finite set of points, and we take \(\omega_G\) to be the constant function \(1/k\), where
+                        \(k\) is the number of points; its integral, the signed sum over the points, is \(1\). Assume now \(\dim G = n \ge 1\). A
+                        Lie group is
+                        <a href="orientations_of_manifolds.html#T-lie_group_orientable" class="ref-link"><strong>parallelizable by left translation</strong></a>:
+                        a basis of the tangent space at the identity extends to a
+                        <a href="lie_algebra_of_lie_group.html#D-left_invariant_frame" class="ref-link"><strong>left-invariant global frame</strong></a>
+                        \(E_1, \dots, E_n\), the basis of the Lie algebra. Replacing \(E_1\) by \(-E_1\) if necessary, we may take this frame to be
+                        positively oriented.
+                    </p>
+                    <p>
+                        Let \((\varepsilon^1, \dots, \varepsilon^n)\) be the dual
+                        <a href="covectors_cotangent_bundle.html#D-coframe" class="ref-link"><strong>coframe</strong></a>,
+                        characterized by \(\varepsilon^i(E_j) = \delta^i_j\). Each \(\varepsilon^i\) is itself left-invariant. To see this, recall
+                        that the frame vectors are left-invariant vector fields, \((L_g)_* E_j = E_j\), and evaluate the pulled-back covector on a
+                        frame vector at an arbitrary point \(h\), writing \(d(L_g)_h\) for the differential of \(L_g\) at \(h\):
+                        \[
+                        \begin{align*}
+                        \bigl(L_g^* \varepsilon^i\bigr)_h\bigl(E_j|_h\bigr)
+                        &= \varepsilon^i|_{gh}\bigl(d(L_g)_h\, E_j|_h\bigr)\\\\
+                        &= \varepsilon^i|_{gh}\bigl(E_j|_{gh}\bigr) = \delta^i_j.
+                        \end{align*}
+                        \]
+                        Since \(L_g^*\varepsilon^i\) and \(\varepsilon^i\) take the same values on the frame that spans the cotangent space at every
+                        point, they are equal; hence \(\varepsilon^i\) is left-invariant.
+                    </p>
+                    <p>
+                        Now set \(\omega_G = \varepsilon^1 \wedge \cdots \wedge \varepsilon^n\). Pullback commutes with the wedge product, so
+                        \[
+                        \begin{align*}
+                        L_g^* \omega_G
+                        &= \bigl(L_g^*\varepsilon^1\bigr) \wedge \cdots \wedge \bigl(L_g^*\varepsilon^n\bigr)\\\\
+                        &= \varepsilon^1 \wedge \cdots \wedge \varepsilon^n = \omega_G,
+                        \end{align*}
+                        \]
+                        so \(\omega_G\) is left-invariant. It is nowhere zero — indeed \(\omega_G(E_1, \dots, E_n) = 1 \gt 0\) — so it is an
+                        orientation form, positively oriented for the given orientation. This much used nothing about compactness: every Lie group
+                        carries a left-invariant orientation form, unique up to a positive constant multiple. (Two left-invariant orientation forms
+                        agree at the identity up to a positive scalar, hence everywhere by left-invariance.)
+                    </p>
+                    <p>
+                        Compactness enters only now. Because \(G\) is compact and \(\omega_G\) is a positively oriented orientation form, its
+                        integral \(\int_G \omega_G\) is a finite positive number. Rescaling by its reciprocal, the form
+                        \[
+                        \tilde\omega_G = \left( \int_G \omega_G \right)^{-1} \omega_G
+                        \]
+                        is again left-invariant, positively oriented, and now satisfies \(\int_G \tilde\omega_G = 1\). Any left-invariant
+                        positively oriented form is a positive multiple of \(\omega_G\), and the normalization fixes that multiple, so
+                        \(\tilde\omega_G\) is the unique such form of total volume \(1\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-haar_integral">
+                    <span class="theorem-title">Definition: Haar Volume Form and Haar Integral</span>
+                    <p>
+                        The unique normalized form of the preceding proposition is the <strong>Haar volume form</strong> on the compact Lie group
+                        \(G\), written \(\omega_G\). The associated linear functional on continuous functions,
+                        \[
+                        f \longmapsto \int_G f\, \omega_G,
+                        \]
+                        is the <strong>Haar integral</strong>. Because \(\omega_G\) is left-invariant, the Haar integral is unchanged under
+                        translating the integrand: \(\int_G (f \circ L_g)\, \omega_G = \int_G f\, \omega_G\) for every \(g \in G\).
+                    </p>
+                </div>
+
+                <p>
+                    The translation-invariance of the Haar integral is the property that makes it indispensable. It allows one to average any
+                    function — or any object built from a representation of the group — over the whole group in a way that respects the group
+                    structure, and a normalized average of total mass \(1\) behaves like a probability measure on \(G\). This is the device that
+                    will let us decompose functions on a compact group into pieces adapted to its symmetries, the group-theoretic analogue of
+                    expanding a periodic function into its Fourier components.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Left-Invariance, Two-Sided Invariance, and What Compactness Buys</h3>
+                    <p>
+                        Two features of the construction are worth separating. The existence of a left-invariant orientation form, unique up to
+                        scale, holds for every Lie group; compactness is used only to make the total volume finite, and hence to normalize the
+                        scale to \(1\). On a noncompact group the form still exists but cannot be normalized this way, since its integral may be
+                        infinite. Second, the form built here is left-invariant by construction, but not obviously invariant under right
+                        translation. For compact groups it turns out that the Haar volume form is in fact two-sided invariant — a property called
+                        unimodularity — and that two-sided invariance is what the representation theory of compact groups ultimately requires. That
+                        refinement is established where it is needed, in the representation-theoretic development later in the curriculum; here we
+                        record only the left-invariant normalized form and its integral, which is the foundation on which the rest is built.
+                    </p>
+                </div>
+            </section>
+
+        </div>
+    </body>
+</html>
