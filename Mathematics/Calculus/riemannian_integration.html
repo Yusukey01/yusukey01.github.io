@@ -1,0 +1,440 @@
+---
+layout: default
+title: "Integration on Riemannian Manifolds"
+topic_id: calc-92
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Integration on Riemannian Manifolds</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#integrating-functions">Recovering the Integral of a Function</a>
+            <a href="#divergence-theorem">The Divergence Theorem</a>
+            <a href="#surface-integrals">Surface Integrals and the Classical Stokes Theorem</a>
+        </div>
+
+        <div class="container">
+
+            <section id="integrating-functions" class="section-content">
+                <h2>Recovering the Integral of a Function</h2>
+
+                <p>
+                    The theory of integration on manifolds was built around forms of top degree, not functions, for a
+                    reason that was unavoidable: on a bare smooth manifold a real-valued function has no coordinate-independent
+                    integral. Changing coordinates multiplies the expression for a function by a Jacobian factor that the
+                    function alone cannot absorb, so the number one would compute depends on the chart, which is no number at
+                    all. A top-degree form is exactly the object engineered to absorb that factor, and that is why
+                    <a href="integration_of_forms.html#D-integral_over_manifold" class="ref-link"><strong>integration was
+                    defined for forms</strong></a> rather than functions.
+                </p>
+
+                <p>
+                    A Riemannian metric removes the obstruction. The metric singles out, on an oriented manifold, a canonical
+                    top-degree form — the
+                    <a href="riemannian_volume_form.html#T-riemannian_volume_form" class="ref-link"><strong>Riemannian volume
+                    form</strong></a> \(\omega_g\) — whose coordinate expression carries precisely the factor
+                    \(\sqrt{\det g_{ij}}\) needed to make the resulting integral coordinate-independent. Given such a form,
+                    a function can be turned into a form simply by multiplication, and then integrated. This section makes that
+                    precise and records the one positivity property that every later estimate rests on.
+                </p>
+
+                <h3>The Definition</h3>
+
+                <p>
+                    Let \((M, g)\) be an oriented Riemannian manifold with or without boundary, and let \(\omega_g\) denote its
+                    Riemannian volume form. For a compactly supported continuous function \(f\), the product \(f\omega_g\) is a
+                    compactly supported \(n\)-form, so we define the integral of \(f\) over \(M\) to be
+                    \[
+                    \int_M f\, dV_g := \int_M f\,\omega_g,
+                    \]
+                    where the notation \(dV_g\) is the traditional name for the volume form in this role — written \(dA_g\) on a
+                    surface and \(ds_g\) on a curve. If \(M\) is itself compact, taking \(f \equiv 1\) gives the volume of \(M\),
+                    \[
+                    \operatorname{Vol}(M) := \int_M \omega_g.
+                    \]
+                    One warning about the notation is worth stating once: the symbol \(dV_g\) does not denote the exterior
+                    derivative of anything. It is a single indivisible name for the volume form, and on a compact manifold
+                    without boundary the volume form is never exact — its integral is the positive number
+                    \(\operatorname{Vol}(M)\), whereas an exact top form
+                    <a href="stokes_theorem.html#T-integral_exact_form" class="ref-link"><strong>integrates to zero</strong></a>.
+                    The \(d\) is purely a typographical inheritance from classical calculus.
+                </p>
+
+                <h3>Positivity of the Integral</h3>
+
+                <p>
+                    The single analytic fact that distinguishes the integral of a function from that of a form is positivity:
+                    a nonnegative function has a nonnegative integral, and the integral vanishes only when the function does.
+                    A form has no sign, so nothing like this holds at the level of forms; it is the metric, through the
+                    positivity of \(\sqrt{\det g_{ij}}\), that makes it true.
+                </p>
+
+                <div class="theorem" id="T-integral_function_positivity">
+                    <span class="theorem-title">Proposition: Positivity of the Integral</span>
+                    <p>
+                        Let \((M, g)\) be a nonempty oriented Riemannian manifold with or without boundary, and let \(f\) be a
+                        compactly supported continuous real-valued function on \(M\) satisfying \(f \geq 0\). Then
+                        \[
+                        \int_M f\, dV_g \geq 0,
+                        \]
+                        with equality if and only if \(f \equiv 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Suppose first that \(f\) is supported in the domain of a single oriented smooth chart \((U, \varphi)\).
+                        In coordinates the
+                        <a href="riemannian_volume_form.html#T-volume_form_coordinates" class="ref-link"><strong>volume form is
+                        \(\sqrt{\det g_{ij}}\,dx^1 \wedge \cdots \wedge dx^n\)</strong></a> in a positively oriented chart, so the
+                        integral becomes the ordinary Lebesgue integral
+                        \[
+                        \int_M f\, dV_g = \int_{\varphi(U)} f(x)\,\sqrt{\det g_{ij}}\; dx^1 \cdots dx^n.
+                        \]
+                        The factor \(\sqrt{\det g_{ij}}\) is strictly positive because \(g\) is positive-definite, and \(f \geq 0\)
+                        by hypothesis, so the integrand is nonnegative and the integral is \(\geq 0\). In a negatively oriented
+                        chart the volume form acquires a minus sign, but the definition of integration over a negatively oriented
+                        chart contributes a compensating minus sign, so the same inequality holds.
+                    </p>
+                    <p>
+                        For general \(f\), choose a partition of unity \(\{\psi_k\}\) subordinate to a cover of the support by
+                        oriented charts. Each \(\psi_k f\) is nonnegative and supported in one chart, so \(\int_M \psi_k f\, dV_g
+                        \geq 0\) by the case just handled, and summing gives \(\int_M f\, dV_g \geq 0\). For the equality case,
+                        suppose \(f\) is positive at some point. By continuity \(f\) is positive on a nonempty open set, on which
+                        some \(\psi_k\) is also positive; the corresponding term \(\int_M \psi_k f\, dV_g\) is then strictly
+                        positive, forcing the total to be strictly positive. Hence a vanishing integral requires \(f \equiv 0\),
+                        and the converse is immediate.
+                    </p>
+                </div>
+
+                <p>
+                    Two consequences are routine but constantly used. Applied to \(|f|\), positivity yields the integral
+                    triangle inequality \(\left| \int_M f\, dV_g \right| \leq \int_M |f|\, dV_g\); applied to a difference, it
+                    shows that integration is monotone. These are the properties that let the Riemannian integral behave like
+                    the integral of elementary calculus, and they are what make the volume form the right measure for analysis
+                    on a curved space — the setting in which the divergence theorem, taken up next, lives.
+                </p>
+            </section>
+
+            <section id="divergence-theorem" class="section-content">
+                <h2>The Divergence Theorem</h2>
+
+                <p>
+                    The classical divergence theorem of vector calculus equates the integral of the divergence of a vector
+                    field over a region with the flux of that field through the boundary. With the Riemannian integral in hand,
+                    the same statement holds on any oriented Riemannian manifold, and its proof is a single application of
+                    Stokes's theorem once the right differential-form translations are in place. The work is entirely in setting
+                    up two pieces of geometry: a coordinate-free definition of divergence, and a clean identification of the
+                    boundary integrand.
+                </p>
+
+                <h3>The Divergence Operator</h3>
+
+                <p>
+                    The volume form provides a coordinate-free way to measure how a vector field distorts volume. Contracting it
+                    against a vector field \(X\) by
+                    <a href="alternating_tensors.html#D-interior_multiplication" class="ref-link"><strong>interior
+                    multiplication</strong></a> produces an \((n-1)\)-form \(X \lrcorner\, \omega_g\), and its exterior derivative
+                    is again a top-degree form, hence a function multiple of \(\omega_g\). That multiple is the divergence.
+                </p>
+
+                <div class="theorem" id="D-divergence_operator">
+                    <span class="theorem-title">Definition: The Divergence of a Vector Field</span>
+                    <p>
+                        Let \((M, g)\) be an oriented Riemannian manifold with or without boundary, with volume form \(\omega_g\).
+                        The <strong>divergence</strong> of a smooth vector field \(X\) is the unique smooth function
+                        \(\operatorname{div} X\) satisfying
+                        \[
+                        d\bigl(X \lrcorner\, \omega_g\bigr) = (\operatorname{div} X)\, \omega_g.
+                        \]
+                        Because \(\omega_g\) is nowhere zero, the right-hand side determines \(\operatorname{div} X\) uniquely at
+                        each point.
+                    </p>
+                </div>
+
+                <p>
+                    This definition makes no reference to coordinates or to a choice of orientation: reversing the orientation
+                    flips the sign of \(\omega_g\) on both sides, leaving \(\operatorname{div} X\) unchanged, so the divergence
+                    is well defined on any Riemannian manifold, orientable or not. Its meaning is made transparent by Cartan's
+                    formula. Since \(\omega_g\) is a top-degree form, \(d\omega_g = 0\), and the
+                    <a href="exterior_derivative.html#T-cartan_magic_formula" class="ref-link"><strong>Cartan formula</strong></a>
+                    \(\mathcal{L}_X \omega_g = X \lrcorner\, d\omega_g + d(X \lrcorner\, \omega_g)\) collapses to
+                    \[
+                    \mathcal{L}_X \omega_g = d(X \lrcorner\, \omega_g) = (\operatorname{div} X)\, \omega_g.
+                    \]
+                    The divergence is therefore exactly the rate at which the flow of \(X\) stretches or compresses the volume
+                    form: it is the proportionality factor in the Lie derivative of \(\omega_g\) along \(X\). In standard
+                    coordinates on Euclidean space, where \(\omega_g = dx^1 \wedge \cdots \wedge dx^n\), expanding
+                    \(d(X \lrcorner\, \omega_g)\) reproduces the familiar formula \(\operatorname{div} X = \sum_i \partial X^i /
+                    \partial x^i\), so the definition extends the classical one.
+                </p>
+
+                <h3>The Boundary Integrand</h3>
+
+                <p>
+                    To turn Stokes's theorem into a flux statement, the restriction of \(X \lrcorner\, \omega_g\) to the boundary
+                    must be identified. The answer is geometrically exactly what one would hope: only the component of \(X\)
+                    normal to the boundary contributes, weighted by the boundary's own volume form.
+                </p>
+
+                <div class="theorem" id="T-divergence_boundary_lemma">
+                    <span class="theorem-title">Lemma: Restriction of the Contracted Volume Form</span>
+                    <p>
+                        Let \((M, g)\) be an oriented Riemannian manifold with boundary, let \(N\) be the outward unit normal
+                        along \(\partial M\), and let \(\widetilde g\) be the induced metric on \(\partial M\). For any smooth
+                        vector field \(X\) on \(M\),
+                        \[
+                        \iota_{\partial M}^{*}\bigl(X \lrcorner\, \omega_g\bigr) = \langle X, N \rangle_g\, \omega_{\widetilde g},
+                        \]
+                        where \(\omega_{\widetilde g}\) is the volume form of \(\partial M\) with the Stokes orientation.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Along \(\partial M\), decompose \(X\) into its normal and tangential parts. Writing
+                        \(X^{\perp} = \langle X, N \rangle_g\, N\) for the normal component and \(X^{\top} = X - X^{\perp}\) for
+                        the tangential one, the contraction splits by linearity:
+                        \[
+                        X \lrcorner\, \omega_g = X^{\perp} \lrcorner\, \omega_g + X^{\top} \lrcorner\, \omega_g.
+                        \]
+                        For the normal part, \(X^{\perp} = \langle X, N \rangle_g\, N\), so pulling back to the boundary and using
+                        that the
+                        <a href="riemannian_volume_form.html#T-boundary_volume_form" class="ref-link"><strong>boundary volume form
+                        is \(\iota_{\partial M}^{*}(N \lrcorner\, \omega_g)\)</strong></a> gives
+                        \[
+                        \iota_{\partial M}^{*}\bigl(X^{\perp} \lrcorner\, \omega_g\bigr)
+                        = \langle X, N \rangle_g\, \iota_{\partial M}^{*}\bigl(N \lrcorner\, \omega_g\bigr)
+                        = \langle X, N \rangle_g\, \omega_{\widetilde g}.
+                        \]
+                        For the tangential part, it suffices to show the pullback of \(X^{\top} \lrcorner\, \omega_g\) vanishes.
+                        Evaluated on any \(n-1\) vectors tangent to \(\partial M\), the form \((X^{\top} \lrcorner\, \omega_g)\)
+                        feeds \(\omega_g\) the \(n\) vectors \(X^{\top}, V_1, \dots, V_{n-1}\), all of which are tangent to
+                        \(\partial M\). But \(\partial M\) is \((n-1)\)-dimensional, so these \(n\) tangent vectors are linearly
+                        dependent, and \(\omega_g\), being alternating, vanishes on any linearly dependent set. Hence the
+                        tangential term contributes nothing, and the displayed identity follows.
+                    </p>
+                </div>
+
+                <h3>The Theorem</h3>
+
+                <p>
+                    With both pieces in place, the divergence theorem is immediate.
+                </p>
+
+                <div class="theorem" id="T-divergence_theorem">
+                    <span class="theorem-title">Theorem: The Divergence Theorem</span>
+                    <p>
+                        Let \((M, g)\) be an oriented Riemannian manifold with boundary. For any compactly supported smooth vector
+                        field \(X\) on \(M\),
+                        \[
+                        \int_M (\operatorname{div} X)\, dV_g = \int_{\partial M} \langle X, N \rangle_g\, dV_{\widetilde g},
+                        \]
+                        where \(N\) is the outward unit normal along \(\partial M\) and \(\widetilde g\) is the induced metric on
+                        the boundary. In dimension three over a compact region of space, this is the classical theorem of Gauss.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        By the definition of divergence, the interior integrand is \((\operatorname{div} X)\, \omega_g =
+                        d(X \lrcorner\, \omega_g)\, \). Applying
+                        <a href="stokes_theorem.html#T-stokes_theorem" class="ref-link"><strong>Stokes's theorem</strong></a> to
+                        the \((n-1)\)-form \(X \lrcorner\, \omega_g\),
+                        \[
+                        \int_M (\operatorname{div} X)\, dV_g = \int_M d\bigl(X \lrcorner\, \omega_g\bigr)
+                        = \int_{\partial M} \iota_{\partial M}^{*}\bigl(X \lrcorner\, \omega_g\bigr).
+                        \]
+                        The preceding lemma identifies the boundary integrand as \(\langle X, N \rangle_g\, \omega_{\widetilde g}\),
+                        which is exactly \(\langle X, N \rangle_g\, dV_{\widetilde g}\). Substituting completes the proof.
+                    </p>
+                </div>
+
+                <h3>The Volume Interpretation Made Precise</h3>
+
+                <p>
+                    The reading of \(\operatorname{div} X\) as the rate of volume change under the flow can be sharpened into an
+                    exact dictionary between the sign of the divergence and the volume behavior of the flow.
+                </p>
+
+                <div class="theorem" id="T-divergence_volume_interpretation">
+                    <span class="theorem-title">Proposition: Geometric Interpretation of the Divergence</span>
+                    <p>
+                        Let \((M, g)\) be an oriented Riemannian manifold, let \(X\) be a smooth vector field, and let \(\theta\)
+                        be its flow. Then the flow is volume-preserving if and only if \(\operatorname{div} X = 0\) everywhere,
+                        volume-nondecreasing if and only if \(\operatorname{div} X \geq 0\) everywhere, and strictly
+                        volume-increasing if and only if \(\operatorname{div} X > 0\) on a dense subset — with the analogous
+                        statements for the reverse inequalities.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        For a compact regular domain \(D\), the flow carries \(D\) diffeomorphically onto \(\theta_t(D)\), and the
+                        change-of-variables formula for the volume form lets the volume of the image be written as an integral
+                        over \(D\) of the pulled-back form \(\theta_t^{*}\omega_g\). Differentiating under the integral sign at
+                        \(t = t_0\) and using that the \(t\)-derivative of a pullback along a flow is the pullback of the Lie
+                        derivative,
+                        \[
+                        \frac{d}{dt}\bigg|_{t=t_0} \operatorname{Vol}(\theta_t(D))
+                        = \int_D \theta_{t_0}^{*}\bigl(\mathcal{L}_X \omega_g\bigr)
+                        = \int_{\theta_{t_0}(D)} (\operatorname{div} X)\, dV_g,
+                        \]
+                        the last step substituting \(\mathcal{L}_X \omega_g = (\operatorname{div} X)\, \omega_g\) and changing
+                        variables back. If \(\operatorname{div} X = 0\), this derivative vanishes for every \(D\) and every
+                        \(t_0\), so the volume is constant and the flow is volume-preserving; the inequality versions follow the
+                        same way. For the strict and converse directions, positivity of the integral of a function does the work:
+                        if \(\operatorname{div} X > 0\) on a dense set, then by continuity \(\operatorname{div} X \geq 0\)
+                        everywhere, so the derivative is nonnegative, and the integral of \(\operatorname{div} X\) over the open
+                        set \(\theta_{t_0}(\operatorname{Int} D)\) is strictly positive because the integrand is positive
+                        somewhere on it; hence the volume is strictly increasing. The contrapositive arguments for the converses
+                        run identically, using that a divergence which is negative somewhere makes the flow volume-decreasing on
+                        a neighborhood.
+                    </p>
+                </div>
+            </section>
+
+            <section id="surface-integrals" class="section-content">
+                <h2>Surface Integrals and the Classical Stokes Theorem</h2>
+
+                <p>
+                    The theorem that originally bore the name of Stokes concerned the circulation of a vector field around the
+                    boundary of a surface in space, equated with the flux of its curl through the surface. That classical result
+                    is the three-dimensional shadow of the general theorem, recovered once the curl is given an intrinsic
+                    definition. Unlike divergence, which makes sense in every dimension, the curl is special to dimension three,
+                    and seeing why is half the content of this section.
+                </p>
+
+                <h3>Gradient and Curl from the Metric</h3>
+
+                <p>
+                    On a Riemannian manifold the metric converts between vector fields and \(1\)-forms through the
+                    <a href="musical_isomorphisms.html#D-musical_flat_riemannian" class="ref-link"><strong>musical
+                    isomorphisms</strong></a>: lowering an index sends a vector field \(X\) to the \(1\)-form \(X^\flat =
+                    \langle X, \cdot \rangle_g\), and raising sends a \(1\)-form back to a vector field. The gradient of a function
+                    is defined by raising the index on its differential,
+                    \[
+                    \operatorname{grad} f = (df)^\sharp,
+                    \]
+                    so that \(\langle \operatorname{grad} f, Y \rangle_g = df(Y) = Yf\) for every \(Y\); this is the
+                    coordinate-free version of the classical gradient, and it works in every dimension.
+                </p>
+
+                <p>
+                    The curl is more delicate. Given a vector field \(X\), the \(1\)-form \(X^\flat\) has an exterior derivative
+                    \(d(X^\flat)\), which is a \(2\)-form. To turn a \(2\)-form back into a vector field we would need a
+                    correspondence between \(2\)-forms and vector fields, and on an \(n\)-manifold the space of \(2\)-forms has
+                    dimension \(\binom{n}{2}\) while vector fields correspond to \(1\)-forms, of dimension \(n\). These match,
+                    \(\binom{n}{2} = n\), only when \(n = 3\). In that dimension alone, contraction with the volume form gives a
+                    bijection between vector fields and \(2\)-forms, and the curl is defined by inverting it.
+                </p>
+
+                <div class="theorem" id="D-curl_operator">
+                    <span class="theorem-title">Definition: The Curl of a Vector Field</span>
+                    <p>
+                        Let \((M, g)\) be an oriented Riemannian \(3\)-manifold. The <strong>curl</strong> of a smooth vector field
+                        \(X\) is the unique smooth vector field \(\operatorname{curl} X\) satisfying
+                        \[
+                        (\operatorname{curl} X) \lrcorner\, \omega_g = d\bigl(X^\flat\bigr).
+                        \]
+                        The contraction \(Y \mapsto Y \lrcorner\, \omega_g\) is a bijection from vector fields to \(2\)-forms in
+                        dimension three, so \(\operatorname{curl} X\) is well defined.
+                    </p>
+                </div>
+
+                <p>
+                    With gradient, curl, and divergence all expressed through the exterior derivative, the three classical
+                    operators are revealed as a single operator \(d\) read in three successive degrees: gradient is \(d\) on
+                    functions, curl is \(d\) on \(1\)-forms, and divergence is \(d\) on \((n-1)\)-forms, all transported across the
+                    musical isomorphisms and the volume-form contraction. This is the intrinsic form of the grad-curl-div
+                    correspondence that <a href="exterior_derivative.html#vector-calculus">appears for Euclidean space</a>. The two
+                    classical identities of vector calculus, that the curl of a gradient and the divergence of a curl both vanish,
+                    are once again the single fact \(d \circ d = 0\).
+                </p>
+
+                <h3>Surface Integrals</h3>
+
+                <p>
+                    Let \(S\) be a compact oriented \(2\)-dimensional submanifold with boundary inside an oriented Riemannian
+                    \(3\)-manifold \(M\), and let \(N\) be a smooth unit normal field along \(S\) determining its orientation.
+                    The induced metric gives \(S\) its own area form \(dA\), and the surface integral of a vector field \(X\)
+                    over \(S\) is the integral of the normal component,
+                    \[
+                    \int_S \langle X, N \rangle_g\, dA,
+                    \]
+                    the flux of \(X\) through \(S\). The same boundary computation used for the divergence theorem shows that
+                    \(dA = \iota_S^{*}(N \lrcorner\, \omega_g)\), so this flux integral is itself the integral over \(S\) of the
+                    \(2\)-form \(N \lrcorner\, \omega_g\) weighted by \(\langle X, N \rangle_g\) — the surface-integral analogue
+                    of the boundary integrand from the divergence theorem.
+                </p>
+
+                <h3>The Classical Stokes Theorem</h3>
+
+                <p>
+                    Everything is now in place to recover the surface form of Stokes's theorem: the flux of the curl through a
+                    surface equals the circulation of the field around its boundary.
+                </p>
+
+                <div class="theorem" id="T-classical_stokes_theorem">
+                    <span class="theorem-title">Theorem: The Classical Stokes Theorem</span>
+                    <p>
+                        Let \(M\) be an oriented Riemannian \(3\)-manifold, and let \(S \subseteq M\) be a compact oriented
+                        \(2\)-dimensional submanifold with boundary, with unit normal \(N\) determining its orientation. For any
+                        smooth vector field \(X\) on \(M\),
+                        \[
+                        \int_S \langle \operatorname{curl} X, N \rangle_g\, dA = \int_{\partial S} \langle X, T \rangle_g\, ds,
+                        \]
+                        where \(T\) is the positively oriented unit tangent field along \(\partial S\) and \(ds\) its arc-length
+                        form.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Apply
+                        <a href="stokes_theorem.html#T-stokes_theorem" class="ref-link"><strong>Stokes's theorem</strong></a> to
+                        the \(1\)-form \(X^\flat\) on \(S\):
+                        \[
+                        \int_S d\bigl(X^\flat\bigr) = \int_{\partial S} X^\flat.
+                        \]
+                        The two integrands are exactly the two sides of the claimed identity, by the two translations established
+                        above and just below. On the left, the surface analogue of the divergence lemma gives
+                        \(\iota_S^{*}\,d(X^\flat) = \langle \operatorname{curl} X, N \rangle_g\, dA\): the curl was defined by
+                        \((\operatorname{curl} X) \lrcorner\, \omega_g = d(X^\flat)\), and restricting that \(2\)-form to \(S\)
+                        extracts the normal component of \(\operatorname{curl} X\) against the area form, exactly as the divergence
+                        lemma extracted \(\langle X, N \rangle_g\). On the right, restricting \(X^\flat\) to the curve
+                        \(\partial S\) gives \(\langle X, T \rangle_g\, ds\): the \(1\)-form \(\iota_{\partial S}^{*}X^\flat\) on a
+                        \(1\)-manifold equals \(f\, ds\) for some function \(f\), and evaluating on the unit tangent \(T\), where
+                        \(ds(T) = 1\), gives \(f = X^\flat(T) = \langle X, T \rangle_g\). Substituting both translations yields the
+                        stated equality.
+                    </p>
+                </div>
+
+                <p>
+                    This is the theorem of classical vector calculus, now seen as one more reading of \(\int_M d\omega =
+                    \int_{\partial M}\omega\). Together with the divergence theorem and Green's theorem, it completes the recovery
+                    of the integral theorems of three-dimensional analysis from a single statement about forms: each is that one
+                    equation, specialized to a degree and dressed in the language of the metric. What changes from one to the next
+                    is only the dimension and the dictionary entry — gradient, curl, or divergence — through which the exterior
+                    derivative is read.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>
