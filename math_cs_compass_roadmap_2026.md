@@ -1,8 +1,20 @@
-# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v3)
+# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v4)
 
 **Author:** Yusuke Yokota
-**Last Updated:** 6/10/2026
+**Last Updated:** 6/15/2026
 **Website:** https://math-cs-compass.com
+
+**v4 update (6/15/2026)**: **Manifold series Ch.16 (Integration, through Riemannian integration)
+completed** — calc-90 (`integration_of_forms.html`: form integration → global integration → Lie-group
+Haar volume form / Haar integral), calc-91 (`stokes_theorem.html`: Stokes Thm + corollaries +
+Green's theorem; Cor 16.15 = de Rham foreshadowing), calc-92 (`riemannian_integration.html`: function
+integration + positivity, divergence theorem, surface integral + classical Stokes). topicGroup
+`integration`. Verified against Lee originals; signs machine-checked; Gemini peer-review reflected.
+**Peter–Weyl's integration substrate (coordinate-independent form integration + Haar integral) is now
+complete in calc-90** — the GDL continuous-leg integration gap is resolved. Stokes (calc-91) is the
+continuous-side origin of the de Rham / DEC critical path. **Remaining manifold scope = Corners /
+Densities only** (not implemented; defer decision pending — neither is on the Peter–Weyl minimal path).
+Detail in `ch16_integration_handout_v12` / `manifold_handout_v24`.
 
 **v3 update (6/10/2026)**: **Manifold series Ch.15 (Orientations) completed** — calc-85~89
 (topicGroup `orientations`: vector-space orientation -> manifold orientation -> induced/Stokes
@@ -40,14 +52,13 @@ lack awareness of applications. The primary focus is rigorous mathematical found
 modern AI/ML, with continuous expansion into adjacent domains (GDL, CDL, cryptography,
 stochastic analysis).
 
-**Total: 187 pages as of 6/10/2026.** Breakdown: I (linalg) 39 / II (calc) 89 / III (prob) 26 /
-IV (disc) 17 / V (ml) 16. The II (calc) figure includes the Ch.15 orientation pages calc-85~89
-(+5 this session); the augmentation edits to existing pages calc-45/52/59 do not add to the count.
-`curriculum.json` is authoritative once the calc-85~89 entries are registered locally.
+**Total: 190 pages as of 6/15/2026.** Breakdown: I (linalg) 39 / II (calc) 92 / III (prob) 26 /
+IV (disc) 17 / V (ml) 16. The II (calc) figure includes the Ch.16 integration pages calc-90/91/92
+(+3 since v3). `curriculum.json` is authoritative once the calc-90~92 entries are registered locally.
 
 **Five active tracks (planned in one pass on 2026/6/3)**; detail in the Part 2 overview:
 - Phase 2e (continuous-time generative foundations, Section III) — awaiting Øksendal purchase
-- Rep Theory (GDL continuous leg, Section I+V) — **complete (linalg-31~39 + ml-16); next = Peter–Weyl**
+- Rep Theory (GDL continuous leg, Section I+V) — **complete (linalg-31~39 + ml-16); next = Peter–Weyl (integration substrate now complete, calc-90)**
 - CDL (category theory, Section IV+V) — awaiting Leinster reading
 - Crypto (through PQC, Section IV+I) — mood-driven
 - TDL (GDL discrete leg, Section IV+V) — mood / GDL progress
@@ -98,7 +109,7 @@ A unified view of the five tracks. Per-track detail is authoritative in the indi
 | Track | GDL relation | Section | Start status | Purchase | Handout |
 |---|---|---|---|---|---|
 | **Phase 2e** continuous-time generative | — | III | **awaiting Øksendal purchase** (then Page1 BM+Itō) | **Øksendal 6th ed.** | `phase2e_handout_v1` |
-| **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **linalg-31~39 + ml-16 complete; next active = Peter–Weyl** | Hall 2nd ed. (on hand) | `representation_theory_track_handout_v8` |
+| **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **linalg-31~39 + ml-16 complete; next active = Peter–Weyl (Haar substrate complete, calc-90)** | Hall 2nd ed. (on hand) | `representation_theory_track_handout_v8` |
 | **CDL** category theory | — | IV (cats) + V (CDL bridge) | **awaiting Leinster reading** (Stage 0) | none | `cdl_track_handout_v1` |
 | **Crypto** through PQC | — | IV (s1) + I (s2-7) | **mood-driven** | none | `crypto_track_handout_v1` |
 | **TDL** | **discrete leg** | IV (existing Hodge) + V (SNN) | **mood / GDL progress** | none | `tdl_track_handout_v1` |
@@ -162,14 +173,17 @@ for sample efficiency); Peter-Weyl (Fourier on groups).
 `references.json` has no papers category, so they are not added to the site-wide index).
 **Status**: linalg-31~39 + ml-16 complete. **Next active = Peter–Weyl** (compact-group harmonic
 analysis), which requires manifold integration (Lee Ch.15/16) as its foundation. Ch.15 Orientations
-(calc-85~89) is now complete, supplying the orientation / Riemannian volume form substrate; the
-remaining prerequisite is Ch.16 Integration (through Stokes), the immediate next manifold step
-(Part 3.6 / manifold handout v22).
+(calc-85~89) and Ch.16 Integration through Riemannian integration (calc-90/91/92) are now **both
+complete**; the Haar-integration substrate Peter–Weyl needs (coordinate-independent form integration +
+Haar integral) is fully supplied by calc-90. The manifold integration prerequisite is therefore
+resolved — Peter–Weyl is unblocked on the integration side (unimodularity / two-sided invariance is
+out of Lee scope and is the Peter–Weyl page's own work, Hall).
 **2026 check**: CERTAIN. Peter–Weyl confirmed as the theoretical core of equivariant nets in
 current literature (2025 PNAS review, 2026 surveys): equivariant layers express variables in the
 generalized Fourier space of the group; for SO(3) the irreducible matrix entries are the Wigner
 D-matrices already used in ml-16.
-**Detail**: `representation_theory_track_handout_v8`.
+**Detail**: `representation_theory_track_handout_v8`; manifold integration substrate in
+`manifold_handout_v24` / `ch16_integration_handout_v12`.
 
 prereqs (now historical): linalg-27~30, linalg-22. Scope resolved as Route B (finite groups
 minimal, straight to Lie-group representations); Hall alone sufficed.
@@ -194,19 +208,21 @@ prereqs: SNN <- disc-15, disc-13, ml-13.
 
 ### 3.5 Rejoining of the two legs (Hodge, future deep connection)
 Continuous Hodge (differential forms: Lee Ch.14 complete = calc-82/83/84; orientations Ch.15
-complete = calc-85~89; integration Ch.16 next) and discrete Hodge (simplicial complexes,
-disc-13/15 existing) share the same structure.
-DEC (Part 12 deferred) will be the reclamation hub bridging both legs. The Ch.16 Stokes scope
-sits on the de Rham / DEC critical path (manifold handout v22). Recorded for
+complete = calc-85~89; integration Ch.16 through Riemannian = calc-90/91/92 complete) and discrete
+Hodge (simplicial complexes, disc-13/15 existing) share the same structure.
+DEC (Part 12 deferred) will be the reclamation hub bridging both legs. calc-91 Stokes is the
+continuous-side origin sitting on the de Rham / DEC critical path (manifold handout v24). Recorded for
 now; the relevant Part 12 entries are "Spectral Laplacian" and "DEC."
 
 ### 3.6 GDL track sequencing (current)
-With the manifold spine complete (calc-36~81), Ch.14 forms (calc-82/83/84), and Ch.15
-orientations (calc-85~89) added, the continuous leg's algebraic and orientation foundation is
-in place. Active order:
+With the manifold spine complete (calc-36~81), Ch.14 forms (calc-82/83/84), Ch.15 orientations
+(calc-85~89), and Ch.16 integration through Riemannian integration (calc-90/91/92) added, the
+continuous leg's algebraic, orientation, and integration foundation is fully in place. Active order:
 - Continuous leg: representation theory + Equivariant NN (ml-16) **complete** -> manifold
-  orientations (Ch.15, **complete**) -> manifold integration (Ch.16 Integration through Stokes,
-  **next active**) -> Peter–Weyl (needs that integration substrate for Haar).
+  orientations (Ch.15, **complete**) -> manifold integration (Ch.16 through Riemannian,
+  **complete**; Haar substrate in calc-90) -> Peter–Weyl (**now unblocked on the integration
+  side**). Remaining manifold scope = Corners / Densities only (defer decision pending; not on the
+  Peter–Weyl minimal path).
 - Discrete leg: existing disc-13~15 -> SNN (mood).
 Forward-pointer obligation: each GDL page carries forward-pointers to "the next mathematics"
 (not explicitly declared; readers infer open-endedness from the structure).
@@ -484,8 +500,9 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 | Equivariant NN | ml-16 (done) | V | `equivariant_nn.html` | ✅ complete (title "Symmetry & Representation Theory in ML") |
 | Manifold Ch.14 Differential Forms | calc-82/83/84 (done) | II | (complete) | ✅ complete (topicGroup `differential-forms`) |
 | Manifold Ch.15 Orientations | calc-85~89 (done) | II | (complete) | ✅ complete (topicGroup `orientations`; + augmentations calc-45/52/59) |
-| Manifold Ch.16 Integration (through Stokes) | ~4 | II | TBD | **next active** (Peter–Weyl integration substrate, manifold handout v22); Corners/Densities tentatively deferred |
-| Peter–Weyl | TBD | I | TBD | after manifold Ch.16 (needs Haar integration; Ch.15 orientation/volume-form substrate now complete) |
+| Manifold Ch.16 Integration (through Riemannian) | calc-90/91/92 (done) | II | (complete) | ✅ complete (topicGroup `integration`; form integration + Haar / Stokes + Green / Riemannian integration + divergence theorem + classical Stokes); Peter–Weyl Haar substrate complete (calc-90); ch16 handout v12 |
+| Manifold Ch.16 Corners / Densities | ~1–2 | II | TBD | **defer decision pending** (not on Peter–Weyl minimal path); Corners = de Rham foreshadowing (Cor 16.27), Densities = calc-89 orientation-covering callback + GDL ℝP²; next free id = calc-93 |
+| Peter–Weyl | TBD | I | TBD | **integration prerequisite resolved** (calc-90 Haar substrate complete); needs Hall + unimodularity (out of Lee scope) |
 | TDL: Simplicial NN | 1 | V | TBD | mood/GDL (GDL discrete leg, Part 3.4; Hodge exists) |
 | TDL: Persistent Homology | ~1 | IV | TBD | optional branch (disc-15 forecast) |
 | Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **awaiting Øksendal purchase** (Part 4; splits anticipated) |
@@ -506,7 +523,7 @@ Completed tracks (on index.html, no planned pages).
 ### Major completed tracks
 | Track | Pages | Completed | Notes |
 |---|---|---|---|
-| Smooth Manifolds (Lee Ch.1–15) | calc-36~81 (spine) + calc-42, calc-47 + calc-82/83/84 (Ch.14 forms) + calc-85~89 (Ch.15 orientations) + calc-45/52/59 (augmentations) | 6/3/2026 (Ch.1–13); 6/7/2026 (Ch.14); 6/10/2026 (Ch.15) | Topological/smooth manifolds -> tangent vectors -> immersions/embeddings -> submanifolds -> Sard/Whitney -> Lie groups -> vector fields/flows -> vector bundles -> cotangent bundle -> tensors -> Riemannian metrics (Ch.13: calc-78~81) -> differential forms (Ch.14: calc-82/83/84, topicGroup `differential-forms`, through Cartan's formula) -> orientations (Ch.15: calc-85~89, topicGroup `orientations`, vector-space orientation through orientation covering, incl. Riemannian volume form and Stokes orientation). Mathematical landing point of the GDL continuous leg. topicGroups `riemannian-geometry`, `differential-forms`, `orientations`. Integration (Ch.16, through Stokes) is the next active scope. Curvature/geodesics deferred to a future LeeRM series. Detail `manifold_series_design_handout_v22`. |
+| Smooth Manifolds (Lee Ch.1–16 through Riemannian integration) | calc-36~81 (spine) + calc-42, calc-47 + calc-82/83/84 (Ch.14 forms) + calc-85~89 (Ch.15 orientations) + calc-90/91/92 (Ch.16 integration) + calc-45/52/59 (augmentations) | 6/3/2026 (Ch.1–13); 6/7/2026 (Ch.14); 6/10/2026 (Ch.15); 6/15/2026 (Ch.16 through Riemannian) | Topological/smooth manifolds -> tangent vectors -> immersions/embeddings -> submanifolds -> Sard/Whitney -> Lie groups -> vector fields/flows -> vector bundles -> cotangent bundle -> tensors -> Riemannian metrics (Ch.13: calc-78~81) -> differential forms (Ch.14: calc-82/83/84, topicGroup `differential-forms`, through Cartan's formula) -> orientations (Ch.15: calc-85~89, topicGroup `orientations`, vector-space orientation through orientation covering, incl. Riemannian volume form and Stokes orientation) -> integration (Ch.16: calc-90/91/92, topicGroup `integration`, form integration + Lie-group Haar -> Stokes + Green -> Riemannian integration + divergence theorem + classical Stokes). Mathematical landing point of the GDL continuous leg; Peter–Weyl Haar substrate complete (calc-90). topicGroups `riemannian-geometry`, `differential-forms`, `orientations`, `integration`. **Remaining = Corners / Densities (Ch.16 tail, defer decision pending)**; curvature/geodesics deferred to a future LeeRM series. Detail `manifold_handout_v24` / `ch16_integration_handout_v12`. |
 | Representation Theory (Hall) | linalg-31~39 + ml-16 | 6/8/2026 (ml-16); rep mainline earlier | Complexification + group/Lie-algebra representations -> irreducible classification -> complete reducibility / Schur -> Clebsch-Gordan -> Wigner-Eckart (linalg-31~39), landing at Equivariant NN (ml-16, Section V). GDL continuous leg's representation-theory spine. Next: Peter–Weyl (needs manifold integration; Ch.15 orientations now complete, Ch.16 integration remaining). Detail `representation_theory_track_handout_v8`. |
 | Formal Methods | disc-16, disc-17 | 5/14/2026 | Section IV third pillar (disc-4,16,17). Bidirectional bridge with disc-12 (Four Color Theorem). The Curry-Howard-Lambek connection point for CDL. |
 
@@ -516,7 +533,7 @@ Completed tracks (on index.html, no planned pages).
 - Horn & Johnson *Matrix Analysis* -> linalg-09~13
 - Boyd & Vandenberghe *Convex Optimization* -> calc-07, calc-08
 - O'Searcoid *Metric Spaces* -> calc-16~22
-- Lee *Introduction to Smooth Manifolds* -> calc-29, calc-36~81, calc-42, calc-82~89 (Ch.14 forms + Ch.15 orientations)
+- Lee *Introduction to Smooth Manifolds* -> calc-29, calc-36~81, calc-42, calc-82~92 (Ch.14 forms + Ch.15 orientations + Ch.16 integration)
 - Conway *Functional Analysis* -> calc-23~28, calc-30~32
 - Stein & Shakarchi *Fourier Analysis* -> calc-14, calc-15, calc-32~35
 - Stillwell *Naive Lie Theory* -> linalg-24, linalg-27~30
@@ -538,7 +555,7 @@ Completed tracks (on index.html, no planned pages).
 | Schwartz Space & Distributions | a PDE/generalized-function page beyond calc-33/34/35 |
 | Pontryagin Duality | after rep theory + calc-32, if a harmonic-analysis track emerges |
 | **Spectral Theory of the Laplacian (continuous)** | **continuous <-> discrete Hodge bridge (Part 3.5); precursor to GDL two-leg rejoining** |
-| **DEC (Discrete Exterior Calculus)** | **reclamation hub for continuous Hodge (Lee Ch.14+) + discrete Hodge (disc-13/15 existing); bridges both GDL legs** |
+| **DEC (Discrete Exterior Calculus)** | **reclamation hub for continuous Hodge (Lee Ch.14+, integration calc-90/91/92 complete; calc-91 Stokes = continuous-side origin) + discrete Hodge (disc-13/15 existing); bridges both GDL legs** |
 | Regular Conditional Distributions | Phase 2e companion (SDE/Itō filtration); non-blocking for prob-26 |
 | Fiber Bundles & Gauge Theory | when a GDL viewpoint demands gauge equivariance; manifold Q8. calc-89 (\(\mathbb{RP}^2\) nonorientable, orientation double cover \(S^2 \to \mathbb{RP}^2\)) now supplies the topological stage for the diffusion-MRI gauge-equivariant-CNN example (both the direct-on-\(\mathbb{RP}^2\) and lift-to-\(S^2\) approaches); frame/principal bundle itself remains out of Lee scope and needs a separate resource |
 | **Optimal Transport** | **FM straight-path optimality. Phase 2e uses forward-pointers only; OT-book acquisition is the trigger** |
@@ -548,6 +565,8 @@ Completed tracks (on index.html, no planned pages).
 | Variational Representations & f-Divergences | contrastive learning / MI estimation (MINE, f-GAN, InfoNCE, PAC-Bayes) |
 | Characteristic Functions & CLT (rigorous) | advanced asymptotic statistics; prereq calc-32 |
 | Information Geometry (Amari) | an information-geometry page; entry point calc-81 secured (musical iso, NGD insight-box) |
+| **Manifold Ch.16 Corners + Homotopy Invariance** | **de Rham foreshadowing trinity (calc-91 Cor 16.15 + Thm 16.26 + Cor 16.27); trigger = Ch.17 de Rham start, or standalone. Not on Peter–Weyl minimal path. calc-93 candidate** |
+| **Manifold Ch.16 Densities + nonorientable divergence theorem (Thm 16.48)** | **calc-89 orientation-covering callback + GDL ℝP² (diffusion-MRI gauge-equivariant CNN base); trigger = GDL ℝP² page or de Rham batch. calc-93 candidate** |
 
 ---
 
@@ -585,8 +604,8 @@ Completed tracks (on index.html, no planned pages).
 
 ---
 
-**This roadmap (v3) is the index layer.** Per-track prereq verification, collisions, owner
+**This roadmap (v4) is the index layer.** Per-track prereq verification, collisions, owner
 candidates, physical-book inspection items, and resume-time greps are authoritative in the
 individual handouts: `phase2e_handout_v1` / `representation_theory_track_handout_v8` /
 `cdl_track_handout_v1` / `crypto_track_handout_v1` / `tdl_track_handout_v1` /
-`manifold_series_design_handout_v22`.
+`manifold_handout_v24` / `ch16_integration_handout_v12`.
