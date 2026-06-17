@@ -1,0 +1,484 @@
+---
+layout: default
+title: "The Hahn-Banach Theorem"
+topic_id: calc-93
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Hahn-Banach Theorem</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#extension-problem">The Extension Problem</a>
+            <a href="#real-case">The Hahn-Banach Theorem: Real Case</a>
+            <a href="#complex-case">The Complex Case</a>
+            <a href="#consequences">Norm-Preserving Extension & Consequences</a>
+        </div>
+
+        <div class="container">
+
+            <section id="extension-problem" class="section-content">
+                <h2>The Extension Problem</h2>
+
+                <p>
+                    Throughout the study of <a href="dual_spaces.html#D-topological_dual_space" class="ref-link"><strong>dual spaces</strong></a>
+                    we relied on a single, deceptively powerful guarantee: that a normed space carries
+                    <em>enough</em> continuous linear functionals to detect every vector. Concretely, we used the existence of a
+                    <strong>norming functional</strong> &mdash; a unit functional \(\varphi\) with \(\varphi(x) = \|x\|\) &mdash; to prove
+                    that the canonical embedding \(J : \mathcal{X} \to \mathcal{X}^{**}\) is isometric and that
+                    \(\mathcal{X}^*\) separates points. That guarantee was taken on faith. We now repay the debt.
+                </p>
+
+                <p>
+                    The mechanism behind it is an <strong>extension</strong> result. One starts with a functional defined only on a
+                    subspace &mdash; for instance, the one-dimensional span of a single vector, where a functional is trivial to write
+                    down &mdash; and asks whether it extends to the whole space <em>without increasing its size</em>. That the answer is
+                    always yes is the content of the <strong>Hahn-Banach Theorem</strong>, the first of the cornerstones of functional
+                    analysis. Its reach extends well beyond norms: the natural setting is extension under domination by a
+                    <strong>sublinear functional</strong>, a class of size-measuring maps more permissive than norms and seminorms,
+                    defined below. We state the theorem in this general form because the
+                    geometric, separation-type consequences we will need later &mdash; separating a point from a convex set, characterizing
+                    weak closures &mdash; require exactly this generality, not merely the norm-preserving special case.
+                </p>
+
+                <h3>Seminorms and Sublinear Functionals</h3>
+
+                <p>
+                    Two classes of size-measuring functions organize the entire discussion. The first weakens a norm by dropping the
+                    requirement that only the zero vector have zero size.
+                </p>
+
+                <div class="theorem" id="D-seminorm">
+                    <span class="theorem-title">Definition: Seminorm</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a vector space over \(\mathbb{F}\) (\(\mathbb{R}\) or \(\mathbb{C}\)). A
+                        <strong>seminorm</strong> on \(\mathcal{X}\) is a function \(p : \mathcal{X} \to [0, \infty)\) such that, for all
+                        \(x, y \in \mathcal{X}\) and all \(\alpha \in \mathbb{F}\),
+                        \[
+                        p(x + y) \;\leq\; p(x) + p(y) \qquad \text{(subadditivity)},
+                        \]
+                        \[
+                        p(\alpha x) \;=\; |\alpha|\, p(x) \qquad \text{(absolute homogeneity)}.
+                        \]
+                        Taking \(\alpha = 0\) in absolute homogeneity gives \(p(0) = 0\). A seminorm that additionally satisfies
+                        \(p(x) = 0 \Rightarrow x = 0\) is precisely a <strong>norm</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    The second class abstracts the two structural features a norm uses when it bounds a functional &mdash; the triangle
+                    inequality and scaling under factors &mdash; but discards far more than a seminorm does. It may take
+                    <em>negative</em> values, and it is homogeneous only under <em>non-negative</em> scalars.
+                </p>
+
+                <div class="theorem" id="D-sublinear_functional">
+                    <span class="theorem-title">Definition: Sublinear Functional</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a vector space over \(\mathbb{R}\). A <strong>sublinear functional</strong> on
+                        \(\mathcal{X}\) is a map \(q : \mathcal{X} \to \mathbb{R}\) satisfying, for all \(x, y \in \mathcal{X}\) and all
+                        \(\alpha \geq 0\),
+                        \[
+                        q(x + y) \;\leq\; q(x) + q(y) \qquad \text{(subadditivity)},
+                        \]
+                        \[
+                        q(\alpha x) \;=\; \alpha\, q(x) \qquad \text{(non-negative homogeneity)}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    On a <strong>real</strong> vector space, every seminorm is a sublinear functional: absolute homogeneity
+                    \(p(\alpha x) = |\alpha| p(x)\) restricts, for \(\alpha \geq 0\), to \(p(\alpha x) = \alpha\, p(x)\), which is exactly
+                    non-negative homogeneity. The converse fails. A seminorm is symmetric (\(p(-x) = p(x)\)) and non-negative,
+                    whereas a sublinear functional need be neither. A concrete example on \(\mathbb{R}\) is \(q(x) = x\) itself,
+                    which is linear &mdash; hence sublinear &mdash; yet takes negative values and satisfies
+                    \(q(-1) = -1 \neq 1 = q(1)\). This genuine asymmetry is precisely what will let a sublinear functional encode
+                    <em>one-sided</em> geometric constraints, such as the separation of convex sets, in later developments. On a
+                    <strong>complex</strong> space the notion of sublinear functional does not directly apply &mdash; non-negative
+                    homogeneity is meaningless for complex scalars &mdash; which is exactly why the complex form of the theorem,
+                    treated below, is phrased through seminorms rather than sublinear functionals.
+                </p>
+
+                <p>
+                    The extension problem can now be posed sharply. Suppose \(f\) is a linear functional defined on a subspace
+                    \(\mathcal{M} \subseteq \mathcal{X}\), and suppose it is <strong>dominated</strong> by a sublinear functional \(q\) on
+                    its domain, meaning \(f(x) \leq q(x)\) for all \(x \in \mathcal{M}\). Does \(f\) extend to a linear functional \(F\) on
+                    all of \(\mathcal{X}\), still dominated by the same \(q\)? Finding <em>some</em> linear extension is easy &mdash; extend a
+                    basis of \(\mathcal{M}\) arbitrarily to a basis of \(\mathcal{X}\). The difficulty, and the entire substance of the
+                    theorem, is to find an extension that <em>remains dominated by \(q\)</em>. We turn to this next.
+                </p>
+
+            </section>
+
+            <section id="real-case" class="section-content">
+                <h2>The Hahn-Banach Theorem: Real Case</h2>
+
+                <p>
+                    We state the theorem in its primary form: extension of a real linear functional under domination by a sublinear
+                    functional. The norm-preserving statement that powers the dual-space theory is a special case, recovered at the
+                    end of this development.
+                </p>
+
+                <div class="theorem" id="T-hahn_banach_real">
+                    <span class="theorem-title">Theorem: Hahn-Banach (Real, Sublinear-Dominated Form)</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a vector space over \(\mathbb{R}\), let \(q\) be a
+                        <strong>sublinear functional</strong> on \(\mathcal{X}\),
+                        and let \(\mathcal{M} \subseteq \mathcal{X}\) be a linear subspace. If \(f : \mathcal{M} \to \mathbb{R}\) is
+                        linear and satisfies
+                        \[
+                        f(x) \;\leq\; q(x) \qquad \text{for all } x \in \mathcal{M},
+                        \]
+                        then there exists a linear functional \(F : \mathcal{X} \to \mathbb{R}\) extending \(f\) &mdash; that is,
+                        \(F|_{\mathcal{M}} = f\) &mdash; with
+                        \[
+                        F(x) \;\leq\; q(x) \qquad \text{for all } x \in \mathcal{X}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The proof has two ingredients. The first is a single, concrete step: given the functional on a subspace, extend
+                    it to a subspace one dimension larger, preserving domination. The second is a transfinite mechanism that iterates
+                    this step until the domain exhausts \(\mathcal{X}\). The mechanism is <strong>Zorn's Lemma</strong>, which we now
+                    state, since the rest of functional analysis &mdash; and this proof in particular &mdash; uses it openly.
+                </p>
+
+                <h3>Zorn's Lemma</h3>
+
+                <p>
+                    Recall the language of order. A <strong>partial order</strong> \(\preceq\) on a set \(\mathcal{P}\) is a reflexive,
+                    antisymmetric, transitive relation. A subset \(\mathcal{C} \subseteq \mathcal{P}\) is a <strong>chain</strong> if any
+                    two of its elements are comparable. An <strong>upper bound</strong> for \(\mathcal{C}\) is an element \(u \in \mathcal{P}\)
+                    with \(c \preceq u\) for every \(c \in \mathcal{C}\); a <strong>maximal element</strong> of \(\mathcal{P}\) is an
+                    \(m \in \mathcal{P}\) admitting no strictly larger element.
+                </p>
+
+                <div class="theorem" id="T-zorns_lemma">
+                    <span class="theorem-title">Theorem (Axiom): Zorn's Lemma</span>
+                    <p>
+                        Let \((\mathcal{P}, \preceq)\) be a non-empty partially ordered set in which every chain has an upper bound in
+                        \(\mathcal{P}\). Then \(\mathcal{P}\) has a maximal element.
+                    </p>
+                    <p>
+                        Zorn's Lemma is <strong>logically equivalent</strong> to the Axiom of Choice over the
+                        Zermelo&ndash;Fraenkel axioms: each can be derived from the other, and neither is provable from the remaining
+                        axioms of set theory. We therefore adopt it as an <strong>axiom</strong>. It is not a theorem awaiting proof
+                        here or elsewhere; stating it is a declaration of which set-theoretic foundation we build on, made explicit so
+                        that every later existence result resting on it &mdash; bases of arbitrary vector spaces, maximal ideals, and
+                        the extension theorem below &mdash; carries a visible dependency rather than a hidden one.
+                    </p>
+                </div>
+
+                <h3>Extension by One Dimension</h3>
+
+                <p>
+                    The heart of the matter is the following lemma. Once a dominated functional can be pushed across a single new
+                    dimension, Zorn's Lemma supplies the rest.
+                </p>
+
+                <div class="theorem" id="T-hahn_banach_one_dim">
+                    <span class="theorem-title">Lemma: One-Dimensional Extension</span>
+                    <p>
+                        Under the hypotheses of the theorem, suppose additionally that \(\dim(\mathcal{X} / \mathcal{M}) = 1\); that is,
+                        \(\mathcal{X} = \mathcal{M} + \mathbb{R}\,x_0\) for some \(x_0 \notin \mathcal{M}\). Then \(f\) admits an extension
+                        \(F : \mathcal{X} \to \mathbb{R}\), linear and dominated by \(q\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Every element of \(\mathcal{X}\) is uniquely \(t x_0 + y\) with \(t \in \mathbb{R}\), \(y \in \mathcal{M}\)
+                        (uniqueness because \(x_0 \notin \mathcal{M}\)). A linear extension of \(f\) is therefore determined by a single
+                        real number \(\alpha_0 := F(x_0)\), via \(F(t x_0 + y) = t\alpha_0 + f(y)\). The task is to choose \(\alpha_0\) so
+                        that \(F \leq q\) everywhere.
+                    </p>
+                    <p>
+                        Consider \(t > 0\). Writing \(t x_0 + y = t\bigl(x_0 + y/t\bigr)\) and using positive homogeneity of \(q\), the
+                        requirement \(F(t x_0 + y) \leq q(t x_0 + y)\) becomes \(t\alpha_0 + f(y) \leq t\, q(x_0 + y/t)\); dividing by
+                        \(t > 0\) and renaming \(y_1 := y/t \in \mathcal{M}\), this is
+                        \[
+                        \alpha_0 \;\leq\; -f(y_1) + q(x_0 + y_1) \qquad \text{for all } y_1 \in \mathcal{M}.
+                        \]
+                        For \(t < 0\), write \(t = -s\) with \(s > 0\); the requirement becomes \(-s\alpha_0 + f(y) \leq s\, q(-x_0 + y/s)\),
+                        and dividing by \(s > 0\) and renaming \(y_2 := y/s\) gives
+                        \[
+                        \alpha_0 \;\geq\; f(y_2) - q(-x_0 + y_2) \qquad \text{for all } y_2 \in \mathcal{M}.
+                        \]
+                        The case \(t = 0\) is the original hypothesis \(f \leq q\) on \(\mathcal{M}\). Thus a valid \(\alpha_0\) exists if
+                        and only if the supremum below does not exceed the infimum:
+                        \[
+                        \begin{align*}
+                        \sup_{y_2 \in \mathcal{M}} \bigl[\, f(y_2) - q(-x_0 + y_2) \,\bigr] \\\\
+                        \leq\; \inf_{y_1 \in \mathcal{M}} \bigl[\, {-f(y_1)} + q(x_0 + y_1) \,\bigr].
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        This inequality holds. For arbitrary \(y_1, y_2 \in \mathcal{M}\), linearity of \(f\), the domination
+                        \(f \leq q\) on \(\mathcal{M}\), and subadditivity of \(q\) give
+                        \[
+                        \begin{align*}
+                        f(y_2) + f(y_1) &= f(y_1 + y_2) \\\\
+                        &\leq q(y_1 + y_2) \\\\
+                        &= q\bigl((x_0 + y_1) + (-x_0 + y_2)\bigr) \\\\
+                        &\leq q(x_0 + y_1) + q(-x_0 + y_2).
+                        \end{align*}
+                        \]
+                        Rearranging, \(f(y_2) - q(-x_0 + y_2) \leq -f(y_1) + q(x_0 + y_1)\) for every pair \(y_1, y_2\). Taking the
+                        supremum over \(y_2\) on the left and the infimum over \(y_1\) on the right yields the displayed inequality.
+                        Any \(\alpha_0\) in the (non-empty) interval between the two sides defines, via \(F(t x_0 + y) = t\alpha_0 + f(y)\),
+                        a linear extension of \(f\) with \(F \leq q\) on all of \(\mathcal{X}\).
+                    </p>
+                </div>
+
+                <h3>From One Dimension to All of \(\mathcal{X}\)</h3>
+
+                <p>
+                    The one-dimensional lemma extends \(f\) across any single new direction. To reach all of \(\mathcal{X}\) &mdash; possibly
+                    requiring uncountably many such steps &mdash; we order the partial extensions and apply Zorn's Lemma.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of the Theorem</span>
+                    <p>
+                        Let \(\mathcal{S}\) be the set of all pairs \((\mathcal{N}, g)\) where \(\mathcal{N}\) is a linear subspace with
+                        \(\mathcal{M} \subseteq \mathcal{N} \subseteq \mathcal{X}\) and \(g : \mathcal{N} \to \mathbb{R}\) is linear,
+                        extends \(f\), and satisfies \(g \leq q\) on \(\mathcal{N}\). The pair \((\mathcal{M}, f)\) lies in \(\mathcal{S}\),
+                        so \(\mathcal{S} \neq \varnothing\). Order \(\mathcal{S}\) by declaring
+                        \((\mathcal{N}_1, g_1) \preceq (\mathcal{N}_2, g_2)\) to mean
+                        \[
+                        \mathcal{N}_1 \subseteq \mathcal{N}_2 \quad \text{and} \quad g_2|_{\mathcal{N}_1} = g_1.
+                        \]
+                        This is reflexive, antisymmetric, and transitive, so \((\mathcal{S}, \preceq)\) is a partially ordered set.
+                    </p>
+                    <p>
+                        <strong>Every chain has an upper bound.</strong><br>
+                        Let \(\mathcal{C} = \{(\mathcal{N}_i, g_i) : i \in I\}\) be a
+                        chain in \(\mathcal{S}\). Put \(\mathcal{N} := \bigcup_{i \in I} \mathcal{N}_i\). This union is a linear subspace:
+                        given \(u, v \in \mathcal{N}\), say \(u \in \mathcal{N}_i\) and \(v \in \mathcal{N}_j\), comparability of the chain
+                        places both in the larger of \(\mathcal{N}_i, \mathcal{N}_j\), which is a subspace and so contains every linear
+                        combination \(\lambda u + v\). Define \(g : \mathcal{N} \to \mathbb{R}\) by \(g(u) := g_i(u)\) whenever
+                        \(u \in \mathcal{N}_i\). This is <strong>well defined</strong>: if \(u \in \mathcal{N}_i \cap \mathcal{N}_j\), then
+                        the chain makes one pair dominate the other, say \((\mathcal{N}_i, g_i) \preceq (\mathcal{N}_j, g_j)\), whence
+                        \(g_j|_{\mathcal{N}_i} = g_i\) and \(g_i(u) = g_j(u)\). Linearity of \(g\) follows by evaluating any two arguments
+                        inside a common \(\mathcal{N}_i\) (again using comparability), and \(g \leq q\) holds because it holds for each
+                        \(g_i\). Thus \((\mathcal{N}, g) \in \mathcal{S}\), and by construction it is an upper bound for \(\mathcal{C}\).
+                    </p>
+                    <p>
+                        <strong>Maximal element is the full space.</strong><br>
+                        By
+                        <a href="#T-zorns_lemma" class="ref-link"><strong>Zorn's Lemma</strong></a>, \(\mathcal{S}\) has a maximal element
+                        \((\mathcal{Y}, F)\). We claim \(\mathcal{Y} = \mathcal{X}\). If not, choose \(x_0 \in \mathcal{X} \setminus \mathcal{Y}\).
+                        Applying the
+                        <a href="#T-hahn_banach_one_dim" class="ref-link"><strong>one-dimensional extension lemma</strong></a> to \(F\) on
+                        \(\mathcal{Y}\) and the direction \(x_0\) produces a dominated linear extension \(F'\) on
+                        \(\mathcal{Y} + \mathbb{R}\,x_0\), a strictly larger subspace. Then \((\mathcal{Y}, F) \prec (\mathcal{Y} + \mathbb{R}\,x_0, F')\),
+                        contradicting maximality. Hence \(\mathcal{Y} = \mathcal{X}\), and \(F\) is the required extension:
+                        linear on all of \(\mathcal{X}\), restricting to \(f\) on \(\mathcal{M}\), and dominated by \(q\).
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="complex-case" class="section-content">
+                <h2>The Complex Case</h2>
+
+                <p>
+                    The real theorem dominates a functional by a sublinear functional, a notion tied to the order structure of
+                    \(\mathbb{R}\). On a complex space neither the order nor non-negative homogeneity makes sense, so the natural object
+                    of domination becomes a <a href="#D-seminorm" class="ref-link"><strong>seminorm</strong></a>, whose absolute
+                    homogeneity \(p(\alpha x) = |\alpha| p(x)\) is meaningful for complex \(\alpha\). The passage from real to complex
+                    rests on a single observation: a complex-linear functional is completely determined by its real part.
+                </p>
+
+                <h3>Real and Complex Parts of a Functional</h3>
+
+                <p>
+                    A complex vector space \(\mathcal{X}\) is also a real vector space, simply by restricting scalar multiplication to
+                    real scalars. If \(g : \mathcal{X} \to \mathbb{C}\) is complex-linear, then \(\operatorname{Re} g : \mathcal{X} \to \mathbb{R}\)
+                    is real-linear. The following lemma shows this loses no information.
+                </p>
+
+                <div class="theorem" id="T-complex_functional_recovery">
+                    <span class="theorem-title">Lemma: Recovery from the Real Part</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a vector space over \(\mathbb{C}\).
+                    </p>
+                    <p>
+                        (a) If \(f : \mathcal{X} \to \mathbb{R}\) is real-linear, then
+                        \[
+                        \tilde{f}(x) \;:=\; f(x) - i\, f(i x)
+                        \]
+                        is complex-linear, and \(f = \operatorname{Re} \tilde{f}\).
+                    </p>
+                    <p>
+                        (b) If \(g : \mathcal{X} \to \mathbb{C}\) is complex-linear and \(f = \operatorname{Re} g\), then \(\tilde{f} = g\).
+                    </p>
+                    <p>
+                        (c) If \(p\) is a seminorm on \(\mathcal{X}\), then \(|f(x)| \leq p(x)\) for all \(x\) if and only if
+                        \(|\tilde{f}(x)| \leq p(x)\) for all \(x\).
+                    </p>
+                    <p>
+                        (d) If \(\mathcal{X}\) is a normed space and \(f, \tilde{f}\) are as in (a), then
+                        \(\|f\| = \|\tilde{f}\|\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <strong>(a)</strong><br>
+                        Additivity and real homogeneity of \(\tilde{f}\) follow from those of \(f\). For complex
+                        homogeneity it suffices to check multiplication by \(i\), since every complex scalar is generated by
+                        \(\mathbb{R}\) and \(i\). Compute
+                        \[
+                        \begin{align*}
+                        \tilde{f}(i x) &= f(i x) - i\, f(i^2 x) \\\\
+                        &= f(i x) - i\, f(-x) \\\\
+                        &= f(i x) + i\, f(x) \\\\
+                        &= i\bigl(f(x) - i\, f(i x)\bigr) \\\\
+                        &= i\, \tilde{f}(x),
+                        \end{align*}
+                        \]
+                        using real-linearity of \(f\) (so \(f(-x) = -f(x)\)). Hence \(\tilde{f}\) is complex-linear. Its real part is
+                        \(\operatorname{Re}\tilde{f}(x) = f(x)\), since \(f\) is real-valued.
+                    </p>
+                    <p>
+                        <strong>(b)</strong><br>
+                        With \(f = \operatorname{Re} g\), write \(g(x) = \operatorname{Re} g(x) + i \operatorname{Im} g(x)\).
+                        For any complex number \(g(x)\), its imaginary part equals \(-\operatorname{Re}\bigl(i\, g(x)\bigr)\). Complex-linearity
+                        gives \(i\, g(x) = g(i x)\), so \(\operatorname{Im} g(x) = -\operatorname{Re} g(i x) = -f(i x)\). Therefore
+                        \(g(x) = f(x) - i f(i x) = \tilde{f}(x)\).
+                    </p>
+                    <p>
+                        <strong>(c)</strong><br>
+                        Since \(f = \operatorname{Re}\tilde{f}\), we have \(|f(x)| = |\operatorname{Re}\tilde{f}(x)| \leq |\tilde{f}(x)|\),
+                        so the bound on \(\tilde{f}\) immediately implies the bound on \(f\). Conversely, suppose \(|f(x)| \leq p(x)\) for
+                        all \(x\). Fix \(x\) and write \(\tilde{f}(x) = r e^{i\theta}\) with \(r = |\tilde{f}(x)| \geq 0\). Then
+                        \[
+                        |\tilde{f}(x)| \;=\; r \;=\; e^{-i\theta}\,\tilde{f}(x) \;=\; \tilde{f}\bigl(e^{-i\theta} x\bigr),
+                        \]
+                        using complex-linearity. The left side is real, so the right side equals its own real part:
+                        \(|\tilde{f}(x)| = \operatorname{Re}\tilde{f}(e^{-i\theta} x) = f(e^{-i\theta} x)\). Applying the hypothesis and
+                        absolute homogeneity of \(p\),
+                        \[
+                        |\tilde{f}(x)| \;=\; f\bigl(e^{-i\theta} x\bigr) \;\leq\; p\bigl(e^{-i\theta} x\bigr) \;=\; |e^{-i\theta}|\, p(x) \;=\; p(x).
+                        \]
+                    </p>
+                    <p>
+                        <strong>(d)</strong><br>
+                        A norm is in particular a seminorm, so applying (c) with \(p(x) = \|\tilde{f}\|\,\|x\|\) and
+                        with \(p(x) = \|f\|\,\|x\|\) shows each of \(\|f\|, \|\tilde{f}\|\) bounds the other; hence they are equal.
+                    </p>
+                </div>
+
+                <h3>The Seminorm Version</h3>
+
+                <p>
+                    With recovery from the real part in hand, the complex extension theorem follows by applying the real theorem to
+                    the real part, then complexifying.
+                </p>
+
+                <div class="theorem" id="T-hahn_banach_seminorm">
+                    <span class="theorem-title">Theorem: Hahn-Banach (Seminorm-Dominated Form)</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a vector space over \(\mathbb{F}\) (\(\mathbb{R}\) or \(\mathbb{C}\)), let \(p\) be a
+                        seminorm on \(\mathcal{X}\), and let \(\mathcal{M} \subseteq \mathcal{X}\) be a linear subspace. If
+                        \(f : \mathcal{M} \to \mathbb{F}\) is linear with \(|f(x)| \leq p(x)\) for all \(x \in \mathcal{M}\), then there
+                        exists a linear functional \(F : \mathcal{X} \to \mathbb{F}\) extending \(f\) with
+                        \[
+                        |F(x)| \;\leq\; p(x) \qquad \text{for all } x \in \mathcal{X}.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <strong>Case \(\mathbb{F} = \mathbb{R}\).</strong><br>
+                        A seminorm is a sublinear functional, and \(f(x) \leq |f(x)| \leq p(x)\)
+                        on \(\mathcal{M}\). The
+                        <a href="#T-hahn_banach_real" class="ref-link"><strong>real theorem</strong></a> yields a linear extension \(F\)
+                        with \(F(x) \leq p(x)\) for all \(x\). Applying this to \(-x\) and using \(p(-x) = p(x)\) gives
+                        \(-F(x) = F(-x) \leq p(-x) = p(x)\), so \(|F(x)| \leq p(x)\).
+                    </p>
+                    <p>
+                        <strong>Case \(\mathbb{F} = \mathbb{C}\).</strong><br>
+                        Let \(f_1 := \operatorname{Re} f\), a real-linear functional on
+                        \(\mathcal{M}\) with \(|f_1(x)| \leq |f(x)| \leq p(x)\). By the real case there is a real-linear
+                        \(F_1 : \mathcal{X} \to \mathbb{R}\) extending \(f_1\) with \(|F_1(x)| \leq p(x)\) for all \(x\). Define
+                        \(F(x) := F_1(x) - i F_1(i x)\). By part (a) of the recovery lemma \(F\) is complex-linear, and by part (c)
+                        the bound \(|F_1| \leq p\) gives \(|F(x)| \leq p(x)\) for all \(x\). Finally \(F\) extends \(f\): on
+                        \(\mathcal{M}\), part (b) applied to \(g = f\) gives \(f = \widetilde{\operatorname{Re} f} = \widetilde{f_1}\),
+                        and since \(F_1|_{\mathcal{M}} = f_1\) we get \(F|_{\mathcal{M}} = \widetilde{f_1} = f\).
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="consequences" class="section-content">
+                <h2>Norm-Preserving Extension & Consequences</h2>
+
+                <p>
+                    We now specialize to normed spaces and recover the statement that the
+                    <a href="dual_spaces.html#D-topological_dual_space" class="ref-link"><strong>dual-space theory</strong></a> took on
+                    faith: a bounded functional on a subspace extends to the whole space <em>without enlarging its norm</em>. This is
+                    the seminorm theorem applied to the most natural seminorm a bounded functional carries with it.
+                </p>
+
+                <h3>The Norm-Preserving Extension</h3>
+
+                <p>
+                    Let \(\mathcal{X}\) be a normed space, \(\mathcal{M} \subseteq \mathcal{X}\) a subspace, and \(f \in \mathcal{M}^*\) a
+                    bounded linear functional, with operator norm \(\|f\|_{\mathcal{M}^*}\). Set
+                    \[
+                    p(x) \;:=\; \|f\|_{\mathcal{M}^*}\, \|x\|_{\mathcal{X}}.
+                    \]
+                    This \(p\) is a seminorm on \(\mathcal{X}\) &mdash; in fact a scalar multiple of the norm &mdash; and on \(\mathcal{M}\) the
+                    boundedness of \(f\) reads exactly \(|f(x)| \leq \|f\|_{\mathcal{M}^*}\,\|x\| = p(x)\). The
+                    <a href="#T-hahn_banach_seminorm" class="ref-link"><strong>seminorm theorem</strong></a> furnishes a linear extension
+                    \(F : \mathcal{X} \to \mathbb{F}\) of \(f\) with \(|F(x)| \leq p(x) = \|f\|_{\mathcal{M}^*}\,\|x\|\) for all \(x\). The
+                    last inequality says \(\|F\|_{\mathcal{X}^*} \leq \|f\|_{\mathcal{M}^*}\); and since \(F\) extends \(f\), the supremum
+                    defining \(\|F\|_{\mathcal{X}^*}\) ranges over a superset of that defining \(\|f\|_{\mathcal{M}^*}\), giving the reverse
+                    inequality. Hence \(\|F\|_{\mathcal{X}^*} = \|f\|_{\mathcal{M}^*}\): the extension is norm-preserving.
+                </p>
+
+                <p>
+                    This is precisely the
+                    <a href="dual_spaces.html#T-hahn_banach_extension" class="ref-link"><strong>Hahn-Banach extension theorem</strong></a>
+                    invoked in the study of dual spaces. The debt incurred there &mdash; where the statement was used to construct norming
+                    functionals and to prove the canonical embedding isometric &mdash; is now discharged: it is the norm-seminorm
+                    specialization of the general theorem proved above.
+                </p>
+
+                <h3>Why the Dual Space Is Rich</h3>
+
+                <p>
+                    The norm-preserving extension has an immediate consequence that the dual-space theory used repeatedly: a normed
+                    space carries enough functionals to detect every vector by its norm. Given a nonzero \(x \in \mathcal{X}\), apply the
+                    extension to the one-dimensional subspace \(\mathcal{M} = \mathbb{F}\,x\) with the functional
+                    \(f(\lambda x) := \lambda \|x\|\), which has \(\|f\|_{\mathcal{M}^*} = 1\). The resulting \(F \in \mathcal{X}^*\) satisfies
+                    \(\|F\|_{\mathcal{X}^*} = 1\) and \(F(x) = \|x\|\). This is the
+                    <a href="dual_spaces.html#T-norm_one_functional" class="ref-link"><strong>norming functional</strong></a> whose
+                    existence underlies both the isometry of the canonical embedding
+                    \(J : \mathcal{X} \to \mathcal{X}^{**}\) and the fact that \(\mathcal{X}^*\) separates points. Two vectors with the same
+                    image under every functional must be equal &mdash; the dual space sees everything.
+                </p>
+
+            </section>
+
+        </div>
+
+</body>
+</html>
