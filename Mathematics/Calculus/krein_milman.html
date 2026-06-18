@@ -1,0 +1,605 @@
+---
+layout: default
+title: "The Krein-Milman Theorem"
+topic_id: calc-97
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Krein-Milman Theorem</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#extreme-points">Extreme Points</a>
+            <a href="#krein-milman">The Krein-Milman Theorem</a>
+            <a href="#converse-milman">Milman's Partial Converse</a>
+            <a href="#affine-images">Extreme Points under Affine Maps</a>
+        </div>
+
+        <div class="container">
+
+            <section id="extreme-points" class="section-content">
+                <h2>Extreme Points</h2>
+
+                <p>
+                    The separation theory of the previous development expressed every closed convex set as an intersection of
+                    closed half-spaces &mdash; a description from the <em>outside</em>, by the functionals that bound the set. There
+                    is a dual question, from the <em>inside</em>: which points of a convex set are irreducible, in the sense that they
+                    cannot be manufactured by averaging other points of the set? A vertex of a polygon is such a point; a point on
+                    the interior of an edge is not, since it is the midpoint of two of its neighbors. The theorem of Krein and
+                    Milman, the goal of this page, will show that for a compact convex set in a
+                    <a href="locally_convex_spaces.html#D-locally_convex_space" class="ref-link"><strong>locally convex space</strong></a>
+                    these irreducible points always exist and suffice to recover the entire set as their closed convex hull.
+                </p>
+
+                <p>
+                    We work over a scalar field \(\mathbb{F}\), either \(\mathbb{R}\) or \(\mathbb{C}\). The definition of an extreme
+                    point is purely linear-algebraic: it refers only to the vector-space structure of the ambient space, not to any
+                    topology. Recall that an <strong>open line segment</strong> between two points \(x_1\) and \(x_2\) of a vector
+                    space is the set \((x_1, x_2) = \{\, t x_2 + (1 - t) x_1 : 0 \lt t \lt 1 \,\}\), and that such a segment is
+                    <strong>proper</strong> when its endpoints are distinct, \(x_1 \neq x_2\).
+                </p>
+
+                <div class="theorem" id="D-extreme_point">
+                    <span class="theorem-title">Definition: Extreme Point</span>
+                    <p>
+                        Let \(K\) be a <a href="metric_space.html#D-convex_set" class="ref-link"><strong>convex
+                        subset</strong></a> of a vector space \(\mathcal{X}\). A point \(a \in K\) is an <strong>extreme point</strong>
+                        of \(K\) if there is no proper open line segment that contains \(a\) and lies entirely in \(K\). The set of all
+                        extreme points of \(K\) is denoted \(\operatorname{ext} K\).
+                    </p>
+                </div>
+
+                <p>
+                    Equivalently, \(a\) is extreme when it admits no representation \(a = t x_2 + (1 - t) x_1\) with
+                    \(x_1, x_2 \in K\), \(0 \lt t \lt 1\), and \(x_1 \neq x_2\): the only way to write \(a\) as an interior point of a
+                    segment in \(K\) is the trivial one, in which both endpoints coincide with \(a\).
+                    For the closed unit disc \(\{(x, y) : x^2 + y^2 \leq 1\}\) in \(\mathbb{R}^2\), the extreme points are exactly the
+                    boundary circle \(\{x^2 + y^2 = 1\}\): no point of the open disc is extreme, since it sits inside a small segment,
+                    while no boundary point lies in the interior of any segment contained in the disc. For a closed convex polygon, the
+                    extreme points are precisely its vertices. A closed half-plane, a line, and the whole space have no extreme points
+                    at all: every point lies in the interior of some segment.
+                </p>
+
+                <h3>Faces and the Removal Criterion</h3>
+
+                <p>
+                    The proof of the Krein-Milman theorem relies on a reformulation of extremality: \(a\) is extreme exactly when
+                    deleting it leaves a convex set. This recasting lets the topological machinery of the theorem engage with the
+                    algebraic definition. We collect it with the other standard equivalent forms.
+                </p>
+
+                <div class="theorem" id="T-extreme_point_characterization">
+                    <span class="theorem-title">Theorem: Characterizations of an Extreme Point</span>
+                    <p>
+                        Let \(K\) be a convex subset of a vector space \(\mathcal{X}\) and let \(a \in K\). The following statements
+                        are equivalent.
+                    </p>
+                    <p>
+                        <strong>(a)</strong> \(a \in \operatorname{ext} K\).<br>
+                        <strong>(b)</strong> If \(x_1, x_2 \in \mathcal{X}\) and \(a = \tfrac{1}{2}(x_1 + x_2)\), then either
+                        \(x_1 \notin K\), or \(x_2 \notin K\), or \(x_1 = x_2 = a\).<br>
+                        <strong>(c)</strong> If \(x_1, x_2 \in \mathcal{X}\), \(0 \lt t \lt 1\), and \(a = t x_1 + (1 - t) x_2\), then
+                        either \(x_1 \notin K\), or \(x_2 \notin K\), or \(x_1 = x_2 = a\).<br>
+                        <strong>(d)</strong> If \(x_1, \dots, x_n \in K\) and \(a \in \operatorname{co}\{x_1, \dots, x_n\}\), then
+                        \(a = x_k\) for some \(k\).<br>
+                        <strong>(e)</strong> \(K \setminus \{a\}\) is a convex set.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        We prove (c) \(\Leftrightarrow\) (a), (c) \(\Rightarrow\) (b) \(\Rightarrow\) (c), (c) \(\Rightarrow\) (d)
+                        \(\Rightarrow\) (b), and (a) \(\Leftrightarrow\) (e).
+                    </p>
+                    <p>
+                        <strong>(c) \(\Leftrightarrow\) (a).</strong><br>
+                        A proper open line segment in \(K\) containing \(a\) is precisely a representation
+                        \(a = t x_1 + (1 - t) x_2\) with \(x_1, x_2 \in K\), \(0 \lt t \lt 1\), and \(x_1 \neq x_2\). Statement (a)
+                        denies the existence of such a representation; statement (c) says that any representation
+                        \(a = t x_1 + (1 - t) x_2\) with \(0 \lt t \lt 1\) and both \(x_1, x_2 \in K\) forces \(x_1 = x_2\), in which
+                        case \(x_1 = x_2 = a\). The two assertions are contrapositives of one another, hence equivalent.
+                    </p>
+                    <p>
+                        <strong>(c) \(\Rightarrow\) (b).</strong><br>
+                        Statement (b) is the special case \(t = \tfrac{1}{2}\) of (c).
+                    </p>
+                    <p>
+                        <strong>(b) \(\Rightarrow\) (c).</strong><br>
+                        Suppose (b) holds and let \(a = t x_1 + (1 - t) x_2\) with \(x_1, x_2 \in K\) and \(0 \lt t \lt 1\); we show
+                        \(x_1 = x_2 = a\). Assume \(x_1 \neq x_2\), seeking a contradiction. The point \(a\) lies strictly between
+                        \(x_1\) and \(x_2\) on the line through them; parametrize that line as
+                        \(z(s) = x_2 + s(x_1 - x_2)\), so \(z(0) = x_2\), \(z(1) = x_1\), and \(a = z(t)\) with \(0 \lt t \lt 1\).
+                        Choose \(\delta \gt 0\) small enough that \(0 \lt t - \delta\) and \(t + \delta \lt 1\), and put
+                        \(u = z(t - \delta)\), \(v = z(t + \delta)\). Both \(u\) and \(v\) are convex combinations of \(x_1, x_2 \in K\),
+                        so \(u, v \in K\) by convexity, and \(\tfrac{1}{2}(u + v) = z(t) = a\) with \(u \neq v\) (as
+                        \(x_1 \neq x_2\) and \(\delta \gt 0\)). This is a representation of \(a\) as a midpoint of two distinct points
+                        of \(K\), contradicting (b). Hence \(x_1 = x_2\), and then \(a = t x_1 + (1 - t) x_1 = x_1\), giving
+                        \(x_1 = x_2 = a\).
+                    </p>
+                    <p>
+                        <strong>(c) \(\Rightarrow\) (d).</strong><br>
+                        We induct on \(n\). For \(n = 1\), \(a \in \operatorname{co}\{x_1\} = \{x_1\}\) gives \(a = x_1\). Suppose the
+                        implication holds for \(n - 1\) points, and let \(a = \sum_{k=1}^{n} \lambda_k x_k\) with \(x_k \in K\),
+                        \(\lambda_k \geq 0\), and \(\sum_k \lambda_k = 1\). If some \(\lambda_k = 0\) the representation uses at most
+                        \(n - 1\) points and the inductive hypothesis applies. If some \(\lambda_k = 1\) then \(a = x_k\) and we are
+                        done. Otherwise every \(\lambda_k \in (0, 1)\). Write
+                        \[
+                        a = \lambda_n x_n + (1 - \lambda_n)\, w,
+                        \qquad
+                        w = \sum_{k=1}^{n-1} \frac{\lambda_k}{1 - \lambda_n}\, x_k ,
+                        \]
+                        where the coefficients of \(w\) are nonnegative and sum to \(1\), so \(w \in \operatorname{co}\{x_1, \dots,
+                        x_{n-1}\} \subseteq K\) by convexity. Now \(a = \lambda_n x_n + (1 - \lambda_n) w\) with
+                        \(0 \lt \lambda_n \lt 1\) and \(x_n, w \in K\); by (c), \(x_n = w = a\). In particular \(a = x_n\).
+                    </p>
+                    <p>
+                        <strong>(d) \(\Rightarrow\) (b).</strong><br>
+                        If \(a = \tfrac{1}{2}(x_1 + x_2)\) with \(x_1, x_2 \in K\), then \(a \in \operatorname{co}\{x_1, x_2\}\), so by
+                        (d) \(a = x_1\) or \(a = x_2\); either way \(\tfrac{1}{2}(x_1 + x_2) = a\) forces \(x_1 = x_2 = a\). Thus the
+                        hypothesis of (b) with \(x_1, x_2 \in K\) yields \(x_1 = x_2 = a\), which is the conclusion of (b) in the
+                        remaining case.
+                    </p>
+                    <p>
+                        <strong>(a) \(\Rightarrow\) (e).</strong><br>
+                        Suppose \(a\) is extreme; we show \(K \setminus \{a\}\) is convex. Let \(y_1, y_2 \in K \setminus \{a\}\) and
+                        \(0 \lt t \lt 1\), and set \(z = t y_1 + (1 - t) y_2\). Since \(K\) is convex, \(z \in K\). Suppose, for
+                        contradiction, that \(z = a\). Then \(a = t y_1 + (1 - t) y_2\) with \(y_1, y_2 \in K\) and
+                        \(0 \lt t \lt 1\); extremality (via the equivalent form (c)) forces \(y_1 = y_2 = a\), contradicting
+                        \(y_1 \neq a\). Hence \(z \neq a\), so \(z \in K \setminus \{a\}\), and \(K \setminus \{a\}\) is convex.
+                    </p>
+                    <p>
+                        <strong>(e) \(\Rightarrow\) (a).</strong><br>
+                        Suppose \(K \setminus \{a\}\) is convex but, for contradiction, \(a\) is not extreme. Then there exist
+                        \(x_1, x_2 \in K\) with \(x_1 \neq x_2\), \(0 \lt t \lt 1\), and \(a = t x_1 + (1 - t) x_2\). Since
+                        \(x_1 \neq x_2\), at most one of them equals \(a\); we claim neither does. If \(x_1 = a\), then
+                        \(a = t a + (1 - t) x_2\) gives \((1 - t) a = (1 - t) x_2\), so \(x_2 = a\) (as \(1 - t \neq 0\)),
+                        contradicting \(x_1 \neq x_2\); symmetrically \(x_2 \neq a\). Thus \(x_1, x_2 \in K \setminus \{a\}\). By
+                        convexity of \(K \setminus \{a\}\), the point \(a = t x_1 + (1 - t) x_2\) lies in \(K \setminus \{a\}\), i.e.
+                        \(a \neq a\) &mdash; absurd. Hence \(a\) is extreme.
+                    </p>
+                </div>
+
+                <p>
+                    The equivalence of (a) and (e) is the form we will exploit: \(a\) is extreme precisely when \(K \setminus \{a\}\)
+                    is convex. Searching for an extreme point therefore becomes a search for a maximal proper relatively open convex
+                    subset of \(K\), whose complement, as we will see, is a single extreme point &mdash; an object Zorn's lemma
+                    produces once compactness keeps the union of a chain of such sets proper.
+                </p>
+            </section>
+
+            <section id="krein-milman" class="section-content">
+                <h2>The Krein-Milman Theorem</h2>
+
+                <p>
+                    The hypotheses are the natural ones for the conclusion to have a chance: the set must be compact, so that maximal
+                    objects produced by Zorn's lemma do not escape, and convex, so that the convex hull of the extreme points has a
+                    target to fill. The ambient space is locally convex so that the separation theorems &mdash; the supply of
+                    continuous functionals &mdash; are available. The bar denotes closure and \(\operatorname{co}\) the
+                    <a href="locally_convex_spaces.html#D-convex_hull" class="ref-link"><strong>convex hull</strong></a>,
+                    so that \(\overline{\operatorname{co}}(A)\) is the
+                    <a href="locally_convex_spaces.html#D-closed_convex_hull" class="ref-link"><strong>closed convex hull</strong></a>.
+                </p>
+
+                <div class="theorem" id="T-krein_milman">
+                    <span class="theorem-title">Theorem: Krein-Milman</span>
+                    <p>
+                        Let \(K\) be a nonempty compact convex subset of a
+                        <a href="locally_convex_spaces.html#D-locally_convex_space" class="ref-link"><strong>locally convex
+                        space</strong></a> \(\mathcal{X}\). Then \(K\) has an extreme point, \(\operatorname{ext} K \neq \varnothing\),
+                        and \(K\) is the closed convex hull of its extreme points:
+                        \[
+                        K = \overline{\operatorname{co}}(\operatorname{ext} K) .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The proof falls into three movements. First, a Zorn's-lemma argument produces a single extreme point as the
+                    complement of a maximal relatively open convex set. Second, the same maximality, applied to translates, shows that
+                    extreme points are abundant enough that any open convex set containing all of them already contains \(K\). Third,
+                    the separation theory converts this into the closed-convex-hull identity.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        If \(K\) is a single point the statement is trivial, so assume \(K\) is not a singleton. Throughout, a
+                        <strong>relatively open</strong> subset of \(K\) means a set of the form \(K \cap W\) with \(W\) open in
+                        \(\mathcal{X}\); these are the open sets of the
+                        <a href="topological_spaces.html#D-subspace_topology" class="ref-link"><strong>subspace topology</strong></a>
+                        on \(K\). We call a relatively open convex subset \(U \subsetneq K\) <strong>proper</strong>; the empty set is
+                        one such, so the collection
+                        \[
+                        \mathcal{U} = \{\, U : U \text{ is a proper relatively open convex subset of } K \,\}
+                        \]
+                        is nonempty.
+                    </p>
+                    <p>
+                        <strong>Step 1: a maximal proper relatively open convex set exists.</strong><br>
+                        Order \(\mathcal{U}\) by inclusion. Let \(\mathcal{U}_0\) be a chain in \(\mathcal{U}\) and set
+                        \(U_0 = \bigcup \{\, U : U \in \mathcal{U}_0 \,\}\). A union of relatively open sets is relatively open, and a
+                        union of a chain of convex sets is convex (any two points of \(U_0\) lie in a common member of the chain,
+                        which contains the segment between them). Thus \(U_0\) is relatively open and convex. It is also proper: if
+                        \(U_0 = K\), then the relatively open cover \(\mathcal{U}_0\) of the
+                        <a href="topological_connectedness_compactness.html#D-compact_space" class="ref-link"><strong>compact
+                        space</strong></a> \(K\) would admit a finite subcover \(U_1, \dots, U_m \in \mathcal{U}_0\); since
+                        \(\mathcal{U}_0\) is a chain, the largest of these, say \(U_j\), contains the others, so \(U_j = K\),
+                        contradicting \(U_j \in \mathcal{U}\). Hence \(U_0 \in \mathcal{U}\) is an upper bound for the chain. By
+                        <a href="hahn_banach.html#T-zorns_lemma" class="ref-link"><strong>Zorn's lemma</strong></a>, \(\mathcal{U}\)
+                        has a maximal element \(U\).
+                    </p>
+                    <p>
+                        <strong>Step 2: translates stay inside \(U\).</strong><br>
+                        For \(x \in K\) and \(0 \leq \lambda \leq 1\) define \(T_{x, \lambda} : K \to K\) by
+                        \(T_{x, \lambda}(y) = \lambda y + (1 - \lambda) x\). This lands in \(K\) by convexity, is continuous, and is
+                        <strong>affine</strong>: for any convex combination \(\sum_{j} \alpha_j y_j\) of points of \(K\),
+                        \[
+                        T_{x, \lambda}\Bigl(\sum_j \alpha_j y_j\Bigr) = \lambda \sum_j \alpha_j y_j + (1 - \lambda) x
+                        = \sum_j \alpha_j\bigl(\lambda y_j + (1 - \lambda) x\bigr) = \sum_j \alpha_j\, T_{x, \lambda}(y_j),
+                        \]
+                        using \(\sum_j \alpha_j = 1\). We claim that for \(x \in U\) and \(0 \leq \lambda \lt 1\),
+                        \[
+                        T_{x, \lambda}(K) \subseteq U .
+                        \]
+                        For \(\lambda = 0\) the map is constant, \(T_{x, 0}(K) = \{x\} \subseteq U\), so assume \(0 \lt \lambda \lt 1\).
+                        The preimage \(W_\lambda = T_{x, \lambda}^{-1}(U) = \{\, y \in K : \lambda y + (1 - \lambda) x \in U \,\}\) is
+                        relatively open in \(K\) (continuity of \(T_{x,\lambda}\)) and convex: if \(T_{x,\lambda}(p), T_{x,\lambda}(q)
+                        \in U\), then \(T_{x,\lambda}(t p + (1-t) q) = t\,T_{x,\lambda}(p) + (1-t)\,T_{x,\lambda}(q) \in U\) by convexity
+                        of \(U\) and affineness of \(T_{x,\lambda}\). It contains \(U\): for \(u \in U\) the point
+                        \(T_{x, \lambda}(u) = \lambda u + (1 - \lambda) x\) is a convex combination of \(u, x \in U\), hence in \(U\).
+                        Since \(U \subseteq W_\lambda\) and \(U\) is a maximal proper relatively open convex set, \(W_\lambda = U\) or
+                        \(W_\lambda = K\).
+                    </p>
+                    <p>
+                        Suppose, for contradiction, that \(W_\lambda = U\). Then for any \(y \in K \setminus U\) we have
+                        \(y \notin W_\lambda\), i.e. \(T_{x, \lambda}(y) \notin U\); and \(T_{x, \lambda}(y) \in K\) by convexity, so
+                        \(T_{x, \lambda}(y) \in K \setminus U\). Thus \(K \setminus U\) is invariant under \(T_{x, \lambda}\), and
+                        iterating,
+                        \[
+                        T_{x, \lambda}^{\,n}(y) = \lambda^n y + (1 - \lambda^n)\, x \in K \setminus U \qquad \text{for all } n \geq 1 .
+                        \]
+                        As \(n \to \infty\), \(\lambda^n \to 0\), so \(\lambda^n y \to 0\) and \((1 - \lambda^n) x \to x\); since
+                        addition and scalar multiplication are continuous, \(T_{x, \lambda}^{\,n}(y) \to x\). The set
+                        \(K \setminus U\) is relatively closed in \(K\) (the complement of the relatively open set \(U\)), so the limit
+                        \(x\) lies in \(K \setminus U\). This contradicts \(x \in U\). Hence \(W_\lambda \neq U\), so
+                        \(W_\lambda = K\), which says exactly \(T_{x, \lambda}(K) \subseteq U\). This proves the claim.
+                    </p>
+                    <p>
+                        <strong>Step 3: a maximality dichotomy for open convex sets.</strong><br>
+                        We claim that if \(V\) is any relatively open convex subset of \(K\), then either \(V \cup U = U\) (that is,
+                        \(V \subseteq U\)) or \(V \cup U = K\). It suffices to show \(V \cup U\) is convex; then \(V \cup U\) is a
+                        relatively open convex set containing \(U\), so by maximality of \(U\) it equals \(U\) or fails to be proper,
+                        i.e. equals \(K\). To see \(V \cup U\) is convex, take \(p, q \in V \cup U\) and \(0 \lt t \lt 1\); we show
+                        \(r := t p + (1 - t) q \in V \cup U\). If both lie in \(V\), or both in \(U\), convexity of the respective set
+                        gives \(r\) there. Suppose \(p \in U\) and \(q \in V\) (the other mixed case is symmetric). The point
+                        \(r = t p + (1 - t) q\) equals \(T_{p, 1 - t}(q)\) with \(p \in U\) and \(0 \leq 1 - t \lt 1\); by Step 2,
+                        \(T_{p, 1 - t}(K) \subseteq U\), so \(r \in U \subseteq V \cup U\). Hence \(V \cup U\) is convex, and the
+                        dichotomy follows.
+                    </p>
+                    <p>
+                        <strong>Step 4: \(K \setminus U\) is a single extreme point.</strong><br>
+                        We show \(K \setminus U\) is a singleton. Suppose instead it contains two distinct points \(a, b\). Because
+                        \(\mathcal{X}\) is locally convex and hence
+                        <a href="topological_spaces.html#T-metric_implies_hausdorff" class="ref-link"><strong>Hausdorff</strong></a>,
+                        there are disjoint open convex neighborhoods of \(a\) and \(b\): choose a continuous
+                        <a href="hahn_banach.html#D-seminorm" class="ref-link"><strong>seminorm</strong></a> \(p\) with
+                        \(p(a - b) \gt 0\), and set \(V_a = \{\, x \in K : p(x - a) \lt \tfrac{1}{2} p(a - b) \,\}\) and
+                        \(V_b = \{\, x \in K : p(x - b) \lt \tfrac{1}{2} p(a - b) \,\}\); these are relatively open (sublevel sets of a
+                        continuous seminorm), convex, disjoint, and contain \(a\) and \(b\) respectively. By the dichotomy of Step 3,
+                        each of \(V_a \cup U\) and \(V_b \cup U\) is either \(U\) or \(K\). Neither can be \(U\): \(a \in V_a\) but
+                        \(a \notin U\), so \(V_a \cup U \neq U\), and likewise for \(b\). Hence \(V_a \cup U = K = V_b \cup U\). But
+                        then \(b \in K = V_a \cup U\), and since \(b \notin U\) we get \(b \in V_a\); as \(b \in V_b\) too, this places
+                        \(b \in V_a \cap V_b = \varnothing\), a contradiction. Therefore \(K \setminus U\) is a singleton, say
+                        \(\{a\}\). Then \(K \setminus \{a\} = U\) is convex, so by the
+                        <a href="#T-extreme_point_characterization" class="ref-link"><strong>removal criterion</strong></a> \(a\) is an
+                        extreme point. In particular \(\operatorname{ext} K \neq \varnothing\).
+                    </p>
+                    <p>
+                        <strong>Step 5: open convex sets containing all extreme points contain \(K\).</strong><br>
+                        We prove the following, which is the heart of the recovery statement: if \(V\) is a relatively open convex
+                        subset of \(K\) with \(\operatorname{ext} K \subseteq V\), then \(V = K\). Suppose not, so \(V \subsetneq K\),
+                        i.e. \(V \in \mathcal{U}\). Enlarge \(V\) to a maximal element \(U\) of \(\mathcal{U}\) containing it: the
+                        argument of Step 1 applied to the subcollection \(\{\, W \in \mathcal{U} : W \supseteq V \,\}\), which is
+                        nonempty and closed under chain-unions in the same way, yields by Zorn's lemma a maximal \(U \supseteq V\) in
+                        \(\mathcal{U}\). By Step 4 applied to this \(U\), \(K \setminus U = \{a\}\) for some extreme point \(a\). But
+                        \(\operatorname{ext} K \subseteq V \subseteq U\), so \(a \in U\), contradicting \(a \in K \setminus U\). Hence
+                        \(V = K\).
+                    </p>
+                    <p>
+                        <strong>Step 6: the closed-convex-hull identity.</strong><br>
+                        Let \(E = \overline{\operatorname{co}}(\operatorname{ext} K)\). Since \(K\) is convex and closed (a compact set
+                        in a Hausdorff space is closed) and contains \(\operatorname{ext} K\), it contains the smallest closed convex
+                        set containing \(\operatorname{ext} K\), namely \(E\); thus \(E \subseteq K\). For the reverse inclusion, we
+                        use that \(E\) is closed and convex and that, by the
+                        <a href="separation_hahn_banach.html#T-closed_convex_hull_halfspaces" class="ref-link"><strong>half-space
+                        representation</strong></a>, \(E\) is the intersection of all closed half-spaces containing it. It suffices to
+                        show every such half-space contains \(K\). A closed half-space containing \(E\) has, over \(\mathbb{R}\), the
+                        form \(\{\, x : f(x) \leq \alpha \,\}\) for a nonzero continuous linear functional \(f\) and a scalar
+                        \(\alpha\); over \(\mathbb{C}\) it has the form \(\{\, x : \operatorname{Re} f(x) \leq \alpha \,\}\), and
+                        writing \(g = \operatorname{Re} f\) reduces us to a real continuous functional in either case. Suppose
+                        \(g \leq \alpha\) on \(E\). For any \(\beta \gt \alpha\), the set \(V = \{\, x \in K : g(x) \lt \beta \,\}\) is
+                        relatively open and convex and contains \(\operatorname{ext} K\) (since \(g \leq \alpha \lt \beta\) there), so by
+                        Step 5, \(V = K\); that is, \(g(x) \lt \beta\) for all \(x \in K\). As \(\beta \gt \alpha\) was arbitrary,
+                        \(g(x) \leq \alpha\) for all \(x \in K\), so \(K\) is contained in the closed half-space
+                        \(\{\, g \leq \alpha \,\}\). Every closed half-space containing \(E\) therefore contains \(K\), whence
+                        \(K \subseteq \bigcap \{\, H : E \subseteq H \,\} = E\). Combined with \(E \subseteq K\), this gives
+                        \(K = E = \overline{\operatorname{co}}(\operatorname{ext} K)\).
+                    </p>
+                </div>
+
+                <p>
+                    The only analytic input was the existence of separating functionals; the rest was the interaction of convexity
+                    with compactness through Zorn's lemma.
+                </p>
+            </section>
+
+            <section id="converse-milman" class="section-content">
+                <h2>Milman's Partial Converse</h2>
+
+                <p>
+                    The Krein-Milman theorem builds \(K\) from \(\operatorname{ext} K\): the extreme points generate the set. A natural
+                    question runs the other way. If \(K\) happens to be the closed convex hull of some set \(F\) we already have in
+                    hand, must the extreme points have come from \(F\)? They must, provided \(F\) is closed: every extreme point of
+                    \(K = \overline{\operatorname{co}}(F)\) already lies in \(F\). This is Milman's theorem; it pins down where the
+                    extreme points can hide, which is what makes Krein-Milman useful in practice. The proof rests on a fact about
+                    convex hulls of compact sets.
+                </p>
+
+                <div class="theorem" id="T-convex_hull_finite_union_compact">
+                    <span class="theorem-title">Lemma: Convex Hull of a Finite Union of Compact Convex Sets</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a topological vector space and let \(K_1, \dots, K_n\) be compact convex subsets. Then
+                        \(\operatorname{co}(K_1 \cup \cdots \cup K_n)\) is compact, and consequently it is closed and equals
+                        \(\overline{\operatorname{co}}(K_1 \cup \cdots \cup K_n)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Let \(\Delta = \{\, (t_1, \dots, t_n) : t_k \geq 0,\ \sum_{k=1}^n t_k = 1 \,\}\) be the standard simplex in
+                        \(\mathbb{R}^n\), a closed bounded subset of \(\mathbb{R}^n\) and hence compact. The product
+                        \(\Delta \times K_1 \times \cdots \times K_n\) is compact, since
+                        <a href="topological_connectedness_compactness.html#T-compact_properties" class="ref-link"><strong>finite
+                        products of compact spaces are compact</strong></a>. Define
+                        \[
+                        \Phi : \Delta \times K_1 \times \cdots \times K_n \to \mathcal{X}, \qquad
+                        \Phi(t_1, \dots, t_n, x_1, \dots, x_n) = \sum_{k=1}^n t_k x_k .
+                        \]
+                        Addition and scalar multiplication are continuous in a topological vector space, so \(\Phi\) is continuous.
+                        Its image is therefore compact, being the continuous image of a compact set.
+                    </p>
+                    <p>
+                        We claim \(\operatorname{im} \Phi = \operatorname{co}(K_1 \cup \cdots \cup K_n)\). Every
+                        \(\Phi(t, x_1, \dots, x_n) = \sum_k t_k x_k\) is a convex combination of points \(x_k \in K_k \subseteq
+                        \bigcup_j K_j\), hence lies in the convex hull. Conversely, a point of \(\operatorname{co}(\bigcup_j K_j)\) is
+                        a finite convex combination \(\sum_i \lambda_i z_i\) of points \(z_i \in \bigcup_j K_j\); grouping the \(z_i\)
+                        by which \(K_j\) they belong to and summing the coefficients within each group, then using convexity of each
+                        \(K_j\) to collapse each group to a single point \(x_j \in K_j\), rewrites the combination as
+                        \(\sum_{j=1}^n t_j x_j\) with \((t_1, \dots, t_n) \in \Delta\) and \(x_j \in K_j\) (take \(x_j\) arbitrary in
+                        \(K_j\) when \(t_j = 0\)). Thus the point is \(\Phi(t, x_1, \dots, x_n) \in \operatorname{im} \Phi\). The image
+                        is therefore exactly the convex hull, which is consequently compact. In a topological vector space the
+                        ambient space is Hausdorff, so a compact set is closed; being closed and convex and containing
+                        \(K_1 \cup \cdots \cup K_n\), it coincides with the closed convex hull.
+                    </p>
+                </div>
+
+                <p>
+                    Without finiteness, or without compactness of the pieces, the convex hull need not be closed; packaging it as the
+                    image of the simplex is what keeps it compact here.
+                </p>
+
+                <div class="theorem" id="T-milman">
+                    <span class="theorem-title">Theorem: Milman</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a locally convex space, let \(K\) be a compact convex subset, and let \(F \subseteq K\)
+                        be such that \(K = \overline{\operatorname{co}}(F)\). Then every extreme point of \(K\) lies in the closure of
+                        \(F\):
+                        \[
+                        \operatorname{ext} K \subseteq \operatorname{cl} F .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        It suffices to treat the case where \(F\) is closed, since replacing \(F\) by \(\operatorname{cl} F\) leaves
+                        \(\overline{\operatorname{co}}(F)\) unchanged and only enlarges the target of the inclusion. So assume \(F\) is
+                        closed; as a closed subset of the compact set \(K\), it is compact. Suppose, for contradiction, that some
+                        extreme point \(x_0 \in \operatorname{ext} K\) satisfies \(x_0 \notin F\).
+                    </p>
+                    <p>
+                        Because \(F\) is closed and \(x_0 \notin F\), the complement \(\mathcal{X} \setminus F\) is an open
+                        neighborhood of \(x_0\). The topology of \(\mathcal{X}\) is generated by continuous seminorms, and a basic
+                        neighborhood of \(x_0\) is cut out by finitely many of them; replacing that finite family by its pointwise
+                        maximum, which is again a
+                        <a href="locally_convex_spaces.html#T-continuous_seminorm_operations" class="ref-link"><strong>continuous
+                        seminorm</strong></a>, we obtain a single continuous seminorm \(p\) and a radius giving a basic neighborhood of
+                        \(x_0\) disjoint from \(F\); after rescaling \(p\) we may take the radius to be \(1\):
+                        \[
+                        F \cap \{\, x : p(x - x_0) \lt 1 \,\} = \varnothing ,
+                        \]
+                        that is, \(p(y - x_0) \geq 1\) for every \(y \in F\). Set
+                        \[
+                        U_0 = \{\, x : p(x) \lt \tfrac{1}{3} \,\},
+                        \]
+                        which is open and convex (a sublevel set of a
+                        <a href="locally_convex_spaces.html#T-seminorm_continuity_equivalence" class="ref-link"><strong>continuous
+                        seminorm</strong></a>), with closure contained in \(\{\, x : p(x) \leq \tfrac{1}{3} \,\}\).
+                    </p>
+                    <p>
+                        The translates \(\{\, y + U_0 : y \in F \,\}\) form an open cover of the compact set \(F\), so finitely many
+                        suffice: there are \(y_1, \dots, y_n \in F\) with \(F \subseteq \bigcup_{k=1}^n (y_k + U_0)\). For each \(k\)
+                        put
+                        \[
+                        K_k = \overline{\operatorname{co}}\bigl(F \cap (y_k + U_0)\bigr).
+                        \]
+                        Each \(K_k\) is a closed convex subset of the compact convex set \(K\) (since \(F \subseteq K\) and \(K\) is
+                        closed convex), hence compact and convex. Moreover \(F \cap (y_k + U_0) \subseteq y_k + U_0\), and
+                        \(y_k + U_0\) is convex with closure inside \(y_k + \{\, p(\cdot) \leq \tfrac{1}{3} \,\}\); taking closed
+                        convex hulls, \(K_k \subseteq y_k + \{\, x : p(x) \leq \tfrac{1}{3} \,\}\), so
+                        \[
+                        p(z - y_k) \leq \tfrac{1}{3} \qquad \text{for every } z \in K_k .
+                        \]
+                    </p>
+                    <p>
+                        Since \(F \subseteq \bigcup_k (F \cap (y_k + U_0)) \subseteq \bigcup_k K_k\), taking closed convex hulls gives
+                        \(K = \overline{\operatorname{co}}(F) \subseteq \overline{\operatorname{co}}(K_1 \cup \cdots \cup K_n)\); and
+                        the reverse inclusion holds because each \(K_k \subseteq K\) and \(K\) is closed convex. Hence
+                        \(K = \overline{\operatorname{co}}(K_1 \cup \cdots \cup K_n)\), which by the lemma equals
+                        \(\operatorname{co}(K_1 \cup \cdots \cup K_n)\). In particular the extreme point \(x_0\) lies in
+                        \(\operatorname{co}(K_1 \cup \cdots \cup K_n)\), so it is a convex combination
+                        \(x_0 = \sum_{k=1}^n \alpha_k x_k\) with \(x_k \in K_k\), \(\alpha_k \geq 0\), \(\sum_k \alpha_k = 1\). By the
+                        <a href="#T-extreme_point_characterization" class="ref-link"><strong>extreme-point characterization</strong></a>,
+                        an extreme point that lies in the convex hull of finitely many points of \(K\) must equal one of them; here it
+                        equals some \(x_j \in K_j\). Then
+                        \[
+                        p(x_0 - y_j) = p(x_j - y_j) \leq \tfrac{1}{3} \lt 1 .
+                        \]
+                        But \(y_j \in F\), so \(p(y_j - x_0) \geq 1\) by the choice of \(p\); as \(p(x_0 - y_j) = p(y_j - x_0)\) (a
+                        seminorm is symmetric under negation), this is a contradiction. Therefore no extreme point lies outside
+                        \(F\), i.e. \(\operatorname{ext} K \subseteq F = \operatorname{cl} F\).
+                    </p>
+                </div>
+
+                <p>
+                    Milman's theorem locates the extreme points: they cannot stray beyond the closure of any generating set. Together
+                    with Krein-Milman, which guarantees that \(\operatorname{ext} K\) generates \(K\), it shows that
+                    \(\operatorname{cl}(\operatorname{ext} K)\) is the smallest closed set whose closed convex hull is \(K\).
+                </p>
+
+                <h3>An Application: \(c_0\) Is Not a Dual Space</h3>
+
+                <p>
+                    Krein-Milman has an immediate negative consequence. If \(\mathcal{X}\) is a Banach space, then the closed unit
+                    ball of \(\mathcal{X}^*\) is compact in the weak-\(*\) topology, with the ordinary convexity; by Krein-Milman this
+                    ball has extreme points. So a Banach space whose closed unit ball has too few extreme points cannot be
+                    isometrically isomorphic to the dual of any Banach space.
+                </p>
+
+                <p>
+                    The space \(c_0\) of scalar sequences converging to \(0\), with the supremum norm, is the cleanest example: its
+                    closed unit ball has <em>no</em> extreme points at all. To see this, take any \(x = (x(j))_j\) in the closed unit
+                    ball, so \(\sup_j |x(j)| \leq 1\) and \(x(j) \to 0\). Since the terms tend to \(0\), there is an index \(N\) with
+                    \(|x(j)| \lt \tfrac{1}{2}\) for all \(j \geq N\). Define two sequences \(y_1, y_2\) by leaving the first \(N - 1\)
+                    coordinates equal to those of \(x\) and perturbing the tail: for \(j \geq N\) set
+                    \(y_1(j) = x(j) + 2^{-j}\) and \(y_2(j) = x(j) - 2^{-j}\), and for \(j \lt N\) set
+                    \(y_1(j) = y_2(j) = x(j)\). Both \(y_1, y_2\) still tend to \(0\) and satisfy \(|y_i(j)| \lt \tfrac{1}{2} +
+                    \tfrac{1}{2} = 1\) on the tail and \(|y_i(j)| = |x(j)| \leq 1\) on the head, so they lie in the closed unit ball;
+                    they are distinct (they differ in every tail coordinate); and \(\tfrac{1}{2}(y_1 + y_2) = x\). Thus \(x\) is the
+                    midpoint of a proper segment in the ball, so \(x\) is not extreme. As \(x\) was arbitrary, the closed unit ball of
+                    \(c_0\) has no extreme points, and therefore \(c_0\) is not isometrically isomorphic to the dual of any Banach
+                    space.
+                </p>
+            </section>
+
+            <section id="affine-images" class="section-content">
+                <h2>Extreme Points under Affine Maps</h2>
+
+                <p>
+                    The extreme points of a compact convex set behave well under the maps that respect convex structure: continuous
+                    affine maps. A map \(T : K \to \mathcal{Y}\) is <strong>affine</strong> when it preserves convex combinations,
+                    \(T\bigl(\sum_k \alpha_k x_k\bigr) = \sum_k \alpha_k\, T(x_k)\) whenever \(\alpha_k \geq 0\) and \(\sum_k
+                    \alpha_k = 1\). Such maps carry compact convex sets to compact convex sets, and every extreme point of the image
+                    is hit by an extreme point of the domain. This pullback of extremality is the mechanism behind many existence
+                    arguments, where one transports an extreme point through a representation map to locate an extremal object.
+                </p>
+
+                <div class="theorem" id="T-affine_image_extreme">
+                    <span class="theorem-title">Theorem: Affine Images Pull Back Extreme Points</span>
+                    <p>
+                        Let \(K\) be a compact convex subset of a locally convex space \(\mathcal{X}\), let \(\mathcal{Y}\) be a
+                        locally convex space, and let \(T : K \to \mathcal{Y}\) be a continuous affine map. Then \(T(K)\) is a compact
+                        convex subset of \(\mathcal{Y}\), and for every extreme point \(y \in \operatorname{ext} T(K)\) there is an
+                        extreme point \(x \in \operatorname{ext} K\) with \(T(x) = y\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Since \(T\) is affine, \(T(K)\) is convex: a convex combination \(\sum_k \alpha_k\, T(x_k)\) of points of
+                        \(T(K)\) equals \(T\bigl(\sum_k \alpha_k x_k\bigr)\), and \(\sum_k \alpha_k x_k \in K\) by convexity of \(K\).
+                        Since \(T\) is continuous and \(K\) is compact, \(T(K)\) is compact as a continuous image of a compact set.
+                    </p>
+                    <p>
+                        Let \(y \in \operatorname{ext} T(K)\). The fiber \(T^{-1}(y) = \{\, x \in K : T(x) = y \,\}\) is nonempty
+                        (because \(y \in T(K)\)), closed in \(K\) (as the preimage of the closed set \(\{y\}\) under the continuous
+                        map \(T\); singletons are closed since \(\mathcal{Y}\) is Hausdorff), and hence compact. It is also convex:
+                        if \(x_1, x_2 \in T^{-1}(y)\) and \(0 \leq t \leq 1\), then \(T(t x_1 + (1 - t) x_2) = t\, T(x_1) + (1 - t)\,
+                        T(x_2) = t y + (1 - t) y = y\), so \(t x_1 + (1 - t) x_2 \in T^{-1}(y)\). Being a nonempty compact convex
+                        subset of the locally convex space \(\mathcal{X}\), the fiber \(T^{-1}(y)\) has an extreme point by
+                        <a href="#T-krein_milman" class="ref-link"><strong>Krein-Milman</strong></a>; choose
+                        \(x \in \operatorname{ext} T^{-1}(y)\). Then \(T(x) = y\).
+                    </p>
+                    <p>
+                        It remains to show \(x \in \operatorname{ext} K\). Suppose \(x = t a + (1 - t) b\) with \(a, b \in K\) and
+                        \(0 \lt t \lt 1\); we must show \(a = b = x\). Applying \(T\) and using that it is affine,
+                        \[
+                        y = T(x) = t\, T(a) + (1 - t)\, T(b),
+                        \]
+                        a convex combination of the points \(T(a), T(b) \in T(K)\). Since \(y\) is an extreme point of \(T(K)\), the
+                        <a href="#T-extreme_point_characterization" class="ref-link"><strong>extreme-point characterization</strong></a>
+                        forces \(T(a) = T(b) = y\); hence \(a, b \in T^{-1}(y)\). Now \(x = t a + (1 - t) b\) is a convex combination
+                        of \(a, b \in T^{-1}(y)\) with \(0 \lt t \lt 1\), and \(x\) is an extreme point of \(T^{-1}(y)\), so the same
+                        characterization gives \(a = b = x\). Therefore \(x \in \operatorname{ext} K\), and \(T(x) = y\) as required.
+                    </p>
+                </div>
+
+                <p>
+                    The pullback is genuinely one-directional. It is not true that an extreme point of \(K\) maps to an extreme point
+                    of \(T(K)\): extremality is lost, not gained, under projection. Take \(\mathcal{X} = \mathbb{R}^3\),
+                    \(\mathcal{Y} = \mathbb{R}^2\), let \(T\) be the orthogonal projection onto the first two coordinates, and let
+                    \(K\) be the closed unit ball of \(\mathbb{R}^3\). Every point of the unit sphere is an extreme point of \(K\),
+                    yet \(T(K)\) is the closed unit disc in \(\mathbb{R}^2\), whose extreme points are only the boundary circle; the
+                    north pole \((0, 0, 1) \in \operatorname{ext} K\) maps to the center \((0, 0)\), which is not extreme in the disc.
+                </p>
+
+                <h3>The Extreme Set Need Not Be Closed</h3>
+
+                <p>
+                    One might expect the set \(\operatorname{ext} K\) to inherit good closure properties from the compactness of
+                    \(K\). It does not: the set of extreme points of a compact convex set need not be closed, even in finite
+                    dimensions. The standard picture lives in \(\mathbb{R}^3\). Take a closed disc \(D\) lying in the plane
+                    \(\{z = 0\}\), say the unit disc \(\{\, (x, y, 0) : x^2 + y^2 \leq 1 \,\}\), and two points placed symmetrically
+                    off the plane, \(P_+ = (1, 0, 1)\) and \(P_- = (1, 0, -1)\), both sitting above and below the boundary point
+                    \((1, 0, 0)\) of the disc. Let \(K\) be the convex hull of \(D \cup \{P_+, P_-\}\); as the convex hull of a
+                    compact set in finite dimensions it is compact and convex.
+                </p>
+
+                <p>
+                    The extreme points of \(K\) are the two apexes \(P_+, P_-\) together with the boundary circle of the disc
+                    <em>minus the single point</em> \((1, 0, 0)\) where the apexes attach. Each point of the open boundary arc is
+                    extreme: it is a genuine corner of the solid, lying on no segment of \(K\) as an interior point. The attachment
+                    point \((1, 0, 0)\), however, is the midpoint of the segment from \(P_+\) to \(P_-\), both of which lie in \(K\),
+                    so it is <em>not</em> extreme. Thus the boundary circle contributes all of its points to
+                    \(\operatorname{ext} K\) except one. The omitted point \((1, 0, 0)\) is a limit of extreme points along the
+                    circle, so \(\operatorname{ext} K\) fails to contain a limit of its own members: it is not closed. This is exactly
+                    the configuration that prevents one from improving Milman's theorem to read \(\operatorname{ext} K \subseteq F\)
+                    in place of \(\operatorname{ext} K \subseteq \operatorname{cl} F\); the closure is genuinely needed.
+                </p>
+
+                <p>
+                    Krein-Milman recovers \(K\) from its extreme points, Milman confines those points to the closure of any
+                    generating set, and the affine-pullback theorem transports extremality through linear representations. Together
+                    they convert geometric questions about compact convex sets into the search for a distinguished extremal
+                    substructure &mdash; the move that, applied to the weak-\(*\) compact unit ball of a dual space, underlies the
+                    representation theorems built on this material.
+                </p>
+            </section>
+
+        </div>
+
+</body>
+</html>
