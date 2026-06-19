@@ -1,0 +1,693 @@
+---
+layout: default
+title: "The Dual of C(X): Riesz Representation"
+topic_id: calc-98
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Dual of C(X): Riesz Representation</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#complex-measures">Complex Measures &amp; Total Variation</a>
+            <a href="#regular-borel">Regular Borel Measures and M(X)</a>
+            <a href="#functionals-to-measures">From Functionals to Measures</a>
+            <a href="#riesz-representation">The Riesz Representation Theorem</a>
+        </div>
+
+        <div class="container">
+
+            <section id="complex-measures" class="section-content">
+                <h2>Complex Measures &amp; Total Variation</h2>
+
+                <p>
+                    Two of the function spaces we have dualized return their own kind: the dual of a Hilbert space is again
+                    a space of vectors through the
+                    <a href="dual_spaces.html#T-riesz_representation" class="ref-link"><strong>Riesz Representation
+                    Theorem</strong></a>, and the dual of \(L^p\) is the conjugate space \(L^q\). The continuous functions
+                    on a compact space behave differently. A continuous linear functional on \(C(X)\) cannot in general be
+                    written as integration against an \(L^q\) density, because \(C(X)\) carries the supremum norm and its
+                    dual must account for evaluation-like behavior concentrated on small sets. The objects that do the work
+                    are <strong>measures</strong>: the dual of \(C(X)\) turns out to be a space of measures on \(X\), with
+                    the functional acting by integration \(f \mapsto \int f \, d\mu\). The goal of this page is to make that
+                    identification precise and to prove it.
+                </p>
+
+                <p>
+                    Establishing this requires measures that may take complex values, since the functionals on \(C(X)\) are
+                    complex-linear. We therefore begin by extending the notion of a signed measure to the complex setting and
+                    by constructing the total variation, the device that measures the size of such an object and ultimately
+                    supplies the dual norm. We work over a compact (or, where noted, locally compact) Hausdorff space \(X\),
+                    and we write \(\Omega\) for a \(\sigma\)-algebra of subsets of \(X\).
+                </p>
+
+                <p>
+                    Recall the real-valued notion: a
+                    <a href="../Probability/radon_nikodym.html#D-signed_measure" class="ref-link"><strong>signed
+                    measure</strong></a> on a measurable space \((X, \Omega)\) is a countably additive set function
+                    \(\nu : \Omega \to [-\infty, \infty]\) with \(\nu(\varnothing) = 0\), assuming at most one of the values
+                    \(\pm\infty\). The complex case removes the infinite values entirely, since the sum of a convergent
+                    complex series must be finite.
+                </p>
+
+                <div class="theorem" id="D-complex_measure">
+                    <span class="theorem-title">Definition: Complex Measure</span>
+                    <p>
+                        Let \((X, \Omega)\) be a measurable space. A <strong>complex measure</strong> on \((X, \Omega)\) is a
+                        function \(\mu : \Omega \to \mathbb{C}\) that is countably additive: for every sequence
+                        \((A_n)_{n \geq 1}\) of pairwise disjoint sets in \(\Omega\),
+                        \[
+                        \mu\!\left(\bigsqcup_{n=1}^\infty A_n\right) \;=\; \sum_{n=1}^\infty \mu(A_n),
+                        \]
+                        the series converging in \(\mathbb{C}\). Taking all \(A_n = \varnothing\) for \(n \geq 2\) forces
+                        \(\mu(\varnothing) = 0\). A complex measure takes only finite values by definition.
+                    </p>
+                </div>
+
+                <p>
+                    Writing \(\mu = \operatorname{Re}\mu + i \operatorname{Im}\mu\), the real and imaginary parts
+                    \((\operatorname{Re}\mu)(\Delta) = \operatorname{Re}\bigl(\mu(\Delta)\bigr)\) and
+                    \((\operatorname{Im}\mu)(\Delta) = \operatorname{Im}\bigl(\mu(\Delta)\bigr)\) are each real-valued and
+                    countably additive, hence finite signed measures. Applying the
+                    <a href="../Probability/radon_nikodym.html#T-jordan_decomposition" class="ref-link"><strong>Jordan
+                    decomposition</strong></a> to each gives four positive finite measures \(\mu_1, \mu_2, \mu_3, \mu_4\) with
+                    \[
+                    \mu \;=\; (\mu_1 - \mu_2) + i(\mu_3 - \mu_4),
+                    \]
+                    where \(\mu_1 \perp \mu_2\) and \(\mu_3 \perp \mu_4\) are mutually singular. A real-valued signed measure
+                    that happens to be finite is the special case \(\operatorname{Im}\mu = 0\); the development below therefore
+                    subsumes the real theory, with the four-measure decomposition collapsing to the two-measure Jordan form.
+                </p>
+
+                <h3>The Total Variation</h3>
+
+                <p>
+                    For a finite signed measure the
+                    <a href="../Probability/radon_nikodym.html#D-total_variation" class="ref-link"><strong>total
+                    variation</strong></a> is defined through the Jordan decomposition as \(|\nu| = \nu^+ + \nu^-\). A complex
+                    measure has no such order structure, so we take instead the supremum-over-partitions description, which
+                    agrees with \(\nu^+ + \nu^-\) in the real case and extends verbatim to the complex one.
+                </p>
+
+                <div class="theorem" id="D-total_variation_complex">
+                    <span class="theorem-title">Definition: Total Variation of a Complex Measure</span>
+                    <p>
+                        Let \(\mu\) be a complex measure on \((X, \Omega)\). The <strong>total variation</strong> of \(\mu\)
+                        is the set function \(|\mu| : \Omega \to [0, \infty]\) defined by
+                        \[
+                        |\mu|(\Delta) \;=\; \sup\left\{\, \sum_{j=1}^{m} |\mu(E_j)| \;:\; \{E_j\}_{j=1}^{m}
+                        \text{ is a measurable partition of } \Delta \,\right\},
+                        \]
+                        the supremum running over all finite partitions of \(\Delta\) into pairwise disjoint measurable sets.
+                    </p>
+                </div>
+
+                <p>
+                    For a finite signed measure \(\nu\), choosing the partition \(\{P \cap \Delta,\, N \cap \Delta\}\) given by
+                    a Hahn decomposition \(X = P \sqcup N\) yields \(\sum_j |\nu(E_j)| = \nu^+(\Delta) + \nu^-(\Delta) =
+                    |\nu|(\Delta)\). No partition can exceed this: for any measurable \(E_j\), the values \(\nu^+(E_j)\) and
+                    \(\nu^-(E_j)\) are nonnegative, so
+                    \[
+                    |\nu(E_j)| \;=\; |\nu^+(E_j) - \nu^-(E_j)| \;\leq\; \nu^+(E_j) + \nu^-(E_j),
+                    \]
+                    and summing over any partition \(\{E_j\}\) of \(\Delta\) gives \(\sum_j |\nu(E_j)| \leq \nu^+(\Delta) +
+                    \nu^-(\Delta)\) by additivity of \(\nu^+\) and \(\nu^-\). The supremum definition thus recovers
+                    \(\nu^+ + \nu^-\), confirming the two notions coincide where both apply.
+                </p>
+
+                <p>
+                    The central structural fact is that this supremum is itself a measure, and a finite one. The finiteness is
+                    the substantive part: it is what makes the dual norm well defined.
+                </p>
+
+                <div class="theorem" id="T-total_variation_finite_measure">
+                    <span class="theorem-title">Theorem: The Total Variation is a Finite Positive Measure</span>
+                    <p>
+                        Let \(\mu\) be a complex measure on \((X, \Omega)\). Then \(|\mu|\) is a positive measure on
+                        \((X, \Omega)\), and it is finite: \(|\mu|(X) < \infty\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <strong>Countable additivity.</strong><br>
+                        Let \(\Delta = \bigsqcup_{n=1}^\infty \Delta_n\) be a disjoint union of measurable sets. We show
+                        \(|\mu|(\Delta) = \sum_n |\mu|(\Delta_n)\).
+                    </p>
+                    <p>
+                        For the inequality \(|\mu|(\Delta) \leq \sum_n |\mu|(\Delta_n)\), let \(\{E_j\}_{j=1}^m\) be any finite
+                        measurable partition of \(\Delta\). Each \(E_j = \bigsqcup_n (E_j \cap \Delta_n)\), so by countable
+                        additivity of \(\mu\) and the triangle inequality,
+                        \[
+                        \sum_{j=1}^m |\mu(E_j)| \;=\; \sum_{j=1}^m \left| \sum_{n=1}^\infty \mu(E_j \cap \Delta_n) \right|
+                        \;\leq\; \sum_{j=1}^m \sum_{n=1}^\infty |\mu(E_j \cap \Delta_n)|
+                        \;=\; \sum_{n=1}^\infty \sum_{j=1}^m |\mu(E_j \cap \Delta_n)|.
+                        \]
+                        For each fixed \(n\), the sets \(\{E_j \cap \Delta_n\}_{j=1}^m\) form a measurable partition of
+                        \(\Delta_n\), so \(\sum_{j=1}^m |\mu(E_j \cap \Delta_n)| \leq |\mu|(\Delta_n)\). Hence
+                        \(\sum_{j=1}^m |\mu(E_j)| \leq \sum_{n=1}^\infty |\mu|(\Delta_n)\). Taking the supremum over all
+                        partitions \(\{E_j\}\) of \(\Delta\) gives \(|\mu|(\Delta) \leq \sum_{n=1}^\infty |\mu|(\Delta_n)\).
+                    </p>
+                    <p>
+                        For the reverse inequality \(|\mu|(\Delta) \geq \sum_n |\mu|(\Delta_n)\), fix \(N \geq 1\) and
+                        \(\varepsilon > 0\). For each \(n \leq N\) choose a measurable partition \(\{E^{(n)}_j\}_j\) of
+                        \(\Delta_n\) with \(\sum_j |\mu(E^{(n)}_j)| > |\mu|(\Delta_n) - \varepsilon / 2^n\). The collection
+                        \(\{E^{(n)}_j : 1 \leq n \leq N,\, j\} \cup \{\Delta \setminus \bigsqcup_{n \leq N} \Delta_n\}\) is a
+                        finite measurable partition of \(\Delta\), so
+                        \[
+                        |\mu|(\Delta) \;\geq\; \sum_{n=1}^N \sum_j |\mu(E^{(n)}_j)|
+                        \;>\; \sum_{n=1}^N \left( |\mu|(\Delta_n) - \frac{\varepsilon}{2^n} \right)
+                        \;>\; \sum_{n=1}^N |\mu|(\Delta_n) - \varepsilon.
+                        \]
+                        Letting \(\varepsilon \to 0\) gives \(|\mu|(\Delta) \geq \sum_{n=1}^N |\mu|(\Delta_n)\), and then
+                        \(N \to \infty\) gives \(|\mu|(\Delta) \geq \sum_{n=1}^\infty |\mu|(\Delta_n)\). Combined with the first
+                        inequality, \(|\mu|\) is countably additive. Since \(|\mu|(\varnothing) = 0\) and \(|\mu| \geq 0\), it
+                        is a positive measure.
+                    </p>
+                    <p>
+                        <strong>Finiteness.</strong><br>
+                        Decompose \(\mu = (\mu_1 - \mu_2) + i(\mu_3 - \mu_4)\) into four positive finite measures as above. For
+                        any measurable \(E\),
+                        \[
+                        |\mu(E)| \;=\; \bigl| (\mu_1 - \mu_2)(E) + i(\mu_3 - \mu_4)(E) \bigr|
+                        \;\leq\; \mu_1(E) + \mu_2(E) + \mu_3(E) + \mu_4(E).
+                        \]
+                        Hence for any finite partition \(\{E_j\}\) of \(X\),
+                        \[
+                        \sum_j |\mu(E_j)| \;\leq\; \sum_j \sum_{k=1}^4 \mu_k(E_j) \;=\; \sum_{k=1}^4 \mu_k(X),
+                        \]
+                        the last equality by additivity of each \(\mu_k\). Taking the supremum over partitions,
+                        \(|\mu|(X) \leq \mu_1(X) + \mu_2(X) + \mu_3(X) + \mu_4(X) < \infty\), since each \(\mu_k\) is finite.
+                    </p>
+                </div>
+
+                <p>
+                    The finiteness argument also shows \(|\mu(E)| \leq |\mu|(E)\) for every measurable \(E\), taking the
+                    trivial partition \(\{E\}\) in the definition. The total variation therefore dominates \(\mu\) setwise
+                    while being a genuine positive measure, and it assigns to all of \(X\) a finite number — the quantity that
+                    will serve as the norm of \(\mu\).
+                </p>
+            </section>
+
+            <section id="regular-borel" class="section-content">
+                <h2>Regular Borel Measures and M(X)</h2>
+
+                <p>
+                    A complex measure as defined above lives on an abstract measurable space. To represent functionals on
+                    \(C(X)\) we need measures that interact correctly with the topology of \(X\): the mass of a set must be
+                    approximable by the mass of compact sets from inside and open sets from outside. These regularity
+                    conditions tie the measure to the topology and are what make the representation unique. We now place the
+                    measures on the natural \(\sigma\)-algebra and impose regularity.
+                </p>
+
+                <p>
+                    Throughout, \(X\) is a locally compact Hausdorff space. The <strong>Borel \(\sigma\)-algebra</strong>
+                    \(\Omega\) is the smallest \(\sigma\)-algebra of subsets of \(X\) containing all
+                    <a href="topological_spaces.html#D-topological_space" class="ref-link"><strong>open sets</strong></a>; its
+                    members are the <strong>Borel sets</strong>. A compact subset and an open subset of \(X\) are Borel, so the
+                    approximation conditions below are well posed.
+                </p>
+
+                <div class="theorem" id="D-regular_borel_measure">
+                    <span class="theorem-title">Definition: Regular Borel Measure</span>
+                    <p>
+                        Let \(X\) be a locally compact Hausdorff space with Borel \(\sigma\)-algebra \(\Omega\). A positive
+                        measure \(\mu\) on \((X, \Omega)\) is a <strong>regular Borel measure</strong> if
+                    </p>
+                    <p>
+                        <strong>(a)</strong> \(\mu(K) < \infty\) for every
+                        <a href="topological_connectedness_compactness.html#D-compact_space" class="ref-link"><strong>compact</strong></a>
+                        set \(K \subseteq X\);<br>
+                        <strong>(b)</strong> \(\mu(E) = \sup\{\, \mu(K) : K \subseteq E,\ K \text{ compact} \,\}\) for every
+                        \(E \in \Omega\) (<strong>inner regularity</strong>);<br>
+                        <strong>(c)</strong> \(\mu(E) = \inf\{\, \mu(U) : U \supseteq E,\ U \text{ open} \,\}\) for every
+                        \(E \in \Omega\) (<strong>outer regularity</strong>).
+                    </p>
+                    <p>
+                        A complex measure \(\mu\) on \((X, \Omega)\) is a <strong>regular Borel measure</strong> if its total
+                        variation \(|\mu|\) is a regular Borel measure in the sense above.
+                    </p>
+                </div>
+
+                <p>
+                    When \(X\) is compact, condition (a) is automatic, since \(\mu(X) < \infty\) for any finite measure and
+                    every compact set has no greater measure. Conditions (b) and (c) remain the substance: they say a Borel
+                    set is squeezed between the compact sets it contains and the open sets that contain it. This is the case
+                    relevant to \(C(X)\) on a compact \(X\); the locally compact formulation is stated as primary because the
+                    representation theorem and its corollary on \(C_0(X)\) hold at that generality, with the compact case as
+                    the specialization \(C_0(X) = C(X)\).
+                </p>
+
+                <h3>The Space M(X)</h3>
+
+                <p>
+                    The regular Borel measures of finite total variation form a vector space, on which the total variation of
+                    the whole space supplies a norm.
+                </p>
+
+                <div class="theorem" id="D-space_of_measures_MX">
+                    <span class="theorem-title">Definition: The Space \(M(X)\)</span>
+                    <p>
+                        Let \(X\) be a locally compact Hausdorff space. Denote by \(M(X)\) the set of all complex-valued
+                        regular Borel measures on \(X\). It is a vector space over \(\mathbb{C}\) under the pointwise
+                        operations \((\mu + \nu)(E) = \mu(E) + \nu(E)\) and \((\lambda\mu)(E) = \lambda\,\mu(E)\). For
+                        \(\mu \in M(X)\), set
+                        \[
+                        \|\mu\| \;=\; |\mu|(X),
+                        \]
+                        the total variation of \(\mu\) over all of \(X\), which is finite by the preceding section.
+                    </p>
+                </div>
+
+                <p>
+                    That the pointwise operations preserve regularity, and that \(\|\cdot\|\) is a norm, must be checked. We
+                    record both as a single proposition.
+                </p>
+
+                <div class="theorem" id="T-total_variation_norm">
+                    <span class="theorem-title">Proposition: \(M(X)\) is a Normed Space</span>
+                    <p>
+                        \(M(X)\) is a complex vector space, and \(\|\mu\| = |\mu|(X)\) defines a norm on it.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <strong>Vector-space structure.</strong><br>
+                        If \(\mu, \nu \in M(X)\) and \(\lambda \in \mathbb{C}\), then \(\mu + \nu\) and \(\lambda\mu\) are
+                        complex measures, being pointwise combinations of countably additive set functions. We must check they
+                        remain regular, i.e. that \(|\mu + \nu|\) and \(|\lambda\mu|\) are regular Borel measures. From the
+                        partition definition, for any \(E\) and any partition \(\{E_j\}\),
+                        \[
+                        \sum_j |(\mu + \nu)(E_j)| \;\leq\; \sum_j |\mu(E_j)| + \sum_j |\nu(E_j)|
+                        \;\leq\; |\mu|(E) + |\nu|(E),
+                        \]
+                        so taking the supremum gives \(|\mu + \nu|(E) \leq |\mu|(E) + |\nu|(E)\); that is,
+                        \(|\mu + \nu| \leq |\mu| + |\nu|\) setwise. Likewise \(|\lambda\mu| = |\lambda|\,|\mu|\), since each
+                        term \(|\lambda\mu(E_j)| = |\lambda|\,|\mu(E_j)|\) scales by \(|\lambda|\).
+                    </p>
+                    <p>
+                        It remains to deduce that \(|\mu + \nu|\) is regular; the same argument applies to
+                        \(|\lambda\mu| = |\lambda|\,|\mu|\), which is regular because a nonnegative scalar multiple of a
+                        regular measure is regular. Write \(\rho = |\mu + \nu|\) and \(\sigma = |\mu| + |\nu|\), so that
+                        \(\rho \leq \sigma\) setwise. Both are finite positive measures, and \(\sigma\) is regular, being a
+                        sum of two regular measures (approximate each summand separately and add). The key elementary fact is
+                        this: because \(\rho\) and \(\sigma\) are finite and \(\rho \leq \sigma\), for any two Borel sets
+                        \(A \subseteq B\) we have
+                        \[
+                        \rho(B) - \rho(A) \;=\; \rho(B \setminus A) \;\leq\; \sigma(B \setminus A),
+                        \]
+                        so whenever \(\sigma\) approximates a set well, \(\rho\) does too.
+                    </p>
+                    <p>
+                        <em>Inner regularity.</em> Fix \(E \in \Omega\) and \(\varepsilon > 0\). By inner regularity of
+                        \(\sigma\) there is a compact \(K \subseteq E\) with \(\sigma(E \setminus K) < \varepsilon\). Applying
+                        the fact above with \(A = K\), \(B = E\),
+                        \[
+                        \rho(E) - \rho(K) \;\leq\; \sigma(E \setminus K) \;<\; \varepsilon,
+                        \]
+                        so \(\rho(K)\) comes within \(\varepsilon\) of \(\rho(E)\). Since \(\varepsilon\) was arbitrary,
+                        \(\rho(E) = \sup\{\rho(K) : K \subseteq E,\ K \text{ compact}\}\).
+                    </p>
+                    <p>
+                        <em>Outer regularity.</em> Similarly, by outer regularity of \(\sigma\) there is an open
+                        \(U \supseteq E\) with \(\sigma(U \setminus E) < \varepsilon\), and the fact above with \(A = E\),
+                        \(B = U\) gives \(\rho(U) - \rho(E) \leq \sigma(U \setminus E) < \varepsilon\). Hence
+                        \(\rho(E) = \inf\{\rho(U) : U \supseteq E,\ U \text{ open}\}\). Thus \(\rho = |\mu + \nu|\) is regular,
+                        and \(\mu + \nu, \lambda\mu \in M(X)\).
+                    </p>
+                    <p>
+                        <strong>Positivity and definiteness.</strong><br>
+                        Clearly \(\|\mu\| = |\mu|(X) \geq 0\). If \(\|\mu\| = 0\), then \(|\mu|(X) = 0\), so \(|\mu|(E) = 0\)
+                        for every \(E \subseteq X\) by monotonicity; since \(|\mu(E)| \leq |\mu|(E) = 0\), we get
+                        \(\mu(E) = 0\) for all \(E\), i.e. \(\mu = 0\). Conversely \(\|0\| = 0\).
+                    </p>
+                    <p>
+                        <strong>Homogeneity.</strong><br>
+                        \(\|\lambda\mu\| = |\lambda\mu|(X) = |\lambda|\,|\mu|(X) = |\lambda|\,\|\mu\|\), using
+                        \(|\lambda\mu| = |\lambda|\,|\mu|\) from above.
+                    </p>
+                    <p>
+                        <strong>Triangle inequality.</strong><br>
+                        \(\|\mu + \nu\| = |\mu + \nu|(X) \leq |\mu|(X) + |\nu|(X) = \|\mu\| + \|\nu\|\), using
+                        \(|\mu + \nu| \leq |\mu| + |\nu|\) from above. Thus \(\|\cdot\|\) is a norm.
+                    </p>
+                </div>
+
+                <h3>Support and Point Masses</h3>
+
+                <p>
+                    Two further notions attached to a measure will be needed when the representation is applied: the set on
+                    which a measure genuinely lives, and the simplest measures of all, concentrated at a single point.
+                </p>
+
+                <div class="theorem" id="D-measure_support">
+                    <span class="theorem-title">Definition: Support of a Measure</span>
+                    <p>
+                        Let \(\mu\) be a complex measure on a locally compact Hausdorff space \(X\) with Borel
+                        \(\sigma\)-algebra \(\Omega\). The <strong>support</strong> of \(\mu\) is the set
+                        \[
+                        \operatorname{supp}\mu \;=\; X \setminus \bigcup\{\, V : V \text{ is open and } |\mu|(V) = 0 \,\}.
+                        \]
+                        Equivalently, \(\operatorname{supp}\mu\) is the smallest closed set whose complement is
+                        \(|\mu|\)-null: it is the set of points every open neighborhood of which carries positive total
+                        variation.
+                    </p>
+                </div>
+
+                <p>
+                    The complement of \(\operatorname{supp}\mu\) is a union of \(|\mu|\)-null open sets, hence open, so
+                    \(\operatorname{supp}\mu\) is closed. Moreover this null complement is itself \(|\mu|\)-null, and crucially
+                    no countability of \(X\) is needed: writing \(W = X \setminus \operatorname{supp}\mu\), every compact
+                    \(C \subseteq W\) is covered by finitely many of the null open sets whose union is \(W\), so
+                    \(|\mu|(C) = 0\); inner regularity of \(|\mu|\) then gives
+                    \(|\mu|(W) = \sup\{|\mu|(C) : C \subseteq W \text{ compact}\} = 0\). Consequently
+                    \(\int_X f \, d\mu = \int_{\operatorname{supp}\mu} f \, d\mu\) for every integrable \(f\), since the
+                    integrand contributes nothing off the support. This is exactly the step that lets one replace \(X\) by the
+                    support of a measure without losing any of its mass.
+                </p>
+
+                <div class="theorem" id="D-dirac_measure">
+                    <span class="theorem-title">Definition: Dirac Measure</span>
+                    <p>
+                        For a point \(x \in X\), the <strong>Dirac measure</strong> (or <strong>point mass</strong>)
+                        \(\delta_x\) is the positive measure defined by
+                        \[
+                        \delta_x(E) \;=\; \begin{cases} 1 & x \in E, \\ 0 & x \notin E, \end{cases}
+                        \]
+                        for \(E \in \Omega\). It is a regular Borel measure with \(\|\delta_x\| = 1\) and
+                        \(\operatorname{supp}\delta_x = \{x\}\), and integration against it is evaluation:
+                        \(\int_X f \, d\delta_x = f(x)\) for every \(f \in C(X)\). A scalar multiple \(\alpha\delta_x\) with
+                        \(\alpha \in \mathbb{C}\) is the complex measure \(E \mapsto \alpha\,\delta_x(E)\), with
+                        \(\|\alpha\delta_x\| = |\alpha|\).
+                    </p>
+                </div>
+
+                <p>
+                    Countable additivity of \(\delta_x\) holds because at most one set in a disjoint family contains \(x\);
+                    regularity holds because \(\{x\}\) is compact and the value on any Borel set is determined by whether it
+                    contains \(x\). These point masses are the extreme points of the unit ball of \(M(X)\), a fact that
+                    surfaces once the representation identifies \(M(X)\) with a dual space.
+                </p>
+            </section>
+
+            <section id="functionals-to-measures" class="section-content">
+                <h2>From Functionals to Measures</h2>
+
+                <p>
+                    We now connect the two sides. One direction is easy and explicit: every measure produces a functional by
+                    integration. The other direction — that every functional arises this way — is the substance of the
+                    representation theorem and occupies the rest of this section. Throughout, \(C_0(X)\) is the space of
+                    continuous functions \(f : X \to \mathbb{C}\) that <strong>vanish at infinity</strong>, meaning that for
+                    each \(\varepsilon > 0\) the set \(\{|f| \geq \varepsilon\}\) is compact, equipped with the supremum norm
+                    \(\|f\|_\infty = \sup_x |f(x)|\). When \(X\) is compact this is simply \(C(X)\), since every continuous
+                    function then has compact support automatically.
+                </p>
+
+                <h3>Each Measure Defines a Functional</h3>
+
+                <div class="theorem" id="T-functional_from_measure">
+                    <span class="theorem-title">Lemma: Integration Against a Measure is a Functional</span>
+                    <p>
+                        Let \(\mu \in M(X)\) and define \(F_\mu : C_0(X) \to \mathbb{C}\) by \(F_\mu(f) = \int f \, d\mu\). Then
+                        \(F_\mu\) is a bounded linear functional, \(F_\mu \in C_0(X)^*\), and
+                        \[
+                        \|F_\mu\| \;=\; \|\mu\| \;=\; |\mu|(X).
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch</span>
+                    <p>
+                        <strong>Boundedness and the upper estimate</strong> (full).<br>
+                        Linearity of \(F_\mu\) is the linearity of the integral. For \(f \in C_0(X)\), the bound
+                        \(|f(x)| \leq \|f\|_\infty\) and the inequality \(\left| \int f \, d\mu \right| \leq \int |f| \, d|\mu|\)
+                        — which holds because, decomposing into real and imaginary signed parts and then into positive and
+                        negative pieces, the integral against \(\mu\) is dominated termwise by the integral of \(|f|\) against
+                        \(|\mu|\) — give
+                        \[
+                        |F_\mu(f)| \;=\; \left| \int f \, d\mu \right| \;\leq\; \int |f| \, d|\mu|
+                        \;\leq\; \|f\|_\infty \, |\mu|(X) \;=\; \|f\|_\infty \, \|\mu\|.
+                        \]
+                        Hence \(F_\mu\) is bounded with \(\|F_\mu\| \leq \|\mu\|\).
+                    </p>
+                    <p>
+                        <strong>The lower estimate</strong> (sketch — it rests on the approximation principle stated after
+                        the proof).<br>
+                        For the reverse inequality \(\|F_\mu\| \geq \|\mu\|\) we must produce functions \(f\) with
+                        \(\|f\|_\infty \leq 1\) and \(|F_\mu(f)|\) close to \(|\mu|(X)\). The polar decomposition of \(\mu\)
+                        writes \(\mu = h \, |\mu|\) for a Borel function \(h\) with \(|h| = 1\) almost everywhere with respect to
+                        \(|\mu|\); this is the measure-theoretic statement that \(\mu\) and \(|\mu|\) differ only by a unimodular
+                        phase. The natural candidate is \(f = \bar{h}\), for which
+                        \[
+                        \int \bar{h} \, d\mu \;=\; \int \bar{h} \, h \, d|\mu| \;=\; \int |h|^2 \, d|\mu| \;=\; |\mu|(X),
+                        \]
+                        but \(\bar{h}\) is only Borel, not continuous, and need not lie in \(C_0(X)\). The remedy is to
+                        approximate \(\bar{h}\) by a continuous function. There is a classical approximation principle: a Borel
+                        function that is bounded by \(1\) can, off a set of arbitrarily small \(|\mu|\)-measure, be matched by a
+                        continuous function of supremum norm at most \(1\). Granting such an approximant \(\phi\) with
+                        \(\|\phi\|_\infty \leq 1\) and \(\int |\phi - \bar{h}| \, d|\mu| < \varepsilon\), we get
+                        \[
+                        |F_\mu(\phi)| \;=\; \left| \int \phi \, d\mu \right|
+                        \;\geq\; \left| \int \bar{h} \, d\mu \right| - \left| \int (\phi - \bar{h}) \, d\mu \right|
+                        \;\geq\; |\mu|(X) - \int |\phi - \bar{h}| \, d|\mu| \;>\; |\mu|(X) - \varepsilon.
+                        \]
+                        Since \(\|\phi\|_\infty \leq 1\), this forces \(\|F_\mu\| \geq |\mu|(X) - \varepsilon\), and letting
+                        \(\varepsilon \to 0\) gives \(\|F_\mu\| \geq \|\mu\| = |\mu|(X)\). With the upper estimate,
+                        \(\|F_\mu\| = \|\mu\|\).
+                    </p>
+                </div>
+
+                <p>
+                    The approximation principle used here expresses the regularity of \(|\mu|\) at the level of functions: just
+                    as a Borel set is approximable by compact and open sets, a bounded Borel function is approximable, in the
+                    mean, by a continuous one of the same supremum bound. We use it as a stated principle; its proof builds the
+                    continuous approximant on the compact sets supplied by inner regularity.
+                </p>
+
+                <p>
+                    The map \(\mu \mapsto F_\mu\) is therefore a norm-preserving linear injection of \(M(X)\) into
+                    \(C_0(X)^*\): linear because the integral is linear in the measure, injective because
+                    \(\|F_\mu\| = \|\mu\|\) forces \(F_\mu = 0 \Rightarrow \mu = 0\). Surjectivity — recovering a measure from an
+                    arbitrary functional — we approach in two steps: first reduce to a <em>positive</em> functional, then realize
+                    a positive functional by a positive measure.
+                </p>
+
+                <h3>Reduction to a Positive Functional</h3>
+
+                <p>
+                    Call a linear functional \(I : C_0(X) \to \mathbb{C}\) <strong>positive</strong> if \(I(f) \geq 0\)
+                    whenever \(f \geq 0\). Positivity is the order-theoretic analogue of being represented by a positive
+                    measure, and it is the form in which a measure is easiest to extract. The first step shows every bounded
+                    functional dominates a positive one of the same norm.
+                </p>
+
+                <div class="theorem" id="T-positive_functional_construction">
+                    <span class="theorem-title">Lemma: A Bounded Functional Yields a Positive Functional</span>
+                    <p>
+                        Let \(F : C_0(X) \to \mathbb{C}\) be a bounded linear functional. For \(f \in C_0(X)\) with
+                        \(f \geq 0\), define
+                        \[
+                        I(f) \;=\; \sup\{\, |F(g)| : g \in C_0(X),\ |g| \leq f \,\}.
+                        \]
+                        Then \(I\) extends to a positive linear functional on \(C_0(X)\) with \(\|I\| = \|F\|\) and
+                        \(|F(g)| \leq I(|g|)\) for all \(g\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch</span>
+                    <p>
+                        For \(f \geq 0\), the defining supremum is finite because \(|F(g)| \leq \|F\| \, \|g\|_\infty \leq
+                        \|F\| \, \|f\|_\infty\) whenever \(|g| \leq f\), so \(0 \leq I(f) \leq \|F\| \, \|f\|_\infty\). Taking
+                        \(g = f\) gives \(I(f) \geq |F(f)|\), and the case \(g\) ranging over multiples of \(f\) gives
+                        \(I(f) \geq \|F\|\,\|f\|_\infty\) in the limit, so in fact \(\|I\| = \|F\|\). One checks additivity on
+                        nonnegative functions: \(I(f_1 + f_2) = I(f_1) + I(f_2)\) for \(f_1, f_2 \geq 0\), the inequality
+                        \(\geq\) by combining near-optimal \(g_1, g_2\) into \(g_1 + g_2\) after adjusting phases so that
+                        \(|F(g_1)| + |F(g_2)| = |F(g_1 + g_2)|\), and \(\leq\) by splitting any \(g\) with \(|g| \leq f_1 + f_2\)
+                        as \(g = g_1 + g_2\) with \(|g_i| \leq f_i\) (set \(g_i = g f_i / (f_1 + f_2)\) where the denominator is
+                        positive, \(0\) elsewhere). Positive homogeneity \(I(t f) = t I(f)\) for \(t \geq 0\) is immediate from
+                        the definition. An additive, positively homogeneous functional on the nonnegative cone extends uniquely
+                        to a linear functional on \(C_0(X)\) by writing a real function as a difference of its positive and
+                        negative parts and a complex function through real and imaginary parts; the extension is positive by
+                        construction and satisfies \(|F(g)| \leq I(|g|)\) since \(|g| \leq |g|\) places \(g\) among the
+                        competitors defining \(I(|g|)\).
+                    </p>
+                </div>
+
+                <h3>A Positive Functional Comes From a Measure</h3>
+
+                <p>
+                    The second step is the heart of the representation: a positive linear functional on \(C_0(X)\) is
+                    integration against a positive regular Borel measure. This is the classically named Riesz representation
+                    for positive functionals; its full construction of the measure is long, and we give the core idea.
+                </p>
+
+                <div class="theorem" id="T-positive_functional_measure">
+                    <span class="theorem-title">Theorem: Positive Functionals are Positive Measures</span>
+                    <p>
+                        Let \(X\) be a locally compact Hausdorff space and let \(I : C_0(X) \to \mathbb{C}\) be a positive
+                        bounded linear functional. Then there is a unique positive regular Borel measure \(\nu\) on \(X\) such
+                        that
+                        \[
+                        I(f) \;=\; \int f \, d\nu \qquad \text{for every } f \in C_0(X),
+                        \]
+                        and \(\|I\| = \nu(X)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch</span>
+                    <p>
+                        The measure is built outside-in, starting from open sets. For an open \(U \subseteq X\), define
+                        \[
+                        \nu(U) \;=\; \sup\{\, I(\phi) : \phi \in C_0(X),\ 0 \leq \phi \leq 1,\ \operatorname{supp}\phi
+                        \subseteq U \,\},
+                        \]
+                        the supremum of the functional over continuous "bump" functions trapped inside \(U\). This is monotone
+                        in \(U\) and, using that a bump subordinate to a union can be split into bumps subordinate to the
+                        pieces, countably subadditive. For an arbitrary set \(E\) one then sets
+                        \[
+                        \nu(E) \;=\; \inf\{\, \nu(U) : U \supseteq E,\ U \text{ open} \,\},
+                        \]
+                        an outer measure by construction. The technical core is to show that this outer measure is countably
+                        additive on the Borel sets — the Carathéodory measurability of open sets — which is where the bulk of
+                        the work lies and where the existence of continuous bumps separating compact sets from closed sets
+                        (a separation property of locally compact Hausdorff spaces) is used repeatedly. Outer regularity holds
+                        by definition; inner regularity follows because the bumps witnessing \(\nu(U)\) have compact support.
+                        Once \(\nu\) is a measure, the identity \(I(f) = \int f \, d\nu\) is verified first for \(0 \leq f
+                        \leq 1\) by sandwiching \(f\) between bumps adapted to the level sets \(\{f > t\}\) and integrating in
+                        \(t\), then for general \(f\) by linearity. Uniqueness follows because two regular Borel measures
+                        agreeing as functionals agree on open sets through the bump-supremum formula, hence on all Borel sets by
+                        outer regularity. Finally \(\|I\| = \nu(X)\): the bound \(|I(f)| \leq \nu(X)\|f\|_\infty\) comes from
+                        \(I(f) = \int f \, d\nu\), and equality is approached by bumps increasing to \(1\).
+                    </p>
+                </div>
+
+                <p>
+                    The two steps compose: an arbitrary bounded functional \(F\) yields a positive functional \(I\) with
+                    \(|F(g)| \leq I(|g|)\), and \(I\) is integration against a positive measure \(\nu\). The remaining task is to
+                    recover \(F\) itself — not just its positive envelope — as integration against a complex measure built from
+                    \(\nu\). Assembling this is the content of the representation theorem in the next section.
+                </p>
+            </section>
+
+            <section id="riesz-representation" class="section-content">
+                <h2>The Riesz Representation Theorem</h2>
+
+                <p>
+                    Everything is now in place. The previous section produced, from a bounded functional \(F\), a positive
+                    functional \(I\) dominating it, and realized \(I\) as integration against a positive measure \(\nu\). We
+                    complete the circle by recovering \(F\) itself as integration against a complex measure, and we record the
+                    resulting identification of \(C_0(X)^*\) with \(M(X)\).
+                </p>
+
+                <div class="theorem" id="T-riesz_representation_c0x">
+                    <span class="theorem-title">Theorem: Riesz Representation for \(C_0(X)\)</span>
+                    <p>
+                        Let \(X\) be a locally compact Hausdorff space. For \(\mu \in M(X)\), let \(F_\mu \in C_0(X)^*\) be the
+                        functional \(F_\mu(f) = \int f \, d\mu\). Then the map
+                        \[
+                        M(X) \longrightarrow C_0(X)^*, \qquad \mu \longmapsto F_\mu,
+                        \]
+                        is an isometric isomorphism: it is linear, \(\|F_\mu\| = \|\mu\|\) for every \(\mu\), and every
+                        bounded linear functional on \(C_0(X)\) equals \(F_\mu\) for a unique \(\mu \in M(X)\). In words, the
+                        dual of \(C_0(X)\) is the space of measures \(M(X)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Linearity of \(\mu \mapsto F_\mu\) and the isometry \(\|F_\mu\| = \|\mu\|\) were established earlier,
+                        and the isometry makes the map injective: \(F_\mu = 0\) forces \(\|\mu\| = 0\), hence \(\mu = 0\). Only
+                        surjectivity remains: given \(F \in C_0(X)^*\), we construct \(\mu \in M(X)\) with \(F = F_\mu\).
+                    </p>
+                    <p>
+                        Form the positive functional \(I\) dominating \(F\), and let \(\nu\) be the positive regular Borel
+                        measure with \(I(g) = \int g \, d\nu\). The domination \(|F(g)| \leq I(|g|) = \int |g| \, d\nu\) says
+                        that \(F\), viewed on \(C_0(X)\) sitting inside \(L^1(\nu)\), is bounded for the \(L^1(\nu)\)-norm:
+                        \[
+                        |F(g)| \;\leq\; \int |g| \, d\nu \;=\; \|g\|_{L^1(\nu)}.
+                        \]
+                        Since \(C_0(X)\) is dense in \(L^1(\nu)\) — continuous functions of compact support approximate
+                        \(L^1\) functions in mean, a consequence of the regularity of \(\nu\) — the functional \(F\) extends
+                        uniquely to a bounded linear functional on \(L^1(\nu)\) of norm at most \(1\). The dual of \(L^1\) is
+                        \(L^\infty\) (the duality of \(L^p\) spaces in the endpoint case \(p = 1\), treated on the page on
+                        <a href="dual_spaces.html">dual spaces</a>), so that extension is given by a function \(\phi \in
+                        L^\infty(\nu)\) with \(\|\phi\|_\infty \leq 1\):
+                        \[
+                        F(g) \;=\; \int g \, \phi \, d\nu \qquad (g \in C_0(X)).
+                        \]
+                        Now define \(\mu\) by \(\mu(E) = \int_E \phi \, d\nu\), the measure with density \(\phi\) against
+                        \(\nu\). It is a complex measure, and its total variation is \(|\mu|(E) = \int_E |\phi| \, d\nu\), so
+                        \(|\mu| \leq \nu\); since \(\nu\) is a finite regular Borel measure, so is the dominated \(|\mu|\),
+                        whence \(\mu \in M(X)\). For every \(g \in C_0(X)\),
+                        \[
+                        F_\mu(g) \;=\; \int g \, d\mu \;=\; \int g \, \phi \, d\nu \;=\; F(g),
+                        \]
+                        the middle equality being the change of variables for a density. Thus \(F = F_\mu\). Uniqueness is the
+                        injectivity already shown. Therefore \(\mu \mapsto F_\mu\) is an isometric isomorphism of \(M(X)\) onto
+                        \(C_0(X)^*\).
+                    </p>
+                </div>
+
+                <p>
+                    The harder direction was routed through the duality of \(L^p\) at \(p = 1\): the regularity of \(\nu\) makes
+                    \(C_0(X)\) dense in \(L^1(\nu)\), and that density is what lets a density \(\phi\) represent \(F\). Regularity
+                    is therefore essential to the construction, not cosmetic.
+                </p>
+
+                <h3>The Compact Case and Annihilators</h3>
+
+                <p>
+                    When \(X\) is compact, \(C_0(X) = C(X)\) and the theorem reads \(C(X)^* = M(X)\): every continuous linear
+                    functional on \(C(X)\) is integration against a unique complex regular Borel measure, with the dual norm
+                    equal to the total variation. This is the form used when \(C(X)\) is the ambient algebra. In particular, if
+                    \(\mathcal{A} \subseteq C(X)\) is a closed subspace, its
+                    <a href="dual_spaces.html#D-topological_dual_space" class="ref-link"><strong>annihilator</strong></a>
+                    \[
+                    \mathcal{A}^\perp \;=\; \{\, \varphi \in C(X)^* : \varphi(f) = 0 \text{ for all } f \in \mathcal{A} \,\}
+                    \]
+                    becomes, under the identification, the space of measures that integrate to zero against every member of
+                    \(\mathcal{A}\):
+                    \[
+                    \mathcal{A}^\perp \;=\; \Bigl\{\, \mu \in M(X) : \int f \, d\mu = 0 \text{ for all } f \in \mathcal{A}
+                    \,\Bigr\}.
+                    \]
+                    An element of \(\mathcal{A}^\perp\) is now a concrete object — a measure on \(X\) — to which the full
+                    machinery of support, total variation, and integration applies. This is precisely what turns an abstract
+                    functional-analytic hypothesis about \(\mathcal{A}\) into a question about measures one can localize and
+                    manipulate.
+                </p>
+
+                <p>
+                    The extreme points of the unit ball of \(M(X)\) make the same identification vivid. For a compact \(X\),
+                    those extreme points are exactly the unimodular point masses \(\alpha\delta_x\) with \(|\alpha| = 1\) and
+                    \(x \in X\): among all measures of total variation \(1\), the indecomposable ones are concentrated at a
+                    single point. A measure that lives on more than one point is an average of measures supported on smaller
+                    sets and so cannot be extreme, while a point mass admits no such splitting. Reading this through the Riesz
+                    isomorphism, the extreme points of the dual ball of \(C(X)\) are the scaled evaluations \(f \mapsto \alpha
+                    f(x)\) — the functionals that read off a single value. The structure of the dual ball is thereby reduced to
+                    the points of \(X\) themselves, the starting point for extracting a distinguished measure from an extremal
+                    functional and the bridge by which compactness arguments on the dual ball return statements about
+                    \(C(X)\).
+                </p>
+            </section>
+
+        </div>
+
+</body>
+</html>
