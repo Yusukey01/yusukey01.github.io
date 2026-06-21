@@ -197,8 +197,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     // surviving holes -> their fixed harmonic generators
     const harmonics = [];
-    if (!state.filled.has('T0')) harmonics.push(HARM.T0);
-    if (!state.filled.has('T1')) harmonics.push(HARM.T1);
+    if (!state.filled.has('T0')) harmonics.push({ region:'T0', h:HARM.T0 });
+    if (!state.filled.has('T1')) harmonics.push({ region:'T1', h:HARM.T1 });
     return { beta1, dimKer, harmonics };
   }
 
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function () {
     .scx-legend-item{display:flex;align-items:center;gap:6px;}
     .scx-swatch{width:14px;height:14px;border-radius:3px;display:inline-block;}
     .scx-swatch.open{background:transparent;border:1px dashed rgba(255,255,255,0.4);}
-    .scx-swatch.filled{background:rgba(243,156,18,0.4);border:1px solid rgba(243,156,18,0.7);}
+    .scx-swatch.filled{background:rgba(56,209,197,0.4);border:1px solid rgba(56,209,197,0.85);}
     .scx-swatch.harm{background:transparent;border:1px solid #64b4ff;border-radius:50%;}
     .scx-panel{background:rgba(20,28,40,0.95);padding:15px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);
       box-shadow:0 8px 32px rgba(0,0,0,0.3);}
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function () {
     /* SVG interactive region */
     .scx-region{cursor:pointer;transition:fill 0.15s, stroke 0.15s;outline:none;}
     .scx-region:hover .scx-region-fill,
-    .scx-region:focus-visible .scx-region-fill{stroke:rgba(243,156,18,0.9);}
+    .scx-region:focus-visible .scx-region-fill{stroke:rgba(56,209,197,0.95);}
     .scx-region:focus-visible .scx-region-fill{stroke-width:3;}
   `;
   document.head.appendChild(style);
@@ -394,11 +394,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // by re-stroking on hover of the overlay -- handled by JS hover below for robustness).
   Object.keys(REGIONS).forEach(name => {
     regionEls[name].addEventListener('mouseenter', () => {
-      if (!state.filled.has(name)) fillEls[name].setAttribute('stroke','rgba(243,156,18,0.8)');
+      if (!state.filled.has(name)) fillEls[name].setAttribute('stroke','rgba(255,255,255,0.6)');
     });
     regionEls[name].addEventListener('mouseleave', () => { applyFillStyle(name); });
     regionEls[name].addEventListener('focus', () => {
-      if (!state.filled.has(name)) fillEls[name].setAttribute('stroke','rgba(243,156,18,0.8)');
+      if (!state.filled.has(name)) fillEls[name].setAttribute('stroke','rgba(255,255,255,0.6)');
     });
     regionEls[name].addEventListener('blur', () => { applyFillStyle(name); });
   });
@@ -414,8 +414,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   function applyFillStyle(name){
     if (state.filled.has(name)) {
-      fillEls[name].setAttribute('fill','rgba(243,156,18,0.32)');
-      fillEls[name].setAttribute('stroke','rgba(243,156,18,0.7)');
+      fillEls[name].setAttribute('fill','rgba(56,209,197,0.30)');
+      fillEls[name].setAttribute('stroke','rgba(56,209,197,0.85)');
       fillEls[name].setAttribute('stroke-dasharray','none');
     } else {
       fillEls[name].setAttribute('fill','transparent');
@@ -424,28 +424,39 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // edge midpoint helper for harmonic arrow direction
+  // region centroid (average of its 3 vertices)
+  function centroid(name){
+    const vs = REGIONS[name];
+    let sx=0, sy=0;
+    vs.forEach(v => { sx += P[v][0]; sy += P[v][1]; });
+    return [sx/vs.length, sy/vs.length];
+  }
+
+  // Draw each surviving hole's harmonic circulation as a loop pulled well inside
+  // its own region. Scaling every endpoint toward the region centroid by SHRINK
+  // (a) lifts the loop off the black complex edges, and (b) separates the two
+  // cycles where they share the diagonal, since T0 and T1 have distinct centroids.
+  const SHRINK = 0.40; // fraction of the way from edge toward centroid
   function drawHarmonics(harmonics){
     layerHarm.innerHTML = '';
-    harmonics.forEach(h => {
-      // draw a directed polyline along the cycle's edges, following each coeff's sign
+    harmonics.forEach(({region, h}) => {
+      const [gx, gy] = centroid(region);
       h.forEach((coeff, ei) => {
         if (coeff === 0) return;
-        let [u,v] = EDGES[ei];
+        const [u,v] = EDGES[ei];
         // coeff +1 => traverse u->v (low->high); -1 => v->u
-        let a = (coeff > 0) ? P[u] : P[v];
-        let b = (coeff > 0) ? P[v] : P[u];
-        // shrink toward centroid a little so arrows sit inside the region, not on the black edge
+        const a = (coeff > 0) ? P[u] : P[v];
+        const b = (coeff > 0) ? P[v] : P[u];
+        // pull both endpoints toward the region centroid
+        const ax = a[0] + (gx - a[0]) * SHRINK, ay = a[1] + (gy - a[1]) * SHRINK;
+        const bx = b[0] + (gx - b[0]) * SHRINK, by = b[1] + (gy - b[1]) * SHRINK;
         const line = document.createElementNS(SVGNS,'line');
-        // nudge endpoints inward toward the segment center by 14%
-        const cx = (a[0]+b[0])/2, cy=(a[1]+b[1])/2;
-        const ax = a[0]+(cx-a[0])*0.16, ay = a[1]+(cy-a[1])*0.16;
-        const bx = b[0]+(cx-b[0])*0.16, by = b[1]+(cy-b[1])*0.16;
         line.setAttribute('x1',ax); line.setAttribute('y1',ay);
         line.setAttribute('x2',bx); line.setAttribute('y2',by);
         line.setAttribute('stroke','#64b4ff');
-        line.setAttribute('stroke-width','2');
-        line.setAttribute('opacity','0.55');
+        line.setAttribute('stroke-width','2.5');
+        line.setAttribute('opacity','0.85');
+        line.setAttribute('stroke-linecap','round');
         line.setAttribute('marker-end','url(#scx-arrow)');
         layerHarm.appendChild(line);
       });
