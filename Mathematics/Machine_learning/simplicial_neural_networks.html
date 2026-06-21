@@ -1,0 +1,380 @@
+---
+layout: default
+title: "Simplicial Neural Networks"
+topic_id: ml-17
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Simplicial Neural Networks</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#edges-to-simplices">From Edges to Simplices</a>
+            <a href="#hodge-propagation">The Hodge Laplacian as a Propagation Operator</a>
+            <a href="#harmonic-features">Harmonic Features and What the Network Sees</a>
+            <a href="#discrete-leg">Simplicial Networks in the Geometric Deep Learning Framework</a>
+            <a href="#demo">Interactive Demo</a>
+        </div>
+
+        <div class="container">
+
+            <section id="edges-to-simplices" class="section-content">
+                <h2>From Edges to Simplices</h2>
+
+                <p>
+                    A <a href="intro_gdl.html"><strong>graph neural network</strong></a> processes data
+                    that lives on the vertices of a graph by repeatedly exchanging information between
+                    neighbours. Each layer is a <a href="intro_gdl.html#D-message_passing" class="ref-link"><strong>message passing layer</strong></a>:
+                    a vertex collects a permutation-invariant aggregate of its neighbours' features and
+                    updates its own state accordingly. The information available to a message passing
+                    layer is therefore routed through a single relation — the edge — and an edge encodes a
+                    relationship between exactly <em>two</em> vertices. A graph, by its very definition,
+                    is a model of <strong>pairwise</strong> interaction.
+                </p>
+
+                <p>
+                    For a great many systems this is exactly the right abstraction, but for many others
+                    it quietly discards structure. A chemical reaction may involve three molecules at
+                    once in a way that is not reducible to its three pairwise sub-interactions. A
+                    co-authorship record in which four researchers wrote a single paper together is not
+                    faithfully represented by the six edges of the pairwise graph on those four authors,
+                    because that graph cannot distinguish "four people co-wrote one paper" from "these
+                    same four people happen to share six separate two-person papers." A triangle of
+                    vertices that bounds a filled face is a genuinely different object from a triangle
+                    that merely encloses a hole. In each case the missing information is a
+                    <strong>higher-order</strong> relation: an interaction supported on a set of three,
+                    four, or more vertices that is irreducibly present as a unit, not as a collection of
+                    its pairwise shadows.
+                </p>
+
+                <p>
+                    The mathematical structure that records relations of every order at once is the
+                    <a href="../Discrete/simplicial_complexes.html#D-abstract_simplicial_complex" class="ref-link"><strong>abstract simplicial complex</strong></a>.
+                    A graph is a simplicial complex that has been truncated at dimension one — vertices
+                    (\(0\)-simplices) and edges (\(1\)-simplices) only. Admitting \(2\)-simplices
+                    (triangles), \(3\)-simplices (tetrahedra), and higher faces restores precisely the
+                    higher-order relations a graph cannot see, and it does so in a way that is internally
+                    consistent: whenever a \(k\)-simplex belongs to the complex, all of its faces do too.
+                    Data now lives not only on vertices but on simplices of every dimension — a feature
+                    vector attached to each triangle, each tetrahedron, and so on.
+                </p>
+
+                <p>
+                    This raises the question that the rest of the page answers. For a graph neural network
+                    the neighbourhood of a vertex is unambiguous: the vertices joined to it by an edge. But
+                    what is the neighbourhood of a \(2\)-simplex? Two triangles can be adjacent because they
+                    share a common edge, or because they are both faces of a common tetrahedron — two
+                    different notions of adjacency, pointing in opposite dimensional directions, and a
+                    message passing scheme must account for both. The operator that organizes them is already
+                    in hand: the discrete Hodge Laplacian, built from the same boundary maps that define the
+                    complex's homology.
+                </p>
+            </section>
+
+            <section id="hodge-propagation" class="section-content">
+                <h2>The Hodge Laplacian as a Propagation Operator</h2>
+
+                <p>
+                    The two notions of adjacency identified at the end of the previous section are not
+                    ad hoc: they are read directly off the maps that build the complex. Recall that the
+                    <a href="../Discrete/simplicial_complexes.html#D-boundary_operator" class="ref-link"><strong>boundary operator</strong></a>
+                    \(\partial_k\) sends each oriented \(k\)-simplex to the alternating sum of its
+                    \((k-1)\)-dimensional faces, and acts on the
+                    <a href="../Discrete/simplicial_complexes.html#D-chain_group" class="ref-link"><strong>chain group</strong></a>
+                    \(C_k(K)\) — the space of real feature vectors indexed by the \(k\)-simplices. We
+                    equip each \(C_k(K)\) with the inner product for which the oriented simplices form an
+                    orthonormal basis, so that the adjoint \(\partial_k^\top\) is the matrix transpose and
+                    maps a \((k-1)\)-chain back up to the \(k\)-chains whose boundary it touches.
+                </p>
+
+                <p>
+                    With a down-map \(\partial_k\) and an up-map \(\partial_{k+1}^\top\) available at each
+                    level, the operator that combines both is the
+                    <a href="../Discrete/incidence_structure.html#D-hodge_laplacian" class="ref-link"><strong>Hodge Laplacian</strong></a>
+                    \[
+                        \boldsymbol{L}_k \;=\; \underbrace{\partial_{k+1}\partial_{k+1}^\top}_{\boldsymbol{L}_k^{\mathrm{up}}}
+                        \;+\; \underbrace{\partial_k^\top \partial_k}_{\boldsymbol{L}_k^{\mathrm{down}}}.
+                    \]
+                    The two summands are exactly the two adjacencies. The upper Laplacian
+                    \(\boldsymbol{L}_k^{\mathrm{up}}\) couples two \(k\)-simplices when they are faces of a
+                    common \((k+1)\)-simplex; the lower Laplacian \(\boldsymbol{L}_k^{\mathrm{down}}\)
+                    couples them when they share a common \((k-1)\)-face. Applied to a feature vector
+                    \(\mathbf{h} \in C_k(K)\), the matrix-vector product \(\boldsymbol{L}_k \mathbf{h}\)
+                    aggregates each simplex's feature with those of its co-face neighbours and its
+                    shared-face neighbours at once — precisely a message passing step, with the complex's
+                    own combinatorics supplying the neighbourhood.
+                </p>
+
+                <p>
+                    That this genuinely extends the graph case is visible at \(k = 0\). The boundary map
+                    \(\partial_1\) from edges to vertices is the oriented incidence matrix \(\boldsymbol{B}\),
+                    and with the convention \(\partial_0 = 0\) the lower part vanishes, leaving
+                    \[
+                        \boldsymbol{L}_0 \;=\; \partial_1 \partial_1^\top \;=\; \boldsymbol{B}\boldsymbol{B}^\top,
+                    \]
+                    which is exactly the
+                    <a href="../Discrete/incidence_structure.html#T-laplacian_BBT" class="ref-link"><strong>graph Laplacian</strong></a>
+                    on vertices. The diffusion \(\mathbf{h} \mapsto \mathbf{h} - \alpha \boldsymbol{L}_0 \mathbf{h}\)
+                    is a symmetric Laplacian smoothing step — the unnormalized analogue of the
+                    propagation used in spectral graph convolutions, which typically replace
+                    \(\boldsymbol{L}_0\) by a normalized variant. The Hodge
+                    Laplacian thus contains the graph Laplacian as its \(0\)-dimensional level, and the
+                    higher levels \(\boldsymbol{L}_1, \boldsymbol{L}_2, \dots\) are the higher-order
+                    interactions a graph could not express. The resulting propagation layer is the
+                    following.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">A Hodge-Laplacian message passing layer</span>
+                    <p>
+                        Let \(K\) be a simplicial complex with Hodge Laplacians \(\boldsymbol{L}_k =
+                        \boldsymbol{L}_k^{\mathrm{up}} + \boldsymbol{L}_k^{\mathrm{down}}\), and let
+                        \(\mathbf{H}_k^{(t)} \in \mathbb{R}^{f_k \times d}\) collect the \(d\)-dimensional
+                        features on the \(k\)-simplices at layer \(t\) (one row per oriented \(k\)-simplex).
+                        A layer updates these features by
+                        \[
+                            \mathbf{H}_k^{(t+1)} \;=\; \sigma\!\left(
+                                \boldsymbol{L}_k^{\mathrm{up}}\, \mathbf{H}_k^{(t)}\, \boldsymbol{W}_k^{\mathrm{up}}
+                                \;+\; \boldsymbol{L}_k^{\mathrm{down}}\, \mathbf{H}_k^{(t)}\, \boldsymbol{W}_k^{\mathrm{down}}
+                                \;+\; \mathbf{H}_k^{(t)}\, \boldsymbol{W}_k^{\mathrm{self}}
+                            \right),
+                        \]
+                        where \(\boldsymbol{W}_k^{\mathrm{up}}, \boldsymbol{W}_k^{\mathrm{down}},
+                        \boldsymbol{W}_k^{\mathrm{self}} \in \mathbb{R}^{d \times d'}\) are learnable weight
+                        matrices and \(\sigma\) is a pointwise nonlinearity. The two Laplacian terms route
+                        messages through shared cofaces and shared faces respectively, and the self term
+                        retains each simplex's current state. Taking \(k = 0\) and dropping the (vanishing)
+                        lower term recovers the symmetric graph-convolution layer on vertices.
+                    </p>
+                </div>
+
+                <p>
+                    Separating \(\boldsymbol{L}_k^{\mathrm{up}}\) from \(\boldsymbol{L}_k^{\mathrm{down}}\)
+                    with independent weights lets the network weigh the two directions differently rather
+                    than collapse them into \(\boldsymbol{L}_k\). One subtlety remains: the orientation chosen
+                    for each simplex enters through \(\partial_k\), so a simplex's feature carries a sign that
+                    flips with reorientation, and a well-posed architecture must respect this — a point the
+                    next section's harmonic analysis settles.
+                </p>
+            </section>
+
+            <section id="harmonic-features" class="section-content">
+                <h2>Harmonic Features and What the Network Sees</h2>
+
+                <p>
+                    A message passing layer driven by \(\boldsymbol{L}_k\) is, before any nonlinearity, a
+                    diffusion: it repeatedly damps a feature vector in the directions \(\boldsymbol{L}_k\)
+                    sees. To understand what such a network can stably represent, we ask what survives this
+                    diffusion. Because \(\boldsymbol{L}_k = \partial_{k+1}\partial_{k+1}^\top +
+                    \partial_k^\top\partial_k\) is a sum of two operators of the form \(MM^\top\), it is
+                    symmetric positive semi-definite, and
+                    \[
+                        \langle \boldsymbol{L}_k \mathbf{h}, \mathbf{h} \rangle
+                        \;=\; \lVert \partial_{k+1}^\top \mathbf{h} \rVert^2 + \lVert \partial_k \mathbf{h} \rVert^2 .
+                    \]
+                    A feature vector lies in \(\ker \boldsymbol{L}_k\) precisely when both terms vanish, and
+                    these are exactly the features a Laplacian smoothing \(\mathbf{h} \mapsto \mathbf{h} -
+                    \alpha \boldsymbol{L}_k \mathbf{h}\) leaves fixed: the <strong>harmonic</strong>
+                    \(k\)-chains. Every other eigendirection has a strictly positive eigenvalue and, for a
+                    suitably small step size \(\alpha\), is attenuated under repeated smoothing. The harmonic
+                    space is thus the stable subspace of this underlying linear diffusion — the fixed points
+                    it preserves — though a trained network, interleaving learnable weights and a
+                    nonlinearity, is not constrained to converge there.
+                </p>
+
+                <p>
+                    What that stable space contains is the substance of the
+                    <a href="../Discrete/intro_homology.html#T-discrete_hodge" class="ref-link"><strong>discrete Hodge theorem</strong></a>:
+                    the harmonic \(k\)-chains are isomorphic to the \(k\)-th
+                    <a href="../Discrete/intro_homology.html#D-homology_betti" class="ref-link"><strong>homology</strong></a>
+                    of the complex,
+                    \[
+                        \ker \boldsymbol{L}_k \;\cong\; H_k(K; \mathbb{R}),
+                        \qquad \dim \ker \boldsymbol{L}_k = \beta_k .
+                    \]
+                    The stable features of a simplicial network are therefore not arbitrary: the dimension
+                    of the space the diffusion preserves equals the \(k\)-th Betti number, and a harmonic
+                    \(k\)-chain is the canonical representative of a homology class. At \(k = 0\) this counts
+                    connected components; at \(k = 1\), independent loops; at \(k = 2\), enclosed voids. A
+                    network built on \(\boldsymbol{L}_k\) reads the topology of its domain directly, in a
+                    basis the propagation itself preserves. This is the precise sense in which these
+                    architectures are <em>topological</em>: the invariants they most readily express are the
+                    homological ones.
+                </p>
+
+                <p>
+                    The harmonic viewpoint also settles the orientation question raised at the close of the
+                    previous section. Reorienting a simplex flips the sign of its row in \(\partial_k\), and
+                    hence the sign of the corresponding feature; the eigenspaces of \(\boldsymbol{L}_k\), and
+                    in particular \(\ker \boldsymbol{L}_k\), transform consistently under these sign changes
+                    because \(\boldsymbol{L}_k\) is built from \(\partial_k\) and its adjoint. A feature read
+                    off the harmonic space is thus tied to genuine topological content rather than to the
+                    bookkeeping of a chosen orientation. We can now assemble the architecture.
+                </p>
+
+                <div class="theorem" id="D-simplicial_neural_network">
+                    <span class="theorem-title">Definition: Simplicial Neural Network</span>
+                    <p>
+                        Let \(K\) be a simplicial complex with simplices up to dimension \(n\), carrying
+                        input features \(\mathbf{H}_k^{(0)}\) on the \(k\)-simplices for \(0 \le k \le n\). A
+                        <strong>simplicial neural network</strong> is a composition of higher-order message
+                        passing layers, in which each level \(k\) is updated from its own features through
+                        \(\boldsymbol{L}_k^{\mathrm{up}}\) and \(\boldsymbol{L}_k^{\mathrm{down}}\) as in the
+                        layer above, with learnable weights at every level and layer. After \(T\) layers the
+                        representations \(\mathbf{H}_k^{(T)}\) are passed to a task head — a permutation- and
+                        orientation-respecting readout for classification of the whole complex, or the
+                        per-simplex features themselves for simplex-level prediction. The graph neural
+                        network is the special case \(n = 1\) in which only the vertex level is read out.
+                    </p>
+                </div>
+
+                <p>
+                    The definition deliberately leaves the aggregation across dimensions open. The minimal
+                    model updates each level independently and only couples dimensions through the shared
+                    boundary maps inside \(\boldsymbol{L}_k\); richer variants also pass messages between a
+                    simplex and its faces and cofaces explicitly. What every such model shares is the
+                    organizing role of the Hodge Laplacian and the homological meaning of the features it
+                    preserves.
+                </p>
+            </section>
+
+            <section id="discrete-leg" class="section-content">
+                <h2>Simplicial Networks in the Geometric Deep Learning Framework</h2>
+
+                <p>
+                    The geometric deep learning framework organizes architectures by the symmetry of their
+                    domain. Its <a href="intro_gdl.html"><strong>graph neural network</strong></a> instance
+                    is equivariant to permutations of a vertex set and exchanges information across edges;
+                    its <a href="equivariant_nn.html"><strong>equivariant</strong></a> instance is
+                    equivariant to a continuous group such as the rotations \(SO(3)\) and decomposes
+                    features into irreducible representation types. The simplicial neural network developed
+                    here is a third instance, and it occupies a distinct place: its domain is a discrete
+                    combinatorial object, but one carrying structure of every dimension, and the symmetry it
+                    respects is the relabelling and reorientation of the simplices that leaves the complex
+                    intact. Where the graph network is the pairwise, one-dimensional case, the simplicial
+                    network is the genuinely higher-dimensional discrete model — the discrete counterpart to
+                    the continuous, manifold-based architectures for data on curved domains.
+                </p>
+
+                <p>
+                    The Hodge-Laplacian layer of the preceding sections is one concrete realization of a more
+                    general scheme. Its propagation made a specific choice — that two \(k\)-simplices are
+                    neighbours when they share a coface or a face — but nothing forces that choice. Replacing
+                    it with an abstract <strong>neighbourhood function</strong> \(\mathcal{N}_k\), a rule that
+                    assigns to each cell a set of related cells, and allowing a family
+                    \(\mathcal{N} = \{\mathcal{N}_1, \dots, \mathcal{N}_n\}\) of them, yields the general
+                    message passing scheme on a higher-order domain.
+                </p>
+
+                <div class="theorem" id="D-higher_order_message_passing">
+                    <span class="theorem-title">Definition: Higher-Order Message Passing</span>
+                    <p>
+                        Let \(\mathcal{X}\) be a higher-order domain — a simplicial complex, cell complex,
+                        or more general combinatorial complex — equipped with a family of neighbourhood
+                        functions \(\mathcal{N} = \{\mathcal{N}_1, \dots, \mathcal{N}_n\}\), and let
+                        \(\mathbf{h}_x^{(l)}\) denote the feature on cell \(x\) at layer \(l\). A
+                        <strong>higher-order message passing</strong> layer updates features through four
+                        rules. For each neighbourhood \(\mathcal{N}_k\) and each \(y \in \mathcal{N}_k(x)\),
+                        a message is computed and then aggregated, first within each neighbourhood and then
+                        across neighbourhoods:
+                        \[
+                        \begin{align*}
+                            m_{x,y} &= \alpha_{\mathcal{N}_k}\!\left(\mathbf{h}_x^{(l)}, \mathbf{h}_y^{(l)}\right), \\\\
+                            m_x^k &= \bigoplus_{y \in \mathcal{N}_k(x)} m_{x,y}, \\\\
+                            m_x &= \bigotimes_{\mathcal{N}_k \in \mathcal{N}} m_x^k, \\\\
+                            \mathbf{h}_x^{(l+1)} &= \beta\!\left(\mathbf{h}_x^{(l)}, m_x\right).
+                        \end{align*}
+                        \]
+                        Here \(\alpha_{\mathcal{N}_k}\) and \(\beta\) are learnable functions, the
+                        <strong>intra-neighbourhood</strong> aggregation \(\bigoplus\) is permutation
+                        invariant, and the <strong>inter-neighbourhood</strong> aggregation \(\bigotimes\)
+                        combines the per-neighbourhood messages. A message \(m_{x,y}\) may depend on the
+                        cells \(x, y\) themselves and not only on their features — in particular on their
+                        orientation — a possibility that has no analogue in graph message passing.
+                    </p>
+                </div>
+
+                <p>
+                    Recovering the concrete layer is now a matter of choosing \(\mathcal{N}\): on a
+                    simplicial complex, take the coface and face neighbourhoods that build the Hodge
+                    Laplacian, with \(\bigoplus\) the Laplacian-weighted sum and \(\bigotimes\) addition.
+                    Other choices recover message passing on cell complexes and hypergraphs, so one set of
+                    update rules subsumes the architectures on all these domains; the graph neural network
+                    is the case where \(\mathcal{X}\) is a graph and \(\mathcal{N}\) its single neighbourhood
+                    of adjacent vertices.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Topology as a Feature Space</h3>
+                    <p>
+                        The organizing fact of this page is that one operator, the Hodge Laplacian
+                        \(\boldsymbol{L}_k\), simultaneously supplies the message passing rule and encodes
+                        the topology of the domain: the features its diffusion preserves are a copy of the
+                        \(k\)-th homology, and their count is the Betti number \(\beta_k\). A graph network
+                        can be made aware of triangles and higher faces only by hand-crafted features; a
+                        simplicial network has the homological structure built into its propagation operator
+                        from the outset. Whether that structure helps on a given task is an empirical
+                        question — many problems are adequately pairwise — but where higher-order relations
+                        carry the signal, the relevant invariants are exactly the ones \(\boldsymbol{L}_k\)
+                        makes available.
+                    </p>
+                </div>
+
+                <p>
+                    The same Hodge Laplacian points beyond the discrete setting. Its kernel-equals-homology
+                    statement is the discrete shadow of a classical theorem for the Laplace-de Rham operator
+                    on a smooth manifold, where harmonic differential forms represent de Rham cohomology. The
+                    discrete exterior calculus that makes this correspondence precise is the natural bridge
+                    between the simplicial networks of this page and the manifold-based architectures for
+                    data on curved domains, joining the discrete and continuous settings through a single
+                    Hodge-theoretic structure. A separate strand leads instead toward
+                    topological data analysis: tracking how the homology of a complex changes as it is built
+                    up through a filtration yields persistent homology, a complementary way of turning
+                    topology into a feature, independent of the message passing developed here. Both are
+                    natural continuations of the same observation — that the topology of a domain is
+                    information a model can be built to see.
+                </p>
+            </section>
+
+            <section id="demo" class="section-content">
+                <h2>Interactive Demo</h2>
+
+                <p>
+                    The central claim of this page is that one operator does two jobs at once: the Hodge
+                    Laplacian \(\boldsymbol{L}_1\) propagates features across the complex, and the dimension
+                    of its kernel counts the complex's one-dimensional holes,
+                    \(\dim \ker \boldsymbol{L}_1 = \beta_1\). The demonstration below makes that identity
+                    tactile. It fixes a square split by a single diagonal into two triangular regions, each of
+                    which can be left <em>open</em> — a genuine hole in the complex — or <em>filled</em> with a
+                    \(2\)-simplex. Filling a region closes a hole; opening it reintroduces one.
+                </p>
+
+                <p>
+                    Each time a region is toggled, both quantities are recomputed from scratch on the resulting
+                    complex: the Betti number \(\beta_1\), obtained exactly from the integer ranks of the
+                    boundary maps, and \(\dim \ker \boldsymbol{L}_1\), obtained independently from the spectrum
+                    of the Hodge Laplacian. They move together, from two holes to one to none, in lockstep with
+                    the geometry. For each hole that remains, a faint circulation traces the harmonic generator
+                    of the corresponding homology class — the stable feature that this complex's propagation
+                    would leave untouched. Closing a hole removes its circulation and drops the count: the
+                    reader causes a homology class to vanish and watches the invariant the network sees drop
+                    with it.
+                </p>
+
+                <div id="simplicial_demo"></div>
+            </section>
+
+        </div>
+
+        <script src="/js/sec5_p17_simplicial_hole_demo.js"></script>
+    </body>
+</html>
