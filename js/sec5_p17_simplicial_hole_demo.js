@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
           </div>
           <div class="tx-caption">
             This surface is a <strong>torus</strong>. Even with every cell filled and no visible
-            gap, \\(\\beta_1 = 2\\): one loop runs through the central hole, the other around the
+            gap, &beta;<sub>1</sub> = 2: one loop runs through the central hole, the other around the
             tube. The eye cannot count these by looking; the Hodge Laplacian
             <strong>L</strong><sub>1</sub> reports them as the dimension of its kernel.
           </div>
@@ -321,12 +321,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const ins=container.querySelector('#tx-insight-text');
       if(ins){
         ins.innerHTML = (nFilled===NC)
-          ? 'Every cell is filled, yet \\(\\beta_1=2\\). No gap is visible, but two independent '
-            + 'loops cannot be contracted \\u2014 the torus\\u2019 two handles. Open a cell and watch the count move.'
+          ? 'Every cell is filled, yet &beta;<sub>1</sub> = 2. No gap is visible, but two independent '
+            + 'loops cannot be contracted \u2014 the torus\u2019 two handles. Open a cell and watch the count move.'
           : 'There ' + (beta1===1?'is one independent loop':'are '+beta1+' independent loops')
             + ', so dim ker <strong>L</strong><sub>1</sub> = ' + beta1 + '. Opening a cell changes which '
             + 'cycles bound and which survive; the count tracks it exactly.';
-        if(window.MathJax&&window.MathJax.typesetPromise){ try{window.MathJax.typesetPromise([ins]);}catch(e){} }
       }
     }
     window.__torusRender=renderState;
