@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // M3 — DOM SKELETON + STYLES
   // ============================================================
   container.innerHTML = `
-    <div class="tx-container">
+    <div class="tx-container tex2jax_ignore mathjax_ignore">
       <div class="tx-layout">
         <div class="tx-canvas-area">
           <div class="tx-instruction">
