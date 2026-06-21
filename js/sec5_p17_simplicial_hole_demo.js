@@ -186,12 +186,6 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
             <div class="tx-badge-sub" id="tx-badge-sub">two independent loops</div>
           </div>
-          <div class="tx-caption">
-            This surface is a <strong>torus</strong>. Even with every cell filled and no visible
-            gap, &beta;<sub>1</sub> = 2: one loop runs through the central hole, the other around the
-            tube. The eye cannot count these by looking; the Hodge Laplacian
-            <strong>L</strong><sub>1</sub> reports them as the dimension of its kernel.
-          </div>
           <div class="tx-insight">
             <span class="tx-insight-icon">&#9673;</span>
             <span id="tx-insight-text"></span>
@@ -221,7 +215,6 @@ document.addEventListener('DOMContentLoaded', function () {
     .tx-badge{font-size:1.5rem;color:#64b4ff;font-weight:bold;line-height:1.3;}
     .tx-badge #tx-count{font-size:1.9rem;color:#fff;}
     .tx-badge-sub{margin-top:8px;font-size:0.85rem;color:rgba(255,255,255,0.6);}
-    .tx-caption{font-size:0.82rem;line-height:1.5;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;margin-bottom:12px;}
     .tx-insight{display:flex;gap:10px;align-items:flex-start;background:linear-gradient(135deg,rgba(66,165,245,0.1),rgba(21,101,192,0.05));border:1px solid rgba(66,165,245,0.2);border-radius:8px;padding:11px;font-size:0.8rem;line-height:1.45;color:rgba(255,255,255,0.82);}
     .tx-insight-icon{color:#64b4ff;font-size:1rem;line-height:1.3;}
   `;
