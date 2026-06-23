@@ -1,0 +1,591 @@
+---
+layout: default
+title: "Representable Functors"
+topic_id: disc-22
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Representable Functors</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#representables">Representable Functors</a>
+            <a href="#dual">Seeing and Being Seen</a>
+            <a href="#embedding">The Yoneda Embedding</a>
+            <a href="#generalized">Objects Probed by Elements</a>
+        </div>
+
+        <div class="container">
+
+            <section id="representables" class="section-content">
+                <h2>Representable Functors</h2>
+
+                <p>
+                    The last stage left a promise unredeemed. Each object \(A\) of a locally small category was to be
+                    probed by the functor \(\mathscr{A}(A, -)\) that records how everything maps out of it, and we
+                    called this the grammar by which an object is read through its relationships. It is time to make
+                    the construction precise and to ask the question it forces: which set-valued functors arise this
+                    way? The functors that do — those naturally isomorphic to an object's web of outgoing maps — are
+                    the <strong>representable</strong> ones, and they are the second route, after adjunctions, to the
+                    idea of a universal property.
+                </p>
+
+                <h3>The functor of maps out of an object</h3>
+
+                <p>
+                    Fix an object \(A\) of a category \(\mathscr{A}\). To each object \(B\) assign the set
+                    \(\mathscr{A}(A, B)\) of maps from \(A\) to \(B\). This assignment is functorial in \(B\): a map
+                    \(g : B \to B'\) does not act on a map \(p : A \to B\) by any choice — there is exactly one thing
+                    to do with it, namely follow it by \(g\) — and post-composition by \(g\) carries
+                    \(\mathscr{A}(A, B)\) into \(\mathscr{A}(A, B')\).
+                </p>
+
+                <div class="theorem" id="D-hom_functor_covariant">
+                    <span class="theorem-title">Definition: Covariant Hom-Functor</span>
+                    <p>
+                        Let \(\mathscr{A}\) be a
+                        <a href="sets_universal_constructions.html#D-small_large_category" class="ref-link"><strong>locally small</strong></a>
+                        category and \(A\) an object of \(\mathscr{A}\). The <strong>covariant hom-functor</strong>
+                        \[
+                        H^A = \mathscr{A}(A, -) : \mathscr{A} \to \mathbf{Set}
+                        \]
+                        is defined on objects by \(H^A(B) = \mathscr{A}(A, B)\), and on a map \(g : B \to B'\) by
+                        <strong>post-composition</strong>,
+                        \[
+                        H^A(g) = \mathscr{A}(A, g) : \mathscr{A}(A, B) \to \mathscr{A}(A, B'),
+                        \qquad p \mapsto g \circ p .
+                        \]
+                        Local smallness is exactly the hypothesis that each \(\mathscr{A}(A, B)\) is a genuine set, so
+                        that the values lie in \(\mathbf{Set}\). The map \(H^A(g)\) is also written \(g \circ -\) or
+                        \(g_*\).
+                    </p>
+                </div>
+
+                <p>
+                    That \(H^A\) is a
+                    <a href="categories_functors_naturality.html#D-functor" class="ref-link"><strong>functor</strong></a>
+                    is a one-line check. Identities are preserved because \(H^A(1_B)\) sends \(p\) to \(1_B \circ p = p\),
+                    so \(H^A(1_B) = 1_{\mathscr{A}(A,B)}\). Composition is preserved because for \(g : B \to B'\) and
+                    \(h : B' \to B''\), applying \(H^A(h) \circ H^A(g)\) to \(p\) yields \(h \circ (g \circ p)\), which
+                    by associativity equals \((h \circ g) \circ p = H^A(h \circ g)(p)\). The single fact that
+                    composition is associative is what makes post-composition functorial; nothing about the particular
+                    category \(\mathscr{A}\) is used.
+                </p>
+
+                <h3>Representability</h3>
+
+                <div class="theorem" id="D-representable_functor">
+                    <span class="theorem-title">Definition: Representable Functor</span>
+                    <p>
+                        Let \(\mathscr{A}\) be a locally small category. A functor \(X : \mathscr{A} \to \mathbf{Set}\)
+                        is <strong>representable</strong> if \(X \cong H^A\) for some object \(A \in \mathscr{A}\),
+                        where \(\cong\) denotes
+                        <a href="categories_functors_naturality.html#D-natural_isomorphism" class="ref-link"><strong>natural isomorphism</strong></a>.
+                        A <strong>representation</strong> of \(X\) is a choice of an object \(A\) together with a
+                        natural isomorphism \(H^A \xrightarrow{\sim} X\). Only set-valued functors — functors whose
+                        codomain is \(\mathbf{Set}\) — can be representable, since \(H^A\) lands in \(\mathbf{Set}\) by
+                        construction.
+                    </p>
+                </div>
+
+                <p>
+                    One should not expect a functor picked at random to be representable; in a sense made precise by
+                    the lemma below, rather few are. The interest of the notion lies in how often the functors that
+                    arise in practice — particularly the forgetful functors that strip structure from an object and
+                    return its underlying set — turn out to be representable after all.
+                </p>
+
+                <h3>The smallest examples</h3>
+
+                <p>
+                    Take \(\mathscr{A} = \mathbf{Set}\) itself and let \(A = 1\) be a one-element set. A map
+                    \(1 \to B\) is precisely a choice of one element of \(B\), so \(H^1(B) = \mathbf{Set}(1, B)\) is in
+                    natural bijection with \(B\): the
+                    <a href="adjoint_functors.html#D-initial_terminal_object" class="ref-link"><strong>terminal set</strong></a>
+                    sees each set as its own collection of points. This bijection is natural in \(B\), so \(H^1\) is
+                    naturally isomorphic to the identity functor \(1_{\mathbf{Set}}\). The identity functor on
+                    \(\mathbf{Set}\) is therefore representable, represented by the one-element set. The observation
+                    that an element of a set is the same thing as a map out of \(1\) — first met when the terminal
+                    object was introduced — is here promoted to a natural isomorphism of functors.
+                </p>
+
+                <p>
+                    The pattern extends to the forgetful functors. The functor \(\mathbf{Top} \to \mathbf{Set}\) that
+                    forgets a topology is naturally isomorphic to \(\mathbf{Top}(1, -)\), where \(1\) is the
+                    one-point space, because a continuous map from a one-point space into \(X\) is just a point of
+                    \(X\). The functor \(\mathbf{Grp} \to \mathbf{Set}\) forgetting the group structure is
+                    \(\mathbf{Grp}(\mathbb{Z}, -)\), because a homomorphism out of the infinite cyclic group is
+                    determined freely by where the generator goes, hence by an arbitrary element of the target group.
+                    In each case a single chosen object — the one-point space, the integers — represents the operation
+                    of reading off the underlying set.
+                </p>
+
+                <h3>Representables among structured categories</h3>
+
+                <p>
+                    Beyond the underlying-set functors, representables turn up wherever a construction is governed by a
+                    universal property. Fixing a field \(k\) and two vector spaces \(U\) and \(V\), consider the
+                    functor \(\mathbf{Vect}_k \to \mathbf{Set}\) whose value at \(W\) is the set of bilinear maps
+                    \(U \times V \to W\). This functor is representable: there is a space \(T\) and a natural
+                    isomorphism between the bilinear maps out of \(U \times V\) and the linear maps out of \(T\),
+                    \[
+                    \{\text{bilinear } U \times V \to W\} \;\cong\; \mathbf{Vect}_k(T, W),
+                    \qquad \text{natural in } W .
+                    \]
+                    The representing object \(T\) is the
+                    <a href="../Calculus/multilinear_algebra_tensor_products.html#T-universal_property_tensor" class="ref-link"><strong>tensor product</strong></a>
+                    \(U \otimes V\), and the natural isomorphism above is precisely its universal property, met earlier
+                    as the statement that bilinear maps out of a product factor uniquely through the tensor product.
+                    What was then phrased as a universal mapping property is, in the present language, the single
+                    assertion that a certain functor is representable, with \(U \otimes V\) the representing object.
+                </p>
+
+                <p>
+                    The basic spaces met across these pages furnish further instances. In the category of based
+                    spaces, the based maps from the circle into a space \(X\) form the underlying set of its loop space
+                    \(\Omega X\), so the functor sending \(X\) to its set of loops is represented by the circle. Passing
+                    to the homotopy category, where maps are taken up to homotopy, this same circle represents the
+                    <a href="../Calculus/fundamental_group.html#D-fundamental_group" class="ref-link"><strong>fundamental group</strong></a>
+                    \(\pi_1(X)\), whose elements are the homotopy classes of those loops. Each of these examples shares
+                    the shape of the others: a functor that looked like a free-standing construction is unmasked as the
+                    maps out of one well-chosen object.
+                </p>
+            </section>
+
+            <section id="dual" class="section-content">
+                <h2>Seeing and Being Seen</h2>
+
+                <p>
+                    The examples just gathered were not produced one at a time by luck. The forgetful functors share a
+                    feature that forces representability on them, and naming that feature converts a list of instances
+                    into a theorem. The feature is the possession of a left adjoint.
+                </p>
+
+                <h3>Adjoints produce representables</h3>
+
+                <p>
+                    Recall that an
+                    <a href="adjoint_functors.html#D-adjunction" class="ref-link"><strong>adjunction</strong></a>
+                    \(F \dashv G\) supplies a bijection \(\mathscr{B}(F A, B) \cong \mathscr{A}(A, G B)\) natural in
+                    both arguments. Reading it with \(A\) fixed and \(B\) varying exhibits the composite
+                    \(\mathscr{A}(A, G(-))\) as a hom-functor in disguise.
+                </p>
+
+                <div class="theorem" id="T-representable_from_adjoint">
+                    <span class="theorem-title">Lemma: Adjoints Give Rise to Representables</span>
+                    <p>
+                        Let \(\mathscr{A}\) and \(\mathscr{B}\) be locally small categories, let
+                        \(F : \mathscr{A} \to \mathscr{B}\) be left adjoint to \(G : \mathscr{B} \to \mathscr{A}\), and
+                        fix an object \(A \in \mathscr{A}\). Then the functor
+                        \[
+                        \mathscr{A}(A, G(-)) : \mathscr{B} \to \mathbf{Set}
+                        \]
+                        — that is, the composite of \(G\) with the covariant hom-functor \(H^A\) — is representable,
+                        represented by \(F(A)\); explicitly \(\mathscr{A}(A, G(-)) \cong H^{F(A)}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        The adjunction supplies, for each object \(B \in \mathscr{B}\), a bijection
+                        \[
+                        \mathscr{A}(A, G B) \;\cong\; \mathscr{B}(F A, B) = H^{F(A)}(B).
+                        \]
+                        It remains to check that this family of bijections is natural in \(B\), for then it is a
+                        <a href="categories_functors_naturality.html#D-natural_isomorphism" class="ref-link"><strong>natural isomorphism</strong></a>
+                        and the representability follows. Let \(q : B \to B'\) be a map in \(\mathscr{B}\). The
+                        <a href="categories_functors_naturality.html#D-natural_transformation" class="ref-link"><strong>naturality square</strong></a>
+                        to be verified is
+                        \[
+                        \begin{array}{ccc}
+                        \mathscr{A}(A, G B) & \longrightarrow & \mathscr{B}(F A, B) \\
+                        {\scriptstyle G(q)\circ-}\big\downarrow & & \big\downarrow{\scriptstyle q\circ-} \\
+                        \mathscr{A}(A, G B') & \longrightarrow & \mathscr{B}(F A, B')
+                        \end{array}
+                        \]
+                        where the horizontal arrows are the adjunction bijections, the left vertical arrow is the
+                        action of \(\mathscr{A}(A, G(-))\) on \(q\), namely post-composition by \(G(q)\), and the right
+                        vertical arrow is the action of \(H^{F(A)}\) on \(q\), namely post-composition by \(q\). Write
+                        \(\bar{f} : F A \to B\) for the
+                        <a href="adjoint_functors.html#D-adjunction" class="ref-link"><strong>transpose</strong></a>
+                        of a map \(f : A \to G B\) under the adjunction, so that transposing carries
+                        \(\mathscr{A}(A, G B)\) bijectively onto \(\mathscr{B}(F A, B)\). Take
+                        \(f \in \mathscr{A}(A, G B)\). Along the top-then-right path it becomes first \(\bar f\), then
+                        \(q \circ \bar f\). Along the left-then-bottom path it becomes first \(G(q) \circ f\), then its
+                        transpose \(\overline{G(q) \circ f}\). The square commutes precisely when
+                        \[
+                        q \circ \bar f = \overline{G(q) \circ f}
+                        \qquad\text{equivalently}\qquad
+                        \overline{q \circ \bar f} = G(q) \circ f ,
+                        \]
+                        and the right-hand form is exactly the naturality equation
+                        \(\overline{q \circ g} = G(q) \circ \bar g\) recorded in the definition of the adjunction,
+                        applied with \(g = \bar f\) — for which \(\bar g = \bar{\bar f} = f\). The condition therefore
+                        holds for every \(q\), the bijections assemble into a natural isomorphism, and
+                        \(\mathscr{A}(A, G(-)) \cong H^{F(A)}\).
+                    </p>
+                </div>
+
+                <p>
+                    The lemma is the engine; the proposition is what it drives. A forgetful functor lands in
+                    \(\mathbf{Set}\) and, in the algebraic cases, carries a left adjoint — the free construction — and
+                    that is enough to force representability.
+                </p>
+
+                <div class="theorem" id="T-set_functor_with_left_adjoint_representable">
+                    <span class="theorem-title">Proposition: A Set-Valued Functor with a Left Adjoint is Representable</span>
+                    <p>
+                        Let \(\mathscr{A}\) be locally small. Any functor \(G : \mathscr{A} \to \mathbf{Set}\) that has
+                        a left adjoint is representable.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Let \(F\) be a left adjoint to \(G : \mathscr{A} \to \mathbf{Set}\), and write \(1\) for a
+                        one-element set. Applying the previous lemma in the case \(\mathscr{B} = \mathscr{A}\),
+                        \(\mathscr{A} = \mathbf{Set}\), and \(A = 1\) gives that \(\mathbf{Set}(1, G(-))\) is
+                        representable. But \(\mathbf{Set}(1, G(B)) \cong G(B)\) naturally in \(B\), since maps out of
+                        the one-element set are elements, so \(G \cong \mathbf{Set}(1, G(-))\). Chaining the two
+                        natural isomorphisms, \(G\) is representable; in fact \(G \cong H^{F(1)}\), so the representing
+                        object is the value of the left adjoint at the one-element set.
+                    </p>
+                </div>
+
+                <p>
+                    The proposition explains the earlier list at a stroke. The forgetful functor
+                    \(\mathbf{Vect}_k \to \mathbf{Set}\) has the
+                    <a href="adjoint_functors.html#T-free_vector_space_adjunction" class="ref-link"><strong>free vector space</strong></a>
+                    functor as its left adjoint; the value of that adjoint at the one-element set is the
+                    one-dimensional space \(k\), so the forgetful functor is \(H^k\) — directly, a linear map out of
+                    \(k\) is fixed by the image of \(1\), which may be any vector of the target. The forgetful functor
+                    on commutative rings is likewise representable, its representing object the polynomial ring on one
+                    generator, because a ring map out of that polynomial ring is fixed by where the generator goes,
+                    hence by an arbitrary element of the target. The free–forgetful pattern that recurs across algebra
+                    is, in every case, a certificate of representability.
+                </p>
+
+                <h3>Putting the views together</h3>
+
+                <p>
+                    We have, for each object \(A\), a functor \(H^A\) describing how \(A\) sees the rest of the
+                    category. As \(A\) varies the view varies, yet it is always the same category being viewed, so the
+                    views are related: a map \(A' \to A\) converts maps out of \(A'\) into maps out of \(A\) by
+                    pre-composition. Note the reversal — the assignment \(A \mapsto H^A\) is itself
+                    <a href="categories_functors_naturality.html#D-contravariant_functor" class="ref-link"><strong>contravariant</strong></a>.
+                </p>
+
+                <div class="theorem" id="D-covariant_representables_functor">
+                    <span class="theorem-title">Definition: The Functor of Covariant Representables</span>
+                    <p>
+                        Let \(\mathscr{A}\) be locally small. The assignment of \(H^A\) to each object \(A\) extends to
+                        a functor
+                        \[
+                        H^\bullet : \mathscr{A}^{\mathrm{op}} \to [\mathscr{A}, \mathbf{Set}],
+                        \]
+                        defined on objects by \(H^\bullet(A) = H^A\) and on a map \(f : A' \to A\) by the natural
+                        transformation \(H^f = H^\bullet(f) : H^A \to H^{A'}\) whose component at \(B\) is
+                        \[
+                        \mathscr{A}(A, B) \to \mathscr{A}(A', B), \qquad p \mapsto p \circ f .
+                        \]
+                        The component \(H^f\) is also written \(\mathscr{A}(f, -)\) or \(f^*\). The symbol
+                        \(\bullet\) marks the slot held open for the varying object, just as \(-\) marks the slot in
+                        \(H^A = \mathscr{A}(A, -)\).
+                    </p>
+                </div>
+
+                <h3>Dualizing: how objects are seen</h3>
+
+                <p>
+                    Every definition so far can be dualized by reversing the arrows. At the formal level the move is
+                    trivial — replace \(\mathscr{A}\) by \(\mathscr{A}^{\mathrm{op}}\) — but the flavour changes: we
+                    stop asking what an object sees and start asking how it is seen. Fixing a target \(A\) and letting
+                    the source vary gives the maps <em>into</em> \(A\), and a map \(g : B' \to B\) now acts by
+                    pre-composition, sending a map \(B \to A\) to a map \(B' \to A\), in the opposite direction to
+                    \(g\).
+                </p>
+
+                <div class="theorem" id="D-hom_functor_contravariant">
+                    <span class="theorem-title">Definition: Contravariant Hom-Functor</span>
+                    <p>
+                        Let \(\mathscr{A}\) be locally small and \(A\) an object. The
+                        <strong>contravariant hom-functor</strong>
+                        \[
+                        H_A = \mathscr{A}(-, A) : \mathscr{A}^{\mathrm{op}} \to \mathbf{Set}
+                        \]
+                        is defined on objects by \(H_A(B) = \mathscr{A}(B, A)\), and on a map \(g : B' \to B\) by
+                        <strong>pre-composition</strong>,
+                        \[
+                        H_A(g) = \mathscr{A}(g, A) : \mathscr{A}(B, A) \to \mathscr{A}(B', A),
+                        \qquad p \mapsto p \circ g .
+                        \]
+                        It is a
+                        <a href="categories_functors_naturality.html#D-presheaf" class="ref-link"><strong>presheaf</strong></a>
+                        on \(\mathscr{A}\). The map \(H_A(g)\) is also written \(g^*\) or \(- \circ g\).
+                    </p>
+                </div>
+
+                <p>
+                    Representability for presheaves is defined by the mirror condition. Strictly the notion is already
+                    available, since a contravariant functor on \(\mathscr{A}\) is a covariant functor on
+                    \(\mathscr{A}^{\mathrm{op}}\), to which the earlier definition applies; but a direct statement is
+                    convenient.
+                </p>
+
+                <div class="theorem" id="D-representable_presheaf">
+                    <span class="theorem-title">Definition: Representable Presheaf</span>
+                    <p>
+                        Let \(\mathscr{A}\) be locally small. A presheaf \(X : \mathscr{A}^{\mathrm{op}} \to \mathbf{Set}\)
+                        is <strong>representable</strong> if \(X \cong H_A\) for some object \(A \in \mathscr{A}\). A
+                        <strong>representation</strong> of \(X\) is a choice of such an \(A\) together with a natural
+                        isomorphism \(H_A \xrightarrow{\sim} X\).
+                    </p>
+                </div>
+
+                <p>
+                    The contravariant examples are as natural as the covariant ones. The power-set construction is a
+                    presheaf \(\mathbf{Set}^{\mathrm{op}} \to \mathbf{Set}\): it sends a set \(B\) to its
+                    <a href="sets_universal_constructions.html#D-power_set" class="ref-link"><strong>power set</strong></a>
+                    \(\mathcal{P}(B)\) and a map \(g : B' \to B\) to the operation of taking preimages,
+                    \(U \mapsto g^{-1}U\). Since a subset of \(B\) is the same as a map \(B \to 2\) into the two-element
+                    set, this presheaf is represented by \(2\): one has \(\mathcal{P} \cong H_2\). The operation of
+                    sending a topological space to its set of open subsets is, in the same way, a representable presheaf
+                    on the category of spaces, represented by the two-point space in which exactly one singleton is
+                    open; and the assignment to each space of its ring of continuous real-valued functions,
+                    post-composed with the forgetful functor to sets, is represented by the real line. In each case the
+                    object being mapped into — the classifier \(2\), the Sierpiński space, the line — is the universal
+                    receptacle through which the construction is read.
+                </p>
+            </section>
+
+            <section id="embedding" class="section-content">
+                <h2>The Yoneda Embedding</h2>
+
+                <p>
+                    The covariant representables were bundled, in the previous section, into a single contravariant
+                    functor \(H^\bullet\). The contravariant representables can be bundled in the same way, and it is
+                    this second bundling that the theory takes as its main object. Fixing the target and varying it
+                    contravariantly gives, for each map \(f : A \to A'\), a natural transformation between the
+                    presheaves \(H_A\) and \(H_{A'}\) — and now the direction is preserved, so the assignment
+                    \(A \mapsto H_A\) is covariant.
+                </p>
+
+                <div class="theorem" id="D-yoneda_embedding">
+                    <span class="theorem-title">Definition: The Yoneda Embedding</span>
+                    <p>
+                        Let \(\mathscr{A}\) be a locally small category. The <strong>Yoneda embedding</strong> of
+                        \(\mathscr{A}\) is the functor
+                        \[
+                        H_\bullet : \mathscr{A} \to [\mathscr{A}^{\mathrm{op}}, \mathbf{Set}]
+                        \]
+                        defined on objects by \(H_\bullet(A) = H_A = \mathscr{A}(-, A)\) and on a map
+                        \(f : A \to A'\) by the natural transformation \(H_\bullet(f) = H_f : H_A \to H_{A'}\) with
+                        components \(p \mapsto f \circ p\). It sends each object to the presheaf of maps into it, and
+                        each map to the operation of post-composing with it. The transformation \(H_f\) is also written
+                        \(\mathscr{A}(-, f)\) or \(f_*\).
+                    </p>
+                </div>
+
+                <p>
+                    The choice to work with the presheaf bundling rather than its covariant mirror is a matter of
+                    convenience, not of substance: any theorem about one dualizes to a theorem about the other. The
+                    advantage is that the target \([\mathscr{A}^{\mathrm{op}}, \mathbf{Set}]\) is a richly structured
+                    category — it has limits, colimits, and exponentials that \(\mathscr{A}\) itself may lack — so
+                    embedding \(\mathscr{A}\) into it places an arbitrary category inside a well-behaved one. The word
+                    <em>embedding</em> anticipates a fact proved at the next stage: \(H_\bullet\) is injective on
+                    isomorphism classes of objects, and more, so that no information about \(\mathscr{A}\) is lost in
+                    the passage to its presheaves. Distinct objects give non-isomorphic presheaves; an object is
+                    determined, up to isomorphism, by the bare pattern of maps into it.
+                </p>
+
+                <h3>A summary of the four functors</h3>
+
+                <p>
+                    Four functors have now been built from the single operation of forming hom-sets, and it is worth
+                    setting them side by side. For each object \(A\) there is a covariant functor
+                    \(H^A : \mathscr{A} \to \mathbf{Set}\) of maps out of \(A\); collecting these over all \(A\) gives
+                    the contravariant \(H^\bullet : \mathscr{A}^{\mathrm{op}} \to [\mathscr{A}, \mathbf{Set}]\). Dually,
+                    for each object \(A\) there is a presheaf \(H_A : \mathscr{A}^{\mathrm{op}} \to \mathbf{Set}\) of
+                    maps into \(A\); collecting these gives the covariant Yoneda embedding
+                    \(H_\bullet : \mathscr{A} \to [\mathscr{A}^{\mathrm{op}}, \mathbf{Set}]\). The second pair is the
+                    dual of the first, and both involve a contravariant step that cannot be avoided — whether one fixes
+                    the source and varies the target or the reverse, exactly one of the two slots reverses arrows.
+                </p>
+
+                <h3>The two slots at once</h3>
+
+                <p>
+                    One further functor unifies all four: rather than fix either argument of the hom-set, let both
+                    vary. Since the first slot reverses arrows and the second preserves them, its home is
+                    \(\mathscr{A}^{\mathrm{op}} \times \mathscr{A}\).
+                </p>
+
+                <div class="theorem" id="D-hom_bifunctor">
+                    <span class="theorem-title">Definition: The Hom-Bifunctor</span>
+                    <p>
+                        Let \(\mathscr{A}\) be locally small. The <strong>hom-bifunctor</strong>
+                        \[
+                        \mathrm{Hom}_{\mathscr{A}} : \mathscr{A}^{\mathrm{op}} \times \mathscr{A} \to \mathbf{Set}
+                        \]
+                        sends an object \((A, B)\) to the hom-set \(\mathscr{A}(A, B)\), and a map \((f, g)\) — where
+                        \(f : A' \to A\) and \(g : B \to B'\), so that \((f,g)\) is a morphism
+                        \((A, B) \to (A', B')\) in the
+                        <a href="categories_functors_naturality.html#D-product_category" class="ref-link"><strong>product category</strong></a>
+                        \(\mathscr{A}^{\mathrm{op}} \times \mathscr{A}\) — to the function
+                        \[
+                        \mathrm{Hom}_{\mathscr{A}}(f, g) : \mathscr{A}(A, B) \to \mathscr{A}(A', B'),
+                        \qquad p \mapsto g \circ p \circ f .
+                        \]
+                        Fixing the first argument at \(A\) recovers the covariant hom-functor
+                        \(H^A = \mathrm{Hom}_{\mathscr{A}}(A, -)\); fixing the second at \(B\) recovers the presheaf
+                        \(H_B = \mathrm{Hom}_{\mathscr{A}}(-, B)\). The bifunctor carries the same information as the
+                        whole family of representables, presented in one piece.
+                    </p>
+                </div>
+
+                <p>
+                    The form \(p \mapsto g \circ p \circ f\) is forced. A morphism in
+                    \(\mathscr{A}^{\mathrm{op}} \times \mathscr{A}\) from \((A,B)\) to \((A',B')\) is a pair
+                    \(A' \xrightarrow{f} A\) and \(B \xrightarrow{g} B'\), and the only way to turn a map
+                    \(p : A \to B\) into a map \(A' \to B'\) using \(f\) and \(g\) is to precede \(p\) by \(f\) and
+                    follow it by \(g\); functoriality follows from associativity.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The hom-bifunctor as a category's own metric</h3>
+                    <p>
+                        The existence of \(\mathrm{Hom}_{\mathscr{A}}\) is the categorical counterpart of a familiar
+                        fact about metric spaces: on a space \((X, d)\) the distance is itself a continuous map
+                        \(d : X \times X \to \mathbb{R}\), so that moving two points slightly changes their distance
+                        only slightly. The hom-bifunctor plays the analogous role for a category. It takes a pair of
+                        objects and returns the set of maps between them, and it does so functorially — deforming
+                        either object along a morphism deforms the set of maps in a controlled, composition-respecting
+                        way. A category measures the proximity of its objects not by a number but by a set of arrows,
+                        and \(\mathrm{Hom}_{\mathscr{A}}\) is the single map that records the whole measurement.
+                    </p>
+                </div>
+
+                <p>
+                    This packaging also clarifies what the naturality clauses in the definition of an adjunction were
+                    asserting. An adjunction \(F \dashv G\) between \(F : \mathscr{A} \to \mathscr{B}\) and
+                    \(G : \mathscr{B} \to \mathscr{A}\) gives, for each \(A\) and \(B\), a bijection
+                    \(\mathscr{B}(F A, B) \cong \mathscr{A}(A, G B)\). Both sides are values of hom-bifunctors —
+                    \(\mathscr{B}(F-, -)\) and \(\mathscr{A}(-, G-)\), each a functor
+                    \(\mathscr{A}^{\mathrm{op}} \times \mathscr{B} \to \mathbf{Set}\) — and the requirement that the
+                    bijection be natural in both arguments is precisely the requirement that these two bifunctors be
+                    <a href="categories_functors_naturality.html#D-natural_isomorphism" class="ref-link"><strong>naturally isomorphic</strong></a>.
+                    What once looked like a pair of commuting-square conditions is the single statement that an
+                    adjunction is a natural isomorphism \(\mathscr{B}(F-, -) \cong \mathscr{A}(-, G-)\).
+                </p>
+            </section>
+
+            <section id="generalized" class="section-content">
+                <h2>Objects Probed by Elements</h2>
+
+                <p>
+                    The chapter has turned on one reversal: an object is known not by what it contains but by how it
+                    relates to others. Its most concrete form comes now. Objects of an arbitrary category have no
+                    elements in any obvious sense — there is nothing inside an abstract object to point at. But sets do
+                    have elements, and an element of a set \(A\) was seen, at the start of this stage, to be the same
+                    thing as a map out of the
+                    <a href="adjoint_functors.html#D-initial_terminal_object" class="ref-link"><strong>terminal object</strong></a>,
+                    a map \(1 \to A\). That identification seeds a definition restoring a notion of element to every
+                    object of every category.
+                </p>
+
+                <div class="theorem" id="D-generalized_element">
+                    <span class="theorem-title">Definition: Generalized Element</span>
+                    <p>
+                        Let \(A\) be an object of a category. A <strong>generalized element</strong> of \(A\) is a map
+                        with codomain \(A\). A map \(S \to A\) is a generalized element of \(A\) of <strong>shape</strong>
+                        \(S\). When the category is locally small, the generalized elements of \(A\) of shape \(S\) are
+                        exactly the members of the hom-set of maps \(S \to A\).
+                    </p>
+                </div>
+
+                <p>
+                    The term is a synonym for <em>map</em>; its value is the change of attitude it encourages.
+                    Generalized elements recover the ordinary ones and reach beyond them. When \(A\) is a set, a
+                    generalized element of shape \(1\) is an ordinary element, while a generalized element of shape
+                    \(\mathbb{N}\) is a sequence in \(A\). In the category of spaces the generalized elements of shape
+                    \(1\), the one-point space, are the points, and the generalized elements of shape the circle are,
+                    by definition, the loops — so in categories of geometric objects one may equally well speak of
+                    figures of a given shape. The loops of \(X\) are exactly its generalized elements of shape the
+                    circle, the underlying set of its loop space; their homotopy classes form the
+                    <a href="../Calculus/fundamental_group.html#D-fundamental_group" class="ref-link"><strong>fundamental group</strong></a>
+                    \(\pi_1(X)\), which is why the loop functor was represented by the circle two sections ago.
+                </p>
+
+                <p>
+                    Algebra furnishes the same pattern. To study the solutions of an equation such as
+                    \(x^2 + y^2 = 1\) over a ring \(A\) is to study the pairs \((a, b) \in A \times A\) with
+                    \(a^2 + b^2 = 1\), and each such pair is a ring homomorphism out of
+                    \(\mathbb{Z}[x, y]/(x^2 + y^2 - 1)\) — the value of the homomorphism on \(x\) and \(y\) is the
+                    chosen pair. A solution in the ring \(A\) is thus a generalized element of \(A\) whose shape is the
+                    coordinate ring of the equation: the fixed object \(\mathbb{Z}[x, y]/(x^2 + y^2 - 1)\) is the
+                    shape, and the maps out of it into the varying ring \(A\) are exactly the solutions there. A
+                    geometric figure, a sequence, a point, a solution of an equation: each is a map into an object, and
+                    the totality of maps of a given shape is a representable functor evaluated at that object.
+                </p>
+
+                <h3>Probing is functorial</h3>
+
+                <p>
+                    Fixing the shape and letting the probed object vary gives, for each object \(S\), the covariant
+                    functor \(H^S = \mathscr{A}(S, -)\) sending an object to its set of generalized elements of shape
+                    \(S\). The functoriality of \(H^S\) carries a plain meaning: any map \(A \to B\) transforms
+                    \(S\)-shaped elements of \(A\) into \(S\)-shaped elements of \(B\), simply by composition. A
+                    continuous map of spaces transforms loops into loops; a ring homomorphism transforms solutions of
+                    an equation into solutions; a linear map transforms the chosen probes of one space into those of
+                    another. The probe is held fixed and the map pushes its elements forward.
+                </p>
+
+                <p>
+                    This is the abstract form of a computation already carried out by hand in the manifold series. To
+                    each smooth map of manifolds \(F : M \to N\) and each point \(p\) there is the differential
+                    \(dF_p : T_pM \to T_{F(p)}N\), and the
+                    <a href="../Calculus/tangent_vectors.html#T-differential_properties" class="ref-link"><strong>properties of the differential</strong></a>
+                    established there were exactly the chain rule \(d(G \circ F)_p = dG_{F(p)} \circ dF_p\) and the
+                    identity \(d(\mathrm{Id})_p = \mathrm{Id}\). Read in the present language these two equations are
+                    preservation of composition and preservation of identities: the operation of taking the tangent
+                    space at a point is a functor, and the differential is what it does to maps. The pushforward
+                    notation \(F_* := dF_p\), with its rule \((G \circ F)_* = G_* \circ F_*\), was the functoriality
+                    asserting itself before the word was available. The work was done long ago; only now does it carry
+                    its name.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Representability as a learning principle</h3>
+                    <p>
+                        Much of geometric deep learning rests on representing a structured object by the way fixed
+                        probes map into it. A graph is encoded by aggregating, at each node, the patterns that small
+                        fixed templates form around it; a point cloud by the local arrangements that a fixed
+                        neighborhood shape can occupy; an algebraic structure by the homomorphisms a fixed test object
+                        admits. Each scheme computes a hom-set \(\mathscr{A}(S, -)\) with the probe \(S\) held fixed,
+                        and the demand that a map between objects act compatibly on these encodings — that a morphism
+                        push probes forward without distortion — is the functoriality of \(H^S\). When such an encoding
+                        is required to be lossless, so that the object is recoverable from how the probes map in, the
+                        demand is precisely that the encoding functor be representable. The questions of which probes
+                        suffice, and what is preserved when the object is replaced by its bundle of generalized
+                        elements, are the questions the next stage answers in full, when the embedding of a category
+                        into its presheaves is shown to be faithful and the bundle of all generalized elements is
+                        proved to determine the object completely.
+                    </p>
+                </div>
+            </section>
+
+        </div>
+
+    </body>
+</html>
