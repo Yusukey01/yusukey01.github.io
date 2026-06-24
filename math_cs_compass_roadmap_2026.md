@@ -14,13 +14,13 @@ lack awareness of applications. The primary focus is rigorous mathematical found
 modern AI/ML, with continuous expansion into adjacent domains (GDL, CDL, cryptography,
 stochastic analysis).
 
-**Total: 199 pages as of 6/22/2026.** Breakdown: I (linalg) 40 / II (calc) 99 / III (prob) 26 /
-IV (disc) 17 / V (ml) 17. `curriculum.json` is authoritative.
+**Total: 210 pages as of 6/24/2026.** Breakdown: I (linalg) 40 / II (calc) 99 / III (prob) 26 /
+IV (disc) 28 / V (ml) 17. `curriculum.json` is authoritative.
 
 **Five active tracks (planned in one pass on 2026/6/3)**; detail in the Part 2 overview:
 - Phase 2e (continuous-time generative foundations, Section III) — awaiting Øksendal purchase
 - Rep Theory (GDL continuous leg, Section I+V) — **complete (linalg-31~40 incl. Peter–Weyl + ml-16); GDL-mandatory scope fully satisfied, no remaining work**
-- CDL (category theory, Section IV+V) — awaiting Leinster reading
+- CDL (category theory, Section IV+V) — **Stage 2 進行中; disc-18~28 公開済 (Leinster Ch.1–5 完了), 次 disc-29 (Ch.6)**
 - Crypto (through PQC, Section IV+I) — mood-driven
 - TDL (GDL discrete leg, Section IV+V) — **SNN (ml-17) complete; discrete leg landed. Only optional persistent-homology branch (disc-18) remains**
 
@@ -71,7 +71,7 @@ A unified view of the five tracks. Per-track detail is authoritative in the indi
 |---|---|---|---|---|---|
 | **Phase 2e** continuous-time generative | — | III | **awaiting Øksendal purchase** (then Page1 BM+Itō) | **Øksendal 6th ed.** | `phase2e_handout_v1` |
 | **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **linalg-31~40 (incl. Peter–Weyl) + ml-16 complete; GDL-mandatory scope fully satisfied** | Hall 2nd ed. (on hand) | `rep_handout_v10` (archival) |
-| **CDL** category theory | — | IV (cats) + V (CDL bridge) | **awaiting Leinster reading** (Stage 0) | none | `cdl_track_handout_v1` |
+| **CDL** category theory | — | IV (cats) + V (CDL bridge) | **Stage 2 進行中: disc-18~28 公開済 (Leinster Ch.1–5 完了); 次 = disc-29 (Ch.6)** | none (both primary free) | `cdl_track_handout_v10` |
 | **Crypto** through PQC | — | IV (s1) + I (s2-7) | **mood-driven** | none | `crypto_track_handout_v1` |
 | **TDL** | **discrete leg** | IV (existing Hodge) + V (SNN) | **SNN (ml-17) complete; discrete leg landed. Optional persistent-homology branch (disc-18) remains** | TDL book (free) | `tdl_track_handout_v2` |
 
@@ -236,16 +236,20 @@ groups from Section I, the Banach spaces from Section II — they were all categ
 IV category page becomes the site-wide callback hub. The manifold Q7 (differential \(dF_p\) =
 functor; calc-45/46 `T-differential_properties`/`T-global_differential_properties`) connects here.
 
-### 5.3 Track structure (per handout §3, ~6-9p, expansion expected)
+### 5.3 Track structure (per handout, ~6-9p, expansion expected)
 
-| Stage | Placement | Content |
-|---|---|---|
-| 0 | — | Yusuke reads Leinster Ch.1–2 (**start trigger**, bulk of the investment cost) |
-| 1 | disc-XX (IV) | categories/functors/natural transformations / Yoneda / adjunction (+ site-wide hub ref-links) |
-| 2 | disc-XX (IV) | limits/colimits / monads / Kan extensions |
-| 3 | disc-XX (IV) | applied: quivers/database functors / string diagrams |
-| 4 | ml-XX (V) | CDL bridge: Para, lenses, monad on Para (primer for the Gavranović paper) |
-| 5 | ml-XX (V) | CDL Overview: revisit the whole site from a categorical viewpoint |
+進捗 (2026-06-24): **Stage 0/1 完了、Stage 2 進行中**。disc-18~28 公開済 (Leinster Ch.1–5 完了)。
+
+| Stage | Placement | Content | Status |
+|---|---|---|---|
+| 0 | — | Yusuke reads Leinster (start trigger) | ✅ done |
+| 1 | disc-18~24 (IV) | categories/functors/natural transformations (disc-18, Ch.1) / adjunction (disc-19/20, Ch.2) / interlude on sets (disc-21, Ch.3) / representables & Yoneda (disc-22/23/24, Ch.4) (+ site-wide hub ref-links) | ✅ done |
+| 2 | disc-25~ (IV) | limits/colimits (disc-25/26/27/28, Ch.5); **next disc-29 = adjoints/representables/limits (Ch.6: RAPL/LAPC, density)** | 🔄 in progress |
+| 3 | disc-XX (IV) | applied: quivers/database functors / string diagrams | pending |
+| 4 | ml-XX (V) | CDL bridge: Para, lenses, **monad on Para** (primer for the Gavranović paper) | pending |
+| 5 | ml-XX (V) | CDL Overview / intro: revisit the whole site from a categorical viewpoint | pending |
+
+**monad / Kan extension の扱い修正 (handout v10 §3)**: 旧 §5.3 は Stage 2 に "monads / Kan extensions" を含めていたが、(a) **monad は Leinster/Fong-Spivak のどちらにも本文がなく IV では独立ページ化しない** — Para 上の monad として **Stage 4 (Section V)** で window-model 導入。(b) **Kan extension は両 primary に章なし** (acquisition flag: Riehl / nLab、references.json 未登録)。Stage 2 の実体は Leinster Ch.5 (limit/colimit) + Ch.6 (adjoint↔limit interaction)。
 
 stage 3 -> 4 is the IV -> V crossing (identity shifts from math to ML application).
 
@@ -254,14 +258,12 @@ stage 3 -> 4 is the IV -> V crossing (identity shifts from math to ML applicatio
 - Fong & Spivak *Seven Sketches* (applied, **free** arXiv:1803.05316, CC BY 4.0; v1's missing url resolved)
 - **Both free, no purchase.** Leinster himself includes poset/monoid examples in the book (an
   entry-design option).
-- **Start status: awaiting Leinster reading (Stage 0).** Learn-while-writing (Yusuke new to it).
-- Detail: `cdl_track_handout_v1`.
+- **Start status: Stage 0/1 完了、Stage 2 進行中 (2026-06-24)。** Learn-while-writing で disc-18~28 公開済。
+- **Section V CDL intro (Stage 5 相当) は将来タスクとして保留** (handout v10 §3.3)。作成時は **確立層 (Backprop as Functor LICS2019 / Categorical Foundations of Gradient-Based Learning ESOP2022 / Parametric Lenses arXiv:2404.00408) に限定**し、ICML 2024 position paper の "all architectures" 主張は確定理論でなく "進行中の研究方向" として正直に位置づける。CDL イントロが disc-20 の monad 伏線の回収先。
+- Detail: `cdl_track_handout_v10`.
 
-### 5.5 Status monitoring (as of 2026/5/9, re-verify via web)
-Research front: ICML 2024 position paper (Gavranović et al.), ACT 2025/2026. Industry: Coend
-($31M). **No production deployment.** -> slow-burn continues. Status-shift triggers: Coend ships a
-product / a CDL architecture wins a benchmark / a major framework adds categorical primitives /
-a second well-funded entrant.
+### 5.5 Status monitoring (re-verified via web 2026/6/24)
+Research front: ICML 2024 position paper (Gavranović et al., arXiv:2402.15332)、survey "Towards a Categorical Foundation of Deep Learning" (arXiv:2410.05353, 2024-10) が既に存在 = 分野が蓄積した証拠。確立層 (Backprop as Functor LICS2019 / Gradient-Based Learning ESOP2022 / Parametric Lenses arXiv:2404.00408) は査読付きで固い。一方 survey 自身が weighted optics 等を **conjecture 段階**と明記 = 最前線は未確立。ACT conference 継続 (2025 Florida / 2026 Tallinn 7月予定)。Industry: Coend ($31M)。**No production deployment** (PyTorch/JAX に categorical primitive なし) -> slow-burn 継続、mathematics-only。Status-shift triggers: Coend ships a product / a CDL architecture wins a benchmark / a major framework adds categorical primitives / a second well-funded entrant.
 
 ### 5.6 Notes (Part 9 ledger)
 - `adjoint` triple overload (Lie adjoint representation / FA operator adjoint / CDL adjoint
@@ -428,7 +430,7 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 | TDL: Simplicial NN | ml-17 (done) | V | `simplicial_neural_networks.html` | ✅ **complete** (GDL discrete leg landed, Part 3.4; Hodge Laplacian message passing, \(\ker L_k\cong H_k\); 2026-06-21) |
 | TDL: Persistent Homology | ~1–2 | IV | TBD (next id disc-18; disc-16/17 occupied by Formal Methods) | optional branch (disc-15 forecast); new concepts (filtration / persistence module / barcode / stability) -> page-count uncertain; ref = Edelsbrunner-Harer (existing); detail in `tdl_track_handout_v2` §4 |
 | Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **awaiting Øksendal purchase** (Part 4; splits anticipated) |
-| CDL Track | ~6–9 | IV + V | TBD | awaiting Leinster reading (Part 5) |
+| CDL Track | ~6–9 (disc-18~28 = 11 done) | IV + V | disc-18~28 (`categories_functors_naturality` ~ `functors_and_limits`) | 🔄 Stage 2: Leinster Ch.1–5 完了、次 disc-29 (Ch.6); detail `cdl_track_handout_v10` (Part 5) |
 | Crypto Track | varies (7 stages) | **IV(s1) + I(s2-7)** | TBD (entry linalg-26) | mood-driven (Part 6, stage 7 terminal) |
 | Section V Quantum (A+B) | 1 | V | TBD | after Crypto stage 1–4 (Part 7.4) |
 | Regular Conditional Distributions | ~1 | III | `regular_conditional_distributions.html` | Phase 2e prereq (SDE/path-space measure) |
@@ -511,7 +513,7 @@ Completed tracks (on index.html, no planned pages).
    loss-dependence and non-guaranteed positive-definiteness, not "global vs local."
 5. **Page count estimation**: new conceptual paradigms expand 1.5–4×. Defer ID assignment to
    drafting. Calibrations: Lie groups 2 -> 4, calc-30 1 -> 2, Phase 2c 2 -> 3, Fourier-PDE 1 -> 3,
-   CDL 6 -> 12 anticipated. **New strongest data point (Peter–Weyl, 6/2026): a ~2-page target
+   CDL 6 -> 12 anticipated (**実績: disc-18~28 で 11 ページ＝予測ほぼ的中、Ch.1–5 分**; Ch.6+ で更に増)。 **New strongest data point (Peter–Weyl, 6/2026): a ~2-page target
    spawned a 7-page prerequisite block (the FA block calc-93~99).** A single dependency audit
    (§12.3 needs Stone–Weierstrass) recursively pulled in SW's entire Conway chain. The lesson is
    not just "pages expand" but "a dependency audit can reveal that the *prerequisite* is the real
@@ -540,7 +542,7 @@ Completed tracks (on index.html, no planned pages).
 
 **This roadmap (v5) is the index layer.** Per-track prereq verification, collisions, owner
 candidates, physical-book inspection items, and resume-time greps are authoritative in the
-individual handouts for the still-active tracks: `phase2e_handout_v1` / `cdl_track_handout_v1` /
+individual handouts for the still-active tracks: `phase2e_handout_v1` / `cdl_track_handout_v10` /
 `crypto_track_handout_v1` / `tdl_track_handout_v2` / `manifold_handout_v24` /
 `ch16_integration_handout_v12`. The completed Representation-Theory track (incl. Peter–Weyl and the
 FA block) is archived in `rep_handout_v10`, which absorbed the spent `peter_weyl_handout_v1` and
