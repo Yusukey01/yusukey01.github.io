@@ -1,0 +1,460 @@
+---
+layout: default
+title: "Intro to Cryptography"
+topic_id: disc-29
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Intro to Cryptography</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#what">What Cryptography Secures</a>
+            <a href="#kerckhoffs">Kerckhoffs's Principle</a>
+            <a href="#breakable">Breaking a Scheme</a>
+            <a href="#attacks">What the Adversary Can Do</a>
+            <a href="#security">Computational vs Unconditional Security</a>
+            <a href="#quantum">The Shifting Ground</a>
+        </div>
+
+        <div class="container">
+
+            <section id="what" class="section-content">
+                <h2>What Cryptography Secures</h2>
+
+                <p>
+                    A message travels across a channel that someone else can read, alter, or forge. The sender wants the
+                    content hidden from everyone but the intended receiver; the receiver wants assurance that the message
+                    arrived unchanged, that it truly came from the claimed sender, and that the sender cannot later deny
+                    having sent it. <strong>Cryptography</strong> is the study of mathematical techniques that secure
+                    information against an adversary who controls the channel. It is one set of tools for information
+                    security, not the whole of it: physical, procedural, and legal mechanisms address the rest.
+                </p>
+
+                <p>
+                    What distinguishes the cryptographic viewpoint from ordinary engineering is the <em>adversary</em>.
+                    We do not design against noise, accident, or average behaviour; we design against an intelligent
+                    opponent who knows the system, chooses the worst case, and is bounded only by the resources available
+                    to them. Every guarantee below is a guarantee made <em>in the presence of such an opponent</em>.
+                </p>
+
+                <div class="theorem" id="D-cryptographic_goals">
+                    <span class="theorem-title">Definition: The Four Goals</span>
+                    <p>
+                        Cryptography addresses four information-security goals, from which others are derived.
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            <strong>Confidentiality</strong> keeps the content of information from all but those
+                            authorized to see it. (<em>Secrecy</em> and <em>privacy</em> are used synonymously.)
+                        </li>
+                        <li>
+                            <strong>Data integrity</strong> ensures that unauthorized alteration of data can be detected,
+                            where alteration includes insertion, deletion, and substitution.
+                        </li>
+                        <li>
+                            <strong>Authentication</strong> establishes identity. It splits into <em>entity
+                            authentication</em> (who one is communicating with) and <em>data-origin authentication</em>
+                            (the source of a message), the latter implicitly providing data integrity, since a modified
+                            message has a changed source.
+                        </li>
+                        <li>
+                            <strong>Non-repudiation</strong> prevents an entity from later denying a previous commitment
+                            or action. Resolving such a dispute generally requires a trusted third party.
+                        </li>
+                    </ol>
+                </div>
+
+                <p>
+                    These goals are about the <em>prevention and detection of cheating</em>. The remainder of this page
+                    asks the question that any such guarantee must answer: when we say a scheme is secure, secure against
+                    <em>what</em>, and how is that claim made precise?
+                </p>
+            </section>
+
+            <section id="kerckhoffs" class="section-content">
+                <h2>Kerckhoffs's Principle</h2>
+
+                <p>
+                    To reason about confidentiality we first fix what an encryption scheme is. We work with a
+                    <strong>message space</strong> \(\mathcal{M}\) of plaintexts, a <strong>ciphertext space</strong>
+                    \(\mathcal{C}\), and a <strong>key space</strong> \(\mathcal{K}\). Each key selects a transformation
+                    that turns plaintext into ciphertext, and a matching transformation that reverses it.
+                </p>
+
+                <div class="theorem" id="D-cipher">
+                    <span class="theorem-title">Definition: Encryption Scheme (Cipher)</span>
+                    <p>
+                        An <strong>encryption scheme</strong>, or <strong>cipher</strong>, consists of a family of
+                        <strong>encryption transformations</strong> \(\{E_e : e \in \mathcal{K}\}\), each an injective
+                        map \(E_e \colon \mathcal{M} \to \mathcal{C}\), together with a family of
+                        <strong>decryption transformations</strong> \(\{D_d : d \in \mathcal{K}\}\), with the property
+                        that for each encryption key \(e\) there is a unique decryption key \(d\) such that
+                        \[
+                        D_d(E_e(m)) = m \quad \text{for every } m \in \mathcal{M}.
+                        \]
+                        The map \(E_e\) must be injective, for otherwise a ciphertext would not determine its plaintext
+                        and decryption would be ambiguous. The pair \((e, d)\) is the <strong>key pair</strong>; the keys
+                        may coincide.
+                    </p>
+                </div>
+
+                <p>
+                    We treat \(E_e\) here as a fixed map: a given plaintext under a given key always produces the same
+                    ciphertext. Such a <em>deterministic</em> scheme is the natural starting point, but it carries a
+                    weakness — identical plaintexts yield identical ciphertexts, so an observer learns when a message
+                    repeats. Removing this leak requires <em>randomized</em> encryption, where the same plaintext can map
+                    to many ciphertexts; we set that refinement aside for now and return to it when security is made
+                    precise.
+                </p>
+
+                <p>
+                    Two parties who wish to communicate confidentially agree on a key pair \((e, d)\); the sender
+                    transmits \(c = E_e(m)\), and the receiver recovers \(m = D_d(c)\). The question is what they must
+                    keep secret. One might try to hide the entire mechanism — the spaces, the transformations, the way
+                    the scheme is built. The principle that organizes modern cryptography rejects this.
+                </p>
+
+                <div class="theorem" id="D-kerckhoffs_principle">
+                    <span class="theorem-title">Definition: Kerckhoffs's Principle</span>
+                    <p>
+                        The security of an encryption scheme must rest entirely on the secrecy of the key, never on the
+                        secrecy of the algorithm. The spaces \(\mathcal{M}, \mathcal{C}, \mathcal{K}\) and the families
+                        \(\{E_e\}, \{D_d\}\) are assumed to be public knowledge; the only secret is the particular key
+                        pair \((e, d)\) in use.
+                    </p>
+                </div>
+
+                <p>
+                    A physical combination lock is the standard analogy. Its mechanism is mass-produced and available to
+                    anyone, yet the lock is secure because the combination is chosen and held by its owner. If the owner
+                    suspects the combination is known, they reset it without replacing the lock. Keeping the
+                    <em>mechanism</em> secret as well can add a layer of difficulty for an attacker, but a scheme must
+                    not depend on it: secret mechanisms are leaked, reverse-engineered, and reconstructed, and a design
+                    whose safety relies on concealment has no defense once concealment fails. Reducing all secrecy to a
+                    short, replaceable key is what makes a scheme analyzable, auditable, and recoverable after exposure.
+                </p>
+
+                <p>
+                    This is also what makes security a <em>mathematical</em> question. Once the adversary is granted full
+                    knowledge of the scheme and is missing only the key, "secure" means precisely: knowing everything
+                    but the key, the adversary still cannot recover the plaintext. The next section makes
+                    <em>cannot</em> precise.
+                </p>
+            </section>
+
+            <section id="breakable" class="section-content">
+                <h2>Breaking a Scheme</h2>
+
+                <p>
+                    Under Kerckhoffs's principle the adversary knows the scheme and lacks only the key. What does it mean
+                    for such an adversary to succeed?
+                </p>
+
+                <div class="theorem" id="D-breakable">
+                    <span class="theorem-title">Definition: Breakable</span>
+                    <p>
+                        An encryption scheme is <strong>breakable</strong> if a third party, without prior knowledge of
+                        the key pair \((e, d)\), can recover plaintext from the corresponding ciphertext within some
+                        appropriate time frame, by a procedure that succeeds with non-negligible probability.
+                    </p>
+                </div>
+
+                <p>
+                    Two phrases carry the weight. <em>Within some appropriate time frame</em> ties security to the
+                    lifespan of the data: an instruction to buy a stock may need to stay secret for minutes, a state
+                    secret for decades, and a scheme is secure only relative to how long the protected information must
+                    outlast the attacker's effort. <em>Non-negligible probability</em> rules out luck from the other
+                    side: a one-off lucky guess of the key is always possible, but its chance shrinks faster than any
+                    polynomial in the key length — it is
+                    <a href="time_complexity.html#D-little_o" class="ref-link"><strong>asymptotically negligible</strong></a>
+                    — so it does not count as breaking the scheme. An attack breaks a scheme only if it succeeds often
+                    enough to matter, not merely sometimes by chance.
+                </p>
+
+                <p>
+                    Since the scheme is public, there is always one attack available: try every key. Enumerate
+                    \(\mathcal{K}\), decrypt the ciphertext under each candidate, and recognize the correct plaintext
+                    when it appears. This <strong>exhaustive search</strong> always works in principle, so its cost sets
+                    a baseline every scheme must clear. If \(|\mathcal{K}|\) is small the scheme is broken outright; the
+                    key space must be large enough that running through it is infeasible. The designer's aim is sharper
+                    than "large key space," though: it is that exhaustive search be the <em>best</em> available attack,
+                    so that no shortcut beats brute force.
+                </p>
+
+                <p>
+                    The distinction matters because a large key space is necessary but not sufficient. A simple
+                    substitution cipher over the English alphabet has \(26! \approx 4 \times 10^{26}\) keys, and a
+                    polyalphabetic variant can reach \((26!)^3 \approx 7 \times 10^{79}\) — both far beyond any
+                    exhaustive search. Yet both are weak: frequency analysis recovers the plaintext without touching
+                    more than a negligible fraction of the key space, because the structure of the language leaks
+                    through the ciphertext. The right measure of security is therefore not the number of keys but the
+                    cost of the <em>best</em> attack, which may be vastly cheaper than brute force.
+                </p>
+
+                <p>
+                    This is where "infeasible" must be pinned down, and where complexity theory enters. We already have a
+                    measure of how the cost of an algorithm grows with the size \(n\) of its input — the
+                    <a href="time_complexity.html#D-time_complexity" class="ref-link"><strong>running time</strong></a>,
+                    analyzed asymptotically — and a notion of which problems count as efficiently solvable, the
+                    <a href="time_complexity.html#D-class_P" class="ref-link"><strong>class \(P\)</strong></a> of
+                    problems decidable in polynomial time. "Computationally infeasible" means, at first approximation,
+                    that no attack runs in polynomial time in the key length: the work to break the scheme grows so
+                    fast with the security parameter that it outpaces any feasible adversary. The security of a cipher
+                    is thus a claim about the <em>complexity</em> of the problem an attacker must solve.
+                </p>
+
+                <p>
+                    Phrasing security through complexity also reveals its fragility. The claim "no efficient attack
+                    exists" is a statement about what algorithms are possible, and the boundary of the efficiently
+                    solvable is not fully mapped — the relationship between efficient solution and efficient
+                    <a href="p_vs_np.html#D-class_NP" class="ref-link"><strong>verification</strong></a> is itself one of
+                    the deepest open questions in the subject. A scheme rests on the belief that a particular problem is
+                    hard, and that belief can be revised. But the cost of an attack also depends on something we have
+                    not yet fixed: what the attacker is allowed to see and do.
+                </p>
+            </section>
+
+            <section id="attacks" class="section-content">
+                <h2>What the Adversary Can Do</h2>
+
+                <p>
+                    "Secure against what?" — the question from the first section — has a second half. Beyond how much
+                    computation the adversary commands, security depends on what access they have to the channel and to
+                    the scheme in operation. A scheme that resists an eavesdropper may fall to an attacker who can also
+                    inject messages; a scheme safe against an attacker who only sees ciphertext may leak under one who
+                    can choose the plaintexts that get encrypted. Stating a security claim means stating which adversary
+                    it holds against.
+                </p>
+
+                <p>
+                    The coarsest split concerns what the adversary does to the channel. A <strong>passive</strong>
+                    adversary only monitors it, and thus threatens confidentiality alone. An <strong>active</strong>
+                    adversary may also alter, insert, or delete transmissions, threatening data integrity and
+                    authentication on top of confidentiality. The four goals from the first section line up against
+                    this split: confidentiality must hold even against a passive listener, while integrity and
+                    authentication are precisely the goals an active adversary attacks.
+                </p>
+
+                <div class="theorem" id="D-attack_model">
+                    <span class="theorem-title">Definition: Attack Models on Encryption</span>
+                    <p>
+                        Attacks on an encryption scheme are classified by what the adversary has access to, in
+                        increasing order of power:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            <strong>Ciphertext-only</strong>: the adversary sees only ciphertexts. A scheme that falls
+                            to this is considered completely insecure.
+                        </li>
+                        <li>
+                            <strong>Known-plaintext</strong>: the adversary holds some plaintext-ciphertext pairs and
+                            uses them to attack other ciphertexts.
+                        </li>
+                        <li>
+                            <strong>Chosen-plaintext</strong>: the adversary obtains ciphertexts for plaintexts of their
+                            own choosing, then attacks previously unseen ciphertexts.
+                        </li>
+                        <li>
+                            <strong>Adaptive chosen-plaintext</strong>: a chosen-plaintext attack in which each chosen
+                            plaintext may depend on ciphertexts seen so far.
+                        </li>
+                        <li>
+                            <strong>Chosen-ciphertext</strong>: the adversary obtains plaintexts for ciphertexts of
+                            their choosing — for instance, by temporary access to decryption equipment whose embedded
+                            key stays hidden. In the strongest form the adversary may keep querying the decryption of
+                            any ciphertext other than the target, even after receiving the target, and still must be
+                            unable to recover its plaintext.
+                        </li>
+                    </ol>
+                </div>
+
+                <p>
+                    The list grows in adversary power: anything broken under a ciphertext-only attack is broken under
+                    all the others, and resistance to chosen-ciphertext attack is a far stronger claim than resistance
+                    to ciphertext-only attack. A modern scheme is expected to remain secure even when the adversary may
+                    choose what gets encrypted and decrypted — a demand that looks paranoid until one realizes that
+                    real systems routinely encrypt attacker-influenced data and decrypt attacker-supplied ciphertexts.
+                    The same hierarchy carries over, with the goal of <em>forgery</em> rather than decryption, to
+                    digital signatures and message authentication codes.
+                </p>
+
+                <p>
+                    With both axes fixed — the adversary's computational power and their access — we can finally
+                    separate the two fundamentally different grades of security a scheme might offer.
+                </p>
+            </section>
+
+            <section id="security" class="section-content">
+                <h2>Computational vs Unconditional Security</h2>
+
+                <div class="theorem" id="D-unconditional_security">
+                    <span class="theorem-title">Definition: Unconditional Security</span>
+                    <p>
+                        A scheme is <strong>unconditionally secure</strong> if it withstands an adversary with unlimited
+                        computational resources. For an encryption scheme this is called <strong>perfect secrecy</strong>:
+                        observing the ciphertext gives the adversary no information about the plaintext, so the
+                        uncertainty about the plaintext after seeing the ciphertext equals the uncertainty before.
+                    </p>
+                </div>
+
+                <p>
+                    Perfect secrecy is the strongest guarantee imaginable — it holds against an opponent bounded by
+                    nothing at all, not even the laws of computation. It is also achievable. The <strong>one-time
+                    pad</strong>, which combines each plaintext symbol with a fresh, uniformly random key symbol used
+                    only once, is unconditionally secure. The catch is structural: a necessary condition for an
+                    encryption scheme to be unconditionally secure is that the key be at least as long as the message.
+                    Perfect secrecy demands as much fresh secret key as there is data to protect, which defeats the
+                    usual purpose of cryptography — to protect a great deal of communication using a small, manageable
+                    secret. Unconditional security is real, but for most purposes it is a luxury one cannot afford.
+                </p>
+
+                <p>
+                    Worse, the guarantee is unavailable for the entire modern toolkit of public-key cryptography. If the
+                    encryption transformation is public, an adversary with unlimited resources can simply encrypt every
+                    candidate plaintext until the observed ciphertext appears; the plaintext is determined in principle.
+                    No public-key scheme can be unconditionally secure. The security that protects nearly all
+                    communication therefore cannot be the unconditional kind. It must be the other kind.
+                </p>
+
+                <div class="theorem" id="D-computational_security">
+                    <span class="theorem-title">Definition: Computational Security</span>
+                    <p>
+                        A scheme is <strong>computationally secure</strong> if the computational effort required to
+                        defeat it, using the best known method, exceeds by a comfortable margin the resources of the
+                        anticipated adversary. The <strong>work factor</strong> \(W_d\) is the minimum amount of work —
+                        measured in elementary operations — needed to recover the secret key, and a scheme is regarded
+                        as secure for practical purposes when \(W_d\) is large enough that the effort is out of reach
+                        within the data's useful lifespan.
+                    </p>
+                </div>
+
+                <p>
+                    This is the security almost every deployed scheme actually has. It does not promise that no attack
+                    exists; it estimates that no <em>feasible</em> attack exists. The honest version of the definition
+                    must therefore distinguish two quantities. The true work factor \(W_d\) — the cost of the best
+                    attack that <em>could ever</em> exist — is generally unknown and unprovable; no one has shown a
+                    large lower bound on it for any public-key scheme. What is actually measured is the
+                    <strong>historical work factor</strong> \(\overline{W}_d\), the cost of the best attack known
+                    <em>at a given time</em>. Computational security is a claim about \(\overline{W}_d\): it asserts
+                    that with today's best algorithms, breaking the scheme is infeasible.
+                </p>
+
+                <p>
+                    The gap between \(\overline{W}_d\) and \(W_d\) is the whole exposure of modern cryptography.
+                    \(\overline{W}_d\) is an upper bound on \(W_d\) that moves downward with every algorithmic advance:
+                    when a faster attack is discovered, the historical work factor drops, and a scheme believed secure
+                    yesterday may be broken today, with no change to the scheme itself. Security under this definition
+                    is provisional by construction — it is the best estimate available, not a theorem. Where a scheme's
+                    hardness can be tied to a well-studied problem widely believed to be intractable, such as integer
+                    factorization or the discrete logarithm, confidence is higher; but the tie is to a
+                    <em>conjectured</em> hardness, not a proven one. The mathematics that makes those problems hard —
+                    and the question of whether they truly are — is the substance of everything that follows. It is also
+                    exactly what a sufficiently different model of computation could overturn.
+                </p>
+            </section>
+
+            <section id="quantum" class="section-content">
+                <h2>The Shifting Ground</h2>
+
+                <p>
+                    Computational security rests on the historical work factor \(\overline{W}_d\): the cost of the best
+                    <em>known</em> attack. That cost is measured against a model of computation — what counts as an
+                    elementary operation, what an algorithm is allowed to do. Change the model, and the cost changes.
+                    This is not a hypothetical concern. It is happening now.
+                </p>
+
+                <p>
+                    A quantum computer is a different model of computation, and for two of the problems on which
+                    public-key cryptography is built it is dramatically faster. Shor gave a quantum algorithm that solves
+                    both integer factorization and the discrete logarithm in time polynomial in the input size
+                    <a href="https://arxiv.org/abs/quant-ph/9508027">[1]</a> — problems for which no efficient classical
+                    algorithm is known, and on whose presumed hardness RSA, Diffie-Hellman, and elliptic-curve schemes
+                    depend. Against a large-scale quantum computer, the historical work factor for these schemes collapses
+                    from infeasible to polynomial. The schemes are not weakened; they are broken.
+                </p>
+
+                <p>
+                    Two clarifications keep this honest. First, a quantum computer large and stable enough to run Shor's
+                    algorithm on cryptographically relevant key sizes does not yet exist; the threat is anticipated, not
+                    realized. But the anticipation already has teeth: an adversary can record encrypted traffic today and
+                    decrypt it once such a machine arrives — the <strong>harvest-now-decrypt-later</strong> strategy —
+                    so data that must stay secret for a decade is effectively exposed now. Second, the quantum threat is
+                    not universal. It targets the specific algebraic structure that Shor's algorithm exploits;
+                    symmetric-key ciphers and hash functions face only a quadratic speedup from quantum search, answered
+                    by doubling key and output lengths.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Math \(\leftrightarrow\) CS: What Survives</h3>
+                    <p>
+                        The response to Shor is already standardized. In 2024, three algorithms were issued as
+                        post-quantum standards: a key-encapsulation mechanism and a digital-signature scheme built on
+                        the hardness of structured-lattice problems
+                        (<a href="https://doi.org/10.6028/NIST.FIPS.203">[2]</a>,
+                        <a href="https://doi.org/10.6028/NIST.FIPS.204">[3]</a>), and a signature scheme resting on the
+                        preimage and second-preimage resistance of hash functions
+                        (<a href="https://doi.org/10.6028/NIST.FIPS.205">[4]</a>). The split is the lesson of this page
+                        made concrete. The schemes Shor breaks are exactly those whose security was tied to factoring and
+                        the discrete logarithm; the schemes that survive are tied to different conjectured-hard problems
+                        — lattice problems — or to the basic one-wayness of a hash, which a model change does not
+                        obviously help. What is replaced is the <em>assumption about which problem is hard</em>; what
+                        endures is the framework — Kerckhoffs's principle, the definition of breaking, security as the
+                        complexity of an attacker's problem. The framework is the same; only the hard problem at its
+                        center is exchanged.
+                    </p>
+                </div>
+
+                <p>
+                    This is the pattern the cryptography track follows. The classical public-key constructions are worth
+                    building in full — they are mathematically complete and historically central — but they are built
+                    with the knowledge that a model change unseats them. The durable layer is the hardness mathematics:
+                    why a problem resists efficient attack, classical or quantum. That is where the track puts its
+                    weight, and where, after the classical schemes and the quantum threat that ends them, it turns next.
+                </p>
+
+                <p>
+                    One debt remains. We have spoken of an attack "succeeding with non-negligible probability" and of a
+                    scheme being secure when no feasible attacker can win, but we have not said what winning means with
+                    full precision. The modern formulation casts security as a game: an adversary tries to distinguish
+                    the encryptions of two plaintexts of its choosing, and the scheme is secure if no efficient strategy
+                    wins with probability noticeably above one half. Making this exact — the indistinguishability game,
+                    randomized encryption that the game forces upon us, and the equivalence between hiding all partial
+                    information and winning no such game — is the proper definition of security, and the foundation on
+                    which every later scheme is judged. We take it up next.
+                </p>
+
+                <h3>References</h3>
+                <ul style="padding-left: 40px; font-size: 0.92rem;">
+                    <li>
+                        P. W. Shor, "Polynomial-Time Algorithms for Prime Factorization and Discrete Logarithms on a
+                        Quantum Computer," <em>SIAM Journal on Computing</em>, vol. 26, no. 5, pp. 1484&ndash;1509, 1997.
+                        arXiv:quant-ph/9508027.
+                    </li>
+                    <li>
+                        National Institute of Standards and Technology, "Module-Lattice-Based Key-Encapsulation Mechanism
+                        Standard," <em>FIPS 203</em>, 2024.
+                    </li>
+                    <li>
+                        National Institute of Standards and Technology, "Module-Lattice-Based Digital Signature
+                        Standard," <em>FIPS 204</em>, 2024.
+                    </li>
+                    <li>
+                        National Institute of Standards and Technology, "Stateless Hash-Based Digital Signature
+                        Standard," <em>FIPS 205</em>, 2024.
+                    </li>
+                </ul>
+            </section>
+
+        </div>
+    </body>
+</html>
