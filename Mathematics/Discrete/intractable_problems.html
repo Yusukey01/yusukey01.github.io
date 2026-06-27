@@ -1,0 +1,408 @@
+---
+layout: default
+title: "The Hardness Assumptions"
+topic_id: disc-32
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Hardness Assumptions</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#factoring">The Integer Factorization Problem</a>
+            <a href="#discrete-log">The Discrete Logarithm Problem</a>
+            <a href="#reductions">Relating One Problem to Another</a>
+            <a href="#landscape">A Landscape Built on Conjecture</a>
+        </div>
+
+        <div class="container">
+
+            <section id="factoring" class="section-content">
+                <h2>The Integer Factorization Problem</h2>
+
+                <p>
+                    The previous page argued that public-key encryption rests on a
+                    <a href="public_key_cryptography.html#D-trapdoor_one_way" class="ref-link"><strong>trapdoor one-way
+                    function</strong></a>: a map easy to evaluate, hard to invert, yet easy to invert for whoever holds a
+                    piece of secret information. That argument was deliberately abstract. It named no function and
+                    exhibited no concrete instance, because the framework does not depend on any particular one. But a
+                    framework that never produces an instance is a promissory note. Somewhere there must be a computation
+                    that is genuinely easy in one direction and genuinely hard in the other, or the whole construction is
+                    vacuous. This page examines the candidates that have actually filled that role — and the sense in
+                    which their hardness is assumed rather than proved.
+                </p>
+
+                <p>
+                    The oldest candidate is the one every reader already half-knows. Multiplying two integers is easy;
+                    recovering the factors from the product is, for suitably chosen integers, hard. We make the second
+                    half precise.
+                </p>
+
+                <div class="theorem" id="D-integer_factorization">
+                    <span class="theorem-title">Definition: The Integer Factorization Problem</span>
+                    <p>
+                        The <strong>integer factorization problem</strong> is the following: given a positive integer
+                        \(n\), find its prime factorization — that is, write
+                        \[
+                        n = p_1^{e_1} p_2^{e_2} \cdots p_k^{e_k},
+                        \]
+                        where the \(p_i\) are pairwise distinct primes and each \(e_i \geq 1\).
+                    </p>
+                </div>
+
+                <p>
+                    Two features of this problem deserve immediate emphasis, because both are easy to overlook and both
+                    are essential to its cryptographic use. The first is that deciding whether \(n\) is prime or
+                    composite is a genuinely different and far easier task than producing its factors. One can certify
+                    that an integer is composite — and indeed that it is prime — without exhibiting a single factor. The
+                    asymmetry is not merely empirical: primality testing belongs to the class of problems solvable in
+                    time polynomial in the length of \(n\), while no such algorithm is known for factoring. So the
+                    relevant gap is not between an easy problem and an unsolved one. It is between a problem we know to be
+                    tractable and a problem we merely <em>believe</em> to be intractable.
+                </p>
+
+                <p>
+                    The second feature is that factoring reduces to the simpler-sounding task of <strong>splitting</strong>:
+                    finding any non-trivial factorization \(n = ab\) with \(1 < a < n\) and \(1 < b < n\), where \(a\)
+                    and \(b\) need not themselves be prime. Once a splitting is found, the factors can be tested for
+                    primality — a polynomial-time step, as just noted — and the splitting procedure applied again to
+                    whichever of them is composite. Recursion
+                    completes the prime factorization. This is why cryptographic constructions can afford to work with a
+                    modulus that is a product of exactly two primes, \(n = pq\): to break such a scheme it is enough to
+                    split \(n\) once, recovering \(p\) and \(q\), and the security of the scheme rests on the difficulty
+                    of that single split.
+                </p>
+
+                <p>
+                    How hard is the split? Here the honest answer is a moving target, and saying so is part of the
+                    mathematics rather than a hedge around it. The naïve method — trial division by every prime up to
+                    \(\sqrt{n}\) — succeeds but costs on the order of \(\sqrt{n}\) divisions in the worst case, which is
+                    exponential in the length of \(n\) and therefore useless at cryptographic sizes. Every improvement
+                    since has chipped away at that exponent without reaching a polynomial-time algorithm. The methods
+                    that succeed in practice are not polynomial; the best of them run in time that grows faster than any
+                    polynomial in the length of \(n\) yet far slower than the trial-division exponential — a
+                    subexponential regime. The precise running times, and the ingenuity behind the algorithms that
+                    achieve them, are a subject in their own right; what matters here is the shape of the curve, not its
+                    equation. No known classical procedure factors a general large integer in polynomial time, and that
+                    single negative fact is the entire foundation on which a factoring-based trapdoor stands.
+                </p>
+
+                <p>
+                    And this foundation has a known expiry condition. It is, after all, a wager: that \(p, q \mapsto pq\)
+                    is easy, which is plainly true, and that its inverse is hard, which is a conjecture supported by
+                    evidence but unproven. Everything said so far concerns <em>classical</em>
+                    computation — algorithms running on the kind of machine the earlier pages took for granted. The
+                    factoring problem is not hard in an absolute sense; it is hard relative to that model. A
+                    quantum computer running Shor's algorithm factors integers in polynomial time, collapsing the
+                    asymmetry between multiplication and factoring that the entire construction depends on. The
+                    subexponential difficulty that protects a factoring-based trapdoor is a property of the classical
+                    world alone. The hardness of factoring is real, useful, and, against a sufficiently capable
+                    adversary, temporary — the first and most historically important of the assumptions a public-key
+                    scheme can be built on, named here with its limit already in view.
+                </p>
+
+            </section>
+
+            <section id="discrete-log" class="section-content">
+                <h2>The Discrete Logarithm Problem</h2>
+
+                <p>
+                    Factoring is one source of a one-way asymmetry, but it is not the only one, and tying every
+                    public-key construction to a single problem would be a fragile design. A second source comes from a
+                    place the reader has already visited: the structure of a finite
+                    <a href="../Linear_algebra/intro_groups.html#D-cyclic_group" class="ref-link"><strong>cyclic
+                    group</strong></a>. Inside such a group, exponentiation runs easily in one direction and, on the
+                    right groups, resists inversion in the other. Naming that resistance precisely is the goal of this
+                    section, and the naming will expose something the algebraic pages could not have shown on their own.
+                </p>
+
+                <p>
+                    Fix a finite cyclic group \(G\) of order \(n\) with generator \(\alpha\). Every element of \(G\) is
+                    a power of \(\alpha\), so for each \(\beta \in G\) there is an exponent that produces it. Reading that
+                    exponent off from \(\beta\) is the problem.
+                </p>
+
+                <div class="theorem" id="D-discrete_log_problem">
+                    <span class="theorem-title">Definition: The Discrete Logarithm Problem</span>
+                    <p>
+                        Let \(G\) be a finite cyclic group of order \(n\), let \(\alpha\) be a generator of \(G\), and
+                        let \(\beta \in G\). The <strong>discrete logarithm</strong> of \(\beta\) to the base \(\alpha\),
+                        written \(\log_\alpha \beta\), is the unique integer \(x\) with \(0 \leq x \leq n-1\) such that
+                        \(\alpha^x = \beta\). The <strong>discrete logarithm problem</strong> is the task of computing
+                        \(x\) from \(\alpha\) and \(\beta\).
+                    </p>
+                </div>
+
+                <p>
+                    The forward direction is cheap. Given \(x\), computing \(\alpha^x\) takes a number of group
+                    operations proportional to the length of \(x\), by repeated squaring. The reverse direction — given
+                    \(\beta\), find \(x\) — is the one cryptography wants to be hard. The most obvious method simply
+                    forms \(\alpha^0, \alpha^1, \alpha^2, \dots\) until \(\beta\) appears, which settles the problem in at
+                    most \(n\) multiplications and is hopeless once \(n\) is large. As with factoring, better methods
+                    narrow that cost without, in the general case, reaching polynomial time. The standing belief is the
+                    same in form: in a suitably chosen group, no efficient classical algorithm is known to recover
+                    \(x\).
+                </p>
+
+                <p>
+                    Now comes the observation that makes this problem worth isolating, and it is a genuine surprise from
+                    the standpoint of the algebra. Take \(G\) to be a group in which the discrete logarithm is believed
+                    hard — the multiplicative group modulo a prime, say, the setting cryptography actually uses — and let
+                    \(n\) be its order. The earlier pages established that
+                    <a href="../Linear_algebra/cyclic_groups.html#T-Zn_cyclic_group" class="ref-link"><strong>the
+                    integers modulo \(n\)</strong></a> form a cyclic group under addition, and that
+                    <a href="../Linear_algebra/group_isomorphism.html#T-cyclic_classified_by_order" class="ref-link"><strong>any
+                    two cyclic groups of the same order are isomorphic</strong></a> — structurally identical, differing only in how their elements are
+                    written. So \(G\) is isomorphic to the additive group \(\mathbb{Z}_n\) of the same order. One
+                    might expect a problem defined purely in terms of group structure to be exactly as hard in
+                    isomorphic copies. It is not.
+                </p>
+
+                <p>
+                    In the additive group \(\mathbb{Z}_n\), the discrete logarithm problem reads: given \(a\) and
+                    \(b\), find \(x\) with \(x a \equiv b \pmod n\) — where the &ldquo;exponentiation&rdquo;
+                    \(\alpha^x\) has become the repeated addition \(x a\). This is a linear congruence, and it is easy.
+                    A solution exists exactly when \(\gcd(a, n)\) divides \(b\), and when it does, the extended Euclidean
+                    algorithm produces \(x\) directly, in time polynomial in the length of \(n\). The discrete logarithm
+                    in the additive presentation is solved almost as soon as it is stated.
+                </p>
+
+                <p>
+                    Yet in \(G\) itself — the isomorphic copy where exponents are written multiplicatively — the same
+                    problem, finding the exponent, is the conjectured-hard one cryptography relies on. The isomorphism
+                    between \(G\) and \(\mathbb{Z}_n\) is real; the disparity in difficulty between them is also real. The
+                    resolution is that an isomorphism preserves group structure but need not preserve computational cost.
+                    Translating an element of \(G\) into its image in \(\mathbb{Z}_n\) — the step that would carry the
+                    hard instance into the easy presentation and let the linear-congruence method finish it —
+                    <em>is itself the discrete logarithm problem</em>. The map exists; computing it is exactly the work we
+                    are trying to avoid. Two groups can be the same as algebraic objects and worlds apart as computational
+                    ones, because difficulty attaches to the representation of the elements, not to the abstract structure
+                    they share.
+                </p>
+
+                <figure style="margin: 1.5rem 0; text-align: center;">
+                    <svg width="100%" viewBox="0 0 680 360" role="img" style="max-width: 620px; height: auto;" aria-labelledby="iso-title iso-desc">
+                        <title id="iso-title">The discrete logarithm cannot escape to the easy group</title>
+                        <desc id="iso-desc">In a group G where the discrete logarithm is believed hard, finding the exponent of an element is the conjectured-hard problem. G is isomorphic to the additive integers modulo n of the same order, where the analogous problem is an easy linear congruence solved by the extended Euclidean algorithm. One could solve the hard problem by carrying the element down to the additive group and solving it there, but the map that carries it down is itself the discrete logarithm. The escape route requires the very computation it was meant to avoid.</desc>
+                        <defs>
+                            <marker id="iso-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </marker>
+                        </defs>
+
+                        <rect x="190" y="30" width="300" height="92" rx="8" fill="#3d7ab5" fill-opacity="0.10" stroke="#3d7ab5" stroke-width="1"/>
+                        <text x="340" y="58" text-anchor="middle" fill="currentColor" font-size="17" font-weight="600" font-family="sans-serif">G&#8195;the hard group</text>
+                        <text x="340" y="84" text-anchor="middle" fill="currentColor" font-size="14" font-family="sans-serif">given &#946;, find its exponent</text>
+                        <text x="340" y="106" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">conjectured hard &#8212; no efficient method known</text>
+
+                        <rect x="190" y="238" width="300" height="92" rx="8" fill="#3d7ab5" fill-opacity="0.10" stroke="#3d7ab5" stroke-width="1"/>
+                        <text x="340" y="266" text-anchor="middle" fill="currentColor" font-size="17" font-weight="600" font-family="sans-serif">&#8484;&#8345;&#8195;the easy group</text>
+                        <text x="340" y="292" text-anchor="middle" fill="currentColor" font-size="14" font-family="sans-serif">the same problem reads xa &#8801; b</text>
+                        <text x="340" y="314" text-anchor="middle" fill="#3d7ab5" font-size="13" font-weight="600" font-family="sans-serif">easy &#8212; extended Euclidean algorithm</text>
+
+                        <line x1="340" y1="122" x2="340" y2="238" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#iso-arrow)"/>
+                        <text x="300" y="170" text-anchor="end" fill="currentColor" font-size="13" font-weight="500" font-family="sans-serif">carry &#946; down</text>
+                        <text x="300" y="188" text-anchor="end" fill="currentColor" font-size="12" fill-opacity="0.75" font-family="sans-serif">to solve it</text>
+                        <text x="300" y="204" text-anchor="end" fill="currentColor" font-size="12" fill-opacity="0.75" font-family="sans-serif">in the easy group</text>
+
+                        <text x="380" y="170" text-anchor="start" fill="currentColor" font-size="13" font-style="italic" font-family="sans-serif">but this map</text>
+                        <text x="380" y="188" text-anchor="start" fill="currentColor" font-size="13" font-style="italic" font-family="sans-serif">is the discrete</text>
+                        <text x="380" y="206" text-anchor="start" fill="currentColor" font-size="13" font-style="italic" font-family="sans-serif">logarithm itself</text>
+
+                        <text x="340" y="352" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.85" font-family="sans-serif">isomorphic groups, but the escape route is the very problem it would avoid</text>
+                    </svg>
+                </figure>
+
+                <div class="insight-box">
+                    <h3>Math \(\leftrightarrow\) CS: Where Hardness Actually Lives</h3>
+                    <p>
+                        The algebraic pages classify groups up to isomorphism, and for them two isomorphic groups are
+                        interchangeable — nothing a group-theoretic argument can ask will distinguish them. Cryptography
+                        cares about a question those pages never pose: not <em>what</em> a group is, but <em>how much it
+                        costs</em> to compute in a given encoding of it. The discrete logarithm shows the two questions
+                        come apart. A property invisible to the classification of structures — the cost of inverting
+                        exponentiation in a particular presentation — is the entire resource a scheme built on the
+                        discrete logarithm draws on. This is the recurring shape of the bridge between the subjects: an
+                        object pinned down completely by pure mathematics still hides, in how it is computed, the
+                        quantity an application lives or dies by.
+                    </p>
+                </div>
+
+                <p>
+                    The same closing caution applies, for the same reason: the hardness of the discrete logarithm is a
+                    conjecture about classical computation, and Shor's algorithm computes discrete logarithms in
+                    polynomial time as well, on any of the groups currently in use. The two oldest hardness assumptions
+                    in public-key cryptography fall to the same machine — a coincidence worth examining, but not yet. For
+                    now we have two candidate trapdoors rather than one, and the immediate question is how they relate.
+                </p>
+
+            </section>
+
+            <section id="reductions" class="section-content">
+                <h2>Relating One Problem to Another</h2>
+
+                <p>
+                    We now have two hardness assumptions standing side by side, factoring and the discrete logarithm,
+                    each a candidate foundation, each conjectural, each classical. A natural question for anyone building
+                    on them is how they relate. If a scheme's security rests on the difficulty of some task, it matters
+                    whether that task is at least as hard as a problem we already trust, or whether it might secretly be
+                    easier. The tool for asking such questions precisely is one the earlier complexity pages already
+                    built: <a href="p_vs_np.html#D-polynomial_time_reduction" class="ref-link"><strong>reduction</strong></a>.
+                    There it compared decision problems; here we put the same idea to work comparing the search problems
+                    that cryptography actually poses, and the shift in setting is worth marking rather than glossing.
+                </p>
+
+                <p>
+                    The problem we want to relate to the discrete logarithm is the one that underlies key agreement.
+                    Suppose two parties have each raised a common base to a private exponent and published the result;
+                    an eavesdropper sees both public values but neither exponent. Can the eavesdropper compute the value
+                    the base would take if raised to the product of the two private exponents — the quantity the parties
+                    will share as a secret? That task is a problem in its own right.
+                </p>
+
+                <div class="theorem" id="D-diffie_hellman_problem">
+                    <span class="theorem-title">Definition: The Diffie-Hellman Problem</span>
+                    <p>
+                        Let \(G\) be a finite cyclic group with generator \(\alpha\). The <strong>Diffie-Hellman
+                        problem</strong> is the following: given \(\alpha\), \(\alpha^a\), and \(\alpha^b\) — but not
+                        the exponents \(a\) and \(b\) — compute \(\alpha^{ab}\).
+                    </p>
+                </div>
+
+                <p>
+                    The Diffie-Hellman problem and the discrete logarithm problem are plainly related: both live in the
+                    same group and both turn on exponents one cannot see directly. The relationship can be made exact.
+                    Suppose someone possesses an efficient method for the discrete logarithm in \(G\). Then, handed an
+                    instance of the Diffie-Hellman problem — the values \(\alpha\), \(\alpha^a\), \(\alpha^b\) — they
+                    first apply that method to \(\alpha^a\) to recover the exponent \(a\). Knowing \(a\), they raise the
+                    other public value to it, computing \((\alpha^b)^a = \alpha^{ab}\), which is exactly the Diffie-Hellman
+                    answer. A solver for the discrete logarithm yields a solver for Diffie-Hellman, at the cost of one
+                    logarithm computation and one exponentiation.
+                </p>
+
+                <div class="theorem" id="T-dhp_reduces_dlp">
+                    <span class="theorem-title">Theorem: The Diffie-Hellman Problem Reduces to the Discrete Logarithm</span>
+                    <p>
+                        In any finite cyclic group, the Diffie-Hellman problem is solvable in polynomial time given
+                        access to a solver for the discrete logarithm problem. Equivalently, the Diffie-Hellman problem
+                        is no harder than the discrete logarithm problem.
+                    </p>
+                </div>
+
+                <p>
+                    The argument just given <em>is</em> the proof: recover \(a = \log_\alpha(\alpha^a)\) with the assumed
+                    solver, then return \((\alpha^b)^a\). Both steps run in time polynomial in the length of the group
+                    order, so the whole procedure is a polynomial-time computation that calls the discrete-logarithm
+                    solver once. That structure — a polynomial-time procedure that invokes a solver for one problem to
+                    settle another — is precisely a reduction, and its consequence is an ordering of difficulty: breaking
+                    Diffie-Hellman is at most as hard as computing discrete logarithms. Whether it is strictly easier —
+                    whether one could solve Diffie-Hellman <em>without</em> being able to take logarithms — is the
+                    converse question, and it remains open. The reduction runs in one direction only; the equivalence of
+                    the two problems is not known in general.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Math \(\leftrightarrow\) CS: Reduction as a Comparison of Hardness</h3>
+                    <p>
+                        The complexity pages introduced reduction to organize decision problems, mapping yes-instances
+                        to yes-instances so that a solver for one language settles another. The reduction here is not of
+                        that exact type — it transforms a <em>search</em> problem, not a yes-or-no question, and it
+                        consults its solver as a subroutine rather than rewriting one instance into one other. What
+                        carries over is the load-bearing idea: a reduction transfers difficulty, so that an ordering
+                        &ldquo;\(P\) is no harder than \(Q\)&rdquo; can be established without solving either. For
+                        cryptography this is the natural currency. A scheme is secure only on the assumption that some
+                        problem is hard; a reduction lets that assumption be compared against, or built up from, the
+                        hardness of a problem already studied, turning a pile of separate conjectures into a structured
+                        hierarchy where the relationships, if not the absolute difficulties, are provable.
+                    </p>
+                </div>
+
+                <p>
+                    The direction of this particular reduction also carries a warning that the rest of the track will
+                    take seriously. Diffie-Hellman is no harder than the discrete logarithm — so anything that solves
+                    the discrete logarithm dissolves Diffie-Hellman along with it. The quantum attack that breaks the
+                    logarithm therefore breaks the key-agreement problem built on it, with no separate effort required;
+                    the reduction guarantees it. An ordering of hardness is a convenience while the problems stand and a
+                    liability once the harder one falls, because everything below it falls too. This is the structural
+                    reason the collapse of the classical assumptions is not piecemeal but wholesale, and the reason the
+                    search for replacements has had to begin from problems that no known reduction connects to factoring
+                    or to logarithms at all.
+                </p>
+
+            </section>
+
+            <section id="landscape" class="section-content">
+                <h2>A Landscape Built on Conjecture</h2>
+
+                <p>
+                    Stepping back, the trapdoor that the previous page treated as an abstract requirement has been given
+                    concrete shape three times over. Factoring supplies one asymmetry, the discrete logarithm a second,
+                    and the Diffie-Hellman problem a third that the reduction places beneath the logarithm in difficulty.
+                    These are the classical foundations of public-key cryptography, and they have carried it for
+                    decades. But the honest summary of this page is not a list of solved problems. It is an inventory of
+                    assumptions, and an account of exactly how much weight each one can bear.
+                </p>
+
+                <p>
+                    Two features run through every assumption examined here. The first is that none of them is a theorem.
+                    We have no proof that factoring is hard, no proof that discrete logarithms resist efficient
+                    computation, no proof that the Diffie-Hellman value cannot be extracted from the public ones. We have
+                    forward maps that are demonstrably easy and inverse maps that have demonstrably resisted every
+                    efficient method anyone has found. Cryptography on these foundations is cryptography that has
+                    converted a wager on open mathematical problems into a guarantee of secrecy — a remarkably productive
+                    move, and one whose terms should not be forgotten. The hardness is conjectured, the security is
+                    conditional, and the condition is the continued difficulty of problems that mathematicians are
+                    actively trying to make easy.
+                </p>
+
+                <p>
+                    The second feature is the one the earlier pages insisted on and this page has met at every turn:
+                    hardness is relative to a model of computation. Factoring and the discrete logarithm are intractable
+                    for the classical machine the analysis assumed throughout, and tractable — in polynomial time — for a
+                    quantum machine running the appropriate algorithm. The two problems fall to the same attack, and the
+                    reduction ensures the Diffie-Hellman problem falls with them. This is not a distant prospect to be
+                    filed under future work. Large-scale quantum computers capable of running these attacks at
+                    cryptographic sizes have not been built, but ciphertexts recorded today can be stored and broken once
+                    they are, so the threat to long-lived secrets is present rather than deferred, and the migration away
+                    from these problems is, in the standardized world of cryptography, already underway rather than
+                    merely anticipated.
+                </p>
+
+                <p>
+                    The quantum threat is sharp but not universal, and precision matters here as much as it did in the
+                    definitions. What the quantum attack dismantles is the specific structure these number-theoretic
+                    problems carry — the abelian arithmetic that makes a single efficient quantum procedure apply to both
+                    factoring and logarithms. Symmetric-key encryption and hash functions, which do not rest on that
+                    structure, face only a generic quantum speedup that searches an unstructured space quadratically
+                    faster, an erosion answered by enlarging keys rather than by abandoning the design. The collapse
+                    documented here is a collapse of the public-key assumptions built on hidden abelian structure, not
+                    of cryptography as a whole. That distinction is what makes a replacement conceivable.
+                </p>
+
+                <p>
+                    And a replacement is exactly what the rest of the track is for. If the danger is that factoring and
+                    the discrete logarithm share an algebraic structure a quantum computer exploits, the response is to
+                    look for hard problems that do not carry that structure — problems for which no efficient quantum
+                    algorithm is known, and on which no known reduction from factoring or logarithms bears. The leading
+                    candidates come from the geometry of high-dimensional integer lattices, where the task of finding a
+                    shortest or nearest vector appears to resist quantum and classical attack alike. Building the next
+                    foundation there means leaving the comfortable arithmetic of this page for a setting where hardness
+                    is conjectured on different grounds entirely. The trapdoor survives the transition; the problem it is
+                    built from does not. That the assumptions of this page are a beginning rather than a settlement is
+                    the thread the track has followed from the start, and the one it follows next into the lattice.
+                </p>
+
+            </section>
+
+        </div>
+    </body>
+</html>
