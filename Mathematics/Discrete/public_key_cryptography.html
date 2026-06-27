@@ -1,0 +1,364 @@
+---
+layout: default
+title: "Public-Key Cryptography"
+topic_id: disc-31
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Public-Key Cryptography</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#two-keys">Two Keys Instead of One</a>
+            <a href="#trapdoor">Trapdoor One-Way Functions</a>
+            <a href="#two-worlds">Symmetric and Public-Key Compared</a>
+            <a href="#hybrid">The Hybrid Construction</a>
+        </div>
+
+        <div class="container">
+
+            <section id="two-keys" class="section-content">
+                <h2>Two Keys Instead of One</h2>
+
+                <p>
+                    Every scheme considered so far has shared one feature: the party who encrypts and the party who
+                    decrypts hold the <em>same</em> secret. An <a href="intro_cryptography.html#D-cipher" class="ref-link"><strong>encryption
+                    scheme</strong></a> pairs each encryption key \(e\) with a decryption key \(d\), and in the schemes
+                    seen until now the two are, for practical purposes, the same object: whoever can lock can also unlock.
+                    Such a scheme works whenever the two parties already share a secret, and its security rests entirely
+                    on keeping that shared secret from everyone else.
+                </p>
+
+                <p>
+                    The difficulty is not in the encryption but in arriving at the shared secret. Before any message can
+                    be sent, the two parties must agree on a key that no one else knows — and they must do so over some
+                    channel. If they could already send secret messages to each other, they would not need the scheme;
+                    the very thing the key is meant to provide is what its establishment seems to require. Two parties
+                    who have never met, communicating only over a channel an adversary controls, cannot use a symmetric
+                    scheme until they have somehow shared a key in advance. This is the <strong>key-distribution
+                    problem</strong>, and for symmetric cryptography it is unavoidable: confidential communication
+                    presupposes a secret already held in common.
+                </p>
+
+                <p>
+                    The resolution is to break the symmetry. Suppose the key that encrypts and the key that decrypts
+                    are genuinely <em>different</em>, and — this is the decisive condition — suppose that knowing the
+                    encryption key gives no feasible way to find the decryption key. Then the encryption key need not be
+                    secret at all. Its owner can publish it: print it, broadcast it, hand it to the adversary directly.
+                    Anyone may use it to encrypt, but only the holder of the matching, undisclosed decryption key can
+                    recover what was encrypted. The secret that symmetric cryptography had to transport in advance never
+                    needs to travel.
+                </p>
+
+                <div class="theorem" id="D-public_key_encryption">
+                    <span class="theorem-title">Definition: Public-Key Encryption Scheme</span>
+                    <p>
+                        An encryption scheme with encryption transformations \(\{E_e : e \in \mathcal{K}\}\) and
+                        corresponding decryption transformations \(\{D_d : d \in \mathcal{K}\}\) is a
+                        <strong>public-key</strong> scheme if, for each associated key pair \((e, d)\), the encryption
+                        key \(e\) — the <strong>public key</strong> — is made publicly available, while the decryption
+                        key \(d\) — the <strong>private key</strong> — is kept secret. For the scheme to be secure it
+                        must be computationally infeasible to determine \(d\) from \(e\). A scheme in which \(e\) and
+                        \(d\) are not separated in this way — where possession of the encryption capability confers the
+                        decryption capability — is <strong>symmetric-key</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    The asymmetry rearranges every assumption of the previous pages. The public key travels over an
+                    unsecured channel — the same channel the ciphertext travels on — because it is not secret. Any party
+                    who obtains it can send confidential messages to its owner that only the owner can read; the owner
+                    publishes one key and receives from many. Once the encryption key is encrypted under no further key,
+                    the regress that made key distribution circular is cut: there is nothing secret to distribute in
+                    order to begin. What this demands, in exchange, is a mathematical object that does not obviously
+                    exist — a transformation easy to apply and infeasible to reverse, yet equipped with a secret that
+                    makes reversal easy after all. The next section names that object and states the property it must
+                    have.
+                </p>
+            </section>
+
+            <section id="trapdoor" class="section-content">
+                <h2>Trapdoor One-Way Functions</h2>
+
+                <p>
+                    The public-key idea asks for a transformation with two properties that pull against each other. It
+                    must be easy to compute in the forward direction, so that anyone holding the public key can encrypt.
+                    It must be infeasible to invert, so that an adversary holding the same public key — and therefore the
+                    same forward transformation — still cannot decrypt. A transformation with these two properties alone
+                    is called <strong>one-way</strong>: easy forward, infeasible back.
+                </p>
+
+                <p>
+                    A one-way function by itself is not yet enough, because the legitimate receiver must be able to
+                    invert it. If inversion were infeasible for everyone, the ciphertext would be unreadable even by its
+                    intended recipient. What the receiver has that the adversary does not is the private key, and the
+                    transformation must be built so that this one extra piece of information collapses the infeasible
+                    inversion into an easy one. A one-way function carrying such a secret shortcut is a
+                    <strong>trapdoor</strong> one-way function: infeasible to invert in general, easy to invert for
+                    whoever holds the trapdoor.
+                </p>
+
+                <div class="theorem" id="D-trapdoor_one_way">
+                    <span class="theorem-title">Definition: Trapdoor One-Way Function</span>
+                    <p>
+                        A <strong>one-way function</strong> is a map \(f \colon \mathcal{X} \to \mathcal{Y}\) that is
+                        easy to evaluate — given \(x\), computing \(f(x)\) is feasible — but hard to invert: given a
+                        value \(y = f(x)\) for \(x\) drawn at random, finding any preimage is computationally
+                        infeasible. A <strong>trapdoor one-way function</strong> is a one-way function \(f\) accompanied
+                        by extra information \(t\), the <strong>trapdoor</strong>, with the property that knowledge of
+                        \(t\) makes inversion feasible: given \(y\) and \(t\), one can compute \(x\) with \(f(x) = y\)
+                        efficiently, while given \(y\) alone — without \(t\) — inversion remains infeasible.
+                    </p>
+                </div>
+
+                <figure style="margin: 1.5rem 0; text-align: center;">
+                    <svg width="100%" viewBox="0 0 680 300" role="img" style="max-width: 680px; height: auto;" aria-labelledby="trap-title trap-desc">
+                        <title id="trap-title">The asymmetry of a trapdoor one-way function</title>
+                        <desc id="trap-desc">The forward map from x to y is easy. Inverting y back to x is infeasible without the trapdoor, but easy for the holder of the trapdoor t.</desc>
+                        <defs>
+                            <marker id="trap-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </marker>
+                        </defs>
+                        <rect x="40" y="118" width="150" height="64" rx="8" fill="#3d7ab5" fill-opacity="0.10" stroke="#3d7ab5" stroke-width="1"/>
+                        <text x="115" y="156" text-anchor="middle" fill="currentColor" font-size="20" font-weight="500" font-family="sans-serif">x</text>
+                        <rect x="490" y="118" width="150" height="64" rx="8" fill="#3d7ab5" fill-opacity="0.10" stroke="#3d7ab5" stroke-width="1"/>
+                        <text x="565" y="156" text-anchor="middle" fill="currentColor" font-size="20" font-weight="500" font-family="sans-serif">y</text>
+                        <line x1="195" y1="138" x2="485" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#trap-arrow)"/>
+                        <text x="340" y="124" text-anchor="middle" fill="currentColor" font-size="16" font-weight="500" font-family="sans-serif">forward: compute f(x)</text>
+                        <text x="340" y="158" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">easy for anyone</text>
+                        <line x1="485" y1="166" x2="195" y2="166" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#trap-arrow)"/>
+                        <text x="340" y="196" text-anchor="middle" fill="currentColor" font-size="16" font-weight="500" font-family="sans-serif">invert without t</text>
+                        <text x="340" y="216" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">infeasible</text>
+                        <line x1="490" y1="245" x2="190" y2="245" stroke="#3d7ab5" stroke-width="1.5" marker-end="url(#trap-arrow)"/>
+                        <text x="340" y="262" text-anchor="middle" fill="currentColor" font-size="16" font-weight="500" font-family="sans-serif">invert with trapdoor t</text>
+                        <text x="340" y="282" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">easy for the holder of t</text>
+                    </svg>
+                </figure>
+
+                <p>
+                    The trapdoor one-way function is the core from which a public-key scheme is built, supplying the
+                    one-way map and the secret that reverses it. The public key \(e\) specifies the forward direction
+                    \(f(x)\), easy for anyone to compute; the private key \(d\) is the trapdoor, making the otherwise
+                    infeasible inversion easy for its holder alone. The security condition of the previous section — that
+                    \(d\) cannot be recovered from \(e\) — is precisely the one-wayness of the forward map seen from the
+                    adversary's side: if the inverse could be computed from \(e\) alone, then \(d\) would be redundant and
+                    the trapdoor no secret.
+                </p>
+
+                <p>
+                    The trapdoor function is the primitive, not yet the scheme. Evaluated directly as a fixed map, it is
+                    deterministic — a given input always yields the same output — and a deterministic encryption is
+                    exactly what the previous page ruled out: equal plaintexts would produce equal ciphertexts, leaking
+                    the structure that <a href="security_definitions.html#D-randomized_encryption" class="ref-link"><strong>randomized
+                    encryption</strong></a> was introduced to hide. A secure public-key scheme therefore does not encrypt
+                    by applying the trapdoor function to the plaintext alone. It combines the function with fresh
+                    randomness at encryption time, so that the trapdoor supplies the hard-to-reverse core while the
+                    randomization supplies the one-to-many map that conceals plaintext structure. The trapdoor function
+                    makes public-key encryption <em>possible</em>; the randomization is what makes a particular use of it
+                    <em>secure</em>. How that combination is carried out concretely belongs with the specific
+                    constructions taken up later; here it is enough that the primitive and the security requirement of the
+                    previous page are not in tension — one is the engine, the other the discipline imposed on its use.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Math \(\leftrightarrow\) CS: Why One-Wayness Is What Public Keys Need</h3>
+                    <p>
+                        The asymmetry of effort between computing \(f\) and inverting it is what makes a key safe to
+                        publish. Handing the adversary the public key hands over the entire forward computation, holding
+                        nothing back — and this is harmless precisely because the forward computation, run in reverse, is
+                        infeasible. Confidentiality is thereby converted into a statement about computational cost: the
+                        protection is not that the adversary lacks information but that the adversary lacks the
+                        <em>resources</em> to use the information it has. A public key is the rare case where the
+                        complete description of a procedure can be made public without compromising what the procedure
+                        protects, because the gap between doing and undoing is itself the lock.
+                    </p>
+                </div>
+
+                <p>
+                    Whether trapdoor one-way functions exist at all is not settled by the definition; the definition only
+                    says what such an object would be. Their existence rests on the presumed hardness of specific
+                    computational problems, and exhibiting concrete functions — and the number-theoretic problems whose
+                    conjectured intractability supplies their one-wayness — is the task of the pages that follow. For now
+                    the framework stands on the assumption that such functions can be built, and the question this page
+                    pursues is structural: granted the public-key construction, how does it compare with the symmetric
+                    schemes it does not replace?
+                </p>
+            </section>
+
+            <section id="two-worlds" class="section-content">
+                <h2>Symmetric and Public-Key Compared</h2>
+
+                <p>
+                    Public-key cryptography removes the obstacle that defines symmetric cryptography — the need to share
+                    a secret before communicating — but it does not make symmetric schemes obsolete. The two carry
+                    complementary strengths, and a clear account of where each wins explains why deployed systems use
+                    both rather than choosing one. The comparison runs along three axes: how the keys are managed, how
+                    fast the scheme runs, and how long the keys must be.
+                </p>
+
+                <p>
+                    <strong>Key management.</strong> A symmetric scheme requires the key to stay secret at both ends,
+                    and a fresh secret for each pair of communicating parties: a network of \(n\) parties who must all
+                    communicate confidentially in pairs needs on the order of \(n^2\) separately guarded keys, every one
+                    of them a secret that had to be distributed in advance. A public-key scheme requires only the
+                    private key to stay secret, and each party holds just one; the matching public keys are published.
+                    The number of secrets to guard drops from one per pair to one per party. What public-key management
+                    demands instead is not secrecy of the public key but its <em>authenticity</em> — a point the scheme
+                    does not resolve for free, and which the next remark isolates.
+                </p>
+
+                <p>
+                    <strong>Speed.</strong> Symmetric schemes are fast. Their operations are simple transformations on
+                    blocks of data, and they sustain high throughput in hardware and software alike. Public-key schemes
+                    are slow by comparison: evaluating a trapdoor one-way function is an arithmetic operation on large
+                    structured objects, orders of magnitude more costly per unit of data than a symmetric transformation.
+                    The gap is not incidental — it follows from the kind of mathematical structure a trapdoor requires —
+                    and it is decisive for how the two are combined.
+                </p>
+
+                <p>
+                    <strong>Key length.</strong> For a well-designed symmetric scheme the best available attack is
+                    exhaustive key search, so the key need only be long enough to put brute force out of reach. A
+                    public-key scheme, by contrast, ties its security to a structured computational problem, and that
+                    structure tends to open attacks better than trying every key — shortcuts that exploit the very
+                    algebraic regularity the trapdoor is built from. Where such a shortcut exists, the private key must
+                    be made substantially longer than a symmetric key of equivalent security to absorb it; the key
+                    length is set against the best known attack on the underlying problem, not against brute force alone.
+                    The richer structure that makes a trapdoor possible is, in general, structure an attacker can also
+                    work with, and a longer key is the recurring price of relying on it.
+                </p>
+
+                <div class="theorem" id="T-symmetric_vs_public">
+                    <span class="theorem-title">Comparison: The Complementary Trade-off</span>
+                    <p>
+                        Symmetric-key and public-key encryption have complementary profiles.
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>
+                            <strong>Symmetric-key</strong>: fast, with short keys, but requires a shared secret
+                            established in advance and a separate secret per communicating pair.
+                        </li>
+                        <li>
+                            <strong>Public-key</strong>: requires no shared secret and only one secret per party, but is
+                            slower, typically needs longer keys, and requires the authenticity — though not the secrecy —
+                            of the public key to be assured.
+                        </li>
+                    </ul>
+                    <p>
+                        Neither dominates the other. Public-key encryption solves the key-distribution problem that
+                        symmetric encryption cannot, while symmetric encryption delivers the bulk-data performance that
+                        public-key encryption cannot.
+                    </p>
+                </div>
+
+                <p>
+                    One asymmetry in this comparison needs care, because it is the one weakness the public-key idea does
+                    not dissolve. Publishing a key removes the burden of keeping it secret, but it introduces the burden
+                    of being sure <em>whose</em> key it is. An adversary who can intervene actively on the channel may
+                    substitute its own public key for the intended recipient's, so that messages a sender believes are
+                    encrypted for the recipient are in fact encrypted for the adversary, who decrypts, reads, re-encrypts
+                    under the true public key, and forwards — a deception that breaks confidentiality without breaking
+                    the encryption at all. The defense is not secrecy of the public key, which by design it lacks, but
+                    <em>assurance of its origin</em>: the sender must be convinced the published key truly belongs to the
+                    intended recipient. Supplying that assurance — binding a public key to an identity — is a problem of
+                    authentication rather than encryption, and the machinery that addresses it is taken up further along
+                    the track.
+                </p>
+            </section>
+
+            <section id="hybrid" class="section-content">
+                <h2>The Hybrid Construction</h2>
+
+                <p>
+                    The complementarity of the two profiles suggests its own resolution: their weaknesses do not overlap,
+                    so used together each supplies exactly what the other lacks. Public-key encryption establishes a key
+                    over an open channel; symmetric encryption then protects the data at high speed.
+                </p>
+
+                <p>
+                    The combination is direct. To send a large message confidentially, the two parties first use the
+                    public-key scheme to establish a shared symmetric key — a short secret, used only for this exchange —
+                    that only the holder of the matching private key can obtain. The bulk of the message, however long, is
+                    then encrypted under the fast symmetric scheme using that key. What travels is the symmetric key
+                    established through the public-key scheme together with the message body sealed by the symmetric
+                    scheme; the recipient recovers the symmetric key with the private key, then decrypts the body.
+                </p>
+
+                <figure style="margin: 1.5rem 0; text-align: center;">
+                    <svg width="100%" viewBox="0 0 680 320" role="img" style="max-width: 680px; height: auto;" aria-labelledby="hybrid-title hybrid-desc">
+                        <title id="hybrid-title">The hybrid construction</title>
+                        <desc id="hybrid-desc">The public-key scheme carries only the short symmetric key from sender to recipient; the fast symmetric scheme carries the message body under that key.</desc>
+                        <defs>
+                            <marker id="hyb-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </marker>
+                        </defs>
+                        <text x="115" y="32" text-anchor="middle" fill="currentColor" font-size="16" font-weight="500" font-family="sans-serif">Sender</text>
+                        <text x="565" y="32" text-anchor="middle" fill="currentColor" font-size="16" font-weight="500" font-family="sans-serif">Recipient</text>
+                        <line x1="115" y1="44" x2="115" y2="300" stroke="currentColor" stroke-width="1" stroke-opacity="0.4"/>
+                        <line x1="565" y1="44" x2="565" y2="300" stroke="currentColor" stroke-width="1" stroke-opacity="0.4"/>
+                        <rect x="200" y="74" width="280" height="74" rx="8" fill="#3d7ab5" fill-opacity="0.10" stroke="#3d7ab5" stroke-width="1"/>
+                        <text x="340" y="104" text-anchor="middle" fill="currentColor" font-size="15" font-weight="500" font-family="sans-serif">public-key scheme</text>
+                        <text x="340" y="128" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">establishes the short symmetric key</text>
+                        <line x1="120" y1="111" x2="198" y2="111" stroke="currentColor" stroke-width="1.5" marker-end="url(#hyb-arrow)"/>
+                        <line x1="482" y1="111" x2="560" y2="111" stroke="currentColor" stroke-width="1.5" marker-end="url(#hyb-arrow)"/>
+                        <rect x="200" y="196" width="280" height="74" rx="8" fill="#3d7ab5" fill-opacity="0.10" stroke="#3d7ab5" stroke-width="1"/>
+                        <text x="340" y="226" text-anchor="middle" fill="currentColor" font-size="15" font-weight="500" font-family="sans-serif">symmetric scheme</text>
+                        <text x="340" y="250" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">encrypts the message body</text>
+                        <line x1="120" y1="233" x2="198" y2="233" stroke="currentColor" stroke-width="1.5" marker-end="url(#hyb-arrow)"/>
+                        <line x1="482" y1="233" x2="560" y2="233" stroke="currentColor" stroke-width="1.5" marker-end="url(#hyb-arrow)"/>
+                        <text x="340" y="180" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">key established above is used as the symmetric key below</text>
+                    </svg>
+                </figure>
+
+                <p>
+                    The slow public-key operation runs only on the short symmetric key, never on the bulk data, so its
+                    cost is a fixed overhead independent of message length; the fast symmetric scheme carries the volume.
+                    The construction inherits the key-distribution solution of public-key encryption and the throughput
+                    of symmetric encryption, and pays the public-key price only once per exchange rather than per byte.
+                    This division of labor — public-key cryptography to establish a key, symmetric cryptography to
+                    protect the data — is the structure underlying essentially every confidential channel in practical
+                    use.
+                </p>
+
+                <p>
+                    The framework is now complete in outline. We have a definition of what security means, a class of
+                    schemes — symmetric and public-key — that could in principle meet it, and a construction combining
+                    their strengths. What the framework still lacks is any actual instance: not one trapdoor one-way
+                    function has been exhibited, and without one the public-key construction is a specification waiting
+                    for a realization. Producing that realization is a question of mathematics, not of cryptographic
+                    architecture. A trapdoor one-way function must be built from an operation that is easy to perform
+                    and infeasible to reverse, and the first such candidates came from number theory: multiplying two
+                    large primes is easy while recovering them from the product — <strong>integer factorization</strong>
+                    — is believed infeasible; exponentiating in a finite group is easy while recovering the exponent —
+                    the <strong>discrete logarithm</strong> — is believed comparably hard. These are the problems on
+                    which public-key cryptography was first built, and the structure that makes them serve as trapdoors
+                    is the arithmetic of congruences, modular exponentiation, and finite cyclic groups.
+                </p>
+
+                <p>
+                    Their hardness, though, is a conjecture about a particular model of computation, and earlier pages
+                    have already marked the limit: a quantum computer running Shor's algorithm solves both factoring and
+                    the discrete logarithm efficiently, so the schemes built on them do not remain secure against an
+                    adversary who has one. The security a trapdoor confers is always relative to what the attacker can
+                    compute, and the search for trapdoors resistant to that broader class of attack — built on different
+                    conjectured-hard problems — is an active continuation of the same program, not a closed chapter.
+                    Building the first concrete public-key schemes on the number-theoretic problems is where the track
+                    turns next; that they are a starting point rather than a final foundation is a distinction the
+                    earlier pages were careful to draw, and the later ones will return to.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>
