@@ -1,0 +1,545 @@
+---
+layout: default
+title: "Diffie-Hellman and RSA"
+topic_id: disc-33
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Diffie-Hellman and RSA</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#dh-protocol">Diffie-Hellman: Opening the Framework</a>
+            <a href="#rsa-scheme">RSA: Filling in Encryption</a>
+            <a href="#rsa-security">What RSA's Security Rests On</a>
+            <a href="#quantum-horizon">Built on Factoring and Logarithms</a>
+        </div>
+
+        <div class="container">
+
+            <section id="dh-protocol" class="section-content">
+                <h2>Diffie-Hellman: Opening the Framework</h2>
+
+                <p>
+                    The previous pages built the public-key idea as a specification and then named the
+                    <a href="intractable_problems.html#D-diffie_hellman_problem" class="ref-link"><strong>hardness
+                    assumptions</strong></a> that might fill it, but exhibited no working system. The first system to
+                    realize the idea historically did not encrypt messages at all. It solved a narrower and, at the time,
+                    more urgent problem: how two parties who share no secret can agree on one over a channel an adversary
+                    is reading. This is the <strong>key-distribution problem</strong> that symmetric cryptography could
+                    not escape on its own, and the construction that broke it opened the public-key era.
+                </p>
+
+                <p>
+                    The mechanism rests on a single asymmetry already in hand. In a finite
+                    <a href="../Linear_algebra/intro_groups.html#D-cyclic_group" class="ref-link"><strong>cyclic
+                    group</strong></a> with generator \(\alpha\), raising \(\alpha\) to a power is cheap, while recovering
+                    the exponent from the result is the
+                    <a href="intractable_problems.html#D-discrete_log_problem" class="ref-link"><strong>discrete
+                    logarithm problem</strong></a>, believed intractable in suitable groups. Two parties exploit this by
+                    each choosing a private exponent, publishing only the corresponding power, and combining what they
+                    receive with what they kept.
+                </p>
+
+                <div class="theorem" id="D-dh_key_agreement">
+                    <span class="theorem-title">Definition: Diffie-Hellman Key Agreement</span>
+                    <p>
+                        Let \(G\) be a finite cyclic group of order \(n\) with generator \(\alpha\), both fixed in
+                        advance and public. Two parties \(A\) and \(B\) establish a shared secret as follows.
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            \(A\) chooses a private integer \(x\) with \(1 \leq x \leq n-1\), keeps it secret, and sends
+                            \(\alpha^x\) to \(B\).
+                        </li>
+                        <li>
+                            \(B\) chooses a private integer \(y\) with \(1 \leq y \leq n-1\), keeps it secret, and sends
+                            \(\alpha^y\) to \(A\).
+                        </li>
+                        <li>
+                            On receiving \(\alpha^y\), party \(A\) computes \((\alpha^y)^x\); on receiving \(\alpha^x\),
+                            party \(B\) computes \((\alpha^x)^y\).
+                        </li>
+                    </ol>
+                    <p>
+                        Both parties obtain the same group element
+                        \[
+                        (\alpha^y)^x = \alpha^{xy} = (\alpha^x)^y,
+                        \]
+                        the equality holding because exponents in a group multiply, and this common value
+                        \(K = \alpha^{xy}\) is their <strong>shared secret</strong>.
+                    </p>
+                </div>
+
+                <p>
+                    The structural novelty is that the shared secret is never transmitted and never chosen by either
+                    party alone. It emerges from the two private exponents jointly, and the commutativity
+                    \((\alpha^x)^y = (\alpha^y)^x\) is exactly what lets the parties arrive at the same value from
+                    opposite sides. This is a sharper departure from the trapdoor picture than it first appears: there is
+                    no secret that reverses a public operation here. Knowing \(x\) inverts nothing an adversary could
+                    otherwise not compute — it is simply the private contribution \(A\) holds back. Key agreement asks
+                    only that the parties reach a common value an eavesdropper cannot, and achieves this with a one-way
+                    function and the commutativity of exponentiation, demanding no trapdoor at all.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: A Small Key Agreement</span>
+                    <p>
+                        Take the multiplicative group modulo the prime \(29\), generated by \(\alpha = 2\). Party \(A\)
+                        draws the private exponent \(x = 6\) and sends
+                        \[
+                        \alpha^x = 2^6 \bmod 29 = 6;
+                        \]
+                        party \(B\) draws \(y = 9\) and sends
+                        \[
+                        \alpha^y = 2^9 \bmod 29 = 19.
+                        \]
+                        Now \(A\) raises what it received to its own exponent, \((\alpha^y)^x = 19^6 \bmod 29 = 22\),
+                        and \(B\) does likewise, \((\alpha^x)^y = 6^9 \bmod 29 = 22\). Both reach the shared secret
+                        \(K = 22\), which equals \(\alpha^{xy} = 2^{54} \bmod 29\) computed either way. An eavesdropper
+                        sees \(2\), \(6\), and \(19\), and to find \(K\) must extract one of the hidden exponents from
+                        \(6 = 2^x\) or \(19 = 2^y\) — a discrete logarithm, easy at this size but infeasible once the
+                        prime is large.
+                    </p>
+                </div>
+
+                <figure style="margin: 1.5rem 0; text-align: center;">
+                    <svg width="100%" viewBox="0 0 680 330" role="img" style="max-width: 680px; height: auto;" aria-labelledby="dh-title dh-desc">
+                        <title id="dh-title">Diffie-Hellman key agreement over an open channel</title>
+                        <desc id="dh-desc">Party A holds a private exponent x and sends alpha to the x; party B holds a private exponent y and sends alpha to the y. Each raises the value it receives to its own private exponent, and both arrive at alpha to the x y, the shared secret. An eavesdropper sees only alpha to the x and alpha to the y and cannot form alpha to the x y.</desc>
+                        <defs>
+                            <marker id="dh-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </marker>
+                        </defs>
+                        <text x="115" y="34" text-anchor="middle" fill="currentColor" font-size="16" font-weight="600" font-family="sans-serif">A</text>
+                        <text x="115" y="56" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">private x</text>
+                        <text x="565" y="34" text-anchor="middle" fill="currentColor" font-size="16" font-weight="600" font-family="sans-serif">B</text>
+                        <text x="565" y="56" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">private y</text>
+                        <line x1="115" y1="68" x2="115" y2="300" stroke="currentColor" stroke-width="1" stroke-opacity="0.4"/>
+                        <line x1="565" y1="68" x2="565" y2="300" stroke="currentColor" stroke-width="1" stroke-opacity="0.4"/>
+                        <line x1="130" y1="108" x2="550" y2="108" stroke="currentColor" stroke-width="1.5" marker-end="url(#dh-arrow)"/>
+                        <text x="340" y="100" text-anchor="middle" fill="currentColor" font-size="15" font-family="sans-serif">&#945;&#739;</text>
+                        <line x1="550" y1="150" x2="130" y2="150" stroke="currentColor" stroke-width="1.5" marker-end="url(#dh-arrow)"/>
+                        <text x="340" y="142" text-anchor="middle" fill="currentColor" font-size="15" font-family="sans-serif">&#945;&#697;</text>
+                        <rect x="40" y="196" width="150" height="74" rx="8" fill="#3d7ab5" fill-opacity="0.10" stroke="#3d7ab5" stroke-width="1"/>
+                        <text x="115" y="226" text-anchor="middle" fill="currentColor" font-size="14" font-family="sans-serif">(&#945;&#697;)&#739;</text>
+                        <text x="115" y="250" text-anchor="middle" fill="#3d7ab5" font-size="14" font-weight="600" font-family="sans-serif">= &#945;&#739;&#697;</text>
+                        <rect x="490" y="196" width="150" height="74" rx="8" fill="#3d7ab5" fill-opacity="0.10" stroke="#3d7ab5" stroke-width="1"/>
+                        <text x="565" y="226" text-anchor="middle" fill="currentColor" font-size="14" font-family="sans-serif">(&#945;&#739;)&#697;</text>
+                        <text x="565" y="250" text-anchor="middle" fill="#3d7ab5" font-size="14" font-weight="600" font-family="sans-serif">= &#945;&#739;&#697;</text>
+                        <text x="340" y="234" text-anchor="middle" fill="currentColor" font-size="13" fill-opacity="0.85" font-family="sans-serif">shared secret, never sent</text>
+                        <text x="340" y="312" text-anchor="middle" fill="currentColor" font-size="12" fill-opacity="0.65" font-family="sans-serif">an eavesdropper sees &#945;&#739; and &#945;&#697; but cannot form &#945;&#739;&#697;</text>
+                    </svg>
+                </figure>
+
+                <p>
+                    What stops the eavesdropper is precisely the problem named on the previous page. The adversary sees
+                    \(\alpha\), \(\alpha^x\), and \(\alpha^y\), and wants \(\alpha^{xy}\) — which is the
+                    <a href="intractable_problems.html#D-diffie_hellman_problem" class="ref-link"><strong>Diffie-Hellman
+                    problem</strong></a> exactly. The security of the agreement is the conjectured intractability of that
+                    problem, and the
+                    <a href="intractable_problems.html#T-dhp_reduces_dlp" class="ref-link"><strong>reduction</strong></a>
+                    established there bounds it from above: since the Diffie-Hellman problem is no harder than the
+                    discrete logarithm, anyone who can take discrete logarithms in \(G\) recovers \(x\) from \(\alpha^x\)
+                    and computes the secret directly. The agreement is therefore secure only in groups where the discrete
+                    logarithm itself resists computation; the choice of group is not cosmetic but the entire basis of the
+                    guarantee.
+                </p>
+
+                <p>
+                    That guarantee is also bounded in a second way, and naming the boundary now prevents a
+                    misreading later. Diffie-Hellman protects the secret against an adversary who only
+                    <em>listens</em>. It offers nothing against one who sits in the middle and substitutes messages:
+                    such an adversary can run a separate agreement with each party, holding one shared secret with \(A\)
+                    and another with \(B\), relaying and re-encrypting traffic while reading all of it, and neither party
+                    can detect the interposition from the protocol alone. The exchanged values carry no evidence of who
+                    sent them. This is the same gap the previous page isolated for public keys in general — that
+                    publishing a value removes the need to keep it secret but not the need to know whose it is — and
+                    closing it requires binding each transmitted value to an identity, a matter of authentication the
+                    track takes up further along. Against a passive adversary, the agreement solves key distribution
+                    completely.
+                </p>
+
+                <p>
+                    Nothing in the construction used the integers modulo a prime specifically. It required only a finite
+                    cyclic group in which exponentiation is efficient and the discrete logarithm is hard, and any such
+                    group serves. The choice among them is a choice of where the hardness is most concentrated per unit
+                    of key length, and a later page returns to this when a group of a very different character — the
+                    points of an elliptic curve — sharpens the same protocol. For now the framework has its first
+                    inhabitant: a working public-key construction, resting on a named hard problem, that establishes a
+                    secret with no secret shared in advance. What it does not yet do is encrypt. Supplying that is the
+                    contribution of the construction taken up next.
+                </p>
+            </section>
+
+            <section id="rsa-scheme" class="section-content">
+                <h2>RSA: Filling in Encryption</h2>
+
+                <p>
+                    Key agreement establishes a shared secret but transmits no message of the sender's choosing. The
+                    construction that followed closed that gap, realizing the other half of the public-key idea:
+                    encryption of an arbitrary plaintext under a published key. Where the previous construction needed no
+                    trapdoor, this one is built on a
+                    <a href="public_key_cryptography.html#D-trapdoor_one_way" class="ref-link"><strong>trapdoor one-way
+                    function</strong></a> in the literal sense — its first concrete instance. The forward map is easy for
+                    anyone; the inverse is infeasible without a secret and easy with it; and the secret is precisely the
+                    private key. The hardness it draws on is the
+                    <a href="intractable_problems.html#D-integer_factorization" class="ref-link"><strong>integer
+                    factorization problem</strong></a>.
+                </p>
+
+                <p>
+                    The scheme is assembled from modular exponentiation in a way that makes the exponents undo one
+                    another exactly when the modulus is a product of two primes. We state the construction, then prove it
+                    decrypts correctly.
+                </p>
+
+                <div class="theorem" id="D-rsa">
+                    <span class="theorem-title">Definition: The RSA Scheme</span>
+                    <p>
+                        <strong>Key generation.</strong> Choose two distinct large primes \(p\) and \(q\), and set the
+                        <strong>modulus</strong> \(n = pq\). Compute \(\phi = (p-1)(q-1)\). Select an
+                        <strong>encryption exponent</strong> \(e\) with \(1 \lt e \lt \phi\) and \(\gcd(e, \phi) = 1\),
+                        and compute the <strong>decryption exponent</strong> \(d\), the unique integer with
+                        \(1 \lt d \lt \phi\) and
+                        \[
+                        ed \equiv 1 \pmod{\phi}.
+                        \]
+                        The integer \(d\) exists and is unique because \(\gcd(e, \phi) = 1\) makes \(e\) invertible
+                        modulo \(\phi\). The <strong>public key</strong> is the pair \((n, e)\); the <strong>private
+                        key</strong> is \(d\). The primes \(p\), \(q\), and the value \(\phi\) are discarded or kept
+                        secret, as knowledge of any of them yields \(d\).
+                    </p>
+                    <p>
+                        <strong>Encryption and decryption.</strong> A plaintext is an integer \(m\) with
+                        \(0 \leq m \leq n-1\). Encryption and decryption are
+                        \[
+                        c = m^e \bmod n, \qquad m = c^d \bmod n.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The trapdoor structure is visible in the keys: the forward map \(m \mapsto m^e \bmod n\) is published
+                    in full as \((n, e)\), while the inverse \(c \mapsto c^d \bmod n\) requires \(d\), which an adversary
+                    holding only \((n, e)\) cannot compute without, in effect, breaking the factorization of \(n\) — a
+                    dependence the next section makes precise. That the two exponentiations genuinely invert one another
+                    is not assumed but follows from the choice of \(d\), which we now prove.
+                </p>
+
+                <div class="theorem" id="T-rsa_correctness">
+                    <span class="theorem-title">Theorem: Correctness of RSA Decryption</span>
+                    <p>
+                        With notation as above, for every plaintext \(m\) with \(0 \leq m \leq n-1\),
+                        \[
+                        (m^e)^d \equiv m \pmod{n}.
+                        \]
+                        Decryption recovers the plaintext exactly.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Since \(ed \equiv 1 \pmod{\phi}\), write \(ed = 1 + k\phi = 1 + k(p-1)(q-1)\) for some integer
+                        \(k \geq 0\). We show \(m^{ed} \equiv m\) modulo \(p\) and modulo \(q\) separately, then combine
+                        the two congruences.
+                    </p>
+                    <p>
+                        <strong>Modulo \(p\).</strong>
+                        <a href="../Linear_algebra/group_isomorphism.html#T-lagrange_corollaries" class="ref-link"><strong>Fermat's
+                        little theorem</strong></a> gives \(a^p \equiv a \pmod{p}\) for every integer \(a\). When
+                        \(\gcd(m, p) = 1\), cancelling one factor of \(m\) yields \(m^{p-1} \equiv 1 \pmod{p}\), so
+                        \[
+                        m^{ed} = m \cdot \bigl(m^{p-1}\bigr)^{k(q-1)} \equiv m \cdot 1^{k(q-1)} = m \pmod{p}.
+                        \]
+                        When instead \(\gcd(m, p) = p\), that is \(p \mid m\), both \(m^{ed}\) and \(m\) are divisible by
+                        \(p\) and hence both \(\equiv 0 \pmod{p}\), so \(m^{ed} \equiv m \pmod{p}\) holds in this case
+                        too. In either case
+                        \[
+                        m^{ed} \equiv m \pmod{p}.
+                        \]
+                    </p>
+                    <p>
+                        <strong>Modulo \(q\).</strong> The argument is identical with the roles of \(p\) and \(q\)
+                        exchanged, using \(ed = 1 + k(p-1)(q-1)\) regrouped as \(1 + k'(q-1)\) with
+                        \(k' = k(p-1)\), and gives
+                        \[
+                        m^{ed} \equiv m \pmod{q}.
+                        \]
+                    </p>
+                    <p>
+                        <strong>Combining.</strong> We now have \(p \mid (m^{ed} - m)\) and \(q \mid (m^{ed} - m)\). Since
+                        \(p\) and \(q\) are distinct primes they are relatively prime, so the additive group
+                        <a href="../Linear_algebra/group_classification.html#T-crt_groups" class="ref-link"><strong>\(\mathbb{Z}_{pq}\)
+                        splits</strong></a> as \(\mathbb{Z}_p \times \mathbb{Z}_q\): a residue modulo \(pq\) is determined
+                        by its residues modulo \(p\) and modulo \(q\). Both residues of \(m^{ed} - m\) are zero, so
+                        \(m^{ed} - m \equiv 0 \pmod{pq}\), that is
+                        \[
+                        m^{ed} \equiv m \pmod{n}.
+                        \]
+                        Because \(0 \leq m \leq n-1\), the residue class determines \(m\) itself, so
+                        \(c^d \bmod n = (m^e)^d \bmod n = m\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Example: A Small Encryption</span>
+                    <p>
+                        Take the primes \(p = 7\) and \(q = 13\), so \(n = 91\) and \(\phi = 6 \cdot 12 = 72\). Choose
+                        \(e = 5\), which is coprime to \(72\); inverting it modulo \(72\) gives \(d = 29\), since
+                        \(5 \cdot 29 = 145 = 1 + 2 \cdot 72\). The public key is \((91, 5)\) and the private key is
+                        \(29\). To encrypt the plaintext \(m = 9\),
+                        \[
+                        c = 9^5 \bmod 91 = 81,
+                        \]
+                        and to decrypt, \(81^{29} \bmod 91 = 9\), recovering the plaintext.
+                    </p>
+                    <p>
+                        The recovery is the proof in miniature. Here \(ed - 1 = 144 = 2\,\phi\), and the congruence
+                        \(m^{ed} \equiv m\) can be checked one prime at a time: modulo \(7\), one finds
+                        \(9^{145} \equiv 2 \equiv 9 \pmod 7\), and modulo \(13\), \(9^{145} \equiv 9 \pmod{13}\). The two
+                        agree with \(m\) in each factor, and the splitting of \(91\) into \(7\) and \(13\) combines them
+                        into \(9^{145} \equiv 9 \pmod{91}\) — exactly the route the proof took.
+                    </p>
+                </div>
+
+                <p>
+                    The proof exposes why the modulus must be a product of distinct primes rather than an arbitrary
+                    integer: the exponent arithmetic that makes \(e\) and \(d\) inverse runs in each prime factor
+                    separately, and the recombination is exactly the splitting of the modulus into coprime parts. The
+                    same splitting that makes correctness work is what an attacker would exploit by factoring — the
+                    structure serving the legitimate user and the structure exposed to the adversary are one and the
+                    same, a tension the next section examines.
+                </p>
+
+                <p>
+                    One caution carries over from the framework and must not be skipped. The map \(m \mapsto m^e \bmod n\)
+                    is a fixed function: a given plaintext always produces the same ciphertext. Applied directly, it is a
+                    deterministic encryption, and the page defining security ruled deterministic public-key encryption
+                    out — equal plaintexts yield equal ciphertexts, and an adversary who can encrypt candidate plaintexts
+                    can match them against an observed ciphertext, the failure that
+                    <a href="security_definitions.html#D-randomized_encryption" class="ref-link"><strong>randomized
+                    encryption</strong></a> exists to repair. The trapdoor function is the primitive; a secure scheme
+                    wraps it with fresh randomness at encryption time, so that the hard-to-invert core is preserved while
+                    the plaintext-to-ciphertext map becomes one-to-many. Textbook RSA — the bare exponentiation above —
+                    is the trapdoor, not yet the scheme deployed in practice, and the gap between the two is filled by
+                    structured randomized padding rather than by any change to the arithmetic just proved.
+                </p>
+            </section>
+
+            <section id="rsa-security" class="section-content">
+                <h2>What RSA's Security Rests On</h2>
+
+                <p>
+                    A passive adversary against RSA holds the public key \((n, e)\) and a ciphertext \(c = m^e \bmod n\),
+                    and wants the plaintext \(m\). Recovering \(m\) from \(c\) under \((n, e)\) is the <strong>RSA
+                    problem</strong>, and no efficient algorithm for it is known. The question this section settles is
+                    how that problem relates to the factoring of \(n\), since the scheme was introduced as resting on
+                    factoring and the precise nature of that dependence is easy to overstate.
+                </p>
+
+                <p>
+                    One direction is clear and complete. If an adversary can factor \(n\), it recovers \(p\) and \(q\),
+                    forms \(\phi = (p-1)(q-1)\) exactly as the key generator did, and computes \(d\) from \(e\) by the
+                    same modular inversion. With \(d\) in hand it decrypts every ciphertext. So the ability to factor
+                    breaks the scheme outright: RSA can be no harder to break than \(n\) is to factor.
+                </p>
+
+                <p>
+                    The reverse direction is the subtle one, and it must be stated in two steps that are often
+                    collapsed into one. The first step concerns not the plaintext but the private exponent: recovering
+                    \(d\) from the public key is exactly as hard as factoring \(n\).
+                </p>
+
+                <div class="theorem" id="T-d_recovery_factoring_equivalent">
+                    <span class="theorem-title">Theorem: Recovering the Private Exponent Is Equivalent to Factoring</span>
+                    <p>
+                        Given the public key \((n, e)\), computing the RSA decryption exponent \(d\) and factoring the
+                        modulus \(n\) are computationally equivalent: an efficient algorithm for either yields an
+                        efficient algorithm for the other.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <strong>Factoring yields \(d\).</strong> This is key generation: from \(p\) and \(q\) compute
+                        \(\phi = (p-1)(q-1)\), then invert \(e\) modulo \(\phi\) to obtain \(d\). Both steps are
+                        efficient.
+                    </p>
+                    <p>
+                        <strong>\(d\) yields a factorization.</strong> Suppose \(d\) is known, so the integer
+                        \(ed - 1\) is a positive multiple of \(\phi\). The multiplicative group modulo \(n\) has order
+                        \(\phi\), so for every \(a\) with \(\gcd(a, n) = 1\) the
+                        <a href="../Linear_algebra/group_isomorphism.html#T-lagrange_corollaries" class="ref-link"><strong>order
+                        of \(a\) divides the group order</strong></a> \(\phi\), and hence divides \(ed - 1\),
+                        so \(a^{ed-1} \equiv 1 \pmod{n}\). Write \(ed - 1 = 2^s t\) with \(t\) odd. The element
+                        \(a^{t}\) then has order a power of \(2\) modulo \(n\), so the sequence
+                        \[
+                        a^{t},\ a^{2t},\ a^{4t},\ \ldots,\ a^{2^s t} \equiv 1 \pmod{n}
+                        \]
+                        reaches \(1\), and we may locate the last entry before it equals \(1\). If some
+                        \(b = a^{2^{i-1} t}\) in this sequence satisfies \(b \not\equiv \pm 1 \pmod{n}\) yet
+                        \(b^2 \equiv 1 \pmod{n}\), then \(b\) is a square root of \(1\) other than \(\pm 1\). Such a
+                        \(b\) gives \((b-1)(b+1) \equiv 0 \pmod{n}\) while neither factor is divisible by \(n\), so
+                        \(\gcd(b - 1, n)\) is a non-trivial factor of \(n\). A non-trivial square root of \(1\) exists
+                        precisely because \(n\) has two distinct prime factors, and a randomly chosen \(a\) produces one
+                        for at least half of the residues coprime to \(n\); repeating with fresh \(a\) succeeds after a
+                        constant expected number of trials. Thus knowledge of \(d\) factors \(n\) efficiently with high
+                        probability.
+                    </p>
+                    <p>
+                        Each direction is an efficient procedure calling the other's solver, so the two problems are
+                        computationally equivalent.
+                    </p>
+                </div>
+
+                <p>
+                    This equivalence is exact, but it is an equivalence about \(d\), not about \(m\). The second step —
+                    relating the recovery of a <em>plaintext</em> to factoring — is where the honest account must stop
+                    short. It is not known whether the RSA problem is as hard as factoring. An adversary might
+                    conceivably recover \(m\) from \(c\) without ever computing \(d\) or factoring \(n\), by some route
+                    that exploits the specific structure of the map \(m \mapsto m^e\); no such route has been found, but
+                    none has been ruled out. The scheme's security therefore <em>rests on</em> the hardness of
+                    factoring without being <em>equivalent</em> to it: factoring breaks RSA, and recovering \(d\) is
+                    exactly factoring, but whether breaking RSA requires either remains open. Stating the dependence as
+                    an equivalence would claim a theorem that does not exist.
+                </p>
+
+                <p>
+                    Granting that the core problem is hard, a scheme can still be defeated through how it is used rather
+                    than through the problem it rests on. These usage failures do not contradict the hardness of
+                    factoring; they show that hardness of the underlying problem is necessary but not sufficient for a
+                    secure deployment. Each identifies a discipline that correct use must observe, and the disciplines
+                    are permanent even as the individual attacks are refined.
+                </p>
+
+                <p>
+                    <strong>Small-exponent and small-message exposure.</strong> A small encryption exponent such as
+                    \(e = 3\) speeds up encryption, but if the same message is sent to enough recipients under the same
+                    small exponent, or if the message itself is small enough that \(m^e \lt n\), the modular reduction
+                    does nothing and \(m\) is recovered by an ordinary integer root of the ciphertext. The fix is not a
+                    larger exponent but the randomized padding already required for semantic security: padding destroys
+                    the algebraic relationships these attacks exploit.
+                </p>
+
+                <p>
+                    <strong>Forward search over a small message space.</strong> Because the encryption map is public, an
+                    adversary facing a message drawn from a small or guessable set can encrypt every candidate and
+                    compare against the observed ciphertext — the deterministic-encryption failure in its starkest form.
+                    This is again answered by randomized padding, which makes re-encryption of a guessed plaintext
+                    almost never reproduce the target ciphertext.
+                </p>
+
+                <p>
+                    <strong>The multiplicative structure.</strong> RSA respects multiplication: the product of the
+                    encryptions of \(m_1\) and \(m_2\) is the encryption of \(m_1 m_2\), since
+                    \((m_1 m_2)^e \equiv m_1^e m_2^e \pmod{n}\). An adversary can exploit this to have a disguised
+                    ciphertext decrypted and then strip the disguise, an
+                    <a href="security_definitions.html#D-indistinguishability" class="ref-link"><strong>adaptive
+                    chosen-ciphertext attack</strong></a> that the bare scheme does not withstand. The defense is to
+                    require plaintexts to carry a rigid structure that a tampered ciphertext will almost surely fail to
+                    produce, so that malformed decryptions are rejected — once more a property supplied by structured
+                    padding, not by the arithmetic.
+                </p>
+
+                <p>
+                    <strong>A shared modulus.</strong> If several parties were issued distinct exponent pairs under one
+                    common modulus \(n\), the equivalence just proved would be fatal: any single party, knowing its own
+                    \((e_i, d_i)\), could factor \(n\) and then compute every other party's private exponent. A modulus
+                    can belong to exactly one party. This is a direct corollary of the equivalence theorem rather than a
+                    separate phenomenon, and it is why key generation produces a fresh modulus per user.
+                </p>
+
+                <p>
+                    None of these failures touches the hardness of factoring; each is a requirement on construction
+                    around a core that is assumed hard. And that assumption carries the qualification every page of this
+                    track has attached to it. The hardness of factoring is hardness against classical computation, the
+                    model under which every algorithm in this section was reckoned. The padding disciplines above secure
+                    RSA against an adversary confined to that model; no choice of key length secures it against a model
+                    in which factoring itself becomes easy. What such a model does to RSA and to the key agreement of the
+                    first section, and why the two fall together, is the final matter.
+                </p>
+            </section>
+
+            <section id="quantum-horizon" class="section-content">
+                <h2>Built on Factoring and Logarithms</h2>
+
+                <p>
+                    The two constructions of this page descend from the two oldest hardness assumptions, one each. Key
+                    agreement rests on the
+                    <a href="intractable_problems.html#D-discrete_log_problem" class="ref-link"><strong>discrete
+                    logarithm</strong></a>: an eavesdropper who could take logarithms would read every shared secret.
+                    Encryption rests on
+                    <a href="intractable_problems.html#D-integer_factorization" class="ref-link"><strong>factoring</strong></a>:
+                    an adversary who could factor would recover every private exponent. The abstract problems named on
+                    the previous page have become two working systems, and the systems inherit not only the hardness of
+                    those problems but their fragility.
+                </p>
+
+                <p>
+                    That fragility is shared, and the sharing is not a coincidence of history but a fact about the
+                    algebra. Both problems live in finite abelian groups — the integers modulo a prime for the discrete
+                    logarithm, the multiplicative structure modulo \(n\) for factoring — and the difficulty in each case
+                    is that of recovering hidden information about a periodicity in that group. A quantum computer
+                    running Shor's algorithm finds such periods efficiently, and so solves both problems in time
+                    polynomial in the input size. The single algorithmic advance that breaks the one breaks the other,
+                    because they were never as different as their statements suggest; they are two faces of the same
+                    underlying structure, and a method that exploits that structure does not distinguish between them.
+                </p>
+
+                <p>
+                    For the constructions of this page the consequence is immediate and total. Against an adversary with
+                    a large-scale quantum computer, factoring \(n\) becomes feasible, so the private exponent \(d\) is
+                    recovered by the equivalence proved above and RSA is decrypted at will. In the same setting the
+                    discrete logarithm becomes feasible, so the private exponents in a key agreement are recovered and
+                    the shared secret with them. The collapse does not stop at the discrete logarithm, moreover: the
+                    <a href="intractable_problems.html#T-dhp_reduces_dlp" class="ref-link"><strong>reduction</strong></a>
+                    of the previous page runs the difficulty downward, so an algorithm that takes logarithms also solves
+                    the Diffie-Hellman problem directly — every construction resting anywhere in that chain of hardness
+                    falls at once. None of the padding disciplines of the previous section helps, because none of them
+                    touches the hardness of the core problem; they guard the construction within the classical model and
+                    have nothing to say once the model itself changes.
+                </p>
+
+                <p>
+                    The reach of this attack is sharp but bounded, and the boundary is what the rest of the track is
+                    organized around. What Shor's algorithm exploits is the hidden abelian structure these two problems
+                    share; cryptographic constructions that do not rest on that structure are not broken by it.
+                    Symmetric-key ciphers and hash functions face only a generic quantum search that halves the
+                    effective key length — an erosion answered by doubling keys, not by abandoning the design. So the
+                    event on the horizon is not the end of cryptography but the obsolescence of one family within it:
+                    the public-key constructions of this page, and the number-theoretic assumptions beneath them, whose
+                    security has a known expiry condition rather than an indefinite future.
+                </p>
+
+                <p>
+                    This is why the search for a successor does not look for a better factoring-based scheme or a harder
+                    instance of the discrete logarithm. A harder instance of the same problem is still an instance of the
+                    same problem, and falls to the same algorithm. The replacement must rest on a hardness that does not
+                    reduce to a hidden abelian period — a problem for which no efficient quantum algorithm is known and
+                    to which factoring and the discrete logarithm do not connect by any known reduction. The most
+                    developed candidates come from the geometry of high-dimensional lattices, where finding a shortest or
+                    nearest vector appears to resist classical and quantum attack alike. Moving there means leaving the
+                    arithmetic of primes and exponents that has carried public-key cryptography from its first key
+                    agreement to its first cipher, and rebuilding the trapdoor on ground a quantum computer does not
+                    level. The framework of the earlier pages — what it means to encrypt, to agree on a key, to be secure
+                    against a bounded adversary — carries over unchanged. Only the hard problem at the center is
+                    exchanged, and exchanging it is the work that follows.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>
