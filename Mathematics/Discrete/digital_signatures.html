@@ -1,0 +1,405 @@
+---
+layout: default
+title: "Digital Signatures"
+topic_id: disc-34
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Digital Signatures</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#why-signatures">The Gap Encryption Leaves Open</a>
+            <a href="#signature-framework">What a Signature Is</a>
+            <a href="#rsa-signatures">Signing by Reversing RSA</a>
+            <a href="#quantum-horizon">What Survives, What Falls</a>
+        </div>
+
+        <div class="container">
+
+            <section id="why-signatures" class="section-content">
+                <h2>The Gap Encryption Leaves Open</h2>
+
+                <p>
+                    The constructions of the previous pages secure the <em>content</em> of a message. A public-key
+                    cipher lets anyone encrypt to a recipient who alone can read the result, and a key agreement lets
+                    two parties derive a shared secret over an open channel. Both keep an eavesdropper from learning
+                    what was sent. Neither establishes <em>who</em> sent it. This is not an oversight but a separate
+                    goal: the first section of this track distinguished confidentiality from data-origin authentication,
+                    and from non-repudiation — the assurance that an entity cannot later disown what it committed to.
+                    Encryption answers the first. The mechanism of this page answers the other two.
+                </p>
+
+                <p>
+                    The gap was named twice already, and naming it a third time fixes precisely what must be supplied.
+                    When the public-key framework was introduced, the observation was that publishing a key removes the
+                    need to keep it secret but not the need to know whose it is. When key agreement was constructed, the
+                    same gap returned as a concrete attack: an adversary interposed between two parties can run a
+                    separate agreement with each, relaying and re-reading everything, because the exchanged values
+                    carry no evidence of their origin. In both cases the missing ingredient is the same. A public value
+                    must be bound to the identity that issued it, and a message must be bound to the party that stands
+                    behind it — bindings that secrecy cannot provide, because the quantity in question is published on
+                    purpose.
+                </p>
+
+                <p>
+                    What supplies the binding is an object that anyone can check but only one party can produce. A
+                    <strong>digital signature</strong> is a string attached to a message that any verifier can test
+                    against a public key, and that no one lacking the corresponding private key could have generated for
+                    that message. Where a
+                    <a href="public_key_cryptography.html#D-trapdoor_one_way" class="ref-link"><strong>trapdoor
+                    one-way function</strong></a> let the holder of a secret invert a public operation in order to read,
+                    a signature uses a private capability in the opposite direction: to <em>mark</em> rather than to
+                    unlock. That asymmetry — closed production, open verification — is what lets a signature certify
+                    origin without revealing anything that would let a second party forge it.
+                </p>
+
+                <p>
+                    Binding a message to its sender and binding a public key to its owner are the same problem applied
+                    at two levels, and the second is what closes the interposition attack. If each party's published
+                    value is accompanied by a signature from a recognized authority attesting that the value belongs to
+                    a named identity, the adversary who substitutes its own value can no longer pass it off as the other
+                    party's: the substituted value carries no valid attestation, and the forgery the adversary would need
+                    is exactly what the signature is built to preclude. Constructing the attestation reduces to signing,
+                    and so does the question of who is trusted to vouch for whom — the structure of certificates and the
+                    trust relationships among them is a layer this page opens rather than completes. What this page does
+                    complete is the primitive on which that layer rests: the signature itself, made precise next and
+                    then built explicitly from arithmetic already in hand.
+                </p>
+            </section>
+
+            <section id="signature-framework" class="section-content">
+                <h2>What a Signature Is</h2>
+
+                <p>
+                    A scheme is specified by two algorithms and a key pair. The signer holds a private key that drives a
+                    <em>signing transformation</em>, producing for a message a string in a designated signature space.
+                    Everyone holds the matching public key, which drives a <em>verification transformation</em> that
+                    decides whether a given message-signature pair is one the signer's private key would have produced.
+                    The verifier never needs the private key — the asymmetry of the previous section, now made into a
+                    pair of named transformations.
+                </p>
+
+                <div class="theorem" id="D-digital_signature">
+                    <span class="theorem-title">Definition: Digital Signature Scheme</span>
+                    <p>
+                        Let \(\mathcal{M}\) be a set of messages and \(\mathcal{S}\) a set of signatures. A
+                        <strong>digital signature scheme</strong> consists of:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            a <strong>signing transformation</strong> \(S_A\), determined by entity \(A\)'s private key,
+                            mapping each \(m \in \mathcal{M}\) to a signature \(s \in \mathcal{S}\); and
+                        </li>
+                        <li>
+                            a <strong>verification transformation</strong> \(V_A\), determined by \(A\)'s public key,
+                            mapping each pair \((m, s) \in \mathcal{M} \times \mathcal{S}\) to \(\mathrm{true}\) or
+                            \(\mathrm{false}\),
+                        </li>
+                    </ol>
+                    <p>
+                        such that \(V_A(m, s) = \mathrm{true}\) precisely when \(s\) is a signature that \(A\)'s signing
+                        transformation produces for \(m\). The verification transformation is computable from the public
+                        key alone, without knowledge of the private key. A pair \((m, s)\) with \(V_A(m, s) =
+                        \mathrm{true}\) is called a <strong>valid</strong> signature of \(A\) on \(m\).
+                    </p>
+                </div>
+
+                <p>
+                    The two transformations move in opposite directions across the same key pair. The diagram traces
+                    the form in which the message accompanies the signature to verification; read against the cipher of
+                    the previous pages, it shows what the signature inverts.
+                </p>
+
+                <figure style="margin: 1.5rem 0; text-align: center;">
+                    <svg width="100%" viewBox="0 0 680 300" role="img" style="max-width: 680px; height: auto;" aria-labelledby="sig-title sig-desc">
+                        <title id="sig-title">Signing and verification across one key pair</title>
+                        <desc id="sig-desc">In the signing row, the signer applies the signing transformation S sub A under the private key to a message m, producing a signature s. In the verification row, anyone applies the verification transformation V sub A under the public key to the pair m and s, obtaining true or false. The private key produces and the public key checks, the reverse of a cipher, in which the public key locks and the private key unlocks.</desc>
+                        <defs>
+                            <marker id="sig-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </marker>
+                        </defs>
+
+                        <text x="40" y="58" text-anchor="start" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">signing</text>
+                        <rect x="40" y="70" width="86" height="46" rx="8" fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-width="1" stroke-opacity="0.5"/>
+                        <text x="83" y="98" text-anchor="middle" fill="currentColor" font-size="16" font-family="sans-serif">m</text>
+                        <line x1="126" y1="93" x2="270" y2="93" stroke="currentColor" stroke-width="1.5" marker-end="url(#sig-arrow)"/>
+                        <text x="198" y="84" text-anchor="middle" fill="#3d7ab5" font-size="14" font-weight="600" font-family="sans-serif">S<tspan font-size="10" dy="3">A</tspan></text>
+                        <text x="198" y="112" text-anchor="middle" fill="#3d7ab5" font-size="12" font-family="sans-serif">private key</text>
+                        <rect x="270" y="70" width="86" height="46" rx="8" fill="#3d7ab5" fill-opacity="0.10" stroke="#3d7ab5" stroke-width="1"/>
+                        <text x="313" y="98" text-anchor="middle" fill="currentColor" font-size="16" font-family="sans-serif">s</text>
+
+                        <text x="40" y="186" text-anchor="start" fill="currentColor" font-size="13" fill-opacity="0.75" font-family="sans-serif">verification</text>
+                        <rect x="40" y="198" width="86" height="46" rx="8" fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-width="1" stroke-opacity="0.5"/>
+                        <text x="83" y="226" text-anchor="middle" fill="currentColor" font-size="15" font-family="sans-serif">(m, s)</text>
+                        <line x1="126" y1="221" x2="270" y2="221" stroke="currentColor" stroke-width="1.5" marker-end="url(#sig-arrow)"/>
+                        <text x="198" y="212" text-anchor="middle" fill="#3d7ab5" font-size="14" font-weight="600" font-family="sans-serif">V<tspan font-size="10" dy="3">A</tspan></text>
+                        <text x="198" y="240" text-anchor="middle" fill="#3d7ab5" font-size="12" font-family="sans-serif">public key</text>
+                        <rect x="270" y="198" width="120" height="46" rx="8" fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-width="1" stroke-opacity="0.5"/>
+                        <text x="330" y="226" text-anchor="middle" fill="currentColor" font-size="14" font-family="sans-serif">true / false</text>
+
+                        <line x1="470" y1="70" x2="470" y2="244" stroke="currentColor" stroke-width="1" stroke-opacity="0.3"/>
+                        <text x="575" y="104" text-anchor="middle" fill="currentColor" font-size="13" font-weight="600" font-family="sans-serif">signature</text>
+                        <text x="575" y="124" text-anchor="middle" fill="currentColor" font-size="12" fill-opacity="0.8" font-family="sans-serif">private produces,</text>
+                        <text x="575" y="140" text-anchor="middle" fill="currentColor" font-size="12" fill-opacity="0.8" font-family="sans-serif">public checks</text>
+                        <text x="575" y="186" text-anchor="middle" fill="currentColor" font-size="13" font-weight="600" font-family="sans-serif">cipher</text>
+                        <text x="575" y="206" text-anchor="middle" fill="currentColor" font-size="12" fill-opacity="0.6" font-family="sans-serif">public locks,</text>
+                        <text x="575" y="222" text-anchor="middle" fill="currentColor" font-size="12" fill-opacity="0.6" font-family="sans-serif">private unlocks</text>
+                    </svg>
+                </figure>
+
+                <p>
+                    Two structural variants of this skeleton occur, distinguished by what the verifier must be given.
+                    In a scheme <em>with appendix</em> — the form drawn above — the message is required as a separate
+                    input to verification: the signature travels alongside the message and is meaningless without it. In
+                    a scheme <em>with message recovery</em>, the message is reconstructed from the signature itself, so
+                    the signature alone suffices and the original need not be transmitted; there the verification map
+                    returns the recovered message rather than a verdict, and acceptance is the further test that the
+                    recovered value carries the expected structure. The construction of the next section is of this
+                    recovery kind. The distinction is not cosmetic. Schemes with appendix sign a short, fixed-length
+                    digest produced by a one-way function rather than the message directly, which both accommodates
+                    messages of arbitrary length and, as the security discussion below shows, removes a structural
+                    weakness that recovery schemes must guard against by other means.
+                </p>
+
+                <p>
+                    Defining the scheme is only half of what is needed; the other half is a precise account of what it
+                    means to <em>break</em> one. The attacker's aim is to <strong>forge</strong>: to produce a valid
+                    signature on a message the legitimate signer never signed. As with encryption, the strength of a
+                    scheme is stated against an adversary's capabilities and graded by what the adversary manages to
+                    achieve — the same two-axis discipline the security definitions used earlier, transposed from
+                    indistinguishability of ciphertexts to unforgeability of signatures.
+                </p>
+
+                <div class="theorem" id="D-signature_forgery">
+                    <span class="theorem-title">Definition: Forgery and Attack Models</span>
+                    <p>
+                        Against a signature scheme, an adversary's <strong>achievement</strong> is graded, from
+                        strongest to weakest break, as:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            <strong>total break</strong> — recovering the private key, or an algorithm functionally
+                            equivalent to the signing transformation, so that the adversary can sign any message at will;
+                        </li>
+                        <li>
+                            <strong>selective forgery</strong> — producing a valid signature on a particular message, or
+                            a class of messages, chosen by the adversary in advance; and
+                        </li>
+                        <li>
+                            <strong>existential forgery</strong> — producing a valid signature on <em>some</em> message,
+                            with little or no control over which message it is.
+                        </li>
+                    </ol>
+                    <p>
+                        The adversary's <strong>capability</strong> is graded by the access it is granted:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>
+                            a <strong>key-only attack</strong> gives the adversary only the signer's public key; while
+                        </li>
+                        <li>
+                            a <strong>message attack</strong> additionally gives valid signatures on messages either
+                            known to or chosen by the adversary, the strongest form being the
+                            <strong>adaptive chosen-message attack</strong>, in which the adversary obtains signatures on
+                            messages it selects in sequence, each choice allowed to depend on signatures already seen.
+                        </li>
+                    </ol>
+                    <p>
+                        A scheme is regarded as secure when even an adversary mounting an adaptive chosen-message attack
+                        cannot achieve so much as existential forgery — the weakest achievement under the strongest
+                        access.
+                    </p>
+                </div>
+
+                <p>
+                    The reason a scheme with appendix hashes the message before signing is now expressible in these
+                    terms. Existential forgery typically proceeds by manufacturing a signature first and asking afterward
+                    what message it happens to validate; if every signature recovers some message, such a forgery is
+                    immediate. Interposing a one-way function blocks this: a forged signature recovers a digest, and to
+                    turn that digest into a forged <em>message</em> the adversary would have to invert the function and
+                    find a preimage, which one-wayness forbids. The hash must be fixed as part of the scheme rather than
+                    chosen per signature, so that an adversary cannot substitute a weak function and defeat the
+                    protection. This is why signatures with appendix are the common case in practice, and why the
+                    weakness they avoid will reappear, in sharp form, in the recovery-style scheme built next.
+                </p>
+            </section>
+
+            <section id="rsa-signatures" class="section-content">
+                <h2>Signing by Reversing RSA</h2>
+
+                <p>
+                    The framework asks for a private capability that marks and a public one that checks. The previous
+                    page already built a function with exactly the needed shape and used it the other way around. The
+                    <a href="diffie_hellman_rsa.html#D-rsa" class="ref-link"><strong>RSA scheme</strong></a> fixes a
+                    modulus \(n = pq\) and a pair of exponents with \(ed \equiv 1 \pmod{\phi(n)}\), the public exponent
+                    \(e\) raising a residue and the private exponent \(d\) undoing it. For encryption the world raises
+                    with \(e\) and only the holder of \(d\) brings the result back; signing exchanges the roles, the
+                    signer applying \(d\) to produce a mark and the world applying \(e\) to check it. No new construction
+                    is required, only the observation that the trapdoor runs in both directions.
+                </p>
+
+                <p>
+                    Concretely, to sign a message \(m\) the signer computes \(s = m^d \bmod n\), and a verifier given
+                    only \(s\) recovers \(s^e \bmod n\) and accepts it as the message. That the recovered value is the
+                    original is the same congruence that made decryption invert encryption, read with \(e\) and \(d\)
+                    swapped: since \(ed \equiv 1 \pmod{\phi(n)}\), the
+                    <a href="diffie_hellman_rsa.html#T-rsa_correctness" class="ref-link"><strong>correctness of RSA</strong></a>
+                    gives \(s^e \equiv m^{de} \equiv m \pmod n\). The recovery established there for the cipher is, with
+                    the exponents in the opposite order, exactly the verification step here. This is a message-recovery
+                    scheme in the sense of the framework: the verifier reconstructs \(m\) from \(s\) by raising to \(e\),
+                    needing no copy of the message in advance. Signing a digest \(h(m)\) in place of \(m\) turns it into
+                    a scheme with appendix, for long messages or where the existential weakness examined below must be
+                    foreclosed.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Signing in Miniature</span>
+                    <p>
+                        Take \(p = 11\), \(q = 17\), so \(n = 187\) and \(\phi(n) = 10 \cdot 16 = 160\). Choosing public
+                        exponent \(e = 7\) (coprime to \(160\)) gives private exponent \(d = 23\), since \(7 \cdot 23 =
+                        161 \equiv 1 \pmod{160}\). To sign \(m = 8\) the signer computes \(s = 8^{23} \bmod 187 = 83\).
+                        A verifier raises the signature to the public exponent and recovers \(83^{7} \bmod 187 = 8\),
+                        which is the message itself. The exponentiation that verifies is the same operation that
+                        would decrypt under this key, applied to the signature in place of a ciphertext — the reversal
+                        made arithmetic.
+                    </p>
+                </div>
+
+                <p>
+                    The security of this signature inherits the previous page's structure directly. Anyone who can
+                    factor \(n\) recovers \(\phi(n)\), hence \(d\) from \(e\), and signs at will — a total break — so the
+                    scheme is no stronger than the
+                    <a href="intractable_problems.html#D-integer_factorization" class="ref-link"><strong>integer
+                    factorization problem</strong></a>; this is the signing-side reading of the fact that
+                    <a href="diffie_hellman_rsa.html#T-d_recovery_factoring_equivalent" class="ref-link"><strong>recovering
+                    the private exponent is equivalent to factoring</strong></a>. But factoring is not the only route to
+                    a forgery, and the second route is the one the framework warned of. The signing operation carries the
+                    multiplicative structure of modular exponentiation: if \(s_1 = m_1^{d}\) and \(s_2 = m_2^{d}\) are
+                    valid signatures, then
+                </p>
+
+                <p>
+                    \[ (s_1 s_2)^{e} \equiv (m_1^{d} m_2^{d})^{e} \equiv m_1^{de} m_2^{de} \equiv m_1 m_2 \pmod n, \]
+                </p>
+
+                <p>
+                    so the product \(s_1 s_2\) is a valid signature on the product \(m_1 m_2\) — a signature the signer
+                    never issued, assembled from two it did. Worse, the product needs no honest signatures at all: an
+                    adversary may pick any \(s\), declare it a signature, and compute the message it validates as \(s^e
+                    \bmod n\), obtaining a valid pair on a message it does not control. That is existential forgery, free
+                    for the taking against the raw scheme. The same multiplicative law that here forges a signature was,
+                    on the previous page, what let a chosen-ciphertext adversary maul one ciphertext into another and
+                    recover a plaintext; it is one algebraic property read once on the decryption side and once on the
+                    signing side.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: A Forgery from Two Signatures</span>
+                    <p>
+                        With the same key \((n = 187,\ e = 7,\ d = 23)\), suppose the signer has issued signatures on
+                        \(m_1 = 3\) and \(m_2 = 5\): namely \(s_1 = 3^{23} \bmod 187 = 181\) and \(s_2 = 5^{23} \bmod 187
+                        = 180\). Their product is \(s_1 s_2 = 181 \cdot 180 \equiv 42 \pmod{187}\), and raising it to the
+                        public exponent gives \(42^{7} \bmod 187 = 15 = m_1 m_2 \bmod 187\). So \(42\) is a valid
+                        signature on \(15\), a message the signer never signed, produced by the adversary from two it
+                        did — and had the adversary simply chosen \(s = 42\) to begin with, the same pair would have
+                        appeared with no honest signatures used at all.
+                    </p>
+                </div>
+
+                <p>
+                    The remedy is the one the framework already identified, now forced by a concrete attack. Before the
+                    private exponent is applied, the message is passed through a fixed, publicly known
+                    <strong>redundancy function</strong> \(R\), and a verifier accepts only when the recovered value
+                    lies in the image of \(R\). For the forgery to survive, the adversary's manufactured value \(s^e
+                    \bmod n\) would have to land in that image, which a well-chosen \(R\) makes overwhelmingly unlikely;
+                    and for the multiplicative attack to survive, \(R\) must not respect products, so that \(R(m_1)
+                    R(m_2)\) is essentially never \(R(m_1 m_2)\). This is the deterministic-encryption lesson transposed:
+                    a public-key operation applied bare to a raw message leaks structure an adversary exploits, and the
+                    cure is a mandated preprocessing step — a source of
+                    <a href="security_definitions.html#D-randomized_encryption" class="ref-link"><strong>randomness</strong></a>
+                    against distinguishing there, a redundancy against forgery here — without which the textbook
+                    operation is only the skeleton of the secure object. Choosing \(R\) well is itself delicate:
+                    breaking the multiplicative law is necessary but not by itself sufficient, and a poorly matched
+                    redundancy can admit a selective forgery in which the adversary obtains a signature on a message of
+                    its own choosing. The point that survives every refinement is structural — the security of the
+                    scheme rests on the hardness of factoring, but no choice of redundancy buys security against an
+                    adversary for whom factoring itself has become easy.
+                </p>
+            </section>
+
+            <section id="quantum-horizon" class="section-content">
+                <h2>What Survives, What Falls</h2>
+
+                <p>
+                    Before turning to that adversary, one boundary of what a signature provides should be marked, since
+                    it separates two kinds of authentication that are easy to conflate. The signature of this page is a
+                    <em>public-key</em> mechanism: producing a mark requires a private key, but checking it requires only
+                    a public one, so any third party can verify, and the signer cannot later disown a valid signature
+                    without disowning the key itself. There is also a symmetric counterpart, in which two parties share
+                    one secret key and append to a message a tag computed under it. Such a tag authenticates the message
+                    to a party who holds the key — it detects tampering and confirms the sender is one of the two
+                    keyholders — but it confers neither third-party verifiability nor non-repudiation, because either
+                    keyholder can produce it, so neither can prove to an outsider which of them did. Symmetric
+                    authentication is cheaper and suffices when the parties trust each other and only a shared channel
+                    must be protected; the public-key signature is what is needed when origin must be provable to anyone
+                    and denial must be foreclosed. It is the latter that the certificate layer sketched earlier requires,
+                    and the latter alone that the rest of this section concerns.
+                </p>
+
+                <p>
+                    The signature built here, and the only one this track has yet constructed, rests on factoring,
+                    exactly as the cipher and the key agreement before it rested on factoring and the discrete logarithm.
+                    That shared foundation is also a shared vulnerability. Both problems are instances of finding a
+                    hidden period in an abelian group, and a quantum algorithm — Shor's — recovers such periods in
+                    polynomial time. The same procedure that factors the modulus, and so exposes the private exponent of
+                    the cipher, exposes the private exponent of the signature; there is no separate quantum attack to
+                    mount, because signing and decrypting are the same trapdoor read in opposite directions, and the
+                    trapdoor itself is what dissolves.
+                </p>
+
+                <p>
+                    The reach of this collapse is sharp, and overstating it would misread the situation as badly as
+                    ignoring it. Shor's algorithm dismantles security that was tied to a hidden abelian structure —
+                    factoring, the discrete logarithm, and the elliptic-curve variant of the latter that a later page
+                    takes up. It does not dismantle cryptography in general. The symmetric authentication just described,
+                    and the one-way functions on which signatures-with-appendix depend, face only the generic quadratic
+                    speedup of a quantum search, which lowers the effective security level by half and is answered by
+                    enlarging keys and outputs rather than by abandoning the design. The line does not run between
+                    classical and quantum security; it runs between schemes whose hardness reduces to a hidden abelian
+                    period and schemes whose hardness does not. The first family falls together; the second persists,
+                    diminished only by a factor a designer can compensate for.
+                </p>
+
+                <p>
+                    This is why the successor to the construction of this page is not a stronger version of it. A
+                    signature resting on a harder instance of factoring still rests on factoring, and a single quantum
+                    algorithm answers every instance at once. The replacement must move the private capability onto a
+                    hardness that no known quantum algorithm touches and to which factoring and the discrete logarithm
+                    do not reduce. Two directions have been carried forward. One keeps the signing operation a private
+                    inversion of a public function but bases that function on the geometry of high-dimensional lattices
+                    rather than on the arithmetic of primes. The other abandons trapdoors entirely and builds a signature
+                    out of nothing but a one-way function, deriving unforgeability from the preimage and collision
+                    resistance of hashing alone — the same hashing that, on this page, only preprocessed a message now
+                    becoming the whole foundation of the mark. Both directions are already standardized, and which to
+                    use is a question of trade-offs the first section of this track recorded rather than one this page
+                    reopens. What the page closes is the account of the classical signature: how a private key marks
+                    what a public key checks, how that mark certifies origin and forecloses denial, and why the
+                    particular mark built from RSA shares both the elegance and the expiry date of the cipher it
+                    reverses.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>
