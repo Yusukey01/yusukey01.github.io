@@ -21,6 +21,7 @@ uses_python: false
             <a href="#why-signatures">The Gap Encryption Leaves Open</a>
             <a href="#signature-framework">What a Signature Is</a>
             <a href="#rsa-signatures">Signing by Reversing RSA</a>
+            <a href="#certificates-and-trust">Certificates and the Transfer of Trust</a>
             <a href="#quantum-horizon">What Survives, What Falls</a>
         </div>
 
@@ -70,10 +71,10 @@ uses_python: false
                     a named identity, the adversary who substitutes its own value can no longer pass it off as the other
                     party's: the substituted value carries no valid attestation, and the forgery the adversary would need
                     is exactly what the signature is built to preclude. Constructing the attestation reduces to signing,
-                    and so does the question of who is trusted to vouch for whom — the structure of certificates and the
-                    trust relationships among them is a layer this page opens rather than completes. What this page does
-                    complete is the primitive on which that layer rests: the signature itself, made precise next and
-                    then built explicitly from arithmetic already in hand.
+                    and so does the question of who is trusted to vouch for whom. The primitive comes first — the signature
+                    itself, made precise next and then built explicitly from arithmetic already in hand — and the structure
+                    of certificates and the trust among them follows from it later on this page, once the mark it rests on
+                    is in place.
                 </p>
             </section>
 
@@ -338,6 +339,186 @@ uses_python: false
                 </p>
             </section>
 
+            <section id="certificates-and-trust" class="section-content">
+                <h2>Certificates and the Transfer of Trust</h2>
+
+                <p>
+                    Every protocol of the previous pages began with a silent assumption: that each party already holds an
+                    authentic copy of the other's public key. The whole apparatus of signing and verifying presumes that
+                    the verification key in hand truly belongs to the party it is attributed to. Yet this is precisely the
+                    binding that the opening of this page named as the second face of the authentication problem, and it
+                    cannot be taken for granted. A public key travels over the same open channel as everything else, and an
+                    adversary who can replace a message can equally replace a key in transit — substituting its own
+                    verification key for the genuine one, then signing forgeries that check perfectly against the
+                    substitute. Establishing what a signature certifies therefore reduces to a prior question: how does one
+                    come to hold an authentic public key at all?
+                </p>
+
+                <p>
+                    The honest answer is that authenticity must enter from outside the channel. One could obtain a key by
+                    hand from its owner, or from a trusted directory consulted over a secured connection, or from a server
+                    that returns keys in signed replies. Each works, and each carries the burden of a secure or trusted
+                    channel maintained continuously. The interesting reduction is the one that needs such a channel only
+                    once: bind a public key to a named identity inside an object that itself carries a signature, so that
+                    any party able to check that one signature can thereafter accept the bound key over a channel that is
+                    not trusted at all. The signature built on this page is exactly the tool that object requires. Two
+                    constructions realize it — one resting on a signature directly, the other on hashing alone — and the
+                    difference between them will matter again when the quantum adversary arrives.
+                </p>
+
+                <h3>The Certificate as a Signed Binding</h3>
+
+                <p>
+                    The first construction packages the binding as a signed statement. A certificate is a data structure in
+                    two parts: a data part, holding at minimum a public key together with a string naming the party that
+                    key belongs to, and a signature part, holding the signature of a trusted issuer over that data part.
+                    The issuer — the certification authority — is a party whose own verification key is already held
+                    authentically by everyone in the system, distributed once through whatever out-of-band means the
+                    setting allows. By signing the pairing of a name with a key, the authority vouches that the key is the
+                    genuine key of the named party.
+                </p>
+
+                <div class="theorem" id="D-public_key_certificate">
+                    <span class="theorem-title">Definition: Public-Key Certificate</span>
+                    <p>
+                        A <em>public-key certificate</em> is a pair consisting of a <em>data part</em> and a
+                        <em>signature part</em>. The data part contains, at minimum, a public key \(P\) and a string
+                        \(\mathrm{id}\) identifying the party to be associated with \(P\). The signature part is the
+                        signature of a <em>certification authority</em> over the data part, computed with the authority's
+                        private signing key. A party holding the authority's authentic verification key accepts the
+                        binding of \(P\) to \(\mathrm{id}\) exactly when that signature verifies.
+                    </p>
+                </div>
+
+                <p>
+                    The verification a recipient performs is the verification map of this page, applied with the
+                    authority's public key to the certificate's data part and signature part. Nothing new is needed: a
+                    certificate is an application of the signature already constructed, its message being the assertion
+                    "this key belongs to this name." Because the recipient checks a signature rather than the key's origin,
+                    the certificate may be fetched over an open channel, forwarded by any party, or stored in a public
+                    directory; tampering with either the bound key or the bound name invalidates the signature, and the
+                    one-wayness that forecloses existential forgery forecloses a forged certificate by the same argument.
+                </p>
+
+                <p>
+                    What the certificate accomplishes is best stated precisely: it does not establish trust, it transfers
+                    it. A recipient who trusts the authority's single verification key acquires, through one signature
+                    check, trust in the authenticity of any key the authority has certified — trust in one key propagated
+                    to trust in many. The trust at the root, by contrast, is established by something the mathematics does
+                    not supply. The authority's own key must be obtained authentically to begin with, and the authority's
+                    judgement that a key really belongs to a named party rests on procedures outside cryptography
+                    altogether — identity checks, registration, the conventions of the institution that runs it. This is
+                    the thin part, and it is thin in an honest sense: the cryptographic object certifies a binding, but
+                    what the binding is worth depends on a human process for which no theorem can vouch. Authenticity of
+                    the root key is required; secrecy of it is not, since a verification key is public by design.
+                </p>
+
+                <h3>Authentication Trees</h3>
+
+                <p>
+                    The second construction transfers trust without signing the bound key at all. It rests on nothing
+                    beyond a collision-resistant hash and the shape of a <a href="trees_and_enumeration.html#D-binary_tree" class="ref-link"><strong>binary tree</strong></a>. Suppose an authority must vouch for many public values
+                    at once — the keys of many parties, or many keys of one party. Rather than sign each, it places the
+                    values at the leaves of a binary tree and hashes upward: the edge leaving a leaf carries the hash of
+                    that leaf's value, and each internal vertex carries the hash of its two incoming edge-labels
+                    concatenated. The label that emerges at the root condenses every leaf into a single value, in the sense
+                    that altering any leaf forces a different root unless a collision is found.
+                </p>
+
+                <div class="figure" style="margin: 1.5rem 0; text-align: center;">
+                    <svg width="100%" viewBox="0 0 640 360" role="img" style="max-width: 640px; height: auto;" aria-labelledby="auth-title auth-desc">
+                        <title id="auth-title">An authentication tree over four public values</title>
+                        <desc id="auth-desc">Four public values Y1 through Y4 sit at the leaves of a binary tree. The edge leaving each leaf carries the hash of that value. The leaves Y1 and Y2 combine at an internal vertex labelled h1, that vertex combines with the hash of Y3 at a second internal vertex labelled h2, and h2 combines with the hash of Y4 at the root R. The root condenses all four leaves into a single value. To authenticate the leaf Y1, a party supplies the sibling labels h of Y2, h of Y3, and h of Y4 along the path to the root, recomputes the labels up that path, and accepts when the recomputed root equals the trusted value R.</desc>
+                        <defs>
+                            <marker id="auth-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 8 5 L 0 9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                            </marker>
+                        </defs>
+
+                        <!-- root R (upper right) -->
+                        <circle cx="540" cy="48" r="11" fill="#3d7ab5" fill-opacity="0.15" stroke="#3d7ab5" stroke-width="1.5"/>
+                        <text x="540" y="34" text-anchor="middle" fill="#3d7ab5" font-size="14" font-weight="600" font-family="sans-serif">R</text>
+
+                        <!-- internal h2 -->
+                        <circle cx="400" cy="138" r="10" fill="currentColor" fill-opacity="0.08" stroke="currentColor" stroke-width="1.2"/>
+                        <text x="372" y="132" text-anchor="end" fill="currentColor" font-size="12" fill-opacity="0.8" font-family="sans-serif">h<tspan font-size="9" dy="3">2</tspan></text>
+
+                        <!-- internal h1 -->
+                        <circle cx="250" cy="226" r="10" fill="currentColor" fill-opacity="0.08" stroke="currentColor" stroke-width="1.2"/>
+                        <text x="222" y="220" text-anchor="end" fill="currentColor" font-size="12" fill-opacity="0.8" font-family="sans-serif">h<tspan font-size="9" dy="3">1</tspan></text>
+
+                        <!-- leaves -->
+                        <circle cx="90"  cy="312" r="9" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="230" cy="312" r="9" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="400" cy="248" r="9" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1"/>
+                        <circle cx="560" cy="160" r="9" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1"/>
+
+                        <!-- edges: h2 -> R, h(Y4) -> R -->
+                        <line x1="406" y1="129" x2="531" y2="57"  stroke="currentColor" stroke-width="1.4" marker-end="url(#auth-arrow)"/>
+                        <line x1="555" y1="151" x2="546" y2="59"  stroke="currentColor" stroke-width="1.4" marker-end="url(#auth-arrow)"/>
+                        <!-- edges: h1 -> h2, h(Y3) -> h2 -->
+                        <line x1="256" y1="217" x2="394" y2="147" stroke="currentColor" stroke-width="1.4" marker-end="url(#auth-arrow)"/>
+                        <line x1="400" y1="239" x2="400" y2="149" stroke="currentColor" stroke-width="1.4" marker-end="url(#auth-arrow)"/>
+                        <!-- edges: h(Y1) -> h1, h(Y2) -> h1 -->
+                        <line x1="95"  y1="303" x2="244" y2="235" stroke="currentColor" stroke-width="1.4" marker-end="url(#auth-arrow)"/>
+                        <line x1="230" y1="303" x2="250" y2="237" stroke="currentColor" stroke-width="1.4" marker-end="url(#auth-arrow)"/>
+
+                        <!-- leaf labels -->
+                        <text x="90"  y="336" text-anchor="middle" fill="currentColor" font-size="13" font-family="sans-serif">Y<tspan font-size="9" dy="3">1</tspan></text>
+                        <text x="230" y="336" text-anchor="middle" fill="currentColor" font-size="13" font-family="sans-serif">Y<tspan font-size="9" dy="3">2</tspan></text>
+                        <text x="400" y="272" text-anchor="middle" fill="currentColor" font-size="13" font-family="sans-serif">Y<tspan font-size="9" dy="3">3</tspan></text>
+                        <text x="560" y="184" text-anchor="middle" fill="currentColor" font-size="13" font-family="sans-serif">Y<tspan font-size="9" dy="3">4</tspan></text>
+
+                        <!-- edge labels: h(Y1) computed by the verifier (neutral), siblings h(Y2),h(Y3),h(Y4) supplied (accent) -->
+                        <text x="160" y="252" text-anchor="middle" fill="currentColor" font-size="11" fill-opacity="0.7" font-family="sans-serif">h(Y<tspan font-size="8" dy="2">1</tspan><tspan dy="-2">)</tspan></text>
+                        <text x="256" y="282" text-anchor="middle" fill="#3d7ab5" font-size="11" font-family="sans-serif">h(Y<tspan font-size="8" dy="2">2</tspan><tspan dy="-2">)</tspan></text>
+                        <text x="424" y="200" text-anchor="middle" fill="#3d7ab5" font-size="11" font-family="sans-serif">h(Y<tspan font-size="8" dy="2">3</tspan><tspan dy="-2">)</tspan></text>
+                        <text x="584" y="110" text-anchor="middle" fill="#3d7ab5" font-size="11" font-family="sans-serif">h(Y<tspan font-size="8" dy="2">4</tspan><tspan dy="-2">)</tspan></text>
+
+                        <!-- legend -->
+                        <text x="70" y="150" text-anchor="start" fill="#3d7ab5" font-size="11" font-family="sans-serif">sibling labels</text>
+                        <text x="70" y="166" text-anchor="start" fill="currentColor" font-size="11" fill-opacity="0.7" font-family="sans-serif">supplied to verify Y<tspan font-size="8" dy="2">1</tspan></text>
+                    </svg>
+                </div>
+
+                <div class="theorem" id="D-authentication_tree">
+                    <span class="theorem-title">Definition: Authentication Tree</span>
+                    <p>
+                        Let \(h\) be a collision-resistant hash function and let \(T\) be a binary tree whose \(t\) leaves
+                        are labelled by public values \(Y_1, \dots, Y_t\). The <em>authentication tree</em> over these
+                        values labels the edge leaving the leaf \(Y_i\) with \(h(Y_i)\), and labels the upper edge of each
+                        internal vertex whose two incoming edges carry labels \(a\) and \(b\) with \(h(a \mathbin\| b)\),
+                        where \(\mathbin\|\) denotes concatenation. The label \(R\) at the root authenticates all \(t\)
+                        leaves at once: given an authentic \(R\), a leaf value \(Y_i\) is accepted as authentic when the
+                        labels along the unique path from \(Y_i\) to the root — recomputed from \(Y_i\) and the sibling
+                        labels supplied along that path — reproduce \(R\).
+                    </p>
+                </div>
+
+                <p>
+                    Verifying one leaf costs only the labels along its path. To authenticate \(Y_1\) in the tree drawn
+                    above, a party is handed the sibling labels \(h(Y_2)\), \(h(Y_3)\), \(h(Y_4)\); it computes \(h(Y_1)\)
+                    itself, combines it with \(h(Y_2)\) to recover the first internal label, combines that with \(h(Y_3)\)
+                    for the next, and finally with \(h(Y_4)\) to reach the root, accepting precisely when the result equals
+                    the trusted \(R\). On a balanced tree the path from a leaf to the root has length about \(\lg t\), so a
+                    value among \(t\) is authenticated by hashing roughly \(\lg t\) times — and only the single root value
+                    need be held authentically, in place of \(t\) separate registrations. A forged leaf would have to
+                    reproduce the same root along its path, which means exhibiting a collision in \(h\); collision
+                    resistance is exactly what forbids it, so the security of the whole structure reduces to a single
+                    property of the hash.
+                </p>
+
+                <p>
+                    The two constructions divide along a clean line. A certificate transfers trust through a
+                    signature — the authority's private key produces the binding, and the public key checks it. An
+                    authentication tree transfers trust through a hash — no signing key participates at all, only the
+                    one-wayness and collision resistance of \(h\). That second remark is the one to carry forward. A
+                    structure that authenticates using nothing but a hash rests on an assumption of a different kind than
+                    the trapdoor underlying the signature, and the next section shows that this difference is exactly what
+                    decides which of these survives an adversary the previous pages have been pointing toward all along.
+                </p>
+            </section>
+
             <section id="quantum-horizon" class="section-content">
                 <h2>What Survives, What Falls</h2>
 
@@ -353,7 +534,7 @@ uses_python: false
                     keyholder can produce it, so neither can prove to an outsider which of them did. Symmetric
                     authentication is cheaper and suffices when the parties trust each other and only a shared channel
                     must be protected; the public-key signature is what is needed when origin must be provable to anyone
-                    and denial must be foreclosed. It is the latter that the certificate layer sketched earlier requires,
+                    and denial must be foreclosed. It is the latter that the certificates of the preceding section rest on,
                     and the latter alone that the rest of this section concerns.
                 </p>
 
@@ -390,8 +571,12 @@ uses_python: false
                     inversion of a public function but bases that function on the geometry of high-dimensional lattices
                     rather than on the arithmetic of primes. The other abandons trapdoors entirely and builds a signature
                     out of nothing but a one-way function, deriving unforgeability from the preimage and collision
-                    resistance of hashing alone — the same hashing that, on this page, only preprocessed a message now
-                    becoming the whole foundation of the mark. Both directions are already standardized, and which to
+                    resistance of hashing alone. This second direction is not a new idea so much as the authentication
+                    tree of the preceding section taken to its conclusion: the structure that transferred trust using only
+                    a hash already authenticated without any signing key, and a hash tree over a signer's own one-time
+                    keys turns that same mechanism into a signature in its own right. The hashing that elsewhere on this
+                    page only preprocessed a message becomes, in that family, the whole foundation of the mark — and
+                    because it leans on no hidden abelian period, it is the family Shor leaves standing. Both directions are already standardized, and which to
                     use is a question of trade-offs the first section of this track recorded rather than one this page
                     reopens. What the page closes is the account of the classical signature: how a private key marks
                     what a public key checks, how that mark certifies origin and forecloses denial, and why the
