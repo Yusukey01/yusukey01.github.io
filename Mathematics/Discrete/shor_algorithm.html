@@ -1,0 +1,664 @@
+---
+layout: default
+title: "Shor's Algorithm"
+topic_id: disc-35
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Shor's Algorithm</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#reduction">Factoring as Period-Finding</a>
+            <a href="#quantum-core">The Quantum Period-Finder</a>
+            <a href="#continued-fractions">Reading the Period from a Measurement</a>
+            <a href="#demo">Interactive: Factoring by Period-Finding</a>
+            <a href="#what-falls">What Falls, and What Does Not</a>
+        </div>
+
+        <div class="container">
+
+            <section id="reduction" class="section-content">
+                <h2>Factoring as Period-Finding</h2>
+
+                <p>
+                    The public-key constructions of the previous pages closed on a promise about the future. Their
+                    security rested on
+                    <a href="intractable_problems.html#D-integer_factorization" class="ref-link"><strong>factoring</strong></a>
+                    and the
+                    <a href="intractable_problems.html#D-discrete_log_problem" class="ref-link"><strong>discrete
+                    logarithm</strong></a>, and that page named these as two faces of a single structure: hidden
+                    information about a periodicity in a finite abelian group, with a known expiry condition rather than
+                    an indefinite future. This page makes the expiry condition explicit. We exhibit the algorithm that
+                    finds such periods in time polynomial in the input length, and so collapses both problems at once.
+                    The work divides cleanly. The reduction from factoring to period-finding is pure number theory and
+                    uses nothing quantum; it is the subject of this section. The efficient period-finder is quantum, and
+                    rests entirely on the finite-dimensional machinery already assembled for quantum computation.
+                </p>
+
+                <p>
+                    Fix a composite \(N > 1\) to be factored. A classical preprocessing step removes the easy cases: if
+                    \(N\) is even we extract the factor \(2\), and the cases where \(N\) is a prime power can be detected
+                    and resolved efficiently as well, so we may assume \(N\) is odd with at least two distinct prime
+                    factors. We treat in full the case of central cryptographic interest, where \(N = pq\) is a product
+                    of two distinct odd primes; this is the form of an RSA modulus. The general case is identical in
+                    outline and is addressed at the end of the section.
+                </p>
+
+                <h3>The Order of an Element Modulo \(N\)</h3>
+
+                <p>
+                    Choose an integer \(x \in \{2, \ldots, N-1\}\) at random. Compute \(\gcd(x, N)\); should it exceed
+                    \(1\) we have stumbled on a nontrivial factor and are finished, so assume \(\gcd(x, N) = 1\), making
+                    \(x\) an element of the
+                    <a href="../Linear_algebra/group_classification.html#T-U_direct_product_CRT" class="ref-link"><strong>group of units</strong></a>
+                    \(U(N) = (\mathbb{Z}/N\mathbb{Z})^*\), the multiplicative group of residues coprime to \(N\). Consider
+                    the powers
+                </p>
+                <p>
+                    \[
+                    x^0 \equiv 1, \quad x^1, \quad x^2, \quad \ldots \pmod{N}.
+                    \]
+                </p>
+                <p>
+                    Because \(U(N)\) is finite this sequence must repeat, and the smallest \(r > 0\) with \(x^r \equiv 1
+                    \pmod{N}\) is exactly the
+                    <a href="../Linear_algebra/intro_groups.html#D-order_of_element" class="ref-link"><strong>order</strong></a>
+                    of \(x\) in \(U(N)\). We call this \(r\) the <strong>period</strong> of \(x\) modulo \(N\): the
+                    function \(a \mapsto x^a \bmod N\) satisfies \(x^a \equiv x^b \pmod{N}\) precisely when \(a \equiv b
+                    \pmod{r}\), since \(x^{a-b} \equiv 1\) holds if and only if \(r \mid a - b\).
+                </p>
+
+                <h3>From a Period to a Factor</h3>
+
+                <p>
+                    Suppose for the moment that we have obtained the period \(r\), and that two pieces of luck hold:
+                    \(r\) is even, and \(x^{r/2} \not\equiv -1 \pmod{N}\). The first lets us form \(x^{r/2}\), an integer
+                    square root of \(1\) modulo \(N\); the second, together with \(x^{r/2} \not\equiv +1\) (which is
+                    automatic, since \(r\) is the <em>least</em> exponent giving \(1\), so \(r/2\) cannot), makes
+                    \(x^{r/2}\) a square root of \(1\) other than \(\pm 1\). From \(x^r \equiv 1\) we read
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    \bigl(x^{r/2}\bigr)^2 - 1 &\equiv 0 \pmod{N}, \\\\
+                    \bigl(x^{r/2} - 1\bigr)\bigl(x^{r/2} + 1\bigr) &\equiv 0 \pmod{N},
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    so \(N\) divides the product \((x^{r/2} - 1)(x^{r/2} + 1)\). Neither factor is itself a multiple of
+                    \(N\): the right factor because \(x^{r/2} \not\equiv -1\), the left because \(x^{r/2} \not\equiv +1\).
+                    Since \(N\) divides the product but neither factor, the prime factors of \(N\) are split between the
+                    two factors, and therefore
+                </p>
+                <p>
+                    \[
+                    \gcd\bigl(x^{r/2} - 1,\ N\bigr) \quad \text{and} \quad \gcd\bigl(x^{r/2} + 1,\ N\bigr)
+                    \]
+                </p>
+                <p>
+                    are both nontrivial divisors of \(N\), computable in time quadratic in the bit length by the
+                    Euclidean algorithm. For \(N = pq\) the split is clean: one prime lands in each gcd. A single period,
+                    obtained under the two lucky conditions, hands us the factorization.
+                </p>
+
+                <div class="theorem" id="T-factoring_reduces_to_period_finding">
+                    <span class="theorem-title">Theorem: Factoring Reduces to Period-Finding</span>
+                    <p>
+                        Let \(N = pq\) be a product of two distinct odd primes, and let \(x \in U(N)\) have even period
+                        \(r\) with \(x^{r/2} \not\equiv -1 \pmod{N}\). Then \(\gcd(x^{r/2} - 1, N)\) and
+                        \(\gcd(x^{r/2} + 1, N)\) are the two prime factors of \(N\). Consequently, any algorithm that
+                        computes the period of an element of \(U(N)\) yields, with the classical pre- and
+                        post-processing above, an algorithm that factors \(N\).
+                    </p>
+                </div>
+
+                <p>
+                    As a concrete instance, take \(N = 15\) and \(x = 2\). The powers \(2, 4, 8, 16 \equiv 1\) give
+                    period \(r = 4\), which is even, and \(x^{r/2} = 2^2 = 4 \not\equiv \pm 1 \pmod{15}\). Then
+                    \(\gcd(4 - 1, 15) = 3\) and \(\gcd(4 + 1, 15) = 5\) recover both prime factors. The whole difficulty
+                    has been displaced onto the one step the classical world cannot perform efficiently: finding the
+                    period \(r\).
+                </p>
+
+                <h3>The Lucky Conditions Are Likely</h3>
+
+                <p>
+                    The reduction assumed two conditions on the random choice of \(x\). We now show they hold with
+                    probability at least one half, so that a handful of random choices of \(x\) suffices to factor
+                    \(N\) with high probability.
+                </p>
+
+                <div class="theorem" id="T-shor_reduction_probability">
+                    <span class="theorem-title">Theorem: The Lucky Conditions Hold with Probability at Least One Half</span>
+                    <p>
+                        Let \(N = pq\) be a product of two distinct odd primes. For \(x\) chosen uniformly at random from
+                        \(U(N)\), with period \(r\), the probability that \(r\) is even and \(x^{r/2} \not\equiv -1
+                        \pmod{N}\) is at least \(\tfrac{1}{2}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Because \(p\) and \(q\) are coprime, the
+                        <a href="../Linear_algebra/group_classification.html#T-U_direct_product_CRT" class="ref-link"><strong>Chinese Remainder decomposition of unit groups</strong></a>
+                        gives an isomorphism
+                        \[
+                        U(N) \;\cong\; U(p) \times U(q),
+                        \]
+                        under which \(x\) corresponds to a pair \((x_p, x_q)\) with \(x_p \in U(p)\), \(x_q \in U(q)\),
+                        and a uniform \(x\) corresponds to an independent uniform pair. Each factor \(U(p)\) is the
+                        multiplicative group of the
+                        <a href="../Linear_algebra/finite_fields.html#T-structure_finite_fields" class="ref-link"><strong>field of \(p\) elements</strong></a>,
+                        hence cyclic of even order \(p - 1\); likewise \(U(q)\) is cyclic of even order \(q - 1\).
+                    </p>
+                    <p>
+                        Write \(r_p = |x_p|\) and \(r_q = |x_q|\) for the orders in the two factors. Under the
+                        isomorphism the order of \(x\) is their
+                        <a href="../Linear_algebra/group_classification.html#T-order_in_direct_product" class="ref-link"><strong>least common multiple</strong></a>,
+                        \(r = \operatorname{lcm}(r_p, r_q)\). Let \(2^{k_p}\) be the exact power of \(2\) dividing
+                        \(r_p\), and \(2^{k_q}\) the exact power dividing \(r_q\). The argument rests on comparing these
+                        two exponents.
+                    </p>
+                    <p>
+                        We claim that the two lucky conditions <em>fail</em> only when \(k_p = k_q\). Consider the
+                        failure modes in turn.
+                    </p>
+                    <p>
+                        If \(r\) is odd, then \(\operatorname{lcm}(r_p, r_q)\) is odd, forcing both \(r_p\) and \(r_q\)
+                        odd, that is \(k_p = k_q = 0\).
+                    </p>
+                    <p>
+                        If \(r\) is even but \(x^{r/2} \equiv -1 \pmod{N}\), then under the isomorphism \(x^{r/2}\)
+                        corresponds to \((x_p^{r/2}, x_q^{r/2})\), and \(-1 \pmod N\) corresponds to the pair
+                        \((-1, -1)\) of the two nonidentity square roots of \(1\). Thus \(x_p^{r/2} \equiv -1 \pmod p\)
+                        and \(x_q^{r/2} \equiv -1 \pmod q\). The condition \(x_p^{r/2} \equiv -1\) means \(x_p^{r/2}\)
+                        has order \(2\), so \(x_p\) has order exactly \(r\) dividing neither \(r/2\); concretely
+                        \(r_p \mid r\) but \(r_p \nmid r/2\), which says the exact power of \(2\) in \(r_p\) equals that
+                        in \(r\). The same holds for \(q\). Hence \(k_p\) and \(k_q\) both equal the \(2\)-adic exponent
+                        of \(r = \operatorname{lcm}(r_p, r_q)\), which is \(\max(k_p, k_q)\); equality with both forces
+                        \(k_p = k_q\) once more.
+                    </p>
+                    <p>
+                        Conversely, when \(k_p \neq k_q\) the larger of the two, say \(k_p > k_q\), makes the \(2\)-adic
+                        exponent of \(r\) equal to \(k_p\), so \(r/2\) still contains \(2^{k_q}\) as a factor and
+                        \(x_q^{r/2} \equiv 1 \pmod q\), while \(x_p^{r/2} \equiv -1 \pmod p\); the pair is
+                        \((-1, 1) \neq (-1, -1)\), so \(x^{r/2} \not\equiv -1 \pmod N\), and \(r\) is even because its
+                        \(2\)-adic exponent \(k_p \geq 1\). Both lucky conditions hold.
+                    </p>
+                    <p>
+                        It remains to bound the probability that \(k_p = k_q\). Write \(p - 1 = 2^{K_p} m_p\) with
+                        \(m_p\) odd, so \(U(p)\), being cyclic of order \(p - 1\), has elements whose orders carry every
+                        \(2\)-adic exponent from \(0\) up to \(K_p\). For \(x_p\) uniform in \(U(p)\), the exponent
+                        \(k_p\) takes its maximal value \(K_p\) exactly when \(x_p\) generates the full \(2\)-power part,
+                        which happens for half the elements; thus \(\Pr[k_p = K_p] = \tfrac{1}{2}\), and the remaining
+                        values \(k_p < K_p\) split the other half, each with probability at most \(\tfrac{1}{2}\). The
+                        same holds for \(q\). The precise distribution of \(k_p\) depends on \(K_p\) and so differs
+                        between \(p\) and \(q\) in general, but all we need is that no single value is taken with
+                        probability exceeding \(\tfrac{1}{2}\), that is \(\max_k \Pr[k_p = k] \leq \tfrac{1}{2}\) and
+                        likewise for \(q\).
+                    </p>
+                    <p>
+                        Under the Chinese Remainder isomorphism \(x_p\) and \(x_q\) are independent, so
+                        \[
+                        \Pr[k_p = k_q] \;=\; \sum_{k \geq 0} \Pr[k_p = k]\,\Pr[k_q = k]
+                        \;\leq\; \max_k \Pr[k_q = k] \sum_{k \geq 0} \Pr[k_p = k]
+                        \;=\; \max_k \Pr[k_q = k] \;\leq\; \tfrac{1}{2}.
+                        \]
+                        Therefore the lucky conditions, which hold exactly when \(k_p \neq k_q\), have probability at
+                        least \(\tfrac{1}{2}\).
+                    </p>
+                </div>
+
+                <p>
+                    The general composite \(N\) with more than two prime factors follows the same route: the unit group
+                    decomposes over the odd prime powers dividing \(N\), each such \(U(p^a)\) is cyclic of even order
+                    for odd \(p\) by a standard result of elementary number theory, and the same comparison of
+                    \(2\)-adic exponents across the factors gives a failure probability at most \(2^{-(t-1)}\) for
+                    \(t \geq 2\) distinct prime factors, which is at most \(\tfrac{1}{2}\) and shrinks as \(t\) grows.
+                    We do not pursue the general bound, since the two-prime case carries the cryptographic content.
+                </p>
+
+                <p>
+                    What remains is the single hard step: given \(x\) and \(N\), determine the period \(r\) of
+                    \(a \mapsto x^a \bmod N\). Trying to read \(r\) by listing the powers takes a number of steps
+                    proportional to \(r\) itself, which may be as large as \(N\) and so exponential in the input length
+                    \(\log N\). It is here, and only here, that the quantum machinery enters.
+                </p>
+            </section>
+
+            <section id="quantum-core" class="section-content">
+                <h2>The Quantum Period-Finder</h2>
+
+                <p>
+                    The reduction leaves one task: given \(x\) and \(N\), find the period \(r\) of the function
+                    \(f(a) = x^a \bmod N\), where \(f(a) = f(b)\) exactly when \(a \equiv b \pmod{r}\). The quantum
+                    algorithm finds it with a circuit whose shape is the one already met in the early query algorithms,
+                    a Fourier transform on either side of a single function evaluation. The amplitudes never appear on
+                    paper; the transform arranges them so that a single measurement reveals the period.
+                </p>
+
+                <h3>The Circuit</h3>
+
+                <p>
+                    Choose \(q = 2^\ell\) with \(N^2 < q \leq 2N^2\), so that the
+                    <a href="../Linear_algebra/quantum_computation.html#D-quantum_fourier_transform" class="ref-link"><strong>quantum Fourier transform</strong></a>
+                    \(F_q\) acts on an \(\ell\)-qubit register. A first register of \(\ell\) qubits will hold the
+                    argument \(a\); a second register of \(n = \lceil \log N \rceil\) qubits will hold the value
+                    \(f(a)\). Let \(O_f\) be the unitary implementing the function evaluation,
+                    \(O_f : |a\rangle|0\rangle \mapsto |a\rangle|f(a)\rangle\), built from the reversible classical
+                    circuit for modular exponentiation. The algorithm applies \(F_q\) to the first register, then
+                    \(O_f\), then \(F_q\) again to the first register, and measures.
+                </p>
+
+                <p>
+                    Begin in \(|0\rangle|0\rangle\). Applying \(F_q\) to the first register, or equivalently a
+                    <a href="../Linear_algebra/quantum_computation.html#D-quantum_fourier_transform" class="ref-link"><strong>layer of Hadamard gates</strong></a>,
+                    builds the uniform
+                    <a href="../Linear_algebra/quantum_computation.html#D-quantum_state" class="ref-link"><strong>superposition</strong></a>
+                    over all arguments,
+                </p>
+                <p>
+                    \[
+                    \frac{1}{\sqrt{q}} \sum_{a=0}^{q-1} |a\rangle |0\rangle.
+                    \]
+                </p>
+                <p>
+                    The single application of \(O_f\) computes every value of \(f\) at once, the phenomenon of quantum
+                    parallelism, producing a state in which the two registers are
+                    <a href="../Linear_algebra/quantum_computation.html#D-entangled_state" class="ref-link"><strong>entangled</strong></a>
+                    through the graph of \(f\),
+                </p>
+                <p>
+                    \[
+                    \frac{1}{\sqrt{q}} \sum_{a=0}^{q-1} |a\rangle |f(a)\rangle.
+                    \]
+                </p>
+
+                <h3>Measuring the Value Register</h3>
+
+                <p>
+                    <a href="../Linear_algebra/quantum_computation.html#D-quantum_measurement" class="ref-link"><strong>Measuring</strong></a>
+                    the second register returns some value \(f(s)\), and collapses the first register to the
+                    superposition of exactly those arguments mapping to it. Since \(f(a) = f(s)\) precisely when
+                    \(a \equiv s \pmod{r}\), these arguments are \(s, s+r, s+2r, \ldots\), and the first register
+                    becomes
+                </p>
+                <p>
+                    \[
+                    \frac{1}{\sqrt{m}} \sum_{j=0}^{m-1} |jr + s\rangle,
+                    \]
+                </p>
+                <p>
+                    where \(m\) is the number of integers of the form \(jr + s\) lying in \(\{0, \ldots, q-1\}\),
+                    namely \(\lceil q/r \rceil\) or \(\lfloor q/r \rfloor\). The period is now encoded in the
+                    <em>spacing</em> of this comb of basis states, all separated by \(r\), shifted by the unknown
+                    offset \(s\). A direct measurement here would return one random \(jr + s\), from which \(r\) cannot
+                    be read: the offset \(s\) is uniformly random and masks the spacing. The Fourier transform exists
+                    precisely to convert a spacing into something a measurement can see.
+                </p>
+
+                <h3>The Second Transform</h3>
+
+                <p>
+                    Applying \(F_q\) to the comb gives
+                </p>
+                <p>
+                    \[
+                    \frac{1}{\sqrt{m}} \sum_{j=0}^{m-1} \frac{1}{\sqrt{q}} \sum_{b=0}^{q-1} e^{2\pi i (jr + s) b / q} |b\rangle
+                    = \frac{1}{\sqrt{mq}} \sum_{b=0}^{q-1} e^{2\pi i s b / q} \left( \sum_{j=0}^{m-1} e^{2\pi i j r b / q} \right) |b\rangle.
+                    \]
+                </p>
+                <p>
+                    The offset \(s\) has retreated into a global phase \(e^{2\pi i s b / q}\) on each \(|b\rangle\),
+                    where it cannot affect any measurement probability. What governs the outcome is the inner sum, a
+                    geometric series in the ratio \(e^{2\pi i r b / q}\):
+                </p>
+                <p>
+                    \[
+                    \sum_{j=0}^{m-1} e^{2\pi i j r b / q}
+                    = \sum_{j=0}^{m-1} \left( e^{2\pi i r b / q} \right)^{j}
+                    = \begin{cases}
+                    m & \text{if } e^{2\pi i r b / q} = 1, \\\\
+                    \dfrac{1 - e^{2\pi i m r b / q}}{1 - e^{2\pi i r b / q}} & \text{if } e^{2\pi i r b / q} \neq 1.
+                    \end{cases}
+                    \]
+                </p>
+
+                <h3>The Easy Case: \(r\) Divides \(q\)</h3>
+
+                <p>
+                    Suppose first that \(r\) divides \(q\), so the comb fits a whole number of times across the domain
+                    and \(m = q/r\). The ratio \(e^{2\pi i r b / q}\) equals \(1\) exactly when \(rb/q\) is an integer,
+                    that is when \(b\) is a multiple of \(q/r\). At each such \(b\) the inner sum equals \(m\), so the
+                    squared amplitude there is \((m/\sqrt{mq})^2 = m/q = 1/r\). There are exactly \(r\) such multiples
+                    of \(q/r\) in the range, each carrying probability \(1/r\); together they account for all the
+                    probability, so every \(b\) that is not a multiple of \(q/r\) has amplitude zero. Measuring returns
+                    a uniformly random multiple
+                </p>
+                <p>
+                    \[
+                    b = c \cdot \frac{q}{r}, \qquad c \in \{0, 1, \ldots, r-1\},
+                    \]
+                </p>
+                <p>
+                    so the known ratio \(b/q = c/r\). The denominator \(r\) is what we seek; we recover it by writing
+                    \(b/q\) in lowest terms, which succeeds whenever \(c\) is coprime to \(r\). The number of such
+                    \(c\) is
+                    <a href="../Linear_algebra/cyclic_groups.html#D-euler_phi" class="ref-link"><strong>Euler's totient</strong></a>
+                    \(\phi(r)\), which is of order \(r / \log\log r\), so a random \(c\) is coprime to \(r\) with
+                    probability \(\Omega(1/\log\log r)\); an expected \(O(\log\log N)\) repetitions therefore yield a
+                    coprime \(c\), and hence \(r\). The algorithm cannot tell
+                    in advance whether a given \(c\) is coprime to \(r\), but it can verify the candidate by checking
+                    whether the resulting \(\gcd(x^{r/2} \pm 1, N)\) are genuine factors of \(N\), at near-linear
+                    classical cost.
+                </p>
+
+                <p>
+                    For the running example \(N = 15\), \(x = 2\), with true period \(r = 4\), the choice
+                    \(N^2 = 225 < q \leq 450\) gives \(q = 256\). The comb has spacing \(4\), and the second transform
+                    concentrates all amplitude on the four multiples of \(q/r = 64\), namely \(b \in \{0, 64, 128,
+                    192\}\), each with probability \(1/4\). A measurement returning \(b = 192\) gives \(b/q = 192/256 =
+                    3/4\), already in lowest terms, so the denominator exposes \(r = 4\); the outcome \(b = 64\) gives
+                    \(1/4\) and serves equally well. The outcome \(b = 128\) reduces to \(1/2\) and would report the
+                    wrong value \(2\), which is exactly the case \(c = 2\) sharing the factor \(2\) with \(r\), caught
+                    by the classical verification.
+                </p>
+
+                <h3>The Hard Case: \(r\) Does Not Divide \(q\)</h3>
+
+                <p>
+                    Because \(q\) is a power of two and \(r\) is generally not, \(r\) usually fails to divide \(q\).
+                    The transform then concentrates amplitude not exactly on the multiples of \(q/r\), which are no
+                    longer integers, but <em>near</em> them. All steps up to the geometric sum remain valid; using
+                    \(|1 - e^{i\theta}| = 2|\sin(\theta/2)|\), the magnitude of the nontrivial case becomes a ratio of
+                    sines,
+                </p>
+                <p>
+                    \[
+                    \frac{\bigl|1 - e^{2\pi i m r b / q}\bigr|}{\bigl|1 - e^{2\pi i r b / q}\bigr|}
+                    = \frac{|\sin(\pi m r b / q)|}{|\sin(\pi r b / q)|}.
+                    \]
+                </p>
+                <p>
+                    The denominator is near zero, making the ratio large, exactly when \(b\) is close to an integer
+                    multiple of \(q/r\); the numerator, oscillating \(m\) times faster, does not vanish in step with it,
+                    so heuristically the amplitude piles up on the \(b\) near multiples of \(q/r\). Carrying out the
+                    estimate precisely, which we do not reproduce here, shows that with high probability the measured
+                    \(b\) satisfies
+                </p>
+                <p>
+                    \[
+                    \left| \frac{b}{q} - \frac{c}{r} \right| \leq \frac{1}{2q}
+                    \]
+                </p>
+                <p>
+                    for a random \(c \in \{0, \ldots, r-1\}\). The known ratio \(b/q\) is no longer exactly \(c/r\), so
+                    we cannot simply reduce it to lowest terms. But the approximation is sharp enough to pin \(c/r\)
+                    down uniquely: any two distinct fractions with denominators at most \(N\) differ by more than
+                    \(1/N^2 > 1/q\), so \(c/r\) is the only fraction with denominator at most \(N\) lying within
+                    \(1/2q\) of \(b/q\). Extracting that unique fraction from \(b/q\) is a classical task with a
+                    classical solution, the continued-fraction expansion, which is the subject of the next section.
+                </p>
+
+                <p>
+                    The cost is modest. Modular exponentiation \(f(a) = x^a \bmod N\) is computed by repeated squaring,
+                    each squaring a multiplication modulo \(N\) carried out by a fast integer-multiplication algorithm,
+                    for a total of \(O((\log N)^2)\) elementary operations up to factors logarithmic in \(\log N\); the
+                    <a href="../Linear_algebra/quantum_computation.html#D-quantum_fourier_transform" class="ref-link"><strong>Fourier transform</strong></a>
+                    runs in \(O((\log N)^2)\) gates, and an expected \(O(\log\log N)\) repetitions suffice to obtain
+                    a usable \(c\). The period \(r\), and through it a factor of \(N\), emerges in time polynomial in
+                    \(\log N\), against a problem for which no efficient classical method is known.
+                </p>
+            </section>
+
+            <section id="continued-fractions" class="section-content">
+                <h2>Reading the Period from a Measurement</h2>
+
+                <p>
+                    The hard case left us with a known rational \(b/q\) and the assurance that a unique fraction
+                    \(c/r\) with denominator at most \(N\) lies within \(1/2q\) of it. Recovering \(c/r\) from \(b/q\)
+                    is a classical problem solved by the continued-fraction expansion, an old device that produces,
+                    from any real number, the sequence of rationals approximating it best for their size. We develop
+                    only what the algorithm requires.
+                </p>
+
+                <h3>Continued Fractions and Convergents</h3>
+
+                <div class="theorem" id="D-continued_fraction">
+                    <span class="theorem-title">Definition: Continued Fraction and Convergents</span>
+                    <p>
+                        For positive integers \(a_1, a_2, \ldots\) and an integer \(a_0 \geq 0\), the
+                        <strong>continued fraction</strong> \([a_0, a_1, a_2, \ldots]\) denotes the value
+                        \[
+                        a_0 + \cfrac{1}{a_1 + \cfrac{1}{a_2 + \cfrac{1}{\ddots}}},
+                        \]
+                        and the integers \(a_i\) are its <strong>partial quotients</strong>. The truncation
+                        \([a_0, \ldots, a_n]\) is the \(n\)-th <strong>convergent</strong>. Writing each convergent as a
+                        fraction \(p_n / q_n\), the numerators and denominators satisfy the recurrence
+                        \[
+                        \begin{align*}
+                        p_0 &= a_0, & p_1 &= a_1 a_0 + 1, & p_n &= a_n p_{n-1} + p_{n-2}, \\\\
+                        q_0 &= 1, & q_1 &= a_1, & q_n &= a_n q_{n-1} + q_{n-2},
+                        \end{align*}
+                        \]
+                        and \(p_n / q_n\) is automatically in lowest terms.
+                    </p>
+                </div>
+
+                <p>
+                    The expansion of a given real number \(\theta\) is read off by the natural greedy procedure: take
+                    the integer part, invert the remainder, and repeat,
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    a_0 &= \lfloor \theta \rfloor, & \theta_1 &= 1 / (\theta - a_0), \\\\
+                    a_1 &= \lfloor \theta_1 \rfloor, & \theta_2 &= 1 / (\theta_1 - a_1),
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    and so on, halting when the remainder is zero. For a rational \(\theta\) the process terminates,
+                    and the denominators \(q_n\) grow at least as fast as \(q_n \geq 2 q_{n-2}\), hence exponentially in
+                    \(n\); the whole expansion of \(b/q\) therefore costs only \(O(\log q)\) steps.
+                </p>
+
+                <h3>The Best-Approximation Property</h3>
+
+                <p>
+                    The feature that makes convergents the right tool is that they approximate better than any fraction
+                    with a smaller denominator. Two facts capture this.
+                </p>
+
+                <div class="theorem" id="T-cf_best_approximation">
+                    <span class="theorem-title">Theorem: Convergents Are Best Approximations</span>
+                    <p>
+                        Let \(\theta = [a_0, a_1, \ldots]\) with convergents \(p_n / q_n\). Then each convergent
+                        approximates \(\theta\) to within the square of its denominator,
+                        \[
+                        \left| \theta - \frac{p_n}{q_n} \right| < \frac{1}{q_n^2},
+                        \]
+                        and it is the best approximation among all fractions of denominator at most \(q_n\): if
+                        \(n > 1\), \(q \leq q_n\), and \(p/q \neq p_n / q_n\), then
+                        \[
+                        \left| \theta - \frac{p_n}{q_n} \right| < \left| \theta - \frac{p}{q} \right|.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    We take this as a standard result of the elementary theory of continued fractions; the recurrence
+                    above makes both statements a finite induction on \(n\). The consequence we need is a uniqueness
+                    statement: if a fraction \(c/r\) with denominator \(r \leq N\) satisfies \(|\theta - c/r| \leq
+                    1/2q\) with \(q > N^2\), then \(c/r\) must be a convergent of \(\theta\), and it is the unique
+                    fraction with denominator at most \(N\) this close to \(\theta\).
+                </p>
+
+                <h3>Extracting the Period</h3>
+
+                <p>
+                    Apply this with \(\theta = b/q\), the measured ratio. We expand \(b/q\) as a continued fraction and
+                    compute its convergents in order of increasing denominator. The sought fraction \(c/r\) has
+                    denominator \(r \leq N\) and lies within \(1/2q\) of \(b/q\); by the uniqueness just stated it is
+                    the convergent of \(b/q\) with the largest denominator not exceeding \(N\). That denominator is a
+                    candidate for the period \(r\) when \(c\) and \(r\) are coprime, which occurs with probability
+                    \(\Omega(1/\log\log r)\); an expected \(O(\log\log N)\) repetitions of the whole quantum procedure
+                    therefore deliver the true \(r\). Each candidate is checked classically by testing whether
+                    \(\gcd(x^{r/2} \pm 1, N)\) are genuine factors, so a wrong guess costs nothing but another run.
+                </p>
+
+                <p>
+                    The running hard-case illustration is \(N = 21\), \(x = 2\), whose true period is \(r = 6\), with
+                    \(q = 512\). A measurement near the multiple \(c = 1\) returns \(b = 85\), giving the ratio
+                    \(b/q = 85/512\). Its continued-fraction expansion is \([0, 6, 42, 2]\), whose convergents are
+                    \(0,\ \tfrac{1}{6},\ \tfrac{42}{253},\ \ldots\); the last one with denominator at most \(N = 21\)
+                    is \(\tfrac{1}{6}\), exposing the period \(r = 6\) at once. An outcome near \(c = 5\), namely
+                    \(b = 427\), expands to \([0, 1, 5, 42, 2]\) with the corresponding convergent \(\tfrac{5}{6}\),
+                    again denominator \(6\). Outcomes whose \(c\) shares a factor with \(r\) yield a convergent in
+                    lower terms, such as \(b = 171\) giving \(\tfrac{1}{3}\), which the classical factor check rejects,
+                    prompting another run.
+                </p>
+            </section>
+
+            <section id="demo" class="section-content">
+                <h2>Interactive: Factoring by Period-Finding</h2>
+
+                <p>
+                    The demonstration below runs the whole chain on a small modulus, where the state vectors are short
+                    enough to compute and draw exactly. Choosing \(N\) and a coprime base \(x\) fixes the period
+                    \(r\) and the transform size \(q = 2^\ell\) with \(N^2 < q \leq 2N^2\). The left panel makes the
+                    interference visible: the amplitude at an outcome \(b\) is the sum of \(M\) unit phase vectors
+                    \(e^{2\pi i (jr) b / q}\), drawn as a running-sum walk on the complex plane, with the white arrow
+                    the resultant \(S(b)\). When \(b\) is a multiple of \(q/r\) the vectors all point the same way and
+                    the walk runs straight out to its full length; between multiples they turn steadily and the walk
+                    curls back on itself, leaving a short resultant. The right panel is the resulting probability
+                    \(P(b) = |S(b)|^2 / (Mq)\), with the selected \(b\) marked. Dragging \(b\) shows the peaks of the
+                    distribution form exactly where the phases align. Pressing <strong>Measure</strong> samples one
+                    outcome \(b\) from \(P\), runs the continued-fraction expansion to recover a candidate period, and
+                    applies the gcd step, reporting the factors when the candidate succeeds and rejecting it at no cost
+                    when it does not.
+                </p>
+
+                <div id="shor_demo"></div>
+            </section>
+
+            <section id="what-falls" class="section-content">
+                <h2>What Falls, and What Does Not</h2>
+
+                <p>
+                    The previous pages built two public-key systems and named the hardness beneath each: key agreement
+                    on the
+                    <a href="intractable_problems.html#D-discrete_log_problem" class="ref-link"><strong>discrete
+                    logarithm</strong></a>, encryption on
+                    <a href="intractable_problems.html#D-integer_factorization" class="ref-link"><strong>factoring</strong></a>.
+                    They also promised that the two would fall together, being two faces of a single structure. The
+                    algorithm of this page makes the promise precise. Factoring has just been reduced to finding a
+                    period in the multiplicative group modulo \(N\), and that period is found efficiently. The same
+                    reduction applies to the discrete logarithm, with the period replaced by a hidden offset in the
+                    group.
+                </p>
+
+                <h3>The Discrete Logarithm Falls by the Same Mechanism</h3>
+
+                <p>
+                    Given a generator \(\alpha\) of a
+                    <a href="../Linear_algebra/intro_groups.html#D-cyclic_group" class="ref-link"><strong>cyclic
+                    group</strong></a> of order \(r_0\) and an element \(\beta = \alpha^t\), the discrete logarithm
+                    asks for the exponent \(t\). Consider the function of two arguments
+                    \[
+                    f(a, b) = \alpha^a \beta^{-b} = \alpha^{a - tb},
+                    \]
+                    which depends only on \(a - tb \bmod r_0\). Two inputs collide, \(f(a,b) = f(a',b')\), exactly when
+                    \((a - a') \equiv t(b - b') \pmod{r_0}\); the inputs giving a fixed value form a coset of the
+                    subgroup of pairs \((a,b)\) with \(a \equiv tb \pmod{r_0}\). The unknown \(t\) is the slope of that
+                    hidden subgroup, and recovering it is again a matter of detecting a periodicity, now in two
+                    dimensions rather than one.
+                </p>
+
+                <div class="theorem" id="T-dlp_via_period_finding">
+                    <span class="theorem-title">Theorem: The Discrete Logarithm as Period-Finding</span>
+                    <p>
+                        Let \(\alpha\) generate a cyclic group of order \(r_0\), let \(\beta = \alpha^t\), and define
+                        \(f(a,b) = \alpha^{a - tb}\) on \(\mathbb{Z}_{r_0} \times \mathbb{Z}_{r_0}\). Then \(f\) is
+                        constant exactly on the cosets of the subgroup \(\{(a,b) : a \equiv tb \pmod{r_0}\}\), and a
+                        quantum Fourier transform over \(\mathbb{Z}_q \times \mathbb{Z}_q\) samples a relation among
+                        \((t, 1)\) from which \(t\) is recovered classically. The discrete logarithm is thus solved by
+                        the same period-finding machinery that solves factoring.
+                    </p>
+                </div>
+
+                <p>
+                    Factoring and the discrete logarithm are, in this light, two instances of a single problem: finding
+                    a hidden subgroup of a finite abelian group, with the Fourier transform over that group as the
+                    instrument that exposes it. This is the unification the previous page anticipated, and it reaches
+                    further than these two cases; the hidden-subgroup framing is the organizing principle behind the
+                    quantum algorithms that break structured public-key cryptography.
+                </p>
+
+                <h3>The Reach Is Sharp but Bounded</h3>
+
+                <p>
+                    It would be a mistake to read this as the end of cryptography. What the algorithm exploits is
+                    specifically the hidden abelian structure of factoring and the discrete logarithm; constructions
+                    that do not rest on such structure are untouched by it. Symmetric-key ciphers and hash functions
+                    are not built on a hidden period, and the best general quantum attack on them is a brute-force
+                    search that finds a key among \(2^k\) possibilities in about \(2^{k/2}\) steps rather than \(2^k\).
+                    This quadratic speedup erodes the effective key length by half and is answered simply by doubling
+                    it; a symmetric cipher with a long enough key, and a hash function with a long enough output,
+                    remain secure. The event on the horizon is not a collapse of cryptography but the obsolescence of
+                    one family within it: the public-key constructions resting on the two oldest number-theoretic
+                    assumptions, whose security carries a known expiry condition rather than an indefinite future.
+                </p>
+
+                <p>
+                    None of the engineering disciplines that harden these systems within the classical model helps
+                    here. Padding, careful parameter choice, and large key sizes all guard against classical attacks
+                    and leave the underlying hardness untouched; once the model itself admits a quantum computer, the
+                    hardness evaporates and the disciplines guard nothing. A larger modulus or a longer exponent does
+                    not escape the attack either. A harder instance of factoring is still an instance of factoring, and
+                    falls to the same period-finding; the difficulty was always relative to the classical model of
+                    computation, and the quantum model moves the boundary of what is efficient.
+                </p>
+
+                <h3>Where the Successor Must Stand</h3>
+
+                <p>
+                    The search for a replacement therefore does not look for a better factoring-based scheme or a more
+                    elaborate use of the discrete logarithm. It looks for a hardness that does not reduce to a hidden
+                    abelian period at all, a problem to which no efficient quantum algorithm is known and to which
+                    factoring and the discrete logarithm do not connect by any reduction. The most developed candidates
+                    come from the geometry of high-dimensional lattices, where finding a shortest or a nearest vector
+                    appears to resist classical and quantum attack alike. The reason such problems lie outside the reach
+                    of this page is precisely that they carry no hidden abelian periodicity for a Fourier transform to
+                    expose; the disconnection is not an accident but the source of their resilience. Standards built on
+                    lattice problems have since been adopted to replace the constructions broken here.
+                </p>
+
+                <p>
+                    Moving to that ground means leaving the arithmetic of primes and exponents that carried public-key
+                    cryptography from its first key agreement to its first cipher. What it does not mean is rebuilding
+                    the framework. The definitions of the earlier pages, what it is to encrypt, to agree on a key, to be
+                    secure against a bounded adversary, carry over unchanged; the quantum computer alters which hard
+                    problem may sit at the center, not what a cryptographic scheme is or what security means. The
+                    geometry of lattices, and the constructions that rest on it, are where the next part of this story
+                    is set.
+                </p>
+            </section>
+
+        </div>
+
+        <script src="/js/sec4_p35_shor_interference_visualizer.js"></script>
+    </body>
+</html>
