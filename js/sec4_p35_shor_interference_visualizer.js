@@ -7,14 +7,14 @@
 // phase vectors v_j = e^{2pi i (jr) b / q}. When b is a multiple of q/r these
 // vectors all point the same way and add up coherently (a long straight walk, large
 // |S|); for other b they rotate and cancel (a walk that curls back on itself, small
-// |S|). The probability is P(b) = |S(b)|^2 / (M q). The period is read out of WHERE
+// |S|). The probability is P(b) = |S(b)|^2 / (Mq). The period is read out of WHERE
 // the constructive interference lands, then continued fractions + gcd return the
 // factors. The offset s only adds a global phase e^{2pi i s b/q} that rotates the
 // whole walk without changing |S|, so we display s = 0 without loss.
 //
 // House rules: no efficiency claims, no vendor names; the demo only displays the
 // page's own state evolution. Math core self-tested in JS against NumPy/Node truth:
-//   |S(b)|^2/(M q) == P(b) (phase-sum equals QFT probability);
+//   |S(b)|^2/(Mq) == P(b) (phase-sum equals QFT probability);
 //   easy N=15 r=4 q=256: b=64 -> all vectors aligned, |S|=M=64, P=1/4; off-peak |S|~0;
 //   hard N=21 r=6 q=512: |S| large near multiples of q/r, small far from them;
 //   continued fraction 85/512 -> 1/6; full chain 15 = 3 x 5.
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="shor-svg-wrap"><svg id="shor-walk" width="100%" height="260" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet"></svg></div>
           </div>
           <div class="shor-view-right">
-            <div class="shor-view-title">QFT probability P(b) = |S(b)|&sup2; / (M q); the marked b is selected at left</div>
+            <div class="shor-view-title">QFT probability P(b) = |S(b)|&sup2; / (Mq); the marked b is selected at left</div>
             <div class="shor-svg-wrap"><svg id="shor-qft" width="100%" height="180" preserveAspectRatio="none"></svg></div>
           </div>
         </div>
@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const startB = Math.round(q / r) % q || 0;
     elB.value = String(startB);
     elResult.className = 'shor-result';
-    elResult.innerHTML = 'Drag <b>b</b> to see the phase vectors align (long white resultant, tall bar) at multiples of q/r and cancel between them. Then press <b>Measure</b>.';
+    elResult.innerHTML = 'Drag <b>b</b> to explore the interference, then press <b>Measure</b>.';
     updateB();
   }
 
