@@ -1,8 +1,10 @@
-# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v6)
+# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v7)
 
 **Author:** Yusuke Yokota
-**Last Updated:** 6/22/2026
+**Last Updated:** 6/29/2026
 **Website:** https://math-cs-compass.com
+
+> **v7 changes (2026-06-29):** Quantum redesign. Part 7's "Section V single-page" design **superseded** — quantum computation distributed across Section I (mathematical prerequisites) and Section IV (algorithms), per crypto handout §0.8. **Layer-1 background page `linalg-41` (quantum_computation.html) COMPLETE** (8 owners incl. `T-spectral_theorem_hermitian`; topicGroup `quantum`). Shor / Grover / VQE / QEC -> Section IV. de Wolf (arXiv:1907.09415, free) replaces Nielsen-Chuang. Waved-through edits: Part 2.4, §6.4/6.5, Part 7 (full rewrite), Part 8.3, Parts 10/11, Part 13. Authoritative for quantum/PQC placement = handout §0.8.
 
 ---
 
@@ -72,7 +74,7 @@ A unified view of the five tracks. Per-track detail is authoritative in the indi
 | **Phase 2e** continuous-time generative | — | III | **awaiting Øksendal purchase** (then Page1 BM+Itō) | **Øksendal 6th ed.** | `phase2e_handout_v1` |
 | **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **linalg-31~40 (incl. Peter–Weyl) + ml-16 complete; GDL-mandatory scope fully satisfied** | Hall 2nd ed. (on hand) | `rep_handout_v10` (archival) |
 | **CDL** category theory | — | IV (cats) + V (CDL bridge) | **Stage 2 進行中: disc-18~28 公開済 (Leinster Ch.1–5 完了); 次 = disc-29 (Ch.6)** | none (both primary free) | `cdl_track_handout_v10` |
-| **Crypto** through PQC | — | IV (s1) + I (s2-7) | **mood-driven** | none | `crypto_track_handout_v1` |
+| **Crypto** through PQC | — | IV (s1) + I (s2-7) | **mood-driven** | none | `crypto_track_handout_v18` |
 | **TDL** | **discrete leg** | IV (existing Hodge) + V (SNN) | **SNN (ml-17) complete; discrete leg landed. Optional persistent-homology branch (disc-18) remains** | TDL book (free) | `tdl_track_handout_v2` |
 
 ### 2.2 Shared structural pattern (this session's finding)
@@ -96,8 +98,7 @@ All five tracks share the same shape:
 
 ### 2.4 The only hard ordering constraint
 
-Section V quantum page (Part 7) <- Crypto stage 1–4 (establishing what Shor breaks). No forced
-order between any other tracks.
+layer-2 Shor (Section IV) <- crypto stage 1-2 classical substrate (COMPLETE) + layer-1 linalg-41 quantum substrate (COMPLETE). Both prerequisites now satisfied. No forced order between any other tracks. (See Part 7.4.)
 
 ---
 
@@ -287,7 +288,7 @@ Applying the topicGroup principle per stage -> a single Section is untenable; id
 | 1 classical crypto foundations | **IV** | computational security (application of complexity, disc-7/9) |
 | 2 public-key & number theory (DH/RSA/DLP) | **I** | group structure, Euler φ, CRT, finite fields |
 | 3 ECC | **I** | elliptic-curve group |
-| 4 quantum threat | **I** | crypto compromise + PQC motivation (Shor proper in Section V, below) |
+| 4 quantum threat | **I** | crypto compromise + PQC motivation (Shor proper in **Section IV**, layer-2; quantum substrate = linalg-41) |
 | 5 lattice foundations | **I** | lattices = discrete modules / geometry |
 | 6 LWE/Module-LWE | **I** | error-perturbed linear algebra over modules |
 | 7 NIST PQC standards | **I** | specs / deployment (viewpoint, thin) |
@@ -313,24 +314,25 @@ revised).
 Same shape as Phase 2e (math, not method). The answer to "where to go after learning the
 concepts" = root deeply in the hardness mathematics, keep individual specs as viewpoint.
 
-### 6.4 ⚠️ stage 4 / quantum owner separation
-- The Shor/Grover quantum-algorithm proper -> **owned by the Section V quantum page** (Part 7).
+### 6.4 ⚠️ stage 4 / quantum owner separation (revised — handout §0.8)
+- The Shor/Grover quantum-algorithm proper -> **owned by Section IV** (algorithm track, disc-N; layer-2). The quantum *prerequisites* are owned by **`linalg-41` (Section I, COMPLETE)**, which layer-2 ref-links.
 - stage 4 (Section I) identity = "the result that crypto is broken by quantum + PQC motivation"
-  only. Shor's quantum detail is not written; ref-link to Section V. It is the consequence of the
+  only. Shor's quantum detail is not written here; ref-link to the Section IV Shor page. It is the consequence of the
   "why will the RSA/ECC built in stage 2-3 break" story.
-- **Bidirectional bridge**: stage4 -> V (Shor detail), V -> stage2-3 (the target RSA/ECDH). Consistent
-  with Part 7's hard dependency (quantum page <- Crypto stage 1-4).
+- **Bidirectional bridge**: stage4 -> Section IV Shor (detail), Shor -> stage2-3 (the target RSA/ECDH), Shor -> linalg-41 (quantum substrate). Consistent
+  with Part 7.4 layer ordering (layer-2 Shor <- crypto stage 1-2 classical substrate, COMPLETE).
 
 ### 6.5 Reference / start
 - stage 1-4 primary: Menezes *Handbook of Applied Cryptography* (**free** cacr.uwaterloo.ca/hac/,
   all 15 chapters, author-sanctioned). 1996, so lattice/PQC are out of scope.
+- **layer-2 Shor primary: de Wolf *Quantum Computing: Lecture Notes* (arXiv:1907.09415, free)**, Ch.5 (factoring -> period-finding -> continued fractions) + Ch.6 (HSP). Chosen over Nielsen-Chuang (see handout §1).
 - stage 5-6 primary: **Peikert *A Decade of Lattice Cryptography*** (**free** IACR ePrint
   2015/939). SIS/LWE/Module-LWE hardness and worst-case reduction = heart of PQC mathematics.
 - stage 7 specs: FIPS 203/204/205 documents + CACR PQC materials (specs not math, thin).
 - **All free, no purchase.** Nguyen-Vallée/Bernstein-Lange consolidated into Peikert after review.
 - **Start status: mood-driven** (timing by interest, terminal at stage 7). Pause only at the
   coherent points stage 3/4/7 (Part 13 failure-mode avoidance).
-- Detail: `crypto_track_handout_v1`.
+- Detail: `crypto_track_handout_v18`.
 
 ### 6.6 Notes (Part 9 ledger)
 `lattice` is polysemous (order-theoretic lattice vs integer lattice) -> crypto side uses
@@ -338,9 +340,9 @@ concepts" = root deeply in the hardness mathematics, keep individual specs as vi
 
 ---
 
-## Part 7 — Quantum: Three Sub-Domains, Section V Single-Page
+## Part 7 — Quantum: Three Sub-Domains, Distributed across Section I / IV
 
-(v1 Part 4 retained. Bridge with Crypto stage 4 made explicit in 7.4.)
+(v6 "Section V single-page" design **superseded 2026-06-29**. Authoritative source = crypto handout §0.8. Quantum computation is not ML; its mathematical prerequisites live in linear algebra / functional analysis, so its owners live in Section I/IV, not Section V.)
 
 ### 7.1 Three sub-domains
 | Sub-domain | Mathematical core | 2026 production |
@@ -349,25 +351,24 @@ concepts" = root deeply in the hardness mathematics, keep individual specs as vi
 | B quantum computation | A + tensor product (qubits) + circuits + Shor/Grover/VQE + error correction | NISQ; no production deployment |
 | C PQC | lattices + LWE/Module-LWE + codes + hashes + elliptic curves | **production-deployed** ( -> Crypto Part 6, stage 5-7) |
 
-### 7.2 Placement
-- **A+B**: a single Section V viewpoint page (ml-XX). A's mathematics is covered by the existing
-  FA block (calc-23/25/27/32), so no dedicated math page is needed. B covers qubits, circuits,
-  Shor/Grover/VQE at viewpoint level. A Section V viewpoint alongside ml-13/Equivariant NN, not a pillar.
-- **C (PQC)**: belongs to the **Crypto Track (Part 6), stages 5-7**. Section I. Crypto, not Quantum.
-- **pace**: A+B off the active path, trigger-tolerant.
+### 7.2 Placement (revised — handout §0.8)
+The single owner principle = **algorithm -> Section IV, mathematical prerequisite -> Section I**. Applied:
+- **A + B mathematical prerequisites -> Section I.** Owned by **`linalg-41` quantum_computation.html (COMPLETE 2026-06-29)**: qubits as unit vectors in a complex Hilbert space, tensor-product registers, Born rule + projective measurement, observables as self-adjoint operators (finite-dim complex Hermitian spectral theorem, new owner `T-spectral_theorem_hermitian`), unitary evolution, and the quantum Fourier transform. 8 new owners. topicGroup `quantum` (small group; see below).
+- **Shor proper -> Section IV** (crypto/algorithm track, disc-N). Classical part = number theory (period -> factoring, disc-32/33 group theory); quantum part = QFT + phase estimation ref-linking layer-1. Primary = de Wolf Ch.5 + Ch.6 (HSP).
+- **Grover / VQE / quantum error correction -> Section IV** (algorithm / coding-theory track). Not Section I. By the same algorithm=IV rule.
+- **C (PQC)** -> **Crypto Track (Part 6), stages 5-7**, Section I. Crypto, not Quantum.
+- **No Section V quantum owner.** Section V may host a viewpoint that *ref-links* these, but owns no quantum mathematics.
 
-### 7.3 What is NOT done
-- No standalone "Quantum Section" (the no-isolated-Geometry/Physics-section principle).
-- No pillar status for Quantum overall (whether C grows to pillar grade is a Crypto Track matter).
+### 7.3 What is NOT done / Section I quantum sequel
+- No standalone "Quantum Section" (no-isolated-Geometry/Physics-section principle, retained).
+- No pillar status for Quantum overall.
+- **Section I quantum sequel is minimal and uncertain**: at most a density-operator / mixed-state page (layer-1 explicitly scoped that out), and even that may reduce to ref-links into existing FA owners (trace.html etc.). Phase estimation is a layer-2 (Section IV) construct, not owned in Section I. Consequence: topicGroup `quantum` stays a **small group in Section I** (currently linalg-41 alone) — accepted as the price of correct classification over forced merger into lie-theory/representation-theory (which quantum *consumes but does not build*). Per §0.8 the future lattice track (layer-3, if Section I) takes a **separate** topicGroup — merging them would erase the "quantum and lattices are unrelated" story that is PQC's raison d'être.
 
-### 7.4 ⚠️ hard dependency (the only forced order)
-The Section V quantum page (A+B) must explain Shor, assuming the reader knows "what Shor breaks."
- -> **Crypto stage 1–4 must be complete before the quantum page is written.** The reverse is not
-required (no need to reach PQC=stage5+ before the quantum page). stage 4 establishes "what is
-broken" in Section I -> the quantum page develops Shor proper in Section V (the bidirectional
-bridge of Part 6.4).
+### 7.4 ⚠️ hard dependency (revised)
+Layer ordering = **layer-1 (Section I quantum background, COMPLETE) -> layer-2 (Shor, Section IV) -> layer-3/4 (lattices / PQC)**. Shor (layer-2) must explain "what Shor breaks," so crypto stage 1-2 (disc-29~34, COMPLETE) supplies the classical number-theoretic and group-theoretic substrate; layer-2 ref-links layer-1 for the quantum substrate. The reverse (reaching PQC = stage 5+ before Shor) is not required. Defense (layers 3-4, lattices/PQC) is the center of gravity.
 
 ---
+
 
 ## Part 8 — Reference Acquisition Status (new in v2)
 
@@ -391,7 +392,7 @@ References for the five tracks plus existing ones, by acquisition status. **One 
 
 ### 8.3 Trigger-based, not yet acquired (future)
 - Amari *Information Geometry* (when an information-geometry page is planned; entry point calc-81 secured)
-- Nielsen-Chuang *Quantum Computation* (if the Section V quantum page is written)
+- ~~Nielsen-Chuang *Quantum Computation*~~ -> **superseded by de Wolf *Quantum Computing: Lecture Notes* (arXiv:1907.09415, free)**, already the primary for layer-1 (linalg-41, done) and layer-2 (Shor, Section IV). No acquisition needed (free arXiv). See handout §1.
 
 ---
 
@@ -431,8 +432,10 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 | TDL: Persistent Homology | ~1–2 | IV | TBD (next id disc-18; disc-16/17 occupied by Formal Methods) | optional branch (disc-15 forecast); new concepts (filtration / persistence module / barcode / stability) -> page-count uncertain; ref = Edelsbrunner-Harer (existing); detail in `tdl_track_handout_v2` §4 |
 | Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **awaiting Øksendal purchase** (Part 4; splits anticipated) |
 | CDL Track | ~6–9 (disc-18~28 = 11 done) | IV + V | disc-18~28 (`categories_functors_naturality` ~ `functors_and_limits`) | 🔄 Stage 2: Leinster Ch.1–5 完了、次 disc-29 (Ch.6); detail `cdl_track_handout_v10` (Part 5) |
-| Crypto Track | varies (7 stages) | **IV(s1) + I(s2-7)** | TBD (entry linalg-26) | mood-driven (Part 6, stage 7 terminal) |
-| Section V Quantum (A+B) | 1 | V | TBD | after Crypto stage 1–4 (Part 7.4) |
+| Crypto Track | varies (7 stages) | **IV(s1) + I(s2-7)** | TBD (entry linalg-26) | mood-driven (Part 6, stage 7 terminal); stage 1-2 disc-29~34 ✅ |
+| Quantum layer-1 (background) | linalg-41 (done) | **I** | `quantum_computation.html` | ✅ **complete** (2026-06-29; qubits/measurement/unitary evolution/QFT; 8 owners incl. `T-spectral_theorem_hermitian`; topicGroup `quantum`; de Wolf Ch.1/4) |
+| Quantum layer-2 (Shor) | ~2-3 | **IV** | TBD (disc-N) | **next active** — de Wolf Ch.5+Ch.6 (HSP); ref-links linalg-41 + disc-32/33; layer-1 substrate ready |
+| Quantum layer-3/4 (lattices / PQC) | varies | **I** (Crypto stage 5-7) | TBD | center of gravity; Peikert; separate topicGroup from `quantum` (§0.8) |
 | Regular Conditional Distributions | ~1 | III | `regular_conditional_distributions.html` | Phase 2e prereq (SDE/path-space measure) |
 | Advanced VI topics | ~1–2 | III | TBD | individually triggered by ML-application pressure |
 | DEC | ~1–2 | IV | TBD | continuous <-> discrete Hodge bridge (Part 3.5); backlog |
@@ -451,6 +454,7 @@ Completed tracks (on index.html, no planned pages).
 | **Peter–Weyl** | **linalg-40** | **6/20/2026** | `peter_weyl.html`, topicGroup `representation-theory`. Compact-group non-commutative Fourier = harmonic-analysis core of the GDL continuous leg. Route = Hall §12.3. \(K=S^1\) degeneration recovers calc-32 Fourier (伏線回収). Closes the rep track's GDL-mandatory scope. Detail: `rep_handout_v10` §5.2 (archival). |
 | Smooth Manifolds (Lee Ch.1–16 through Riemannian integration) | calc-36~81 (spine) + calc-42/45/47/52/59 + calc-82~92 (Ch.14 forms / Ch.15 orientations / Ch.16 integration) | 6/3 (Ch.1–13); 6/7 (Ch.14); 6/10 (Ch.15); 6/15/2026 (Ch.16) | Manifold spine through Riemannian metrics, differential forms, orientations, integration (form + Lie-group Haar, Stokes/Green, Riemannian integration + divergence). Mathematical landing of the GDL continuous leg; Peter–Weyl Haar substrate in calc-90. Remaining = Corners / Densities (Part 12). Detail: `manifold_handout_v24` / `ch16_integration_handout_v12`. |
 | Representation Theory (Hall) | linalg-31~40 + ml-16 | 6/8/2026 (ml-16); rep mainline earlier; 6/20/2026 (Peter–Weyl linalg-40) | Complexification + group/Lie-algebra representations -> irreducible classification -> complete reducibility / Schur -> Clebsch-Gordan -> Wigner-Eckart (linalg-31~39) -> **Peter–Weyl (linalg-40)**, landing at Equivariant NN (ml-16, Section V). GDL continuous leg's representation-theory spine, **now complete through compact-group harmonic analysis**. GDL-mandatory scope fully satisfied; only the GDL-unnecessary deep-dive (Part II: semisimple / Verma / Weyl character formula) remains. Detail: `rep_handout_v10` (archival). |
+| **Quantum layer-1 (background)** | **linalg-41** | **6/29/2026** | `quantum_computation.html`, topicGroup `quantum` (Section I). Qubits as unit vectors in a complex Hilbert space, tensor-product registers, Born rule + projective measurement, observables as self-adjoint operators (new owner `T-spectral_theorem_hermitian` = finite-dim complex Hermitian spectral theorem), unitary evolution, QFT. 8 new owners. Layer-1 of the quantum/PQC stack; substrate for layer-2 Shor (Section IV). de Wolf Ch.1/4. 4 sections rigorously reviewed. Detail: `crypto_track_handout_v18` §5.1/§5.2. |
 | Formal Methods | disc-16, disc-17 | 5/14/2026 | Section IV third pillar (disc-4,16,17). Bidirectional bridge with disc-12 (Four Color Theorem). The Curry-Howard-Lambek connection point for CDL. |
 
 ### Completed reference -> page mapping
@@ -522,7 +526,7 @@ Completed tracks (on index.html, no planned pages).
 6. **Per-topic prior-knowledge calibration**: set track-character per topic (Lie=expert,
    CDL/Phase2e/Rep/TDL=learn-while-writing).
 7. **Mood-driven dispatch**: no single order enforced. If one track stalls, others proceed. The
-   only hard ordering is Section V quantum <- Crypto stage 1-4 (Part 7.4).
+   only hard ordering is layer-2 Shor (Section IV) <- crypto stage 1-2 + layer-1 linalg-41, both now COMPLETE (Part 7.4).
 8. **[v2 added] All-tracks isomorphic structure**: "mathematical content owned by its native
    Section; identity moves to Section V at the ML/application point." Rep/CDL/Crypto/TDL/Phase2e
    all take this shape (Part 2.2).
@@ -543,7 +547,7 @@ Completed tracks (on index.html, no planned pages).
 **This roadmap (v5) is the index layer.** Per-track prereq verification, collisions, owner
 candidates, physical-book inspection items, and resume-time greps are authoritative in the
 individual handouts for the still-active tracks: `phase2e_handout_v1` / `cdl_track_handout_v10` /
-`crypto_track_handout_v1` / `tdl_track_handout_v2` / `manifold_handout_v24` /
+`crypto_track_handout_v18` / `tdl_track_handout_v2` / `manifold_handout_v24` /
 `ch16_integration_handout_v12`. The completed Representation-Theory track (incl. Peter–Weyl and the
 FA block) is archived in `rep_handout_v10`, which absorbed the spent `peter_weyl_handout_v1` and
 `fa_block_screening_handout_v5`.
