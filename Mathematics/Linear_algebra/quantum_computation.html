@@ -1,0 +1,641 @@
+---
+layout: default
+title: "Quantum Computation"
+topic_id: linalg-41
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">Quantum Computation</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#state-space">Quantum State Space</a>
+            <a href="#measurement">Observables & Measurement</a>
+            <a href="#evolution">Unitary Evolution</a>
+            <a href="#qft">Quantum Fourier Transform</a>
+        </div>
+
+        <div class="container">
+
+                <section id="state-space" class="section-content">
+                    <h2>The Qubit and Quantum State Space</h2>
+
+                    <p>
+                        Classical computation stores information in bits, each definitely \(0\) or \(1\). Quantum
+                        computation replaces the bit with a <strong>qubit</strong>, whose distinguishing feature is that
+                        it may rest in a weighted blend of \(0\) and \(1\) at once. To make "weighted blend" precise we
+                        need only a single piece of mathematics already in hand: a finite-dimensional complex
+                        <a href="../Calculus/intro_analysis.html#D-Hilbert_space" class="ref-link"><strong>Hilbert space</strong></a>,
+                        a complex vector space carrying an
+                        <a href="../Calculus/intro_analysis.html#D-inner_product_space" class="ref-link"><strong>inner product</strong></a>.
+                        The two classical values become an orthonormal basis of that space, and a qubit state is a unit
+                        vector expressed in that basis.
+                    </p>
+
+                    <p>
+                        Throughout, we keep the site convention that the inner product is linear in its first argument
+                        and conjugate-linear in its second. Quantum mechanics is traditionally written in
+                        <a href="../Calculus/dual_spaces.html#D-bra_ket" class="ref-link"><strong>Dirac (bra-ket) notation</strong></a>,
+                        where the pairing \(\langle\phi|\psi\rangle\) is conjugate-linear in \(\phi\); the two are reconciled
+                        by the relation \(\langle\phi|\psi\rangle = \langle\psi,\phi\rangle\), so adopting bra-ket
+                        notation introduces no new convention. We write the basis vectors of the two-dimensional space as
+                        the kets \(|0\rangle\) and \(|1\rangle\), identified with the standard column vectors
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        |0\rangle &= \begin{bmatrix} 1 \\ 0 \end{bmatrix}, \\\\
+                        |1\rangle &= \begin{bmatrix} 0 \\ 1 \end{bmatrix}.
+                        \end{align*}
+                        \]
+                    </p>
+
+                    <div class="theorem" id="D-qubit">
+                        <span class="theorem-title">Definition: Qubit</span>
+                        <p>
+                            A <strong>qubit</strong> is a unit vector in the complex Hilbert space \(\mathbb{C}^2\),
+                            written
+                            \[
+                            \begin{align*}
+                            |\psi\rangle &= \alpha_0 |0\rangle + \alpha_1 |1\rangle, \\\\
+                            &\quad \alpha_0, \alpha_1 \in \mathbb{C}, \quad |\alpha_0|^2 + |\alpha_1|^2 = 1,
+                            \end{align*}
+                            \]
+                            where \(\{|0\rangle, |1\rangle\}\) is the orthonormal
+                            <strong>computational basis</strong>. The scalars \(\alpha_0, \alpha_1\) are the
+                            <strong>amplitudes</strong> of \(|\psi\rangle\), and the constraint
+                            \(\|\,|\psi\rangle\,\|^2 = \langle\psi,\psi\rangle = |\alpha_0|^2 + |\alpha_1|^2 = 1\) is the
+                            requirement that \(|\psi\rangle\) be a <strong>unit vector</strong> in the norm induced by the
+                            complex inner product.
+                        </p>
+                    </div>
+
+                    <p>
+                        The word "qubit" names the state of a single two-level system; it is a noun reserved for the
+                        two-dimensional case. A system of several such pieces lives not in a sum but in a
+                        <em>tensor product</em> of the individual spaces, the construction that joins independent
+                        degrees of freedom into one space whose dimension is the product of the factors.
+                    </p>
+
+                    <p>
+                        Concretely, two qubits share the four-dimensional space \(\mathbb{C}^2 \otimes \mathbb{C}^2\),
+                        with basis
+                        \(|0\rangle\otimes|0\rangle,\ |0\rangle\otimes|1\rangle,\ |1\rangle\otimes|0\rangle,\ |1\rangle\otimes|1\rangle\),
+                        abbreviated \(|00\rangle, |01\rangle, |10\rangle, |11\rangle\). The
+                        <a href="kronecker.html#D-tensor_product_space" class="ref-link"><strong>tensor product space</strong></a>
+                        was introduced over \(\mathbb{R}\); here we take it over \(\mathbb{C}\), the construction being
+                        identical with complex scalars. An \(n\)-fold tensor product yields the state space of an
+                        \(n\)-qubit register.
+                    </p>
+
+                    <div class="theorem" id="D-quantum_state">
+                        <span class="theorem-title">Definition: Quantum State of a Register</span>
+                        <p>
+                            The state space of a register of \(n\) qubits is the \(2^n\)-dimensional complex Hilbert
+                            space
+                            \[
+                            \mathcal{H}_n = \underbrace{\mathbb{C}^2 \otimes \cdots \otimes \mathbb{C}^2}_{n}
+                            = (\mathbb{C}^2)^{\otimes n},
+                            \]
+                            with orthonormal computational basis \(\{|b_1 b_2 \cdots b_n\rangle : b_k \in \{0,1\}\}\).
+                            Identifying each bit string with the integer it encodes, we label the basis
+                            \(|0\rangle, |1\rangle, \ldots, |2^n - 1\rangle\). A <strong>quantum state</strong> of the
+                            register is a unit vector
+                            \[
+                            \begin{align*}
+                            |\psi\rangle &= \sum_{j=0}^{2^n - 1} \alpha_j |j\rangle, \\\\
+                            &\quad \alpha_j \in \mathbb{C}, \quad \sum_{j=0}^{2^n - 1} |\alpha_j|^2 = 1.
+                            \end{align*}
+                            \]
+                        </p>
+                    </div>
+
+                    <p>
+                        These \(2^n\) basis states are mutually orthogonal. Under the integer labelling, \(|j\rangle\) is
+                        the standard basis vector of \(\mathbb{C}^{2^n}\) with a \(1\) in position \(j\) and \(0\)
+                        elsewhere, so distinct labels \(j \neq j'\) give vectors supported on different coordinates and
+                        hence \(\langle j | j' \rangle = \delta_{j, j'}\). Equivalently, in bit-string form two basis
+                        states are orthogonal as soon as their strings differ in even a single position, and equal only
+                        when the strings agree everywhere. Either way \(\{|j\rangle\}\) is an orthonormal basis of
+                        \(\mathcal{H}_n\), as the definition requires.
+                    </p>
+
+                    <h3>Entanglement</h3>
+
+                    <p>
+                        A register state need not factor into a state of each qubit separately. When it does, the qubits
+                        are independent; when it does not, they are <strong>entangled</strong>. The distinction is
+                        exactly whether a state of the joint space is or is not an elementary tensor.
+                    </p>
+
+                    <div class="theorem" id="D-entangled_state">
+                        <span class="theorem-title">Definition: Product and Entangled States</span>
+                        <p>
+                            A state \(|\psi\rangle \in \mathcal{H}_A \otimes \mathcal{H}_B\) is a <strong>product
+                            state</strong> if it can be written \(|\psi\rangle = |\phi_A\rangle \otimes |\phi_B\rangle\)
+                            for some \(|\phi_A\rangle \in \mathcal{H}_A\) and \(|\phi_B\rangle \in \mathcal{H}_B\). A
+                            state that admits no such factorization is called <strong>entangled</strong>.
+                        </p>
+                    </div>
+
+                    <p>
+                        The canonical example is the two-qubit state
+                        \[
+                        |\Phi\rangle = \tfrac{1}{\sqrt 2}\bigl(|00\rangle + |11\rangle\bigr).
+                        \]
+                        Suppose it factored as \((a_0|0\rangle + a_1|1\rangle) \otimes (b_0|0\rangle + b_1|1\rangle)\).
+                        Expanding the product gives amplitudes \(a_0 b_0\) on \(|00\rangle\), \(a_0 b_1\) on
+                        \(|01\rangle\), \(a_1 b_0\) on \(|10\rangle\), and \(a_1 b_1\) on \(|11\rangle\). Matching against
+                        \(|\Phi\rangle\) forces \(a_0 b_1 = 0\) and \(a_1 b_0 = 0\), yet also \(a_0 b_0 = \tfrac{1}{\sqrt 2}\)
+                        and \(a_1 b_1 = \tfrac{1}{\sqrt 2}\), both nonzero. The first pair of equations requires one factor
+                        in each to vanish, contradicting the second pair. No factorization exists, so \(|\Phi\rangle\) is
+                        entangled.
+                    </p>
+
+                    <p>
+                        That an elementary tensor stays elementary under independent operations, while a general state
+                        need not, is governed at the level of operators by the
+                        <a href="kronecker.html#T-kronecker_properties" class="ref-link"><strong>mixed-product property</strong></a>
+                        of the tensor product, \((A \otimes B)(C \otimes D) = (AC) \otimes (BD)\): applying separate
+                        operations \(A\) and \(B\) to the two factors acts as the single operator \(A \otimes B\) on the
+                        joint space, and such factored operators preserve product states. Entanglement is precisely what
+                        escapes this factored description, and it is the structural resource that distinguishes quantum
+                        registers from independent classical ones.
+                    </p>
+                </section>
+                <section id="measurement" class="section-content">
+                    <h2>Observables and Measurement</h2>
+
+                    <p>
+                        A quantum state carries its amplitudes invisibly. We never read the vector
+                        \(|\psi\rangle\) directly; the only way to extract classical information is to
+                        <strong>measure</strong>, and measurement returns a single classical outcome drawn at random,
+                        with probabilities fixed by the amplitudes. This is the one genuinely non-classical axiom of the
+                        theory, and the rest of the formalism is built to be consistent with it.
+                    </p>
+
+                    <h3>Measurement in the Computational Basis</h3>
+
+                    <p>
+                        Suppose a register is in state \(|\psi\rangle = \sum_{j=0}^{2^n - 1} \alpha_j |j\rangle\).
+                        Measuring it in the computational basis yields one basis label \(j\), and the rule for which one
+                        is the central postulate.
+                    </p>
+
+                    <div class="theorem" id="D-quantum_measurement">
+                        <span class="theorem-title">Definition: Measurement in the Computational Basis (Born Rule)</span>
+                        <p>
+                            Let \(|\psi\rangle = \sum_{j=0}^{2^n - 1} \alpha_j |j\rangle\) be a quantum state. A
+                            <strong>measurement in the computational basis</strong> returns the outcome \(j\) with
+                            probability
+                            \[
+                            \Pr[j] = |\alpha_j|^2 = |\langle j | \psi \rangle|^2,
+                            \]
+                            and upon obtaining outcome \(j\) the state <strong>collapses</strong> to the basis state
+                            \(|j\rangle\). The map \(j \mapsto |\alpha_j|^2\) is a probability distribution precisely
+                            because \(|\psi\rangle\) is a unit vector:
+                            \(\sum_{j} |\alpha_j|^2 = \|\,|\psi\rangle\,\|^2 = 1\).
+                        </p>
+                    </div>
+
+                    <p>
+                        The normalization requirement on states is thus not an arbitrary convenience but exactly the
+                        condition that the Born probabilities sum to one. Two consequences are immediate. First,
+                        measurement is irreversible: the amplitudes are destroyed and only the label \(j\) survives, so
+                        \(|\psi\rangle\) cannot be reconstructed from the outcome. Second, an overall phase carries no
+                        information. Replacing \(|\psi\rangle\) by \(e^{i\theta}|\psi\rangle\) leaves every probability
+                        \(|e^{i\theta}\alpha_j|^2 = |\alpha_j|^2\) unchanged, so such a <strong>global phase</strong> is
+                        physically undetectable.
+                    </p>
+
+                    <p>
+                        It is worth pausing on what kind of object an amplitude is, because this is exactly where the
+                        quantum world parts ways with ordinary chance. A classical random bit is described by
+                        probabilities, which are non-negative real numbers that add up to one. An amplitude is something
+                        more general: it is a complex number, and only its squared modulus \(|\alpha_j|^2\) is a
+                        probability. Amplitudes may therefore be negative, or complex, and when a state can be reached
+                        along two routes their amplitudes are added <em>before</em> squaring. Two contributions of
+                        opposite sign can cancel, and two of the same sign can reinforce, an effect with no counterpart
+                        in classical probability and known as <strong>interference</strong>. A coin that could land
+                        heads two ways only ever becomes more likely to be heads; an amplitude that reaches a state two
+                        ways can have those ways annihilate, leaving that state impossible. Designing a computation so
+                        that the wrong answers cancel and the right answers reinforce is the central trick of quantum
+                        algorithms, and the quantum Fourier transform of the final section is the instrument that
+                        arranges such interference at scale.
+                    </p>
+
+                    <h3>Projective Measurement</h3>
+
+                    <p>
+                        Measurement in the computational basis is the special case of a more general scheme that measures
+                        along any orthogonal decomposition of the state space. The decomposition is recorded by a family
+                        of orthogonal projectors.
+                    </p>
+
+                    <div class="theorem" id="D-projective_measurement">
+                        <span class="theorem-title">Definition: Projective Measurement</span>
+                        <p>
+                            A <strong>projective measurement</strong> on \(\mathcal{H}\) is a finite family of
+                            orthogonal projectors \(P_1, \ldots, P_m\) that are pairwise orthogonal,
+                            \(P_i P_j = 0\) for \(i \neq j\), and resolve the identity, \(\sum_{i=1}^{m} P_i = I\).
+                            Applied to a state \(|\psi\rangle\), the measurement returns outcome \(i\) with probability
+                            \[
+                            \Pr[i] = \| P_i |\psi\rangle \|^2 = \langle \psi | P_i | \psi \rangle,
+                            \]
+                            after which the state collapses to the normalized projection
+                            \(P_i |\psi\rangle / \| P_i |\psi\rangle \|\).
+                        </p>
+                    </div>
+
+                    <p>
+                        Here \(\langle \psi | P_i | \psi \rangle\) denotes the inner product \(\langle \psi, P_i \psi\rangle\)
+                        written in bra-ket form. The probabilities sum to one because the projectors resolve the identity:
+                        \(\sum_i \langle\psi|P_i|\psi\rangle = \langle\psi|\bigl(\sum_i P_i\bigr)|\psi\rangle
+                        = \langle\psi|\psi\rangle = 1\). The rank-one operator \(|j\rangle\langle j|\), formed by
+                        following a ket with a bra, sends a vector \(|\psi\rangle\) to \(\langle j|\psi\rangle\,|j\rangle\):
+                        it reads off the \(j\)-th amplitude and returns it along \(|j\rangle\), and so is exactly the
+                        orthogonal projector onto the line spanned by \(|j\rangle\). Choosing these projectors
+                        \(P_j = |j\rangle\langle j|\) onto each computational basis state recovers the Born rule of the
+                        previous definition, since
+                        \(\langle\psi|j\rangle\langle j|\psi\rangle = |\langle j|\psi\rangle|^2 = |\alpha_j|^2\).
+                    </p>
+
+                    <h3>Observables</h3>
+
+                    <p>
+                        It is often convenient to attach a numerical value to each outcome and package the whole
+                        measurement as a single operator. If outcome \(i\) is assigned the real number \(\lambda_i\), the
+                        projective measurement is encoded by the operator \(M = \sum_{i=1}^{m} \lambda_i P_i\). Such an
+                        \(M\) is self-adjoint, \(M = M^*\). The converse, that every self-adjoint matrix can be written in
+                        this form, is the finite-dimensional spectral theorem, which we now state and prove, since it is
+                        the precise structure that legitimizes the entire identification of observables with self-adjoint
+                        operators.
+                    </p>
+
+                    <div class="theorem" id="T-spectral_theorem_hermitian">
+                        <span class="theorem-title">Theorem: Spectral Theorem for Hermitian Matrices</span>
+                        <p>
+                            Let \(A\) be an \(n \times n\) complex matrix that is Hermitian, \(A^* = A\). Then:
+                        </p>
+                        <p>
+                            (i) every eigenvalue of \(A\) is real;
+                        </p>
+                        <p>
+                            (ii) \(A\) is unitarily diagonalizable: there exist a
+                            <a href="lie_groups.html#D-unitary_group" class="ref-link"><strong>unitary matrix</strong></a>
+                            \(U\) (so \(U^* U = I\)) and a real diagonal matrix \(D\) with \(A = U D U^*\);
+                        </p>
+                        <p>
+                            (iii) equivalently, writing the distinct eigenvalues as \(\lambda_1, \ldots, \lambda_m\) and
+                            letting \(P_i\) be the orthogonal projector onto the eigenspace \(\ker(A - \lambda_i I)\),
+                            \[
+                            \begin{align*}
+                            A &= \sum_{i=1}^{m} \lambda_i P_i, \\\\
+                            P_i P_j &= \delta_{ij} P_i, \\\\
+                            \sum_{i=1}^{m} P_i &= I.
+                            \end{align*}
+                            \]
+                        </p>
+                    </div>
+
+                    <div class="proof">
+                        <span class="proof-title">Proof.</span>
+                        <p>
+                            We argue by induction on the dimension \(n\), the case \(n = 1\) being immediate. Over
+                            \(\mathbb{C}\) the
+                            <a href="eigenvectors.html#D-characteristic_equation" class="ref-link"><strong>characteristic polynomial</strong></a>
+                            of \(A\) has a root, so \(A\) has an
+                            <a href="eigenvectors.html#D-eigenvalue_eigenvector" class="ref-link"><strong>eigenvalue</strong></a>
+                            \(\lambda\) with a unit eigenvector \(v\). Reality of \(\lambda\) follows from
+                            self-adjointness:
+                            \[
+                            \begin{align*}
+                            \lambda \langle v, v \rangle &= \langle A v, v \rangle \\\\
+                            &= \langle v, A v \rangle \\\\
+                            &= \overline{\lambda} \langle v, v \rangle,
+                            \end{align*}
+                            \]
+                            and since \(\langle v, v \rangle = 1 \neq 0\) we conclude \(\lambda = \overline{\lambda}\),
+                            proving (i).
+                        </p>
+                        <p>
+                            Let \(W = \operatorname{span}(v)\) and consider its
+                            <a href="orthogonality.html#D-orthogonal_complement" class="ref-link"><strong>orthogonal complement</strong></a>
+                            \(W^\perp\). This subspace is \(A\)-invariant: for \(w \in W^\perp\),
+                            \[
+                            \begin{align*}
+                            \langle A w, v \rangle &= \langle w, A v \rangle \\\\
+                            &= \langle w, \lambda v \rangle \\\\
+                            &= \overline{\lambda} \langle w, v \rangle = 0,
+                            \end{align*}
+                            \]
+                            so \(A w \in W^\perp\). The restriction \(A|_{W^\perp}\) is again Hermitian: for any
+                            \(w, w' \in W^\perp\) the identity \(\langle A w, w' \rangle = \langle w, A w' \rangle\) is
+                            inherited directly from \(A^* = A\) on the full space. Acting on the
+                            \((n-1)\)-dimensional space \(W^\perp\), it has by the inductive hypothesis an orthonormal
+                            basis of eigenvectors with real eigenvalues. Adjoining \(v\) yields an orthonormal basis of
+                            eigenvectors for the whole space, by the
+                            <a href="orthogonality.html#T-orthogonal_decomposition" class="ref-link"><strong>orthogonal decomposition</strong></a>
+                            \(\mathbb{C}^n = W \oplus W^\perp\).
+                        </p>
+                        <p>
+                            Collecting these orthonormal eigenvectors as the columns of \(U\) gives a matrix whose
+                            columns are orthonormal, hence
+                            <a href="orthogonality.html#T-orthonormal_columns_characterization" class="ref-link"><strong>unitary</strong></a>
+                            (\(U^* U = I\)), and \(A U = U D\) with \(D\) the diagonal matrix of the real eigenvalues;
+                            hence \(A = U D U^*\), which is (ii). Now group the basis vectors sharing a common
+                            eigenvalue \(\lambda_i\) and let \(V_i\) be their span. The vectors assigned to \(\lambda_i\)
+                            all lie in the eigenspace \(\ker(A - \lambda_i I)\); conversely any eigenvector for
+                            \(\lambda_i\), expanded in the orthonormal eigenbasis, can have nonzero components only along
+                            basis vectors whose eigenvalue is \(\lambda_i\), since applying \(A - \lambda_i I\) scales the
+                            component along an eigenvector of eigenvalue \(\mu\) by \(\mu - \lambda_i\), which vanishes
+                            only when \(\mu = \lambda_i\). Hence \(V_i = \ker(A - \lambda_i I)\) exactly, and the
+                            orthogonal projector \(P_i\) onto \(V_i\) is the eigenspace projector named in the statement,
+                            independent of which orthonormal basis of that eigenspace was chosen. Distinct eigenspaces are
+                            mutually orthogonal: if \(Ax = \lambda_i x\) and \(Ay = \lambda_j y\) with
+                            \(\lambda_i \neq \lambda_j\), then
+                            \(\lambda_i \langle x, y\rangle = \langle Ax, y\rangle = \langle x, Ay\rangle
+                            = \lambda_j \langle x, y\rangle\) (using reality of the eigenvalues), forcing
+                            \(\langle x, y\rangle = 0\). Since the chosen eigenvectors are orthonormal and span
+                            \(\mathbb{C}^n\), the projectors are therefore pairwise orthogonal,
+                            \(P_i P_j = \delta_{ij} P_i\), and resolve the identity, \(\sum_i P_i = I\); rewriting
+                            \(A = U D U^*\) by collecting equal diagonal entries gives \(A = \sum_i \lambda_i P_i\),
+                            which is (iii).
+                        </p>
+                    </div>
+
+                    <div class="theorem" id="D-observable">
+                        <span class="theorem-title">Definition: Observable</span>
+                        <p>
+                            An <strong>observable</strong> on a finite-dimensional Hilbert space \(\mathcal{H}\) is a
+                            self-adjoint operator \(M = M^*\). By the spectral theorem above its
+                            spectral decomposition \(M = \sum_{i} \lambda_i P_i\) exists, with distinct real eigenvalues
+                            \(\lambda_i\) and \(P_i\) the
+                            orthogonal projector onto the corresponding eigenspace; the observable defines the projective
+                            measurement \(\{P_i\}\) whose outcome \(\lambda_i\) occurs with probability
+                            \(\langle\psi|P_i|\psi\rangle\). The <strong>expected value</strong> of the outcome in state
+                            \(|\psi\rangle\) is
+                            \[
+                            \langle M \rangle_\psi = \sum_i \lambda_i \langle\psi|P_i|\psi\rangle = \langle \psi | M | \psi \rangle.
+                            \]
+                        </p>
+                    </div>
+
+                    <p>
+                        The spectral theorem is what makes this definition coherent: its real eigenvalues are what
+                        allow the \(\lambda_i\) to serve as measurement outcomes, and its orthogonal eigenspace
+                        projectors are exactly the family a projective measurement requires. The same reality and
+                        orthogonality persist for self-adjoint operators in infinite dimensions, where they are the
+                        <a href="../Calculus/spectral_theory.html#T-self_adjoint_spectral_properties" class="ref-link"><strong>spectral properties of self-adjoint operators</strong></a>.
+                        The observables of quantum mechanics are, in this precise sense, the finite-dimensional
+                        self-adjoint operators of functional analysis.
+                    </p>
+
+                    <p>
+                        As the smallest example, the operator
+                        \(Z = |0\rangle\langle 0| - |1\rangle\langle 1| = \begin{bmatrix} 1 & 0 \\ 0 & -1 \end{bmatrix}\)
+                        is a single-qubit observable with eigenvalues \(+1\) and \(-1\) and eigenvectors \(|0\rangle\) and
+                        \(|1\rangle\); measuring it is measurement in the computational basis, with the two outcomes
+                        relabelled \(+1\) and \(-1\). More general measurements than the projective ones exist and become
+                        relevant once states of subsystems are described by density operators, but for closed systems in
+                        pure states the projective picture, and its packaging as self-adjoint observables, is complete.
+                    </p>
+
+                    <h3>Measurement and Entanglement</h3>
+
+                    <p>
+                        With measurement in hand we can return to the entangled state of the first section and see what
+                        makes entanglement more than an algebraic curiosity. Take again
+                        \(|\Phi\rangle = \tfrac{1}{\sqrt 2}(|00\rangle + |11\rangle)\), and suppose we measure only the
+                        first qubit in the computational basis. The two outcomes have equal probability \(\tfrac12\),
+                        but the consequence for the second qubit is the striking part. If the first qubit is found to be
+                        \(|0\rangle\), the only surviving term of \(|\Phi\rangle\) is \(|00\rangle\), so the whole state
+                        collapses to \(|00\rangle\) and the second qubit is now certainly \(|0\rangle\); if the first is
+                        found to be \(|1\rangle\), the state collapses to \(|11\rangle\) and the second is certainly
+                        \(|1\rangle\). Measuring one qubit instantly fixes the other, even though before the measurement
+                        neither qubit had a definite value of its own.
+                    </p>
+
+                    <p>
+                        This is the operational meaning of the algebraic non-factorization seen earlier. A product state
+                        \(|\phi_A\rangle \otimes |\phi_B\rangle\) carries a definite state for each part separately, so
+                        measuring one part tells us nothing new about the other. An entangled state carries no such
+                        per-part description; the parts have only joint properties, and a measurement of one reveals,
+                        and indeed creates, a matching property of the other. Since the two qubits may be far apart, the
+                        correlation is not explained by any local value carried along in advance. This is the resource
+                        that quantum protocols spend, and the feature that most sharply separates a quantum register
+                        from a collection of independent classical bits.
+                    </p>
+                </section>
+
+                <section id="evolution" class="section-content">
+                    <h2>Unitary Evolution</h2>
+
+                    <p>
+                        Measurement is one of the two things one can do to a quantum state; the other is to let it
+                        evolve without looking. Where measurement is random and irreversible, evolution is
+                        deterministic and reversible, and the mathematics that enforces both properties at once is
+                        unitarity.
+                    </p>
+
+                    <p>
+                        Quantum mechanics permits only linear operations on states. An operation taking
+                        \(|\phi\rangle\) to \(|\psi\rangle\) is therefore multiplication by a matrix \(U\),
+                        \(|\psi\rangle = U|\phi\rangle\). Since the result must again be a legitimate state, \(U\) must
+                        send unit vectors to unit vectors; by linearity this forces \(\|U\psi\| = \|\psi\|\) for every
+                        vector, and an operator preserving the norm of every vector is exactly a unitary operator. The
+                        equivalence runs through the inner product: a norm-preserving \(U\) preserves inner products as
+                        well, since the polarization identity recovers \(\langle\phi,\psi\rangle\) from norms alone, and
+                        \(\langle U\phi, U\psi\rangle = \langle\phi,\psi\rangle\) for all \(\phi,\psi\) is precisely the
+                        condition \(U^* U = I\). This is the same group of norm-preserving maps met in the study of
+                        matrix groups.
+                    </p>
+
+                    <p>
+                        Recall that the
+                        <a href="lie_groups.html#D-unitary_group" class="ref-link"><strong>unitary group</strong></a>
+                        \(U(n)\) consists of the matrices satisfying \(U^* U = I\), equivalently those preserving the
+                        Hermitian inner product on \(\mathbb{C}^n\). Closed-system quantum evolution is, by definition, the
+                        action of an element of \(U(2^n)\) on the register state space \(\mathcal{H}_n\). Three facts
+                        about such a \(U\) are worth isolating, all equivalent to \(U^* U = I\): it preserves inner
+                        products, \(\langle U\phi, U\psi\rangle = \langle \phi, \psi\rangle\); it preserves norms,
+                        \(\|U\psi\| = \|\psi\|\); and it is invertible with \(U^{-1} = U^*\). The norm-preservation is
+                        what guarantees \(U|\phi\rangle\) is again a unit vector, and the invertibility, with the inverse
+                        given explicitly by \(U^{-1} = U^*\), is what makes the evolution reversible and lossless.
+                    </p>
+
+                    <h3>Gates</h3>
+
+                    <p>
+                        A unitary acting on a small, fixed number of qubits is called a <strong>gate</strong>, by analogy
+                        with the logic gates of classical circuits. The single-qubit gates are the elements of
+                        \(U(2)\); among them the matrices
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        X &= \begin{bmatrix} 0 & 1 \\ 1 & 0 \end{bmatrix}, \\\\
+                        Z &= \begin{bmatrix} 1 & 0 \\ 0 & -1 \end{bmatrix},
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        are the bit-flip and phase-flip, exchanging \(|0\rangle \leftrightarrow |1\rangle\) and attaching
+                        a sign to \(|1\rangle\) respectively. These are two of the Pauli matrices, each simultaneously
+                        unitary and self-adjoint, so each is both an admissible evolution and an admissible observable.
+                    </p>
+
+                    <h3>Continuous Evolution and the Hamiltonian</h3>
+
+                    <p>
+                        The unitary description above is the discrete, gate-level picture. Physically, a closed system
+                        evolves continuously in time, and the continuous and discrete pictures are joined by the
+                        exponential map. A continuous family of evolutions \(\{U(t)\}_{t \in \mathbb{R}}\) satisfying
+                        \(U(s+t) = U(s)U(t)\) and \(U(0) = I\) is precisely a
+                        <a href="matrix_exponential.html#D-one_parameter_subgroup" class="ref-link"><strong>one-parameter subgroup</strong></a>,
+                        and every such family is generated by a fixed matrix through the matrix exponential:
+                        <a href="matrix_exponential.html#T-one_param_exp" class="ref-link"><strong>one-parameter subgroups are matrix exponentials</strong></a>,
+                        so \(U(t) = e^{tA}\) for a unique \(A\).
+                    </p>
+
+                    <p>
+                        For the family to consist of unitaries, the generator \(A\) must be skew-Hermitian,
+                        \(A^* = -A\); writing \(A = -iH\) with \(H = H^*\) self-adjoint exhibits the generator as
+                        \(-i\) times an observable, and the evolution takes the form
+                        \[
+                        U(t) = e^{-i t H}.
+                        \]
+                        The self-adjoint generator \(H\) is the <strong>Hamiltonian</strong> of the system. That a
+                        Hermitian \(H\) produces a unitary \(U(t)\) is an instance of the exponential map
+                        <a href="matrix_exponential.html#T-exp_maps_to_group" class="ref-link"><strong>carrying the generator into the group</strong></a>:
+                        the skew-Hermitian matrices are the tangent space at the identity of \(U(2^n)\), and the
+                        exponential maps that tangent space into the group. The observables of the measurement postulate
+                        and the generators of evolution are thus the same self-adjoint operators, seen once through their
+                        spectra and once through their exponentials. Quantum dynamics is, in this sense, an application of
+                        the exponential map already developed for matrix Lie groups.
+                    </p>
+                </section>
+
+                <section id="qft" class="section-content">
+                    <h2>The Quantum Fourier Transform</h2>
+
+                    <p>
+                        The single most important unitary in quantum algorithms is the quantum Fourier transform. It is
+                        the discrete Fourier transform, already familiar from classical signal processing, recast as a
+                        unitary operation on a register and applied to amplitudes rather than to a list of numbers
+                        written on paper. The recasting is what makes it both efficient and useful, and it is the engine
+                        that period-finding algorithms run on.
+                    </p>
+
+                    <h3>From the Discrete Fourier Transform to a Unitary</h3>
+
+                    <p>
+                        The
+                        <a href="../Calculus/fourier_transform.html#D-dft_idft" class="ref-link"><strong>discrete Fourier transform</strong></a>
+                        was introduced in an asymmetric normalization standard in signal processing, with the inverse
+                        carrying the factor \(1/N\) and the forward transform using the kernel
+                        \(e^{-2\pi i k n / N}\). For quantum computation we adopt the symmetric, manifestly unitary
+                        normalization instead: we place \(1/\sqrt{N}\) on both transform and inverse, and we take the
+                        sign convention \(\omega_N = e^{2\pi i / N}\) for the primitive \(N\)-th root of unity. The two
+                        conventions describe the same underlying transform and differ only by where the normalization
+                        sits and by the sign in the exponent; the symmetric form is the one that yields a unitary matrix,
+                        which is what the quantum setting requires.
+                    </p>
+
+                    <div class="theorem" id="D-quantum_fourier_transform">
+                        <span class="theorem-title">Definition: Quantum Fourier Transform</span>
+                        <p>
+                            Let \(N = 2^n\) and let \(\omega_N = e^{2\pi i / N}\). The <strong>quantum Fourier
+                            transform</strong> is the operator \(F_N\) on the \(n\)-qubit state space whose
+                            \((j,k)\)-entry is \(\tfrac{1}{\sqrt{N}}\,\omega_N^{jk}\), acting on a computational basis
+                            state by
+                            \[
+                            F_N |k\rangle = \frac{1}{\sqrt{N}} \sum_{j=0}^{N-1} \omega_N^{jk} |j\rangle.
+                            \]
+                            The matrix \(F_N\) is unitary: each column has norm \(1\), and any two distinct columns
+                            \(k \neq k'\) are orthogonal, since
+                            \[
+                            \sum_{j=0}^{N-1} \overline{\left(\tfrac{1}{\sqrt N}\omega_N^{jk}\right)} \tfrac{1}{\sqrt N}\omega_N^{jk'}
+                            = \frac{1}{N} \sum_{j=0}^{N-1} \omega_N^{j(k'-k)}
+                            = \begin{cases} 1 & k = k', \\ 0 & k \neq k', \end{cases}
+                            \]
+                            the last equality being the geometric-sum identity for roots of unity. Being unitary and
+                            symmetric, its inverse is \(F_N^{-1} = F_N^{*}\), differing only by conjugated exponents.
+                        </p>
+                    </div>
+
+                    <p>
+                        The smallest case is already familiar. For \(N = 2\) the definition gives
+                        \[
+                        F_2 = \frac{1}{\sqrt 2} \begin{bmatrix} 1 & 1 \\ 1 & -1 \end{bmatrix},
+                        \]
+                        which is the Hadamard gate. The quantum Fourier transform is, in this sense, the
+                        many-dimensional generalization of the single most basic superposition-creating gate.
+                    </p>
+
+                    <h3>What Makes It Quantum</h3>
+
+                    <p>
+                        It would be a mistake to read \(F_N\) as merely a fast way to compute the classical transform.
+                        The classical fast Fourier transform takes a vector written down explicitly and returns another
+                        such vector in \(O(N \log N)\) steps. The quantum Fourier transform does something categorically
+                        different: it acts on a state whose amplitudes are never written down anywhere, transforming the
+                        amplitudes of a superposition into the amplitudes of another superposition. It can be implemented
+                        by a circuit of only \(O(n^2)\) elementary gates, exponentially fewer than the
+                        \(O(N \log N) = O(2^n n)\) steps of the classical algorithm, but the output is not a readable
+                        list of Fourier coefficients; it is a quantum state from which only a single measured sample can
+                        be drawn. The art of quantum algorithm design lies in arranging that this single sample carries
+                        the information one wants.
+                    </p>
+
+                    <p>
+                        The efficiency rests on a structural fact: applied to a basis state, \(F_N\) produces not an
+                        entangled state but a product state across the \(n\) qubits,
+                        \[
+                        F_N |k\rangle = \bigotimes_{\ell=1}^{n} \frac{1}{\sqrt 2}\Bigl(|0\rangle + e^{2\pi i k / 2^{\ell}} |1\rangle\Bigr),
+                        \]
+                        each factor a single-qubit state carrying one binary digit of phase. This tensor factorization,
+                        a direct use of the
+                        <a href="kronecker.html#T-kronecker_properties" class="ref-link"><strong>mixed-product structure</strong></a>
+                        of the tensor product, is precisely what lets the transform be built from one-qubit and
+                        two-qubit gates rather than from a dense \(2^n \times 2^n\) matrix.
+                    </p>
+
+                    <div class="insight-box">
+                        <h3>Why the Fourier Transform, of All Things</h3>
+                        <p>
+                            The Fourier transform turns the operation of shifting into the operation of multiplying by a
+                            phase: a periodic structure in the input becomes a concentration of amplitude at the
+                            frequencies matching that period. A measurement of the transformed state then returns one of
+                            those frequencies with high probability. This is exactly the leverage needed to detect a
+                            hidden period in a function, and detecting a hidden period is, as we will see, the heart of
+                            the algorithm that factors integers. The quantum Fourier transform is the bridge from the
+                            harmonic analysis of finite groups to the algorithms that threaten classical public-key
+                            cryptography.
+                        </p>
+                    </div>
+
+                    <p>
+                        We have now assembled the full vocabulary of quantum computation over finite-dimensional complex
+                        Hilbert spaces: states as unit vectors, observables as self-adjoint operators, evolution as
+                        unitary flow, and the Fourier transform as the central unitary subroutine. The next step is to
+                        put the quantum Fourier transform to work: applied to a superposition encoding a periodic
+                        function and combined with the number-theoretic reduction of factoring to period-finding, it
+                        yields an efficient quantum algorithm for a problem long believed intractable, with consequences
+                        for the hardness assumptions underlying widely deployed cryptography. That algorithm is taken up
+                        next.
+                    </p>
+                </section>
+
+        </div>
+</body>
+</html>
