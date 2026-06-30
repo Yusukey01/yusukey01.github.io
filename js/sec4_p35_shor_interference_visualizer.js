@@ -1,4 +1,4 @@
-// sec4_p35_shor_interference_visualizer.js
+// shor_period_demo.js
 // disc-35 "Shor's Algorithm" — interference visualizer for quantum period-finding.
 //
 // CORE INSIGHT (the thing that makes Shor work): after the value register is
@@ -74,14 +74,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     return best;
   }
-  function tryFactor(N, x, b, q) {
+  function tryFactor(N, x, b, q, r) {
     const [cNum, rCand] = cfBest(b, q, N);
     if (rCand % 2 !== 0) return { rCand, cNum, ok: false, reason: 'odd' };
     const h = modpow(x, rCand / 2, N);
     if (h === N - 1 || h === 1) return { rCand, cNum, ok: false, reason: 'trivial' };
     const f1 = gcd(h - 1, N), f2 = gcd(h + 1, N);
     const ok = (f1 > 1 && f1 < N) && (f2 > 1 && f2 < N);
-    return { rCand, cNum, ok, f1, f2, reason: ok ? null : 'wrong-period' };
+    if (ok) return { rCand, cNum, ok, f1, f2, reason: null };
+    // failure: distinguish a b sitting exactly on a multiple c*(q/r) whose c
+    // shares a factor with r (the convergent reduces past r) from a b that
+    // simply fell too far from any multiple to recover r at all.
+    let reason = 'far';
+    if (r) {
+      const c = Math.round(b / (q / r));
+      const onMultiple = Math.abs(b - c * (q / r)) < 0.5;
+      if (onMultiple && gcd(c, r) > 1) reason = 'shared-factor';
+    }
+    return { rCand, cNum, ok, f1, f2, reason };
   }
 
   // ---- self-test against verified truth (logged, non-blocking) ----
@@ -297,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function () {
     for (let i = 0; i < q; i++) { acc += probs[i]; if (u <= acc) { b = i; break; } }
     elB.value = String(b);
     updateB();
-    const res = tryFactor(N, x, b, q);
+    const res = tryFactor(N, x, b, q, state.r);
     const [cp, rc] = cfBest(b, q, N);
     if (res.ok) {
       elResult.className = 'shor-result ok';
@@ -311,7 +321,9 @@ document.addEventListener('DOMContentLoaded', function () {
         ? `the candidate period <code>r = ${rc}</code> came out odd`
         : (res.reason === 'trivial'
           ? `<code>x<sup>r/2</sup> \u2261 \u00b11 (mod N)</code>, a trivial square root`
-          : `the sampled <code>b</code> sat too far from a multiple of <code>q/r</code>, so <code>${cp}/${rc}</code> gave a wrong period`);
+          : (res.reason === 'shared-factor'
+            ? `<code>b</code> landed on a constructive peak, but its index shared a factor with the period, so the convergent reduced to <code>${cp}/${rc}</code> and gave a wrong period`
+            : `the sampled <code>b</code> sat too far from a multiple of <code>q/r</code>, so <code>${cp}/${rc}</code> gave a wrong period`));
       elResult.className = 'shor-result bad';
       elResult.innerHTML =
         `Measured <code>b = ${b}</code> &rarr; <code>${cp}/${rc}</code>: this run fails because ${why}. ` +
