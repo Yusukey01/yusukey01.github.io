@@ -1,0 +1,371 @@
+---
+layout: default
+title: "Lattices: The Geometry of Discrete Point Sets"
+topic_id: linalg-42
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Lattices: The Geometry of Discrete Point Sets</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#motivation">Two Sources of a Simple Idea</a>
+            <a href="#definition">Lattices and Their Bases</a>
+            <a href="#nonuniqueness">Change of Basis</a>
+            <a href="#minima">The Shortest Vector</a>
+        </div>
+
+        <div class="container">
+
+            <section id="motivation" class="section-content">
+                <h2>Two Sources of a Simple Idea</h2>
+
+                <p>
+                    Take the integer points of the plane: all pairs \((a, b)\) with \(a, b \in \mathbb{Z}\). This
+                    is among the most familiar infinite patterns in mathematics — a regular grid, repeating identically in
+                    every direction. Replace the two unit steps that generate it, \((1,0)\) and \((0,1)\), with any
+                    two other vectors that do not lie on a common line, and take all their integer combinations. The
+                    result is again an evenly spaced array of points, sheared or stretched but still perfectly
+                    periodic. Such a point set is a <strong>lattice</strong>, and this page studies its geometry in
+                    \(\mathbb{R}^n\).
+                </p>
+
+                <p>
+                    The definition that follows will look almost too plain to repay attention: a lattice is the set
+                    of integer combinations of some independent vectors. Two independent historical currents explain
+                    why this plain object rewards close study, and both feed the questions we raise in the sections
+                    below.
+                </p>
+
+                <h3>The geometry of numbers</h3>
+
+                <p>
+                    The first current is the study of whole numbers through geometry. A question in arithmetic —
+                    which integers can be written as a sum of two squares, how well an irrational number can be
+                    approximated by fractions — can be recast as a question about how the integer points of the plane
+                    or of a higher-dimensional space are arranged relative to a region. Minkowski's insight, late in
+                    the nineteenth century, was that a sufficiently large symmetric convex region must swallow a
+                    lattice point other than the origin, purely for reasons of volume. This turns arithmetic
+                    statements into statements about area and volume, and it is the reason a lattice carries a
+                    genuine geometry rather than a mere combinatorial pattern. We take up this circle of ideas, and
+                    the notion of the <em>shortest</em> lattice vector it controls, in a companion page.
+                </p>
+
+                <h3>The reduction of quadratic forms</h3>
+
+                <p>
+                    The second current is the search for a <em>good</em> set of generating vectors. The same lattice
+                    can be produced by many different pairs of vectors — some nearly orthogonal and short, others
+                    long and skewed almost onto a single line. Lagrange and Gauss, studying binary quadratic forms,
+                    developed a procedure to replace a skewed pair by a short and nearly orthogonal one generating the
+                    same lattice. In the twentieth century this basis-reduction idea was extended to arbitrary
+                    dimension, and it became one of the most widely used algorithms in computational mathematics.
+                    The non-uniqueness of the generating set, which we make precise below, is exactly what gives this
+                    search room to operate.
+                </p>
+
+                <p>
+                    A third face of the lattice belongs to the physical sciences: the atoms of a crystal sit at
+                    lattice points, and the densest way to stack equal spheres is a lattice arrangement. We note this
+                    only to set it aside. The thread we follow is the mathematical one — the geometry of numbers and
+                    the reduction of bases — because it is this thread that leads, much later, to the hard
+                    computational problems on which a new generation of cryptography is built. That destination is
+                    still several steps away; the immediate task is to fix the definitions with care.
+                </p>
+            </section>
+
+            <section id="definition" class="section-content">
+                <h2>Lattices and Their Bases</h2>
+
+                <p>
+                    Fix a collection of \(k\) vectors \(\mathbf{b}_1, \dots, \mathbf{b}_k \in \mathbb{R}^n\) that are
+                    <a href="linear_equations.html#D-linear_independence" class="ref-link"><strong>linearly
+                    independent</strong></a>. The lattice they generate is the set of all their integer combinations.
+                </p>
+
+                <div class="theorem" id="D-lattice">
+                    <span class="theorem-title">Definition: Lattice</span>
+                    <p>
+                        Let \(\mathbf{b}_1, \dots, \mathbf{b}_k \in \mathbb{R}^n\) be linearly independent. The
+                        <strong>lattice</strong> generated by them is
+                        \[
+                            \mathcal{L}(\mathbf{b}_1, \dots, \mathbf{b}_k)
+                            = \left\{ \sum_{i=1}^{k} z_i \mathbf{b}_i : z_i \in \mathbb{Z} \right\}.
+                        \]
+                        The generating vectors are called a <strong>basis</strong> of the lattice. Collecting them as
+                        the columns of a matrix \(\mathbf{B} \in \mathbb{R}^{n \times k}\), the same set is written
+                        compactly as
+                        \[
+                            \mathcal{L}(\mathbf{B}) = \left\{ \mathbf{B}\mathbf{z} : \mathbf{z} \in \mathbb{Z}^k \right\}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Two integer parameters record the shape of the ambient data. The number \(k\) of basis vectors is
+                    the <strong>rank</strong> of the lattice, and the dimension \(n\) of the surrounding space is its
+                    <strong>dimension</strong>. When \(k = n\) — the basis vectors span all of \(\mathbb{R}^n\) — the
+                    lattice is called <strong>full-rank</strong>. The integer grid \(\mathbb{Z}^n\), generated by the
+                    standard basis, is the prototypical full-rank lattice; the single line of points
+                    \(\mathcal{L}\big((2,1)^\top\big) \subset \mathbb{R}^2\) is a rank-\(1\) lattice sitting inside a
+                    two-dimensional space, and is not full-rank. Unless stated otherwise, the lattices we treat are
+                    full-rank, so that \(\mathbf{B}\) is a square invertible matrix; the general case differs in
+                    bookkeeping rather than in substance.
+                </p>
+
+                <h3>An intrinsic description</h3>
+
+                <p>
+                    The definition above builds a lattice from a chosen basis. There is a second, coordinate-free way
+                    to say what a lattice is, one that names no generators at all and instead describes the point set
+                    by two structural properties it possesses.
+                </p>
+
+                <p>
+                    The first property is algebraic. A lattice is closed under the vector-space operations that keep it
+                    inside itself: the origin belongs to it, and if \(\mathbf{x}\) and \(\mathbf{y}\) are lattice
+                    points then so are \(-\mathbf{x}\) and \(\mathbf{x} + \mathbf{y}\). In the language of the algebra
+                    track, a lattice is an additive
+                    <a href="intro_groups.html#D-subgroup" class="ref-link"><strong>subgroup</strong></a> of
+                    \(\mathbb{R}^n\). The second property is topological, and it is what separates a lattice from a
+                    dense set of points such as \(\mathbb{Q}^n\): a lattice is <strong>discrete</strong>. Every lattice
+                    point has a surrounding ball of some positive radius that contains no other lattice point. The
+                    points do not merely fail to fill space — they stay uniformly apart.
+                </p>
+
+                <p>
+                    These two properties characterize lattices exactly. A subset of \(\mathbb{R}^n\) arises as
+                    \(\mathcal{L}(\mathbf{B})\) for some independent basis if and only if it is a discrete additive
+                    subgroup of \(\mathbb{R}^n\). The forward direction is immediate: integer combinations of
+                    independent vectors form an additive subgroup, and the independence forces the points apart, so
+                    the set is discrete. The reverse direction — that every discrete additive subgroup admits a finite
+                    independent generating set — is a standard fact in the geometry of numbers, which we take as known rather than prove
+                    here; the two descriptions may be used interchangeably in what follows.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why the intrinsic description matters</h3>
+                    <p>
+                        A basis is a convenient handle, but it is not part of the lattice: the same point set carries
+                        many bases. The intrinsic description — discrete additive subgroup —
+                        depends on none of them. Whenever we prove that some quantity attached to a lattice is
+                        genuinely a property of the <em>lattice</em> rather than an accident of the chosen basis, it is
+                        this coordinate-free viewpoint that makes the claim well-posed.
+                    </p>
+                </div>
+            </section>
+
+            <section id="nonuniqueness" class="section-content">
+                <h2>Change of Basis</h2>
+
+                <p>
+                    The integer grid \(\mathbb{Z}^2\) is generated by the standard basis \((1,0)^\top, (0,1)^\top\).
+                    It is equally generated by \((1,1)^\top, (2,1)^\top\): every integer point is an integer
+                    combination of the second pair, and conversely. A single lattice therefore carries many bases, and
+                    the freedom to pass between them is precisely what basis reduction exploits. We now make this
+                    freedom exact — which changes of basis preserve the lattice, and which do not.
+                </p>
+
+                <p>
+                    A change of basis is a matrix acting on the right of \(\mathbf{B}\): replacing \(\mathbf{B}\) by
+                    \(\mathbf{B}\mathbf{U}\) re-expresses the same columns as combinations of one another. For the new
+                    columns to be integer combinations of the old, and vice versa, both \(\mathbf{U}\) and its inverse
+                    must have integer entries. Such matrices have a clean characterization.
+                </p>
+
+                <div class="theorem" id="D-unimodular_matrix">
+                    <span class="theorem-title">Definition: Unimodular Matrix and Basis Equivalence</span>
+                    <p>
+                        A matrix \(\mathbf{U} \in \mathbb{Z}^{n \times n}\) is <strong>unimodular</strong> if
+                        \(\det(\mathbf{U}) = \pm 1\). Two bases \(\mathbf{B}_1, \mathbf{B}_2 \in \mathbb{R}^{n \times n}\)
+                        of full-rank lattices are called <strong>equivalent</strong> when they generate the same
+                        lattice, \(\mathcal{L}(\mathbf{B}_1) = \mathcal{L}(\mathbf{B}_2)\).
+                    </p>
+                </div>
+
+                <p>
+                    The connection between the two notions is that unimodular matrices are exactly the integer matrices
+                    with an integer inverse. Suppose \(\det(\mathbf{U}) = \pm 1\). The
+                    <a href="determinants.html#T-adjugate_inverse" class="ref-link"><strong>adjugate formula for the
+                    inverse</strong></a> writes \(\mathbf{U}^{-1} = \det(\mathbf{U})^{-1} \operatorname{adj}(\mathbf{U})\),
+                    where the adjugate
+                    \(\operatorname{adj}(\mathbf{U})\) is built from
+                    <a href="determinants.html#D-determinant" class="ref-link"><strong>determinants</strong></a> of
+                    integer submatrices of
+                    \(\mathbf{U}\) and therefore has integer entries. Dividing integer entries by
+                    \(\det(\mathbf{U}) = \pm 1\) leaves them integers, so \(\mathbf{U}^{-1}\) is again an integer matrix
+                    — indeed itself unimodular. Conversely, if both \(\mathbf{U}\) and
+                    \(\mathbf{U}^{-1}\) have integer entries, then \(\det(\mathbf{U})\) and \(\det(\mathbf{U}^{-1})\) are
+                    both integers, and their product is \(\det(\mathbf{U}\mathbf{U}^{-1}) = \det(\mathbf{I}) = 1\); the
+                    only integers whose product is \(1\) are \(\pm 1\), forcing \(\det(\mathbf{U}) = \pm 1\). The
+                    unimodular matrices thus form a group under multiplication.
+                </p>
+
+                <div class="theorem" id="T-lattice_basis_equivalence">
+                    <span class="theorem-title">Theorem: Bases Generating the Same Lattice</span>
+                    <p>
+                        Two bases \(\mathbf{B}_1, \mathbf{B}_2 \in \mathbb{R}^{n \times n}\) generate the same lattice
+                        if and only if \(\mathbf{B}_2 = \mathbf{B}_1 \mathbf{U}\) for some unimodular matrix
+                        \(\mathbf{U}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Suppose first that \(\mathcal{L}(\mathbf{B}_1) = \mathcal{L}(\mathbf{B}_2)\). Each column of
+                        \(\mathbf{B}_2\) is a lattice point of \(\mathcal{L}(\mathbf{B}_1)\), hence an integer
+                        combination of the columns of \(\mathbf{B}_1\); assembling these combinations column by column
+                        gives an integer matrix \(\mathbf{U} \in \mathbb{Z}^{n \times n}\) with
+                        \(\mathbf{B}_2 = \mathbf{B}_1 \mathbf{U}\). Symmetrically, each column of \(\mathbf{B}_1\) lies
+                        in \(\mathcal{L}(\mathbf{B}_2)\), giving an integer matrix \(\mathbf{V}\) with
+                        \(\mathbf{B}_1 = \mathbf{B}_2 \mathbf{V}\). Combining, \(\mathbf{B}_1 = \mathbf{B}_1 \mathbf{U}
+                        \mathbf{V}\); since \(\mathbf{B}_1\) is invertible, \(\mathbf{U}\mathbf{V} = \mathbf{I}\). Then
+                        \(\det(\mathbf{U})\det(\mathbf{V}) = 1\) with both determinants integers, so
+                        \(\det(\mathbf{U}) = \pm 1\) and \(\mathbf{U}\) is unimodular.
+                    </p>
+                    <p>
+                        Conversely, suppose \(\mathbf{B}_2 = \mathbf{B}_1 \mathbf{U}\) with \(\mathbf{U}\) unimodular.
+                        Every column of \(\mathbf{B}_2\) is then an integer combination of the columns of
+                        \(\mathbf{B}_1\), so \(\mathcal{L}(\mathbf{B}_2) \subseteq \mathcal{L}(\mathbf{B}_1)\). Because
+                        \(\mathbf{U}\) is unimodular, \(\mathbf{U}^{-1}\) is also an integer matrix, and
+                        \(\mathbf{B}_1 = \mathbf{B}_2 \mathbf{U}^{-1}\) shows the reverse inclusion
+                        \(\mathcal{L}(\mathbf{B}_1) \subseteq \mathcal{L}(\mathbf{B}_2)\). The two lattices coincide.
+                    </p>
+                </div>
+
+                <p>
+                    One consequence settles a point left open earlier. The rank of a lattice was defined as the number
+                    of vectors in a basis, and this is well-defined only if every basis has the same size. Since any
+                    two bases are related by an invertible (indeed unimodular) matrix, they have equal cardinality, so
+                    the rank is an invariant of the lattice and not of the basis. The same reasoning will return in a
+                    sharper form once we attach a volume to a basis: that volume, unlike the basis itself, will depend
+                    only on the lattice.
+                </p>
+
+                <h3>The fundamental parallelepiped</h3>
+
+                <p>
+                    A basis carries with it a natural tile, the region swept out by combinations of the basis vectors
+                    with coefficients in the half-open unit interval.
+                </p>
+
+                <div class="theorem" id="D-fundamental_parallelepiped">
+                    <span class="theorem-title">Definition: Fundamental Parallelepiped</span>
+                    <p>
+                        For a basis \(\mathbf{B} \in \mathbb{R}^{n \times n}\), the <strong>fundamental
+                        parallelepiped</strong> is
+                        \[
+                            \mathcal{P}(\mathbf{B}) = \left\{ \mathbf{B}\mathbf{x} : \mathbf{x} \in \mathbb{R}^n,\
+                            0 \le x_i \lt 1 \text{ for all } i \right\}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The tile depends on the basis: a skewed basis produces a long, slanted parallelepiped, while a
+                    nearly orthogonal one produces a nearly rectangular tile. What does not depend on the basis is the
+                    way the tile fills space. Placing one copy of \(\mathcal{P}(\mathbf{B})\) at each lattice point
+                    covers all of \(\mathbb{R}^n\) exactly once. To see this, write any point as
+                    \(\mathbf{p} = \mathbf{B}\mathbf{y}\) with \(\mathbf{y} \in \mathbb{R}^n\), and split each
+                    coordinate into its integer and fractional parts, \(y_i = \lfloor y_i \rfloor + \{y_i\}\) with
+                    \(\lfloor y_i \rfloor \in \mathbb{Z}\) and \(\{y_i\} \in [0, 1)\). Then
+                    \(\mathbf{p} = \mathbf{B}\lfloor \mathbf{y} \rfloor + \mathbf{B}\{\mathbf{y}\}\), where the first
+                    term is a lattice point and the second lies in \(\mathcal{P}(\mathbf{B})\). This decomposition is
+                    unique because the integer and fractional parts of a real number are, so every point of space lies
+                    in exactly one translate — no gaps and no overlaps. This is the geometric content of the basis
+                    being a set of generators: the lattice, together with a single tile, tiles the whole space by
+                    translation. The common volume of these tiles, identical across all bases of the lattice, is the
+                    quantity we turn to next, where it becomes the lattice's determinant.
+                </p>
+            </section>
+
+            <section id="minima" class="section-content">
+                <h2>The Shortest Vector</h2>
+
+                <p>
+                    A lattice has a feature the integer grid hides from view. In \(\mathbb{Z}^n\) the nonzero points
+                    nearest the origin are the standard basis vectors, all of length one. In a skewed lattice the
+                    shortest nonzero vector may be far from any basis vector we happened to write down, and finding it
+                    is not obvious from the basis at all. This shortest length is a central geometric
+                    invariant of a lattice, and it is the quantity the rest of the lattice story circles back to.
+                </p>
+
+                <p>
+                    Throughout, \(\|\cdot\|\) denotes the Euclidean norm
+                    \(\|\mathbf{x}\| = \big(\sum_i x_i^2\big)^{1/2}\), unless another norm is named; the definitions
+                    below adapt to any norm by substituting its unit ball for the Euclidean one.
+                </p>
+
+                <div class="theorem" id="D-minimum_distance">
+                    <span class="theorem-title">Definition: Minimum Distance and Successive Minima</span>
+                    <p>
+                        The <strong>minimum distance</strong> of a lattice \(\mathcal{L}\) is the length of a shortest
+                        nonzero lattice vector,
+                        \[
+                            \lambda_1(\mathcal{L}) = \min_{\mathbf{v} \in \mathcal{L} \setminus \{\mathbf{0}\}}
+                            \|\mathbf{v}\|.
+                        \]
+                        More generally, for a lattice of rank \(n\) and each \(i \in \{1, \dots, n\}\), the
+                        \(i\)-th <strong>successive minimum</strong> \(\lambda_i(\mathcal{L})\) is the smallest radius
+                        \(r\) such that the closed ball of radius \(r\) about the origin contains \(i\) linearly
+                        independent lattice vectors:
+                        \[
+                            \lambda_i(\mathcal{L}) = \min \left\{ r : \dim \operatorname{span}\big(
+                            \mathcal{L} \cap \overline{B}(\mathbf{0}, r) \big) \ge i \right\}.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Setting \(i = 1\) recovers the minimum distance, so the successive minima are a graded refinement
+                    of a single idea: \(\lambda_1\) measures the shortest vector, \(\lambda_2\) the shortest vector in a
+                    <em>new</em> direction, and so on up to \(\lambda_n\), which measures how far one must
+                    reach to capture a full set of \(n\) independent short vectors. The insistence on linear
+                    independence is what keeps \(\lambda_2\) from collapsing back onto \(\lambda_1\): the vector
+                    \(2\mathbf{v}\) is longer than a shortest vector \(\mathbf{v}\), but it points the same way, so it
+                    adds no new direction and does not count toward \(\lambda_2\). Only a vector spanning a genuinely
+                    new direction advances the dimension in the definition. The successive minima increase weakly,
+                    \(\lambda_1 \le \lambda_2 \le \dots \le \lambda_n\), directly from the definition, since a ball
+                    large enough to hold \(i\) independent vectors also holds \(i - 1\) of them.
+                </p>
+
+                <p>
+                    Two facts make these quantities well-posed rather than formal. First, the minimum in the
+                    definition is attained: because the lattice is discrete, only finitely many lattice points lie
+                    within any fixed radius, so a shortest nonzero vector genuinely exists rather than being merely
+                    approached. Second, the same discreteness guarantees a positive lower bound —
+                    \(\lambda_1(\mathcal{L}) > 0\) — so the points of a lattice are separated by a definite gap, the
+                    geometric expression of the discreteness we built into the definition of a lattice.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Existence versus construction</h3>
+                    <p>
+                        The minimum distance raises two very different questions, and the distance between them is a
+                        seam that runs through the study of lattices. One is a question of <em>existence</em>: how short
+                        must the shortest vector be — what bound does the geometry of the lattice force upon
+                        \(\lambda_1\)? This is answered by the geometry of numbers, where a volume argument guarantees
+                        a short vector without ever exhibiting one; we take it up in the companion page on Minkowski's
+                        theorem. The other is a question of <em>construction</em>: given a basis, actually produce a
+                        vector achieving, or even approximating, that length. Here the situation is entirely different
+                        — no efficient procedure is known, and the presumed difficulty of this search is precisely
+                        what later makes lattices a foundation for cryptography. That the shortest vector must exist,
+                        yet appears computationally out of reach to find, is the tension carried forward into the
+                        study of lattice problems.
+                    </p>
+                </div>
+            </section>
+
+        </div>
+    </body>
+</html>
