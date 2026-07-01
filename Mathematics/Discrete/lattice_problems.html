@@ -1,0 +1,572 @@
+---
+layout: default
+title: "Lattice Problems"
+topic_id: disc-36
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Lattice Problems</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#shortest-vector">The Shortest Vector Problem</a>
+            <a href="#distance-problems">Distances to a Lattice</a>
+            <a href="#approximation-hierarchy">The Approximation Hierarchy</a>
+            <a href="#quantum-horizon">What the Quantum Attack Leaves Standing</a>
+        </div>
+
+        <div class="container">
+
+            <section id="shortest-vector" class="section-content">
+                <h2>The Shortest Vector Problem</h2>
+
+                <p>
+                    A lattice was built as a geometric object: a
+                    <a href="../Linear_algebra/lattice_intro.html#D-lattice" class="ref-link"><strong>discrete additive
+                    subgroup</strong></a> of \(\mathbb{R}^n\), the set of all integer combinations of a basis. From that
+                    geometry the previous pages extracted a single number that measures how tightly the lattice packs
+                    space near the origin — the length of its shortest nonzero vector, the
+                    <a href="../Linear_algebra/lattice_intro.html#D-minimum_distance" class="ref-link"><strong>first
+                    minimum</strong></a> \(\lambda_1(\mathcal{L})\). Everything on that page was about the
+                    <em>existence</em> of a short vector. Minkowski's convex body theorem guaranteed one without ever
+                    producing it, delivering the bound
+                    \[
+                    \lambda_1(\mathcal{L}) \leq \sqrt{n}\,(\det \mathcal{L})^{1/n}
+                    \]
+                    from a volume argument that never inspects a single lattice point. This page asks the question that
+                    existence leaves open. A vector of that length is promised to be there; how hard is it to
+                    <em>find</em>?
+                </p>
+
+                <p>
+                    The gap between the two questions is the entire subject. Existence is settled by geometry in one
+                    line; construction is, as far as anyone knows, intractable. Naming the construction problem precisely
+                    is the first step.
+                </p>
+
+                <div class="theorem" id="D-svp">
+                    <span class="theorem-title">Definition: The Shortest Vector Problem (SVP)</span>
+                    <p>
+                        Given a basis \(\mathbf{B}\) of a lattice \(\mathcal{L} = \mathcal{L}(\mathbf{B}) \subseteq
+                        \mathbb{R}^n\), the <strong>shortest vector problem</strong> asks for a nonzero lattice vector
+                        \(\mathbf{v} \in \mathcal{L}\) of minimum length, that is, one satisfying
+                        \[
+                        \|\mathbf{v}\| = \lambda_1(\mathcal{L}).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Two aspects of this definition repay a moment's attention, because both separate SVP from problems
+                    that look superficially similar and are in fact easy. The first is that the input is a
+                    <em>basis</em>, not the lattice as a set. The lattice is infinite; one never receives it directly.
+                    One receives a finite list of vectors whose integer combinations generate it, and the same lattice
+                    admits infinitely many such lists, related by the
+                    <a href="../Linear_algebra/lattice_intro.html#D-unimodular_matrix" class="ref-link"><strong>unimodular</strong></a>
+                    changes of basis catalogued earlier. Some bases are nearly orthogonal and reveal the short vectors at
+                    a glance; others are long and skewed and hide them completely. The difficulty of SVP is precisely the
+                    difficulty of recovering geometric information — the shortest vector — that a badly chosen basis
+                    obscures. A cryptographic construction will later exploit exactly this: it publishes a bad basis and
+                    keeps a good one secret.
+                </p>
+
+                <p>
+                    The second aspect is that the length is measured in the Euclidean norm, and this is a genuine choice
+                    rather than a formality. The same problem posed in the \(\ell_\infty\) norm — where a vector's length
+                    is its largest coordinate in absolute value — behaves differently, and the difference will surface
+                    when we come to hardness. Unless stated otherwise, \(\|\cdot\|\) means the Euclidean length
+                    throughout, matching the norm in which \(\lambda_1\) was defined.
+                </p>
+
+                <p>
+                    Why should finding \(\mathbf{v}\) be hard? The lattice is discrete, so a shortest vector exists and
+                    is one of finitely many candidates below any fixed length. One might hope to simply enumerate them.
+                    The obstruction is dimension. The number of lattice points inside a ball of fixed radius grows
+                    exponentially with \(n\), and the shortest vector can hide among integer combinations whose
+                    coefficients are individually large even when the vector they produce is small — a long, skewed basis
+                    arranges precisely this cancellation. Searching the coefficients directly is exponential in \(n\), and
+                    no method is known that avoids paying a cost of that order in the worst case. What replaces
+                    enumeration in practice is basis reduction, which improves a bad basis toward an orthogonal one; we
+                    return to its power and its limits at the end of the page.
+                </p>
+
+                <p>
+                    In cryptographic settings one rarely needs the exact shortest vector. It is enough to find a vector
+                    that is short to within a factor — and, on the other side, hardness is more naturally established for
+                    the approximate problem than the exact one. Both considerations point to relaxing the definition by a
+                    factor \(\gamma \geq 1\).
+                </p>
+
+                <div class="theorem" id="D-svp_gamma">
+                    <span class="theorem-title">Definition: Approximate SVP (\(\mathrm{SVP}_\gamma\))</span>
+                    <p>
+                        Let \(\gamma = \gamma(n) \geq 1\) be an approximation factor. Given a basis \(\mathbf{B}\) of
+                        \(\mathcal{L} \subseteq \mathbb{R}^n\), the problem \(\mathrm{SVP}_\gamma\) asks for a nonzero
+                        \(\mathbf{v} \in \mathcal{L}\) with
+                        \[
+                        \|\mathbf{v}\| \leq \gamma \cdot \lambda_1(\mathcal{L}).
+                        \]
+                        The exact problem is the case \(\gamma = 1\).
+                    </p>
+                </div>
+
+                <p>
+                    The approximation factor \(\gamma\) is written as a function of the dimension deliberately. The whole
+                    story of lattice hardness is a story about how this factor scales with \(n\): the problem is
+                    NP-hard for factors close to \(1\), lands in a benign complexity class for factors around
+                    \(\sqrt{n}\), and becomes solvable in polynomial time only once \(\gamma\) is allowed to grow
+                    exponentially. A single family of problems, indexed by one growing parameter, stretches from
+                    intractable to easy. Locating the useful cryptographic regime within that stretch is the task of the
+                    approximation hierarchy developed later on this page.
+                </p>
+
+                <p>
+                    Before that, a word on the honest state of the exact problem's hardness, because it comes with a
+                    subtlety that the definition's insistence on the Euclidean norm anticipated. That the exact shortest
+                    vector problem is hard is not a folk belief but a theorem — with a caveat about the norm. In the
+                    \(\ell_\infty\) norm, exact SVP is NP-hard, and the proof follows the same combinatorial route that
+                    settles the nearest-vector problem, which the next section takes up. In the Euclidean norm the
+                    question resisted for far longer; establishing NP-hardness there required substantially more
+                    machinery and a reduction that succeeds only with high probability rather than with certainty. The
+                    upshot is that exact SVP is hard, the Euclidean case genuinely harder to prove hard than the
+                    \(\ell_\infty\) case, and — a point the hierarchy will make precise — the hardness that actually
+                    supports cryptography is not this worst-case exact hardness at all, but the hardness of approximating
+                    to within a factor that grows with the dimension.
+                </p>
+
+            </section>
+
+            <section id="distance-problems" class="section-content">
+                <h2>Distances to a Lattice</h2>
+
+                <p>
+                    The shortest vector problem asks about the lattice in isolation: how close to the origin does a
+                    nonzero lattice point come? A second, equally natural question introduces an outside point. Given a
+                    target \(\mathbf{t} \in \mathbb{R}^n\) that is typically not itself in the lattice, which lattice
+                    point lies nearest to it? This is the <strong>closest vector problem</strong>, and it is in a precise
+                    sense the more fundamental of the two: much of the hardness of SVP is inherited from it, as the next
+                    section shows by reducing one to the other.
+                </p>
+
+                <p>
+                    We state it, but — unlike SVP — we do not enshrine it as a named object the rest of the track will
+                    link to. The reason is structural and worth making explicit, since it recurs. The cryptographic
+                    constructions this track builds toward rest on the shortest-vector side and on two close relatives
+                    defined below; the closest vector problem in its full generality serves here as the source of
+                    hardness and the parent of those relatives, not as a load-bearing definition in its own right. It is
+                    the conceptual hub, described precisely and then set to one side.
+                </p>
+
+                <p>
+                    Given a basis \(\mathbf{B}\) of \(\mathcal{L} \subseteq \mathbb{R}^n\) and a target
+                    \(\mathbf{t} \in \mathbb{R}^n\), the closest vector problem (CVP) asks for a lattice vector
+                    \(\mathbf{v} \in \mathcal{L}\) minimizing \(\|\mathbf{v} - \mathbf{t}\|\); the minimum value itself
+                    is the distance \(\operatorname{dist}(\mathbf{t}, \mathcal{L})\). Three versions of the question sit
+                    at different strengths. The <em>search</em> version demands the nearest vector; the
+                    <em>optimization</em> version asks only for the distance \(\operatorname{dist}(\mathbf{t},
+                    \mathcal{L})\) without exhibiting the vector; the <em>decision</em> version is weaker still, asking
+                    only whether \(\operatorname{dist}(\mathbf{t}, \mathcal{L}) \leq r\) for a supplied bound \(r\). These
+                    look like three problems of decreasing difficulty, and the first implication is immediate: a nearest
+                    vector hands you its own distance, and a distance settles any threshold question. The content is that
+                    the implications also run backward. A procedure that answers only the yes-or-no decision question can
+                    be called repeatedly — binary search over the distance, then a sequence of queries that sieves the
+                    lattice to sparser and sparser sublattices — to recover first the distance and then the vector
+                    itself, all in polynomially many calls. The three versions are therefore equivalent up to
+                    polynomial-time computation, which is why hardness may be studied on whichever version is most
+                    convenient, and why the decision version, being the simplest to reason about, is the one on which the
+                    complexity results are proved.
+                </p>
+
+                <p>
+                    That decision version is genuinely hard, and here the hardness is not norm-dependent or probabilistic
+                    but flatly classical. Deciding whether a target lies within a given distance of a lattice is
+                    <a href="p_vs_np.html#D-NP_completeness" class="ref-link"><strong>NP-complete</strong></a>.
+                    Membership in <a href="p_vs_np.html#D-class_NP" class="ref-link"><strong>NP</strong></a> is
+                    the easy half: a lattice vector within distance \(r\) of the target is a certificate of the "yes"
+                    answer, checkable by a single distance computation, and short enough to write down because its
+                    entries are bounded by the target's size plus \(r\). The hard half exhibits a
+                    <a href="p_vs_np.html#D-polynomial_time_reduction" class="ref-link"><strong>polynomial-time
+                    reduction</strong></a> from a problem already known to be NP-complete — the subset-sum problem, which
+                    asks whether some subset of a given list of integers \(a_1, \dots, a_n\) sums to a target \(S\). The
+                    reduction is clean enough to state in full.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">The subset-sum reduction</span>
+                    <p>
+                        From integers \(a_1, \dots, a_n\) and target \(S\), build the \((n+1) \times n\) basis whose
+                        first row is \((a_1, \dots, a_n)\) and whose remaining rows are \(2 \mathbf{I}_n\), take the
+                        target \(\mathbf{t} = (S, 1, 1, \dots, 1)^{\!\top}\), and set the radius \(r = \sqrt{n}\):
+                        \[
+                        \mathbf{B} =
+                        \begin{pmatrix}
+                        a_1 & a_2 & \cdots & a_n \\\\
+                        2 & 0 & \cdots & 0 \\\\
+                        0 & 2 & \cdots & 0 \\\\
+                        \vdots & & \ddots & \vdots \\\\
+                        0 & 0 & \cdots & 2
+                        \end{pmatrix},
+                        \qquad
+                        \mathbf{t} =
+                        \begin{pmatrix} S \\\\ 1 \\\\ 1 \\\\ \vdots \\\\ 1 \end{pmatrix}.
+                        \]
+                        A lattice point is \(\mathbf{B}\mathbf{x}\) for integer \(\mathbf{x}\); its last \(n\) coordinates
+                        are the even numbers \(2x_1, \dots, 2x_n\), each at distance at least \(1\) from the
+                        corresponding entry of \(\mathbf{t}\). So \(\|\mathbf{B}\mathbf{x} - \mathbf{t}\|^2 \geq n\)
+                        always, with equality only when every \(x_i \in \{0, 1\}\) — making each of those \(n\)
+                        coordinates exactly distance \(1\) away — and when the first coordinate matches exactly,
+                        \(\sum_i a_i x_i = S\). Thus a lattice point lands within \(\sqrt{n}\) of \(\mathbf{t}\) precisely
+                        when the set \(\{i : x_i = 1\}\) is a subset summing to \(S\). The subset-sum instance is a "yes"
+                        exactly when the constructed CVP instance is, and the construction is plainly polynomial-time.
+                    </p>
+                </div>
+
+                <p>
+                    The same combinatorial construction, adapted, yields NP-hardness of the exact shortest vector problem
+                    in the \(\ell_\infty\) norm — the norm-dependent claim promised earlier now has its source. In the
+                    Euclidean norm the corresponding statement for SVP demands considerably more, which is the
+                    asymmetry the previous section flagged. For the closest vector problem, though, the Euclidean case
+                    is already settled by the reduction above.
+                </p>
+
+                <p>
+                    With CVP in hand as the hub, two specializations carry the actual cryptographic weight, and both are
+                    named objects the track will reuse. The first restricts the target to lie unusually close to the
+                    lattice — closer than half the minimum distance — so that the nearest vector is unique and the
+                    problem becomes one of decoding a point known to be a slight perturbation of a lattice point.
+                </p>
+
+                <div class="theorem" id="D-bdd">
+                    <span class="theorem-title">Definition: Bounded Distance Decoding (\(\mathrm{BDD}_\gamma\))</span>
+                    <p>
+                        Let \(\gamma = \gamma(n) \geq 1\). Given a basis \(\mathbf{B}\) of \(\mathcal{L} \subseteq
+                        \mathbb{R}^n\) and a target \(\mathbf{t} \in \mathbb{R}^n\) promised to satisfy
+                        \[
+                        \operatorname{dist}(\mathbf{t}, \mathcal{L}) \lt \frac{\lambda_1(\mathcal{L})}{2\gamma},
+                        \]
+                        the <strong>bounded distance decoding</strong> problem asks for the unique lattice vector
+                        \(\mathbf{v} \in \mathcal{L}\) with \(\|\mathbf{v} - \mathbf{t}\| = \operatorname{dist}(\mathbf{t},
+                        \mathcal{L})\).
+                    </p>
+                </div>
+
+                <p>
+                    The promise is what distinguishes BDD from CVP. A general target may sit anywhere, with several
+                    lattice points nearly tied for closest; BDD guarantees the target is a small displacement of one
+                    particular lattice point, and asks only to recover it. The condition
+                    \(\operatorname{dist}(\mathbf{t}, \mathcal{L}) \lt \lambda_1 / 2\) already forces uniqueness — two
+                    lattice points within that distance of \(\mathbf{t}\) would sit within \(\lambda_1\) of each other,
+                    contradicting the definition of the minimum distance — and the factor \(\gamma\) tightens the
+                    promise further. This is the shape of a decryption problem: a ciphertext is a lattice point plus a
+                    small error, and recovering the message is recovering the lattice point. The encryption schemes the
+                    track builds toward are, at their core, instances of decoding under exactly such a promise.
+                </p>
+
+                <p>
+                    The second specialization returns to the intrinsic geometry of the lattice, generalizing the first
+                    minimum from one short vector to a full set of them. A lattice of rank \(n\) has not just a shortest
+                    vector but a whole sequence of
+                    <a href="../Linear_algebra/lattice_intro.html#D-minimum_distance" class="ref-link"><strong>successive
+                    minima</strong></a> \(\lambda_1 \leq \lambda_2 \leq \dots \leq \lambda_n\), where \(\lambda_i\) is the
+                    smallest radius within which the lattice contains \(i\) linearly independent vectors. Finding one
+                    short vector is SVP; finding a full independent set of them, all short, is its natural generalization.
+                </p>
+
+                <div class="theorem" id="D-sivp">
+                    <span class="theorem-title">Definition: Shortest Independent Vectors Problem (\(\mathrm{SIVP}_\gamma\))</span>
+                    <p>
+                        Let \(\gamma = \gamma(n) \geq 1\). Given a basis \(\mathbf{B}\) of a rank-\(n\) lattice
+                        \(\mathcal{L} \subseteq \mathbb{R}^n\), the <strong>shortest independent vectors problem</strong>
+                        asks for \(n\) linearly independent lattice vectors \(\mathbf{v}_1, \dots, \mathbf{v}_n \in
+                        \mathcal{L}\) with
+                        \[
+                        \max_i \|\mathbf{v}_i\| \leq \gamma \cdot \lambda_n(\mathcal{L}).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    SIVP asks for a basis-like object that is short in the strong sense that even its longest member is
+                    controlled by the \(n\)-th successive minimum. It is the problem that most directly captures "find a
+                    good basis," and it is the worst-case problem to which the security of the lattice encryption schemes
+                    will ultimately be tied. That tie — a guarantee that breaking the average-case encryption problem
+                    would entail solving SIVP (and its decision-style companion, introduced next) in the worst case — is
+                    the feature that sets lattice cryptography apart, and it is why SIVP earns a name here even though
+                    nothing on this page yet uses it. The definitions of this section are the vocabulary; the hierarchy
+                    that orders them by difficulty, and locates the cryptographic sweet spot among them, is the work of
+                    the next.
+                </p>
+
+            </section>
+
+            <section id="approximation-hierarchy" class="section-content">
+                <h2>The Approximation Hierarchy</h2>
+
+                <p>
+                    The problems of the previous sections were posed as search or promise tasks with an approximation
+                    factor \(\gamma\) attached. To speak about their complexity in the sharpest terms — membership in
+                    classes like NP, and its complement — it helps to recast the approximate problems in decision form,
+                    as <em>promise problems</em>. A promise problem does not partition all inputs into yes and no; it
+                    guarantees that every input it is asked about falls into one of two well-separated cases, and asks an
+                    algorithm only to tell those two apart. The gap between the cases is exactly the approximation factor.
+                </p>
+
+                <div class="theorem" id="D-gapsvp">
+                    <span class="theorem-title">Definition: The Decision Problem \(\mathrm{GapSVP}_\gamma\)</span>
+                    <p>
+                        Let \(\gamma = \gamma(n) \geq 1\). An instance is a basis \(\mathbf{B}\) of \(\mathcal{L}
+                        \subseteq \mathbb{R}^n\) together with a rational \(r \gt 0\). The promise is that the instance
+                        falls into one of two cases, and the problem is to decide which:
+                    </p>
+                    <p>
+                        &bull;&nbsp; a <strong>YES</strong> instance satisfies \(\lambda_1(\mathcal{L}) \leq r\);
+                    </p>
+                    <p>
+                        &bull;&nbsp; a <strong>NO</strong> instance satisfies \(\lambda_1(\mathcal{L}) \gt \gamma \cdot r\).
+                    </p>
+                    <p>
+                        Instances with \(r \lt \lambda_1(\mathcal{L}) \leq \gamma r\) are excluded by the promise; no
+                        answer is required for them.
+                    </p>
+                </div>
+
+                <p>
+                    The companion problem \(\mathrm{GapCVP}_\gamma\) is defined identically but for a target: given
+                    \(\mathbf{B}\), a target \(\mathbf{t}\), and a bound \(r\), a YES instance has
+                    \(\operatorname{dist}(\mathbf{t}, \mathcal{L}) \leq r\) and a NO instance has
+                    \(\operatorname{dist}(\mathbf{t}, \mathcal{L}) \gt \gamma r\). At \(\gamma = 1\) the promise gap
+                    closes and \(\mathrm{GapCVP}_1\) is exactly the decisional closest vector problem shown NP-complete
+                    above. Increasing \(\gamma\) widens the gap, weakens the problem, and is what makes the higher rungs
+                    of the hierarchy tractable.
+                </p>
+
+                <p>
+                    The first structural fact orders the two families against each other: approximating shortest vectors
+                    is no harder than approximating closest ones. This is the promised inheritance of hardness, and the
+                    reduction realizing it is short.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">\(\mathrm{GapSVP}_\gamma\) reduces to \(\mathrm{GapCVP}_\gamma\)</span>
+                    <p>
+                        A first instinct — feed the shortest vector problem to a closest-vector solver with target
+                        \(\mathbf{0}\) — fails at once, since \(\mathbf{0}\) is itself a lattice point and its nearest
+                        lattice vector is itself. The fix is to bar one basis vector from the combination. From a
+                        \(\mathrm{GapSVP}_\gamma\) instance \((\mathbf{B}, r)\) with \(\mathbf{B} = (\mathbf{b}_1, \dots,
+                        \mathbf{b}_n)\), build \(n\) instances of \(\mathrm{GapCVP}_\gamma\); the \(i\)-th uses the basis
+                        \(\mathbf{B}_i = (\mathbf{b}_1, \dots, 2\mathbf{b}_i, \dots, \mathbf{b}_n)\) with the \(i\)-th
+                        vector doubled, the target \(\mathbf{b}_i\), and the same bound \(r\). Answer YES if the
+                        \(\mathrm{GapCVP}_\gamma\) oracle says YES on at least one instance.
+                    </p>
+                    <p>
+                        If \((\mathbf{B}, r)\) is a NO instance, every nonzero lattice vector has length exceeding
+                        \(\gamma r\). Doubling one basis vector only shrinks the lattice, so \(\mathcal{L}(\mathbf{B}_i)\)
+                        is a sublattice of \(\mathcal{L}(\mathbf{B})\); every vector of \(\mathcal{L}(\mathbf{B}_i)\) is
+                        therefore also a vector of \(\mathcal{L}(\mathbf{B})\), and its difference from
+                        \(\mathbf{b}_i \in \mathcal{L}(\mathbf{B})\) is again an element of \(\mathcal{L}(\mathbf{B})\).
+                        That difference cannot be zero: writing a vector of \(\mathcal{L}(\mathbf{B}_i)\) in the basis
+                        \(\mathbf{B}\), the coefficient of \(\mathbf{b}_i\) is always even — it multiplies the doubled
+                        vector \(2\mathbf{b}_i\) — so subtracting \(\mathbf{b}_i\) leaves that coefficient odd, and an
+                        odd coefficient cannot vanish. The difference is thus a nonzero vector of \(\mathcal{L}(\mathbf{B})\),
+                        and the NO promise makes its length exceed \(\gamma r\). Every point of
+                        \(\mathcal{L}(\mathbf{B}_i)\) is therefore farther than \(\gamma r\) from \(\mathbf{b}_i\), and
+                        each oracle answers NO. If instead \(\lambda_1(\mathcal{L}) \leq r\), write a shortest vector as
+                        \(\mathbf{v} = a_1 \mathbf{b}_1 + \dots + a_n \mathbf{b}_n\). Some \(a_k\) is odd, since otherwise
+                        \(\mathbf{v}/2\) would be a shorter lattice vector. For that \(k\), the point \(\mathbf{b}_k +
+                        \mathbf{v}\) lies in \(\mathcal{L}(\mathbf{B}_k)\) and sits within \(\|\mathbf{v}\| \leq r\) of the
+                        target \(\mathbf{b}_k\), so the \(k\)-th oracle answers YES.
+                    </p>
+                </div>
+
+                <p>
+                    The reduction preserves the gap \(\gamma\) exactly and calls the oracle on lattices of the same rank
+                    as the input — it is gap-preserving and rank-preserving, features that make it a reliable tool
+                    elsewhere. It calls the oracle \(n\) times rather than once, so it is a Turing-style reduction rather
+                    than the single-instance mapping used for the NP-completeness above; whether a single-instance
+                    reduction exists is not known. The consequence for the hierarchy is what matters: any complexity
+                    upper bound proved for \(\mathrm{GapCVP}_\gamma\) transfers to \(\mathrm{GapSVP}_\gamma\), because a
+                    solver for the former yields one for the latter.
+                </p>
+
+                <p>
+                    With the two families linked, the hierarchy can be read off as a function of the one parameter
+                    \(\gamma\). Three regimes divide the line, and the boundaries between them are where the whole
+                    subject lives.
+                </p>
+
+                <p>
+                    At the bottom, for small approximation factors, the problems are <strong>NP-hard</strong>. Exact
+                    GapCVP is NP-complete, and the hardness
+                    persists as the gap opens, degrading only slowly; approximating the closest vector to within
+                    almost-polynomial factors — factors below any fixed power of the dimension — remains NP-hard. Any
+                    algorithm solving the problem for these gaps would
+                    solve every problem in NP.
+                </p>
+
+                <p>
+                    At the top, for factors that grow <strong>exponentially</strong> in \(n\), the problems are solvable
+                    in polynomial time. This is the domain of basis reduction, the subject of the final section: a
+                    polynomial-time procedure exists that finds a vector within an exponential factor of the shortest,
+                    and no better. The exponential-approximation regime is the easy end of the line.
+                </p>
+
+                <p>
+                    Between these lies the regime that cryptography occupies, and its defining feature is a negative one:
+                    for gaps around \(\sqrt{n}\), the problems are almost certainly <em>not</em> NP-hard. The evidence is
+                    a containment. For \(\gamma = \sqrt{n}\), the problem \(\mathrm{GapCVP}_{\sqrt{n}}\) lies not only in
+                    NP but in its complement <strong>coNP</strong> — meaning a NO instance, one where the target is far
+                    from the lattice, admits a short certificate of its farness, just as a YES instance admits a nearby
+                    lattice vector as certificate of its nearness. Certifying farness is the hard direction: a target can
+                    have enormously many lattice points near it without any being within the bound, and exhibiting a
+                    succinct proof that none is close is not obvious. The earliest arguments that farness can be
+                    certified went through the
+                    <a href="../Linear_algebra/minkowski_dual.html#D-dual_lattice" class="ref-link"><strong>dual
+                    lattice</strong></a> — the reciprocal lattice whose geometry, tied to the original by the
+                    <a href="../Linear_algebra/minkowski_dual.html#T-dual_determinant_reciprocal" class="ref-link"><strong>reciprocal
+                    determinant relation</strong></a>, converts a statement about the absence of short vectors on one
+                    side into the presence of a witness on the other. An early argument of this kind reached the smaller
+                    gap \(\sqrt{n / \log n}\), placing the problem there in a probabilistic analogue of coNP; later work
+                    sharpened the containment, widening the gap to \(\sqrt{n}\) and strengthening the class to coNP
+                    proper. By the reduction just proved, all of this transfers to
+                    \(\mathrm{GapSVP}\): the shortest vector problem at gap \(\sqrt{n}\) is likewise in \(\mathrm{NP}
+                    \cap \mathrm{coNP}\).
+                </p>
+
+                <p>
+                    The force of this containment is what it forbids. A problem that is NP-hard and simultaneously in coNP
+                    would place all of NP inside coNP, collapsing the tower of complexity classes above them — the
+                    polynomial hierarchy — to a low level, an outcome complexity theorists regard as most unlikely. So
+                    the containment of \(\mathrm{GapSVP}_{\sqrt{n}}\) in \(\mathrm{NP} \cap \mathrm{coNP}\) is read in
+                    reverse, as a ceiling on hardness: the NP-hardness that holds for small gaps cannot be pushed up to
+                    the gap \(\sqrt{n}\) without collapsing the hierarchy. Approximating lattice vectors to within
+                    \(\sqrt{n}\) is, in all likelihood, strictly easier than the NP-hard exact problem — and yet no
+                    efficient algorithm for it is known.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Math \(\leftrightarrow\) CS: Why the Middle Is the Right Place to Build</h3>
+                    <p>
+                        A cryptographer reading the hierarchy wants neither end. The NP-hard bottom is tempting — what
+                        stronger foundation than a problem as hard as all of NP? — but NP-hardness is a worst-case
+                        guarantee, an assurance that <em>some</em> instances are hard, and encryption needs the typical
+                        instance to be hard, drawn at random. The exponentially-approximable top is simply broken:
+                        basis reduction solves it. The useful regime is the middle, at gaps polynomial in \(n\), where
+                        two things hold at once. The problem is not known to be NP-hard, which sounds like a weakness but
+                        is the price of the coNP containment that rules out the collapse; and no efficient algorithm,
+                        classical or quantum, approaches these gaps. Security rests not on the peak of the hierarchy but
+                        on a plateau partway up it — hard enough that decades of algorithms have not reached it,
+                        structured enough that a worst-case instance can be transformed into the random-looking instances
+                        an encryption scheme needs. That the foundations sit in \(\mathrm{NP} \cap \mathrm{coNP}\),
+                        exactly where factoring sits, is not a coincidence but a signpost: it is the class of problems
+                        hard enough to build on yet too structured to be NP-complete.
+                    </p>
+                </div>
+
+                <p>
+                    The hierarchy thus delivers a single object, \(\mathrm{GapSVP}_\gamma\) with its shadow
+                    \(\mathrm{GapCVP}_\gamma\), whose difficulty is dialed by one parameter from NP-hard to
+                    polynomial-time, and it locates the cryptographic regime as a plateau near \(\sqrt{n}\) — above the
+                    reach of every known algorithm, below the NP-hardness ceiling that the polynomial hierarchy protects.
+                    What remains is to see the one algorithm that does reach the lattice, understand exactly how far up
+                    it climbs, and confront the fact that a quantum computer climbs no higher.
+                </p>
+
+            </section>
+
+            <section id="quantum-horizon" class="section-content">
+                <h2>What the Quantum Attack Leaves Standing</h2>
+
+                <p>
+                    The hierarchy left one algorithm unexamined: the procedure that actually reaches into a lattice and
+                    returns a short vector. Every practical attack on a lattice problem, and every honest assessment of
+                    how hard these problems are, passes through basis reduction, introduced above. The foundational
+                    reduction algorithm runs in time
+                    polynomial in the dimension and the size of the input, and it always succeeds in producing a reduced
+                    basis. The question is how short the vector it returns actually is.
+                </p>
+
+                <p>
+                    The answer is what everything downstream turns on. Basis reduction finds a vector guaranteed to be short —
+                    but only to within a factor that grows <em>exponentially</em> with the dimension. In the language of
+                    the hierarchy, the polynomial-time algorithm solves \(\mathrm{SVP}_\gamma\) for \(\gamma\)
+                    exponential in \(n\), and no better. It sits exactly at the tractable top of the hierarchy and does
+                    not descend into the middle. Improvements that trade running time for a smaller factor exist, but they
+                    buy only modest reductions in the exponent at steep cost, and none brings the approximation factor
+                    down to the polynomial range where the cryptographic problems live. The plateau near \(\sqrt{n}\)
+                    remains, after decades, out of reach.
+                </p>
+
+                <p>
+                    This is the observation on which the security of every lattice construction rests, and it must be
+                    stated with care. The gap between
+                    what basis reduction achieves — an exponential approximation — and what would break the cryptography
+                    — a polynomial one — is not a theorem that the polynomial regime is hard. It is the absence of any
+                    algorithm that closes the gap. Lattice hardness, like the hardness of factoring before it, is a
+                    conjecture: the assertion that no efficient procedure approximates lattice vectors to within
+                    polynomial factors, supported by the failure of sustained effort to find one, not by a proof that
+                    none can exist.
+                </p>
+
+                <p>
+                    What makes this conjecture the foundation for a <em>post-quantum</em> cryptography is a second fact,
+                    and it is the one this whole track has been moving toward. The classical assumptions fell to a
+                    quantum computer because factoring and the discrete logarithm carry a hidden periodic structure — an
+                    abelian arithmetic that a quantum procedure detects in polynomial time, collapsing the asymmetry the
+                    schemes depended on. Basis reduction is where one looks for the analogous quantum advantage against
+                    lattices, and the finding is stark: the best quantum algorithms for the lattice problems achieve the
+                    same exponential approximation as the best classical ones, and no better. Quantum computation buys no
+                    improvement in the approximation factor. No quantum algorithm approaches the polynomial gaps either.
+                </p>
+
+                <p>
+                    The reason is structural, and it closes a thread left hanging by the quantum attack itself. Shor's
+                    algorithm succeeds by finding a period in an abelian group — the structure the number-theoretic
+                    problems supply and the lattice problems do not. A lattice has no such abelian period for a quantum
+                    procedure to seize; its shortest vectors are hidden by high-dimensional geometry, not by a hidden
+                    subgroup of the kind the quantum Fourier transform is built to expose. This is why the migration
+                    documented across the classical pages heads here specifically. It is not that lattices are provably
+                    beyond quantum reach — the honest claim is narrower and is the same conjectural shape as before: no
+                    efficient quantum algorithm for these problems is known, and the structure that made the classical
+                    problems fall is absent. The absence of a known attack, classical or quantum, is precisely what a
+                    post-quantum foundation is built from.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Math \(\leftrightarrow\) CS: The Same Complexity Class as Factoring</h3>
+                    <p>
+                        The <a href="intractable_problems.html#landscape" class="ref-link"><strong>classical assumptions</strong></a> 
+                        ended on an inventory of conjectures and a promise: that the search for a quantum-resistant foundation would 
+                        begin from a problem no known reduction connects to factoring or the discrete logarithm. The lattice problems 
+                        are that foundation, and the hierarchy places them with precision. Their cryptographic regime sits 
+                        in \(\mathrm{NP} \cap \mathrm{coNP}\) — the same class that houses factoring, hard enough to build 
+                        on yet too structured to be NP-complete.
+                        The parallel is exact and instructive: both foundations are conjectured-hard problems in the same
+                        complexity class, neither NP-hard nor known to be easy. The difference that matters is the one
+                        Shor's algorithm draws. Factoring's place in that class comes with a hidden abelian structure a
+                        quantum computer exploits; the lattice problems' place in it does not. Same class, same
+                        conjectural status, different fate under quantum attack — and that difference is the entire case
+                        for rebuilding cryptography on the geometry of lattices.
+                    </p>
+                </div>
+
+                <p>
+                    What remains is to build the encryption on this ground: to turn a worst-case lattice problem into the
+                    random-looking, average-case problem an encryption scheme can sample from, and to show that breaking
+                    the scheme would solve the worst-case problem underneath. That construction is where the geometry of
+                    this page becomes a working cryptosystem.
+                </p>
+
+            </section>
+
+        </div>
+    </body>
+</html>
