@@ -1,0 +1,439 @@
+---
+layout: default
+title: "Learning With Errors (LWE)"
+topic_id: disc-38
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Learning With Errors (LWE)</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#learning-with-errors">A Problem Built from Noise</a>
+            <a href="#dual-geometry">The Dual of the Hash</a>
+            <a href="#worst-case-hardness">A Quantum Reduction</a>
+            <a href="#encryption">The Cryptosystem</a>
+        </div>
+
+        <div class="container">
+
+            <section id="learning-with-errors" class="section-content">
+                <h2>A Problem Built from Noise</h2>
+
+                <p>
+                    The previous page built one-way functions and collision-resistant hashing on the difficulty of
+                    finding short vectors in a random lattice, and closed by naming what that construction could not
+                    reach: public-key encryption. The obstruction was structural. The function \(\mathbf{z} \mapsto
+                    \mathbf{A}\mathbf{z}\) is surjective and compressing — the shape of a hash, which destroys
+                    information rather than protecting it behind a trapdoor. This page introduces the problem that
+                    supplies the missing shape. It is the same \(q\)-ary geometry read through an injective map, made
+                    hard not by compression but by a controlled amount of <em>noise</em>.
+                </p>
+
+                <p>
+                    <strong>Convention.</strong> Where the short-integer-solution problem multiplied its secret vector on
+                    the right, as \(\mathbf{A}\mathbf{z}\), the problem of this page places its secret on the left, as
+                    \(\mathbf{s}^\top\mathbf{A}\). This is not a substantive change — it reflects that the two problems
+                    are duals of one another, a relationship the next section makes exact — but the convention is worth
+                    fixing now, because it governs every formula below.
+                </p>
+
+                <h3>The Distribution</h3>
+
+                <p>
+                    Fix a dimension \(n\) and a modulus \(q\), as before, together with an <strong>error
+                    distribution</strong> \(\chi\) over \(\mathbb{Z}\) — typically a discrete Gaussian of width
+                    \(\alpha q\) on the standard-deviation scale, for some \(\alpha \lt 1\), the parameter \(\alpha\)
+                    being called the relative
+                    <em>error rate</em>. A secret vector \(\mathbf{s} \in \mathbb{Z}_q^n\) is fixed once. The problem is
+                    presented not as a single equation but as a source of noisy linear measurements of that secret.
+                </p>
+
+                <div class="theorem" id="D-lwe">
+                    <span class="theorem-title">Definition: The LWE Distribution</span>
+                    <p>
+                        For a secret \(\mathbf{s} \in \mathbb{Z}_q^n\), the <strong>LWE distribution</strong>
+                        \(A_{\mathbf{s}, \chi}\) over \(\mathbb{Z}_q^n \times \mathbb{Z}_q\) is sampled by choosing
+                        \(\mathbf{a} \in \mathbb{Z}_q^n\) uniformly at random, drawing an error \(e \leftarrow \chi\), and
+                        outputting
+                        \[
+                        (\mathbf{a},\; b = \langle \mathbf{s}, \mathbf{a} \rangle + e \bmod q).
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Each sample is an
+                    <a href="../Linear_algebra/orthogonality.html#D-inner_product" class="ref-link"><strong>inner
+                    product</strong></a> of the secret with a random vector, pushed off its true value by a small error.
+                    Without the error the samples would be exact linear equations, and a few of them would pin down
+                    \(\mathbf{s}\) by Gaussian elimination in polynomial time — this is the same collapse that made
+                    unbounded SIS trivial, here in additive rather than multiplicative form. The noise is the entire
+                    difficulty. It is small enough that the samples still carry information about \(\mathbf{s}\), yet
+                    large enough that no efficient procedure has been found to disentangle the secret from the error.
+                </p>
+
+                <h3>Two Problems, Search and Decision</h3>
+
+                <p>
+                    From this one distribution grow two problems, and the distinction between them will matter for both
+                    the hardness reduction and the encryption scheme.
+                </p>
+
+                <div class="theorem" id="D-lwe_search">
+                    <span class="theorem-title">Definition: Search-LWE</span>
+                    <p>
+                        Given \(m\) independent samples \((\mathbf{a}_i, b_i) \in \mathbb{Z}_q^n \times \mathbb{Z}_q\)
+                        drawn from \(A_{\mathbf{s}, \chi}\) for a uniformly random secret \(\mathbf{s} \in \mathbb{Z}_q^n\)
+                        fixed across all samples, <strong>search-LWE</strong> asks to recover \(\mathbf{s}\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-lwe_decision">
+                    <span class="theorem-title">Definition: Decision-LWE</span>
+                    <p>
+                        Given \(m\) independent samples \((\mathbf{a}_i, b_i) \in \mathbb{Z}_q^n \times \mathbb{Z}_q\),
+                        where every sample is drawn either (1) from \(A_{\mathbf{s}, \chi}\) for a uniformly random
+                        \(\mathbf{s}\) fixed across all samples, or (2) from the uniform distribution on
+                        \(\mathbb{Z}_q^n \times \mathbb{Z}_q\), <strong>decision-LWE</strong> asks to distinguish which
+                        of the two is the case, with non-negligible advantage.
+                    </p>
+                </div>
+
+                <p>
+                    Search asks to extract the secret; decision asks only whether a secret is there at all — whether the
+                    noisy samples are structured or merely random. Decision is the property an encryption scheme leans
+                    on, since hiding a message amounts to making a ciphertext indistinguishable from noise. As with the
+                    previous problem, the sample count \(m\) is of secondary importance, taken large enough that the
+                    secret is determined with high probability and otherwise left unspecified. The two problems turn out
+                    to be equivalent up to a polynomial factor, a fact the hardness section returns to; for now it is
+                    enough that both are believed hard, and that the belief will shortly be anchored to the worst-case
+                    lattice problems of the previous pages.
+                </p>
+
+            </section>
+
+            <section id="dual-geometry" class="section-content">
+                <h2>The Dual of the Hash</h2>
+
+                <p>
+                    The short-integer-solution problem was a shortest-vector problem on the \(q\)-ary lattice
+                    \(\mathcal{L}^\perp(\mathbf{A})\). Learning with errors is also a lattice problem, on a lattice built
+                    from the same matrix — but a different one, and the relationship between the two lattices is exactly
+                    the relationship between a hash and the encryption it could not provide.
+                </p>
+
+                <div class="theorem" id="D-lwe_lattice">
+                    <span class="theorem-title">Definition: The LWE Lattice \(\mathcal{L}(\mathbf{A})\)</span>
+                    <p>
+                        For a matrix \(\mathbf{A} \in \mathbb{Z}_q^{n \times m}\), the associated <strong>LWE
+                        lattice</strong> is
+                        \[
+                        \mathcal{L}(\mathbf{A}) = \{\, \mathbf{A}^\top \mathbf{s} : \mathbf{s} \in \mathbb{Z}^n \,\} +
+                        q\mathbb{Z}^m,
+                        \]
+                        the set of all integer vectors congruent modulo \(q\) to some \(\mathbf{A}^\top\mathbf{s}\).
+                        Here \(\mathbf{s}\) ranges over integer vectors, but only its residues modulo \(q\) matter:
+                        changing \(\mathbf{s}\) by a multiple of \(q\) shifts \(\mathbf{A}^\top\mathbf{s}\) by an element
+                        of \(q\mathbb{Z}^m\), which the summand \(q\mathbb{Z}^m\) absorbs, so the set is well defined and
+                        \(\mathbf{s}\) may equally be read as an element of \(\mathbb{Z}_q^n\).
+                    </p>
+                </div>
+
+                <p>
+                    The connection to the samples is immediate. Collecting \(m\) LWE samples into a matrix
+                    \(\mathbf{A}\) whose columns are the \(\mathbf{a}_i\) and a vector \(\mathbf{b}\) whose entries are
+                    the \(b_i\), the defining relation becomes
+                    \[
+                    \mathbf{b}^\top = \mathbf{s}^\top \mathbf{A} + \mathbf{e}^\top \pmod q, \qquad \mathbf{e}
+                    \leftarrow \chi^m.
+                    \]
+                    The noiseless part \(\mathbf{A}^\top\mathbf{s}\) is a point of \(\mathcal{L}(\mathbf{A})\), and the
+                    observed \(\mathbf{b}\) is that point displaced by the short error \(\mathbf{e}\). Recovering the
+                    secret is recovering the lattice point closest to \(\mathbf{b}\) — provided the error is small enough
+                    that exactly one lattice point is within reach.
+                </p>
+
+                <h3>An Average-Case Bounded-Distance Problem</h3>
+
+                <p>
+                    This is a decoding problem. The target \(\mathbf{b}\) is promised to lie close to
+                    \(\mathcal{L}(\mathbf{A})\) — within the error width, itself below half the minimum distance
+                    \(\lambda_1\), so that a single lattice point is unambiguously the nearest — and the task is to find
+                    that unique nearby
+                    lattice point. That is precisely
+                    <a href="lattice_problems.html#D-bdd" class="ref-link"><strong>bounded-distance
+                    decoding</strong></a>, now in an average-case form: the lattice \(\mathcal{L}(\mathbf{A})\) is random
+                    rather than adversarial, and the target is generated by the LWE distribution. Search-LWE is
+                    average-case BDD on the family of LWE lattices, exactly as SIS was average-case shortest-vector on
+                    the family of \(q\)-ary lattices. When the samples are uniform instead — the other case of
+                    decision-LWE — the vector \(\mathbf{b}\) is far from every lattice point with high probability, and
+                    no nearby point exists to decode.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Two Lattices Are Dual</h3>
+                    <p>
+                        The SIS lattice and the LWE lattice are built from the same \(\mathbf{A}\), and they are duals of
+                        one another up to a scale of \(q\):
+                        \[
+                        \mathcal{L}(\mathbf{A}) = q \cdot \mathcal{L}^\perp(\mathbf{A})^*.
+                        \]
+                        The verification is direct. By definition of the dual, a vector \(\mathbf{y}\) lies in
+                        \(q \cdot \mathcal{L}^\perp(\mathbf{A})^*\) exactly when \(\mathbf{y}/q \in
+                        \mathcal{L}^\perp(\mathbf{A})^*\), that is, when \(\langle \mathbf{z}, \mathbf{y}/q \rangle \in
+                        \mathbb{Z}\) — equivalently \(\langle \mathbf{z}, \mathbf{y} \rangle \equiv 0 \pmod q\) — for every
+                        \(\mathbf{z} \in \mathcal{L}^\perp(\mathbf{A})\), that is, for every
+                        \(\mathbf{z}\) with \(\mathbf{A}\mathbf{z} = \mathbf{0} \bmod q\). The vectors satisfying this are
+                        precisely those of the form \(\mathbf{A}^\top\mathbf{s} \bmod q\), which is the definition of
+                        \(\mathcal{L}(\mathbf{A})\). The
+                        <a href="../Linear_algebra/minkowski_dual.html#D-dual_lattice" class="ref-link"><strong>dual
+                        lattice</strong></a> introduced in the geometry pages, developed there with no application in
+                        sight, is exactly the bridge between the two central problems of lattice cryptography.
+                    </p>
+                </div>
+
+                <h3>Why One Hashes and the Other Encrypts</h3>
+
+                <p>
+                    The duality is not a curiosity; it is the reason the two problems support different cryptography.
+                    SIS is concerned with the <em>surjective</em> map \(\mathbf{z} \mapsto \mathbf{A}\mathbf{z}\), which
+                    sends a short vector to its syndrome and, being many-to-one, cannot be inverted to a unique input —
+                    the shape of a hash. LWE is concerned with the <em>injective</em> map \(\mathbf{s} \mapsto
+                    \mathbf{A}^\top\mathbf{s} + \mathbf{e}\), which embeds a secret, perturbed by noise, into a
+                    higher-dimensional space. An injective map admits, in principle, a unique preimage; the noise is what
+                    hides it. A unique-preimage-with-a-hidden-key is the shape of a <em>trapdoor</em>, and a trapdoor is
+                    what public-key encryption requires. The surjective side compresses and destroys; the injective side
+                    embeds and conceals. That is the whole difference, and the final section turns it into a scheme.
+                </p>
+
+            </section>
+
+            <section id="worst-case-hardness" class="section-content">
+                <h2>A Quantum Reduction</h2>
+
+                <p>
+                    Learning with errors inherits the guarantee that made its predecessor trustworthy: it is hard on
+                    average because a worst-case lattice problem is hard. But the reduction that establishes this differs
+                    from the one for the short-integer-solution problem in a way that is not incidental. It is
+                    <em>quantum</em>. This is the point at which the thread left hanging by the classical pages — that
+                    lattices resist quantum attack, yet are not untouched by quantum computation — is drawn tight.
+                </p>
+
+                <div class="theorem" id="T-lwe_worst_case_hardness">
+                    <span class="theorem-title">Theorem: Worst-Case Hardness of LWE</span>
+                    <p>
+                        Fix any \(m = \mathrm{poly}(n)\), any modulus \(q\), and a discretized Gaussian error
+                        distribution \(\chi\) of width parameter \(\alpha q \geq 2\sqrt{n}\) with \(0 \lt \alpha \lt 1\). If
+                        there is an efficient algorithm that solves
+                        <a href="learning_with_errors.html#D-lwe_decision" class="ref-link"><strong>decision-LWE</strong></a>,
+                        then there is an efficient <em>quantum</em> algorithm that solves
+                        <a href="lattice_problems.html#D-gapsvp" class="ref-link"><strong>\(\mathrm{GapSVP}_\gamma\)</strong></a>
+                        and
+                        <a href="lattice_problems.html#D-sivp" class="ref-link"><strong>\(\mathrm{SIVP}_\gamma\)</strong></a>
+                        on every \(n\)-dimensional lattice, for an approximation factor \(\gamma = \tilde{O}(n/\alpha)\).
+                    </p>
+                </div>
+
+                <p>
+                    As with the short-integer-solution problem, the exact modulus and sample count play no role beyond a
+                    lower bound; the strength of the conclusion is governed by the error rate \(\alpha\), through the
+                    factor \(\gamma = \tilde{O}(n/\alpha)\). Smaller noise means a smaller \(\alpha\), hence a larger
+                    \(\gamma\) — a weaker guarantee — so there is a genuine tension: too little noise and the problem
+                    loses its worst-case backing, too much and the samples cease to determine the secret. The reduction
+                    converts any algorithm solving LWE — classical or quantum — into a quantum algorithm for lattice
+                    problems. It runs in two steps, and the second is where the quantum Fourier transform re-enters the
+                    story.
+                </p>
+
+                <h3>The Two Steps</h3>
+
+                <p>
+                    The reduction is iterative, producing progressively narrower Gaussian samples over the input lattice
+                    \(\mathcal{L}\) until they are sharp enough to read off solutions to the shortest-vector problems.
+                    One iteration couples a classical step to a quantum one.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">One iteration of the reduction</span>
+                    <p>
+                        <strong>Step one, classical.</strong> Given an oracle for search-LWE and a supply of discrete
+                        Gaussian samples over \(\mathcal{L}\) of some width \(r\), one solves bounded-distance decoding on
+                        the <em>dual</em> lattice \(\mathcal{L}^*\), to within a distance \(d \approx \alpha q / r\). The
+                        Gaussian samples over \(\mathcal{L}\) are combined with the BDD target to manufacture properly
+                        distributed LWE samples; the secret the oracle then recovers is exactly what pins down the
+                        closest dual-lattice vector, solving the decoding instance.
+                    </p>
+                    <p>
+                        <strong>Step two, quantum.</strong> Given an oracle for bounded-distance decoding on
+                        \(\mathcal{L}^*\) to within distance \(d\), one generates discrete Gaussian samples over
+                        \(\mathcal{L}\) of a <em>narrower</em> width \(r' \approx \sqrt{n}/d\). This is the step that
+                        cannot be done classically. A known BDD solution is used to prepare a quantum state; computing
+                        the quantum Fourier transform on that state and measuring it yields a fresh Gaussian sample over
+                        \(\mathcal{L}\).
+                    </p>
+                    <p>
+                        Substituting \(d \approx \alpha q / r\) into \(r' \approx \sqrt{n}/d\) gives \(r' \approx
+                        \sqrt{n}\, r / (\alpha q)\), so the condition \(\alpha q \geq 2\sqrt{n}\) forces \(r' \leq r/2\):
+                        the width produced by step two is smaller than the width step one consumed, by a constant factor.
+                        Feeding \(r'\) back into step one and
+                        iterating drives the Gaussian width steadily down, until the samples over \(\mathcal{L}\) are
+                        narrow enough that \(\mathrm{SIVP}_\gamma\) and \(\mathrm{GapSVP}_\gamma\) fall out directly. The
+                        detailed accounting of the widths, and the discrete-Gaussian machinery that makes each step
+                        precise, is beyond the scope of this page; what matters here is the architecture — a classical
+                        decoding step and a quantum sampling step, alternating — and the necessity of the quantum
+                        transform in the second.
+                    </p>
+                </div>
+
+                <p>
+                    Search and decision are equivalent for these parameters, up to a polynomial loss in the sample
+                    count: an oracle that merely distinguishes LWE samples from uniform can be bootstrapped, one
+                    coordinate of the secret at a time, into one that recovers the whole secret. So the hardness above,
+                    stated for decision-LWE, transfers to search, and the encryption scheme of the next section may lean
+                    on whichever form is convenient.
+                </p>
+
+                <h3>Why the Reduction Is Quantum, and What That Means</h3>
+
+                <p>
+                    The quantum step is not a mere convenience. There is no known classical procedure that generates the
+                    narrower Gaussian samples from a BDD solution; the quantum Fourier transform is, so far, essential to
+                    that construction. This has a precise and initially unsettling consequence. The theorem guarantees
+                    only that breaking LWE yields a <em>quantum</em> algorithm for lattice problems — so a
+                    <em>classical</em> algorithm breaking LWE would still imply merely a quantum lattice algorithm, not a
+                    classical one.
+                </p>
+
+                <p>
+                    A later result partially removes the quantum step, at a cost that sharpens the picture rather than
+                    dissolving it. One can give a fully <em>classical</em> reduction from lattice problems to LWE, but
+                    only under two concessions: it reaches \(\mathrm{GapSVP}_\gamma\) alone, not
+                    \(\mathrm{SIVP}_\gamma\); and it requires an exponentially large modulus, \(q \geq 2^{n/2}\), where
+                    the quantum reduction is content with a modulus polynomial in \(n\). The quantum reduction is thus
+                    both more general in the problems it reaches and more efficient in the parameters it demands. That
+                    the strongest known evidence for LWE's hardness passes through a quantum computation is the exact
+                    counterpart, on the defensive side, of the fact that the classical schemes fell to one.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Math \(\leftrightarrow\) Quantum: The Transform That Builds Instead of Breaks</h3>
+                    <p>
+                        The <a href="intractable_problems.html#landscape"><strong>classical
+                        assumptions</strong></a> fell because the quantum Fourier transform detects the hidden abelian
+                        period inside factoring and the discrete logarithm. Lattices carry no such period, which is why
+                        the same transform mounts no attack on them. Yet the transform reappears here on the constructive
+                        side: it is the engine of the sampling step that certifies LWE's worst-case hardness. The
+                        security of lattice cryptography does not come from lattices being untouched by quantum
+                        computation — the honest statement is narrower. No efficient quantum algorithm for the underlying
+                        lattice problems is known, and the abelian structure that the transform exploits to break the
+                        classical schemes is simply absent. The same instrument that ends one cryptography helps
+                        certify the foundation of its successor.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="encryption" class="section-content">
+                <h2>The Cryptosystem</h2>
+
+                <p>
+                    The injective, noisy shape of learning with errors was promised to be what unlocks public-key
+                    encryption. Here is the scheme that redeems the promise. Its security reduces to decision-LWE, and
+                    hence — through the quantum reduction of the previous section — to the worst-case hardness of lattice
+                    problems. It is the first encryption whose security rests on a worst-case assumption, and a
+                    descendant of it is deployed today.
+                </p>
+
+                <h3>Encrypting a Bit</h3>
+
+                <p>
+                    The secret key is a random vector \(\mathbf{s} \in \mathbb{Z}_q^n\). The public key is a collection
+                    of LWE samples \((\mathbf{a}_i, b_i)\) for that secret — noisy linear measurements, published in the
+                    open. Because the samples are LWE-distributed, decision-LWE is exactly the assumption that they look
+                    like uniform random pairs, revealing nothing about \(\mathbf{s}\).
+                </p>
+
+                <p>
+                    To encrypt a single bit, one adds together a random subset of the public samples, obtaining a fresh
+                    pair \((\mathbf{a}, b)\) that is itself close to a valid LWE sample. The message bit is hidden in the
+                    last coordinate: to send a zero, leave \(b\) as it is; to send a one, shift it by \(\lfloor q/2
+                    \rfloor\). The ciphertext is either close to the mod-\(q\) subspace orthogonal to \((-\mathbf{s}, 1)\)
+                    — encoding zero — or far from it, near the midpoint — encoding one. Holding the secret \(\mathbf{s}\),
+                    the receiver computes the inner product that tests which case holds and recovers the bit. Decryption
+                    succeeds as long as the error accumulated by summing the subset stays below \(q/4\), half the gap
+                    between the two cases; on the rare occasions it exceeds that threshold, the bit flips and decryption
+                    fails. This is the practical face of the tension named in the hardness section — too little noise
+                    forfeits the worst-case guarantee, too much invites decryption failure — and controlling its
+                    probability is a central concern of the deployed schemes discussed below.
+                </p>
+
+                <h3>Why It Is Secure</h3>
+
+                <p>
+                    Semantic security follows from a single thought experiment. Imagine the public key were
+                    <em>malformed</em> — replaced by genuinely uniform random pairs with no underlying secret at all.
+                    Decision-LWE says no efficient adversary can tell a malformed key from a real one; the two are
+                    computationally indistinguishable. But under a malformed key, encryption is <em>lossy</em>: a
+                    ciphertext formed from uniform pairs is, up to negligible statistical error, independent of the
+                    message bit. An adversary facing a malformed key therefore gains no information about the bit — not
+                    because the bit is computationally hidden, but because it is statistically absent from the
+                    ciphertext. Since the real key is indistinguishable from the malformed one, the adversary can do no
+                    better against the real scheme. Any advantage in guessing the message would be an advantage in
+                    solving decision-LWE, which is assumed hard.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Math \(\leftrightarrow\) CS: Worst-Case Security, Deployed</h3>
+                    <p>
+                        Two properties set this construction apart from the number-theoretic schemes it is built to
+                        outlast. Its security rests on the <em>worst-case</em> hardness of general lattice problems —
+                        \(\mathrm{GapSVP}_\gamma\) and \(\mathrm{SIVP}_\gamma\) — rather than an average-case assumption
+                        about a chosen distribution, so there is no distribution of weak keys to worry about avoiding.
+                        And the underlying problems carry no abelian periodic structure for a quantum computer to seize,
+                        so the scheme is conjectured to resist the attack that felled the classical constructions — the
+                        same conjectural claim as before, that no efficient algorithm, classical or quantum, is known,
+                        but now sitting under an encryption scheme rather than a hash.
+                    </p>
+                </div>
+
+                <h3>From the Textbook Scheme to a Deployed Standard</h3>
+
+                <p>
+                    The scheme above is deliberately minimal — a single bit per ciphertext, keys quadratic in the
+                    dimension — and a long line of refinements separates it from what runs in practice. The efficiency
+                    gap is closed largely by working over a <em>ring</em>: replacing the vectors of \(\mathbb{Z}_q^n\)
+                    with polynomials in a quotient ring endows the samples with algebraic structure that shrinks keys and
+                    speeds arithmetic, at the price of a more specialized hardness assumption. The structured variant
+                    that results, module learning with errors, is the foundation of the key-encapsulation mechanism
+                    standardized in 2024 as the primary post-quantum replacement for the classical key exchanges — the
+                    endpoint toward which this entire track has been building. That algebraic structure, and the ring
+                    geometry it rests on, is the subject of the pages that follow.
+                </p>
+
+                <p>
+                    It is worth marking what has been assembled. The classical pages built encryption on factoring and
+                    the discrete logarithm, then watched a quantum algorithm collapse the hidden abelian structure they
+                    depended on. The geometry pages developed lattices as pure objects — minima, determinants, duals,
+                    Minkowski's bound — with no cryptographic use in sight. The complexity page turned that geometry into
+                    a hierarchy of hard problems. These two problems, the short-integer-solution problem and learning
+                    with errors, are where the threads converge: a hash and an encryption, dual to one another, both
+                    grounded by reduction in the worst-case hardness of the very lattice problems the geometry pages
+                    measured, and both standing where the classical schemes fell. The foreshadowing is discharged. What
+                    remains is to make the construction efficient enough to deploy.
+                </p>
+
+            </section>
+
+        </div>
+    </body>
+</html>

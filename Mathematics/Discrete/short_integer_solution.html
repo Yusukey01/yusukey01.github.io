@@ -1,0 +1,427 @@
+---
+layout: default
+title: "Short Integer Solution (SIS)"
+topic_id: disc-37
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Short Integer Solution (SIS)</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#average-case">A Problem Chosen at Random</a>
+            <a href="#q-ary-lattice">The Lattice Behind the Problem</a>
+            <a href="#one-way-collision">One-Wayness and Collisions</a>
+            <a href="#worst-case-hardness">The Worst-Case Guarantee</a>
+        </div>
+
+        <div class="container">
+
+            <section id="average-case" class="section-content">
+                <h2>A Problem Chosen at Random</h2>
+
+                <p>
+                    The previous page ended with a promise: to turn a worst-case lattice problem into the
+                    random-looking, average-case problem that an encryption scheme can sample from, and to show that
+                    breaking such a scheme would solve the worst-case problem underneath. This page delivers the first
+                    half of that promise. It defines the problem on which the earliest lattice-based cryptography was
+                    built, and it establishes the guarantee that makes the problem trustworthy.
+                </p>
+
+                <p>
+                    The distinction that organizes everything here is between <em>worst-case</em> and
+                    <em>average-case</em> hardness. Cryptography needs problems that are hard on a randomly chosen
+                    instance, because a scheme generates its keys by sampling — an adversary faces whatever instance the
+                    sampling produced, not one an adversary got to choose. Nearly every classical construction rests on
+                    an average-case assumption of exactly this kind. A scheme built on the difficulty of factoring
+                    assumes not that factoring is hard in the worst case, but that it is hard for integers drawn from
+                    some specified distribution. This raises a question with no clean answer: which distribution? Some
+                    integers factor easily, and one must arrange the sampling to avoid them, without any guarantee that
+                    the avoided cases are the only easy ones.
+                </p>
+
+                <p>
+                    Lattice cryptography escapes this question. The problem defined below is hard on average — over its
+                    own natural distribution — <em>because</em> a worst-case lattice problem is hard at all, with no
+                    distribution left to second-guess. That is the guarantee the final section makes precise; the
+                    intervening sections build the object it applies to.
+                </p>
+
+                <h3>The Problem</h3>
+
+                <p>
+                    Fix a dimension \(n\) and a modulus \(q\), and work in the finite additive group
+                    \(\mathbb{Z}_q^n\) of integer vectors modulo \(q\). The problem takes as input a collection of
+                    uniformly random elements of this group and asks for a short integer combination of them that
+                    vanishes.
+                </p>
+
+                <div class="theorem" id="D-sis">
+                    <span class="theorem-title">Definition: The Short Integer Solution Problem (SIS)</span>
+                    <p>
+                        Let \(n, q\) be positive integers, \(\beta \gt 0\) a real bound, and \(m\) a number of samples.
+                        Given \(m\) uniformly random vectors \(\mathbf{a}_1, \dots, \mathbf{a}_m \in \mathbb{Z}_q^n\),
+                        forming the columns of a matrix \(\mathbf{A} \in \mathbb{Z}_q^{n \times m}\), the problem
+                        \(\mathrm{SIS}_{n, q, \beta, m}\) asks for a nonzero integer vector
+                        \(\mathbf{z} \in \mathbb{Z}^m\) of Euclidean norm \(\|\mathbf{z}\| \leq \beta\) satisfying
+                        \[
+                        \mathbf{A}\mathbf{z} = \sum_{i=1}^{m} \mathbf{a}_i \, z_i = \mathbf{0} \in \mathbb{Z}_q^n.
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Here \(n\) is the main hardness parameter; one should picture it as large, with \(q\) a small
+                    polynomial in \(n\). The number of samples \(m\) is of secondary importance and is often left
+                    unspecified, for a reason the next section makes structural. Two constraints on the parameters are
+                    forced by the shape of the problem.
+                </p>
+
+                <p>
+                    First, the norm bound cannot be dropped. Without the requirement \(\|\mathbf{z}\| \leq \beta\), a
+                    solution is trivial to produce by standard linear algebra over \(\mathbb{Z}_q\): the equation
+                    \(\mathbf{A}\mathbf{z} = \mathbf{0}\) is a homogeneous linear system, and once \(m\) exceeds \(n\) it
+                    has nonzero solutions that are found in polynomial time. The difficulty is created entirely by
+                    demanding that the solution be <em>short</em>. For the same reason one must take \(\beta \lt q\):
+                    otherwise the vector \(\mathbf{z} = (q, 0, \dots, 0)\) is always a legitimate solution, since
+                    \(q \, \mathbf{a}_1 \equiv \mathbf{0} \pmod q\), and it is nonzero and trivial to write down.
+                </p>
+
+                <p>
+                    Second, the bound and the sample count must be large enough that a solution is <em>guaranteed to
+                    exist</em> — otherwise the problem may be asking for something that is not there. This is where a
+                    counting argument enters, and it is worth stating precisely, because the same argument reappears in
+                    the next two sections in two different roles.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why a Short Solution Must Exist</h3>
+                    <p>
+                        Suppose \(\beta \geq \sqrt{m}\) and \(m \gt n \log_2 q\). Consider the vectors
+                        \(\mathbf{x} \in \{0, 1\}^m\) — there are \(2^m\) of them. Each maps to
+                        \(\mathbf{A}\mathbf{x} \in \mathbb{Z}_q^n\), a set of only \(q^n\) possible values. Since
+                        \(2^m \gt q^n\), which is exactly the condition \(m \gt n \log_2 q\), the pigeonhole principle
+                        forces two distinct vectors \(\mathbf{x}, \mathbf{x}'\) with
+                        \(\mathbf{A}\mathbf{x} = \mathbf{A}\mathbf{x}'\). Their difference
+                        \(\mathbf{z} = \mathbf{x} - \mathbf{x}' \in \{-1, 0, 1\}^m\) is nonzero, satisfies
+                        \(\mathbf{A}\mathbf{z} = \mathbf{0}\), and has norm at most \(\sqrt{m} \leq \beta\). A valid
+                        solution exists — this counting argument proves it — but the argument inspects no lattice point
+                        and produces no \(\mathbf{z}\). It is the same existence-without-construction gap that Minkowski's
+                        theorem opened for the shortest vector, now transported to a problem chosen at random.
+                    </p>
+                </div>
+
+                <p>
+                    Finding the solution is a separate matter from knowing it exists, and the difficulty of finding it —
+                    on a random instance — is what the following sections pin down, first geometrically, then
+                    cryptographically, and finally as a worst-case guarantee.
+                </p>
+
+            </section>
+
+            <section id="q-ary-lattice" class="section-content">
+                <h2>The Lattice Behind the Problem</h2>
+
+                <p>
+                    The problem was posed algebraically — a matrix, a linear equation modulo \(q\), a norm bound — but
+                    its difficulty is geometric, and naming the geometry is what connects it to everything the previous
+                    pages built. The set of all integer vectors that the matrix sends to zero is not an arbitrary
+                    collection. It is a lattice.
+                </p>
+
+                <div class="theorem" id="D-q_ary_lattice">
+                    <span class="theorem-title">Definition: The \(q\)-ary Lattice \(\mathcal{L}^\perp(\mathbf{A})\)</span>
+                    <p>
+                        For a matrix \(\mathbf{A} \in \mathbb{Z}_q^{n \times m}\), the associated
+                        <strong>\(q\)-ary lattice</strong> is
+                        \[
+                        \mathcal{L}^\perp(\mathbf{A}) = \{\, \mathbf{z} \in \mathbb{Z}^m : \mathbf{A}\mathbf{z} =
+                        \mathbf{0} \in \mathbb{Z}_q^n \,\} \supseteq q\mathbb{Z}^m,
+                        \]
+                        the set of integer vectors mapped to zero modulo \(q\). It is called \(q\)-ary because it
+                        contains \(q\mathbb{Z}^m\): membership is determined entirely by residues modulo \(q\).
+                    </p>
+                </div>
+
+                <p>
+                    That this set is a
+                    <a href="../Linear_algebra/lattice_intro.html#D-lattice" class="ref-link"><strong>lattice</strong></a> —
+                    a discrete additive subgroup of \(\mathbb{R}^m\) — can be seen directly. It is a subgroup of
+                    \(\mathbb{Z}^m\): the map \(\mathbf{z} \mapsto \mathbf{A}\mathbf{z} \bmod q\) is a homomorphism from
+                    \(\mathbb{Z}^m\) to the finite group \(\mathbb{Z}_q^n\), and \(\mathcal{L}^\perp(\mathbf{A})\) is its
+                    kernel. A kernel is a subgroup, and a subgroup of \(\mathbb{Z}^m\) is discrete because
+                    \(\mathbb{Z}^m\) is. It is full-rank because it contains \(q\mathbb{Z}^m\), which already spans
+                    \(\mathbb{R}^m\); the lattice fills the whole space rather than collapsing into a proper subspace.
+                    Every tool the geometry pages developed for lattices in general applies to it without modification.
+                </p>
+
+                <h3>SIS as an Average-Case Shortest-Vector Problem</h3>
+
+                <p>
+                    With the lattice named, the problem reads differently. A solution to
+                    \(\mathrm{SIS}_{n, q, \beta, m}\) is a nonzero \(\mathbf{z} \in \mathcal{L}^\perp(\mathbf{A})\) with
+                    \(\|\mathbf{z}\| \leq \beta\) — a short nonzero vector of the \(q\)-ary lattice. This is precisely a
+                    <a href="lattice_problems.html#D-svp_gamma" class="ref-link"><strong>shortest-vector
+                    problem</strong></a> on \(\mathcal{L}^\perp(\mathbf{A})\), with the norm bound \(\beta\) playing the
+                    role of the target length. The one structural difference from the worst-case problems of the previous
+                    page is decisive: the lattice here is not adversarial but <em>random</em>, drawn from the
+                    distribution induced by a uniformly random \(\mathbf{A}\). SIS is the average-case shortest-vector
+                    problem on this family of \(q\)-ary lattices.
+                </p>
+
+                <p>
+                    The matrix \(\mathbf{A}\) acts as a parity check in the language of coding theory: it does not
+                    generate the lattice but tests membership in it, exactly as a parity-check matrix tests membership in
+                    a linear code. This viewpoint also explains why the sample count \(m\) was called secondary. Two
+                    monotonicities follow from the definition and pin down how the parameters govern difficulty.
+                </p>
+
+                <div class="insight-box">
+                    <h3>How the Parameters Move the Difficulty</h3>
+                    <p>
+                        <strong>More samples make SIS no harder.</strong> Any solution for \(\mathbf{A}\) extends to a
+                        solution for an enlarged matrix \([\mathbf{A} \mid \mathbf{A}']\) by padding \(\mathbf{z}\) with
+                        zeros, which leaves the norm unchanged. Extra columns can simply be ignored, so the problem can
+                        only become easier as \(m\) grows. This is why \(m\) is left unspecified: it is not a security
+                        parameter but a convenience, taken just large enough that a solution exists.
+                    </p>
+                    <p>
+                        <strong>A larger dimension makes SIS no easier.</strong> By the same padding argument in reverse,
+                        raising \(n\) — the number of linear constraints modulo \(q\) — can only make the problem harder.
+                        This is the sense in which \(n\) is the hardness parameter: security is bought by increasing the
+                        number of constraints the short vector must satisfy, not by tuning how many samples the adversary
+                        sees.
+                    </p>
+                </div>
+
+                <p>
+                    One variant is worth naming, because the cryptographic constructions built on SIS use it freely.
+                    Instead of asking for a short vector in the kernel, one may fix a target \(\mathbf{u} \in
+                    \mathbb{Z}_q^n\) and ask for a short integer solution to \(\mathbf{A}\mathbf{x} = \mathbf{u}\). The
+                    set of all solutions, ignoring the norm bound, is a coset \(\mathbf{c} + \mathcal{L}^\perp(\mathbf{A})\)
+                    of the \(q\)-ary lattice, for any particular solution \(\mathbf{c}\). Finding a short element of a
+                    lattice coset is the inhomogeneous form of the problem; for the parameters that concern cryptography
+                    it is essentially equivalent to the homogeneous one, and we will not distinguish them further.
+                </p>
+
+            </section>
+
+            <section id="one-way-collision" class="section-content">
+                <h2>One-Wayness and Collisions</h2>
+
+                <p>
+                    The counting argument of the first section did more than guarantee that a solution exists. It
+                    exhibited that solution as the <em>difference of two inputs that collide</em> — two distinct
+                    \(\mathbf{x}, \mathbf{x}'\) with \(\mathbf{A}\mathbf{x} = \mathbf{A}\mathbf{x}'\). Read in that light,
+                    hardness of SIS is exactly the statement that such collisions are hard to find, and this is what turns
+                    the problem into a cryptographic primitive rather than a mere curiosity.
+                </p>
+
+                <p>
+                    Restrict the matrix to act on short inputs. Fix \(m\) somewhat larger than \(n \log_2 q\) and consider
+                    the function that reads a bit-string and returns its image modulo \(q\),
+                    \[
+                    f_{\mathbf{A}} : \{0, 1\}^m \to \mathbb{Z}_q^n, \qquad f_{\mathbf{A}}(\mathbf{x}) = \mathbf{A}\mathbf{x}
+                    \bmod q.
+                    \]
+                    The domain has \(2^m\) elements and the codomain \(q^n\); when \(m \gt n \log_2 q\) the domain is
+                    strictly larger, so \(f_{\mathbf{A}}\) is a <em>compressing</em> function and collisions are guaranteed
+                    to exist. The content of SIS is that they cannot be found efficiently.
+                </p>
+
+                <h3>Collision Resistance</h3>
+
+                <p>
+                    A <strong>collision</strong> for \(f_{\mathbf{A}}\) is a pair \(\mathbf{x} \neq \mathbf{x}'\) in
+                    \(\{0, 1\}^m\) with \(f_{\mathbf{A}}(\mathbf{x}) = f_{\mathbf{A}}(\mathbf{x}')\). Any collision
+                    immediately yields an SIS solution: the difference \(\mathbf{z} = \mathbf{x} - \mathbf{x}' \in
+                    \{-1, 0, 1\}^m\) is nonzero, has \(\mathbf{A}\mathbf{z} = \mathbf{0}\), and satisfies
+                    \(\|\mathbf{z}\| \leq \sqrt{m}\). Conversely an algorithm that finds short SIS solutions can be turned
+                    into one that finds collisions. So the family of functions \(\{f_{\mathbf{A}}\}\), indexed by the
+                    random choice of \(\mathbf{A}\), is <strong>collision resistant</strong> exactly when
+                    \(\mathrm{SIS}_{n, q, \sqrt{m}, m}\) is hard: no efficient algorithm, given a random \(\mathbf{A}\),
+                    finds a collision with non-negligible probability. The bit-domain \(\{0, 1\}^m\) is not essential; any
+                    sufficiently large set of short integer vectors serves the same purpose.
+                </p>
+
+                <p>
+                    A weaker guarantee is worth separating out, because it names a distinct primitive. The function family
+                    is <strong>one-way</strong> if, given \(\mathbf{A}\) and the image \(f_{\mathbf{A}}(\mathbf{x})\) of a
+                    random input \(\mathbf{x}\), no efficient algorithm recovers any preimage with non-negligible
+                    probability. Collision resistance is the stronger property: finding two inputs with the same image is
+                    at least as hard as inverting the function, since a preimage-finder can be used to manufacture
+                    collisions. Every collision-resistant family is therefore one-way, and SIS delivers the stronger of
+                    the two. Both are foundational objects of cryptography — the ingredients from which hash functions,
+                    identification schemes, and digital signatures are built.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Math \(\leftrightarrow\) CS: The First Cryptography from Worst-Case Hardness</h3>
+                    <p>
+                        A collision-resistant hash function is precisely a compressing map on which collisions —
+                        guaranteed to exist by counting — are computationally out of reach. The <em>modular subset-sum</em>
+                        function \(f_{\mathbf{A}}(\mathbf{x}) = \sum_i x_i \mathbf{a}_i \bmod q\) is exactly such a map, and
+                        its collision resistance rests on SIS. This is what the previous page's foundation was for: a hash
+                        function whose security does not assume that some cleverly chosen distribution of inputs is hard,
+                        but follows from the hardness of a single worst-case lattice problem. What one can build at this
+                        level are the primitives of "minicrypt" — one-way functions, collision-resistant hashing,
+                        signatures. What one cannot yet build is public-key <em>encryption</em>: for that a matrix alone
+                        is not enough, and the closely related problem of the next page is what unlocks it.
+                    </p>
+                </div>
+
+            </section>
+
+            <section id="worst-case-hardness" class="section-content">
+                <h2>The Worst-Case Guarantee</h2>
+
+                <p>
+                    Everything so far has treated SIS as a random problem and asserted, without justification, that it is
+                    hard on average. That assertion is now made precise, and its justification is the property that sets
+                    lattice cryptography apart from every construction built on factoring or the discrete logarithm: the
+                    average-case problem is hard <em>because</em> a worst-case problem is. Solving random SIS instances,
+                    even with small probability, would solve <em>every</em> instance of a lattice problem from the
+                    previous page.
+                </p>
+
+                <div class="theorem" id="T-sis_worst_case_hardness">
+                    <span class="theorem-title">Theorem: Worst-Case Hardness of SIS</span>
+                    <p>
+                        Fix any \(m = \mathrm{poly}(n)\), any \(\beta \gt 0\), and any sufficiently large modulus
+                        \(q \geq \beta \cdot \mathrm{poly}(n)\). If there is an efficient algorithm that solves
+                        \(\mathrm{SIS}_{n, q, \beta, m}\) with non-negligible probability over a uniformly random
+                        \(\mathbf{A}\), then there is an efficient algorithm that solves the
+                        <a href="lattice_problems.html#D-gapsvp" class="ref-link"><strong>decision shortest-vector
+                        problem</strong></a> \(\mathrm{GapSVP}_\gamma\) and the
+                        <a href="lattice_problems.html#D-sivp" class="ref-link"><strong>shortest independent vectors
+                        problem</strong></a> \(\mathrm{SIVP}_\gamma\) on <em>every</em> \(n\)-dimensional lattice, for an
+                        approximation factor \(\gamma = \beta \cdot \mathrm{poly}(n)\).
+                    </p>
+                </div>
+
+                <p>
+                    The values of \(m\) and \(q\) beyond the lower bound play no role in the guarantee; what governs the
+                    strength of the conclusion is the norm bound \(\beta\), through the approximation factor
+                    \(\gamma = \beta \cdot \mathrm{poly}(n)\) it produces. A smaller \(\beta\) — a stricter demand on the
+                    SIS solution — yields a smaller \(\gamma\), a harder worst-case problem, and thus a stronger security
+                    guarantee. The theorem is proved by exhibiting a reduction: an algorithm that, given a basis of an
+                    <em>arbitrary</em> lattice \(\mathcal{L}\) and access to an oracle solving random SIS, produces short
+                    independent vectors in \(\mathcal{L}\). The whole difficulty is that the oracle answers only for
+                    <em>uniformly random</em> instances, while \(\mathcal{L}\) is arbitrary; the reduction must
+                    manufacture a random-looking SIS instance whose solution reaches back into the fixed lattice.
+                </p>
+
+                <h3>The Core Step</h3>
+
+                <p>
+                    The reduction maintains a set \(\mathbf{S} \subset \mathcal{L}\) of linearly independent lattice
+                    vectors, beginning with the input basis, and repeatedly replaces it by a shorter set
+                    \(\mathbf{S}'\) with \(\|\mathbf{S}'\| \leq \|\mathbf{S}\|/2\), where \(\|\mathbf{X}\|\) denotes the
+                    longest vector in the set. Iterating drives the set down until it can shrink no further, at which
+                    point its length certifies a solution to \(\mathrm{SIVP}_\gamma\); the same short independent set
+                    also settles \(\mathrm{GapSVP}_\gamma\), since its shortest member bounds \(\lambda_1\) from above
+                    while the promise gap bounds it from below. One iteration runs the following
+                    core step.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">The length-halving step</span>
+                    <p>
+                        Using the current set \(\mathbf{S}\), generate \(m\) lattice vectors
+                        \(\mathbf{v}_1, \dots, \mathbf{v}_m \in \mathcal{L}\) that are well spread through \(\mathcal{L}\)
+                        yet as short as \(\mathbf{S}\) allows, forming the columns of a matrix \(\mathbf{V}\). Reduce them
+                        modulo \(q\mathcal{L}\) to build the SIS instance: with \(\mathbf{B}\) the basis of
+                        \(\mathcal{L}\), set
+                        \[
+                        \mathbf{a}_i = \mathbf{B}^{-1}\mathbf{v}_i \bmod q\mathbb{Z}^n \in \mathbb{Z}_q^n, \qquad
+                        \mathbf{A} = \mathbf{B}^{-1}\mathbf{V} \bmod q,
+                        \]
+                        which is integral because each \(\mathbf{v}_i\) is a lattice vector, so
+                        \(\mathbf{B}^{-1}\mathbf{v}_i \in \mathbb{Z}^n\). Hand \(\mathbf{A}\) to the SIS oracle. If it
+                        returns a valid short solution \(\mathbf{z} \in \mathbb{Z}^m\) with \(\mathbf{A}\mathbf{z} =
+                        \mathbf{0} \bmod q\) and \(\|\mathbf{z}\| \leq \beta\), output the vector
+                        \[
+                        \mathbf{v} = \mathbf{V}\mathbf{z}/q.
+                        \]
+                    </p>
+                    <p>
+                        This \(\mathbf{v}\) is a lattice vector. Applying \(\mathbf{B}\) to the defining congruence
+                        \(\mathbf{B}^{-1}\mathbf{v}_i \equiv \mathbf{a}_i \pmod{q\mathbb{Z}^n}\) and using
+                        \(\mathbf{B}(q\mathbb{Z}^n) = q\mathcal{L}\) gives \(\mathbf{v}_i \equiv \mathbf{B}\mathbf{a}_i
+                        \pmod{q\mathcal{L}}\), so the combination satisfies
+                        \[
+                        \mathbf{V}\mathbf{z} = \mathbf{B}(\mathbf{A}\mathbf{z}) = \mathbf{0} \pmod{q\mathcal{L}},
+                        \]
+                        so \(\mathbf{V}\mathbf{z}\) lies in \(q\mathcal{L}\) and \(\mathbf{v} = \mathbf{V}\mathbf{z}/q \in
+                        \mathcal{L}\). It is short. The vectors can be produced with \(\|\mathbf{v}_i\| \leq \|\mathbf{S}\|
+                        \cdot \mathrm{poly}(n)\), and \(\|\mathbf{z}\| \leq \beta\), so
+                        \[
+                        \|\mathbf{V}\mathbf{z}\| \leq \|\mathbf{S}\| \cdot \beta \cdot \mathrm{poly}(n),
+                        \]
+                        and for a modulus \(q = \beta \cdot \mathrm{poly}(n)\) chosen large enough,
+                        \[
+                        \|\mathbf{v}\| = \frac{\|\mathbf{V}\mathbf{z}\|}{q} \leq \frac{\|\mathbf{S}\|}{2}.
+                        \]
+                        Collecting enough such vectors \(\mathbf{v}\), across repetitions of the step, furnishes the
+                        shorter independent set \(\mathbf{S}'\).
+                    </p>
+                </div>
+
+                <p>
+                    Two claims complete the argument, and both turn on the vectors \(\mathbf{v}_i\) being genuinely well
+                    spread. First, the instance \(\mathbf{A}\) handed to the oracle must look <em>uniformly random</em>,
+                    since that is the only distribution on which the oracle is assumed to work. It can be shown, through
+                    the lattice smoothing technique, that when \(\mathbf{S}\) is still longer than a
+                    \(\mathrm{SIVP}_\gamma\) solution — precisely the regime where the reduction has not yet finished —
+                    the vectors \(\mathbf{v}_i \bmod q\mathcal{L}\) are nearly uniform over \(\mathcal{L}/q\mathcal{L}\),
+                    and multiplication by \(\mathbf{B}^{-1}\) carries this to a nearly uniform \(\mathbf{a}_i\) over
+                    \(\mathbb{Z}_q^n\). Second, the output vectors must not all collapse to zero or into a proper
+                    subspace, even against an adversarial oracle; the same spread guarantees that
+                    \(\mathbf{v} = \mathbf{V}\mathbf{z}/q\) retains enough randomness that a full-rank set is obtained
+                    after enough steps. The reduction is thereby valid, and the theorem follows.
+                </p>
+
+                <p>
+                    A concrete choice of parameters makes the guarantee tangible. Taking \(q = 2^{2n}\) and
+                    \(m = 4n^2\), an oracle that finds a nonzero \(\{-1, 0, 1\}\)-combination summing to zero modulo
+                    \(q\), for random \(\mathbf{a}_1, \dots, \mathbf{a}_m \in \mathbb{Z}_q^n\), yields a polynomial-time
+                    algorithm for \(\mathrm{SIVP}\) with a polynomial approximation factor on any lattice. The modulus is
+                    large and the factor is far from optimal at this setting; a long line of refinements has since driven
+                    the modulus down to nearly \(\beta\) and the factor into the range where the problem is believed
+                    genuinely hard, but the mechanism is already the one shown above.
+                </p>
+
+                <div class="insight-box">
+                    <h3>From Existence to Construction, and Onward to Encryption</h3>
+                    <p>
+                        The reduction closes the gap the first section opened. Counting guaranteed a short SIS solution
+                        without producing one; Minkowski's theorem guaranteed a short lattice vector the same way. The
+                        worst-case theorem shows those two existence gaps are the <em>same</em> gap: an algorithm that
+                        closes the average-case one — that actually finds the short SIS solution counting promises —
+                        closes the worst-case one, finding short vectors in every lattice. The hardness of construction,
+                        conjectured across the previous pages and left as the foundation on which a post-quantum
+                        cryptography would be built, is what this reduction anchors the random problem to.
+                    </p>
+                    <p>
+                        What SIS does not give is public-key encryption; its function \(\mathbf{z} \mapsto \mathbf{A}
+                        \mathbf{z}\) is surjective and short-output, the shape of a hash, not a trapdoor. The next page
+                        introduces the encryption-enabling companion of SIS — the same \(q\)-ary geometry read through an
+                        injective, noisy map rather than a surjective one — and grounds <em>its</em> hardness in the same
+                        worst-case lattice problems, this time through a reduction that is quantum rather than classical.
+                    </p>
+                </div>
+
+            </section>
+
+        </div>
+    </body>
+</html>

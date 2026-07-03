@@ -1,0 +1,500 @@
+---
+layout: default
+title: "Ring Lattices & Module-LWE"
+topic_id: disc-39
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Ring Lattices & Module-LWE</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#ring-transition">From Vectors to Polynomials</a>
+            <a href="#ring-sis-lwe">Ring-SIS and Ring-LWE</a>
+            <a href="#ideal-lattices">Ideal Lattices and Hardness</a>
+            <a href="#module-mlkem">Module Lattices and ML-KEM</a>
+        </div>
+
+        <div class="container">
+
+            <section id="ring-transition" class="section-content">
+                <h2>From Vectors to Polynomials</h2>
+
+                <p>
+                    The two problems assembled in the previous pages — the short-integer-solution problem and learning
+                    with errors — are hard, reduction-grounded, and quantum-resistant, but they are not yet efficient
+                    enough to deploy. The obstruction is size. A single learning-with-errors sample is one noisy scalar
+                    \(\langle \mathbf{s}, \mathbf{a} \rangle + e \in \mathbb{Z}_q\), extracted from a fresh random vector
+                    \(\mathbf{a} \in \mathbb{Z}_q^n\); producing enough pseudorandomness to encrypt a message therefore
+                    costs a matrix of independent random entries, and every operation is a full matrix–vector product.
+                    Keys grow as \(n^2\), and arithmetic with them is quadratic. This page removes that cost by changing
+                    the algebraic home of the samples: the flat vector space \(\mathbb{Z}_q^n\) is replaced by a
+                    quotient of a polynomial ring, in which a single element carries \(n\) coordinates at once and
+                    multiplication mixes them all in near-linear time.
+                </p>
+
+                <h3>The Ring \(R = \mathbb{Z}[x]/(f(x))\)</h3>
+
+                <p>
+                    The construction reuses two objects already built in the algebra pages. The first is the
+                    <a href="../Linear_algebra/polynomial_rings.html#D-polynomial_ring" class="ref-link"><strong>polynomial
+                    ring</strong></a> \(\mathbb{Z}[x]\), whose elements are formal integer-coefficient polynomials. The
+                    second is the <a href="../Linear_algebra/ideals.html#D-factor_ring" class="ref-link"><strong>factor
+                    ring</strong></a> construction, which collapses a ring modulo an
+                    <a href="../Linear_algebra/ideals.html#D-ideal" class="ref-link"><strong>ideal</strong></a>. Fix a
+                    monic polynomial \(f(x) \in \mathbb{Z}[x]\) of degree \(n\), and let \((f(x))\) denote the principal
+                    ideal it generates — all polynomial multiples of \(f\). The ring at the center of this page is the
+                    quotient
+                    \[
+                    R = \mathbb{Z}[x]/(f(x)).
+                    \]
+                    Passing to this quotient imposes a single relation, \(f(x) = 0\); every polynomial is reduced modulo
+                    \(f\), so each residue class has a unique representative of degree less than \(n\). As an additive
+                    group, then, \(R\) is exactly \(\mathbb{Z}^n\): an element is determined by its \(n\) integer
+                    coefficients \((a_0, a_1, \ldots, a_{n-1})\). What the polynomial structure adds beyond
+                    \(\mathbb{Z}^n\) is a <em>multiplication</em> — the product of two residues, reduced again modulo
+                    \(f\) — that the flat vector space does not possess.
+                </p>
+
+                <p>
+                    Reducing the coefficients modulo an integer \(q\) in turn gives the finite ring
+                    \[
+                    R_q = R/qR = \mathbb{Z}_q[x]/(f(x)),
+                    \]
+                    whose elements are degree-\(\lt n\) polynomials with coefficients drawn from \(\mathbb{Z}_q\). This
+                    \(R_q\) is the polynomial analogue of the coordinate space \(\mathbb{Z}_q^n\) that hosted the earlier
+                    problems: additively identical to it, but now closed under a ring multiplication. A random element of
+                    \(R_q\) is a single object that stands in for a full random vector, and this is the source of the
+                    compression to come.
+                </p>
+
+                <h3>The Choice of \(f\)</h3>
+
+                <p>
+                    The modulus polynomial \(f\) is not arbitrary. Two families dominate both the theory and the
+                    deployed standards. The first is \(f(x) = x^n - 1\), the choice that makes multiplication by \(x\)
+                    act as a cyclic shift of the coefficient vector — the ring of <em>circulant</em> structure. The
+                    second, and the one that underlies the modern standards, is \(f(x) = x^n + 1\) with \(n\) a power of
+                    two. This \(f\) is a <em>cyclotomic</em> polynomial: its complex roots are primitive \(2n\)-th roots of
+                    unity, the points \(e^{i\pi(2k+1)/n}\) evenly spaced on the unit circle. It is
+                    <a href="../Linear_algebra/polynomial_rings.html#D-irreducible_polynomial" class="ref-link"><strong>irreducible</strong></a>
+                    over \(\mathbb{Q}\), which — as the hardness discussion below will need — forces the quotient
+                    \(\mathbb{Q}[x]/(f)\) to be a field and keeps \(R\) free of the zero divisors that a reducible \(f\)
+                    would introduce. Multiplication modulo \(x^n + 1\) is <em>negacyclic</em>: shifting past the top
+                    degree wraps around with a sign flip, since \(x^n \equiv -1\). Concretely, for
+                    \(a, b \in R\) the product coefficients are
+                    \[
+                    (a \cdot b)_k = \sum_{i+j=k} a_i b_j \;-\; \sum_{i+j=k+n} a_i b_j,
+                    \]
+                    the first sum collecting the ordinary convolution terms and the second the wrapped terms that cross
+                    degree \(n\), negated. A naive evaluation of this product is still quadratic in \(n\); the
+                    near-linear speed advertised above comes from evaluating it through a fast transform, a point the
+                    final section makes precise once the deployed parameters are in view.
+                </p>
+
+                <h3>One Ring Element for Many Scalars</h3>
+
+                <p>
+                    The structural payoff is already visible at the level of counting. In the coordinate world, a random
+                    \(\mathbf{a} \in \mathbb{Z}_q^n\) is \(n\) independent scalars, and pairing it with a secret produces
+                    a single pseudorandom scalar. In the ring world, a random \(a \in R_q\) is likewise \(n\) coefficients
+                    — but multiplying it by a secret ring element \(s \in R_q\) produces another <em>full</em> ring
+                    element \(a \cdot s \in R_q\), that is, \(n\) pseudorandom scalars at once. The ring multiplication
+                    has taken a single random object and manufactured a vector's worth of output from it. The price is
+                    that these \(n\) output scalars are no longer independent: they are the coordinates of one product in
+                    a structured ring, tied together by the relation \(f(x) = 0\). Every efficiency this page gains, and
+                    every specialization of the hardness assumption it must accept in exchange, traces back to that
+                    single trade — independence surrendered for structure.
+                </p>
+
+                <p>
+                    Fixing the basis \(1, x, \ldots, x^{n-1}\) makes this correspondence mechanical: multiplication by a
+                    fixed \(a \in R_q\) is a linear map on \(\mathbb{Z}_q^n\), represented by a structured \(n \times n\)
+                    matrix whose columns are the successive shifts of \(a\) (cyclic for \(x^n - 1\), negacyclic for
+                    \(x^n + 1\)). A single ring element thus encodes an entire structured matrix, and a single ring
+                    equation encodes \(n\) scalar equations of the earlier kind. The next section installs the two
+                    problems that live in this ring, each the direct polynomial image of one built before.
+                </p>
+            </section>
+
+            <section id="ring-sis-lwe" class="section-content">
+                <h2>Ring-SIS and Ring-LWE</h2>
+
+                <p>
+                    Each of the two lattice problems from the previous pages has a direct image in the ring \(R_q\),
+                    obtained by the same substitution throughout: a random vector from \(\mathbb{Z}_q^n\) becomes a single
+                    random element of \(R_q\), and an inner product of vectors becomes a product in \(R_q\). What was a
+                    matrix of \(nm\) independent scalars becomes a short list of \(m\) ring elements, and the hardness
+                    assumption narrows accordingly.
+                </p>
+
+                <h3>The Ring Analogue of the Hash</h3>
+
+                <p>
+                    The <a href="short_integer_solution.html#D-sis" class="ref-link"><strong>short integer
+                    solution</strong></a> problem sought a short integer combination of random vectors summing to zero.
+                    Its ring form replaces the vectors by ring elements and the integer combination by a combination
+                    with short ring coefficients.
+                </p>
+
+                <div class="theorem" id="D-ring_sis">
+                    <span class="theorem-title">Definition: The Ring Short Integer Solution Problem (Ring-SIS)</span>
+                    <p>
+                        Fix the ring \(R = \mathbb{Z}[x]/(f(x))\) with coefficient modulus \(q\), a real bound
+                        \(\beta \gt 0\), and a number of samples \(m\). Given \(m\) uniformly random ring elements
+                        \(a_1, \ldots, a_m \in R_q\), the problem \(\mathrm{Ring}\)-\(\mathrm{SIS}_{q, \beta, m}\) asks for
+                        a nonzero vector of ring elements \((z_1, \ldots, z_m) \in R^m\), of norm
+                        \(\|(z_1, \ldots, z_m)\| \leq \beta\), satisfying
+                        \[
+                        a_1 z_1 + \cdots + a_m z_m = 0 \bmod q,
+                        \]
+                        where the norm of a tuple of ring elements is measured through the Euclidean norm of their
+                        combined coefficient vectors.
+                    </p>
+                </div>
+
+                <p>
+                    The compression is immediate from the counting of the previous section. Because a single random
+                    \(a_i \in R_q\) already carries \(n\) coordinates and multiplication by it acts as a full
+                    \(n \times n\) structured matrix, the number of ring samples needed to guarantee a short solution is
+                    smaller than the coordinate count by a factor of \(n\): the coordinate problem needed
+                    \(m \approx n \log q\) columns, whereas here \(m \approx \log q\) ring elements suffice. The
+                    matrix that the coordinate problem stored explicitly is now generated on demand from \(m\)
+                    polynomials.
+                </p>
+
+                <h3>The Ring Analogue of the Encryption</h3>
+
+                <p>
+                    <a href="learning_with_errors.html#D-lwe" class="ref-link"><strong>Learning with errors</strong></a>
+                    hid a secret behind noisy inner products. Its ring form hides a secret ring element behind noisy
+                    ring products, and here the error is not a single scalar but a small element of the ring — a
+                    polynomial all of whose coefficients are drawn from the error distribution.
+                </p>
+
+                <div class="theorem" id="D-ring_lwe">
+                    <span class="theorem-title">Definition: The Ring-LWE Distribution</span>
+                    <p>
+                        Fix a secret ring element \(s \in R_q\) and an error distribution \(\chi\) over \(R\) — typically
+                        a discrete Gaussian applied to each coordinate, of width \(\alpha q\) for some error rate
+                        \(\alpha \lt 1\). The Ring-LWE distribution \(A_{s, \chi}\) over \(R_q \times R_q\) is sampled by
+                        choosing \(a \in R_q\) uniformly at random, drawing an error \(e \leftarrow \chi\), and outputting
+                        \[
+                        (a,\; b = a \cdot s + e \bmod q).
+                        \]
+                        The <strong>search</strong> problem asks, given many independent samples from \(A_{s, \chi}\)
+                        for a fixed secret \(s\), to recover \(s\).
+                    </p>
+                </div>
+
+                <p>
+                    As in the coordinate case, the problem that matters for building pseudorandomness is not the search
+                    form but the decision form: the demand is not that recovering the secret be hard, but that the
+                    samples be indistinguishable from pure randomness.
+                </p>
+
+                <div class="theorem" id="D-ring_lwe_decision">
+                    <span class="theorem-title">Definition: Decision-Ring-LWE</span>
+                    <p>
+                        Given \(m\) independent samples \((a_i, b_i) \in R_q \times R_q\), where every sample is drawn
+                        either (1) from \(A_{s, \chi}\) for a uniformly random secret \(s \in R_q\) fixed across all
+                        samples, or (2) from the uniform distribution on \(R_q \times R_q\), decision-Ring-LWE asks to
+                        distinguish which of the two is the case, with non-negligible advantage.
+                    </p>
+                </div>
+
+                <p>
+                    The same compression the hash enjoyed carries over: one Ring-LWE sample \((a_i, b_i)\) delivers a
+                    full pseudorandom ring element \(b_i \in R_q\) — \(n\) pseudorandom scalars — from a single random
+                    \(a_i\) and one near-linear ring multiplication, where coordinate learning with errors produced a
+                    single scalar per random vector. This is the efficiency the coordinate problems could not supply, and
+                    it is bought entirely with the algebraic structure of \(R_q\).
+                </p>
+
+                <div class="insight-box">
+                    <h3>Structured Samples, Narrowed Assumption</h3>
+                    <p>
+                        The ring problems are not new hardness assumptions conjured from nothing; they are the coordinate
+                        problems restricted to inputs with algebraic symmetry. A Ring-LWE sample, read through the
+                        coefficient-vector identification of the previous section, is a coordinate learning-with-errors
+                        instance whose random matrix is forced to be structured — its \(n\) rows are the successive
+                        \(x\)-shifts of a single row, not \(n\) independent draws. Solving Ring-LWE therefore solves a
+                        special case of coordinate learning with errors, which makes the ring assumption formally
+                        <em>stronger</em>: there could, in principle, be an algorithm that exploits the structure and
+                        breaks the ring problem without touching the general one. Whether that structure can be exploited
+                        is the subject of the next section, where the hardness of these problems is tied not to arbitrary
+                        lattices but to lattices that inherit the symmetry of the ring.
+                    </p>
+                </div>
+            </section>
+
+            <section id="ideal-lattices" class="section-content">
+                <h2>Ideal Lattices and Hardness</h2>
+
+                <p>
+                    The coordinate problems earned their credibility by reduction: solving them on random instances was
+                    shown at least as hard as solving lattice problems in the <em>worst case</em>. The ring problems must
+                    earn the same credibility, and the argument follows the same shape — but the lattices it reaches are
+                    no longer arbitrary. They carry the algebraic symmetry of the ring, and that symmetry both sharpens
+                    the geometry and narrows the class of instances the guarantee covers.
+                </p>
+
+                <h3>From Ring Ideals to Lattices</h3>
+
+                <p>
+                    The geometric object attached to the ring is built from its ideals. Recall that an
+                    <a href="../Linear_algebra/ideals.html#D-ideal" class="ref-link"><strong>ideal</strong></a> of a ring
+                    is an additive subgroup closed under multiplication by every ring element. Fix the coefficient-vector
+                    identification of the first section, sending each element of \(R\) to its coordinate vector in
+                    \(\mathbb{Z}^n\). Under this map, an ideal \(I \subseteq R\) — being in particular an additive
+                    subgroup of \(R \cong \mathbb{Z}^n\) — becomes a
+                    <a href="../Linear_algebra/lattice_intro.html#D-lattice" class="ref-link"><strong>lattice</strong></a>
+                    in \(\mathbb{Z}^n\). A lattice arising this way is called an <strong>ideal lattice</strong>.
+                </p>
+
+                <div class="theorem" id="D-ideal_lattice">
+                    <span class="theorem-title">Definition: Ideal Lattice</span>
+                    <p>
+                        Let \(R = \mathbb{Z}[x]/(f(x))\), identified with \(\mathbb{Z}^n\) through the coefficient
+                        embedding that sends a residue of degree \(\lt n\) to its vector of coefficients. An <strong>ideal
+                        lattice</strong> is the image under this embedding of an ideal \(I \subseteq R\); that is, a
+                        lattice \(\mathcal{L} \subseteq \mathbb{Z}^n\) whose preimage is closed not only under addition
+                        but under multiplication by every element of \(R\).
+                    </p>
+                </div>
+
+                <p>
+                    The extra closure is what distinguishes an ideal lattice from a generic one, and its geometric
+                    consequence is a hidden symmetry. Because an ideal is closed under multiplication by \(x\), and
+                    multiplication by \(x\) is a coordinate shift (cyclic for \(f = x^n - 1\), negacyclic for
+                    \(f = x^n + 1\)), an ideal lattice is mapped to itself by that shift. A single short vector in such a
+                    lattice therefore generates a whole orbit of \(n\) short vectors — its successive shifts — all of the
+                    same length. Generic lattices have no such structure; a short vector there tells one nothing about
+                    the location of others.
+                </p>
+
+                <h3>The Worst-Case Guarantee</h3>
+
+                <p>
+                    With ideal lattices in hand, the hardness of Ring-LWE is stated by exact analogy to the coordinate
+                    <a href="learning_with_errors.html#T-lwe_worst_case_hardness" class="ref-link"><strong>worst-case
+                    hardness theorem</strong></a>. The reduction is again quantum, and the target is again an approximate
+                    shortest-vector problem — but restricted to the ideal lattices of the ring.
+                </p>
+
+                <div class="theorem" id="T-ring_lwe_hardness">
+                    <span class="theorem-title">Theorem: Worst-Case Hardness of Ring-LWE</span>
+                    <p>
+                        Let \(R\) be a cyclotomic ring of degree \(n\), with an appropriate modulus \(q\) and an error
+                        distribution \(\chi\) of error rate \(\alpha \lt 1\). If there is an efficient algorithm that
+                        solves decision-Ring-LWE, then there is an efficient <em>quantum</em> algorithm that solves
+                        <a href="lattice_problems.html#D-svp_gamma" class="ref-link"><strong>\(\mathrm{SVP}_\gamma\)</strong></a>
+                        on <em>every</em> ideal lattice in \(R\), for an approximation factor
+                        \(\gamma = \mathrm{poly}(n)/\alpha\).
+                    </p>
+                </div>
+
+                <p>
+                    The statement mirrors its coordinate ancestor line for line, with one word changed: the guarantee
+                    ranges over every <em>ideal</em> lattice rather than every lattice. That single restriction is the
+                    entire content of the trade made in the first section. The proof proceeds, as in the coordinate case,
+                    in two stages — a quantum reduction establishing the hardness of the search problem for any ring of
+                    integers of a number field, followed by a classical search-to-decision step that uses the special
+                    algebraic structure of cyclotomic rings, namely that they are Galois over the rationals and that the
+                    modulus splits into small-norm prime ideals. The precise form of the error distribution the reduction
+                    requires is delicate — it is most naturally expressed through the geometry of the ring described
+                    below — and the full argument is beyond the scope of this page; what matters here is the shape of the
+                    conclusion and the object it reaches.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why the Ring Must Be a Domain</h3>
+                    <p>
+                        The choice of an irreducible modulus \(f\) is not cosmetic; it is what keeps the ring problems
+                        hard. Consider the homogeneous form of Ring-SIS — a collision in the hash — over the reducible
+                        modulus \(f = x^n - 1\). Because \(x^n - 1\) factors as \((x - 1)(1 + x + \cdots + x^{n-1})\), the
+                        ring \(R = \mathbb{Z}[x]/(x^n - 1)\) is not an
+                        <a href="../Linear_algebra/intro_rings.html#D-integral_domain" class="ref-link"><strong>integral
+                        domain</strong></a>: it contains
+                        <a href="../Linear_algebra/intro_rings.html#D-zero_divisor" class="ref-link"><strong>zero
+                        divisors</strong></a>, nonzero elements whose product is zero. The zero divisors do not hand over
+                        a collision directly — the public multipliers \(a_i\) are random, so no fixed element is
+                        annihilated by all of them — but the factorization opens a shortcut of a subtler kind. Multiplying
+                        any ring element by the complementary factor \(g = 1 + x + \cdots + x^{n-1}\) collapses it onto
+                        the one-dimensional quotient \(R/(x - 1) \cong \mathbb{Z}_q\), since \(a \cdot g\) depends only on
+                        the sum of the coefficients of \(a\). An attacker restricts the search for a collision to
+                        multiples of \(g\), where the problem has effectively been projected down to a single dimension
+                        and short combinations summing to zero are trivial to find. The reducible modulus thus breaks the
+                        hash not through a lone zero divisor but through the low-dimensional image its factorization
+                        exposes. Over an integral domain no such proper quotient exists, and collision resistance is
+                        recovered under the worst-case hardness of the underlying ideal lattices — which is exactly what
+                        the cyclotomic choice \(f = x^n + 1\), irreducible over \(\mathbb{Q}\), supplies.
+                    </p>
+                </div>
+
+                <h3>The Geometry of the Ring</h3>
+
+                <p>
+                    One subtlety in the hardness statement deserves a closer look: what "short" means for a ring element.
+                    The coefficient embedding of the first section — reading an element as its vector of coefficients and
+                    taking the ordinary Euclidean norm — is the naive choice, and it suffices for building intuition. But
+                    it behaves badly under multiplication: the norm of a product \(a \cdot b\) can be only loosely
+                    related to the norms of \(a\) and \(b\), because the reduction modulo \(f\) distorts lengths.
+                </p>
+
+                <p>
+                    The sharper notion, and the one the hardness reduction actually uses, is the <em>canonical
+                    embedding</em>. Rather than reading off coefficients, it evaluates a ring element \(z\) at all \(n\)
+                    complex roots \(\alpha_1, \ldots, \alpha_n\) of \(f\), sending \(z \mapsto (z(\alpha_1), \ldots,
+                    z(\alpha_n)) \in \mathbb{C}^n\). For the cyclotomic \(f = x^n + 1\), these roots are the evenly spaced
+                    points on the unit circle named in the first section. The virtue of this map is that it turns ring
+                    multiplication into coordinate-wise multiplication of the image vectors — because evaluating a product
+                    at a fixed root multiplies the two evaluations — so norms of products are controlled sharply rather
+                    than loosely. The canonical embedding is a device for analysis; the ring elements are never actually
+                    computed as tuples of complex numbers. Its role is to give the reduction a geometry in which the
+                    error distribution and the shortness of solutions can be measured cleanly, and it is the reason the
+                    hardness theorem is stated for cyclotomic rings, whose canonical geometry is especially regular.
+                </p>
+            </section>
+
+            <section id="module-mlkem" class="section-content">
+                <h2>Module Lattices and ML-KEM</h2>
+
+                <p>
+                    The ring construction buys efficiency at the cost of a stronger hardness assumption: security now
+                    rests on ideal lattices rather than arbitrary ones. The deployed standard declines both extremes —
+                    the single large ring that would concentrate all trust in one ring's structure, and the unstructured
+                    coordinates that would forfeit the efficiency. It interpolates, working with short vectors of ring
+                    elements — a <em>module</em> — and it is this middle path that reaches the algorithm standardized for
+                    global deployment.
+                </p>
+
+                <h3>From Rings to Modules</h3>
+
+                <p>
+                    The interpolation is a single generalization of everything above. Where Ring-LWE fixed a secret ring
+                    element \(s \in R_q\) and published noisy products \(a \cdot s + e\), its module form fixes a secret
+                    <em>vector</em> of ring elements \(\mathbf{s} \in R_q^k\) and publishes noisy inner products
+                    \[
+                    b = \langle \mathbf{a}, \mathbf{s} \rangle + e = a_1 s_1 + \cdots + a_k s_k + e \bmod q,
+                    \]
+                    where \(\mathbf{a} \in R_q^k\) is a uniformly random vector of ring elements and the inner product is
+                    taken in \(R_q\). This is <strong>module learning with errors</strong>, or Module-LWE. The rank
+                    \(k\) is a tuning dial between the two problems already built: at \(k = 1\) it is exactly Ring-LWE,
+                    a single ring element; and if the ring is taken to be \(\mathbb{Z}\) itself — degree one, no
+                    polynomial structure — it collapses back to coordinate learning with errors. Every problem on this
+                    page is one setting of that dial.
+                </p>
+
+                <p>
+                    The hardness guarantee generalizes in step. Just as Ring-LWE was tied to shortest-vector problems on
+                    ideal lattices, Module-LWE is at least as hard as approximating worst-case lattice problems on
+                    <strong>module lattices</strong> — the lattices corresponding to \(R\)-submodules of \(R_q^k\). These
+                    sit strictly between the two earlier worlds: more structured than the arbitrary lattices behind
+                    coordinate learning with errors, less structured than the single ideal lattices behind Ring-LWE. This
+                    intermediate position, and the reason a standard would deliberately seek it, is the substance of the
+                    rank parameter.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Dial from LWE to Ring-LWE</h3>
+                    <p>
+                        The three problems of this track are not three separate assumptions but three settings of one
+                        rank parameter \(k\) over a base ring of degree \(d\) — the role played by \(n\) in the single-ring
+                        discussion above, renamed here because it now varies alongside \(k\). Taking \(R = \mathbb{Z}\)
+                        (so \(d = 1\)) and letting \(k\) grow recovers coordinate learning with errors: unstructured,
+                        maximal key size, security resting on arbitrary lattices. Taking \(k = 1\) and letting the ring
+                        degree \(d\) grow recovers Ring-LWE: maximally structured, minimal key size, security resting on
+                        ideal lattices alone. The module regime — moderate \(k\), moderate \(d\), with the product
+                        \(kd\) (the total lattice dimension) held near the security target — sits between them, and lets a
+                        designer trade structure for key size continuously rather than choosing an extreme. The deployed
+                        standard lives at this interior point.
+                    </p>
+                </div>
+
+                <h3>ML-KEM</h3>
+
+                <p>
+                    The key-encapsulation mechanism standardized in 2024 as the primary post-quantum replacement for
+                    classical key exchange — named ML-KEM, for module-lattice-based key-encapsulation mechanism — is
+                    built directly on Module-LWE. Its base ring is the cyclotomic \(R_q = \mathbb{Z}_q[x]/(x^{256} + 1)\)
+                    with prime modulus \(q = 3329\), fixed across all security levels; the rank \(k\) is the single
+                    parameter that varies, taking the values \(k = 2, 3, 4\) to give the three standardized strengths.
+                    The degree \(256\) and the prime \(3329\) are chosen together so that the ring supports the fast
+                    transform that makes multiplication near-linear, the point promised above and settled now.
+                    Because \(q \equiv 1 \pmod{256}\), the modulus admits primitive \(256\)-th roots of unity, and
+                    \(x^{256} + 1\) factors modulo \(q\) into \(128\) quadratic polynomials rather than remaining whole.
+                    A number-theoretic transform — the finite-field analogue of the discrete Fourier transform — maps a
+                    ring element to its residues modulo those \(128\) factors, in which multiplication becomes a
+                    component-wise product of low-degree pieces; the transform and its inverse run in \(O(n \log n)\)
+                    time, replacing the \(O(n^2)\) cost of a direct convolution.
+                </p>
+
+                <p>
+                    The construction proceeds in two stages, following the pattern the classical encryption pages
+                    established. First a public-key encryption scheme is built directly from Module-LWE: the public key
+                    is a Module-LWE instance, encryption hides a message by adding it to a fresh noisy combination of
+                    that instance, and decryption removes the noise using the secret. Because the noise is only bounded,
+                    not eliminated, decryption carries a small probability of failure — an intrinsic feature of the
+                    lattice construction, controlled by choosing the parameters so the failure probability is
+                    astronomically small. This scheme is secure against passive eavesdroppers, but not against an
+                    adversary who submits crafted ciphertexts and observes the responses. The second stage closes that
+                    gap with the Fujisaki–Okamoto transform, a generic procedure that upgrades a passively-secure
+                    encryption scheme into a key-encapsulation mechanism secure against adaptive chosen-ciphertext
+                    attacks: it derandomizes encryption and forces the recipient to re-encrypt and verify, so a
+                    malformed ciphertext is detected rather than answered. The result is ML-KEM.
+                </p>
+
+                <div class="insight-box">
+                    <h3>NTRU and the Shape of a Ring Problem</h3>
+                    <p>
+                        Module-LWE is not the only lattice problem to live in a polynomial ring. The NTRU problem,
+                        proposed years before Ring-LWE, hides a short secret \(s\) by publishing the ring quotient
+                        \(e/s\) of two short elements. It stands in almost the same relation to Ring-LWE that a
+                        homogeneous equation stands to an inhomogeneous one: an NTRU sample asks for a secret with
+                        \(a \cdot s = e\) for short \(e\), while a Ring-LWE sample asks for a secret with
+                        \(a \cdot s + b = e\) — the same equation carrying an extra term. This kinship is close enough
+                        that Ring-LWE can be shown at least as hard as the NTRU problem for suitable parameters, by a
+                        loss-of-information argument. NTRU is not a historical curiosity: the signature scheme FALCON,
+                        selected by the same standardization process that produced ML-KEM and slated for its own
+                        standard, is built on NTRU lattices. The ring geometry of this page underlies both the
+                        encryption and the signatures of the post-quantum suite.
+                    </p>
+                </div>
+
+                <h3>Where the Track Arrives</h3>
+
+                <p>
+                    This completes the arc the cryptography track has been building toward. The classical schemes fell to
+                    a quantum algorithm; the geometry and complexity pages rebuilt hardness from worst-case lattice
+                    problems; and the two preceding pages turned that hardness into a hash and an encryption, quantum-resistant
+                    but too large to deploy. This page supplied the missing efficiency by moving the whole construction
+                    into a polynomial ring, where a single element carries a vector's worth of data and multiplication
+                    runs in near-linear time — paying for the speed with a hardness assumption narrowed from arbitrary
+                    lattices to the ideal and module lattices that inherit the ring's symmetry. The endpoint is an
+                    algorithm now being deployed across the internet's key exchanges, resting on a chain of reductions
+                    that reaches all the way back to the worst-case geometry the earliest pages measured.
+                </p>
+
+                <p>
+                    What the ring perspective opens beyond cryptography is a second thread the site will pursue
+                    elsewhere: the same cyclotomic rings, the same canonical embedding into complex space, and the same
+                    ideals-as-lattices dictionary are the opening moves of algebraic number theory, where the arithmetic
+                    of these rings is studied for its own sake. The construction built here for the practical purpose of
+                    shrinking a key is, from that vantage, a first encounter with the geometry of numbers in a number
+                    field — a structure whose depth the cryptographic application only begins to exercise.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>
