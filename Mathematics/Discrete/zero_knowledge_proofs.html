@@ -1,0 +1,388 @@
+---
+layout: default
+title: "Zero-Knowledge Proofs"
+topic_id: disc-40
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Zero-Knowledge Proofs</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#interactive-proofs">Proof as a Conversation</a>
+            <a href="#completeness-soundness">Completeness and Soundness</a>
+            <a href="#zero-knowledge">The Zero-Knowledge Property</a>
+            <a href="#fiat-shamir">A Concrete Protocol</a>
+        </div>
+
+        <div class="container">
+
+            <section id="interactive-proofs" class="section-content">
+                <h2>Proof as a Conversation</h2>
+
+                <p>
+                    Every scheme built so far shares a common shape: a secret is used, and something derived from it — a
+                    ciphertext, a signature, a key — is sent across the channel. The recipient learns the derived object,
+                    and the security argument is that the derived object leaks nothing useful about the secret. This page
+                    asks a sharper question. Can one party convince another that it <em>knows</em> a secret, or that some
+                    assertion is true, while transmitting nothing about the secret at all — not an encryption of it, not
+                    a function of it, nothing beyond the single bit that the claim holds? The answer, which at first
+                    sounds paradoxical, is yes, and the mechanism that achieves it turns the very notion of a proof from
+                    a static object into an exchange.
+                </p>
+
+                <h3>Why Not Just Show the Secret</h3>
+
+                <p>
+                    Consider the humble password. To prove she is authorized, a claimant sends her password to a
+                    verifier, who checks it against a stored record. The flaw is structural: the moment the verifier
+                    receives the password, he can impersonate the claimant to anyone else. The secret has been spent by
+                    being shown. A first improvement is a <em>challenge-response</em> exchange: rather than reveal the
+                    secret, the claimant answers a fresh, unpredictable question that only a holder of the secret could
+                    answer, and answers it in a way that cannot be replayed. This is better — the secret itself never
+                    crosses the wire — but it is not yet enough. Each response may still leak a sliver of information
+                    about the secret, and an adversarial verifier, free to choose the questions, might select them
+                    precisely to accumulate those slivers until the secret is reconstructed.
+                </p>
+
+                <p>
+                    What we want is a stronger guarantee: that the claimant can respond to challenges indefinitely, and
+                    the verifier — however cleverly he chooses them — ends the exchange knowing nothing he could not have
+                    worked out alone before it began. To reach that guarantee we must first change what a proof is.
+                </p>
+
+                <h3>Interactive Proof Systems</h3>
+
+                <p>
+                    The traditional notion of a mathematical proof is a fixed string of symbols, checkable by anyone, and
+                    absolute: it establishes its conclusion with certainty. We replace it with something looser and, for
+                    this purpose, more powerful. An <strong>interactive proof</strong> is a conversation between a
+                    <em>prover</em>, who asserts that some statement is true, and a <em>verifier</em>, who interrogates
+                    the prover across several rounds and then decides whether to accept. The prover's messages depend on
+                    private randomness; the verifier's challenges depend on his own. The proof is no longer a document
+                    but a protocol — sometimes called, for this reason, a proof <em>by protocol</em>.
+                </p>
+
+                <div class="theorem" id="D-interactive_proof">
+                    <span class="theorem-title">Definition: Interactive Proof</span>
+                    <p>
+                        An <strong>interactive proof</strong> for an assertion is a protocol between a prover \(P\) and a
+                        verifier \(V\), each a probabilistic algorithm, in which they exchange a sequence of messages —
+                        the verifier issuing <em>challenges</em> and the prover issuing <em>responses</em> — after which
+                        \(V\) outputs accept or reject. The collection of all messages exchanged in one execution is
+                        called the <strong>transcript</strong> (or view). Because the parties use private randomness, a
+                        proof in this setting is <em>probabilistic</em>: it need convince the verifier only with
+                        probability arbitrarily close to \(1\), rather than with the absolute certainty of a written
+                        proof.
+                    </p>
+                </div>
+
+                <p>
+                    Trading certainty for a probability that can be pushed as near to \(1\) as desired is what buys the
+                    new capability. A written proof, being a fixed object, can be copied and shown onward; a conversation
+                    conducted with fresh randomness on both sides cannot be replayed to a third party, and it is exactly
+                    this non-transferability that will make zero knowledge possible. Interactive proofs used for
+                    identification carry a particular reading: the prover asserts not merely that some object exists but
+                    that <em>it possesses knowledge</em> of one. Proving knowledge of a secret is a stronger claim than
+                    proving the secret exists — demonstrating one knows the prime factors of a number says more than
+                    observing that the number is composite. Making that stronger claim precise is the task of the next
+                    section.
+                </p>
+            </section>
+
+            <section id="completeness-soundness" class="section-content">
+                <h2>Completeness and Soundness</h2>
+
+                <p>
+                    Two properties make an interactive proof worth the name. The first says that the protocol works when
+                    everyone is honest; the second says that it cannot be cheated. Together they capture what it means to
+                    prove <em>knowledge</em> of a secret, as opposed to merely asserting it.
+                </p>
+
+                <div class="theorem" id="D-completeness_soundness">
+                    <span class="theorem-title">Definition: Completeness and Soundness</span>
+                    <p>
+                        An interactive proof is <strong>complete</strong> if, when the prover genuinely holds the secret
+                        and both parties follow the protocol, the verifier accepts with overwhelming probability — the
+                        probability of an erroneous rejection is not of practical significance.
+                    </p>
+                    <p>
+                        It is <strong>sound</strong> if there is an efficient algorithm \(M\), the
+                        <em>knowledge extractor</em>, with the following property: whenever a prover — however it
+                        operates internally — makes the verifier accept with non-negligible probability, \(M\) can
+                        interact with that prover and extract the secret from it. Soundness thus guarantees that success
+                        in the protocol is possible only for a party that effectively possesses the secret: anything that
+                        can convince the verifier can be turned, by \(M\), into the secret itself.
+                    </p>
+                </div>
+
+                <p>
+                    Completeness is the routine requirement that honest participants succeed. Soundness carries the
+                    weight: its formulation through an extractor is what elevates the protocol from a proof that some
+                    object <em>exists</em> to a proof that the prover <em>knows</em> it. Because the secret can be read
+                    out of any successful prover, no strategy convinces the verifier without, in effect, encoding the
+                    secret — there is no way to pass that sidesteps knowing it.
+                </p>
+
+                <div class="theorem" id="D-proof_of_knowledge">
+                    <span class="theorem-title">Definition: Proof of Knowledge</span>
+                    <p>
+                        An interactive proof that is both complete and sound is called a <strong>proof of
+                        knowledge</strong>. In it, the prover demonstrates possession of a secret \(s\) by correctly
+                        answering challenges whose answers require \(s\), and soundness — via the extractor — certifies
+                        that no prover lacking \(s\) can do so with more than negligible probability.
+                    </p>
+                </div>
+
+                <h3>Hardness Is Not Optional</h3>
+
+                <p>
+                    There is a subtlety that the definitions alone conceal, and it connects this construction to
+                    everything the cryptography track has assumed. Completeness and soundness are statements about the
+                    <em>protocol</em>; neither, on its own, says the scheme is secure. A proof of knowledge certifies
+                    that whoever passes must possess the secret — but if the secret can be computed from the public data
+                    by anyone, then possessing it is no achievement, and the protocol proves nothing of value. The
+                    guarantee is meaningful only when the underlying problem the prover's secret solves is
+                    <a href="intro_cryptography.html#D-computational_security" class="ref-link"><strong>computationally
+                    hard</strong></a>.
+                </p>
+
+                <p>
+                    Concretely, the secret is chosen as the solution to an instance of a problem believed intractable —
+                    for example, a square root modulo a composite whose
+                    <a href="intractable_problems.html#D-integer_factorization" class="ref-link"><strong>factorization</strong></a>
+                    is unknown, a problem no efficient method is known to solve. Then computing the secret from public
+                    information is infeasible, so the ability to answer the protocol's challenges is genuine evidence of
+                    knowledge rather than of public computation. This dependence is not a defect but the crux: like every
+                    scheme in this track, an interactive proof rests on a conjectured hardness assumption, and its
+                    guarantees are exactly as strong as that assumption. What the protocol adds, on top of the hardness,
+                    is the next property — that demonstrating knowledge of the secret can be done without surrendering
+                    any part of it.
+                </p>
+            </section>
+
+            <section id="zero-knowledge" class="section-content">
+                <h2>The Zero-Knowledge Property</h2>
+
+                <p>
+                    Completeness and soundness make the protocol a proof of knowledge, but they say nothing about what
+                    the verifier <em>learns</em> along the way. A protocol could be a perfect proof of knowledge and
+                    still leak the secret outright — soundness constrains the dishonest prover, not the curious verifier.
+                    The property that closes this gap, and gives the construction its name, is a demand on the
+                    conversation itself: that it teach the verifier nothing.
+                </p>
+
+                <h3>Simulation as the Measure of Knowledge</h3>
+
+                <p>
+                    The difficulty is to say precisely what "nothing" means. The verifier plainly ends the protocol
+                    knowing one new thing — that the assertion is true. How can we certify that he learns <em>only</em>
+                    that, and nothing about the secret behind it? The resolution reuses an idea already central to the
+                    definition of secrecy on an earlier page. There, a scheme was declared to leak nothing if a
+                    <em>simulator</em>, denied the ciphertext, could reproduce whatever an adversary computed from it —
+                    for if the ciphertext could be done without, it carried nothing. The same move works here, with the
+                    entire transcript of the conversation in the role the ciphertext played.
+                </p>
+
+                <div class="theorem" id="D-zero_knowledge">
+                    <span class="theorem-title">Definition: Zero-Knowledge Property</span>
+                    <p>
+                        A proof of knowledge has the <strong>zero-knowledge property</strong> if it is
+                        <em>simulatable</em>: there exists an efficient algorithm, the <strong>simulator</strong>, which,
+                        given only the assertion to be proven and <em>without any access to the prover or its
+                        secret</em>, produces transcripts indistinguishable from those of genuine executions between the
+                        real prover and the verifier.
+                    </p>
+                    <p>
+                        Because a transcript can be manufactured from the assertion alone, it can carry no information
+                        beyond the assertion's truth: anything the verifier could extract from a real conversation, he
+                        could equally have produced by himself, running the simulator, without the prover ever
+                        participating. Participation therefore leaves him no better able to impersonate the prover than
+                        he was before.
+                    </p>
+                </div>
+
+                <p>
+                    The correspondence with the earlier secrecy definition is exact: the secret plays the role the
+                    plaintext played, and the transcript the role of the ciphertext. In both, what can be fabricated from
+                    public data alone reveals nothing private.
+                </p>
+
+                <p>
+                    One consequence is worth drawing out, because it explains why the proof must be a live, interactive
+                    exchange and cannot be a transferable document. Suppose an observer records a complete protocol run —
+                    every message between prover and verifier — and later replays the recording to a third party. It
+                    convinces that third party of nothing. The simulator establishes why: an indistinguishable recording
+                    could have been produced by the verifier alone, with no prover present, so the recording is not
+                    evidence that any prover took part. A proof of this kind convinces only the party who is live in the
+                    exchange, issuing fresh, unpredictable challenges in real time. This is the non-transferability
+                    promised earlier, now seen to be not an incidental feature but the direct expression of the
+                    zero-knowledge property.
+                </p>
+
+                <h3>Two Grades of Indistinguishability</h3>
+
+                <p>
+                    The definition turns on transcripts being "indistinguishable," and there are two grades of this,
+                    according to how severely one is permitted to compare the real and simulated distributions.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Perfect versus Computational Zero-Knowledge</h3>
+                    <p>
+                        A protocol is <strong>perfect zero-knowledge</strong> if the simulated transcripts and the real
+                        ones have <em>identical</em> probability distributions — no test whatsoever, however much
+                        computation it is granted, can tell them apart. It is <strong>computational zero-knowledge</strong>
+                        if the two distributions are only <em>polynomially indistinguishable</em>: no algorithm confined
+                        to probabilistic polynomial time can separate them, though an unbounded one might. The weaker,
+                        computational grade is the one that matters in practice, and by convention "zero-knowledge"
+                        unqualified means computational zero-knowledge. It rests on the same footing as every other
+                        polynomial-time security notion in this track — an adversary limited to feasible computation
+                        gains no usable advantage, even if an infinitely powerful one theoretically could.
+                    </p>
+                </div>
+
+                <p>
+                    With the three properties in hand — completeness, soundness, and zero knowledge — the notion of a
+                    zero-knowledge proof is complete. What remains is to exhibit one: a concrete protocol, resting on a
+                    concrete hardness assumption, in which all three can be seen at work.
+                </p>
+            </section>
+
+            <section id="fiat-shamir" class="section-content">
+                <h2>A Concrete Protocol</h2>
+
+                <p>
+                    The earliest and most transparent zero-knowledge identification scheme rests on the difficulty of
+                    extracting square roots modulo a composite of unknown factorization. It shows the three abstract
+                    properties as concrete arithmetic, and its structure — commit, challenge, respond — recurs in a large
+                    family of later protocols.
+                </p>
+
+                <h3>Setup and Protocol</h3>
+
+                <p>
+                    A trusted party publishes a modulus \(n = pq\), the product of two secret primes, and keeps the
+                    factorization private. A prover \(A\) chooses a secret \(s\) coprime to \(n\) and registers the
+                    public value \(v = s^2 \bmod n\); her secret is thus a square root of \(v\). Recovering \(s\) from
+                    \(v\) means extracting a square root modulo \(n\), which is as hard as
+                    <a href="intractable_problems.html#D-integer_factorization" class="ref-link"><strong>factoring</strong></a>
+                    \(n\) — infeasible without the primes. Each round is a three-message exchange — a
+                    <em>commitment</em> (or witness) from the prover, a one-bit <em>challenge</em> from the verifier, and
+                    the prover's <em>response</em>:
+                    \[
+                    \begin{align*}
+                    A \to B &: \quad x = r^2 \bmod n \\
+                    A \leftarrow B &: \quad e \in \{0, 1\} \\
+                    A \to B &: \quad y = r\, s^{e} \bmod n
+                    \end{align*}
+                    \]
+                    where \(r\) is a fresh random value the prover draws each round. The verifier accepts the round if
+                    \(y \neq 0\) and
+                    \[
+                    y^2 \equiv x\, v^{e} \pmod{n}.
+                    \]
+                    The whole protocol repeats this round \(t\) times, and \(B\) accepts \(A\)'s identity only if all
+                    \(t\) rounds succeed.
+                </p>
+
+                <p>
+                    That the check passes for an honest prover is immediate: \(y^2 = r^2 s^{2e} = x\,(s^2)^{e} = x\,v^{e}\)
+                    modulo \(n\). This is <strong>completeness</strong>. The two challenge values ask two different
+                    questions of the prover — at \(e = 0\) she must produce the square root of the commitment \(x\)
+                    itself, namely \(r\); at \(e = 1\) she must produce a square root of \(x v\), namely \(rs\). Only a
+                    prover who knows \(s\) can answer both, and this is the seed of soundness.
+                </p>
+
+                <h3>Why It Is Sound, and Zero-Knowledge</h3>
+
+                <p>
+                    <strong>Soundness</strong> appears the moment one asks what it would take to answer both challenges
+                    for a single commitment. Suppose a prover, having sent \(x\), could respond correctly to both
+                    \(e = 0\) with some \(y_0\) and \(e = 1\) with some \(y_1\). Then \(y_0^2 \equiv x\) and
+                    \(y_1^2 \equiv xv \pmod n\), so \(y_1^2 / y_0^2 \equiv v\), which means \(y_1 / y_0\) is a square root
+                    of \(v\). A modulus \(n = pq\) has four square roots of \(v\), so this need not be the prover's
+                    original \(s\); but any square root serves as the secret being proved, and should it be one of the
+                    two roots other than \(\pm s\), it even betrays the factorization of \(n\), since then
+                    \(\gcd(y_1/y_0 - s,\, n)\) is a nontrivial factor. Either way the extractor reads a genuine square
+                    root out of any prover able to answer both challenges for one commitment. A cheat holding no square
+                    root can prepare a commitment answering only one of the two challenges — either pick \(r\) and set
+                    \(x = r^2\) (ready for \(e = 0\)), or pick \(r\) and set \(x = r^2 v^{-1}\) (ready for \(e = 1\)) — but
+                    not one commitment good for both. Such a cheat therefore survives a single round with probability
+                    exactly \(1/2\), by guessing which challenge will come, and survives all \(t\) rounds with probability
+                    only \(2^{-t}\), driven as low as desired by taking \(t\) large.
+                </p>
+
+                <p>
+                    <strong>Zero knowledge</strong> is the claim that a full transcript teaches the verifier nothing
+                    about \(s\), and the argument is the simulator of the previous section made concrete. A verifier who
+                    knows in advance which challenge \(e\) he will issue can manufacture a valid transcript with no
+                    prover and no secret: he picks the response \(y\) at random and defines the commitment backward as
+                    \(x = y^2 v^{-e} \bmod n\). By construction this triple satisfies \(y^2 \equiv x v^{e}\), so it passes
+                    verification, and the pair \((x, y)\) it produces is distributed exactly as in a real run — the real
+                    protocol also yields a uniform \(y\) and a commitment determined by it. Since the verifier can
+                    generate indistinguishable transcripts alone, the real ones give him nothing he could not already
+                    fabricate. The response \(y = r\) at \(e = 0\) is a random value independent of \(s\); the response
+                    \(y = rs\) at \(e = 1\) is masked by the fresh random \(r\), which \(B\) never learns. No information
+                    about \(s\) survives the exchange.
+                </p>
+
+                <p>
+                    The simulator just described handles a verifier who fixes his challenge in advance — the honest-verifier
+                    case. A verifier free to choose \(e\) adaptively, after seeing the commitment, is handled by a standard
+                    refinement: the simulator guesses the challenge, produces a transcript for that guess, and if the
+                    verifier's actual challenge differs, resets the verifier and tries again. Because each guess is correct
+                    with probability \(1/2\), a few attempts suffice, and the simulation goes through against an arbitrary
+                    verifier. The zero-knowledge guarantee therefore holds in full, not only against a cooperative one.
+                </p>
+
+                <div class="insight-box">
+                    <h3>From Interaction to Infrastructure</h3>
+                    <p>
+                        The three-message shape of this protocol — commitment, challenge, response — is the template for
+                        a broad class of zero-knowledge proofs, and two later developments turned that template into
+                        widely deployed technology. First, the interactive challenge can be removed: replacing the
+                        verifier's random \(e\) with the output of a hash function applied to the commitment collapses the
+                        conversation into a single non-interactive message that anyone can check, converting an
+                        identification protocol into a digital signature. Second, the assertion being proven need not be
+                        knowledge of a square root; the same commit-challenge-response skeleton extends to proving that an
+                        arbitrary computation was performed correctly, yielding succinct proofs a verifier can check far
+                        faster than redoing the computation. These non-interactive, general-purpose descendants are what
+                        now let one party certify a large batch of transactions, or a private credential, with a short
+                        proof that reveals nothing beyond its own validity — the zero-knowledge idea, unchanged in
+                        essence from the square-root protocol above, operating at the scale of modern systems.
+                    </p>
+                </div>
+
+                <p>
+                    One caution keeps this in step with the rest of the track. The square-root protocol borrows its
+                    hardness from factoring, and factoring is exactly the assumption a quantum period-finding algorithm is
+                    known to dissolve — the same collapse that unseated the classical public-key schemes. A scheme resting
+                    on it inherits that exposure. What survives is not this particular instance but the framework around
+                    it: completeness, soundness, and the zero-knowledge property are defined for <em>any</em> underlying
+                    hard problem, and the commit-challenge-response skeleton re-instantiates on assumptions currently
+                    believed to resist quantum attack — the lattice problems of the preceding pages among them. The
+                    zero-knowledge idea is assumption-agnostic; only the square root must be replaced.
+                </p>
+
+                <p>
+                    The distance from a password handed across a wire to a proof that convinces while revealing nothing
+                    is the distance this page has traveled. A proof became a conversation; the conversation acquired
+                    completeness and soundness, making it a proof of knowledge; and the demand that it be simulatable
+                    made it zero-knowledge, so that conviction and concealment — seemingly opposed — hold at once. The
+                    square-root protocol is the smallest complete illustration of how they can.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>

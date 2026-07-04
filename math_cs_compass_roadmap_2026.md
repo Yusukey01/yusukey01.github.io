@@ -1,10 +1,8 @@
-# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v7)
+# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v8)
 
 **Author:** Yusuke Yokota
-**Last Updated:** 6/29/2026
+**Last Updated:** 7/3/2026
 **Website:** https://math-cs-compass.com
-
-> **v7 changes (2026-06-29):** Quantum redesign. Part 7's "Section V single-page" design **superseded** — quantum computation distributed across Section I (mathematical prerequisites) and Section IV (algorithms), per crypto handout §0.8. **Layer-1 background page `linalg-41` (quantum_computation.html) COMPLETE** (8 owners incl. `T-spectral_theorem_hermitian`; topicGroup `quantum`). Shor / Grover / VQE / QEC -> Section IV. de Wolf (arXiv:1907.09415, free) replaces Nielsen-Chuang. Waved-through edits: Part 2.4, §6.4/6.5, Part 7 (full rewrite), Part 8.3, Parts 10/11, Part 13. Authoritative for quantum/PQC placement = handout §0.8.
 
 ---
 
@@ -16,21 +14,18 @@ lack awareness of applications. The primary focus is rigorous mathematical found
 modern AI/ML, with continuous expansion into adjacent domains (GDL, CDL, cryptography,
 stochastic analysis).
 
-**Total: 210 pages as of 6/24/2026.** Breakdown: I (linalg) 40 / II (calc) 99 / III (prob) 26 /
-IV (disc) 28 / V (ml) 17. `curriculum.json` is authoritative.
+**Total: 225 pages.** I (linalg) 43 / II (calc) 99 / III (prob) 26 / IV (disc) 40 / V (ml) 17. `curriculum.json` is authoritative.
 
-**Five active tracks (planned in one pass on 2026/6/3)**; detail in the Part 2 overview:
-- Phase 2e (continuous-time generative foundations, Section III) — awaiting Øksendal purchase
-- Rep Theory (GDL continuous leg, Section I+V) — **complete (linalg-31~40 incl. Peter–Weyl + ml-16); GDL-mandatory scope fully satisfied, no remaining work**
-- CDL (category theory, Section IV+V) — **Stage 2 進行中; disc-18~28 公開済 (Leinster Ch.1–5 完了), 次 disc-29 (Ch.6)**
-- Crypto (through PQC, Section IV+I) — mood-driven
-- TDL (GDL discrete leg, Section IV+V) — **SNN (ml-17) complete; discrete leg landed. Only optional persistent-homology branch (disc-18) remains**
+**Five tracks** (status + full detail in Part 2):
+- Phase 2e — continuous-time generative foundations (III) — ⏸ awaiting Øksendal purchase
+- Rep Theory — GDL continuous leg (I+V) — ✅ complete
+- CDL — category theory (IV+V) — 🔄 Stage 2 in progress
+- Crypto — through PQC incl. Quantum (IV+I) — ✅ complete
+- TDL — GDL discrete leg (IV+V) — ✅ landed (optional persistent-homology branch remains)
 
 ---
 
 ## Part 1 — Application Domains: Pillar vs. Viewpoint
-
-(v1 Part 1 retained. GDL two-leg structure added to 1.2.)
 
 ### 1.1 Two orthogonal axes
 - **Pillar (vertical thread)**: a structural thread that multiple Sections converge into; a
@@ -39,7 +34,7 @@ IV (disc) 28 / V (ml) 17. `curriculum.json` is authoritative.
   mathematical altitude, never "completed."
 These are independent. A domain can be Pillar and Viewpoint / Viewpoint only / Pillar only / neither.
 
-### 1.2 Classification of the three domains (GDL two-leg added)
+### 1.2 Classification of the three domains
 
 | Domain | Pillar? | Viewpoint? | Production maturity (2026) | Site treatment |
 |---|---|---|---|---|
@@ -47,7 +42,7 @@ These are independent. A domain can be Pillar and Viewpoint / Viewpoint only / P
 | **CDL** | ⚠️ Pre-pillar | ✅ | R&D (Coend $31M, no product) | Slow-burn parallel track |
 | **Quantum** | ⚠️ Latent | ✅ | Limited (PQC is separate, see Crypto) | Viewpoint via Insight Box |
 
-**GDL two-leg structure (made explicit in v2, detailed in Part 3)**:
+**GDL two-leg structure** (detailed in Part 3):
 - **Continuous leg**: manifold -> Riemannian -> representation theory -> Equivariant NN
   (SO(3)/SE(3) continuous symmetry) = Rep Theory track.
 - **Discrete leg**: GNN (ml-13) -> simplicial complexes / Hodge (disc-13~15) -> SNN/TDL
@@ -63,7 +58,7 @@ learn-while-writing. Track-character is calibrated per topic, not against a glob
 
 ---
 
-## Part 2 — Active-Track Overview (new in v2, index layer)
+## Part 2 — Active-Track Overview (index layer)
 
 A unified view of the five tracks. Per-track detail is authoritative in the individual handouts.
 
@@ -73,39 +68,40 @@ A unified view of the five tracks. Per-track detail is authoritative in the indi
 |---|---|---|---|---|---|
 | **Phase 2e** continuous-time generative | — | III | **awaiting Øksendal purchase** (then Page1 BM+Itō) | **Øksendal 6th ed.** | `phase2e_handout_v1` |
 | **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **linalg-31~40 (incl. Peter–Weyl) + ml-16 complete; GDL-mandatory scope fully satisfied** | Hall 2nd ed. (on hand) | `rep_handout_v10` (archival) |
-| **CDL** category theory | — | IV (cats) + V (CDL bridge) | **Stage 2 進行中: disc-18~28 公開済 (Leinster Ch.1–5 完了); 次 = disc-29 (Ch.6)** | none (both primary free) | `cdl_track_handout_v10` |
-| **Crypto** through PQC | — | IV (s1) + I (s2-7) | **mood-driven** | none | `crypto_track_handout_v18` |
-| **TDL** | **discrete leg** | IV (existing Hodge) + V (SNN) | **SNN (ml-17) complete; discrete leg landed. Optional persistent-homology branch (disc-18) remains** | TDL book (free) | `tdl_track_handout_v2` |
+| **CDL** category theory | — | IV (cats) + V (CDL bridge) | **Stage 2 in progress: disc-18~28 published (Leinster Ch.1–5 done); next = Ch.6 (ID TBD, disc-XX)** | none (both primary free) | `cdl_track_handout_v10` |
+| **Crypto** through PQC | — | IV (classical + Shor + lattice-computation + PQC) + I (algebra + quantum bg + lattice geometry) | **✅ COMPLETE (mainline arc + ZKP)** | none | `crypto_track_handout_v25` |
+| **TDL** | **discrete leg** | IV (existing Hodge) + V (SNN) | **SNN (ml-17) complete; discrete leg landed. Optional persistent-homology branch (disc-XX) remains** | TDL book (free) | `tdl_track_handout_v2` |
 
-### 2.2 Shared structural pattern (this session's finding)
+### 2.2 Shared structural pattern
 
-All five tracks share the same shape:
+Four of the five tracks share the same shape:
 - **"The mathematical content is owned by its native Section; identity shifts to Section V at
-  the ML/application point."** Rep (math=I, Equiv NN=V) / CDL (cats=IV, bridge=V) / Crypto
-  (math=I, quantum=V bridge) / TDL (Hodge=IV, SNN=V) / Phase 2e (math=III, landing ml-14/15 = existing V).
+  the ML/application point."** Rep (math=I, Equiv NN=V) / CDL (cats=IV, bridge=V) /
+  TDL (Hodge=IV, SNN=V) / Phase 2e (math=III, landing ml-14/15 = existing V).
+- **Crypto is the exception (confirmed in execution):** its application point is *not* Section V.
+  Both math and application landed in Section I/IV — the quantum "Section V bridge" idea was
+  **dropped** (handout §0.8). Quantum computation is not ML; Shor/PQC own Section IV (algorithm)
+  and Section I (quantum/lattice geometry). Section V owns no quantum mathematics.
 - This is a consistent expression of the site principle "application is viewpoint, mathematics
   is owner" (Part 1).
 - **Obsolescence-resistance principle** (established in Crypto §0.5 / Phase 2e): write the
   enduring mathematics thickly (continuous-time generation, LWE hardness), not the individual
   method (diffusion, ML-KEM). When methods are replaced, the foundation survives.
 
-### 2.3 Start priority (mood-driven dispatch; no single order enforced)
+### 2.3 Start priority (mood-driven; no single order enforced)
 
-- **External deadline pressure**: CDL (asymmetric preparation cost, MUST cover but slow).
-- **Application in current production**: Phase 2e (diffusion/FM), Crypto stage 7 (PQC deploying now).
-- **GDL pillar internal progress**: Rep Theory (**complete through Peter–Weyl, linalg-40; no remaining GDL-mandatory work**), TDL (**discrete leg landed via SNN ml-17; only optional persistent-homology branch remains**).
-- All mood-driven. If one track stalls, others proceed (Part 13 principle 7).
-
-### 2.4 The only hard ordering constraint
-
-layer-2 Shor (Section IV) <- crypto stage 1-2 classical substrate (COMPLETE) + layer-1 linalg-41 quantum substrate (COMPLETE). Both prerequisites now satisfied. No forced order between any other tracks. (See Part 7.4.)
+No forced order — if one track stalls, others proceed (Part 12 principle 7). After crypto
+completion the remaining active work is **CDL (Stage 2), Phase 2e (awaiting purchase), and the
+optional TDL persistent-homology branch**. Dispatch by interest: CDL carries the only real deadline
+pressure (asymmetric prep cost); Phase 2e is unblocked the moment Øksendal is acquired. The former
+hard-ordering constraint (Shor after crypto substrate + linalg-41) is fully discharged — nothing
+blocks anything now.
 
 ---
 
 ## Part 3 — GDL Pillar (two-leg: continuous Rep + discrete TDL)
 
-In v1 the GDL discussion (old Part 2) and Rep Theory (old Part 8) were separate; v2 consolidates
-them under the GDL pillar. GDL stands on two legs (Part 1.2).
+GDL stands on two legs (Part 1.2): a continuous leg (Rep Theory) and a discrete leg (TDL).
 
 ### 3.1 Why GDL is a pillar (three independent reasons)
 1. **Mathematical thickness**: Lie groups, Riemannian geometry, fiber bundles, representation
@@ -136,7 +132,7 @@ GDL-unnecessary deep-dive (semisimple / Verma / Weyl character formula) remains.
 (SNN, ml-17). GNN (ml-13) generalized pairwise -> higher-order via the Hodge Laplacian; \(\ker L_k \cong H_k\)
 makes the propagation operator report holes. TDL is a subfield of GDL (GNNs = pairwise; TDL = n-body
 over simplicial/cellular complexes). Reference: TDL book (tdlbook.org, registered) + Edelsbrunner-Harer.
-**Remaining**: persistent homology (disc-18) only — optional TDA branch off disc-15's other forecast,
+**Remaining**: persistent homology (disc-XX) only — optional TDA branch off disc-15's other forecast,
 not GDL-mandatory. Future / mood-driven.
 **Detail**: site pages + `tdl_track_handout_v2`.
 
@@ -144,15 +140,12 @@ not GDL-mandatory. Future / mood-driven.
 Continuous Hodge (differential forms: Lee Ch.14 complete = calc-82/83/84; orientations Ch.15
 complete = calc-85~89; integration Ch.16 through Riemannian = calc-90/91/92 complete) and discrete
 Hodge (simplicial complexes, disc-13/15 existing) share the same structure.
-DEC (Part 12 deferred) will be the reclamation hub bridging both legs. calc-91 Stokes is the
+DEC (Part 11 deferred) will be the reclamation hub bridging both legs. calc-91 Stokes is the
 continuous-side origin sitting on the de Rham / DEC critical path (manifold handout v24). Recorded for
-now; the relevant Part 12 entries are "Spectral Laplacian" and "DEC."
+now; the relevant Part 11 entries are "Spectral Laplacian" and "DEC."
 
-### 3.6 GDL track sequencing (current)
-Both legs' GDL-mandatory scope is complete. Continuous leg: manifold spine + Ch.14~16 + rep theory
-+ Peter–Weyl + Equivariant NN (ml-16) — done; only Corners/Densities deferred (not on any active path).
-Discrete leg: disc-13~15 + SNN (ml-17) — done; optional persistent-homology branch (disc-18) remains.
-Forward-pointer obligation: each GDL page carries forward-pointers to "the next mathematics."
+Both legs' GDL-mandatory scope is complete (continuous: Rep Theory + Peter–Weyl + ml-16; discrete:
+SNN ml-17). Standing obligation: each GDL page carries forward-pointers to "the next mathematics."
 
 ---
 
@@ -162,14 +155,12 @@ Build stochastic analysis (Brownian motion -> Itō -> SDE -> Fokker-Planck) in S
 justify from below the continuous-time machinery that ml-14 (diffusion) / ml-15 (flow matching)
 use as given.
 
-### 4.1 Role update (v1 -> v2)
-v1 framed this as "continuous-time basis for diffusion, landing at ml-14." But **ml-15
-flow_matching already exists** and fully develops the continuous-time machinery in ML language
-(its body performs the calculation where the score term cancels the diffusion term, collapsing
-the Fokker-Planck equation to the continuity equation).
- -> Role purified to "**justify from below the continuous-time objects ml-14/15 use as given.**"
-Landing point ml-14 -> **ml-14 + ml-15**. The biggest callback is the FP page proving ml-15's
-cancellation calculation from below.
+### 4.1 Role
+**ml-15 flow_matching already exists** and fully develops the continuous-time machinery in ML
+language (its body performs the calculation where the score term cancels the diffusion term,
+collapsing the Fokker-Planck equation to the continuity equation). So this track's role is to
+**justify from below the continuous-time objects ml-14/15 use as given** — landing at both ml-14
+and ml-15. The biggest callback is the FP page proving ml-15's cancellation calculation from below.
 
 ### 4.2 Significance in the Flow Matching era
 Diffusion is being displaced by FM in practice (FLUX, SD3 are rectified flow), but **both are
@@ -198,7 +189,7 @@ prereqs: Page1 <- prob-23, prob-21, calc-23 / Page2 <- Page1, prob-24 / Page3 <-
 - track-character: a CS author learning pure math while writing (same class as CDL).
 - Detail: `phase2e_handout_v1`.
 
-### 4.5 Notes (overload, see Part 9 ledger)
+### 4.5 Notes (overload, see Part 8 ledger)
 - `D-infinitesimal_generator` exists on the Lie side -> SDE generator must use `D-sde_generator`.
 - `score_function` triple collision (Fisher/data/continuous) -> Page3 ref-links ml-14's
   `D-score_function_data_gradient`, does not define a new one.
@@ -220,7 +211,7 @@ applications mature.
 - **The structural deadline is starting slowly now itself**. Unlike other tracks, deferring this
   one creates a trap later.
 
-### 5.2 Placement decision (v2, resolving the ultimate question)
+### 5.2 Placement decision (owner Section)
 **owner = Section IV**. Applying the topicGroup principle — a category-theory page's identity is
 "a discrete/combinatorial algebraic structure with composition" (a category = objects + morphisms
 + composition), which is Section IV's identity itself. That category theory cites Vect/Hilb as
@@ -229,7 +220,7 @@ theory = the twin of category theory (Curry-Howard-Lambek).
 
 **"Cross-Section spanning" is not a placement problem but a ref-link direction problem**: a
 category page (IV) citing examples from I/II just means ref-links pointing outward; the owner
-stays IV (precedents: Crypto stage4 -> V, Peter-Weyl -> II).
+stays IV (precedents: Peter-Weyl math owned in II while ml-16 lands in V; the same outward-ref-link pattern).
 
 **Spanning is the greatest weapon — reclamation hub design**: the stage 1 page **intentionally
 bundles** ref-links to examples in Sections I/II/IV, letting the reader see at a glance "the
@@ -239,164 +230,110 @@ functor; calc-45/46 `T-differential_properties`/`T-global_differential_propertie
 
 ### 5.3 Track structure (per handout, ~6-9p, expansion expected)
 
-進捗 (2026-06-24): **Stage 0/1 完了、Stage 2 進行中**。disc-18~28 公開済 (Leinster Ch.1–5 完了)。
+Progress (2026-06-24): **Stage 0/1 done, Stage 2 in progress.** disc-18~28 published (Leinster Ch.1–5 done).
 
 | Stage | Placement | Content | Status |
 |---|---|---|---|
 | 0 | — | Yusuke reads Leinster (start trigger) | ✅ done |
 | 1 | disc-18~24 (IV) | categories/functors/natural transformations (disc-18, Ch.1) / adjunction (disc-19/20, Ch.2) / interlude on sets (disc-21, Ch.3) / representables & Yoneda (disc-22/23/24, Ch.4) (+ site-wide hub ref-links) | ✅ done |
-| 2 | disc-25~ (IV) | limits/colimits (disc-25/26/27/28, Ch.5); **next disc-29 = adjoints/representables/limits (Ch.6: RAPL/LAPC, density)** | 🔄 in progress |
+| 2 | disc-25~28 (IV) | limits/colimits (disc-25/26/27/28, Ch.5); **next = disc-XX: adjoints/representables/limits (Ch.6: RAPL/LAPC, density)** — ID assigned at drafting (disc-29~40 consumed by crypto) | 🔄 in progress |
 | 3 | disc-XX (IV) | applied: quivers/database functors / string diagrams | pending |
 | 4 | ml-XX (V) | CDL bridge: Para, lenses, **monad on Para** (primer for the Gavranović paper) | pending |
 | 5 | ml-XX (V) | CDL Overview / intro: revisit the whole site from a categorical viewpoint | pending |
 
-**monad / Kan extension の扱い修正 (handout v10 §3)**: 旧 §5.3 は Stage 2 に "monads / Kan extensions" を含めていたが、(a) **monad は Leinster/Fong-Spivak のどちらにも本文がなく IV では独立ページ化しない** — Para 上の monad として **Stage 4 (Section V)** で window-model 導入。(b) **Kan extension は両 primary に章なし** (acquisition flag: Riehl / nLab、references.json 未登録)。Stage 2 の実体は Leinster Ch.5 (limit/colimit) + Ch.6 (adjoint↔limit interaction)。
+**monad / Kan extension handling (handout v10 §3):** the old §5.3 placed "monads / Kan extensions" in Stage 2, but (a) **monad has no dedicated treatment in either Leinster or Fong-Spivak, so it gets no standalone page in IV** — instead it is introduced as a monad on Para in the window-model at **Stage 4 (Section V)**. (b) **Kan extension has no chapter in either primary** (acquisition flag: Riehl / nLab, not yet in references.json). Stage 2's actual content is Leinster Ch.5 (limits/colimits) + Ch.6 (adjoint↔limit interaction).
 
 stage 3 -> 4 is the IV -> V crossing (identity shifts from math to ML application).
 
 ### 5.4 Reference / start
 - Leinster *Basic Category Theory* (rigorous, IV, **free** arXiv:1612.09375, CC BY-NC-SA, v2 2025/8)
-- Fong & Spivak *Seven Sketches* (applied, **free** arXiv:1803.05316, CC BY 4.0; v1's missing url resolved)
+- Fong & Spivak *Seven Sketches* (applied, **free** arXiv:1803.05316, CC BY 4.0)
 - **Both free, no purchase.** Leinster himself includes poset/monoid examples in the book (an
   entry-design option).
-- **Start status: Stage 0/1 完了、Stage 2 進行中 (2026-06-24)。** Learn-while-writing で disc-18~28 公開済。
-- **Section V CDL intro (Stage 5 相当) は将来タスクとして保留** (handout v10 §3.3)。作成時は **確立層 (Backprop as Functor LICS2019 / Categorical Foundations of Gradient-Based Learning ESOP2022 / Parametric Lenses arXiv:2404.00408) に限定**し、ICML 2024 position paper の "all architectures" 主張は確定理論でなく "進行中の研究方向" として正直に位置づける。CDL イントロが disc-20 の monad 伏線の回収先。
+- **Section V CDL intro (≈ Stage 5) is deferred as a future task** (handout v10 §3.3). When written, **restrict to the established layer (Backprop as Functor LICS2019 / Categorical Foundations of Gradient-Based Learning ESOP2022 / Parametric Lenses arXiv:2404.00408)**, and frame the ICML 2024 position paper's "all architectures" claim honestly as an ongoing research direction, not settled theory. The CDL intro is where disc-20's monad foreshadowing pays off.
 - Detail: `cdl_track_handout_v10`.
 
-### 5.5 Status monitoring (re-verified via web 2026/6/24)
-Research front: ICML 2024 position paper (Gavranović et al., arXiv:2402.15332)、survey "Towards a Categorical Foundation of Deep Learning" (arXiv:2410.05353, 2024-10) が既に存在 = 分野が蓄積した証拠。確立層 (Backprop as Functor LICS2019 / Gradient-Based Learning ESOP2022 / Parametric Lenses arXiv:2404.00408) は査読付きで固い。一方 survey 自身が weighted optics 等を **conjecture 段階**と明記 = 最前線は未確立。ACT conference 継続 (2025 Florida / 2026 Tallinn 7月予定)。Industry: Coend ($31M)。**No production deployment** (PyTorch/JAX に categorical primitive なし) -> slow-burn 継続、mathematics-only。Status-shift triggers: Coend ships a product / a CDL architecture wins a benchmark / a major framework adds categorical primitives / a second well-funded entrant.
+### 5.5 Status monitoring (web-verified 2026-06-24)
+The field has accumulated (peer-reviewed established layer + recent survey), but the frontier is
+still conjectural (the survey itself flags weighted optics etc. as open) and there is **no
+production deployment** (no categorical primitives in PyTorch/JAX) -> slow-burn, mathematics-only.
+Status-shift triggers: Coend ships a product / a CDL architecture wins a benchmark / a major
+framework adds categorical primitives / a second well-funded entrant. Paper list: handout §3.3.
 
-### 5.6 Notes (Part 9 ledger)
+### 5.6 Notes (Part 8 ledger)
 - `adjoint` triple overload (Lie adjoint representation / FA operator adjoint / CDL adjoint
   functor) -> CDL uses `D-adjoint_functor`.
-- v1 Part 3.6 correction: "lattice in disc-1/2/3" is wrong (actually Graph/Combi/ToC).
+- Category-page entry correction: "lattice in disc-1/2/3" is wrong (actually Graph/Combi/ToC).
   No poset/lattice page exists; monoid undefined -> entry via Leinster examples or existing assets
   (Set/Grp/Vect/Ban/Hilb/Top).
 
 ---
 
-## Part 6 — Crypto Track (stage 7 completion assumed, (C) Section split)
+## Part 6 — Crypto Track (✅ COMPLETE — includes Quantum)
 
-The site's most under-covered area relative to importance (a canonical math <-> CS bridge). Upgraded
-to assume stage 7 (PQC capstone) completion, driven by 2026 PQC production deployment.
+The former standalone "Quantum" plan is absorbed here — quantum computation shipped as part of the crypto stack (Shor = attack, lattices = defense), not as a separate track.
 
-### 6.1 Placement decision (v2, (C) stage split)
-Applying the topicGroup principle per stage -> a single Section is untenable; identity splits:
+Complete through PQC. Realized placement below; all policy/lessons/per-page detail live in
+`crypto_track_handout_v25` (single source of truth) + `curriculum.json`/`previews.json`. Only the
+**placement outcomes that the topicGroup principle produced** are kept here, as the canonical worked
+example of Part 12 principle 10.
 
-| Stage | Section | identity |
-|---|---|---|
-| 1 classical crypto foundations | **IV** | computational security (application of complexity, disc-7/9) |
-| 2 public-key & number theory (DH/RSA/DLP) | **I** | group structure, Euler φ, CRT, finite fields |
-| 3 ECC | **I** | elliptic-curve group |
-| 4 quantum threat | **I** | crypto compromise + PQC motivation (Shor proper in **Section IV**, layer-2; quantum substrate = linalg-41) |
-| 5 lattice foundations | **I** | lattices = discrete modules / geometry |
-| 6 LWE/Module-LWE | **I** | error-perturbed linear algebra over modules |
-| 7 NIST PQC standards | **I** | specs / deployment (viewpoint, thin) |
+### 6.1 Realized placement
 
-Entry point = existing linalg-26 (Finite Fields). stage 1(IV) -> 2(I) is the only Section crossing,
-bridged with forward/back-links. Double callback: complexity theory reclaimed at stage 1, algebra
-at stage 2+.
+| Layer | Pages | Section | topicGroup |
+|---|---|---|---|
+| Classical foundations + public-key + number theory + signatures | disc-29~34 | IV | `cryptography` |
+| Quantum background (qubit/measurement/evolution/QFT) | linalg-41 | I | `quantum` (new) |
+| Shor (attack) | disc-35 | IV | `cryptography` |
+| Lattice geometry (lattice + dual, Minkowski) | linalg-42/43 | I | `lattice` (new) |
+| Lattice computational problems (SVP/GapSVP/SIVP/BDD) | disc-36 | IV | `computation` |
+| SIS / LWE / Ring-Module-LWE + ML-KEM | disc-37/38/39 | IV | `cryptography` |
+| ZKP (off-mainline) | disc-40 | IV | `cryptography` |
 
-### 6.2 Stage 7 upgrade rationale (2026 PQC production deployment)
-ML-KEM ships in production at AWS default, Chromium default TLS, Apple PQ3, Microsoft SymCrypt.
-FIPS 140-2 sunsets 2026/9, CNSA 2.0 at 2027/1, Google deadline 2029. HNDL threat. -> Stopping at
-stage 3/4 means "not covering PQC that is in live production," conflicting with the mission.
-**Terminal = stage 7 fixed.**
+Mainline arc = attack (Shor) -> defense (geometry -> computational problems -> SIS -> LWE ->
+Ring/Module-LWE + ML-KEM). Primaries: HAC + de Wolf + Regev (courses) + Peikert; all free, all
+registered in `references.json`.
 
-### 6.3 ⚠️ Obsolescence-resistance design principle (most important, shared core of all tracks)
-Individual algorithms go obsolete (FIPS 206/FALCON added 2026, HQC selected 2025/3, parameters
-revised).
-- **Enduring layer (thick, stage 5–6)**: the hardness mathematics. Why LWE/Module-LWE is hard =
-  reduction to worst-case lattice problems (SVP/CVP), lattice geometry. Unchanged since Regev 2005.
-- **Obsolescing layer (thin, viewpoint, stage 7)**: individual specs (Kyber parameters, FIPS
-  numbers). Forward-pointer marking "the 2026 standards," not cataloged.
-
-Same shape as Phase 2e (math, not method). The answer to "where to go after learning the
-concepts" = root deeply in the hardness mathematics, keep individual specs as viewpoint.
-
-### 6.4 ⚠️ stage 4 / quantum owner separation (revised — handout §0.8)
-- The Shor/Grover quantum-algorithm proper -> **owned by Section IV** (algorithm track, disc-N; layer-2). The quantum *prerequisites* are owned by **`linalg-41` (Section I, COMPLETE)**, which layer-2 ref-links.
-- stage 4 (Section I) identity = "the result that crypto is broken by quantum + PQC motivation"
-  only. Shor's quantum detail is not written here; ref-link to the Section IV Shor page. It is the consequence of the
-  "why will the RSA/ECC built in stage 2-3 break" story.
-- **Bidirectional bridge**: stage4 -> Section IV Shor (detail), Shor -> stage2-3 (the target RSA/ECDH), Shor -> linalg-41 (quantum substrate). Consistent
-  with Part 7.4 layer ordering (layer-2 Shor <- crypto stage 1-2 classical substrate, COMPLETE).
-
-### 6.5 Reference / start
-- stage 1-4 primary: Menezes *Handbook of Applied Cryptography* (**free** cacr.uwaterloo.ca/hac/,
-  all 15 chapters, author-sanctioned). 1996, so lattice/PQC are out of scope.
-- **layer-2 Shor primary: de Wolf *Quantum Computing: Lecture Notes* (arXiv:1907.09415, free)**, Ch.5 (factoring -> period-finding -> continued fractions) + Ch.6 (HSP). Chosen over Nielsen-Chuang (see handout §1).
-- stage 5-6 primary: **Peikert *A Decade of Lattice Cryptography*** (**free** IACR ePrint
-  2015/939). SIS/LWE/Module-LWE hardness and worst-case reduction = heart of PQC mathematics.
-- stage 7 specs: FIPS 203/204/205 documents + CACR PQC materials (specs not math, thin).
-- **All free, no purchase.** Nguyen-Vallée/Bernstein-Lange consolidated into Peikert after review.
-- **Start status: mood-driven** (timing by interest, terminal at stage 7). Pause only at the
-  coherent points stage 3/4/7 (Part 13 failure-mode avoidance).
-- Detail: `crypto_track_handout_v18`.
-
-### 6.6 Notes (Part 9 ledger)
-`lattice` is polysemous (order-theoretic lattice vs integer lattice) -> crypto side uses
-`D-integer_lattice` etc. explicitly.
-
----
-
-## Part 7 — Quantum: Three Sub-Domains, Distributed across Section I / IV
-
-(v6 "Section V single-page" design **superseded 2026-06-29**. Authoritative source = crypto handout §0.8. Quantum computation is not ML; its mathematical prerequisites live in linear algebra / functional analysis, so its owners live in Section I/IV, not Section V.)
-
-### 7.1 Three sub-domains
-| Sub-domain | Mathematical core | 2026 production |
-|---|---|---|
-| A quantum theory (physics) | Hilbert space + spectral theory + Fourier; unitary evolution; observables | 100-year established |
-| B quantum computation | A + tensor product (qubits) + circuits + Shor/Grover/VQE + error correction | NISQ; no production deployment |
-| C PQC | lattices + LWE/Module-LWE + codes + hashes + elliptic curves | **production-deployed** ( -> Crypto Part 6, stage 5-7) |
-
-### 7.2 Placement (revised — handout §0.8)
-The single owner principle = **algorithm -> Section IV, mathematical prerequisite -> Section I**. Applied:
-- **A + B mathematical prerequisites -> Section I.** Owned by **`linalg-41` quantum_computation.html (COMPLETE 2026-06-29)**: qubits as unit vectors in a complex Hilbert space, tensor-product registers, Born rule + projective measurement, observables as self-adjoint operators (finite-dim complex Hermitian spectral theorem, new owner `T-spectral_theorem_hermitian`), unitary evolution, and the quantum Fourier transform. 8 new owners. topicGroup `quantum` (small group; see below).
-- **Shor proper -> Section IV** (crypto/algorithm track, disc-N). Classical part = number theory (period -> factoring, disc-32/33 group theory); quantum part = QFT + phase estimation ref-linking layer-1. Primary = de Wolf Ch.5 + Ch.6 (HSP).
-- **Grover / VQE / quantum error correction -> Section IV** (algorithm / coding-theory track). Not Section I. By the same algorithm=IV rule.
-- **C (PQC)** -> **Crypto Track (Part 6), stages 5-7**, Section I. Crypto, not Quantum.
-- **No Section V quantum owner.** Section V may host a viewpoint that *ref-links* these, but owns no quantum mathematics.
-
-### 7.3 What is NOT done / Section I quantum sequel
-- No standalone "Quantum Section" (no-isolated-Geometry/Physics-section principle, retained).
-- No pillar status for Quantum overall.
-- **Section I quantum sequel is minimal and uncertain**: at most a density-operator / mixed-state page (layer-1 explicitly scoped that out), and even that may reduce to ref-links into existing FA owners (trace.html etc.). Phase estimation is a layer-2 (Section IV) construct, not owned in Section I. Consequence: topicGroup `quantum` stays a **small group in Section I** (currently linalg-41 alone) — accepted as the price of correct classification over forced merger into lie-theory/representation-theory (which quantum *consumes but does not build*). Per §0.8 the future lattice track (layer-3, if Section I) takes a **separate** topicGroup — merging them would erase the "quantum and lattices are unrelated" story that is PQC's raison d'être.
-
-### 7.4 ⚠️ hard dependency (revised)
-Layer ordering = **layer-1 (Section I quantum background, COMPLETE) -> layer-2 (Shor, Section IV) -> layer-3/4 (lattices / PQC)**. Shor (layer-2) must explain "what Shor breaks," so crypto stage 1-2 (disc-29~34, COMPLETE) supplies the classical number-theoretic and group-theoretic substrate; layer-2 ref-links layer-1 for the quantum substrate. The reverse (reaching PQC = stage 5+ before Shor) is not required. Defense (layers 3-4, lattices/PQC) is the center of gravity.
+### 6.2 Placement decisions the topicGroup principle forced (the worked example)
+- **Split by identity, not by track.** Lattice *geometry* is pure math -> Section I (new `lattice`
+  group); lattice *computational problems* are complexity -> Section IV `computation` (joining
+  intractable_problems disc-3/5/6/7/9); the crypto constructions (SIS/LWE) are applications ->
+  Section IV `cryptography`. Placing everything in Section I would have been wrong on this.
+- **Shor -> Section IV** (algorithm), ref-linking linalg-41 for the quantum substrate. Quantum
+  computation is not ML: no Section V quantum owner exists; Grover/VQE/QEC would also be Section IV
+  (not built — no trigger).
+- **ECC dropped** (isolated, quantum-obsolete, absent from HAC; structural preview via disc-33 suffices).
+- **No standalone PQC-specs page** — ML-KEM/FIPS deployment is thin viewpoint inside disc-38/39
+  (obsolescence-resistance: write the hardness mathematics thickly, specs thin).
+- 🔴 **Site-wide permanent rule (handout §0.7/§6):** never write factoring/DLP as a permanent
+  security anchor, nor lattices as "in-principle quantum-safe" — the known/conjecture register is
+  mandatory on all crypto pages. Enforced; recorded here only as a cross-page invariant.
 
 ---
 
 
-## Part 8 — Reference Acquisition Status (new in v2)
+## Part 7 — Reference Acquisition Status
 
 References for the five tracks plus existing ones, by acquisition status. **One purchase remains:
 Øksendal 6th ed. (Phase 2e).** Hall 2nd ed. (Rep Theory) is now on hand. All other references are free.
 
-### 8.1 Active-track references (status)
+### 7.1 Active-track references (status)
 
 | Track | reference | status |
 |---|---|---|
 | Phase 2e | **Øksendal *SDE*** (registered III, Springer Universitext 6th ed., ISBN 978-3-540-04758-2) / Durrett (registered III, on hand) / Holderrieth-Erives *FM & Diffusion* (registered V, arXiv:2506.02070, free) | ⚠️ **Øksendal purchase required**; Durrett + Holderrieth free |
 | Rep Theory | **Hall *Lie Groups…* 2nd ed.** (registered I, GTM 222, ISBN 9783319134666) | ✅ on hand; used for linalg-31~40 (incl. Peter–Weyl §12.3) |
 | Rep Theory (applied) | Gerken et al. (AI Review 2023, arXiv:2105.13926) / Esteves (arXiv:2004.05154) / Brehmer et al. (TMLR 2024, arXiv:2410.23179) | placed as ml-16 in-page References; **not** added to `references.json` (no papers category) |
-| CDL | Leinster *Basic Category Theory* (registered IV, arXiv:1612.09375, v2 2025/8) / Fong-Spivak *Seven Sketches* (registered IV/V, arXiv:1803.05316 <- url to add) | ✅ both free |
-| Crypto | Menezes *Handbook* (registered I, cacr.uwaterloo.ca/hac/) / **Peikert** *Decade of Lattice Crypto* (unregistered, IACR ePrint 2015/939) / FIPS 203-205 + CACR materials | ✅ all free |
-| TDL | Hajij et al. *Topological Deep Learning* (**registered** IV/V, tdlbook.org) / Edelsbrunner-Harer (registered IV) — Lim *Hodge Laplacians on Graphs* **not used** (ml-17 did not need it) | ✅ all free |
+| CDL | Leinster *Basic Category Theory* (registered IV, arXiv:1612.09375, v2 2025/8) / Fong-Spivak *Seven Sketches* (registered IV/V, arXiv:1803.05316) | ✅ both free |
+| Crypto (✅ done) | Menezes *Handbook* / de Wolf *Quantum Computing* (books) / Regev *Lattices in CS* (**`courses`**) / Peikert *Decade of Lattice Crypto* (books) / FIPS 203-205 | ✅ all free, all registered |
+| TDL | Hajij et al. *Topological Deep Learning* (registered IV/V, tdlbook.org) / Edelsbrunner-Harer (registered IV) | ✅ all free |
 
-### 8.2 Pending references.json additions (at start)
-- Fong-Spivak url field (CDL, edit existing entry)
-- Peikert (Crypto, at stage 5 start, url=eprint.iacr.org/2015/939)
-
-### 8.3 Trigger-based, not yet acquired (future)
+### 7.2 Not yet acquired (trigger-based)
 - Amari *Information Geometry* (when an information-geometry page is planned; entry point calc-81 secured)
-- ~~Nielsen-Chuang *Quantum Computation*~~ -> **superseded by de Wolf *Quantum Computing: Lecture Notes* (arXiv:1907.09415, free)**, already the primary for layer-1 (linalg-41, done) and layer-2 (Shor, Section IV). No acquisition needed (free arXiv). See handout §1.
 
 ---
 
-## Part 9 — Overload Ledger (new in v2)
+## Part 8 — Overload Ledger
 
 Collected homonyms (the same symbol used for different concepts across Sections/contexts). Always
 cross-check before naming a new anchor. The manifold handout §2 overload notes are merged here.
@@ -413,7 +350,7 @@ cross-check before naming a new anchor. The manifold handout §2 overload notes 
 
 ---
 
-## Part 10 — Filename Registry (planned pages)
+## Part 9 — Filename Registry (planned pages)
 
 Completed pages are authoritative in `curriculum.json`. This table reserves filenames before
 drafting so cross-page references can be written ahead. IDs assigned at drafting time.
@@ -429,13 +366,11 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 | Peter–Weyl | linalg-40 (done) | I | `peter_weyl.html` | ✅ **complete** (Hall §12.3; Haar via calc-90, Stone–Weierstrass via calc-99; closed the rep track's GDL-mandatory scope) |
 | Functional Analysis block (Conway) | calc-93~99 (done) | II | (complete) | ✅ **complete** (topicGroup `functional-analysis`; Peter–Weyl's Stone–Weierstrass prerequisite chain) |
 | TDL: Simplicial NN | ml-17 (done) | V | `simplicial_neural_networks.html` | ✅ **complete** (GDL discrete leg landed, Part 3.4; Hodge Laplacian message passing, \(\ker L_k\cong H_k\); 2026-06-21) |
-| TDL: Persistent Homology | ~1–2 | IV | TBD (next id disc-18; disc-16/17 occupied by Formal Methods) | optional branch (disc-15 forecast); new concepts (filtration / persistence module / barcode / stability) -> page-count uncertain; ref = Edelsbrunner-Harer (existing); detail in `tdl_track_handout_v2` §4 |
+| TDL: Persistent Homology | ~1–2 | IV | TBD (disc-XX; next free = disc-41, assigned at drafting) | optional branch (disc-15 forecast); new concepts (filtration / persistence module / barcode / stability) -> page-count uncertain; ref = Edelsbrunner-Harer (existing); detail in `tdl_track_handout_v2` §4 |
 | Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **awaiting Øksendal purchase** (Part 4; splits anticipated) |
-| CDL Track | ~6–9 (disc-18~28 = 11 done) | IV + V | disc-18~28 (`categories_functors_naturality` ~ `functors_and_limits`) | 🔄 Stage 2: Leinster Ch.1–5 完了、次 disc-29 (Ch.6); detail `cdl_track_handout_v10` (Part 5) |
-| Crypto Track | varies (7 stages) | **IV(s1) + I(s2-7)** | TBD (entry linalg-26) | mood-driven (Part 6, stage 7 terminal); stage 1-2 disc-29~34 ✅ |
-| Quantum layer-1 (background) | linalg-41 (done) | **I** | `quantum_computation.html` | ✅ **complete** (2026-06-29; qubits/measurement/unitary evolution/QFT; 8 owners incl. `T-spectral_theorem_hermitian`; topicGroup `quantum`; de Wolf Ch.1/4) |
-| Quantum layer-2 (Shor) | ~2-3 | **IV** | TBD (disc-N) | **next active** — de Wolf Ch.5+Ch.6 (HSP); ref-links linalg-41 + disc-32/33; layer-1 substrate ready |
-| Quantum layer-3/4 (lattices / PQC) | varies | **I** (Crypto stage 5-7) | TBD | center of gravity; Peikert; separate topicGroup from `quantum` (§0.8) |
+| CDL Track | ~6–9 (disc-18~28 = 11 done) | IV + V | disc-18~28 (`categories_functors_naturality` ~ `functors_and_limits`); next = disc-XX (Ch.6) | 🔄 Stage 2: Leinster Ch.1–5 done, next = Ch.6 (ID TBD, disc-29~40 consumed by crypto); detail `cdl_track_handout_v10` (Part 5) |
+| Crypto Track (incl. Quantum) | disc-29~40 + linalg-41/42/43 (done) | IV + I | (see `curriculum.json`) | ✅ **COMPLETE** — placement in Part 6, detail in `crypto_track_handout_v25` |
+| Grover / VQE / QEC | — | IV | TBD | not built; no active trigger (algorithm=IV rule reserved) |
 | Regular Conditional Distributions | ~1 | III | `regular_conditional_distributions.html` | Phase 2e prereq (SDE/path-space measure) |
 | Advanced VI topics | ~1–2 | III | TBD | individually triggered by ML-application pressure |
 | DEC | ~1–2 | IV | TBD | continuous <-> discrete Hodge bridge (Part 3.5); backlog |
@@ -443,19 +378,17 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 
 ---
 
-## Part 11 — Completed Tracks Log
+## Part 10 — Completed Tracks Log
 
 Completed tracks (on index.html, no planned pages).
 
 ### Major completed tracks
 | Track | Pages | Completed | Notes |
 |---|---|---|---|
-| **Functional Analysis block (Conway)** | **calc-93~99** | **6/16–6/19/2026** | topicGroup `functional-analysis`, Conway-ordered (Hahn–Banach -> four-pillars/Baire -> LCS -> separation HB -> Krein–Milman -> Riesz \(C(X)^*=M(X)\) -> Stone–Weierstrass). Built as Peter–Weyl's Stone–Weierstrass prerequisite chain. Owner-absent debt tracked in Part 12. Detail: `rep_handout_v10` §5.3 (archival). |
-| **Peter–Weyl** | **linalg-40** | **6/20/2026** | `peter_weyl.html`, topicGroup `representation-theory`. Compact-group non-commutative Fourier = harmonic-analysis core of the GDL continuous leg. Route = Hall §12.3. \(K=S^1\) degeneration recovers calc-32 Fourier (伏線回収). Closes the rep track's GDL-mandatory scope. Detail: `rep_handout_v10` §5.2 (archival). |
-| Smooth Manifolds (Lee Ch.1–16 through Riemannian integration) | calc-36~81 (spine) + calc-42/45/47/52/59 + calc-82~92 (Ch.14 forms / Ch.15 orientations / Ch.16 integration) | 6/3 (Ch.1–13); 6/7 (Ch.14); 6/10 (Ch.15); 6/15/2026 (Ch.16) | Manifold spine through Riemannian metrics, differential forms, orientations, integration (form + Lie-group Haar, Stokes/Green, Riemannian integration + divergence). Mathematical landing of the GDL continuous leg; Peter–Weyl Haar substrate in calc-90. Remaining = Corners / Densities (Part 12). Detail: `manifold_handout_v24` / `ch16_integration_handout_v12`. |
-| Representation Theory (Hall) | linalg-31~40 + ml-16 | 6/8/2026 (ml-16); rep mainline earlier; 6/20/2026 (Peter–Weyl linalg-40) | Complexification + group/Lie-algebra representations -> irreducible classification -> complete reducibility / Schur -> Clebsch-Gordan -> Wigner-Eckart (linalg-31~39) -> **Peter–Weyl (linalg-40)**, landing at Equivariant NN (ml-16, Section V). GDL continuous leg's representation-theory spine, **now complete through compact-group harmonic analysis**. GDL-mandatory scope fully satisfied; only the GDL-unnecessary deep-dive (Part II: semisimple / Verma / Weyl character formula) remains. Detail: `rep_handout_v10` (archival). |
-| **Quantum layer-1 (background)** | **linalg-41** | **6/29/2026** | `quantum_computation.html`, topicGroup `quantum` (Section I). Qubits as unit vectors in a complex Hilbert space, tensor-product registers, Born rule + projective measurement, observables as self-adjoint operators (new owner `T-spectral_theorem_hermitian` = finite-dim complex Hermitian spectral theorem), unitary evolution, QFT. 8 new owners. Layer-1 of the quantum/PQC stack; substrate for layer-2 Shor (Section IV). de Wolf Ch.1/4. 4 sections rigorously reviewed. Detail: `crypto_track_handout_v18` §5.1/§5.2. |
-| Formal Methods | disc-16, disc-17 | 5/14/2026 | Section IV third pillar (disc-4,16,17). Bidirectional bridge with disc-12 (Four Color Theorem). The Curry-Howard-Lambek connection point for CDL. |
+| Representation Theory (Hall) — incl. Peter–Weyl + FA block | linalg-31~40 + ml-16 + calc-93~99 | 6/8–6/20/2026 | GDL continuous leg: group/Lie-algebra reps -> irreducible classification -> Schur -> Clebsch-Gordan/Wigner-Eckart -> Peter–Weyl (linalg-40, recovers calc-32 Fourier), landing at Equivariant NN (ml-16). FA block (calc-93~99, `functional-analysis`) built as Peter–Weyl's Stone–Weierstrass prerequisite. GDL-mandatory scope complete. Deep-dive deferred (Part 11). Detail: `rep_handout_v10`. |
+| Smooth Manifolds (Lee Ch.1–16 through Riemannian integration) | calc-36~81 + calc-42/45/47/52/59 + calc-82~92 | 6/3–6/15/2026 | Manifold spine + differential forms (Ch.14) + orientations (Ch.15) + integration (Ch.16: Haar, Stokes/Green, Riemannian, divergence). Mathematical landing of the GDL continuous leg; Peter–Weyl Haar substrate in calc-90. Corners/Densities deferred (Part 11). Detail: `manifold_handout_v24` / `ch16_integration_handout_v12`. |
+| **Crypto Track (through PQC, incl. Quantum)** | **disc-29~40 + linalg-41/42/43** | **~7/3/2026** | Full attack->defense arc + ZKP. New topicGroups `quantum` (linalg-41) and `lattice` (linalg-42/43). Placement + deviations recorded in Part 6; full detail in `crypto_track_handout_v25`. |
+| Formal Methods | disc-16, disc-17 | 5/14/2026 | Section IV third pillar (disc-4,16,17). Bidirectional bridge with disc-12 (Four Color Theorem). Curry-Howard-Lambek connection point for CDL. |
 
 ### Completed reference -> page mapping
 - Lay *Linear Algebra* -> linalg-01~10
@@ -476,10 +409,14 @@ Completed tracks (on index.html, no planned pages).
 - Edelsbrunner & Harer *Computational Topology* -> disc-14, disc-15
 - Avigad et al. *Lean* -> disc-16, disc-17
 - Murphy Book1/Book2 *Probabilistic ML* -> ml-01~12, prob-16, prob-26 etc.
+- Menezes et al. *Handbook of Applied Cryptography* -> disc-29~34, disc-40 (§10.4 ZKP)
+- de Wolf *Quantum Computing: Lecture Notes* -> linalg-41, disc-35 (Ch.1/4/5/6)
+- Regev *Lattices in Computer Science* (courses) -> linalg-42/43, disc-36
+- Peikert *A Decade of Lattice Cryptography* -> disc-36, disc-37/38/39
 
 ---
 
-## Part 12 — Deferred Items (Non-Blocking)
+## Part 11 — Deferred Items (Non-Blocking)
 
 | Item | Trigger to Revisit |
 |---|---|
@@ -504,7 +441,7 @@ Completed tracks (on index.html, no planned pages).
 
 ---
 
-## Part 13 — Key Learnings & Development Principles
+## Part 12 — Key Learnings & Development Principles
 
 1. **Notation consistency is non-negotiable**: calligraphic for spaces (𝒳,𝒴,𝒵,ℋ,𝒳*,𝒳**),
    functionals as φ, operator norm ‖φ‖_𝒳*. New Section II pages match calc-23~28.
@@ -512,12 +449,12 @@ Completed tracks (on index.html, no planned pages).
    citations. Forward links use descriptive text (no href) until the target exists.
 3. **Application-viewpoint philosophy**: use Insight Boxes and the Tessera to connect abstract
    theorems to applications without breaking main-text proofs. Application domains introduced when
-   tools are ready (asymmetric, Parts 1-7).
+   tools are ready (asymmetric, Parts 1-6).
 4. **Fisher vs Hessian**: the real distinction is reparametrization invariance (Čencov) vs
    loss-dependence and non-guaranteed positive-definiteness, not "global vs local."
 5. **Page count estimation**: new conceptual paradigms expand 1.5–4×. Defer ID assignment to
    drafting. Calibrations: Lie groups 2 -> 4, calc-30 1 -> 2, Phase 2c 2 -> 3, Fourier-PDE 1 -> 3,
-   CDL 6 -> 12 anticipated (**実績: disc-18~28 で 11 ページ＝予測ほぼ的中、Ch.1–5 分**; Ch.6+ で更に増)。 **New strongest data point (Peter–Weyl, 6/2026): a ~2-page target
+   CDL 6 -> 12 anticipated (**actual: 11 pages for disc-18~28 = close to prediction, covering Ch.1–5**; more expected at Ch.6+). **New strongest data point (Peter–Weyl, 6/2026): a ~2-page target
    spawned a 7-page prerequisite block (the FA block calc-93~99).** A single dependency audit
    (§12.3 needs Stone–Weierstrass) recursively pulled in SW's entire Conway chain. The lesson is
    not just "pages expand" but "a dependency audit can reveal that the *prerequisite* is the real
@@ -526,28 +463,36 @@ Completed tracks (on index.html, no planned pages).
 6. **Per-topic prior-knowledge calibration**: set track-character per topic (Lie=expert,
    CDL/Phase2e/Rep/TDL=learn-while-writing).
 7. **Mood-driven dispatch**: no single order enforced. If one track stalls, others proceed. The
-   only hard ordering is layer-2 Shor (Section IV) <- crypto stage 1-2 + layer-1 linalg-41, both now COMPLETE (Part 7.4).
-8. **[v2 added] All-tracks isomorphic structure**: "mathematical content owned by its native
-   Section; identity moves to Section V at the ML/application point." Rep/CDL/Crypto/TDL/Phase2e
-   all take this shape (Part 2.2).
-9. **[v2 added] Obsolescence-resistance principle**: write the enduring mathematics thickly, not
+   former hard ordering (layer-2 Shor <- crypto stage 1-2 + layer-1 linalg-41) is now fully
+   **discharged** — the entire crypto/quantum stack (disc-35~40) shipped (Part 6). No hard
+   ordering constraint remains in the plan.
+8. **Tracks-isomorphic structure**: "mathematical content owned by its native
+   Section; identity moves to Section V at the ML/application point." Rep/CDL/TDL/Phase2e take this
+   shape; Crypto is the exception (owns IV/I, no Section V landing) (Part 2.2).
+9. **Obsolescence-resistance principle**: write the enduring mathematics thickly, not
    the individual method. diffusion -> FM, ML-KEM -> next-gen: when methods swap, the foundation
-   survives (Parts 4.2, 6.3).
-10. **[v2 added] topicGroup is decided by identity**: place a page by what it *is* (its
-    mathematical object), not what it is *used for*. The Crypto (C) split, CDL Section IV, and
-    quantum owner separation are all applications of this principle.
+   survives (Parts 4.2, 6.2).
+10. **topicGroup is decided by identity**: place a page by what it *is* (its
+    mathematical object), not what it is *used for*. The crypto/lattice/quantum placement split
+    (Part 6.2), CDL in Section IV, and quantum owner separation are all applications of this principle.
 11. **Single ownership**: each T-/D- anchor has exactly one owner site-wide. grep previews.json +
-    HTML before assigning. Overloads are managed in the Part 9 ledger.
+    HTML before assigning. Overloads are managed in the Part 8 ledger.
 12. **Handout-driven continuity**: session state is authoritative in this roadmap and the
     handouts; memory carries protocol/philosophy only. Per-track detail is single-source-of-truth
     in `*_handout_v1.md`.
 
 ---
 
-**This roadmap (v5) is the index layer.** Per-track prereq verification, collisions, owner
+**This roadmap is the index layer.** Per-track prereq verification, collisions, owner
 candidates, physical-book inspection items, and resume-time greps are authoritative in the
-individual handouts for the still-active tracks: `phase2e_handout_v1` / `cdl_track_handout_v10` /
-`crypto_track_handout_v18` / `tdl_track_handout_v2` / `manifold_handout_v24` /
-`ch16_integration_handout_v12`. The completed Representation-Theory track (incl. Peter–Weyl and the
-FA block) is archived in `rep_handout_v10`, which absorbed the spent `peter_weyl_handout_v1` and
-`fa_block_screening_handout_v5`.
+individual handouts for the **still-active tracks**: `phase2e_handout_v1` / `cdl_track_handout_v10` /
+`tdl_track_handout_v2` (optional persistent-homology branch only).
+
+**Completed-track handouts (archival, do not resume):** `crypto_track_handout_v25` (crypto through
+PQC + ZKP — completion record, touched only if a *new* track is started), `rep_handout_v10` (Rep
+Theory incl. Peter–Weyl + FA block; absorbed the spent `peter_weyl_handout_v1` and
+`fa_block_screening_handout_v5`), `manifold_handout_v24` / `ch16_integration_handout_v12` (manifold
+spine through Riemannian integration; only Corners/Densities deferred).
+
+**Next active work** = CDL Stage 2 (Leinster Ch.6, next disc-ID assigned at drafting) or Phase 2e
+(on Øksendal purchase); the crypto track is closed.
