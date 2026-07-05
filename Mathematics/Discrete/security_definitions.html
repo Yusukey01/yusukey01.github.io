@@ -51,7 +51,7 @@ uses_python: false
                     equal ciphertexts: \(m = m'\) forces \(E_e(m) = E_e(m')\). An observer who sees the same ciphertext
                     twice learns that the same message was sent twice, without breaking anything — the equality of
                     ciphertexts is visible directly. In a setting where messages recur, the pattern of repetitions is
-                    itself information, and a deterministic scheme transmits it in clear.
+                    itself information, and a deterministic scheme transmits it in the clear.
                 </p>
 
                 <p>
@@ -59,8 +59,8 @@ uses_python: false
                     plaintext is drawn from a small or skewed set — a yes/no instruction, a choice among a handful of
                     fixed commands, a field whose likely values are few. Under Kerckhoffs's principle the scheme itself
                     is public; if the encryption transformation is also public to the adversary, as in a public-key
-                    setting, it can encrypt each likely plaintext directly, and even when it is not, a chosen-plaintext
-                    adversary can obtain such encryptions. Either way the adversary can compare against the observed
+                    setting, the adversary can encrypt each likely plaintext directly, and even when the transformation
+                    is not public, a chosen-plaintext adversary can obtain such encryptions. Either way the adversary can compare against the observed
                     ciphertext. A deterministic scheme offers no defense here, because the ciphertext it produces for a
                     given plaintext is a fixed target the adversary can reproduce and match.
                 </p>
@@ -71,9 +71,9 @@ uses_python: false
                     deterministic scheme may leak some part of it — some predicate, some
                     fragment, some single bit that the ciphertext determines and the adversary can compute. Recovering
                     the plaintext in full is only the crudest notion of a break; a scheme that hides the message but
-                    discloses a reliable bit of it has still failed against an adversary who needs only that bit. Making
-                    this precise — what it means to leak nothing, not merely to hide the whole — is the work of the
-                    sections ahead.
+                    discloses a reliable bit of it has still failed against an adversary who needs only that bit. The work
+                    of the sections ahead is to make this precise: what it means to leak nothing, not merely to hide the
+                    whole.
                 </p>
 
                 <p>
@@ -187,8 +187,8 @@ uses_python: false
                     complexity notions invoked on the previous page enter the definition itself. "The adversary cannot
                     win" does not mean no winning strategy exists in principle — exhaustive key search always exists —
                     but that no strategy runs within the resource budget of a feasible attacker, made precise as time
-                    polynomial in the
-                    <a href="time_complexity.html#D-class_P" class="ref-link"><strong>security parameter</strong></a>.
+                    <a href="time_complexity.html#D-class_P" class="ref-link"><strong>polynomial</strong></a> in the
+                    security parameter.
                     A scheme is secure against the bounded adversary the previous page described, not against an
                     unbounded one; the unbounded case is the separate and stronger guarantee taken up later.
                 </p>
@@ -197,9 +197,10 @@ uses_python: false
                     The winning margin must be <strong>negligible</strong>. An adversary can always achieve exactly
                     \(\tfrac{1}{2}\) by ignoring the ciphertext and flipping its own coin, and can do slightly better by
                     luck on any given run. What security forbids is a margin a feasible attacker can convert into a
-                    reliable advantage — one that survives being
-                    <a href="time_complexity.html#D-little_o" class="ref-link"><strong>asymptotically negligible</strong></a>
-                    and so cannot be amplified into a usable edge by repeating the attack a feasible number of times.
+                    reliable advantage — one small enough to be
+                    <a href="time_complexity.html#D-little_o" class="ref-link"><strong>little-o</strong></a> of every
+                    inverse polynomial, so that it cannot be amplified into a usable edge by repeating the attack a
+                    feasible number of times.
                     This is the precise form of the "non-negligible probability" the previous page used to separate a
                     genuine break from a lucky guess.
                 </p>
@@ -222,8 +223,8 @@ uses_python: false
                     have <strong>equal length</strong>. A ciphertext generally reveals the
                     length of its plaintext, and an adversary allowed to submit plaintexts of different lengths could
                     win trivially by reading off the ciphertext size, defeating the scheme for a reason that has nothing
-                    to do with the secrecy of content. Fixing equal lengths isolates the property we actually want — that
-                    nothing <em>about the content</em> leaks — and the question of concealing length is a separate
+                    to do with the secrecy of content. Fixing equal lengths isolates the property we actually want:
+                    that nothing <em>about the content</em> leaks. The question of concealing length is a separate
                     concern addressed by other means.
                 </p>
             </section>
@@ -252,14 +253,14 @@ uses_python: false
                 <div class="theorem" id="D-semantic_security">
                     <span class="theorem-title">Definition: Semantic Security</span>
                     <p>
-                        A scheme is <strong>semantically secure</strong> if, for every probability distribution over the
-                        message space and every function \(f\) of the plaintext that an adversary might wish to compute,
-                        whatever a polynomial-time adversary can compute about the plaintext given the ciphertext, it can
-                        also compute in polynomial time without the ciphertext. Formally, for every polynomial-time
+                        A scheme is <strong>semantically secure</strong> if whatever a polynomial-time adversary can
+                        compute about the plaintext from the ciphertext, it can already compute in polynomial time
+                        without it — for every distribution over the message space. Formally, for every polynomial-time
                         adversary \(\mathcal{A}\) given a challenge ciphertext there is a polynomial-time
-                        <strong>simulator</strong> \(\mathcal{S}\) given only the length of the plaintext, such that the
-                        probability that \(\mathcal{A}\) correctly computes \(f(m)\) exceeds the probability that
-                        \(\mathcal{S}\) does so by only a negligible amount.
+                        <strong>simulator</strong> \(\mathcal{S}\) given only the length of the plaintext such that, for
+                        every function \(f\) of the plaintext the adversary might wish to compute, the probability that
+                        \(\mathcal{A}\) correctly computes \(f(m)\) exceeds the probability that \(\mathcal{S}\) does so
+                        by only a negligible amount.
                     </p>
                 </div>
 
@@ -357,10 +358,10 @@ uses_python: false
                     content, and its mechanism is the construction of a simulator. We are given that no efficient
                     adversary wins the guessing game, and must produce, for any adversary \(\mathcal{A}\) that computes
                     some \(f(m)\) from the ciphertext, a simulator \(\mathcal{S}\) that does as well without it. The
-                    simulator's strategy is to run \(\mathcal{A}\) on a <em>decoy</em>: rather than the true ciphertext,
-                    which it does not have, \(\mathcal{S}\) encrypts a fixed dummy plaintext of the correct length —
-                    which it can do, since encryption is available to it as it is to the adversary — drawing the
-                    randomness itself, and feeds the result to \(\mathcal{A}\). Indistinguishability guarantees that
+                    simulator's strategy is to run \(\mathcal{A}\) on a <em>decoy</em>. Rather than the true ciphertext,
+                    which it does not have, \(\mathcal{S}\) encrypts a fixed dummy plaintext of the correct length,
+                    drawing the randomness itself, and feeds the result to \(\mathcal{A}\); it can do this because
+                    encryption is available to it just as it is to the adversary. Indistinguishability guarantees that
                     \(\mathcal{A}\) cannot tell it has been fed a decoy rather than a real challenge — if it could, that
                     detection would itself win the guessing game. So \(\mathcal{A}\) computes \(f\) on the decoy run
                     essentially as well as it would have on the real ciphertext, and the simulator simply reports
@@ -411,8 +412,8 @@ uses_python: false
                     The first enlargement follows the attack hierarchy of the previous page. The indistinguishability
                     game as stated lets the adversary obtain encryptions of plaintexts it chooses; this is security
                     against a chosen-plaintext attack. But the previous page placed a stronger adversary above it — one
-                    that can also obtain <em>decryptions</em> of ciphertexts of its choosing, even adaptively, even
-                    after seeing the challenge, for every ciphertext but the target itself. Granting the game's
+                    that can also obtain <em>decryptions</em> of ciphertexts of its choosing, even adaptively and even
+                    after seeing the challenge, though never of the target ciphertext itself. Granting the game's
                     adversary that decryption access, and still demanding it cannot win, defines security against an
                     adaptive chosen-ciphertext attack. The definition does not change shape — it is the same guessing
                     game with a more powerful player — but the bar is far higher, and it is the bar that schemes
