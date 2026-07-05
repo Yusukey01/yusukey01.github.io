@@ -2,20 +2,20 @@
 // disc-35 "Shor's Algorithm" — interference visualizer for quantum period-finding.
 //
 // CORE INSIGHT (the thing that makes Shor work): after the value register is
-// measured, the argument register holds a comb (1/sqrt M) sum_j |jr+s>. Applying
-// the quantum Fourier transform, the amplitude at outcome b is the SUM of M unit
+// measured, the argument register holds a comb (1/sqrt m) sum_j |jr+s>. Applying
+// the quantum Fourier transform, the amplitude at outcome b is the SUM of m unit
 // phase vectors v_j = e^{2pi i (jr) b / q}. When b is a multiple of q/r these
 // vectors all point the same way and add up coherently (a long straight walk, large
 // |S|); for other b they rotate and cancel (a walk that curls back on itself, small
-// |S|). The probability is P(b) = |S(b)|^2 / (Mq). The period is read out of WHERE
+// |S|). The probability is P(b) = |S(b)|^2 / (mq). The period is read out of WHERE
 // the constructive interference lands, then continued fractions + gcd return the
 // factors. The offset s only adds a global phase e^{2pi i s b/q} that rotates the
 // whole walk without changing |S|, so we display s = 0 without loss.
 //
 // House rules: no efficiency claims, no vendor names; the demo only displays the
 // page's own state evolution. Math core self-tested in JS against NumPy/Node truth:
-//   |S(b)|^2/(Mq) == P(b) (phase-sum equals QFT probability);
-//   easy N=15 r=4 q=256: b=64 -> all vectors aligned, |S|=M=64, P=1/4; off-peak |S|~0;
+//   |S(b)|^2/(mq) == P(b) (phase-sum equals QFT probability);
+//   easy N=15 r=4 q=256: b=64 -> all vectors aligned, |S|=m=64, P=1/4; off-peak |S|~0;
 //   hard N=21 r=6 q=512: |S| large near multiples of q/r, small far from them;
 //   continued fraction 85/512 -> 1/6; full chain 15 = 3 x 5.
 
@@ -36,14 +36,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   function order(x, N) { let r = 1, c = x % N; while (c !== 1) { c = (c * x) % N; r++; } return r; }
   function pickQ(N) { let q = 1; while (q <= N * N) q *= 2; return q; } // smallest 2^l > N^2, in (N^2, 2N^2]
-  function combCount(r, q) { let M = 0; for (let a = 0; a < q; a += r) M++; return M; }
+  function combCount(r, q) { let m = 0; for (let a = 0; a < q; a += r) m++; return m; }
 
-  // Partial sums of the M phase vectors v_j = e^{2pi i (jr) b / q}.
-  function phaseWalk(r, q, b, M) {
+  // Partial sums of the m phase vectors v_j = e^{2pi i (jr) b / q}.
+  function phaseWalk(r, q, b, m) {
     const t = 2 * Math.PI / q;
     let re = 0, im = 0;
     const pts = [[0, 0]];
-    for (let j = 0; j < M; j++) {
+    for (let j = 0; j < m; j++) {
       const ang = t * ((j * r * b) % q);
       re += Math.cos(ang); im += Math.sin(ang);
       pts.push([re, im]);
@@ -52,15 +52,15 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function qftProbs(N, x) {
-    const r = order(x, N), q = pickQ(N), M = combCount(r, q);
+    const r = order(x, N), q = pickQ(N), m = combCount(r, q);
     const probs = new Float64Array(q);
     const t = 2 * Math.PI / q;
     for (let b = 0; b < q; b++) {
       let re = 0, im = 0;
-      for (let j = 0; j < M; j++) { const ang = t * ((j * r * b) % q); re += Math.cos(ang); im += Math.sin(ang); }
-      probs[b] = (re * re + im * im) / (M * q);
+      for (let j = 0; j < m; j++) { const ang = t * ((j * r * b) % q); re += Math.cos(ang); im += Math.sin(ang); }
+      probs[b] = (re * re + im * im) / (m * q);
     }
-    return { r, q, M, probs };
+    return { r, q, m, probs };
   }
 
   function cfBest(num, den, Nmax) {
@@ -96,11 +96,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ---- self-test against verified truth (logged, non-blocking) ----
   (function selfTest() {
-    const r = order(2, 15), q = pickQ(15), M = combCount(r, q);
-    const w = phaseWalk(r, q, 64, M);
-    const easyAligned = Math.abs(w.absS - M) < 1e-6;
-    const Ppeak = w.absS * w.absS / (M * q);
-    const off = phaseWalk(r, q, 32, M);
+    const r = order(2, 15), q = pickQ(15), m = combCount(r, q);
+    const w = phaseWalk(r, q, 64, m);
+    const easyAligned = Math.abs(w.absS - m) < 1e-6;
+    const Ppeak = w.absS * w.absS / (m * q);
+    const off = phaseWalk(r, q, 32, m);
     const ok1 = easyAligned && Math.abs(Ppeak - 0.25) < 1e-9 && off.absS < 1e-6;
     const t2 = qftProbs(21, 2);
     const ok2 = t2.r === 6 && t2.q === 512 && (t2.q % t2.r !== 0);
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="shor-svg-wrap"><svg id="shor-walk" width="100%" height="260" viewBox="0 0 260 260" preserveAspectRatio="xMidYMid meet"></svg></div>
           </div>
           <div class="shor-view-right">
-            <div class="shor-view-title">QFT probability P(b) = |S(b)|&sup2; / (Mq); the marked b is selected at left</div>
+            <div class="shor-view-title">QFT probability P(b) = |S(b)|&sup2; / (mq); the marked b is selected at left</div>
             <div class="shor-svg-wrap"><svg id="shor-qft" width="100%" height="180" preserveAspectRatio="none"></svg></div>
           </div>
         </div>
@@ -205,11 +205,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function drawWalk() {
-    const { r, q, M } = state;
+    const { r, q, m } = state;
     const b = parseInt(elB.value, 10);
-    const w = phaseWalk(r, q, b, M);
+    const w = phaseWalk(r, q, b, m);
     const VB = 260, cx = VB / 2, cy = VB / 2, margin = 18;
-    const R = Math.max(1, M);
+    const R = Math.max(1, m);
     const scale = (VB / 2 - margin) / R;
     const X = re => cx + re * scale;
     const Y = im => cy - im * scale;
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const [re, im] = w.pts[i];
       d += (i === 0 ? 'M' : 'L') + X(re).toFixed(2) + ' ' + Y(im).toFixed(2) + ' ';
     }
-    const align = w.absS / M;
+    const align = w.absS / m;
     const stroke = align > 0.6 ? '#f39c12' : (align > 0.25 ? '#9ed0ff' : '#42a5f5');
     s += `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.4" opacity="0.9"/>`;
     s += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(w.Sre)}" y2="${Y(w.Sim)}" stroke="#fff" stroke-width="2"/>`;
@@ -260,20 +260,20 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function updateB() {
-    const { r, q, M } = state;
+    const { r, q, m } = state;
     const b = parseInt(elB.value, 10);
     const w = drawWalk();
     drawQft(b);
-    const P = w.absS * w.absS / (M * q);
+    const P = w.absS * w.absS / (m * q);
     const nm = nearestMultipleInfo(b, q, r);
     const aligned = nm.dist === 0;
     elBval.textContent = `${b} / ${q}`;
     elReadout.innerHTML =
-      `|S(b)| = ${w.absS.toFixed(2)} of max ${M} &nbsp; P(b) = ${P.toFixed(4)} &nbsp; ` +
+      `|S(b)| = ${w.absS.toFixed(2)} of max ${m} &nbsp; P(b) = ${P.toFixed(4)} &nbsp; ` +
       `nearest multiple of q/r: ${nm.c}&middot;(q/r) = ${nm.nearest} ` +
       (aligned
         ? `<span class="hot">(exact: vectors fully aligned, constructive)</span>`
-        : `(distance ${nm.dist}: vectors rotate, ${w.absS < M * 0.25 ? 'largely destructive' : 'partial'})`);
+        : `(distance ${nm.dist}: vectors rotate, ${w.absS < m * 0.25 ? 'largely destructive' : 'partial'})`);
   }
 
   function rebuild() {
@@ -286,11 +286,11 @@ document.addEventListener('DOMContentLoaded', function () {
   function recompute() {
     const N = parseInt(elN.value, 10);
     const x = parseInt(elX.value, 10);
-    const { r, q, M, probs } = qftProbs(N, x);
-    state = { N, x, r, q, M, probs };
+    const { r, q, m, probs } = qftProbs(N, x);
+    state = { N, x, r, q, m, probs };
     const rdivq = (q % r === 0);
     elMeta.innerHTML =
-      `N = ${N}, x = ${x} &nbsp; period r = ${r} &nbsp; q = 2^${Math.round(Math.log2(q))} = ${q} &nbsp; M = ${M} vectors &nbsp; ` +
+      `N = ${N}, x = ${x} &nbsp; period r = ${r} &nbsp; q = 2^${Math.round(Math.log2(q))} = ${q} &nbsp; m = ${m} vectors &nbsp; ` +
       `<span class="tag">${rdivq ? 'easy: r | q' : 'hard: r \u2224 q'}</span>`;
     elB.max = String(q - 1);
     const startB = Math.round(q / r) % q || 0;
