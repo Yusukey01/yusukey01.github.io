@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function () {
     S.worstShown = scored[ATK_TOPN - 1].v;           // scale reference for bars
   }
 
-  function fmtCoord(x) { return x === 0 ? '0' : (x > 0 ? '+' : '\u2212') + Math.abs(x); } // +2 / \u22122 / 0 (no sign on zero)
+  function fmtCoord(x) { return x === 0 ? '0' : (x > 0 ? '+' : '\u2212') + Math.abs(x); }
 
   function vecHTML(vec, ref) {
     // color each coordinate green if it matches ref, amber otherwise (ref null => neutral)
