@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const style = document.createElement('style');
   style.textContent = `
     .lnd-container{margin-bottom:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#e8eaed;}
-    .lnd-instruction{text-align:center;margin-bottom:16px;font-size:0.9rem;color:rgba(255,255,255,0.5);line-height:1.5;}
+    .lnd-instruction{text-align:center;margin-bottom:16px;font-size:0.9rem;color:rgba(255,255,255,0.7);line-height:1.5;background:rgba(20,28,40,0.95);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 16px;}
     .lnd-layout{display:flex;flex-direction:column;gap:16px;}
     @media(min-width:992px){.lnd-layout{flex-direction:row;}.lnd-panel{flex:1;min-width:0;}}
     .lnd-panel{background:rgba(20,28,40,0.95);padding:16px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 32px rgba(0,0,0,0.3);}
@@ -266,8 +266,8 @@ document.addEventListener('DOMContentLoaded', function () {
     .lnd-slider-block input[type=range]{width:100%;height:34px;cursor:pointer;accent-color:#42a5f5;}
     .lnd-slider-scale{display:flex;justify-content:space-between;font-size:0.68rem;color:rgba(255,255,255,0.4);margin-top:2px;}
     /* caption + footnote */
-    .lnd-caption{margin-top:16px;background:linear-gradient(135deg,rgba(66,165,245,0.1),rgba(21,101,192,0.05));border:1px solid rgba(66,165,245,0.2);border-radius:8px;padding:13px 15px;font-size:0.83rem;line-height:1.55;color:rgba(255,255,255,0.85);}
-    .lnd-footnote{margin-top:12px;font-size:0.72rem;color:rgba(255,255,255,0.42);line-height:1.5;font-style:italic;}
+    .lnd-caption{margin-top:16px;background:linear-gradient(135deg,rgba(40,60,90,0.97),rgba(25,40,65,0.97));border:1px solid rgba(66,165,245,0.35);border-radius:8px;padding:13px 15px;font-size:0.83rem;line-height:1.55;color:rgba(255,255,255,0.9);}
+    .lnd-footnote{margin-top:12px;font-size:0.72rem;color:rgba(255,255,255,0.55);line-height:1.5;font-style:italic;background:rgba(20,28,40,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 14px;}
     /* ---- shared render-body atoms ---- */
     .lnd-vec{font-family:'Courier New',monospace;font-size:0.95rem;letter-spacing:0.01em;color:#cdd5de;}
     .lnd-vec .cm{color:#7ddc8a;}      /* coordinate match */
