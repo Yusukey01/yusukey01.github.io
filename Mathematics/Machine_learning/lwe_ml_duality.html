@@ -1,0 +1,265 @@
+---
+layout: default
+title: "Learning With Errors, Read Twice"
+topic_id: ml-18
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Learning With Errors, Read Twice</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#read-twice">A Linear System, Read Twice</a>
+            <a href="#estimation">The Estimation View</a>
+            <a href="#homomorphism">The Homomorphism View</a>
+            <a href="#symmetry">One Noise, Two Readings</a>
+            <a href="#Demo">Demo: The Noise Dial</a>
+        </div>
+
+        <div class="container">
+
+            <section id="read-twice" class="section-content">
+                <h2>A Linear System, Read Twice</h2>
+
+                <p>
+                    Two of the most heavily used objects in this curriculum turn out to share a strikingly similar
+                    syntactic structure. On one side sits the workhorse of statistical learning: a linear model observed
+                    through noise. On the other sits the hardest problem underwriting post-quantum encryption. They live
+                    in different worlds, one continuous and real, the other discrete and modular, but the sentence that
+                    describes them is nearly the same, and this page is about what follows from that resemblance.
+                </p>
+
+                <p>
+                    Recall the <a href="../Linear_algebra/leastsquares.html#D-linear_regression_model" class="ref-link"><strong>linear regression model</strong></a>,
+                    the starting point of nearly every supervised method we have built:
+                    \[
+                    \boldsymbol{y} = X\boldsymbol{\beta} + \boldsymbol{\varepsilon}, \qquad
+                    \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \sigma^2 I).
+                    \]
+                    A design matrix \(X\) acts on an unknown parameter vector \(\boldsymbol{\beta}\); we observe the
+                    product corrupted by a small amount of Gaussian noise, and the entire enterprise of regression is to
+                    recover \(\boldsymbol{\beta}\) despite that corruption.
+                </p>
+
+                <p>
+                    Now recall the <a href="../Discrete/learning_with_errors.html#D-lwe" class="ref-link"><strong>Learning With Errors distribution</strong></a>.
+                    A public matrix \(\mathbf{A}\) acts on a secret vector \(\mathbf{s}\); we observe the product,
+                    corrupted by a small error, and reduced modulo \(q\):
+                    \[
+                    \mathbf{b} = \mathbf{A}\mathbf{s} + \mathbf{e} \pmod{q}, \qquad
+                    \mathbf{e} \sim \chi.
+                    \]
+                    The error distribution \(\chi\) is, as on the source page, a discrete Gaussian of small width, though
+                    deployed schemes often replace it with a close approximation that is cheaper to sample in constant
+                    time. Up to that discreteness and the modular reduction, the two displays line up term for term: a
+                    known linear map applied to an unknown vector, observed through additive Gaussian-shaped noise. The recovery target even carries the same role in both: \(\boldsymbol{\beta}\)
+                    is what the statistician wants to recover; \(\mathbf{s}\) is what the cryptographer must prevent the
+                    adversary from recovering.
+                </p>
+
+                <p>
+                    So the question writes itself. If LWE <em>is</em> noisy linear regression, and regression is something
+                    our models solve for a living, why is LWE considered hard enough to protect the world's data against
+                    a quantum adversary? The tension between those two readings is the entire content of this page, and it
+                    resolves into a single design parameter that we will end by putting under the reader's finger.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why this bridge is worth crossing</h3>
+                    <p>
+                        The connection is not a loose analogy. What a regression-style attack confronts directly is the
+                        average-case recovery problem: pull the secret out of many noisy linear samples. The
+                        <a href="../Discrete/learning_with_errors.html#T-lwe_worst_case_hardness" class="ref-link"><strong>worst-case hardness</strong></a>
+                        that anchors lattice cryptography does not describe that recovery problem directly; it links it,
+                        through a reduction, to the difficulty of hard lattice problems in the worst case, the
+                        <a href="../Discrete/lattice_problems.html#D-gapsvp" class="ref-link"><strong>gap shortest vector problem</strong></a>
+                        and the <a href="../Discrete/lattice_problems.html#D-sivp" class="ref-link"><strong>shortest independent vectors problem</strong></a>.
+                        Reading LWE as
+                        regression tells us <em>where an attacker would push</em>; reading it as a homomorphism, which we
+                        do next, tells us <em>what the same structure protects</em>. The seam between attack and defense
+                        runs straight through the noise term \(\mathbf{e}\).
+                    </p>
+                </div>
+            </section>
+
+            <section id="estimation" class="section-content">
+                <h2>The Estimation View</h2>
+
+                <p>
+                    Read the LWE sample as data. We are handed rows \((\mathbf{a}_i, b_i)\) with
+                    \(b_i = (\langle \mathbf{s}, \mathbf{a}_i\rangle + e_i) \bmod q\), and we want the coefficient vector
+                    \(\mathbf{s}\). Over the reals, this is the problem <a href="../Linear_algebra/leastsquares.html#D-least_squares_solution" class="ref-link"><strong>least squares</strong></a>
+                    was invented to solve, and if the modulus and the discreteness were not there, an attacker would
+                    simply solve it. Collect enough independent rows and \(\mathbf{s}\) falls out by inverting a linear
+                    system; noise merely turns exact recovery into estimation.
+                </p>
+
+                <p>
+                    This is precisely why the machine-learning attacks on LWE that appeared in the research literature
+                    frame secret recovery as a regression problem and throw modern function approximators at it. Standard
+                    LWE secrets are not sparse; their coordinates are <strong>small</strong>, drawn from a narrow
+                    distribution centered at zero, and a small-coefficient vector recovered from noisy linear
+                    measurements is exactly what penalized least squares is built to estimate. The \(\ell_2\)-penalized
+                    <a href="regression.html#T-ridge_regression_solution" class="ref-link"><strong>Ridge</strong></a>
+                    estimator is the natural language for pulling a small, dense solution out of an ill-conditioned
+                    linear system, which is exactly the shape a standard LWE secret has. The \(\ell_1\)-penalized
+                    <a href="regression.html#D-lasso_regression" class="ref-link"><strong>Lasso</strong></a>, which
+                    instead pressures coordinates to zero, is the tool one would reach for against the sparse variants
+                    that appear in the literature; here it serves mainly to fix the vocabulary of penalized regression in
+                    which all these attacks are phrased. Borrowing that vocabulary is what makes
+                    the attack expressible; whether the borrowed tools actually recover the secret is a separate
+                    question, and the next subsection explains why they do not simply do so.
+                </p>
+
+                <div class="insight-box">
+                    <h3>What the attack actually threatens</h3>
+                    <p>
+                        These estimation-based attacks succeed only on small instances with unusually structured
+                        secrets, and remain far from threatening cryptographic parameter sizes. Those parameters are not
+                        set by machine-learning attacks at all: their security margins come from the estimated cost of
+                        lattice-reduction attacks, the primal and dual attacks whose difficulty is measured through the
+                        block size a basis-reduction algorithm needs. Machine learning offers a vivid re-description of
+                        the recovery problem, not the frontier of cryptanalysis. This is the honest posture the
+                        curriculum keeps around every hardness claim: no efficient algorithm is <em>known</em>, and the
+                        security rests on a <em>conjectured</em> hardness, not on a proof that any single method must
+                        fail.
+                    </p>
+                </div>
+
+                <h3>Why the regression does not simply succeed</h3>
+
+                <p>
+                    If LWE is regression, why can we not always run the regression? The obstruction is the single
+                    ingredient that the real-valued model lacks: reduction modulo \(q\). Over \(\mathbb{R}\), the
+                    least-squares objective \(\|\boldsymbol{y} - X\boldsymbol{\beta}\|_2^2\) is a convex bowl, and every
+                    local step of an optimizer carries information about the global minimum. That is the mechanism by
+                    which regression works at all: local gradient information is globally trustworthy.
+                </p>
+
+                <p>
+                    Reduction modulo \(q\) destroys this. The map \(t \mapsto t \bmod q\) wraps the real line onto a
+                    circle, and a coefficient vector that is slightly wrong no longer produces a slightly wrong
+                    prediction. It produces a residual that has wrapped around, landing anywhere in
+                    \(\{0, 1, \dots, q-1\}\) with no gradient pointing home. The smooth convex bowl is replaced by a
+                    landscape that is flat and uninformative almost everywhere, punctuated by a spike at the true secret.
+                    An optimizer standing at a near-miss sees none of the structure that ordinary regression relies on,
+                    because the arithmetic has severed the link between "close to \(\mathbf{s}\)" and "small residual."
+                    This is the mechanism, stated without proof, by which a problem that <em>looks</em> like regression
+                    resists being solved like regression. The noise \(\mathbf{e}\) then does the finishing work: even the
+                    exact secret produces a nonzero residual, so an attacker cannot even recognize a perfect guess with
+                    certainty.
+                </p>
+            </section>
+
+            <section id="homomorphism" class="section-content">
+                <h2>The Homomorphism View</h2>
+
+                <p>
+                    Now read the same structure the other way. Instead of trying to <em>strip</em> the noise away to
+                    recover \(\mathbf{s}\), suppose we embrace it, and ask what we can compute while the data stays
+                    hidden inside it. The answer is what lets lattice cryptography carry much of the modern program of
+                    computing on encrypted data.
+                </p>
+
+                <p>
+                    The name to keep in view is not an accident of jargon. A <a href="../Linear_algebra/ideals.html#D-ring_homomorphism" class="ref-link"><strong>ring homomorphism</strong></a>
+                    is a map \(\phi\) that preserves both operations, \(\phi(a + b) = \phi(a) + \phi(b)\) and
+                    \(\phi(ab) = \phi(a)\phi(b)\). An encryption scheme is called <em>homomorphic</em> when its encryption
+                    map behaves like one: operating on ciphertexts mirrors operating on the plaintexts they conceal. If
+                    \(\mathrm{Enc}\) sends messages \(m_1, m_2\) to ciphertexts, then a homomorphic scheme provides
+                    operations \(\oplus, \otimes\) on ciphertexts satisfying
+                    \[
+                    \mathrm{Enc}(m_1) \oplus \mathrm{Enc}(m_2) = \mathrm{Enc}(m_1 + m_2), \qquad
+                    \mathrm{Enc}(m_1) \otimes \mathrm{Enc}(m_2) = \mathrm{Enc}(m_1 \cdot m_2),
+                    \]
+                    which is the defining diagram of a homomorphism, now read as a security guarantee. A server that
+                    never sees a plaintext can still add and multiply the hidden values, returning an encrypted result
+                    only its owner can open.
+                </p>
+
+                <p>
+                    The <a href="../Discrete/ring_lattice_cryptography.html#D-ring_lwe" class="ref-link"><strong>Ring-LWE</strong></a>
+                    structure supplies exactly this. Its samples live not in a raw vector space but in a quotient ring
+                    \(R_q\), and the ring's own addition and multiplication are what the ciphertext operations
+                    \(\oplus, \otimes\) ride on. The secret and its Gaussian error sit inside ring elements, so the ring
+                    supplies a multiplication of ciphertexts directly, rather than forcing it to be simulated by many
+                    scalar operations. That multiplication is not free: multiplying two ciphertexts expands the secret
+                    into a higher-degree object, so a further step is needed to bring the result back to a standard
+                    ciphertext under the original key, and this step, together with the noise growth it must control, is
+                    the dominant cost of homomorphic multiplication. Even so, the ring structure is the algebraic reason
+                    a single hardness assumption, the same one an attacker attacks in the estimation view, is also what
+                    powers computation over ciphertexts in the defense view.
+                </p>
+
+                <div class="insight-box">
+                    <h3>What the noise costs on this side</h3>
+                    <p>
+                        The error \(\mathbf{e}\) does not vanish when we switch readings; it accumulates. Each ciphertext
+                        addition adds error, and each multiplication amplifies it. Once the accumulated error grows
+                        comparable to the modulus, decryption fails, which caps how deep a computation the ciphertexts
+                        can carry unaided. The engineering apparatus that refreshes noise to lift this cap is a rich
+                        subject in its own right; here it is enough to see <em>why</em> a cap exists at all, and that its
+                        location is set by the same width parameter that governs hardness. The details of noise
+                        management belong to the fast-moving implementation layer and are deliberately left outside our
+                        scope.
+                    </p>
+                </div>
+            </section>
+
+            <section id="symmetry" class="section-content">
+                <h2>One Noise, Two Readings</h2>
+
+                <p>
+                    The two views are not two topics that happen to share a page. They are one object under two
+                    readings, and the hinge between them is a single quantity: the width of the error distribution
+                    \(\chi\). Increase the noise, and the estimation view gets harder, because the residual landscape an
+                    attacker's optimizer must climb grows flatter and less informative. That is good for security. But
+                    increase the same noise, and the homomorphism view gets shallower, allowing fewer operations before
+                    decryption fails. That is bad for computation. The parameter an attacker
+                    would want small is exactly the parameter a user of encrypted computation would also want small, and
+                    the parameter that protects the secret is exactly the parameter that limits the depth of what can be
+                    computed over it.
+                </p>
+
+                <p>
+                    So the noise term is a shared currency. It is spent, in opposite directions, by attack and by
+                    defense. Every choice of \(\chi\) is simultaneously a stance on how hard the secret is to steal and
+                    on how much can be computed without revealing it, and there is no setting that maximizes both.
+                </p>
+
+                <div class="insight-box">
+                    <h3>A pattern beyond this page</h3>
+                    <p>
+                        It is worth noting, as a closing aside, that the shape of what we have seen here recurs well
+                        outside cryptography. Wherever learning systems are set against one another, the same tension
+                        tends to appear: the mechanisms that make a system robust to being manipulated are frequently the
+                        very mechanisms an adversary studies in order to manipulate it, so that a single design choice
+                        buys resistance in one direction while conceding leverage in another. One need not accept any
+                        strong claim about the current state of such contests to notice the structural rhyme. What makes
+                        the lattice setting unusually clean is that the shared quantity is not a vague resource but a
+                        single, explicit parameter, and the trade-off it governs can be written down and, in the demo
+                        below, moved by hand.
+                    </p>
+                </div>
+            </section>
+
+            <section id="Demo" class="section-content">
+                <h2>Demo: The Noise Dial</h2>
+               
+                <div id="lwe_noise_duality_visualizer"></div>
+            </section>
+
+        </div>
+
+        <script src="/js/sec5_p18_lwe_noise_duality.js"></script>
+    </body>
+</html>
