@@ -292,6 +292,17 @@ document.addEventListener('DOMContentLoaded', function () {
     .lnd-btn.pri{background:linear-gradient(135deg,#1565c0,#42a5f5);border:1px solid #64b4ff;color:#fff;}
     .lnd-btn.pri:hover{filter:brightness(1.1);}
     .lnd-btn:disabled{opacity:0.4;cursor:not-allowed;}
+    /* ---- distribution chart ---- */
+    .lnd-dist-card{background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 14px;margin-bottom:12px;}
+    .lnd-dist-head{font-size:0.78rem;color:rgba(255,255,255,0.7);margin-bottom:10px;}
+    .lnd-dist-sub{display:block;font-size:0.68rem;color:rgba(255,255,255,0.4);margin-top:3px;}
+    .lnd-dbar-true-legend{color:#64b4ff;font-weight:600;}
+    .lnd-dist-bars{display:flex;flex-direction:column;gap:4px;}
+    .lnd-dbar-row{height:9px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;}
+    .lnd-dbar{height:100%;border-radius:4px;transition:width 0.18s ease;}
+    .lnd-dbar-other{background:rgba(255,255,255,0.22);}
+    .lnd-dbar-true{background:linear-gradient(90deg,#1565c0,#64b4ff);box-shadow:0 0 6px rgba(100,180,255,0.5);}
+    .lnd-dist-note{font-size:0.74rem;color:rgba(255,255,255,0.6);margin-top:10px;line-height:1.45;}
     /* ---- U7 compute-panel body ---- */
     .lnd-c-card{background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 14px;margin-bottom:12px;}
     .lnd-pick-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px;}
@@ -323,13 +334,25 @@ document.addEventListener('DOMContentLoaded', function () {
   // ---- U6: attack recompute + render ----
   // One fresh-noise instance drives the displayed guess-vs-truth vectors;
   // identifiableRate is averaged over ATK_REPS instances for a smooth meter.
+  const ATK_TOPN = 12; // how many best candidates the distribution chart shows
+
   function recomputeAttack() {
     const { A, b } = genLWE(S.s, S.w_atk);
-    S.bestGuess = bruteBest(A, b).best;
+    // Score every candidate on this one observation, then read off both the best
+    // fit AND the full ranked distribution — so the chart and the vector agree.
+    const scored = CANDS.map(sc => ({ sc, v: score(A, b, sc), isTrue: eqVec(sc, S.s) }));
+    scored.sort((x, y) => x.v - y.v);
+    S.bestGuess = scored[0].sc;
     S.identifiableRate = identifiableRate(S.s, S.w_atk, ATK_REPS);
+    // distribution: the top-N by score, plus the true secret's global rank and value
+    S.dist = scored.slice(0, ATK_TOPN).map(e => ({ v: e.v, isTrue: e.isTrue }));
+    S.trueRank = scored.findIndex(e => e.isTrue);   // 0-based
+    S.trueVal = scored[S.trueRank].v;
+    S.bestVal = scored[0].v;
+    S.worstShown = scored[ATK_TOPN - 1].v;           // scale reference for bars
   }
 
-  function fmtCoord(x) { return x === 0 ? '0' : (x > 0 ? '+' : '\u2212') + Math.abs(x); }
+  function fmtCoord(x) { return x === 0 ? '0' : (x > 0 ? '+' : '\u2212') + Math.abs(x); } // +2 / \u22122 / 0 (no sign on zero)
 
   function vecHTML(vec, ref) {
     // color each coordinate green if it matches ref, amber otherwise (ref null => neutral)
@@ -338,6 +361,45 @@ document.addEventListener('DOMContentLoaded', function () {
       return `<span class="${cls}">${fmtCoord(x)}</span>`;
     }).join('&nbsp;&nbsp;');
     return `[&nbsp;${inner}&nbsp;]`;
+  }
+
+  // Distribution chart: one bar per top-N candidate. Bar length encodes "fit quality"
+  // (worstShown - score), so the best candidates are the LONGEST bars. The true
+  // secret's bar is highlighted. Reads at a glance:
+  //   low noise  -> the true secret's bar towers alone (isolated winner)
+  //   high noise -> all bars nearly equal, the true secret sunk into the pack
+  function distHTML() {
+    const bars = S.dist;
+    const lo = S.bestVal;                                  // best (shortest score)
+    const hi = Math.max(S.worstShown, lo + 1);             // guard against zero range
+    const rows = bars.map((e) => {
+      const quality = (hi - e.v) / (hi - lo);              // 1 = best, 0 = worst shown
+      const w = Math.max(4, Math.round(quality * 100));    // keep a sliver visible
+      const cls = e.isTrue ? 'lnd-dbar-true' : 'lnd-dbar-other';
+      return `<div class="lnd-dbar-row"><div class="lnd-dbar ${cls}" style="width:${w}%;"></div></div>`;
+    }).join('');
+    // annotation: is the true secret the clear, isolated winner or lost in the crowd?
+    let note;
+    if (S.trueRank === 0 && S.dist.length > 1) {
+      const gap = (S.dist[1].v - S.dist[0].v);
+      const spread = Math.max(1, S.worstShown - S.bestVal);
+      const isolated = gap / spread > 0.25;
+      note = isolated
+        ? 'The true secret stands alone as the clear best fit.'
+        : 'The true secret is best here, but barely — rivals are almost as good.';
+    } else if (S.trueRank < ATK_TOPN) {
+      note = `A wrong candidate now fits best; the true secret has sunk to rank #${S.trueRank + 1}.`;
+    } else {
+      note = `The true secret is lost in the crowd — rank #${S.trueRank + 1} of ${CANDS.length}.`;
+    }
+    return `
+      <div class="lnd-dist-card">
+        <div class="lnd-dist-head">how the candidates score
+          <span class="lnd-dist-sub">longer = fits better · <span class="lnd-dbar-true-legend">the true secret</span></span>
+        </div>
+        <div class="lnd-dist-bars">${rows}</div>
+        <div class="lnd-dist-note">${note}</div>
+      </div>`;
   }
 
   function renderAttack() {
@@ -366,6 +428,8 @@ document.addEventListener('DOMContentLoaded', function () {
           <span class="ms">amber</span> = the fit has drifted off
         </div>
       </div>
+
+      ${distHTML()}
 
       <div class="lnd-meter-card">
         <div class="lnd-meter-top">
