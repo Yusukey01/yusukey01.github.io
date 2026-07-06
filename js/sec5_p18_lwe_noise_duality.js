@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function () {
     S.identifiableRate = identifiableRate(S.s, S.w_atk, ATK_REPS);
   }
 
-  function fmtCoord(x) { return (x >= 0 ? '+' : '\u2212') + Math.abs(x); } // +2 / \u22122 (minus sign)
+  function fmtCoord(x) { return x === 0 ? '0' : (x > 0 ? '+' : '\u2212') + Math.abs(x); }
 
   function vecHTML(vec, ref) {
     // color each coordinate green if it matches ref, amber otherwise (ref null => neutral)
