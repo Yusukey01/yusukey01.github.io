@@ -321,6 +321,18 @@ document.addEventListener('DOMContentLoaded', function () {
     .lnd-result-note.ok{color:rgba(125,220,138,0.85);}
     .lnd-result-note.broken{color:#ffcf7a;}
     .lnd-budget-top{display:flex;justify-content:space-between;align-items:baseline;font-size:0.75rem;color:rgba(255,255,255,0.55);margin-bottom:6px;}
+    /* ---- slot line ---- */
+    .lnd-slot-head{font-size:0.78rem;color:rgba(255,255,255,0.7);margin-bottom:12px;}
+    .lnd-slot-sub{display:block;font-size:0.68rem;color:rgba(255,255,255,0.4);margin-top:3px;}
+    .lnd-slot-track{position:relative;height:34px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;margin-bottom:10px;}
+    .lnd-slot-band{position:absolute;top:0;bottom:0;background:rgba(100,180,255,0.09);border-radius:2px;}
+    .lnd-slot-wall{position:absolute;top:-2px;bottom:-2px;width:2px;background:rgba(255,207,122,0.55);transform:translateX(-1px);}
+    .lnd-slot-tick{position:absolute;top:50%;width:6px;height:6px;border-radius:50%;transform:translate(-50%,-50%);}
+    .lnd-slot-center{background:rgba(255,255,255,0.28);}
+    .lnd-slot-correct{background:#7ddc8a;box-shadow:0 0 5px rgba(125,220,138,0.6);width:8px;height:8px;}
+    .lnd-slot-decoded{background:#ffcf7a;box-shadow:0 0 5px rgba(255,207,122,0.6);width:8px;height:8px;}
+    .lnd-slot-marker{position:absolute;top:50%;width:4px;height:22px;border-radius:2px;transform:translate(-50%,-50%);transition:left 0.18s ease,background 0.18s ease;}
+    .lnd-slot-note{font-size:0.74rem;margin-top:8px;line-height:1.45;}
     .lnd-adds-badge{font-family:'Courier New',monospace;color:#64b4ff;}
     .lnd-hint{font-size:0.74rem;color:rgba(255,255,255,0.5);margin-top:10px;line-height:1.5;}
     .lnd-hint strong{color:#ffcf7a;font-weight:600;}
@@ -352,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
     S.worstShown = scored[ATK_TOPN - 1].v;           // scale reference for bars
   }
 
-  function fmtCoord(x) { return x === 0 ? '0' : (x > 0 ? '+' : '\u2212') + Math.abs(x); }
+  function fmtCoord(x) { return x === 0 ? '0' : (x > 0 ? '+' : '\u2212') + Math.abs(x); } // +2 / \u22122 / 0 (no sign on zero)
 
   function vecHTML(vec, ref) {
     // color each coordinate green if it matches ref, amber otherwise (ref null => neutral)
@@ -468,6 +480,59 @@ document.addEventListener('DOMContentLoaded', function () {
     S.broken = (dec(S.acc) !== S.expected);  // direct ground-truth comparison
   }
 
+  // Slot line: the answer lives at a slot center (spacing Delta); decryption rounds acc to
+  // the NEAREST center. A windowed view around the correct slot shows the marker drifting off
+  // center as noise accumulates. The broken state follows S.broken (the direct dec!=expected
+  // comparison) exactly — we never re-derive it from the marker's geometry, because the
+  // Delta*P != q drift makes a pure "crossed the wall" test disagree near the boundary.
+  function slotHTML() {
+    const pos = mod(S.acc);
+    const decoded = dec(S.acc);
+    const expected = S.expected;
+    // window: slots [expected-3 .. expected+3], clamped to [0, P)
+    const kLo = Math.max(0, expected - 3), kHi = Math.min(P - 1, expected + 3);
+    const xLo = DELTA * kLo - DELTA / 2, xHi = DELTA * kHi + DELTA / 2;
+    const span = xHi - xLo;
+    const toPct = (v) => 100 * (v - xLo) / span;
+    let markerPct = toPct(pos);
+    const outLeft = markerPct < 0, outRight = markerPct > 100;
+    markerPct = Math.max(0, Math.min(100, markerPct)); // clamp for display
+
+    // slot cells + centers
+    let cells = '', ticks = '';
+    for (let k = kLo; k <= kHi; k++) {
+      const cx = toPct(DELTA * k);
+      const isCorrect = k === expected;
+      const isDecoded = k === decoded;
+      const cls = isCorrect ? 'lnd-slot-correct' : (isDecoded ? 'lnd-slot-decoded' : 'lnd-slot-center');
+      cells += `<div class="lnd-slot-tick ${cls}" style="left:${cx}%;"></div>`;
+    }
+    // wall markers: half-slot boundaries around the correct slot
+    const wallL = toPct(DELTA * expected - DELTA / 2);
+    const wallR = toPct(DELTA * expected + DELTA / 2);
+    const markerColor = S.broken ? '#f39c12' : '#64b4ff';
+    const arrow = outLeft ? '&#9664;' : (outRight ? '&#9654;' : '');
+
+    return `
+      <div class="lnd-c-card">
+        <div class="lnd-slot-head">where the answer lands
+          <span class="lnd-slot-sub">each notch is a slot (spacing &Delta; = ${DELTA}); decryption snaps to the nearest one</span>
+        </div>
+        <div class="lnd-slot-track">
+          <div class="lnd-slot-wall" style="left:${wallL}%;"></div>
+          <div class="lnd-slot-wall" style="left:${wallR}%;"></div>
+          <div class="lnd-slot-band" style="left:${wallL}%;width:${wallR - wallL}%;"></div>
+          ${cells}
+          <div class="lnd-slot-marker" style="left:${markerPct}%;background:${markerColor};box-shadow:0 0 6px ${markerColor};"></div>
+        </div>
+        <div class="lnd-slot-note" style="color:${S.broken ? '#ffcf7a' : 'rgba(255,255,255,0.6)'};">
+          ${S.broken
+            ? `The marker has drifted past the wall into slot ${decoded}\u2019s territory \u2014 it decrypts to ${decoded}, not ${expected}. ${arrow}`
+            : `The marker sits inside slot ${expected}\u2019s walls, so it still decrypts correctly. Noise nudges it off center; cross a wall and it flips.`}
+        </div>
+      </div>`;
+  }
+
   function renderCompute() {
     const body = container.querySelector('#lnd-def-body');
     if (!body) return;
@@ -508,6 +573,8 @@ document.addEventListener('DOMContentLoaded', function () {
             : 'correct \u2014 equals the true sum of the hidden numbers'}
         </div>
       </div>
+
+      ${slotHTML()}
 
       <div class="lnd-c-card">
         <div class="lnd-budget-top">
