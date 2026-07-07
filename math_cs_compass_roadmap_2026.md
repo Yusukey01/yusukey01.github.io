@@ -1,7 +1,7 @@
-# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v8)
+# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v9)
 
 **Author:** Yusuke Yokota
-**Last Updated:** 7/3/2026
+**Last Updated:** 7/6/2026
 **Website:** https://math-cs-compass.com
 
 ---
@@ -14,13 +14,13 @@ lack awareness of applications. The primary focus is rigorous mathematical found
 modern AI/ML, with continuous expansion into adjacent domains (GDL, CDL, cryptography,
 stochastic analysis).
 
-**Total: 225 pages.** I (linalg) 43 / II (calc) 99 / III (prob) 26 / IV (disc) 40 / V (ml) 17. `curriculum.json` is authoritative.
+**Total: 226 pages.** I (linalg) 43 / II (calc) 99 / III (prob) 26 / IV (disc) 40 / V (ml) 18. `curriculum.json` is authoritative.
 
 **Five tracks** (status + full detail in Part 2):
 - Phase 2e — continuous-time generative foundations (III) — ⏸ awaiting Øksendal purchase
 - Rep Theory — GDL continuous leg (I+V) — ✅ complete
 - CDL — category theory (IV+V) — 🔄 Stage 2 in progress
-- Crypto — through PQC incl. Quantum (IV+I) — ✅ complete
+- Crypto — through PQC incl. Quantum (IV+I) + Section V landing (ml-18, stage 5) — ✅ complete
 - TDL — GDL discrete leg (IV+V) — ✅ landed (optional persistent-homology branch remains)
 
 ---
@@ -69,7 +69,7 @@ A unified view of the five tracks. Per-track detail is authoritative in the indi
 | **Phase 2e** continuous-time generative | — | III | **awaiting Øksendal purchase** (then Page1 BM+Itō) | **Øksendal 6th ed.** | `phase2e_handout_v1` |
 | **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **linalg-31~40 (incl. Peter–Weyl) + ml-16 complete; GDL-mandatory scope fully satisfied** | Hall 2nd ed. (on hand) | `rep_handout_v10` (archival) |
 | **CDL** category theory | — | IV (cats) + V (CDL bridge) | **Stage 2 in progress: disc-18~28 published (Leinster Ch.1–5 done); next = Ch.6 (ID TBD, disc-XX)** | none (both primary free) | `cdl_track_handout_v10` |
-| **Crypto** through PQC | — | IV (classical + Shor + lattice-computation + PQC) + I (algebra + quantum bg + lattice geometry) | **✅ COMPLETE (mainline arc + ZKP)** | none | `crypto_track_handout_v25` |
+| **Crypto** through PQC | — | IV (classical + Shor + lattice-computation + PQC) + I (algebra + quantum bg + lattice geometry) + **V (LWE landing ml-18, `security`)** | **✅ COMPLETE (mainline arc + ZKP + stage 5 Section V landing)** | none | `crypto_track_handout_v26` |
 | **TDL** | **discrete leg** | IV (existing Hodge) + V (SNN) | **SNN (ml-17) complete; discrete leg landed. Optional persistent-homology branch (disc-XX) remains** | TDL book (free) | `tdl_track_handout_v2` |
 
 ### 2.2 Shared structural pattern
@@ -78,10 +78,13 @@ Four of the five tracks share the same shape:
 - **"The mathematical content is owned by its native Section; identity shifts to Section V at
   the ML/application point."** Rep (math=I, Equiv NN=V) / CDL (cats=IV, bridge=V) /
   TDL (Hodge=IV, SNN=V) / Phase 2e (math=III, landing ml-14/15 = existing V).
-- **Crypto is the exception (confirmed in execution):** its application point is *not* Section V.
-  Both math and application landed in Section I/IV — the quantum "Section V bridge" idea was
-  **dropped** (handout §0.8). Quantum computation is not ML; Shor/PQC own Section IV (algorithm)
-  and Section I (quantum/lattice geometry). Section V owns no quantum mathematics.
+- **Crypto is the partial exception (updated 2026-07-06, handout §0.9):** the *quantum* half has
+  no Section V landing — Shor/PQC own Section IV (algorithm) and Section I (quantum/lattice geometry),
+  and Section V owns no quantum mathematics (the old quantum "Section V bridge" idea stays **dropped**,
+  handout §0.8). But the *LWE* half now **does** land in Section V: **ml-18 (`security` group, crypto
+  stage 5)** reads LWE as noisy regression + ring homomorphism (noise duality), a genuine ML/application
+  landing. Crucially this does **not** break "mathematics is owner": ml-18 owns no crypto mathematics —
+  disc-38/39 remain the native owners, ml-18 only ref-links them and adds the ML *reading* (landing ≠ owner).
 - This is a consistent expression of the site principle "application is viewpoint, mathematics
   is owner" (Part 1).
 - **Obsolescence-resistance principle** (established in Crypto §0.5 / Phase 2e): write the
@@ -269,12 +272,12 @@ framework adds categorical primitives / a second well-funded entrant. Paper list
 
 ---
 
-## Part 6 — Crypto Track (✅ COMPLETE — includes Quantum)
+## Part 6 — Crypto Track (✅ COMPLETE — includes Quantum + Section V landing ml-18)
 
 The former standalone "Quantum" plan is absorbed here — quantum computation shipped as part of the crypto stack (Shor = attack, lattices = defense), not as a separate track.
 
 Complete through PQC. Realized placement below; all policy/lessons/per-page detail live in
-`crypto_track_handout_v25` (single source of truth) + `curriculum.json`/`previews.json`. Only the
+`crypto_track_handout_v26` (single source of truth) + `curriculum.json`/`previews.json`. Only the
 **placement outcomes that the topicGroup principle produced** are kept here, as the canonical worked
 example of Part 12 principle 10.
 
@@ -289,10 +292,14 @@ example of Part 12 principle 10.
 | Lattice computational problems (SVP/GapSVP/SIVP/BDD) | disc-36 | IV | `computation` |
 | SIS / LWE / Ring-Module-LWE + ML-KEM | disc-37/38/39 | IV | `cryptography` |
 | ZKP (off-mainline) | disc-40 | IV | `cryptography` |
+| **LWE Section V landing (stage 5): noise duality — estimation + homomorphism views** | **ml-18** | **V** | **`security` (new)** |
 
 Mainline arc = attack (Shor) -> defense (geometry -> computational problems -> SIS -> LWE ->
-Ring/Module-LWE + ML-KEM). Primaries: HAC + de Wolf + Regev (courses) + Peikert; all free, all
-registered in `references.json`.
+Ring/Module-LWE + ML-KEM) -> **stage 5 Section V landing (ml-18)**. Stage 5 reads LWE (disc-38) as
+noisy regression (ref-links ml-2 Ridge/Lasso) + ring homomorphism (ref-links disc-39); it owns **no**
+new crypto mathematics — disc-38/39 stay the native owners, ml-18 adds only the ML *reading* (landing
+≠ owner, handout §0.9). New topicGroup **`security`** (Section V, holds future FHE/DP/ZKP × ML landings).
+Primaries: HAC + de Wolf + Regev (courses) + Peikert; all free, all registered in `references.json`.
 
 ### 6.2 Placement decisions the topicGroup principle forced (the worked example)
 - **Split by identity, not by track.** Lattice *geometry* is pure math -> Section I (new `lattice`
@@ -305,6 +312,14 @@ registered in `references.json`.
 - **ECC dropped** (isolated, quantum-obsolete, absent from HAC; structural preview via disc-33 suffices).
 - **No standalone PQC-specs page** — ML-KEM/FIPS deployment is thin viewpoint inside disc-38/39
   (obsolescence-resistance: write the hardness mathematics thickly, specs thin).
+- **Stage 5 landing forced a new Section V group (`security`).** ml-18 lands in Section V (its ML
+  element = reading LWE as regression, ref-linking ml-2). But topicGroup **must not cross sections**:
+  the `cryptography` group belongs to Section IV, so it cannot be reused on a Section V page. The
+  existing Section V groups (`ml-foundations`/`deep-learning`/`generative-models`) all mismatch by
+  content (ml-18 is neither a base learning method, an NN architecture, nor a generative model).
+  Hence a new Section-V-local group `security` — sized to hold future landings (FHE/DP/ZKP × ML),
+  not a singleton. Reusing a prereq's group (ml-2 = `ml-foundations`) would have been wrong: ml-18
+  is not a foundation. (landing ≠ owner: disc-38/39 keep the crypto mathematics; handout §0.9.)
 - 🔴 **Site-wide permanent rule (handout §0.7/§6):** never write factoring/DLP as a permanent
   security anchor, nor lattices as "in-principle quantum-safe" — the known/conjecture register is
   mandatory on all crypto pages. Enforced; recorded here only as a cross-page invariant.
@@ -369,7 +384,7 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 | TDL: Persistent Homology | ~1–2 | IV | TBD (disc-XX; next free = disc-41, assigned at drafting) | optional branch (disc-15 forecast); new concepts (filtration / persistence module / barcode / stability) -> page-count uncertain; ref = Edelsbrunner-Harer (existing); detail in `tdl_track_handout_v2` §4 |
 | Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **awaiting Øksendal purchase** (Part 4; splits anticipated) |
 | CDL Track | ~6–9 (disc-18~28 = 11 done) | IV + V | disc-18~28 (`categories_functors_naturality` ~ `functors_and_limits`); next = disc-XX (Ch.6) | 🔄 Stage 2: Leinster Ch.1–5 done, next = Ch.6 (ID TBD, disc-29~40 consumed by crypto); detail `cdl_track_handout_v10` (Part 5) |
-| Crypto Track (incl. Quantum) | disc-29~40 + linalg-41/42/43 (done) | IV + I | (see `curriculum.json`) | ✅ **COMPLETE** — placement in Part 6, detail in `crypto_track_handout_v25` |
+| Crypto Track (incl. Quantum + V landing) | disc-29~40 + linalg-41/42/43 + **ml-18** (done) | IV + I + **V** | (see `curriculum.json`) | ✅ **COMPLETE** — placement in Part 6, detail in `crypto_track_handout_v26` |
 | Grover / VQE / QEC | — | IV | TBD | not built; no active trigger (algorithm=IV rule reserved) |
 | Regular Conditional Distributions | ~1 | III | `regular_conditional_distributions.html` | Phase 2e prereq (SDE/path-space measure) |
 | Advanced VI topics | ~1–2 | III | TBD | individually triggered by ML-application pressure |
@@ -387,7 +402,7 @@ Completed tracks (on index.html, no planned pages).
 |---|---|---|---|
 | Representation Theory (Hall) — incl. Peter–Weyl + FA block | linalg-31~40 + ml-16 + calc-93~99 | 6/8–6/20/2026 | GDL continuous leg: group/Lie-algebra reps -> irreducible classification -> Schur -> Clebsch-Gordan/Wigner-Eckart -> Peter–Weyl (linalg-40, recovers calc-32 Fourier), landing at Equivariant NN (ml-16). FA block (calc-93~99, `functional-analysis`) built as Peter–Weyl's Stone–Weierstrass prerequisite. GDL-mandatory scope complete. Deep-dive deferred (Part 11). Detail: `rep_handout_v10`. |
 | Smooth Manifolds (Lee Ch.1–16 through Riemannian integration) | calc-36~81 + calc-42/45/47/52/59 + calc-82~92 | 6/3–6/15/2026 | Manifold spine + differential forms (Ch.14) + orientations (Ch.15) + integration (Ch.16: Haar, Stokes/Green, Riemannian, divergence). Mathematical landing of the GDL continuous leg; Peter–Weyl Haar substrate in calc-90. Corners/Densities deferred (Part 11). Detail: `manifold_handout_v24` / `ch16_integration_handout_v12`. |
-| **Crypto Track (through PQC, incl. Quantum)** | **disc-29~40 + linalg-41/42/43** | **~7/3/2026** | Full attack->defense arc + ZKP. New topicGroups `quantum` (linalg-41) and `lattice` (linalg-42/43). Placement + deviations recorded in Part 6; full detail in `crypto_track_handout_v25`. |
+| **Crypto Track (through PQC, incl. Quantum + V landing)** | **disc-29~40 + linalg-41/42/43 + ml-18** | **~7/6/2026** | Full attack->defense arc + ZKP + **stage 5 Section V landing (ml-18, LWE as noise-duality, new `security` group)**. New topicGroups `quantum` (linalg-41), `lattice` (linalg-42/43), **`security` (ml-18, Section V)**. Placement + deviations in Part 6; full detail in `crypto_track_handout_v26`. |
 | Formal Methods | disc-16, disc-17 | 5/14/2026 | Section IV third pillar (disc-4,16,17). Bidirectional bridge with disc-12 (Four Color Theorem). Curry-Howard-Lambek connection point for CDL. |
 
 ### Completed reference -> page mapping
@@ -464,11 +479,13 @@ Completed tracks (on index.html, no planned pages).
    CDL/Phase2e/Rep/TDL=learn-while-writing).
 7. **Mood-driven dispatch**: no single order enforced. If one track stalls, others proceed. The
    former hard ordering (layer-2 Shor <- crypto stage 1-2 + layer-1 linalg-41) is now fully
-   **discharged** — the entire crypto/quantum stack (disc-35~40) shipped (Part 6). No hard
+   **discharged** — the entire crypto/quantum stack (disc-35~40) shipped + Section V landing ml-18 (stage 5, Part 6). No hard
    ordering constraint remains in the plan.
 8. **Tracks-isomorphic structure**: "mathematical content owned by its native
    Section; identity moves to Section V at the ML/application point." Rep/CDL/TDL/Phase2e take this
-   shape; Crypto is the exception (owns IV/I, no Section V landing) (Part 2.2).
+   shape; Crypto is a **partial** exception (owns IV/I): its quantum half has no Section V landing,
+   but the LWE half landed via **ml-18** (`security` group, stage 5) as noise-duality — owner still
+   native (disc-38/39), landing ≠ owner (Part 2.2, handout §0.9).
 9. **Obsolescence-resistance principle**: write the enduring mathematics thickly, not
    the individual method. diffusion -> FM, ML-KEM -> next-gen: when methods swap, the foundation
    survives (Parts 4.2, 6.2).
@@ -488,8 +505,10 @@ candidates, physical-book inspection items, and resume-time greps are authoritat
 individual handouts for the **still-active tracks**: `phase2e_handout_v1` / `cdl_track_handout_v10` /
 `tdl_track_handout_v2` (optional persistent-homology branch only).
 
-**Completed-track handouts (archival, do not resume):** `crypto_track_handout_v25` (crypto through
-PQC + ZKP — completion record, touched only if a *new* track is started), `rep_handout_v10` (Rep
+**Completed-track handouts (archival):** `crypto_track_handout_v26` (crypto through
+PQC + ZKP + **stage 5 Section V landing ml-18** — completion record; v26 added the `security`-group
+landing, so the track can extend into Section V `security` pages (FHE/DP/ZKP × ML) without a new track),
+`rep_handout_v10` (Rep
 Theory incl. Peter–Weyl + FA block; absorbed the spent `peter_weyl_handout_v1` and
 `fa_block_screening_handout_v5`), `manifold_handout_v24` / `ch16_integration_handout_v12` (manifold
 spine through Riemannian integration; only Corners/Densities deferred).
