@@ -4,9 +4,10 @@
 // ONE honest thesis, shown two ways: the SAME small centered noise chi = Uniform[-w,w]
 // that an attacker must fight to un-hide a secret is the SAME kind of noise a
 // homomorphic computation must budget. The payload is the ASYMMETRY of scale:
-//   LEFT  (hide the secret): needs noise on the MODULUS scale (w ~ q/2) to blur it;
-//   RIGHT (compute on ciphertexts): breaks at only SLOT-scale noise (w ~ Delta = q/P),
-//   about P times smaller.
+//   LEFT  (hide the secret): identifiability survives until w is a large fraction of q;
+//   RIGHT (compute on ciphertexts): a single add breaks once 2w >= Delta/2.
+// The two walls are measured against different rulers (q vs Delta), and the empirically
+// measured gap between the 0.5-crossings is about 4x -- NOT P. Do not quote P as the gap.
 // Two independent sliders, both drawing from the identical Uniform[-w,w].
 //
 // Honesty guardrails (see spec):
@@ -15,8 +16,7 @@
 //    n=4 toy is fully enumerable; a footnote says so. Never imply "search gets hard".
 //  - Compute toy is ADDITIVE ONLY (c = Delta*m + noise). No multiply button.
 //  - The "broken" state is a DIRECT comparison dec(acc) !== expected, never a
-//    predicted noise threshold (Delta*P = 256 != q = 257 makes any threshold inexact
-//    near the boundary; the direct comparison is always correct by construction).
+//    predicted noise threshold.
 //  - Keep P = 16; do not engineer the scale gap away. The gap IS the lesson.
 //
 // House rules: no scheme/algorithm names in UI; no efficiency claims; toy sizes only;
@@ -24,10 +24,10 @@
 // Theme-safety: every visible element sits on a self-contained opaque dark panel;
 // no CSS var(--), no data-theme read, no currentColor.
 //
-// Math core: verified headless against the spec's tables (attack identifiability
-// collapse 1.00 -> 0 across w_atk in [0, q/2]; additive round-trip 0 failures while
-// 2w < Delta/2; scale-gap ratio ~ P). Decrypt decodes on the NON-centered residue
-// round(mod(c)/Delta) % P, which round-trips the full plaintext range [0,P).
+// Math core: q = 256 so that P*DELTA === q exactly and every plaintext slot has the
+// same noise tolerance. Single-add correctness is EXACT: safe iff 2w < DELTA/2, with
+// w = DELTA/4 the first breaking width (verified exhaustively over all m1,m2,e1,e2).
+// Decrypt decodes on the NON-centered residue round(mod(c)/Delta) % P.
 
 document.addEventListener('DOMContentLoaded', function () {
   const container = document.getElementById('lwe_noise_duality_visualizer');
@@ -38,14 +38,16 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   // M1 — MATH CORE (verified)
   // ============================================================
-  const q = 257, n = 4, m = 8, P = 16, DELTA = Math.floor(q / P); // Delta = 16
+  const q = 256, n = 4, m = 8, P = 16, DELTA = q / P; // Delta = 16, and P*DELTA === q exactly
 
   function randInt(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); } // inclusive
   function centeredNoise(w) { return w === 0 ? 0 : randInt(-w, w); }                    // chi = Uniform[-w,w]
   function mod(x) { return ((x % q) + q) % q; }                                         // in [0,q)
-  function centeredLift(x) { const r = mod(x); return r >= q / 2 ? r - q : r; }         // in [-q/2, q/2)
+  function centeredLift(x) { const r = mod(x); return r >= q / 2 ? r - q : r; }         // image is [-q/2, q/2)
   function dot(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
-  function roundHalfUp(x) { return Math.floor(x + 0.5); }                               // pinned rounding
+  // Not Math.round: JS rounds -0.5 to -0, breaking half-integer symmetry. dec() only ever
+  // feeds a non-negative argument, but pin the behaviour so a later edit cannot silently change it.
+  function roundHalfUp(x) { return Math.floor(x + 0.5); }
 
   // --- attack core ---
   const CANDS = (function () {                       // all 625 vectors in {-2..2}^4
@@ -73,6 +75,9 @@ document.addEventListener('DOMContentLoaded', function () {
     for (const sc of CANDS) { const v = score(A, b, sc); if (v < bs) { bs = v; best = sc; } }
     return { best };
   }
+  // Resamples A as well as e, so this rate marginalizes over matrices too. That is the
+  // right quantity for the thesis, but it means a single on-screen instance can disagree
+  // with the plotted rate: one unlucky A can stay identifiable well past the average wall.
   function identifiableRate(s, w, reps) {             // fraction of instances where best === s
     let hit = 0;
     for (let r = 0; r < reps; r++) { const { A, b } = genLWE(s, w); if (eqVec(bruteBest(A, b).best, s)) hit++; }
@@ -87,73 +92,122 @@ document.addEventListener('DOMContentLoaded', function () {
   // ============================================================
   // M5 — SELF-TESTS (run once; console.error + return on any failure, UI stays hidden)
   // ============================================================
+  // Every test below must be capable of FAILING on a plausible bug. Tests that merely
+  // confirm a property already guaranteed by their own loop bounds are not tests.
+  // Each returns null on success or a diagnostic string on failure.
   function selfTest() {
-    // T1 — attack identifiable at zero noise: best === secret AND score(secret) === 0
+    // T1 — zero noise: the secret is the unique exact minimiser (score 0, and no tie).
     {
       const s = sampleSecret(); const { A, b } = genLWE(s, 0);
-      if (!eqVec(bruteBest(A, b).best, s) || score(A, b, s) !== 0) {
-        console.error('lwe demo: attack zero-noise identifiability failed'); return false;
-      }
+      if (score(A, b, s) !== 0) return 'T1: secret does not achieve zero residual at w=0';
+      if (!eqVec(bruteBest(A, b).best, s)) return 'T1: argmin is not the secret at w=0';
+      let zeros = 0;
+      for (const sc of CANDS) if (score(A, b, sc) === 0) zeros++;
+      if (zeros !== 1) return 'T1: zero-residual candidate not unique at w=0 (' + zeros + ')';
     }
-    // T2 — attack degrades (weakly) across w in {0,32,64,96}
+
+    // T2 — the identifiability curve must COLLAPSE, not merely fail to rise.
+    // Positive control at w=0, negative control at w=q/2. A flat or inverted curve fails.
     {
-      const s = sampleSecret(); const pts = [0, 32, 64, 96].map(w => identifiableRate(s, w, 20));
-      for (let i = 1; i < pts.length; i++) if (pts[i] > pts[i - 1] + 0.2) {
-        console.error('lwe demo: attack degradation not monotone'); return false;
-      }
+      const s = sampleSecret();
+      const lo = identifiableRate(s, 0, 24);
+      const hi = identifiableRate(s, q / 2, 24);
+      if (lo < 0.99) return 'T2: not identifiable at zero noise (' + lo + ')';
+      if (hi > 0.10) return 'T2: still identifiable at modulus-scale noise (' + hi + ')';
+      // and it must be weakly decreasing across the sweep
+      const pts = [0, 32, 64, 96].map(w => identifiableRate(s, w, 20));
+      for (let i = 1; i < pts.length; i++) if (pts[i] > pts[i - 1] + 0.2) return 'T2: curve not decreasing';
     }
-    // T3 — compute single-add round-trip for all m1,m2 and all w with 2w < Delta/2
+
+    // T3 — single-add correctness is EXACT, so test it exhaustively over every noise pair,
+    // not by sampling. Positive side: every w with 2w < DELTA/2 round-trips for all inputs.
     {
       for (let w = 0; 2 * w < DELTA / 2; w++)
-        for (let m1 = 0; m1 < P; m1++) for (let m2 = 0; m2 < P; m2++)
-          if (dec(hAdd(enc(m1, w), enc(m2, w))) !== (m1 + m2) % P) {
-            console.error('lwe demo: compute round-trip failed'); return false;
-          }
+        for (let m1 = 0; m1 < P; m1++)
+          for (let m2 = 0; m2 < P; m2++)
+            for (let e1 = -w; e1 <= w; e1++)
+              for (let e2 = -w; e2 <= w; e2++) {
+                const c = hAdd(mod(DELTA * m1 + e1), mod(DELTA * m2 + e2));
+                if (dec(c) !== (m1 + m2) % P) return 'T3: round-trip failed inside the safe bound';
+              }
     }
-    // T4a — at w=0 the accumulator never breaks from noise across many adds
+
+    // T3b — NEGATIVE CONTROL. The bound must be tight: at the first excluded width the
+    // round-trip must actually break for some input. Without this, T3 passes vacuously
+    // if DELTA/2 is ever loosened.
+    {
+      const w = DELTA / 4;           // smallest w with 2w >= DELTA/2
+      let broke = false;
+      for (let m1 = 0; m1 < P && !broke; m1++)
+        for (let m2 = 0; m2 < P && !broke; m2++)
+          for (let e1 = -w; e1 <= w && !broke; e1++)
+            for (let e2 = -w; e2 <= w && !broke; e2++)
+              if (dec(hAdd(mod(DELTA * m1 + e1), mod(DELTA * m2 + e2))) !== (m1 + m2) % P) broke = true;
+      if (!broke) return 'T3b: bound is not tight — no failure at w = DELTA/4';
+    }
+
+    // T4 — accumulator: exact at w=0 over a long chain; and at slot-scale noise a break
+    // is reached. The high-noise width is DERIVED from DELTA, not a magic constant.
     {
       let acc = hAdd(enc(3, 0), enc(5, 0)), expected = 8;
       for (let k = 0; k < 15; k++) {
         acc = hAdd(acc, enc(3, 0)); expected = (expected + 3) % P;
-        if (dec(acc) !== expected) { console.error('lwe demo: zero-noise drift'); return false; }
+        if (dec(acc) !== expected) return 'T4: drift at zero noise';
       }
     }
-    // T4b — at high noise (w=12) a break is reached within a few adds in the majority of runs
     {
+      const w = DELTA;              // comfortably past the single-add wall
       let broke = 0;
       for (let t = 0; t < 40; t++) {
-        let acc = hAdd(enc(3, 12), enc(5, 12)), expected = 8, hit = (dec(acc) !== expected);
-        for (let k = 0; k < 6 && !hit; k++) { acc = hAdd(acc, enc(3, 12)); expected = (expected + 3) % P; if (dec(acc) !== expected) hit = true; }
+        let acc = hAdd(enc(3, w), enc(5, w)), expected = 8, hit = (dec(acc) !== expected);
+        for (let k = 0; k < 6 && !hit; k++) { acc = hAdd(acc, enc(3, w)); expected = (expected + 3) % P; if (dec(acc) !== expected) hit = true; }
         if (hit) broke++;
       }
-      if (broke / 40 < 0.6) { console.error('lwe demo: high-noise break too rare'); return false; }
+      if (broke / 40 < 0.6) return 'T4: high-noise break too rare (' + broke + '/40)';
     }
-    // T5 — SCALE-GAP INVARIANT (the thesis): attack-drop w_atk >= 4 * compute-break w_def
+
+    // T4c — hAdd must land back in Z_q. dec() applies its own mod, so a missing reduction
+    // in hAdd is invisible to every round-trip test above. Pin the ciphertext space directly.
     {
-      const s = sampleSecret(); let wAtk = null;
-      for (let w = 0; w <= 128; w += 4) { if (identifiableRate(s, w, 24) < 0.5) { wAtk = w; break; } }
-      let wDef = null;
-      for (let w = 0; w <= 16 && wDef === null; w++) {
-        let broke = 0;
-        for (let t = 0; t < 30; t++) {
-          let acc = hAdd(enc(3, w), enc(5, w)), expected = 8, hit = (dec(acc) !== expected);
-          for (let k = 0; k < 6 && !hit; k++) { acc = hAdd(acc, enc(3, w)); expected = (expected + 3) % P; if (dec(acc) !== expected) hit = true; }
-          if (hit) broke++;
-        }
-        if (broke / 30 >= 0.5) wDef = w;
-      }
-      if (wAtk === null || wDef === null || wAtk < 4 * Math.max(1, wDef)) {
-        console.error('lwe demo: scale-gap invariant failed', wAtk, wDef); return false;
+      for (let t = 0; t < 200; t++) {
+        const c = hAdd(enc(randInt(0, P - 1), 3), enc(randInt(0, P - 1), 3));
+        if (!Number.isInteger(c) || c < 0 || c >= q) return 'T4c: hAdd left Z_q (' + c + ')';
       }
     }
-    return true;
+
+    // T5 — SCALE-GAP INVARIANT (the thesis). Both walls are located by the SAME observable:
+    // the 0.5 crossing of a per-instance failure probability. Mixing observables (e.g. a
+    // 6-add chain on one side) makes the ratio an artefact of the chain length.
+    {
+      const s = sampleSecret();
+      let wAtk = null;
+      for (let w = 0; w <= q / 2; w += 4) { if (identifiableRate(s, w, 24) < 0.5) { wAtk = w; break; } }
+      let wDef = null;
+      for (let w = 1; w <= DELTA && wDef === null; w++) {
+        let broke = 0;
+        for (let t = 0; t < 200; t++) if (dec(hAdd(enc(3, w), enc(5, w))) !== 8) broke++;
+        if (broke / 200 >= 0.5) wDef = w;
+      }
+      if (wAtk === null) return 'T5: attack wall never reached';
+      if (wDef === null) return 'T5: compute wall never reached';
+      // Measured over 120 trials: wAtk ~ 44..60, wDef ~ 11..15, ratio ~ 3.4..5.1 (median 4).
+      // The gate is set at 2x, comfortably below the observed tail, because a rendering
+      // failure on an unlucky draw is worse than a loose bound. A collapsed gap (ratio ~ 1)
+      // is what this must catch, and it does.
+      if (wAtk < 2 * wDef) return 'T5: scale gap collapsed (wAtk=' + wAtk + ', wDef=' + wDef + ')';
+    }
+
+    return null;
   }
 
-  if (!selfTest()) {
+  const failure = selfTest();
+  if (failure !== null) {
+    console.error('lwe demo: ' + failure);
     container.innerHTML =
       '<div style="padding:16px;color:#ff8a80;background:rgba(20,28,40,0.95);border-radius:8px;' +
       'font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;">' +
-      'Demo failed its internal consistency check and was not rendered.</div>';
+      'Demo failed its internal consistency check and was not rendered.' +
+      '<div style="margin-top:8px;font-size:0.85em;opacity:0.75;">' + failure + '</div></div>';
     return;
   }
 
@@ -629,8 +683,9 @@ document.addEventListener('DOMContentLoaded', function () {
       : `On the right, the computation still holds at noise w = ${S.w_def}; it breaks once noise reaches the slot scale (&Delta; = ${DELTA}).`;
     cap.innerHTML =
       `${left} ${right} ` +
-      `Same kind of noise in both worlds &mdash; but the modulus scale is about P = ${P}&times; larger than the slot scale. ` +
-      `One noise, two very different sensitivities.`;
+      `Same kind of noise in both worlds &mdash; but it is measured against two different rulers: ` +
+      `the modulus q = ${q} on the left, a single slot &Delta; = ${DELTA} on the right. ` +
+      `The walls they set are not equally far away, and no setting of the noise puts you safely behind both.`;
   }
 
   // ---- U8 (attack half): wiring ----
