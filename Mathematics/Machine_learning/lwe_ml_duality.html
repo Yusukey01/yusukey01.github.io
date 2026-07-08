@@ -60,10 +60,60 @@ uses_python: false
                     \]
                     The error distribution \(\chi\) is, as on the source page, a discrete Gaussian of small width, though
                     deployed schemes often replace it with a close approximation that is cheaper to sample in constant
-                    time. Up to that discreteness and the modular reduction, the two displays line up term for term: a
-                    known linear map applied to an unknown vector, observed through additive Gaussian-shaped noise. The recovery target even carries the same role in both: \(\boldsymbol{\beta}\)
-                    is what the statistician wants to recover; \(\mathbf{s}\) is what the cryptographer must prevent the
-                    adversary from recovering.
+                    time. Up to the modular reduction, and the discreteness it forces, the two displays line up term for
+                    term.
+                </p>
+
+                <div class="theorem">
+                    <span class="theorem-title">The Two Readings, Side by Side</span>
+                    <table style="margin: 0 auto; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid currentColor;">
+                                <th style="padding: 8px 18px; text-align: left;">Role</th>
+                                <th style="padding: 8px 18px; text-align: left;">Linear regression</th>
+                                <th style="padding: 8px 18px; text-align: left;">Learning With Errors</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 6px 18px;">Known linear map</td>
+                                <td style="padding: 6px 18px;">design matrix \(X\)</td>
+                                <td style="padding: 6px 18px;">public matrix \(\mathbf{A}\)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 18px;">Unknown vector</td>
+                                <td style="padding: 6px 18px;">parameters \(\boldsymbol{\beta}\)</td>
+                                <td style="padding: 6px 18px;">secret \(\mathbf{s}\)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 18px;">Observation</td>
+                                <td style="padding: 6px 18px;">response \(\boldsymbol{y}\)</td>
+                                <td style="padding: 6px 18px;">samples \(\mathbf{b}\)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 18px;">Additive noise</td>
+                                <td style="padding: 6px 18px;">Gaussian-shaped \(\boldsymbol{\varepsilon}\)</td>
+                                <td style="padding: 6px 18px;">Gaussian-shaped \(\mathbf{e}\)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 18px;">Goal for that vector</td>
+                                <td style="padding: 6px 18px;">recover it</td>
+                                <td style="padding: 6px 18px;">keep it hidden</td>
+                            </tr>
+                            <tr style="border-top: 2px solid currentColor;">
+                                <td style="padding: 6px 18px;">The one difference</td>
+                                <td style="padding: 6px 18px;">a continuous system over \(\mathbb{R}\)</td>
+                                <td style="padding: 6px 18px;">reduced \(\bmod q\), hence discrete</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>
+                    Every row but the last reads identically: a known linear map applied to an unknown vector, observed
+                    through additive Gaussian-shaped noise. The recovery target even carries the same role in both &mdash;
+                    \(\boldsymbol{\beta}\) is what the statistician wants to recover, \(\mathbf{s}\) is what the
+                    cryptographer must keep hidden. The whole tension of this page lives in that final row.
                 </p>
 
                 <p>
@@ -111,7 +161,11 @@ uses_python: false
                     measurements is exactly what penalized least squares is built to estimate. The \(\ell_2\)-penalized
                     <a href="regression.html#T-ridge_regression_solution" class="ref-link"><strong>Ridge</strong></a>
                     estimator is the natural language for pulling a small, dense solution out of an ill-conditioned
-                    linear system, which is exactly the shape a standard LWE secret has. The \(\ell_1\)-penalized
+                    linear system, which is exactly the shape a standard LWE secret has.
+                </p>
+
+                <p>
+                    The \(\ell_1\)-penalized
                     <a href="regression.html#D-lasso_regression" class="ref-link"><strong>Lasso</strong></a>, which
                     instead pressures coordinates to zero, is the tool one would reach for against the sparse variants
                     that appear in the literature; here it serves mainly to fix the vocabulary of penalized regression in
@@ -175,6 +229,9 @@ uses_python: false
                     is a map \(\phi\) that preserves both operations, \(\phi(a + b) = \phi(a) + \phi(b)\) and
                     \(\phi(ab) = \phi(a)\phi(b)\). An encryption scheme is called <em>homomorphic</em> when its encryption
                     map behaves like one: operating on ciphertexts mirrors operating on the plaintexts they conceal.
+                </p>
+
+                <p>
                     The correspondence is not an equality between ciphertexts &mdash; encryption is randomized, and the
                     noise each ciphertext carries differs, so \(\mathrm{Enc}(m_1) \oplus \mathrm{Enc}(m_2)\) is not the
                     same ciphertext as a fresh \(\mathrm{Enc}(m_1 + m_2)\). What a homomorphic scheme guarantees is that
@@ -185,8 +242,12 @@ uses_python: false
                     \]
                     which is the homomorphism diagram read through decryption, now a security guarantee &mdash; and it
                     holds only while the accumulated noise stays small enough to decrypt, the very budget the demo below
-                    spends. A server that never sees a plaintext can still add and multiply the hidden values, returning 
-                    an encrypted result only its owner can open.
+                    spends.
+                </p>
+
+                <p>
+                    The practical consequence is the point: a server that never sees a plaintext can still add and
+                    multiply the hidden values, returning an encrypted result only its owner can open.
                 </p>
 
                 <p>
@@ -195,7 +256,11 @@ uses_python: false
                     \(R_q\), and the ring's own addition and multiplication are what the ciphertext operations
                     \(\oplus, \otimes\) ride on. The secret and its Gaussian error sit inside ring elements, so the ring
                     supplies a multiplication of ciphertexts directly, rather than forcing it to be simulated by many
-                    scalar operations. That multiplication is not free: multiplying two ciphertexts expands the secret
+                    scalar operations.
+                </p>
+
+                <p>
+                    That multiplication is not free: multiplying two ciphertexts expands the secret
                     into a higher-degree object, so a further step is needed to bring the result back to a standard
                     ciphertext under the original key, and this step, together with the noise growth it must control, is
                     the dominant cost of homomorphic multiplication. Even so, the ring structure is the algebraic reason
@@ -224,19 +289,38 @@ uses_python: false
                 <p>
                     The two views are not two topics that happen to share a page. They are one object under two
                     readings, and the hinge between them is a single quantity: the width of the error distribution
-                    \(\chi\). Increase the noise, and the estimation view gets harder, because the residual landscape an
-                    attacker's optimizer must climb grows flatter and less informative. That is good for security. But
-                    increase the same noise, and the homomorphism view gets shallower, allowing fewer operations before
-                    decryption fails. That is bad for computation. The parameter an attacker
-                    would want small is exactly the parameter a user of encrypted computation would also want small, and
-                    the parameter that protects the secret is exactly the parameter that limits the depth of what can be
-                    computed over it.
+                    \(\chi\). The same knob pulls the two views in opposite directions.
                 </p>
 
+                <div class="theorem">
+                    <span class="theorem-title">One Knob, Opposite Directions</span>
+                    <table style="margin: 0 auto; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid currentColor;">
+                                <th style="padding: 8px 18px; text-align: left;">Turn the noise \(\chi\)&hellip;</th>
+                                <th style="padding: 8px 18px; text-align: left;">Estimation view (attack)</th>
+                                <th style="padding: 8px 18px; text-align: left;">Homomorphism view (compute)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 6px 18px;">wider (up)</td>
+                                <td style="padding: 6px 18px;">residual landscape flatter, recovery harder &mdash; <strong>more secure</strong></td>
+                                <td style="padding: 6px 18px;">budget exhausts sooner, fewer operations &mdash; <strong>shallower</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 18px;">narrower (down)</td>
+                                <td style="padding: 6px 18px;">gradient information returns &mdash; <strong>easier to break</strong></td>
+                                <td style="padding: 6px 18px;">more headroom before decryption fails &mdash; <strong>deeper</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <p>
-                    So the noise term is a shared currency. It is spent, in opposite directions, by attack and by
-                    defense. Every choice of \(\chi\) is simultaneously a stance on how hard the secret is to steal and
-                    on how much can be computed without revealing it, and there is no setting that maximizes both.
+                    So the noise term is a shared currency, spent in opposite directions by attack and by defense. Every
+                    choice of \(\chi\) is at once a stance on how hard the secret is to steal and on how much can be
+                    computed without revealing it &mdash; and no setting maximizes both.
                 </p>
 
                 <div class="insight-box">
