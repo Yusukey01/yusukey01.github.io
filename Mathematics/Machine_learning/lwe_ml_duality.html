@@ -33,17 +33,20 @@ uses_python: false
                 <p>
                     Two of the most heavily used objects in this curriculum turn out to share a strikingly similar
                     syntactic structure. On one side sits the workhorse of statistical learning: a linear model observed
-                    through noise. On the other sits the hardest problem underwriting post-quantum encryption. They live
-                    in different worlds, one continuous and real, the other discrete and modular, but the sentence that
-                    describes them is nearly the same, and this page is about what follows from that resemblance.
+                    through noise. On the other sits one of the hardness assumptions underwriting post-quantum
+                    encryption. They live in different worlds, one continuous, the other reduced modulo \(q\), but the
+                    sentence that describes them is nearly the same, and this page is about what follows from that
+                    resemblance.
                 </p>
 
                 <p>
                     Recall the <a href="../Linear_algebra/leastsquares.html#D-linear_regression_model" class="ref-link"><strong>linear regression model</strong></a>,
-                    the starting point of nearly every supervised method we have built:
+                    the starting point of nearly every supervised method we have built. To it we add the noise model
+                    under which least squares is the maximum-likelihood estimator, taking the residual
+                    \(\boldsymbol{\epsilon}\) to be Gaussian:
                     \[
-                    \boldsymbol{y} = X\boldsymbol{\beta} + \boldsymbol{\varepsilon}, \qquad
-                    \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \sigma^2 I).
+                    \mathbf{Y} = X\boldsymbol{\beta} + \boldsymbol{\epsilon}, \qquad
+                    \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \sigma^2 I).
                     \]
                     A design matrix \(X\) acts on an unknown parameter vector \(\boldsymbol{\beta}\); we observe the
                     product corrupted by a small amount of Gaussian noise, and the entire enterprise of regression is to
@@ -77,8 +80,8 @@ uses_python: false
                         <tbody>
                             <tr>
                                 <td style="padding: 6px 18px;">Known linear map</td>
-                                <td style="padding: 6px 18px;">design matrix \(X\)</td>
-                                <td style="padding: 6px 18px;">public matrix \(\mathbf{A}\)</td>
+                                <td style="padding: 6px 18px;">design matrix \(X\), given</td>
+                                <td style="padding: 6px 18px;">public matrix \(\mathbf{A}\), uniformly random</td>
                             </tr>
                             <tr>
                                 <td style="padding: 6px 18px;">Unknown vector</td>
@@ -87,40 +90,41 @@ uses_python: false
                             </tr>
                             <tr>
                                 <td style="padding: 6px 18px;">Observation</td>
-                                <td style="padding: 6px 18px;">response \(\boldsymbol{y}\)</td>
+                                <td style="padding: 6px 18px;">response \(\mathbf{Y}\)</td>
                                 <td style="padding: 6px 18px;">samples \(\mathbf{b}\)</td>
                             </tr>
                             <tr>
                                 <td style="padding: 6px 18px;">Additive noise</td>
-                                <td style="padding: 6px 18px;">Gaussian-shaped \(\boldsymbol{\varepsilon}\)</td>
+                                <td style="padding: 6px 18px;">Gaussian-shaped \(\boldsymbol{\epsilon}\)</td>
                                 <td style="padding: 6px 18px;">Gaussian-shaped \(\mathbf{e}\)</td>
                             </tr>
-                            <tr>
-                                <td style="padding: 6px 18px;">Goal for that vector</td>
-                                <td style="padding: 6px 18px;">recover it</td>
-                                <td style="padding: 6px 18px;">keep it hidden</td>
-                            </tr>
                             <tr style="border-top: 2px solid currentColor;">
-                                <td style="padding: 6px 18px;">The one difference</td>
+                                <td style="padding: 6px 18px;">Where they part: arithmetic</td>
                                 <td style="padding: 6px 18px;">a continuous system over \(\mathbb{R}\)</td>
                                 <td style="padding: 6px 18px;">reduced \(\bmod q\), hence discrete</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 18px;">Where they part: purpose</td>
+                                <td style="padding: 6px 18px;">recover the unknown vector</td>
+                                <td style="padding: 6px 18px;">keep it hidden</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <p>
-                    Every row but the last reads identically: a known linear map applied to an unknown vector, observed
-                    through additive Gaussian-shaped noise. The recovery target even carries the same role in both &mdash;
-                    \(\boldsymbol{\beta}\) is what the statistician wants to recover, \(\mathbf{s}\) is what the
-                    cryptographer must keep hidden. The whole tension of this page lives in that final row.
+               <p>
+                    The first four rows read identically: a known linear map applied to an unknown vector, observed
+                    through additive Gaussian-shaped noise. The two partings are of different kinds. The second is a
+                    reversal of intent, not of structure &mdash; \(\boldsymbol{\beta}\) and \(\mathbf{s}\) occupy the
+                    same slot, and only our attitude toward them differs. The first is structural, and it is the one
+                    that will do the work.
                 </p>
 
                 <p>
                     So the question writes itself. If LWE <em>is</em> noisy linear regression, and regression is something
                     our models solve for a living, why is LWE considered hard enough to protect the world's data against
                     a quantum adversary? The tension between those two readings is the entire content of this page, and it
-                    resolves into a single design parameter that we will end by putting under the reader's finger.
+                    resolves into a single design parameter that the demo at the end places under the reader's hand.
                 </p>
 
                 <div class="insight-box">
@@ -129,8 +133,10 @@ uses_python: false
                         The connection is not a loose analogy. What a regression-style attack confronts directly is the
                         average-case recovery problem: pull the secret out of many noisy linear samples. The
                         <a href="../Discrete/learning_with_errors.html#T-lwe_worst_case_hardness" class="ref-link"><strong>worst-case hardness</strong></a>
-                        that anchors lattice cryptography does not describe that recovery problem directly; it links it,
-                        through a reduction, to the difficulty of hard lattice problems in the worst case, the
+                        that anchors lattice cryptography does not describe that recovery problem directly &mdash; it is
+                        stated for the decision problem, which at these parameters is equivalent to recovery up to a
+                        polynomial loss &mdash; but links it, through a reduction, to the difficulty of hard lattice
+                        problems in the worst case, the
                         <a href="../Discrete/lattice_problems.html#D-gapsvp" class="ref-link"><strong>gap shortest vector problem</strong></a>
                         and the <a href="../Discrete/lattice_problems.html#D-sivp" class="ref-link"><strong>shortest independent vectors problem</strong></a>.
                         Reading LWE as
