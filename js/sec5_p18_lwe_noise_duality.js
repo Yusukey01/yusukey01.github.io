@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function () {
               <span>compute noise</span><span class="lnd-wval" id="lnd-def-wval">w = 0</span>
             </div>
             <input type="range" id="lnd-def-slider" min="0" max="${DEF_MAX}" step="1" value="0">
-            <div class="lnd-slider-scale"><span>0</span><span>guaranteed only while w &lt; ${DELTA / 4}</span></div>
+            <div class="lnd-slider-scale"><span>0</span><span>one add is safe below w = ${DELTA / 4}; more adds, sooner</span></div>
           </div>
 
           <div class="lnd-def-body" id="lnd-def-body"><!-- U7 render target --></div>
@@ -679,8 +679,8 @@ document.addEventListener('DOMContentLoaded', function () {
       ? `On the left, noise of w = ${S.w_atk} has blurred the secret: it is no longer the unique best fit. That wall stands at a sizeable fraction of the modulus (q = ${q}).`
       : `On the left, the secret is still pinned down at noise w = ${S.w_atk}; blurring it takes noise measured against the modulus (q = ${q}), not against a slot.`;
     const right = S.broken
-      ? `On the right, noise of only w = ${S.w_def} was enough to break the computation &mdash; the single-add wall sits at w = ${DELTA / 4}, a fraction of a slot (&Delta; = ${DELTA}).`
-      : `On the right, this run still decodes at noise w = ${S.w_def}, but past w = ${DELTA / 4} that is luck rather than safety: a single add is only guaranteed while 2w &lt; &Delta;/2.`;
+      ? `On the right, noise of w = ${S.w_def} was enough to break the computation after ${S.addsDone} add${S.addsDone === 1 ? '' : 's'} &mdash; a fraction of a slot (&Delta; = ${DELTA}), not a slot's worth.`
+      : `On the right, this run still decodes at noise w = ${S.w_def} after ${S.addsDone} add${S.addsDone === 1 ? '' : 's'}. A single add is safe only while 2w &lt; &Delta;/2; every further add brings the wall closer.`;
     cap.innerHTML =
       `${left} ${right} ` +
       `Same kind of noise in both worlds &mdash; but it is measured against two different rulers: ` +
