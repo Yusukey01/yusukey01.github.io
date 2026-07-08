@@ -543,18 +543,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const pos = mod(S.acc);
     const decoded = dec(S.acc);
     const expected = S.expected;
-    // window: slots [expected-3 .. expected+3], clamped to [0, P)
-    const kLo = Math.max(0, expected - 3), kHi = Math.min(P - 1, expected + 3);
-    const xLo = DELTA * kLo - DELTA / 2, xHi = DELTA * kHi + DELTA / 2;
-    const span = xHi - xLo;
-    const toPct = (v) => 100 * (v - xLo) / span;
-    let markerPct = toPct(pos);
-    const outLeft = markerPct < 0, outRight = markerPct > 100;
-    markerPct = Math.max(0, Math.min(100, markerPct)); // clamp for display
+    // The ciphertext space is a CIRCLE (Z_q), so the window must wrap rather than clamp.
+    // Center it on `expected` and measure every position by signed circular distance from
+    // that centre; otherwise slots 0 and P-1 clamp two different ciphertexts to opposite
+    // edges even though they decode to the same value.
+    const HALF = 3;                                   // slots shown either side of centre
+    const centre = DELTA * expected;                  // ciphertext at the centre of the band
+    const span = (2 * HALF + 1) * DELTA;              // full window width, in ciphertext units
+    const circDist = (v) => { let d = mod(v - centre); if (d > q / 2) d -= q; return d; };
+    const toPct = (v) => 100 * (circDist(v) + span / 2) / span;
+    const markerPct = toPct(pos);                     // always in [0,100]: the window wraps
 
     // slot cells + centers
-    let cells = '', ticks = '';
-    for (let k = kLo; k <= kHi; k++) {
+    let cells = '';
+    for (let j = -HALF; j <= HALF; j++) {
+      const k = ((expected + j) % P + P) % P;         // wrap the slot index too
       const cx = toPct(DELTA * k);
       const isCorrect = k === expected;
       const isDecoded = k === decoded;
@@ -565,7 +568,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const wallL = toPct(DELTA * expected - DELTA / 2);
     const wallR = toPct(DELTA * expected + DELTA / 2);
     const markerColor = S.broken ? '#f39c12' : '#64b4ff';
-    const arrow = outLeft ? '&#9664;' : (outRight ? '&#9654;' : '');
 
     return `
       <div class="lnd-c-card">
@@ -581,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
         <div class="lnd-slot-note" style="color:${S.broken ? '#ffcf7a' : 'rgba(255,255,255,0.6)'};">
           ${S.broken
-            ? `The marker has drifted past the wall into slot ${decoded}\u2019s territory \u2014 it decrypts to ${decoded}, not ${expected}. ${arrow}`
+            ? `The marker has drifted past the wall into slot ${decoded}\u2019s territory \u2014 it decrypts to ${decoded}, not ${expected}.`
             : `The marker sits inside slot ${expected}\u2019s walls, so it still decrypts correctly. Noise nudges it off center; cross a wall and it flips.`}
         </div>
       </div>`;
