@@ -564,7 +564,10 @@ document.addEventListener('DOMContentLoaded', function () {
       const cls = isCorrect ? 'lnd-slot-correct' : (isDecoded ? 'lnd-slot-decoded' : 'lnd-slot-center');
       cells += `<div class="lnd-slot-tick ${cls}" style="left:${cx}%;"></div>`;
     }
-    // wall markers: half-slot boundaries around the correct slot
+    // Wall markers: the half-slot boundaries around the correct slot. Under round-half-up
+    // the slot is half-open, [-DELTA/2, +DELTA/2) — a residual of exactly +DELTA/2 rounds UP
+    // into the next slot. The band below is decoration; the authoritative "did it flip?"
+    // signal is always S.broken, computed as dec(acc) !== expected.
     const wallL = toPct(DELTA * expected - DELTA / 2);
     const wallR = toPct(DELTA * expected + DELTA / 2);
     const markerColor = S.broken ? '#f39c12' : '#64b4ff';
