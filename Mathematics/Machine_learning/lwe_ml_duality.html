@@ -62,11 +62,12 @@ uses_python: false
                     \mathbf{e} \sim \chi.
                     \]
                     The error distribution \(\chi\) is, as on the source page, a discrete Gaussian of small width. The
-                    standardized schemes do not use one. They draw errors from a different discrete distribution on a
-                    finite support &mdash; the centered binomial is the usual choice &mdash; which is sampled in constant
-                    time and, being bounded, admits sharper failure analysis than a Gaussian tail. This is a substitution,
-                    not a compromise. Up to the modular reduction, and the discreteness it forces, the two displays line
-                    up term for term.
+                    standardized schemes do not use one. They draw each coefficient from a centered binomial
+                    distribution on \(\mathbb{Z}_q\), governed by a small integer parameter, so that every error is
+                    bounded rather than merely unlikely to be large
+                    (<a href="https://doi.org/10.6028/NIST.FIPS.203">[1]</a>). The same distribution supplies the
+                    secret. This is a substitution, not a compromise. Up to the modular reduction, and the discreteness
+                    it forces, the two displays line up term for term.
                 </p>
 
                 <h4>The Two Readings, Side by Side</h4>
@@ -171,16 +172,19 @@ uses_python: false
                 </p>
 
                 <p>
-                    Some deployments instead choose secrets that are <strong>small and sparse</strong> — most of their
-                    coordinates are exactly zero — because sparsity buys efficiency in homomorphic encryption. That is
-                    the regime the \(\ell_1\)-penalized
+                    Some deployments instead choose secrets that are <strong>small and sparse</strong> &mdash; most of
+                    their coordinates are exactly zero &mdash; because sparsity buys efficiency in homomorphic
+                    encryption. Over the reals, recovering such a vector is the regime the \(\ell_1\)-penalized
                     <a href="regression.html#D-lasso_regression" class="ref-link"><strong>Lasso Regression</strong></a>
-                    is built for, since its penalty pressures coordinates to zero rather than merely shrinking them. The
-                    distinction is not idle bookkeeping, and the regression vocabulary is what makes it legible: sparsity
-                    is extra structure, and an estimator able to exploit structure has strictly more to work with than
-                    one facing a dense unknown. A secret chosen sparse for the sake of efficiency has, in the language of
-                    estimation, handed something away. That is a caution worth recording about a parameter choice, not a
-                    claim about the standardized schemes, whose secrets are dense.
+                    is built for, since its penalty pressures coordinates to zero rather than merely shrinking them. No
+                    one runs Lasso against a lattice scheme, and the next subsection explains why: modular reduction
+                    destroys the convex geometry on which the \(\ell_1\) ball's sharp corners do their work. What
+                    survives the crossing is not the algorithm but the accounting. Sparsity is extra structure, and an
+                    adversary able to exploit structure has strictly more to work with than one facing a dense unknown
+                    &mdash; a fact the lattice attacks exploit by their own means, in their own geometry. A secret
+                    chosen sparse for the sake of efficiency has, in the language of estimation, handed something away.
+                    That is a caution worth recording about a parameter choice, not a claim about the standardized
+                    schemes, whose secrets are dense.
                 </p>
 
                 <div class="insight-box">
@@ -188,8 +192,9 @@ uses_python: false
                     <p>
                         Nothing in the estimation reading sets a single parameter of a deployed scheme. Those margins
                         come from the estimated cost of lattice-reduction attacks, the primal and dual attacks whose
-                        difficulty is measured through the block size a basis-reduction algorithm needs. Two distinct
-                        uncertainties sit underneath that estimate, and conflating them is a common error. The first is
+                        difficulty is measured through the block size a basis-reduction algorithm needs
+                        (<a href="https://doi.org/10.1515/jmc-2015-0016">[2]</a>). Two distinct uncertainties sit
+                        underneath that estimate, and conflating them is a common error. The first is
                         that the cost model itself remains contested &mdash; translating a block size into a concrete
                         operation count is an active research question, and the margins carry deliberate slack to absorb
                         it. The second is deeper: no efficient algorithm for LWE is <em>known</em>, and the security
@@ -294,7 +299,8 @@ uses_python: false
 
                 <p>
                     That multiplication is not free. The product of two ciphertexts is <em>quadratic</em> in the secret:
-                    it no longer decrypts under \(s\), but under the pair \((s, s^2)\). A further step, called
+                    where a fresh ciphertext is decrypted by a linear expression in \(s\), the product requires the
+                    powers \(1, s, s^2\), and so carries one more component than it began with. A further step, called
                     relinearization, uses an auxiliary key to bring the result back to a standard ciphertext under the
                     original key, and this step, together with the noise growth it must control, is the dominant cost of
                     homomorphic multiplication.
@@ -310,6 +316,17 @@ uses_python: false
                     lattices &mdash; a proper subclass of lattices, carrying extra algebraic structure that a general
                     lattice does not have. The ring gives us ciphertext multiplication and charges us a stronger
                     assumption for it. Same family, not the same problem.
+                </p>
+
+                <p>
+                    That price is felt keenly enough that the standardized schemes decline to pay it in full. Rather than
+                    a single ring element, their secret is a short vector <em>of</em> ring elements, multiplied against a
+                    small matrix of them &mdash; a middle setting that keeps most of the ring's efficiency while resting
+                    on a lattice problem less special than the ideal case
+                    (<a href="https://doi.org/10.6028/NIST.FIPS.203">[1]</a>). We will not develop that variant here. It
+                    is enough to notice that the axis running from raw vectors to full rings is a dial, not a switch, and
+                    that where a scheme sits on it is a deliberate choice between structure and the assumption structure
+                    costs.
                 </p>
 
                 <div class="insight-box">
@@ -390,7 +407,8 @@ uses_python: false
                     This separation between what is determined and what is computable is not peculiar to cryptography.
                     It appears throughout high-dimensional statistics and learning theory, where problems from sparse
                     principal components to planted structures in random graphs are known or conjectured to admit an
-                    answer that no efficient algorithm can produce. Such a gap is usually an obstacle, the reason a
+                    answer that no efficient algorithm can produce
+                    (<a href="https://arxiv.org/abs/1806.07508">[3]</a>). Such a gap is usually an obstacle, the reason a
                     method that should work does not. Lattice cryptography is what happens when someone builds on the
                     obstacle deliberately: the entire construction is an engineered instance of a problem whose solution
                     is guaranteed to exist and believed to be out of reach. Identifiability is what the demonstration
@@ -442,6 +460,23 @@ uses_python: false
                 </p>
                
                 <div id="lwe_noise_duality_visualizer"></div>
+
+                <h3>References</h3>
+                <ul style="padding-left: 40px; font-size: 0.92rem;">
+                    <li>
+                        National Institute of Standards and Technology, "Module-Lattice-Based Key-Encapsulation Mechanism
+                        Standard," <em>FIPS 203</em>, 2024.
+                    </li>
+                    <li>
+                        M. R. Albrecht, R. Player, and S. Scott, "On the Concrete Hardness of Learning with Errors,"
+                        <em>Journal of Mathematical Cryptology</em>, vol. 9, no. 3, pp. 169&ndash;203, 2015.
+                    </li>
+                    <li>
+                        M. Brennan, G. Bresler, and W. Huleihel, "Reducibility and Computational Lower Bounds for
+                        Problems with Planted Sparse Structure," <em>Proceedings of the 31st Conference on Learning
+                        Theory (COLT)</em>, pp. 48&ndash;166, 2018.
+                    </li>
+                </ul>
             </section>
 
         </div>
