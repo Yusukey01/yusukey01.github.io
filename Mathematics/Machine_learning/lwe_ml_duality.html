@@ -61,14 +61,15 @@ uses_python: false
                     \mathbf{b} = \mathbf{A}\mathbf{s} + \mathbf{e} \pmod{q}, \qquad
                     \mathbf{e} \sim \chi.
                     \]
-                    The error distribution \(\chi\) is, as on the source page, a discrete Gaussian of small width, though
-                    deployed schemes often replace it with a close approximation that is cheaper to sample in constant
-                    time. Up to the modular reduction, and the discreteness it forces, the two displays line up term for
-                    term.
+                    The error distribution \(\chi\) is, as on the source page, a discrete Gaussian of small width. The
+                    standardized schemes do not use one. They draw errors from a different discrete distribution on a
+                    finite support &mdash; the centered binomial is the usual choice &mdash; which is sampled in constant
+                    time and, being bounded, admits sharper failure analysis than a Gaussian tail. This is a substitution,
+                    not a compromise. Up to the modular reduction, and the discreteness it forces, the two displays line
+                    up term for term.
                 </p>
 
                 <h4>The Two Readings, Side by Side</h4>
-                <br>
                 <table style="margin: 0 auto; border-collapse: collapse;">
                     <thead>
                         <tr style="border-bottom: 2px solid currentColor;">
@@ -110,7 +111,6 @@ uses_python: false
                         </tr>
                     </tbody>
                 </table>
-                <br>
 
                <p>
                     The first four rows read identically: a known linear map applied to an unknown vector, observed
@@ -180,7 +180,9 @@ uses_python: false
                     literature succeed against sparse secrets and have not been extended to the dense secrets of the
                     standardized parameter sets, and the regression vocabulary already predicts where the asymmetry
                     comes from: sparsity is extra structure, and an estimator that can exploit it has strictly more to
-                    work with. We should be careful, however, not to overread the correspondence. Those attacks do not
+                    work with. The reach of those attacks should not be overstated: they have been demonstrated in
+                    dimensions of a few hundred, well below what deployed schemes use, so this is a caution about a
+                    parameter choice rather than a break of anything in the field. We should be careful, however, not to overread the correspondence. Those attacks do not
                     run Lasso. They train sequence models to predict \(b\) from \(\mathbf{a}\), forcing a network to
                     internalize modular linear structure, and then convert the trained model into a secret-recovery
                     procedure. Penalized regression names the estimation problem; it does not name the algorithm.
@@ -233,6 +235,17 @@ uses_python: false
                     like regression resists being solved like regression. The noise \(\mathbf{e}\) then does the
                     finishing work: the exact secret produces a nonzero residual, so an attacker cannot verify a
                     candidate by exact fit.
+                </p>
+
+                <p>
+                    It would be a mistake, though, to conclude that a broken gradient is what keeps LWE safe, or that
+                    less noise is always better for the defender. Push the width toward zero and the samples stop being
+                    a hostile optimization landscape and start being a system of polynomial equations &mdash; one that
+                    algebraic techniques solve outright, in subexponential and sometimes polynomial time, once the error
+                    is small relative to the dimension. Those techniques demand a great many samples, which is one
+                    reason schemes are careful about how much they publish. But the lesson stands: the noise must be
+                    wide enough to destroy the algebraic structure, and narrow enough that honest ciphertexts still
+                    decode. The regression view sees only one of those two constraints.
                 </p>
             </section>
 
@@ -337,7 +350,6 @@ uses_python: false
                 </p>
 
                 <h4>One Knob, Opposite Directions</h4>
-                <br>
                 <table style="margin: 0 auto; border-collapse: collapse;">
                     <thead>
                         <tr style="border-bottom: 2px solid currentColor;">
@@ -349,7 +361,7 @@ uses_python: false
                     <tbody>
                         <tr>
                             <td style="padding: 6px 18px;">wider (up)</td>
-                            <td style="padding: 6px 18px;">the true secret stops being the unique best fit &mdash; <strong>identifiability lost</strong></td>
+                            <td style="padding: 6px 18px;">with the toy's few equations, the true secret stops being the unique best fit &mdash; <strong>identifiability lost</strong></td>
                             <td style="padding: 6px 18px;">the accumulated error crosses the decoding threshold &mdash; <strong>decryption fails</strong></td>
                         </tr>
                         <tr>
@@ -359,32 +371,38 @@ uses_python: false
                         </tr>
                     </tbody>
                 </table>
-                <br>
 
                 <p>
-                    The attack column deserves care. What a wider \(\chi\) destroys is not the attacker's <em>speed</em>
-                    but the attacker's <em>target</em>: past a certain width the true secret is no longer the unique
-                    minimizer of the residual, so there is nothing for any algorithm, efficient or not, to single out.
-                    Nothing here says that search becomes slow. It says that search becomes ill-posed.
+                    The attack column deserves care, and the toy below will mislead you if you read it too literally.
+                    With only a handful of equations, widening \(\chi\) really does destroy the attacker's
+                    <em>target</em>: the true secret stops being the unique minimizer of the residual, and no algorithm
+                    can single out what is no longer singular. But that is a symptom of having too few samples, not a
+                    property of LWE. An attacker in the real world may harvest as many samples as it likes, and once it
+                    has enough, the secret is again pinned down as the unique solution, however wide the noise. What
+                    protects LWE is therefore not that the answer ceases to exist. It is that the answer exists,
+                    unreachably: in the dimensions real schemes use, no known algorithm can find it before the universe
+                    ends. Identifiability is what the demonstration can show you at \(n = 4\). Search cost is what
+                    actually stands between an adversary and the key.
                 </p>
 
                 <p>
-                    So the noise is a shared currency, spent in opposite directions by attack and by defense. But the
-                    two directions are not spent at the same rate, and this is the point the demonstration below is
-                    built to make. Security is measured against the <em>modulus</em> \(q\): the secret stays identifiable
-                    until the noise is a substantial fraction of it. Correctness is measured against a plaintext
-                    <em>slot</em>, \(\Delta = q/P\) for a plaintext space of size \(P\) &mdash; a far smaller ruler. The
-                    consequence is that the honest computation breaks well before the secret is hidden. In the toy below
-                    the corridor between the two walls spans only a factor of about four, and it is not centered: there
-                    is no width at which the secret is safely hidden and the computation still reliably decodes.
+                    So the noise is a shared currency, spent in opposite directions by attack and by defense &mdash; but
+                    the two directions are not spent at the same rate, and this is what the demonstration below is built
+                    to show. On the compute side the ruler is a plaintext <em>slot</em>, \(\Delta = q/P\): a wobble of
+                    half a slot already corrupts the answer. On the attack side, in this toy, the ruler is the
+                    <em>modulus</em> \(q\) itself. The consequence is a corridor spanning only a factor of about four,
+                    and one that never opens: at no width is the secret unidentifiable while the computation still
+                    reliably decodes.
                 </p>
 
                 <p>
-                    Which tells us where the resolution cannot come from. No setting of \(\chi\) opens the corridor,
-                    because \(\chi\) is the very quantity the corridor is measured in. The parameter that reopens it is
-                    the one we have held fixed throughout: the dimension \(n\). Raising it makes the secret hard to
-                    identify without demanding that the noise grow to the modulus scale &mdash; which is why real schemes
-                    live in hundreds of dimensions rather than four, and why the hardness of the underlying
+                    But that corridor is an artifact of a four-dimensional secret with eight equations, and reading it
+                    as the shape of the real trade-off would invert the subject. Real schemes do not escape the corridor
+                    by tuning \(\chi\); they escape it by raising the dimension \(n\). Doing so leaves the secret
+                    perfectly well determined &mdash; and puts it beyond reach anyway, since the cost of finding it grows
+                    faster than any adversary can pay. The noise need only be wide enough to defeat the algebraic
+                    shortcuts that a nearly noiseless system would admit, and narrow enough that the ciphertexts still
+                    decode. Everything else is bought with dimension, which is why the hardness of the underlying
                     <a href="../Discrete/lattice_problems.html">lattice problems</a> in high dimension is what the
                     security ultimately rests on.
                 </p>
@@ -395,11 +413,19 @@ uses_python: false
                 <h2>Demo: The Noise Dial</h2>
 
                <p>
-                    The corridor can be walked by hand. The two panels below draw from one and the same noise
+                    The toy's corridor can be walked by hand. The two panels below draw from one and the same noise
                     \(\chi\), read in opposite directions. On the left, the noise is an ally: turn it down and the
                     secret is pinned as the unique best fit among the candidates. On the right, the same noise is an
                     adversary: turn it up and the honest computation no longer decodes to the value it should. Move the
                     two sliders and watch where each wall stands. They are not the same distance away.
+                </p>
+
+                <p>
+                    Keep in mind what the left panel is and is not showing. With four unknowns and eight equations, a
+                    wide \(\chi\) genuinely erases the answer. Real parameters do not work this way: the answer
+                    survives, and it is the cost of finding it that grows out of reach. A laptop can demonstrate the
+                    first effect. It cannot demonstrate the second &mdash; which is precisely why the second is the one
+                    that secures the scheme.
                 </p>
                
                 <div id="lwe_noise_duality_visualizer"></div>
