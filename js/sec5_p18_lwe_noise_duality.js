@@ -412,8 +412,13 @@ document.addEventListener('DOMContentLoaded', function () {
     S.identifiableRate = identifiableRate(S.s, S.w_atk, ATK_REPS);
     // distribution: the top-N by score, plus the true secret's global rank and value
     S.dist = scored.slice(0, ATK_TOPN).map(e => ({ v: e.v, isTrue: e.isTrue }));
-    S.trueRank = scored.findIndex(e => e.isTrue);   // 0-based
-    S.trueVal = scored[S.trueRank].v;
+    // Rank by STRICT inequality: how many candidates score strictly better than the truth.
+    // Array position would call a tie a loss, but a tie IS the thing this panel exists to
+    // show — the secret ceasing to be the *unique* minimiser.
+    const trueEntry = scored.find(e => e.isTrue);
+    S.trueVal = trueEntry.v;
+    S.trueRank = scored.filter(e => e.v < trueEntry.v).length;   // 0-based, ties share a rank
+    S.trueTied = scored.some(e => !e.isTrue && e.v === trueEntry.v);
     S.bestVal = scored[0].v;
     S.worstShown = scored[ATK_TOPN - 1].v;           // scale reference for bars
   }
@@ -446,7 +451,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }).join('');
     // annotation: is the true secret the clear, isolated winner or lost in the crowd?
     let note;
-    if (S.trueRank === 0 && S.dist.length > 1) {
+    if (S.trueRank === 0 && S.trueTied) {
+      note = 'The true secret is tied for best — it is no longer the unique best fit.';
+    } else if (S.trueRank === 0 && S.dist.length > 1) {
       const gap = (S.dist[1].v - S.dist[0].v);
       const spread = Math.max(1, S.worstShown - S.bestVal);
       const isolated = gap / spread > 0.25;
