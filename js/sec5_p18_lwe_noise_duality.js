@@ -66,21 +66,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     return { A, b };
   }
-  // L1 residual after centered lift. Deliberately NOT the least-squares objective of the
-  // prose: least squares is the MLE only under GAUSSIAN noise, and this toy draws
-  // Uniform[-w,w]. Under uniform noise the likelihood is flat inside the box and zero
-  // outside, so the MLE is a feasibility problem (is every |r_i| <= w?), not a minimization
-  // at all. L1 is used here because it is the plainest "total disagreement" score a reader
-  // can check by hand; L2 gives the same ranking behaviour on this toy. Verified: at w=57
-  // over 400 trials, unique-argmin rates are L1 0.315, L2 0.438, and true-MLE 0.323 -- the
-  // objective changes the numbers but not the phenomenon the panel exists to show.
+  // Squared residual after centered lift -- the least-squares objective of the prose.
+  // Note this is NOT the maximum-likelihood estimator here: least squares is the MLE
+  // under Gaussian noise, and this toy draws Uniform[-w,w]. Under uniform noise the
+  // likelihood is flat inside the box and zero outside, so the MLE is a feasibility
+  // question (is every |r_i| <= w?), not a minimization. We use least squares anyway,
+  // because it is what the page explains and what the reader expects to see running.
   function score(A, b, sc) {
-    let s = 0; for (let i = 0; i < A.length; i++) s += Math.abs(centeredLift(b[i] - dot(A[i], sc)));
+    let s = 0;
+    for (let i = 0; i < A.length; i++) {
+      const d = centeredLift(b[i] - dot(A[i], sc));
+      s += d * d;
+    }
     return s;
   }
+  
   function bruteBest(A, b) {                          // argmin over all 625 candidates
     let best = null, bs = Infinity;
-    for (const sc of CANDS) { const v = score(A, b, sc); if (v < bs) { bs = v; best = sc; } }
+    for (const sc of CANDS) { 
+      const v = score(A, b, sc); if (v < bs) { bs = v; best = sc; } }
     return { best };
   }
   // Resamples A as well as e, so this rate marginalizes over matrices too. That is the
