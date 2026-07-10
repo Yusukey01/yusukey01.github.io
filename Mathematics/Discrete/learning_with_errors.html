@@ -245,8 +245,9 @@ uses_python: false
                 </div>
 
                 <p>
-                    As with the short-integer-solution problem, the exact modulus and sample count play no role beyond a
-                    lower bound; the strength of the conclusion is governed by the error rate \(\alpha\), through the
+                    As with the short-integer-solution problem, the exact modulus and sample count play no role in
+                    <em>this</em> reduction beyond a lower bound; the strength of the conclusion is governed by the error
+                    rate \(\alpha\), through the
                     factor \(\gamma = \tilde{O}(n/\alpha)\). Smaller noise means a smaller \(\alpha\), hence a larger
                     \(\gamma\) — a weaker guarantee — so there is a genuine tension: too little noise and the problem
                     loses its worst-case backing, too much and the samples cease to determine the secret. The reduction
@@ -260,7 +261,9 @@ uses_python: false
                 <p>
                     The reduction is iterative, producing progressively narrower Gaussian samples over the input lattice
                     \(\mathcal{L}\) until they are sharp enough to read off solutions to the shortest-vector problems.
-                    One iteration couples a classical step to a quantum one.
+                    One iteration couples a classical step to a quantum one. The LWE oracle it calls is the
+                    <em>search</em> form, while the theorem above assumes only the <em>decision</em> form; the
+                    bootstrapping that converts one into the other is recorded at the close of this section.
                 </p>
 
                 <div class="proof">
@@ -296,11 +299,12 @@ uses_python: false
                 </div>
 
                 <p>
-                    Search and decision are equivalent for these parameters, up to a polynomial loss in the sample
-                    count: an oracle that merely distinguishes LWE samples from uniform can be bootstrapped, one
-                    coordinate of the secret at a time, into one that recovers the whole secret. So the hardness above,
-                    stated for decision-LWE, transfers to search, and the encryption scheme of the next section may lean
-                    on whichever form is convenient.
+                    Here is the bootstrapping, as recorded. Search and decision agree for these parameters, up to a
+                    polynomial loss in the sample count: an oracle that merely distinguishes LWE samples from uniform
+                    can be bootstrapped, one coordinate of the secret at a time, into one that recovers the whole
+                    secret &mdash; which is the search oracle the reduction called for. Read in the other direction, the
+                    same equivalence carries hardness from decision to search, so the encryption scheme of the next
+                    section may lean on whichever form is convenient.
                 </p>
 
                 <h3>Why the Reduction Is Quantum, and What That Means</h3>
@@ -315,14 +319,27 @@ uses_python: false
                 </p>
 
                 <p>
-                    A later result partially removes the quantum step, at a cost that sharpens the picture rather than
-                    dissolving it. One can give a fully <em>classical</em> reduction from lattice problems to LWE, but
-                    only under two concessions: it reaches \(\mathrm{GapSVP}_\gamma\) alone, not
-                    \(\mathrm{SIVP}_\gamma\); and it requires an exponentially large modulus, \(q \geq 2^{n/2}\), where
-                    the quantum reduction is content with a modulus polynomial in \(n\). The quantum reduction is thus
-                    both more general in the problems it reaches and more efficient in the parameters it demands. That
-                    the strongest known evidence for LWE's hardness passes through a quantum computation is the exact
-                    counterpart, on the defensive side, of the fact that the classical schemes fell to one.
+                    Later work removes the quantum step in part, at a cost that sharpens the picture rather than
+                    dissolving it. A first classical reduction reached \(\mathrm{GapSVP}_\gamma\) but only for an
+                    exponentially large modulus, \(q \geq 2^{n/2}\). That barrier was later broken: a fully classical
+                    reduction is now known for a modulus polynomial in \(n\), the regime the deployed schemes actually
+                    inhabit. Two costs survive. It is not known to reach \(\mathrm{SIVP}_\gamma\), only
+                    \(\mathrm{GapSVP}_\gamma\). And it loses dimension: breaking \(n\)-dimensional LWE classically yields
+                    a lattice algorithm only in dimension \(\sqrt{n}\), so to underwrite a lattice problem of a given
+                    size, the classical route demands an LWE instance quadratically larger than the quantum route does.
+                </p>
+
+                <p>
+                    Both costs trace to a single structural fact, and the proof above has already exhibited it. The
+                    quantum reduction is <em>iterative</em>: step two hands a narrower Gaussian back to step one, and
+                    the width descends by a constant factor each round. The classical route rests on a reduction that
+                    makes a single pass. A one-shot argument cannot compound its gains, which is where the quadratic
+                    loss in dimension enters, and no such argument is known to reach \(\mathrm{SIVP}_\gamma\), which the
+                    iterative one handles. Whether the loss is inherent &mdash; whether \(n\)-dimensional LWE with polynomial modulus
+                    is classically as hard as \(n\)-dimensional lattice problems, rather than merely
+                    \(\sqrt{n}\)-dimensional ones &mdash; remains open. That the strongest known evidence for LWE's
+                    hardness still passes through a quantum computation is the exact counterpart, on the defensive side,
+                    of the fact that the classical schemes fell to one.
                 </p>
 
                 <div class="insight-box">
