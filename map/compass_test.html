@@ -674,6 +674,34 @@
                 0 4px 18px rgba(0, 0, 0, 0.4),
                 0 0 20px var(--fkw-glow, rgba(100, 180, 255, 0.4));
         }
+        /* Clickable signpost chips sitting on the prerequisite curves */
+        .fkw-chip.fkw-nav {
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .fkw-chip.fkw-nav::before { display: none; }
+        .fkw-chip.fkw-nav:hover {
+            background: rgba(32, 44, 64, 0.92);
+            transform: translate(-50%, -50%) scale(1.07);
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.45),
+                0 0 22px var(--fkw-glow, rgba(100, 180, 255, 0.4));
+        }
+        .fkw-arrow {
+            display: inline-block;
+            margin-right: 7px;
+            color: var(--fkw-accent, #64b4ff);
+            text-shadow: 0 0 6px var(--fkw-accent, #64b4ff);
+            transform: rotate(var(--fkw-rot, 0rad));
+            vertical-align: middle;
+        }
+        .fkw-nav .fkw-inner {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
         .fkw-inner { display: inline-block; opacity: 0; }
         .fkw-chip.show .fkw-inner {
             animation:
@@ -1993,12 +2021,14 @@ function drawPrerequisiteConnections(activeTile) {
 }
 
 /**
- * FLOATING KEYWORDS (DOM overlay)
- * On tile selection, up to six core keywords appear as glass chips ringing
- * the hexagon. A separate fixed layer above the canvas guarantees legibility
- * over lit tiles and prerequisite lines, and keeps the font size in screen
- * pixels regardless of zoom. The head of each page's keyword array is
- * curated to be its defining concepts, so we simply take the first six.
+ * FLOATING KEYWORDS & PREREQ SIGNPOSTS (DOM overlay)
+ * On tile selection, up to six core keywords appear as glass chips on the
+ * hexagon's six vertex directions, and each prerequisite curve carries a
+ * clickable signpost chip that jumps the camera to (and selects) its source
+ * tile. A separate fixed layer above the canvas guarantees legibility over
+ * lit tiles, and keeps font sizes in screen pixels regardless of zoom.
+ * The head of each page's keyword array is curated to be its defining
+ * concepts, so we simply take the first six.
  */
 const fkwLayer = document.getElementById('fkw-layer');
 const FKW_MAX = 6;
@@ -2008,11 +2038,48 @@ const FKW_MAX = 6;
 // then upper-right, upper-left, lower-right, lower-left, bottom. The bottom
 // chip sits beyond the "TAP TO OPEN" pill, so they never collide.
 const FKW_ANGLES = [-90, -30, -150, 30, 150, 90];
+const FKW_NAV_DIST = 120;      // signpost distance beyond the hexagon edge
+const FKW_NAV_STAGGER = 46;    // extra spacing for near-parallel curves
 let fkwTileId = null;
 
 function fkwHexToRgba(hex, alpha) {
     const n = parseInt(hex.slice(1), 16);
     return 'rgba(' + ((n >> 16) & 255) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ', ' + alpha + ')';
+}
+
+// Jump the camera to a linked tile and select it (same effects as a tap).
+function fkwJumpTo(id) {
+    const tile = knowledgeData.find(t => t.id === id);
+    if (!tile) return;
+    activeTileId = tile.id;
+    sfx.tap();
+    const sectionColor = SECTION_COLORS[tile.section] || '#ffffff';
+    activeRipples.push({
+        q: tile.q, r: tile.r,
+        radius: scale * 0.9, maxRadius: scale * 4.5,
+        alpha: 0.8, color: sectionColor, startTime: Date.now()
+    });
+    updateInfoPanel(tile);
+    panToTile(tile);
+}
+
+// Point on the quadratic prerequisite curve, replicating the exact control
+// point used by drawPrerequisiteConnections so signposts sit ON the line.
+function fkwCurvePoint(p0, p1, t) {
+    const midX = (p1.x + p0.x) / 2, midY = (p1.y + p0.y) / 2;
+    const dx = p1.x - p0.x, dy = p1.y - p0.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const curveAmount = Math.min(dist * 0.25, scale * 0.8);
+    const cx = midX + (-dy / dist) * curveAmount;
+    const cy = midY + (dx / dist) * curveAmount;
+    const u = 1 - t;
+    return {
+        x: u * u * p0.x + 2 * u * t * cx + t * t * p1.x,
+        y: u * u * p0.y + 2 * u * t * cy + t * t * p1.y,
+        // tangent (direction of increasing t, i.e. toward the active tile)
+        tx: 2 * u * (cx - p0.x) + 2 * t * (p1.x - cx),
+        ty: 2 * u * (cy - p0.y) + 2 * t * (p1.y - cy)
+    };
 }
 
 function syncFloatingKeywords(activeTile) {
@@ -2039,41 +2106,99 @@ function syncFloatingKeywords(activeTile) {
                 // Add .show on the next frame so entrance animations fire
                 requestAnimationFrame(() => chip.classList.add('show'));
             });
+
+            // Signpost chips: one per prerequisite, accented in the
+            // DESTINATION tile's section color so cross-section jumps read
+            // at a glance. Near-parallel curves get staggered distances.
+            const active = getPixelCoords(activeTile.q, activeTile.r);
+            const prereqs = (activeTile.prereqs || [])
+                .map(pid => knowledgeData.find(t => t.id === pid))
+                .filter(Boolean);
+            const buckets = {};
+            prereqs.forEach((p, i) => {
+                const pc = getPixelCoords(p.q, p.r);
+                const bucket = Math.round(Math.atan2(pc.y - active.y, pc.x - active.x) / (Math.PI / 12));
+                const rank = buckets[bucket] || 0;
+                buckets[bucket] = rank + 1;
+
+                const chip = document.createElement('div');
+                chip.className = 'fkw-chip fkw-nav';
+                const pColor = SECTION_COLORS[p.section] || '#64b4ff';
+                chip.style.setProperty('--fkw-accent', pColor);
+                chip.style.setProperty('--fkw-glow', fkwHexToRgba(pColor, 0.35));
+                chip.style.setProperty('--fkw-delay', ((kws.length + i) * 80) + 'ms');
+                chip.dataset.target = p.id;
+                chip.dataset.bump = rank * FKW_NAV_STAGGER;
+                const inner = document.createElement('span');
+                inner.className = 'fkw-inner';
+                const arrow = document.createElement('span');
+                arrow.className = 'fkw-arrow';
+                arrow.textContent = '\u279C';
+                inner.appendChild(arrow);
+                inner.appendChild(document.createTextNode(p.title));
+                chip.appendChild(inner);
+                chip.addEventListener('mousedown', ev => ev.stopPropagation());
+                chip.addEventListener('click', ev => { ev.stopPropagation(); fkwJumpTo(chip.dataset.target); });
+                fkwLayer.appendChild(chip);
+                requestAnimationFrame(() => chip.classList.add('show'));
+            });
         }
     }
     if (!fkwTileId) return;
 
     // Chips are a reading-zoom feature: fade them out in sync with the zoom
     // range where tile titles disappear, instead of letting fixed-size chips
-    // crowd a shrunken hexagon.
+    // crowd a shrunken hexagon. visibility also gates the signposts' clicks.
     const vis = Math.max(0, Math.min(1, (scale - 38) / 10));
     fkwLayer.style.opacity = vis;
+    fkwLayer.style.visibility = vis === 0 ? 'hidden' : '';
     if (vis === 0) return;
 
-    // Per-frame positioning on the hexagon's vertex directions.
-    // Vertical placement uses only the chip's half-HEIGHT, so every chip sits
-    // on its vertex's row regardless of how long its word is. Diagonal chips
-    // then grow horizontally outward from the hexagon's slanted edge; this
-    // guarantees the three rows (top, middle, bottom) never collide, no
-    // matter the word lengths.
+    // Per-frame positioning.
+    // Keyword chips: vertical placement uses only the chip's half-HEIGHT, so
+    // every chip sits on its vertex's row regardless of how long its word is.
+    // Diagonal chips then grow horizontally outward from the hexagon's
+    // slanted edge; this guarantees the three rows (top, middle, bottom)
+    // never collide, no matter the word lengths.
+    // Signpost chips: placed on their prerequisite curve, a fixed distance
+    // beyond the hexagon edge, arrow rotated toward the destination.
     const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
     const baseR = scale * 1.05 + 12;
     const chips = fkwLayer.children;
+    let kwIdx = 0;
     for (let i = 0; i < chips.length; i++) {
         const chip = chips[i];
-        const a = FKW_ANGLES[i] * Math.PI / 180;
         const hw = chip.offsetWidth / 2, hh = chip.offsetHeight / 2;
-        const c = Math.cos(a);
-        let py = y + Math.sin(a) * (baseR + hh);
-        let px;
-        if (Math.abs(c) > 0.25) {
-            // Diagonal vertex: inner edge anchored just outside the hexagon,
-            // extending away from the tile.
-            px = x + Math.sign(c) * (scale * 0.9 + 10 + hw);
+        let px, py;
+
+        if (chip.className.indexOf('fkw-nav') !== -1) {
+            const target = knowledgeData.find(t => t.id === chip.dataset.target);
+            if (!target) continue;
+            const p0 = getPixelCoords(target.q, target.r);
+            const D = baseR + FKW_NAV_DIST + (parseFloat(chip.dataset.bump) || 0);
+            // Walk back from the active end of the curve until D away
+            let pt = fkwCurvePoint(p0, { x, y }, 0.5);
+            for (let t = 1; t >= 0.02; t -= 0.02) {
+                pt = fkwCurvePoint(p0, { x, y }, t);
+                if (Math.hypot(pt.x - x, pt.y - y) >= D) break;
+            }
+            px = pt.x; py = pt.y;
+            // Arrow points along the curve toward the destination
+            chip.style.setProperty('--fkw-rot', Math.atan2(-pt.ty, -pt.tx) + 'rad');
         } else {
-            // Top / bottom vertex: centered on the tile.
-            px = x;
+            const a = FKW_ANGLES[kwIdx++] * Math.PI / 180;
+            const c = Math.cos(a);
+            py = y + Math.sin(a) * (baseR + hh);
+            if (Math.abs(c) > 0.25) {
+                // Diagonal vertex: inner edge anchored just outside the
+                // hexagon, extending away from the tile.
+                px = x + Math.sign(c) * (scale * 0.9 + 10 + hw);
+            } else {
+                // Top / bottom vertex: centered on the tile.
+                px = x;
+            }
         }
+
         // Keep every chip fully on screen
         px = Math.min(window.innerWidth - hw - 6, Math.max(hw + 6, px));
         py = Math.min(window.innerHeight - hh - 6, Math.max(hh + 6, py));
@@ -2685,6 +2810,7 @@ window.addEventListener('mouseup', e => {
     // Don't handle interaction if clicking on Tessera or UI elements
     const tesseraContainer = document.getElementById('tessera-container');
     if (tesseraContainer && tesseraContainer.contains(e.target)) return;
+    if (fkwLayer.contains(e.target)) return;
     if (!isDragging) handleInteraction(e.clientX, e.clientY);
 });
 
