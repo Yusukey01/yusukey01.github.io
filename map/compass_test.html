@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Math-CS Compass | Knowledge Map</title>
+    <title>[TEST] Math-CS Compass | Knowledge Map</title>
     <style>
         :root { 
             --bg-color: #0b0e14; 
@@ -1252,10 +1253,10 @@ async function loadCurriculumData() {
     try {
         let response;
         try {
-            response = await fetch('../data/curriculum.json');
+            response = await fetch('../data/curriculum_test.json');
             if (!response.ok) throw new Error('Relative path failed');
         } catch {
-            response = await fetch('/data/curriculum.json');
+            response = await fetch('/data/curriculum_test.json');
         }
         
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1663,7 +1664,14 @@ function getEntryAnimationProgress(tileIndex) {
     if (!entryAnimationActive || reduceMotion) return 1;
     
     const elapsed = Date.now() - entryAnimationStartTime;
-    const tileStartTime = tileIndex * ENTRY_STAGGER_DELAY;
+    // Spread ALL tiles across ENTRY_ANIMATION_DURATION regardless of tile
+    // count. A fixed per-tile delay only animated the first ~70 tiles
+    // before the completion cutoff in render(), making the remaining
+    // tiles pop in simultaneously.
+    const stagger = knowledgeData.length > 0
+        ? ENTRY_ANIMATION_DURATION / knowledgeData.length
+        : ENTRY_STAGGER_DELAY;
+    const tileStartTime = tileIndex * stagger;
     const tileElapsed = elapsed - tileStartTime;
     
     if (tileElapsed < 0) return 0;
@@ -3198,8 +3206,13 @@ async function init() {
     // Load data while gate animation plays
     const loadPromise = loadCurriculumData();
     
-    // Play gate animation sequence
-    await playGateAnimation();
+    // Play gate animation sequence (skipped for reduced-motion users,
+    // matching how the tile entry/idle animations already behave)
+    if (reduceMotion) {
+        skipGateAnimation();
+    } else {
+        await playGateAnimation();
+    }
     
     // Wait for data to be loaded
     const loaded = await loadPromise;
@@ -3212,6 +3225,13 @@ async function init() {
         entryAnimationStartTime = Date.now();
         render();
         initTessera();
+    } else {
+        // Load failed: while gate-active is set the error message in
+        // #loading is at opacity 0 - the user would see a dead black
+        // screen. Reveal the UI layer and drop the overlay.
+        document.body.classList.remove('gate-active');
+        const overlay = document.getElementById('gate-overlay');
+        if (overlay) overlay.classList.add('hidden');
     }
 }
 
@@ -3276,7 +3296,10 @@ function playGateAnimation() {
             });
         });
 
-        Promise.all(preloadPromises).then(async () => {
+        // Watchdog: a hung image download must not brick the page behind
+        // the gate - proceed after 2.5s even if preloading never settles.
+        const preloadWatchdog = new Promise((r) => setTimeout(r, 2500));
+        Promise.race([Promise.all(preloadPromises), preloadWatchdog]).then(async () => {
             // gate_0 is already .active — hold it for MIN_HOLD
             await new Promise((r) => setTimeout(r, MIN_HOLD));
 
