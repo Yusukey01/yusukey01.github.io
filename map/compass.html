@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Math-CS Compass | Knowledge Map</title>
+    <title>[TEST] Math-CS Compass | Knowledge Map</title>
     <style>
         :root { 
             --bg-color: #0b0e14; 
@@ -581,6 +582,22 @@
             100% { transform: scale(5); opacity: 0; }
         }
 
+        /* Exit veil: masks the document swap at the end of the exit
+           animation (map background color, above everything) */
+        #exit-veil {
+            position: fixed;
+            inset: 0;
+            background: #0b0e14;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in;
+            z-index: 2000;
+        }
+        #exit-veil.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         /* Hide UI during gate animation */
         body.gate-active #search-container,
         body.gate-active #fkw-layer,
@@ -863,6 +880,9 @@
 
 <!-- Floating keyword chips (populated on tile selection) -->
 <div id="fkw-layer"></div>
+
+<!-- Exit veil (fades in at the end of the exit animation) -->
+<div id="exit-veil"></div>
 
 <script>
 /**
@@ -1252,10 +1272,10 @@ async function loadCurriculumData() {
     try {
         let response;
         try {
-            response = await fetch('../data/curriculum.json');
+            response = await fetch('../data/curriculum_test.json');
             if (!response.ok) throw new Error('Relative path failed');
         } catch {
-            response = await fetch('/data/curriculum.json');
+            response = await fetch('/data/curriculum_test.json');
         }
         
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1663,7 +1683,14 @@ function getEntryAnimationProgress(tileIndex) {
     if (!entryAnimationActive || reduceMotion) return 1;
     
     const elapsed = Date.now() - entryAnimationStartTime;
-    const tileStartTime = tileIndex * ENTRY_STAGGER_DELAY;
+    // Spread ALL tiles across ENTRY_ANIMATION_DURATION regardless of tile
+    // count. A fixed per-tile delay only animated the first ~70 tiles
+    // before the completion cutoff in render(), making the remaining
+    // tiles pop in simultaneously.
+    const stagger = knowledgeData.length > 0
+        ? ENTRY_ANIMATION_DURATION / knowledgeData.length
+        : ENTRY_STAGGER_DELAY;
+    const tileStartTime = tileIndex * stagger;
     const tileElapsed = elapsed - tileStartTime;
     
     if (tileElapsed < 0) return 0;
@@ -1702,6 +1729,11 @@ function triggerExitAnimation(url) {
     exitAnimationStartTime = Date.now();
     exitTargetUrl = url;
     
+    // Warm the HTTP cache so the swap after the animation is instant.
+    // Harmless if the response is uncacheable - we just fall back to a
+    // normal load at navigation time.
+    try { fetch(url, { credentials: 'same-origin' }).catch(() => {}); } catch (e) {}
+    
     // Update Tessera for departure
     setTesseraExpression('wave');
     updateTesseraMessage("See you there! Happy learning!");
@@ -1728,8 +1760,14 @@ function triggerExitAnimation(url) {
         }
     }, 150);
     
-    // Navigate at ~60% through animation for smooth flow
-    const navigateAt = Math.min(totalExitDuration * 0.6, 400);
+    // Let the suck-in animation essentially finish before navigating
+    // (the prefetch above hides the load time), and fade a map-colored
+    // veil over the last 300ms to mask the document swap. Reduced-motion
+    // users skip the wait: immediate veil, quick navigation.
+    const veil = document.getElementById('exit-veil');
+    const navigateAt = reduceMotion ? 200 : Math.max(200, totalExitDuration - 80);
+    const veilAt = reduceMotion ? 0 : Math.max(0, navigateAt - 300);
+    setTimeout(() => { if (veil) veil.classList.add('active'); }, veilAt);
     setTimeout(() => {
         window.location.assign(url);
     }, navigateAt);
@@ -2865,10 +2903,7 @@ function handleInteraction(clientX, clientY) {
         if (tile.isReserved) {
             activeTileId = tile.id;
             updateInfoPanel(tile);
-            // Only recenter on touch: on a mouse the cursor stays put, so
-            // panning would slide the tile out from under the pointer and
-            // break the click-again-to-open gesture.
-            if (isTouchInteraction) panToTile(tile);
+            panToTile(tile);
         } else if (activeTileId === tile.id) {
             if (tile.url) {
                 triggerExitAnimation(tile.url);
@@ -2893,7 +2928,7 @@ function handleInteraction(clientX, clientY) {
             const prereqCount = tile.prereqs?.length || 0;
             const prereqText = prereqCount > 0 ? ` (${prereqCount} prerequisites)` : '';
             updateInfoPanel(tile);
-            if (isTouchInteraction) panToTile(tile);
+            panToTile(tile);
         }
     }
 
@@ -3145,6 +3180,14 @@ function resetMapState() {
     entryAnimationActive = true;
     entryAnimationStartTime = Date.now();
     
+    // Clear the exit veil (bfcache restores the page with it active)
+    const exitVeil = document.getElementById('exit-veil');
+    if (exitVeil) {
+        exitVeil.style.transition = 'none';
+        exitVeil.classList.remove('active');
+        setTimeout(() => { exitVeil.style.transition = ''; }, 50);
+    }
+    
     // Reset UI opacity
     const uiElements = ['#search-container', '#legend', '#zoom-controls', '#tessera-container'];
     uiElements.forEach(selector => {
@@ -3198,8 +3241,13 @@ async function init() {
     // Load data while gate animation plays
     const loadPromise = loadCurriculumData();
     
-    // Play gate animation sequence
-    await playGateAnimation();
+    // Play gate animation sequence (skipped for reduced-motion users,
+    // matching how the tile entry/idle animations already behave)
+    if (reduceMotion) {
+        skipGateAnimation();
+    } else {
+        await playGateAnimation();
+    }
     
     // Wait for data to be loaded
     const loaded = await loadPromise;
@@ -3212,6 +3260,13 @@ async function init() {
         entryAnimationStartTime = Date.now();
         render();
         initTessera();
+    } else {
+        // Load failed: while gate-active is set the error message in
+        // #loading is at opacity 0 - the user would see a dead black
+        // screen. Reveal the UI layer and drop the overlay.
+        document.body.classList.remove('gate-active');
+        const overlay = document.getElementById('gate-overlay');
+        if (overlay) overlay.classList.add('hidden');
     }
 }
 
@@ -3276,7 +3331,10 @@ function playGateAnimation() {
             });
         });
 
-        Promise.all(preloadPromises).then(async () => {
+        // Watchdog: a hung image download must not brick the page behind
+        // the gate - proceed after 2.5s even if preloading never settles.
+        const preloadWatchdog = new Promise((r) => setTimeout(r, 2500));
+        Promise.race([Promise.all(preloadPromises), preloadWatchdog]).then(async () => {
             // gate_0 is already .active — hold it for MIN_HOLD
             await new Promise((r) => setTimeout(r, MIN_HOLD));
 
