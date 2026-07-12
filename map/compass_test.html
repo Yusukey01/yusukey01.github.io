@@ -631,6 +631,7 @@
             inset: 0;
             pointer-events: none;
             z-index: 5; /* above canvas (1), below UI panels (10) */
+            transition: opacity 0.25s ease;
         }
         .fkw-chip {
             position: absolute;
@@ -2042,10 +2043,19 @@ function syncFloatingKeywords(activeTile) {
     }
     if (!fkwTileId) return;
 
-    // Per-frame positioning on the hexagon's vertex directions at any zoom.
-    // The radius adds each chip's own half-extent projected on its radial
-    // direction, so every chip's inner edge clears the vertex (hex radius is
-    // 0.95 * scale) by the same fixed screen-pixel margin.
+    // Chips are a reading-zoom feature: fade them out in sync with the zoom
+    // range where tile titles disappear, instead of letting fixed-size chips
+    // crowd a shrunken hexagon.
+    const vis = Math.max(0, Math.min(1, (scale - 38) / 10));
+    fkwLayer.style.opacity = vis;
+    if (vis === 0) return;
+
+    // Per-frame positioning on the hexagon's vertex directions.
+    // Vertical placement uses only the chip's half-HEIGHT, so every chip sits
+    // on its vertex's row regardless of how long its word is. Diagonal chips
+    // then grow horizontally outward from the hexagon's slanted edge; this
+    // guarantees the three rows (top, middle, bottom) never collide, no
+    // matter the word lengths.
     const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
     const baseR = scale * 1.05 + 12;
     const chips = fkwLayer.children;
@@ -2053,9 +2063,17 @@ function syncFloatingKeywords(activeTile) {
         const chip = chips[i];
         const a = FKW_ANGLES[i] * Math.PI / 180;
         const hw = chip.offsetWidth / 2, hh = chip.offsetHeight / 2;
-        const r = baseR + hw * Math.abs(Math.cos(a)) + hh * Math.abs(Math.sin(a));
-        let px = x + Math.cos(a) * r;
-        let py = y + Math.sin(a) * r;
+        const c = Math.cos(a);
+        let py = y + Math.sin(a) * (baseR + hh);
+        let px;
+        if (Math.abs(c) > 0.25) {
+            // Diagonal vertex: inner edge anchored just outside the hexagon,
+            // extending away from the tile.
+            px = x + Math.sign(c) * (scale * 0.9 + 10 + hw);
+        } else {
+            // Top / bottom vertex: centered on the tile.
+            px = x;
+        }
         // Keep every chip fully on screen
         px = Math.min(window.innerWidth - hw - 6, Math.max(hw + 6, px));
         py = Math.min(window.innerHeight - hh - 6, Math.max(hh + 6, py));
