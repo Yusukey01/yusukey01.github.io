@@ -638,9 +638,9 @@
             transform: translate(-50%, -50%);
             white-space: nowrap;
             pointer-events: none;
-            padding: 4px 12px;
+            padding: 5px 14px;
             border-radius: 999px;
-            font-size: 12.5px;
+            font-size: 14px;
             letter-spacing: 0.3px;
             color: #e8e8e8;
             background: rgba(15, 20, 30, 0.78);
@@ -656,7 +656,7 @@
         .fkw-chip::before {
             content: '';
             display: inline-block;
-            width: 6px; height: 6px;
+            width: 7px; height: 7px;
             border-radius: 50%;
             background: var(--fkw-accent, #64b4ff);
             box-shadow: 0 0 6px var(--fkw-accent, #64b4ff);
@@ -665,9 +665,13 @@
         }
         .fkw-chip.primary {
             font-weight: 600;
-            font-size: 13.5px;
+            font-size: 16px;
+            padding: 6px 16px;
             color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow:
+                0 4px 18px rgba(0, 0, 0, 0.4),
+                0 0 20px var(--fkw-glow, rgba(100, 180, 255, 0.4));
         }
         .fkw-inner { display: inline-block; opacity: 0; }
         .fkw-chip.show .fkw-inner {
@@ -1997,10 +2001,12 @@ function drawPrerequisiteConnections(activeTile) {
  */
 const fkwLayer = document.getElementById('fkw-layer');
 const FKW_MAX = 6;
-// Ring angles in degrees, y-down screen coordinates (-90 = straight up).
-// An even 48-degree fan centered on top; the bottom sector stays clear for
-// the "TAP TO OPEN" pill. Slot order = importance: keyword #1 sits on top.
-const FKW_ANGLES = [-90, -138, -42, -186, 6, -234];
+// The map's hexagons are pointy-top with vertices at 30 + k*60 degrees, so
+// the six chips sit on the six vertex directions (y-down screen coordinates,
+// -90 = straight up). Slot order = importance: keyword #1 on the top vertex,
+// then upper-right, upper-left, lower-right, lower-left, bottom. The bottom
+// chip sits beyond the "TAP TO OPEN" pill, so they never collide.
+const FKW_ANGLES = [-90, -30, -150, 30, 150, 90];
 let fkwTileId = null;
 
 function fkwHexToRgba(hex, alpha) {
@@ -2036,18 +2042,21 @@ function syncFloatingKeywords(activeTile) {
     }
     if (!fkwTileId) return;
 
-    // Per-frame positioning: circular ring hugging the hexagon's edge at any
-    // zoom (hex radius is 0.95 * scale, plus a fixed screen-pixel margin).
+    // Per-frame positioning on the hexagon's vertex directions at any zoom.
+    // The radius adds each chip's own half-extent projected on its radial
+    // direction, so every chip's inner edge clears the vertex (hex radius is
+    // 0.95 * scale) by the same fixed screen-pixel margin.
     const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
-    const ring = scale * 1.05 + 55;
+    const baseR = scale * 1.05 + 12;
     const chips = fkwLayer.children;
     for (let i = 0; i < chips.length; i++) {
         const chip = chips[i];
         const a = FKW_ANGLES[i] * Math.PI / 180;
-        let px = x + Math.cos(a) * ring;
-        let py = y + Math.sin(a) * ring * 0.92;
-        // Keep every chip fully on screen
         const hw = chip.offsetWidth / 2, hh = chip.offsetHeight / 2;
+        const r = baseR + hw * Math.abs(Math.cos(a)) + hh * Math.abs(Math.sin(a));
+        let px = x + Math.cos(a) * r;
+        let py = y + Math.sin(a) * r;
+        // Keep every chip fully on screen
         px = Math.min(window.innerWidth - hw - 6, Math.max(hw + 6, px));
         py = Math.min(window.innerHeight - hh - 6, Math.max(hh + 6, py));
         chip.style.left = px + 'px';
