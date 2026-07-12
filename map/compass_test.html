@@ -2086,8 +2086,7 @@ const FKW_MAX = 6;
 // then upper-right, upper-left, lower-right, lower-left, bottom. The bottom
 // chip sits beyond the "TAP TO OPEN" pill, so they never collide.
 const FKW_ANGLES = [-90, -30, -150, 30, 150, 90];
-const FKW_NAV_DIST = 120;      // signpost distance beyond the hexagon edge
-const FKW_NAV_STAGGER = 46;    // extra spacing for near-parallel curves
+const FKW_NAV_DIST = 120;      // base signpost distance beyond the hexagon edge
 const FKW_FWD_MAX = 7;         // cap on forward signposts (hub tiles)
 let fkwTileId = null;
 let fkwFwdIndex = new Map();
@@ -2162,6 +2161,34 @@ function fkwCurvePoint(p0, p1, t) {
     };
 }
 
+// Walk outward from the ACTIVE end of a dependency curve until D away from
+// the active tile; if the curve is shorter than D (adjacent target), keep
+// going straight past the target along the final tangent. Returns the point
+// and the outward angle (toward the destination).
+function fkwWalkCurve(active, other, forward, D) {
+    let pt = null, reached = false;
+    if (forward) {
+        for (let t = 0.02; t <= 1.0001; t += 0.02) {
+            pt = fkwCurvePoint(active, other, t);
+            if (Math.hypot(pt.x - active.x, pt.y - active.y) >= D) { reached = true; break; }
+        }
+    } else {
+        for (let t = 0.98; t >= -0.0001; t -= 0.02) {
+            pt = fkwCurvePoint(other, active, t);
+            if (Math.hypot(pt.x - active.x, pt.y - active.y) >= D) { reached = true; break; }
+        }
+    }
+    const sgn = forward ? 1 : -1;
+    if (!reached) {
+        const len = Math.hypot(pt.tx, pt.ty) || 1;
+        const extra = D - Math.hypot(pt.x - active.x, pt.y - active.y);
+        pt = { x: pt.x + sgn * (pt.tx / len) * extra,
+               y: pt.y + sgn * (pt.ty / len) * extra,
+               tx: pt.tx, ty: pt.ty };
+    }
+    return { x: pt.x, y: pt.y, ang: Math.atan2(sgn * pt.ty, sgn * pt.tx) };
+}
+
 // Faint dashed curves from the selected tile to its cross-cluster
 // dependents - the forward direction of the dependency graph. Kept visually
 // quiet (thin, low alpha, destination-colored) so the rich prerequisite
@@ -2227,20 +2254,14 @@ function syncFloatingKeywords(activeTile) {
             // Signposts: cross-cluster prerequisites (filled pills) and
             // cross-cluster dependents (ghost pills). Same-cluster links are
             // adjacent and directly clickable, so they get no signpost.
-            // Near-parallel curves get staggered distances.
-            const active = getPixelCoords(activeTile.q, activeTile.r);
+            // Overlaps are resolved at positioning time by pushing each
+            // signpost further out along its own curve.
             const back = (activeTile.prereqs || [])
                 .map(pid => knowledgeData.find(t => t.id === pid))
                 .filter(p => p && fkwIsCrossCluster(p, activeTile));
             const fwd = fkwForwardTargets(activeTile, historyTop);
-            const buckets = {};
             let delayIdx = kws.length;
             const makeSignpost = (p, dir) => {
-                const pc = getPixelCoords(p.q, p.r);
-                const bucket = Math.round(Math.atan2(pc.y - active.y, pc.x - active.x) / (Math.PI / 12));
-                const rank = buckets[bucket] || 0;
-                buckets[bucket] = rank + 1;
-
                 const isBack = p.id === historyTop;
                 const chip = document.createElement('div');
                 chip.className = 'fkw-chip fkw-nav' + (dir === 'f' ? ' fkw-fwd' : '') + (isBack ? ' fkw-back' : '');
@@ -2250,7 +2271,6 @@ function syncFloatingKeywords(activeTile) {
                 chip.style.setProperty('--fkw-delay', (delayIdx++ * 80) + 'ms');
                 chip.dataset.target = p.id;
                 chip.dataset.dir = dir;
-                chip.dataset.bump = rank * FKW_NAV_STAGGER;
                 const inner = document.createElement('span');
                 inner.className = 'fkw-inner';
                 const arrow = document.createElement('span');
@@ -2278,17 +2298,25 @@ function syncFloatingKeywords(activeTile) {
     fkwLayer.style.visibility = vis === 0 ? 'hidden' : '';
     if (vis === 0) return;
 
-    // Per-frame positioning.
-    // Keyword chips: vertical placement uses only the chip's half-HEIGHT, so
-    // every chip sits on its vertex's row regardless of how long its word is.
-    // Diagonal chips then grow horizontally outward from the hexagon's
-    // slanted edge; this guarantees the three rows (top, middle, bottom)
-    // never collide, no matter the word lengths.
-    // Signposts: placed on their dependency curve, a fixed distance beyond
-    // the hexagon edge, arrow rotated toward the destination.
+    // Per-frame positioning with deterministic collision resolution.
+    // Keyword chips are laid out first and act as obstacles: vertical
+    // placement uses only the chip's half-HEIGHT (each word stays on its
+    // vertex's row regardless of length) and diagonal chips grow
+    // horizontally outward from the hexagon's slanted edge, so keywords
+    // never collide with each other. Each signpost then walks outward along
+    // ITS OWN curve until it clears everything placed before it - the chip
+    // stays on its road, and identical inputs give identical positions, so
+    // nothing jitters.
     const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
     const baseR = scale * 1.05 + 12;
     const chips = fkwLayer.children;
+    const placed = [];
+    const PAD = 4;
+    const overlaps = rc => placed.some(b =>
+        rc.l < b.r && rc.r > b.l && rc.t < b.b && rc.b > b.t);
+    const rectOf = (cx, cy, hw, hh) =>
+        ({ l: cx - hw - PAD, t: cy - hh - PAD, r: cx + hw + PAD, b: cy + hh + PAD });
+
     let kwIdx = 0;
     for (let i = 0; i < chips.length; i++) {
         const chip = chips[i];
@@ -2299,28 +2327,16 @@ function syncFloatingKeywords(activeTile) {
             const target = knowledgeData.find(t => t.id === chip.dataset.target);
             if (!target) continue;
             const tc = getPixelCoords(target.q, target.r);
-            const D = baseR + FKW_NAV_DIST + (parseFloat(chip.dataset.bump) || 0);
-            let pt;
-            if (chip.dataset.dir === 'f') {
-                // forward curve runs active -> target: walk t upward
-                pt = fkwCurvePoint({ x, y }, tc, 0.5);
-                for (let t = 0; t <= 0.98; t += 0.02) {
-                    pt = fkwCurvePoint({ x, y }, tc, t);
-                    if (Math.hypot(pt.x - x, pt.y - y) >= D) break;
-                }
-                if (chip.className.indexOf('fkw-back') === -1)
-                    chip.style.setProperty('--fkw-rot', Math.atan2(pt.ty, pt.tx) + 'rad');
-            } else {
-                // prerequisite curve runs target -> active: walk t downward
-                pt = fkwCurvePoint(tc, { x, y }, 0.5);
-                for (let t = 1; t >= 0.02; t -= 0.02) {
-                    pt = fkwCurvePoint(tc, { x, y }, t);
-                    if (Math.hypot(pt.x - x, pt.y - y) >= D) break;
-                }
-                if (chip.className.indexOf('fkw-back') === -1)
-                    chip.style.setProperty('--fkw-rot', Math.atan2(-pt.ty, -pt.tx) + 'rad');
+            const fwd = chip.dataset.dir === 'f';
+            let D = baseR + FKW_NAV_DIST;
+            let pt = fkwWalkCurve({ x, y }, tc, fwd, D);
+            let guard = 0;
+            while (overlaps(rectOf(pt.x, pt.y, hw, hh)) && guard++ < 24) {
+                D += 22;
+                pt = fkwWalkCurve({ x, y }, tc, fwd, D);
             }
             px = pt.x; py = pt.y;
+            chip.style.setProperty('--fkw-rot', pt.ang + 'rad');
         } else {
             const a = FKW_ANGLES[kwIdx++] * Math.PI / 180;
             const c = Math.cos(a);
@@ -2340,6 +2356,7 @@ function syncFloatingKeywords(activeTile) {
         py = Math.min(window.innerHeight - hh - 6, Math.max(hh + 6, py));
         chip.style.left = px + 'px';
         chip.style.top = py + 'px';
+        placed.push(rectOf(px, py, hw, hh));
     }
 }
 
