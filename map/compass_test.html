@@ -674,25 +674,43 @@
                 0 4px 18px rgba(0, 0, 0, 0.4),
                 0 0 20px var(--fkw-glow, rgba(100, 180, 255, 0.4));
         }
-        /* Clickable signpost chips sitting on the prerequisite curves */
+        /* Clickable JUMP signposts on cross-cluster prerequisite curves.
+           Deliberately styled like the "TAP TO OPEN" pill (section-color
+           gradient + white border + bold white text) so the map keeps one
+           visual grammar: dark glass = information, colored pill = action. */
         .fkw-chip.fkw-nav {
             pointer-events: auto;
             cursor: pointer;
-            transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+            font-weight: 600;
+            color: #ffffff;
+            background: var(--fkw-accent, #64b4ff);
+            background: linear-gradient(135deg,
+                var(--fkw-accent, #64b4ff),
+                color-mix(in srgb, var(--fkw-accent, #64b4ff) 62%, #000));
+            border: 1.5px solid rgba(255, 255, 255, 0.55);
+            box-shadow:
+                0 4px 14px rgba(0, 0, 0, 0.45),
+                0 0 18px var(--fkw-glow, rgba(100, 180, 255, 0.4));
+            transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
         }
         .fkw-chip.fkw-nav::before { display: none; }
         .fkw-chip.fkw-nav:hover {
-            background: rgba(32, 44, 64, 0.92);
-            transform: translate(-50%, -50%) scale(1.07);
+            filter: brightness(1.18);
+            transform: translate(-50%, -50%) scale(1.08);
             box-shadow:
-                0 6px 20px rgba(0, 0, 0, 0.45),
-                0 0 22px var(--fkw-glow, rgba(100, 180, 255, 0.4));
+                0 6px 22px rgba(0, 0, 0, 0.5),
+                0 0 26px var(--fkw-glow, rgba(100, 180, 255, 0.55));
         }
         .fkw-arrow {
             display: inline-block;
+            width: 18px; height: 18px;
+            line-height: 18px;
+            text-align: center;
+            font-size: 11px;
             margin-right: 7px;
-            color: var(--fkw-accent, #64b4ff);
-            text-shadow: 0 0 6px var(--fkw-accent, #64b4ff);
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.28);
+            border-radius: 50%;
             transform: rotate(var(--fkw-rot, 0rad));
             vertical-align: middle;
         }
@@ -2107,13 +2125,18 @@ function syncFloatingKeywords(activeTile) {
                 requestAnimationFrame(() => chip.classList.add('show'));
             });
 
-            // Signpost chips: one per prerequisite, accented in the
-            // DESTINATION tile's section color so cross-section jumps read
-            // at a glance. Near-parallel curves get staggered distances.
+            // JUMP signposts: only for prerequisites in a DIFFERENT
+            // topicGroup or section. Same-cluster prerequisites are adjacent
+            // on the map and directly clickable, so a signpost would only
+            // collide with the keyword chips; the signpost's job is crossing
+            // to clusters you cannot see. Colored in the DESTINATION tile's
+            // section. Near-parallel curves get staggered distances.
             const active = getPixelCoords(activeTile.q, activeTile.r);
             const prereqs = (activeTile.prereqs || [])
                 .map(pid => knowledgeData.find(t => t.id === pid))
-                .filter(Boolean);
+                .filter(Boolean)
+                .filter(p => p.section !== activeTile.section ||
+                             p.topicGroup !== activeTile.topicGroup);
             const buckets = {};
             prereqs.forEach((p, i) => {
                 const pc = getPixelCoords(p.q, p.r);
