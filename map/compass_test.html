@@ -2983,6 +2983,9 @@ window.addEventListener('wheel', e => {
 
 
 // Touch Handlers
+// True from the moment a second finger touches until every finger lifts:
+// a gesture that ever pinched must never end in a tap.
+let gestureHadPinch = false;
 canvas.addEventListener('touchstart', e => {
 
     // hide keyboard when touching canvas
@@ -2994,6 +2997,7 @@ canvas.addEventListener('touchstart', e => {
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
         lastX = startX; lastY = startY;
     } else if (e.touches.length === 2) {
+        gestureHadPinch = true;
         initialPinchDist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX, 
             e.touches[0].clientY - e.touches[1].clientY
@@ -3016,6 +3020,7 @@ canvas.addEventListener('touchmove', e => {
         lastX = x; lastY = y;
         
     } else if (e.touches.length === 2) {
+        gestureHadPinch = true;
         const dist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX, 
             e.touches[0].clientY - e.touches[1].clientY
@@ -3028,11 +3033,26 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', e => {
     e.preventDefault(); 
-    if (!isDragging && e.changedTouches.length === 1) {
+    if (!isDragging && !gestureHadPinch && e.changedTouches.length === 1) {
         handleInteraction(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    }
+    if (e.touches.length > 0) {
+        // A finger remains (pinch ending one finger at a time): re-anchor
+        // pan tracking to it so the map does not jump, and mark the rest
+        // of the gesture as a drag so it can never end in a tap either.
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        lastX = startX; lastY = startY;
+        isDragging = true;
+    } else {
+        gestureHadPinch = false; // gesture fully ended
     }
     setTimeout(() => isTouchInteraction = false, 500); 
 });
+
+canvas.addEventListener('touchcancel', () => {
+    isDragging = false;
+    gestureHadPinch = false;
+}, { passive: true });
 
 // Keyboard navigation
 window.addEventListener('keydown', e => {
