@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>[TEST] Math-CS Compass | Knowledge Map</title>
+    <title>Math-CS Compass | Knowledge Map</title>
     <style>
         :root { 
             --bg-color: #0b0e14; 
@@ -584,6 +583,7 @@
 
         /* Hide UI during gate animation */
         body.gate-active #search-container,
+        body.gate-active #fkw-layer,
         body.gate-active #legend,
         body.gate-active #zoom-controls,
         body.gate-active #tessera-container,
@@ -624,6 +624,69 @@
         @media (max-width: 768px) {
             #bgm-toggle { left: 10px; width: 40px; height: 40px; }
         }
+
+        /* ===== Floating keyword chips (DOM overlay above the canvas) ===== */
+        #fkw-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5; /* above canvas (1), below UI panels (10) */
+        }
+        .fkw-chip {
+            position: absolute;
+            left: 0; top: 0;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            pointer-events: none;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            letter-spacing: 0.3px;
+            color: #e8e8e8;
+            background: rgba(15, 20, 30, 0.78);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.35),
+                0 0 14px var(--fkw-glow, rgba(100, 180, 255, 0.25));
+            visibility: hidden;
+        }
+        .fkw-chip.show { visibility: visible; }
+        .fkw-chip::before {
+            content: '';
+            display: inline-block;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--fkw-accent, #64b4ff);
+            box-shadow: 0 0 6px var(--fkw-accent, #64b4ff);
+            margin-right: 7px;
+            vertical-align: middle;
+        }
+        .fkw-chip.primary {
+            font-weight: 600;
+            font-size: 13.5px;
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+        .fkw-inner { display: inline-block; opacity: 0; }
+        .fkw-chip.show .fkw-inner {
+            animation:
+                fkwIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) var(--fkw-delay, 0s) both,
+                fkwFloat 3.6s ease-in-out calc(var(--fkw-delay, 0s) + 0.45s) infinite alternate;
+        }
+        @keyframes fkwIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fkwFloat {
+            from { transform: translateY(0); }
+            to   { transform: translateY(3px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .fkw-chip.show .fkw-inner { animation: none; opacity: 1; }
+        }
+
         /* Respect OS "reduce motion": stop the looping background-logo pulse.
            Tessera's float/wave and the loading spinner are intentionally kept. */
         @media (prefers-reduced-motion: reduce) {
@@ -729,6 +792,9 @@
 <div id="loading">Loading curriculum data</div>
 
 <canvas id="mapCanvas"></canvas>
+
+<!-- Floating keyword chips (populated on tile selection) -->
+<div id="fkw-layer"></div>
 
 <script>
 /**
@@ -1118,10 +1184,10 @@ async function loadCurriculumData() {
     try {
         let response;
         try {
-            response = await fetch('../data/curriculum_test.json');
+            response = await fetch('../data/curriculum.json');
             if (!response.ok) throw new Error('Relative path failed');
         } catch {
-            response = await fetch('/data/curriculum_test.json');
+            response = await fetch('/data/curriculum.json');
         }
         
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1922,90 +1988,71 @@ function drawPrerequisiteConnections(activeTile) {
 }
 
 /**
- * FLOATING KEYWORDS
- * When a tile is selected, up to six core keywords drift up around the
- * hexagon, giving an at-a-glance scent of the page without opening it.
- * The first entries of each page's keyword list are curated to be its
- * defining concepts, so we simply take the head of the array.
+ * FLOATING KEYWORDS (DOM overlay)
+ * On tile selection, up to six core keywords appear as glass chips ringing
+ * the hexagon. A separate fixed layer above the canvas guarantees legibility
+ * over lit tiles and prerequisite lines, and keeps the font size in screen
+ * pixels regardless of zoom. The head of each page's keyword array is
+ * curated to be its defining concepts, so we simply take the first six.
  */
+const fkwLayer = document.getElementById('fkw-layer');
 const FKW_MAX = 6;
-const FKW_STAGGER = 90;          // ms between successive words
-const FKW_RISE_DURATION = 450;   // per-word fade/rise time
-// Slot angles in degrees (-90 = straight up). The bottom stays clear for
+// Ring angles in degrees, y-down screen coordinates (-90 = straight up).
+// An even 48-degree fan centered on top; the bottom sector stays clear for
 // the "TAP TO OPEN" pill. Slot order = importance: keyword #1 sits on top.
-const FKW_ANGLES = [-90, -38, -142, 0, 180, -116];
-// Radial multiplier per slot; the 6th sits further out to avoid crowding
-// the upper-left pair.
-const FKW_R_MULT = [1.0, 1.0, 1.0, 1.05, 1.05, 1.32];
+const FKW_ANGLES = [-90, -138, -42, -186, 6, -234];
+let fkwTileId = null;
 
-let fkwState = { tileId: null, startTime: 0 };
+function fkwHexToRgba(hex, alpha) {
+    const n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + ((n >> 16) & 255) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ', ' + alpha + ')';
+}
 
-function updateAndDrawFloatingKeywords(activeTile, time, alphaFactor) {
-    if (exitAnimationActive) return;
-    const id = (activeTile && !activeTile.isReserved) ? activeTile.id : null;
-    if (id !== fkwState.tileId) {
-        fkwState = { tileId: id, startTime: time };
+function syncFloatingKeywords(activeTile) {
+    const id = (activeTile && !activeTile.isReserved && !exitAnimationActive) ? activeTile.id : null;
+
+    // (Re)build chips only when the selection changes
+    if (id !== fkwTileId) {
+        fkwTileId = id;
+        fkwLayer.innerHTML = '';
+        if (id) {
+            const kws = (activeTile.keywords || []).slice(0, FKW_MAX);
+            const color = SECTION_COLORS[activeTile.section] || '#64b4ff';
+            kws.forEach((kw, i) => {
+                const chip = document.createElement('div');
+                chip.className = 'fkw-chip' + (i === 0 ? ' primary' : '');
+                chip.style.setProperty('--fkw-accent', color);
+                chip.style.setProperty('--fkw-glow', fkwHexToRgba(color, 0.35));
+                chip.style.setProperty('--fkw-delay', (i * 80) + 'ms');
+                const inner = document.createElement('span');
+                inner.className = 'fkw-inner';
+                inner.textContent = kw;
+                chip.appendChild(inner);
+                fkwLayer.appendChild(chip);
+                // Add .show on the next frame so entrance animations fire
+                requestAnimationFrame(() => chip.classList.add('show'));
+            });
+        }
     }
-    if (!id) return;
-    const kws = (activeTile.keywords || []).slice(0, FKW_MAX);
-    if (kws.length === 0) return;
+    if (!fkwTileId) return;
 
+    // Per-frame positioning: circular ring hugging the hexagon's edge at any
+    // zoom (hex radius is 0.95 * scale, plus a fixed screen-pixel margin).
     const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
-    const sectionColor = SECTION_COLORS[activeTile.section] || '#ffffff';
-    const rx = scale * 2.05;
-    const ry = scale * 1.35;
-    // Readable at any zoom: clamp to a screen-pixel range instead of
-    // scaling away like tile titles do.
-    const baseFont = Math.max(11, Math.min(15, scale * 0.22));
-    const elapsed = time - fkwState.startTime;
-
-    ctx.save();
-    ctx.textBaseline = 'middle';
-
-    kws.forEach((kw, i) => {
-        const t0 = i * FKW_STAGGER;
-        const p = reduceMotion ? 1 : Math.min(1, Math.max(0, (elapsed - t0) / FKW_RISE_DURATION));
-        if (p <= 0) return;
-        const ease = 1 - Math.pow(1 - p, 3); // easeOutCubic
-
-        const ang = FKW_ANGLES[i] * Math.PI / 180;
-        let px = x + Math.cos(ang) * rx * FKW_R_MULT[i];
-        let py = y + Math.sin(ang) * ry * FKW_R_MULT[i];
-
-        // Entry rise + gentle idle drift (distinct phase per word)
-        const rise = (1 - ease) * 10;
-        const drift = reduceMotion ? 0 : Math.sin(time / 900 + i * 2.4) * 2.5;
-        py += rise + drift;
-
-        const fontSize = (i === 0 ? baseFont * 1.15 : baseFont);
-        ctx.font = (i === 0 ? '600 ' : '400 ') + fontSize.toFixed(1) + "px 'Segoe UI', sans-serif";
-
-        // Text grows away from the tile
-        const c = Math.cos(ang);
-        ctx.textAlign = c > 0.3 ? 'left' : (c < -0.3 ? 'right' : 'center');
-
-        // Keep the word on screen when the tile sits near a viewport edge
-        const w = ctx.measureText(kw).width;
-        const leftEdge = ctx.textAlign === 'left' ? px : (ctx.textAlign === 'right' ? px - w : px - w / 2);
-        px += Math.max(0, 8 - leftEdge) - Math.max(0, (leftEdge + w) - (window.innerWidth - 8));
-
-        ctx.globalAlpha = (i === 0 ? 0.92 : 0.78) * ease * alphaFactor;
-
-        // Dark halo first (legibility over lit neighbor tiles), then the
-        // fill with a soft section-color glow.
-        ctx.shadowBlur = 0;
-        ctx.lineWidth = 3.5;
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = 'rgba(11, 14, 20, 0.85)';
-        ctx.strokeText(kw, px, py);
-
-        ctx.shadowColor = sectionColor;
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = (i === 0 ? '#ffffff' : '#e0e0e0');
-        ctx.fillText(kw, px, py);
-    });
-
-    ctx.restore();
+    const ring = scale * 1.05 + 55;
+    const chips = fkwLayer.children;
+    for (let i = 0; i < chips.length; i++) {
+        const chip = chips[i];
+        const a = FKW_ANGLES[i] * Math.PI / 180;
+        let px = x + Math.cos(a) * ring;
+        let py = y + Math.sin(a) * ring * 0.92;
+        // Keep every chip fully on screen
+        const hw = chip.offsetWidth / 2, hh = chip.offsetHeight / 2;
+        px = Math.min(window.innerWidth - hw - 6, Math.max(hw + 6, px));
+        py = Math.min(window.innerHeight - hh - 6, Math.max(hh + 6, py));
+        chip.style.left = px + 'px';
+        chip.style.top = py + 'px';
+    }
 }
 
 /**
@@ -2371,8 +2418,8 @@ function render() {
         ctx.fillText(text, x, hintY + bounceOffset);
     }
 
-    // Floating keywords around the selected tile
-    updateAndDrawFloatingKeywords(activeTile, time, globalAlphaFactor);
+    // Floating keyword chips around the selected tile (DOM overlay)
+    syncFloatingKeywords(activeTile);
 
     scheduleNextFrame();
 }
