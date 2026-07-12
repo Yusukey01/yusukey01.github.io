@@ -583,6 +583,7 @@
 
         /* Hide UI during gate animation */
         body.gate-active #search-container,
+        body.gate-active #fkw-layer,
         body.gate-active #legend,
         body.gate-active #zoom-controls,
         body.gate-active #tessera-container,
@@ -623,6 +624,137 @@
         @media (max-width: 768px) {
             #bgm-toggle { left: 10px; width: 40px; height: 40px; }
         }
+
+        /* ===== Floating keyword chips (DOM overlay above the canvas) ===== */
+        #fkw-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5; /* above canvas (1), below UI panels (10) */
+            transition: opacity 0.25s ease;
+        }
+        .fkw-chip {
+            position: absolute;
+            left: 0; top: 0;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            pointer-events: none;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            color: #e8e8e8;
+            background: rgba(15, 20, 30, 0.78);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.35),
+                0 0 14px var(--fkw-glow, rgba(100, 180, 255, 0.25));
+            visibility: hidden;
+        }
+        .fkw-chip.show { visibility: visible; }
+        .fkw-chip::before {
+            content: '';
+            display: inline-block;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--fkw-accent, #64b4ff);
+            box-shadow: 0 0 6px var(--fkw-accent, #64b4ff);
+            margin-right: 7px;
+            vertical-align: middle;
+        }
+        .fkw-chip.primary {
+            font-weight: 600;
+            font-size: 16px;
+            padding: 6px 16px;
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow:
+                0 4px 18px rgba(0, 0, 0, 0.4),
+                0 0 20px var(--fkw-glow, rgba(100, 180, 255, 0.4));
+        }
+        /* Clickable JUMP signposts on cross-cluster dependency curves.
+           One visual grammar across the map: dark glass = information,
+           colored pill = action. Prerequisite jumps (go learn first) are
+           FILLED pills like "TAP TO OPEN"; forward jumps (where this leads)
+           are GHOST pills - dark glass with a colored border. */
+        .fkw-chip.fkw-nav {
+            pointer-events: auto;
+            cursor: pointer;
+            font-weight: 600;
+            color: #ffffff;
+            background: var(--fkw-accent, #64b4ff);
+            background: linear-gradient(135deg,
+                var(--fkw-accent, #64b4ff),
+                color-mix(in srgb, var(--fkw-accent, #64b4ff) 62%, #000));
+            border: 1.5px solid rgba(255, 255, 255, 0.55);
+            box-shadow:
+                0 4px 14px rgba(0, 0, 0, 0.45),
+                0 0 18px var(--fkw-glow, rgba(100, 180, 255, 0.4));
+            transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+        }
+        .fkw-chip.fkw-nav::before { display: none; }
+        .fkw-chip.fkw-nav:hover {
+            filter: brightness(1.18);
+            transform: translate(-50%, -50%) scale(1.08);
+            box-shadow:
+                0 6px 22px rgba(0, 0, 0, 0.5),
+                0 0 26px var(--fkw-glow, rgba(100, 180, 255, 0.55));
+        }
+        .fkw-chip.fkw-nav.fkw-fwd {
+            background: rgba(15, 20, 30, 0.82);
+            border: 1.5px solid var(--fkw-accent, #64b4ff);
+            font-weight: 500;
+        }
+        /* The way back: the signpost pointing at the tile you jumped from */
+        .fkw-chip.fkw-nav.fkw-back {
+            animation: fkwBackPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes fkwBackPulse {
+            0%, 100% { box-shadow: 0 4px 14px rgba(0,0,0,0.45), 0 0 12px var(--fkw-glow, rgba(100,180,255,0.4)); }
+            50%      { box-shadow: 0 4px 14px rgba(0,0,0,0.45), 0 0 26px var(--fkw-glow, rgba(100,180,255,0.6)); }
+        }
+        .fkw-arrow {
+            display: inline-block;
+            width: 18px; height: 18px;
+            line-height: 18px;
+            text-align: center;
+            font-size: 11px;
+            margin-right: 7px;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.28);
+            border-radius: 50%;
+            transform: rotate(var(--fkw-rot, 0rad));
+            vertical-align: middle;
+        }
+        .fkw-fwd .fkw-arrow { background: var(--fkw-glow, rgba(100, 180, 255, 0.35)); }
+        .fkw-back .fkw-arrow { transform: none; font-size: 13px; }
+        .fkw-nav .fkw-inner {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+        .fkw-inner { display: inline-block; opacity: 0; }
+        .fkw-chip.show .fkw-inner {
+            animation:
+                fkwIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) var(--fkw-delay, 0s) both,
+                fkwFloat 3.6s ease-in-out calc(var(--fkw-delay, 0s) + 0.45s) infinite alternate;
+        }
+        @keyframes fkwIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fkwFloat {
+            from { transform: translateY(0); }
+            to   { transform: translateY(3px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .fkw-chip.show .fkw-inner { animation: none; opacity: 1; }
+            .fkw-chip.fkw-nav.fkw-back { animation: none; }
+        }
+
         /* Respect OS "reduce motion": stop the looping background-logo pulse.
            Tessera's float/wave and the loading spinner are intentionally kept. */
         @media (prefers-reduced-motion: reduce) {
@@ -728,6 +860,9 @@
 <div id="loading">Loading curriculum data</div>
 
 <canvas id="mapCanvas"></canvas>
+
+<!-- Floating keyword chips (populated on tile selection) -->
+<div id="fkw-layer"></div>
 
 <script>
 /**
@@ -1204,6 +1339,13 @@ async function loadCurriculumData() {
         // Compute the one-ring of empty hex slots surrounding all tiles, for an
         // editor-style "unfilled map" backdrop. Tiles never move, so compute once.
         blankSlots = computeBlankSlots();
+
+        // Reverse dependency index for forward links (id -> dependents)
+        fkwFwdIndex = new Map();
+        knowledgeData.forEach(t => (t.prereqs || []).forEach(pid => {
+            if (!fkwFwdIndex.has(pid)) fkwFwdIndex.set(pid, []);
+            fkwFwdIndex.get(pid).push(t.id);
+        }));
 
         document.getElementById('loading').style.display = 'none';
         
@@ -1921,6 +2063,304 @@ function drawPrerequisiteConnections(activeTile) {
 }
 
 /**
+ * FLOATING KEYWORDS & JUMP SIGNPOSTS (DOM overlay)
+ * On tile selection:
+ *  - up to six core keywords appear as glass chips on the hexagon's six
+ *    vertex directions (the head of each page's keyword array is curated
+ *    to be its defining concepts);
+ *  - each CROSS-CLUSTER dependency (different topicGroup or section, in
+ *    both directions) carries a clickable signpost that jumps the camera
+ *    to its tile. Prerequisite signposts are filled pills; forward
+ *    ("this unlocks...") signposts are ghost pills on faint dashed curves.
+ *  - jumps push a history stack; the signpost pointing back at the tile
+ *    you came from is marked with a return icon and pulses.
+ * Same-cluster links get no signposts: those tiles are adjacent on the map
+ * and directly clickable. A fixed DOM layer above the canvas guarantees
+ * legibility and screen-pixel font sizes at any zoom.
+ */
+const fkwLayer = document.getElementById('fkw-layer');
+const FKW_MAX = 6;
+// The map's hexagons are pointy-top with vertices at 30 + k*60 degrees, so
+// the six chips sit on the six vertex directions (y-down screen coordinates,
+// -90 = straight up). Slot order = importance: keyword #1 on the top vertex,
+// then upper-right, upper-left, lower-right, lower-left, bottom. The bottom
+// chip sits beyond the "TAP TO OPEN" pill, so they never collide.
+const FKW_ANGLES = [-90, -30, -150, 30, 150, 90];
+const FKW_NAV_DIST = 120;      // base signpost distance beyond the hexagon edge
+const FKW_FWD_MAX = 7;         // cap on forward signposts (hub tiles)
+let fkwTileId = null;
+let fkwFwdIndex = new Map();
+let fkwHistory = [];
+let fkwJumpFlag = false;
+
+function fkwHexToRgba(hex, alpha) {
+    const n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + ((n >> 16) & 255) + ', ' + ((n >> 8) & 255) + ', ' + (n & 255) + ', ' + alpha + ')';
+}
+
+function fkwIsCrossCluster(a, b) {
+    return a.section !== b.section || a.topicGroup !== b.topicGroup;
+}
+
+// Cross-cluster direct dependents of a tile, capped, but always including
+// mustInclude (the jump-history target) so the way back can never be capped
+// away on hub tiles.
+function fkwForwardTargets(tile, mustInclude) {
+    const all = (fkwFwdIndex.get(tile.id) || [])
+        .map(did => knowledgeData.find(t => t.id === did))
+        .filter(t => t && !t.isReserved && fkwIsCrossCluster(t, tile));
+    const capped = all.slice(0, FKW_FWD_MAX);
+    if (mustInclude && all.some(t => t.id === mustInclude) &&
+        !capped.some(t => t.id === mustInclude)) {
+        capped[capped.length - 1] = all.find(t => t.id === mustInclude);
+    }
+    return capped;
+}
+
+// Jump the camera to a linked tile and select it (same effects as a tap).
+// Jumping onto the history top is a "return" and pops the stack; any other
+// jump pushes the tile we are leaving.
+function fkwJumpTo(id) {
+    const tile = knowledgeData.find(t => t.id === id);
+    if (!tile) return;
+    const prev = activeTileId;
+    if (fkwHistory.length && fkwHistory[fkwHistory.length - 1] === id) {
+        fkwHistory.pop();
+    } else if (prev && prev !== id) {
+        fkwHistory.push(prev);
+    }
+    fkwJumpFlag = true;
+    activeTileId = tile.id;
+    sfx.tap();
+    const sectionColor = SECTION_COLORS[tile.section] || '#ffffff';
+    activeRipples.push({
+        q: tile.q, r: tile.r,
+        radius: scale * 0.9, maxRadius: scale * 4.5,
+        alpha: 0.8, color: sectionColor, startTime: Date.now()
+    });
+    updateInfoPanel(tile);
+    panToTile(tile);
+}
+
+// Point on a quadratic dependency curve, replicating the exact control point
+// used by drawPrerequisiteConnections so signposts sit ON the line.
+function fkwCurvePoint(p0, p1, t) {
+    const midX = (p1.x + p0.x) / 2, midY = (p1.y + p0.y) / 2;
+    const dx = p1.x - p0.x, dy = p1.y - p0.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const curveAmount = Math.min(dist * 0.25, scale * 0.8);
+    const cx = midX + (-dy / dist) * curveAmount;
+    const cy = midY + (dx / dist) * curveAmount;
+    const u = 1 - t;
+    return {
+        x: u * u * p0.x + 2 * u * t * cx + t * t * p1.x,
+        y: u * u * p0.y + 2 * u * t * cy + t * t * p1.y,
+        // tangent (direction of increasing t, i.e. from p0 toward p1)
+        tx: 2 * u * (cx - p0.x) + 2 * t * (p1.x - cx),
+        ty: 2 * u * (cy - p0.y) + 2 * t * (p1.y - cy)
+    };
+}
+
+// Walk outward from the ACTIVE end of a dependency curve until D away from
+// the active tile; if the curve is shorter than D (adjacent target), keep
+// going straight past the target along the final tangent. Returns the point
+// and the outward angle (toward the destination).
+function fkwWalkCurve(active, other, forward, D) {
+    let pt = null, reached = false;
+    if (forward) {
+        for (let t = 0.02; t <= 1.0001; t += 0.02) {
+            pt = fkwCurvePoint(active, other, t);
+            if (Math.hypot(pt.x - active.x, pt.y - active.y) >= D) { reached = true; break; }
+        }
+    } else {
+        for (let t = 0.98; t >= -0.0001; t -= 0.02) {
+            pt = fkwCurvePoint(other, active, t);
+            if (Math.hypot(pt.x - active.x, pt.y - active.y) >= D) { reached = true; break; }
+        }
+    }
+    const sgn = forward ? 1 : -1;
+    if (!reached) {
+        const len = Math.hypot(pt.tx, pt.ty) || 1;
+        const extra = D - Math.hypot(pt.x - active.x, pt.y - active.y);
+        pt = { x: pt.x + sgn * (pt.tx / len) * extra,
+               y: pt.y + sgn * (pt.ty / len) * extra,
+               tx: pt.tx, ty: pt.ty };
+    }
+    return { x: pt.x, y: pt.y, ang: Math.atan2(sgn * pt.ty, sgn * pt.tx) };
+}
+
+// Faint dashed curves from the selected tile to its cross-cluster
+// dependents - the forward direction of the dependency graph. Kept visually
+// quiet (thin, low alpha, destination-colored) so the rich prerequisite
+// lines stay the protagonists.
+function drawForwardConnections(activeTile) {
+    const targets = fkwForwardTargets(activeTile,
+        fkwHistory.length ? fkwHistory[fkwHistory.length - 1] : null);
+    if (targets.length === 0) return;
+    const p1of = t => getPixelCoords(t.q, t.r);
+    const active = getPixelCoords(activeTile.q, activeTile.r);
+    ctx.save();
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 10]);
+    targets.forEach(t => {
+        const p1 = p1of(t);
+        ctx.strokeStyle = SECTION_COLORS[t.section] || '#ffffff';
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        // rebuild the exact quadratic (same math as fkwCurvePoint)
+        const midX = (p1.x + active.x) / 2, midY = (p1.y + active.y) / 2;
+        const dx = p1.x - active.x, dy = p1.y - active.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const amt = Math.min(dist * 0.25, scale * 0.8);
+        ctx.moveTo(active.x, active.y);
+        ctx.quadraticCurveTo(midX + (-dy / dist) * amt, midY + (dx / dist) * amt, p1.x, p1.y);
+        ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.restore();
+}
+
+function syncFloatingKeywords(activeTile) {
+    const id = (activeTile && !activeTile.isReserved && !exitAnimationActive) ? activeTile.id : null;
+
+    // (Re)build chips only when the selection changes
+    if (id !== fkwTileId) {
+        // Manual selection changes (not via a signpost jump) invalidate the
+        // jump history - the "way back" marker would point somewhere stale.
+        if (!fkwJumpFlag) fkwHistory.length = 0;
+        fkwJumpFlag = false;
+
+        fkwTileId = id;
+        fkwLayer.innerHTML = '';
+        if (id) {
+            const historyTop = fkwHistory.length ? fkwHistory[fkwHistory.length - 1] : null;
+            const kws = (activeTile.keywords || []).slice(0, FKW_MAX);
+            const color = SECTION_COLORS[activeTile.section] || '#64b4ff';
+            kws.forEach((kw, i) => {
+                const chip = document.createElement('div');
+                chip.className = 'fkw-chip' + (i === 0 ? ' primary' : '');
+                chip.style.setProperty('--fkw-accent', color);
+                chip.style.setProperty('--fkw-glow', fkwHexToRgba(color, 0.35));
+                chip.style.setProperty('--fkw-delay', (i * 80) + 'ms');
+                const inner = document.createElement('span');
+                inner.className = 'fkw-inner';
+                inner.textContent = kw;
+                chip.appendChild(inner);
+                fkwLayer.appendChild(chip);
+                // Add .show on the next frame so entrance animations fire
+                requestAnimationFrame(() => chip.classList.add('show'));
+            });
+
+            // Signposts: cross-cluster prerequisites (filled pills) and
+            // cross-cluster dependents (ghost pills). Same-cluster links are
+            // adjacent and directly clickable, so they get no signpost.
+            // Overlaps are resolved at positioning time by pushing each
+            // signpost further out along its own curve.
+            const back = (activeTile.prereqs || [])
+                .map(pid => knowledgeData.find(t => t.id === pid))
+                .filter(p => p && fkwIsCrossCluster(p, activeTile));
+            const fwd = fkwForwardTargets(activeTile, historyTop);
+            let delayIdx = kws.length;
+            const makeSignpost = (p, dir) => {
+                const isBack = p.id === historyTop;
+                const chip = document.createElement('div');
+                chip.className = 'fkw-chip fkw-nav' + (dir === 'f' ? ' fkw-fwd' : '') + (isBack ? ' fkw-back' : '');
+                const pColor = SECTION_COLORS[p.section] || '#64b4ff';
+                chip.style.setProperty('--fkw-accent', pColor);
+                chip.style.setProperty('--fkw-glow', fkwHexToRgba(pColor, 0.45));
+                chip.style.setProperty('--fkw-delay', (delayIdx++ * 80) + 'ms');
+                chip.dataset.target = p.id;
+                chip.dataset.dir = dir;
+                const inner = document.createElement('span');
+                inner.className = 'fkw-inner';
+                const arrow = document.createElement('span');
+                arrow.className = 'fkw-arrow';
+                arrow.textContent = isBack ? '\u27F2' : '\u279C';
+                inner.appendChild(arrow);
+                inner.appendChild(document.createTextNode(p.title));
+                chip.appendChild(inner);
+                chip.addEventListener('mousedown', ev => ev.stopPropagation());
+                chip.addEventListener('click', ev => { ev.stopPropagation(); fkwJumpTo(chip.dataset.target); });
+                fkwLayer.appendChild(chip);
+                requestAnimationFrame(() => chip.classList.add('show'));
+            };
+            back.forEach(p => makeSignpost(p, 'b'));
+            fwd.filter(p => !back.some(b => b.id === p.id)).forEach(p => makeSignpost(p, 'f'));
+        }
+    }
+    if (!fkwTileId) return;
+
+    // Chips are a reading-zoom feature: fade them out in sync with the zoom
+    // range where tile titles disappear, instead of letting fixed-size chips
+    // crowd a shrunken hexagon. visibility also gates the signposts' clicks.
+    const vis = Math.max(0, Math.min(1, (scale - 38) / 10));
+    fkwLayer.style.opacity = vis;
+    fkwLayer.style.visibility = vis === 0 ? 'hidden' : '';
+    if (vis === 0) return;
+
+    // Per-frame positioning with deterministic collision resolution.
+    // Keyword chips are laid out first and act as obstacles: vertical
+    // placement uses only the chip's half-HEIGHT (each word stays on its
+    // vertex's row regardless of length) and diagonal chips grow
+    // horizontally outward from the hexagon's slanted edge, so keywords
+    // never collide with each other. Each signpost then walks outward along
+    // ITS OWN curve until it clears everything placed before it - the chip
+    // stays on its road, and identical inputs give identical positions, so
+    // nothing jitters.
+    const { x, y } = getPixelCoords(activeTile.q, activeTile.r);
+    const baseR = scale * 1.05 + 12;
+    const chips = fkwLayer.children;
+    const placed = [];
+    const PAD = 4;
+    const overlaps = rc => placed.some(b =>
+        rc.l < b.r && rc.r > b.l && rc.t < b.b && rc.b > b.t);
+    const rectOf = (cx, cy, hw, hh) =>
+        ({ l: cx - hw - PAD, t: cy - hh - PAD, r: cx + hw + PAD, b: cy + hh + PAD });
+
+    let kwIdx = 0;
+    for (let i = 0; i < chips.length; i++) {
+        const chip = chips[i];
+        const hw = chip.offsetWidth / 2, hh = chip.offsetHeight / 2;
+        let px, py;
+
+        if (chip.className.indexOf('fkw-nav') !== -1) {
+            const target = knowledgeData.find(t => t.id === chip.dataset.target);
+            if (!target) continue;
+            const tc = getPixelCoords(target.q, target.r);
+            const fwd = chip.dataset.dir === 'f';
+            let D = baseR + FKW_NAV_DIST;
+            let pt = fkwWalkCurve({ x, y }, tc, fwd, D);
+            let guard = 0;
+            while (overlaps(rectOf(pt.x, pt.y, hw, hh)) && guard++ < 24) {
+                D += 22;
+                pt = fkwWalkCurve({ x, y }, tc, fwd, D);
+            }
+            px = pt.x; py = pt.y;
+            chip.style.setProperty('--fkw-rot', pt.ang + 'rad');
+        } else {
+            const a = FKW_ANGLES[kwIdx++] * Math.PI / 180;
+            const c = Math.cos(a);
+            py = y + Math.sin(a) * (baseR + hh);
+            if (Math.abs(c) > 0.25) {
+                // Diagonal vertex: inner edge anchored just outside the
+                // hexagon, extending away from the tile.
+                px = x + Math.sign(c) * (scale * 0.9 + 10 + hw);
+            } else {
+                // Top / bottom vertex: centered on the tile.
+                px = x;
+            }
+        }
+
+        // Keep every chip fully on screen
+        px = Math.min(window.innerWidth - hw - 6, Math.max(hw + 6, px));
+        py = Math.min(window.innerHeight - hh - 6, Math.max(hh + 6, py));
+        chip.style.left = px + 'px';
+        chip.style.top = py + 'px';
+        placed.push(rectOf(px, py, hw, hh));
+    }
+}
+
+/**
  * Frame scheduling with tab-visibility awareness.
  * When the tab is hidden we stop scheduling frames entirely (instead of
  * relying on the browser's implicit rAF throttling), then resume on return.
@@ -2226,8 +2666,10 @@ function render() {
         ctx.restore();
     }
     
-    // Draw prerequisite connections and particles (not during exit animation)
+    // Draw dependency connections (not during exit animation): faint
+    // forward curves first, rich prerequisite lines on top
     if (activeTile && !exitAnimationActive) {
+        drawForwardConnections(activeTile);
         drawPrerequisiteConnections(activeTile);
     }
     
@@ -2282,6 +2724,9 @@ function render() {
         ctx.font = "bold 13px 'Segoe UI', sans-serif";
         ctx.fillText(text, x, hintY + bounceOffset);
     }
+
+    // Floating keyword chips around the selected tile (DOM overlay)
+    syncFloatingKeywords(activeTile);
 
     scheduleNextFrame();
 }
@@ -2520,6 +2965,7 @@ window.addEventListener('mouseup', e => {
     // Don't handle interaction if clicking on Tessera or UI elements
     const tesseraContainer = document.getElementById('tessera-container');
     if (tesseraContainer && tesseraContainer.contains(e.target)) return;
+    if (fkwLayer.contains(e.target)) return;
     if (!isDragging) handleInteraction(e.clientX, e.clientY);
 });
 
@@ -2537,6 +2983,9 @@ window.addEventListener('wheel', e => {
 
 
 // Touch Handlers
+// True from the moment a second finger touches until every finger lifts:
+// a gesture that ever pinched must never end in a tap.
+let gestureHadPinch = false;
 canvas.addEventListener('touchstart', e => {
 
     // hide keyboard when touching canvas
@@ -2548,6 +2997,7 @@ canvas.addEventListener('touchstart', e => {
         startX = e.touches[0].clientX; startY = e.touches[0].clientY;
         lastX = startX; lastY = startY;
     } else if (e.touches.length === 2) {
+        gestureHadPinch = true;
         initialPinchDist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX, 
             e.touches[0].clientY - e.touches[1].clientY
@@ -2570,6 +3020,7 @@ canvas.addEventListener('touchmove', e => {
         lastX = x; lastY = y;
         
     } else if (e.touches.length === 2) {
+        gestureHadPinch = true;
         const dist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX, 
             e.touches[0].clientY - e.touches[1].clientY
@@ -2582,11 +3033,26 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', e => {
     e.preventDefault(); 
-    if (!isDragging && e.changedTouches.length === 1) {
+    if (!isDragging && !gestureHadPinch && e.changedTouches.length === 1) {
         handleInteraction(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    }
+    if (e.touches.length > 0) {
+        // A finger remains (pinch ending one finger at a time): re-anchor
+        // pan tracking to it so the map does not jump, and mark the rest
+        // of the gesture as a drag so it can never end in a tap either.
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        lastX = startX; lastY = startY;
+        isDragging = true;
+    } else {
+        gestureHadPinch = false; // gesture fully ended
     }
     setTimeout(() => isTouchInteraction = false, 500); 
 });
+
+canvas.addEventListener('touchcancel', () => {
+    isDragging = false;
+    gestureHadPinch = false;
+}, { passive: true });
 
 // Keyboard navigation
 window.addEventListener('keydown', e => {
