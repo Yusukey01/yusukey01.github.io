@@ -17,7 +17,7 @@ stochastic analysis).
 **Total: 226 pages.** I (linalg) 43 / II (calc) 99 / III (prob) 26 / IV (disc) 40 / V (ml) 18. `curriculum.json` is authoritative.
 
 **Five tracks** (status + full detail in Part 2):
-- Phase 2e — continuous-time generative foundations (III) — ⏸ awaiting Øksendal purchase
+- Phase 2e — stochastic analysis track (III, Øksendal Ch.2–8 body + dispersed app landings) — ⏸ awaiting Øksendal purchase
 - Rep Theory — GDL continuous leg (I+V) — ✅ complete
 - CDL — category theory (IV+V) — 🔄 Stage 2 in progress
 - Crypto — through PQC incl. Quantum (IV+I) + Section V landing (ml-18, stage 5) — ✅ complete
@@ -66,10 +66,10 @@ A unified view of the five tracks. Per-track detail is authoritative in the indi
 
 | Track | GDL relation | Section | Start status | Purchase | Handout |
 |---|---|---|---|---|---|
-| **Phase 2e** continuous-time generative | — | III | **awaiting Øksendal purchase** (then Page1 BM+Itō) | **Øksendal 6th ed.** | `phase2e_handout_v1` |
+| **Phase 2e** stochastic analysis | — | III | **awaiting Øksendal purchase**; scope upgraded v2 (Ch.2–8 body, 4p prob-27~30 + dispersed app landings) | **Øksendal 6th ed.** | `phase2e_handout_v2` |
 | **Rep Theory** | **continuous leg** | I (rep) + V (Equiv NN) | **linalg-31~40 (incl. Peter–Weyl) + ml-16 complete; GDL-mandatory scope fully satisfied** | Hall 2nd ed. (on hand) | `rep_handout_v10` (archival) |
-| **CDL** category theory | — | IV (cats) + V (CDL bridge) | **Stage 2 in progress: disc-18~28 published (Leinster Ch.1–5 done); next = Ch.6 (ID TBD, disc-XX)** | none (both primary free) | `cdl_track_handout_v10` |
-| **Crypto** through PQC | — | IV (classical + Shor + lattice-computation + PQC) + I (algebra + quantum bg + lattice geometry) + **V (LWE landing ml-18, `security`)** | **✅ COMPLETE (mainline arc + ZKP + stage 5 Section V landing)** | none | `crypto_track_handout_v26` |
+| **CDL** category theory | — | IV (cats) + V (CDL bridge) | **Stage 2 in progress: disc-18~28 published (Leinster Ch.1–5 done); next = Ch.6 §6.1 = disc-41 (fixed; Ch.6 total 5–6p, PDF-scoped)** | none (both primary free) | `cdl_track_handout_v13` |
+| **Crypto** through PQC | — | IV (classical + Shor + lattice-computation + PQC) + I (algebra + quantum bg + lattice geometry) + **V (LWE landing ml-18, `security`)** | **✅ COMPLETE (mainline arc + ZKP + stage 5 Section V landing)** | none | `crypto_track_handout_v27` |
 | **TDL** | **discrete leg** | IV (existing Hodge) + V (SNN) | **SNN (ml-17) complete; discrete leg landed. Optional persistent-homology branch (disc-XX) remains** | TDL book (free) | `tdl_track_handout_v2` |
 
 ### 2.2 Shared structural pattern
@@ -152,50 +152,89 @@ SNN ml-17). Standing obligation: each GDL page carries forward-pointers to "the 
 
 ---
 
-## Part 4 — Phase 2e: Continuous-Time Generative Foundations (Active Slow-Burn)
+## Part 4 — Phase 2e: Stochastic Analysis Track (Active Slow-Burn)
 
-Build stochastic analysis (Brownian motion -> Itō -> SDE -> Fokker-Planck) in Section III, to
-justify from below the continuous-time machinery that ml-14 (diffusion) / ml-15 (flow matching)
-use as given.
+Build a stochastic-analysis track in Section III from **Øksendal Ch.2–8** (the mathematical body:
+Brownian motion → Itō → SDE → diffusions/generator/Fokker-Planck), with the "with Applications"
+chapters (Ch.6, 9–12) dispersed as landings/bridges rather than laid out in chapter order. One
+strand of this — the BM→Itō→SDE→FP path — justifies from below the continuous-time machinery that
+ml-14 (diffusion) / ml-15 (flow matching) use as given; but the track's range is the analysis
+itself, not only the generative-model support.
 
-### 4.1 Role
-**ml-15 flow_matching already exists** and fully develops the continuous-time machinery in ML
-language (its body performs the calculation where the score term cancels the diffusion term,
-collapsing the Fokker-Planck equation to the continuity equation). So this track's role is to
-**justify from below the continuous-time objects ml-14/15 use as given** — landing at both ml-14
-and ml-15. The biggest callback is the FP page proving ml-15's cancellation calculation from below.
+### 4.1 Scope upgrade (v1 → v2)
+v1 scoped Phase 2e narrowly as "justify ml-14/15's continuous-time objects from below," 3 pages
+(BM+Itō / SDE / FP) — only Øksendal Ch.2–5. v2 (after ToC review): one Øksendal volume covers the
+intended range in full. Of the 12 chapters, **Ch.2–8 are the mathematical body**; Ch.6, 9–12 are
+application chapters. Therefore:
+- **Track body = Øksendal Ch.2–8**, owned in Section III (v1's 3 pages + a diffusions/generator page).
+- **Application chapters are NOT poured into Section III in chapter order** (violates the topicGroup
+  principle: a page is placed by *what it is*, not *what it is used for*). They are dispersed as
+  landings/bridges when the site's callback structure demands them — the same tracks-isomorphic
+  structure as crypto (Peikert not followed in chapter order; SIS/LWE owned, applications landed in V).
+- **Martingale theory stays "touched only"** — Øksendal itself does not systematize it (introduces
+  it minimally as a tool for the Itō integral; Ch.4 "Itô Formula and the Martingale Representation
+  Theorem" is the sole locus, and only to the representation theorem). The site follows suit:
+  Doob's maximal inequality / optional stopping / convergence theorems are **not owned**; filtration
+  and adapted processes are owned minimally as Itō-integral scaffolding. A full martingale
+  systematization, if ever done, is Durrett territory and split off as the Part 11 deferred item
+  "Uniform Integrability & Martingale Convergence."
 
 ### 4.2 Significance in the Flow Matching era
 Diffusion is being displaced by FM in practice (FLUX, SD3 are rectified flow), but **both are
-ODE/SDE representations of the same object** (Stochastic Interpolants). Phase 2e is not
-diffusion-specific but "the continuous-time basis unifying diffusion and FM." Its significance
-strengthened, not weakened, in the FM era.
+ODE/SDE representations of the same object** (Stochastic Interpolants). The generative-support
+strand is not diffusion-specific but "the continuous-time basis unifying diffusion and FM." Its
+significance strengthened, not weakened, in the FM era. Obsolescence-resistance concentrates the
+value in the self-contained mathematics (Ch.2–8), not the method.
 
-### 4.3 Three-page structure (Section III, prob-XX)
+### 4.3 Track-body structure (Section III; free ids prob-27~30, assigned at drafting)
 
-| Page | scope | downstream callback |
-|---|---|---|
-| 1 `brownian_motion_ito.html` | Wiener-process axioms, existence (Kolmogorov+Čentsov), path pathology, Itō integral L² construction, Itō formula | ml-15's \(\mathbf{w}_t, d\mathbf{w}_t\) |
-| 2 `sde_diffusion.html` | SDE definition, existence-uniqueness (Lipschitz/Picard), OU/Langevin, generator, Dynkin, Girsanov | ml-15's σ_t-tuned SDE |
-| 3 `fokker_planck_diffusion_model.html` | FP = adjoint of generator, heat eq (calc-33), score, reverse-time SDE | **justifies ml-15's special-case machinery from below (biggest callback)** |
+| Page | Øksendal | scope | callback / bridge |
+|---|---|---|---|
+| 1 `brownian_motion_ito.html` | Ch.3–4 | Wiener-process axioms, existence (Kolmogorov+Čentsov), path pathology, Itō integral L² construction, Itō formula | ml-15's \(\mathbf{w}_t, d\mathbf{w}_t\) |
+| 2 `sde_diffusion.html` | Ch.5 | SDE definition, existence-uniqueness (Lipschitz/Picard), OU/Langevin, generator, Dynkin, Girsanov | ml-15's σ_t-tuned SDE |
+| 3 `fokker_planck_diffusion_model.html` | Ch.8 (fwd) | FP = adjoint of generator (Kolmogorov forward), heat eq (calc-33), score, reverse-time SDE | **justifies ml-15's special-case machinery from below (biggest callback)** |
+| 4 `diffusions_generator.html` | Ch.7–8 | Itō diffusions, strong Markov (built fresh, not from prob-18), stopping time + first hitting, generator as diffusion-process operator, Dynkin general form, Kolmogorov backward (paired with Page3 forward) | resolvent → calc-27's unbounded-\(-\Delta\) foreshadow; FP adjoint → calc-27 `T-existence_of_adjoint` |
 
-prereqs: Page1 <- prob-23, prob-21, calc-23 / Page2 <- Page1, prob-24 / Page3 <- Page2, calc-33.
+prereqs: Page1 <- prob-23, prob-21, calc-23 / Page2 <- Page1, prob-24 / Page3 <- Page2, calc-33 /
+Page4 <- Page2, Page3. Page3(forward) ↔ Page4(backward) cross-linked. Page4 splits into
+"strong Markov & stopping" + "generator & Kolmogorov equations" if volume forces it (Lie 2→4,
+FA 2→7 precedent). All four pages close on existing foundations — **zero new prereqs**.
 
-### 4.4 Reference / start
+### 4.4 Application-chapter dispersal (post-body, callback-driven; forward-pointers only for now)
+
+| Øksendal | math | placement | trigger |
+|---|---|---|---|
+| Ch.9 Feynman-Kac | probabilistic rep ↔ parabolic PDE | **Section II bridge** (calc-33~35; also calc-27 `T-existence_of_adjoint`) | a PDE-probabilistic-interpretation page |
+| Ch.10 Optimal Stopping | stopping time / optimal stopping / free boundary | **Section V landing** (RL/optimal control) | an RL-theory or optimal-stopping-ML page (stopping-time *definition* owned by Page4) |
+| Ch.11 Stochastic Control | HJB | **Section V landing** (RL) | continuous-time limit of ml-10's discrete Bellman (`T-bellman_optimality`); ml-10 is discrete-only with no forward-pointer → new one-directional landing, ml-10 unchanged |
+| Ch.6 Filtering | Kalman-Bucy | deferred | a state-space/Kalman ML page (low priority) |
+| Ch.12 Finance | Black-Scholes | **out of scope** | — (ML/CS-orientation mismatch) |
+
+### 4.5 Reference / start
 - primary: Øksendal (SDE proper, **purchase required** — Springer Universitext 6th ed.,
   ISBN 978-3-540-04758-2) + Durrett (measure-theoretic substrate, on hand) + Holderrieth-Erives
   (FM/diffusion unification, the V-side bridge, free, already used on the ML side).
 - No OT book -> FM/rectified flow/OT are forward-pointers only (no href).
 - Rigor calibration (whether to add Karatzas-Shreve) decided after seeing scope. On hold.
 - **Start status: awaiting Øksendal purchase** (then Page1 BM+Itō). Zero new prereqs;
-  the only blocker is acquiring Øksendal. Dependency audit already complete.
+  the only blocker is acquiring Øksendal. Dependency audit complete (body 4 pages).
 - track-character: a CS author learning pure math while writing (same class as CDL).
-- Detail: `phase2e_handout_v1`.
+- Detail: `phase2e_handout_v2`.
 
-### 4.5 Notes (overload, see Part 8 ledger)
-- `D-infinitesimal_generator` exists on the Lie side -> SDE generator must use `D-sde_generator`.
+### 4.6 Notes (overload / owner facts, see Part 8 ledger)
+- `D-infinitesimal_generator` exists on the Lie/differential-geometry side (owner = calc-64
+  `integral_curves.html`) -> SDE generator must use `D-sde_generator`. Page4 receives it by
+  ref-link (does not re-own).
 - `score_function` triple collision (Fisher/data/continuous) -> Page3 ref-links ml-14's
   `D-score_function_data_gradient`, does not define a new one.
+- `characteristic` is an overloaded word (4 owners incl. ring characteristic `D-characteristic`)
+  -> Øksendal's characteristic operator folded into the generator rather than owned separately.
+- prob-18 (`markov.html`) is a graphical-models (first-order Markov) page, **not** a stochastic-
+  process Markov-chain page -> Page4 does not depend on it; strong Markov is built fresh, prob-18
+  gets a loose back-link only, not a prereq.
+- Page4 anchor set (`D-ito_diffusion`, `D-stopping_time`, `T-strong_markov_property`,
+  `T-kolmogorov_backward`) collision-checked free (2026-07-11); `martingale`/`stopping`/`adapted`/
+  `semigroup`/`dynkin` have zero existing owners.
 
 ---
 
@@ -231,7 +270,7 @@ groups from Section I, the Banach spaces from Section II — they were all categ
 IV category page becomes the site-wide callback hub. The manifold Q7 (differential \(dF_p\) =
 functor; calc-45/46 `T-differential_properties`/`T-global_differential_properties`) connects here.
 
-### 5.3 Track structure (per handout, ~6-9p, expansion expected)
+### 5.3 Track structure (per handout; Ch.1–5 = 11p done, Ch.6 = 5–6p PDF-scoped)
 
 Progress (2026-06-24): **Stage 0/1 done, Stage 2 in progress.** disc-18~28 published (Leinster Ch.1–5 done).
 
@@ -239,7 +278,7 @@ Progress (2026-06-24): **Stage 0/1 done, Stage 2 in progress.** disc-18~28 publi
 |---|---|---|---|
 | 0 | — | Yusuke reads Leinster (start trigger) | ✅ done |
 | 1 | disc-18~24 (IV) | categories/functors/natural transformations (disc-18, Ch.1) / adjunction (disc-19/20, Ch.2) / interlude on sets (disc-21, Ch.3) / representables & Yoneda (disc-22/23/24, Ch.4) (+ site-wide hub ref-links) | ✅ done |
-| 2 | disc-25~28 (IV) | limits/colimits (disc-25/26/27/28, Ch.5); **next = disc-XX: adjoints/representables/limits (Ch.6: RAPL/LAPC, density)** — ID assigned at drafting (disc-29~40 consumed by crypto) | 🔄 in progress |
+| 2 | disc-25~28 (IV) | limits/colimits (disc-25/26/27/28, Ch.5); **next = disc-41: Ch.6 §6.1 (limits via representables/adjoints), then §6.2 disc-42~44 (pointwise/density), §6.3 disc-45~46 (RAPL/LAPC, CCC)** — Ch.6 total 5–6p, PDF-scoped (disc-29~40 consumed by crypto) | 🔄 in progress |
 | 3 | disc-XX (IV) | applied: quivers/database functors / string diagrams | pending |
 | 4 | ml-XX (V) | CDL bridge: Para, lenses, **monad on Para** (primer for the Gavranović paper) | pending |
 | 5 | ml-XX (V) | CDL Overview / intro: revisit the whole site from a categorical viewpoint | pending |
@@ -254,7 +293,7 @@ stage 3 -> 4 is the IV -> V crossing (identity shifts from math to ML applicatio
 - **Both free, no purchase.** Leinster himself includes poset/monoid examples in the book (an
   entry-design option).
 - **Section V CDL intro (≈ Stage 5) is deferred as a future task** (handout v10 §3.3). When written, **restrict to the established layer (Backprop as Functor LICS2019 / Categorical Foundations of Gradient-Based Learning ESOP2022 / Parametric Lenses arXiv:2404.00408)**, and frame the ICML 2024 position paper's "all architectures" claim honestly as an ongoing research direction, not settled theory. The CDL intro is where disc-20's monad foreshadowing pays off.
-- Detail: `cdl_track_handout_v10`.
+- Detail: `cdl_track_handout_v13`.
 
 ### 5.5 Status monitoring (web-verified 2026-06-24)
 The field has accumulated (peer-reviewed established layer + recent survey), but the frontier is
@@ -277,7 +316,7 @@ framework adds categorical primitives / a second well-funded entrant. Paper list
 The former standalone "Quantum" plan is absorbed here — quantum computation shipped as part of the crypto stack (Shor = attack, lattices = defense), not as a separate track.
 
 Complete through PQC. Realized placement below; all policy/lessons/per-page detail live in
-`crypto_track_handout_v26` (single source of truth) + `curriculum.json`/`previews.json`. Only the
+`crypto_track_handout_v27` (single source of truth) + `curriculum.json`/`previews.json`. Only the
 **placement outcomes that the topicGroup principle produced** are kept here, as the canonical worked
 example of Part 12 principle 10.
 
@@ -356,7 +395,7 @@ cross-check before naming a new anchor. The manifold handout §2 overload notes 
 | Symbol/term | Use 1 | Use 2 | Use 3 | Handling |
 |---|---|---|---|---|
 | `adjoint` | Lie adjoint representation `D-adjoint_representation_Ad/ad` | FA operator adjoint `T-existence_of_adjoint`/`D-self_adjoint_operator` | CDL adjoint functor (new) | CDL uses `D-adjoint_functor`/`T-adjunction` |
-| `infinitesimal_generator` | Lie one-param subgroup `D-infinitesimal_generator` | SDE generator (new) | — | SDE uses `D-sde_generator` |
+| `infinitesimal_generator` | Lie one-param subgroup `D-infinitesimal_generator` (owner calc-64 `integral_curves.html`) | SDE generator (new) | — | SDE uses `D-sde_generator`; Page4 ref-links, no re-own |
 | `score_function` | Fisher `D-score_function` (∇_θ) | data `D-score_function_data_gradient` (∇_x, ml-14) | continuous score (Phase2e Page3) | Page3 ref-links ml-14, no new one |
 | `lattice` | order-theoretic lattice (future FA) | integer lattice (crypto, new) | — | crypto uses `D-integer_lattice` |
 | `\hat{g}` | tangent-cotangent map (calc-81) | product metric (calc-78 separated to `g(+)g̃`) | — | already separated (manifold §2) |
@@ -381,12 +420,12 @@ drafting so cross-page references can be written ahead. IDs assigned at drafting
 | Peter–Weyl | linalg-40 (done) | I | `peter_weyl.html` | ✅ **complete** (Hall §12.3; Haar via calc-90, Stone–Weierstrass via calc-99; closed the rep track's GDL-mandatory scope) |
 | Functional Analysis block (Conway) | calc-93~99 (done) | II | (complete) | ✅ **complete** (topicGroup `functional-analysis`; Peter–Weyl's Stone–Weierstrass prerequisite chain) |
 | TDL: Simplicial NN | ml-17 (done) | V | `simplicial_neural_networks.html` | ✅ **complete** (GDL discrete leg landed, Part 3.4; Hodge Laplacian message passing, \(\ker L_k\cong H_k\); 2026-06-21) |
-| TDL: Persistent Homology | ~1–2 | IV | TBD (disc-XX; next free = disc-41, assigned at drafting) | optional branch (disc-15 forecast); new concepts (filtration / persistence module / barcode / stability) -> page-count uncertain; ref = Edelsbrunner-Harer (existing); detail in `tdl_track_handout_v2` §4 |
-| Phase 2e | 3+ | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html` | **awaiting Øksendal purchase** (Part 4; splits anticipated) |
-| CDL Track | ~6–9 (disc-18~28 = 11 done) | IV + V | disc-18~28 (`categories_functors_naturality` ~ `functors_and_limits`); next = disc-XX (Ch.6) | 🔄 Stage 2: Leinster Ch.1–5 done, next = Ch.6 (ID TBD, disc-29~40 consumed by crypto); detail `cdl_track_handout_v10` (Part 5) |
-| Crypto Track (incl. Quantum + V landing) | disc-29~40 + linalg-41/42/43 + **ml-18** (done) | IV + I + **V** | (see `curriculum.json`) | ✅ **COMPLETE** — placement in Part 6, detail in `crypto_track_handout_v26` |
+| TDL: Persistent Homology | ~1–2 | IV | TBD (disc-XX; ID assigned at drafting — disc-41~46 reserved by CDL Ch.6) | optional branch (disc-15 forecast); new concepts (filtration / persistence module / barcode / stability) -> page-count uncertain; ref = Edelsbrunner-Harer (existing); detail in `tdl_track_handout_v2` §4 |
+| Phase 2e | 4 (body) + dispersed | III | `brownian_motion_ito.html`, `sde_diffusion.html`, `fokker_planck_diffusion_model.html`, `diffusions_generator.html` (prob-27~30) | **awaiting Øksendal purchase** (Part 4; Ch.2–8 body, app chapters dispersed; splits anticipated) |
+| CDL Track | Ch.1–5 = 11 done, Ch.6 = 5–6p | IV + V | disc-18~28 (`categories_functors_naturality` ~ `functors_and_limits`); next = disc-41 (Ch.6 §6.1), through disc-46 | 🔄 Stage 2: Leinster Ch.1–5 done, next = Ch.6 §6.1 = disc-41 (fixed; disc-29~40 consumed by crypto); detail `cdl_track_handout_v13` (Part 5) |
+| Crypto Track (incl. Quantum + V landing) | disc-29~40 + linalg-41/42/43 + **ml-18** (done) | IV + I + **V** | (see `curriculum.json`) | ✅ **COMPLETE** — placement in Part 6, detail in `crypto_track_handout_v27` |
 | Grover / VQE / QEC | — | IV | TBD | not built; no active trigger (algorithm=IV rule reserved) |
-| Regular Conditional Distributions | ~1 | III | `regular_conditional_distributions.html` | Phase 2e prereq (SDE/path-space measure) |
+| Regular Conditional Distributions | ~1 | III | `regular_conditional_distributions.html` | Phase 2e *companion* (path-space measure refinement); non-blocking — body 4 pages close without it |
 | Advanced VI topics | ~1–2 | III | TBD | individually triggered by ML-application pressure |
 | DEC | ~1–2 | IV | TBD | continuous <-> discrete Hodge bridge (Part 3.5); backlog |
 | GDL Overview | 1 | V | TBD | backlog |
@@ -402,7 +441,7 @@ Completed tracks (on index.html, no planned pages).
 |---|---|---|---|
 | Representation Theory (Hall) — incl. Peter–Weyl + FA block | linalg-31~40 + ml-16 + calc-93~99 | 6/8–6/20/2026 | GDL continuous leg: group/Lie-algebra reps -> irreducible classification -> Schur -> Clebsch-Gordan/Wigner-Eckart -> Peter–Weyl (linalg-40, recovers calc-32 Fourier), landing at Equivariant NN (ml-16). FA block (calc-93~99, `functional-analysis`) built as Peter–Weyl's Stone–Weierstrass prerequisite. GDL-mandatory scope complete. Deep-dive deferred (Part 11). Detail: `rep_handout_v10`. |
 | Smooth Manifolds (Lee Ch.1–16 through Riemannian integration) | calc-36~81 + calc-42/45/47/52/59 + calc-82~92 | 6/3–6/15/2026 | Manifold spine + differential forms (Ch.14) + orientations (Ch.15) + integration (Ch.16: Haar, Stokes/Green, Riemannian, divergence). Mathematical landing of the GDL continuous leg; Peter–Weyl Haar substrate in calc-90. Corners/Densities deferred (Part 11). Detail: `manifold_handout_v24` / `ch16_integration_handout_v12`. |
-| **Crypto Track (through PQC, incl. Quantum + V landing)** | **disc-29~40 + linalg-41/42/43 + ml-18** | **~7/6/2026** | Full attack->defense arc + ZKP + **stage 5 Section V landing (ml-18, LWE as noise-duality, new `security` group)**. New topicGroups `quantum` (linalg-41), `lattice` (linalg-42/43), **`security` (ml-18, Section V)**. Placement + deviations in Part 6; full detail in `crypto_track_handout_v26`. |
+| **Crypto Track (through PQC, incl. Quantum + V landing)** | **disc-29~40 + linalg-41/42/43 + ml-18** | **~7/6/2026** | Full attack->defense arc + ZKP + **stage 5 Section V landing (ml-18, LWE as noise-duality, new `security` group)**. New topicGroups `quantum` (linalg-41), `lattice` (linalg-42/43), **`security` (ml-18, Section V)**. Placement + deviations in Part 6; full detail in `crypto_track_handout_v27`. |
 | Formal Methods | disc-16, disc-17 | 5/14/2026 | Section IV third pillar (disc-4,16,17). Bidirectional bridge with disc-12 (Four Color Theorem). Curry-Howard-Lambek connection point for CDL. |
 
 ### Completed reference -> page mapping
@@ -443,6 +482,8 @@ Completed tracks (on index.html, no planned pages).
 | Regular Conditional Distributions | Phase 2e companion (SDE/Itō filtration); non-blocking for prob-26 |
 | Fiber Bundles & Gauge Theory | when a GDL viewpoint demands gauge equivariance; manifold Q8. calc-89 (\(\mathbb{RP}^2\) nonorientable, orientation double cover \(S^2 \to \mathbb{RP}^2\)) now supplies the topological stage for the diffusion-MRI gauge-equivariant-CNN example (both the direct-on-\(\mathbb{RP}^2\) and lift-to-\(S^2\) approaches); frame/principal bundle itself remains out of Lee scope and needs a separate resource |
 | **Optimal Transport** | **FM straight-path optimality. Phase 2e uses forward-pointers only; OT-book acquisition is the trigger** |
+| **Phase 2e app: Feynman-Kac** | **Øksendal Ch.9. Section II bridge (calc-33~35 PDE + calc-27 `T-existence_of_adjoint`); trigger = a PDE-probabilistic-interpretation page. Body Page3/4 own the substrate** |
+| **Phase 2e app: Optimal Stopping / HJB** | **Øksendal Ch.10–11. Section V landing (RL/optimal control); continuous-time limit of ml-10 discrete Bellman (`T-bellman_optimality`), new one-directional link, ml-10 unchanged. Stopping-time definition owned by Page4** |
 | String Diagrams | after CDL Stage 4 (or part of Stage 4) |
 | Persistent Homology | TDL optional branch (disc-15 forecast, Part 3.4) |
 | Uniform Integrability & Martingale Convergence | RL theory / stochastic approximation; resolves prob-23 UI forward-ref |
@@ -502,10 +543,10 @@ Completed tracks (on index.html, no planned pages).
 
 **This roadmap is the index layer.** Per-track prereq verification, collisions, owner
 candidates, physical-book inspection items, and resume-time greps are authoritative in the
-individual handouts for the **still-active tracks**: `phase2e_handout_v1` / `cdl_track_handout_v10` /
+individual handouts for the **still-active tracks**: `phase2e_handout_v2` / `cdl_track_handout_v13` /
 `tdl_track_handout_v2` (optional persistent-homology branch only).
 
-**Completed-track handouts (archival):** `crypto_track_handout_v26` (crypto through
+**Completed-track handouts (archival):** `crypto_track_handout_v27` (crypto through
 PQC + ZKP + **stage 5 Section V landing ml-18** — completion record; v26 added the `security`-group
 landing, so the track can extend into Section V `security` pages (FHE/DP/ZKP × ML) without a new track),
 `rep_handout_v10` (Rep
@@ -513,5 +554,5 @@ Theory incl. Peter–Weyl + FA block; absorbed the spent `peter_weyl_handout_v1`
 `fa_block_screening_handout_v5`), `manifold_handout_v24` / `ch16_integration_handout_v12` (manifold
 spine through Riemannian integration; only Corners/Densities deferred).
 
-**Next active work** = CDL Stage 2 (Leinster Ch.6, next disc-ID assigned at drafting) or Phase 2e
+**Next active work** = CDL Stage 2 (Leinster Ch.6 §6.1 = disc-41, fixed) or Phase 2e
 (on Øksendal purchase); the crypto track is closed.
