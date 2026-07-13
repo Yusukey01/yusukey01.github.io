@@ -174,6 +174,12 @@
                 throw new Error(`Could not load curriculum.json. Tried: ${paths.join(', ')}`);
             }
             
+            return processCurriculumData(data);
+        }
+
+        // Pure transformation: curriculum.json object -> editor state pieces.
+        // Shared by the server fetch and by local-file loading.
+        function processCurriculumData(data) {
             const tiles = [];
             const foundGroups = {}; // To store dynamic topic group names
             const formatGroupName = (id) => id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -303,6 +309,9 @@
             const [snapName, setSnapName] = useState('');
             const svgRef = React.useRef(null);
             const fitBoundsRef = React.useRef(null);
+            const fileInputRef = React.useRef(null);
+            // 'server' or the local file's name once one has been loaded
+            const [dataSource, setDataSource] = useState('server');
 
             const hexSize = 28;
 
@@ -872,6 +881,55 @@
                 document.body.removeChild(link);
                 URL.revokeObjectURL(url);
             };
+
+            // Load a local curriculum.json (drag & drop or file picker).
+            // Replaces the whole editing session: fresh tiles, cleared
+            // selection/float/undo. Snapshots survive (they are keyed by
+            // tile id and live in localStorage).
+            const loadFromLocalFile = useCallback((file) => {
+                if (!file || !file.name.toLowerCase().endsWith('.json')) {
+                    alert('Please drop a .json file.');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const data = JSON.parse(reader.result);
+                        if (!data.sections) throw new Error('missing "sections" - is this a curriculum.json?');
+                        const { tiles, rawData, topicGroupNames } = processCurriculumData(data);
+                        setTiles(tiles);
+                        setOriginalData(rawData);
+                        setTopicGroupNames(topicGroupNames);
+                        setSelectedTile(null);
+                        setSelectedIds([]);
+                        setFloatState(null);
+                        setAnalysisMode(null);
+                        undoStack.current = [];
+                        setDataSource(file.name);
+                        setError(null);
+                        setLoading(false);
+                    } catch (e) {
+                        alert('Failed to load file: ' + e.message);
+                    }
+                };
+                reader.readAsText(file);
+            }, []);
+
+            // Whole-window drag & drop
+            useEffect(() => {
+                const onDragOver = (e) => { e.preventDefault(); };
+                const onDrop = (e) => {
+                    e.preventDefault();
+                    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                    if (f) loadFromLocalFile(f);
+                };
+                window.addEventListener('dragover', onDragOver);
+                window.addEventListener('drop', onDrop);
+                return () => {
+                    window.removeEventListener('dragover', onDragOver);
+                    window.removeEventListener('drop', onDrop);
+                };
+            }, [loadFromLocalFile]);
 
             // Load data (once only)
             useEffect(() => {
@@ -1839,6 +1897,22 @@
                                 <p style={{ color: '#9ca3af', marginBottom: '12px' }}>
                                     Organize the map, then download the updated JSON file.
                                 </p>
+                                <div style={{ fontSize: '0.68rem', color: '#9ca3af', marginBottom: '8px' }}>
+                                    Source: <b style={{ color: dataSource === 'server' ? '#9ca3af' : '#fbbf24' }}>{dataSource === 'server' ? 'server (fetched)' : dataSource}</b>
+                                </div>
+                                <button
+                                    style={{ width: '100%', padding: '8px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '8px' }}
+                                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                                >
+                                    📂 Load curriculum.json… (or drop it anywhere)
+                                </button>
+                                <input ref={fileInputRef} type="file" accept=".json,application/json"
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => {
+                                        const f = e.target.files && e.target.files[0];
+                                        if (f) loadFromLocalFile(f);
+                                        e.target.value = '';
+                                    }} />
                                 <button 
                                     style={{ width: '100%', padding: '10px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
                                     onClick={exportToJson}
