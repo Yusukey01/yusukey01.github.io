@@ -915,6 +915,29 @@
                 reader.readAsText(file);
             }, []);
 
+            // Discard whatever is loaded and re-fetch the server copy.
+            const reloadFromServer = useCallback(() => {
+                setLoading(true);
+                loadCurriculumData()
+                    .then(({ tiles, rawData, topicGroupNames }) => {
+                        setTiles(tiles);
+                        setOriginalData(rawData);
+                        setTopicGroupNames(topicGroupNames);
+                        setSelectedTile(null);
+                        setSelectedIds([]);
+                        setFloatState(null);
+                        setAnalysisMode(null);
+                        undoStack.current = [];
+                        setDataSource('server');
+                        setError(null);
+                        setLoading(false);
+                    })
+                    .catch(err => {
+                        setError(err.message);
+                        setLoading(false);
+                    });
+            }, []);
+
             // Whole-window drag & drop
             useEffect(() => {
                 const onDragOver = (e) => { e.preventDefault(); };
@@ -1897,8 +1920,18 @@
                                 <p style={{ color: '#9ca3af', marginBottom: '12px' }}>
                                     Organize the map, then download the updated JSON file.
                                 </p>
-                                <div style={{ fontSize: '0.68rem', color: '#9ca3af', marginBottom: '8px' }}>
-                                    Source: <b style={{ color: dataSource === 'server' ? '#9ca3af' : '#fbbf24' }}>{dataSource === 'server' ? 'server (fetched)' : dataSource}</b>
+                                <div style={{ fontSize: '0.68rem', color: '#9ca3af', marginBottom: '8px',
+                                              display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>Source: <b style={{ color: dataSource === 'server' ? '#9ca3af' : '#fbbf24' }}>{dataSource === 'server' ? 'server (fetched)' : dataSource}</b></span>
+                                    {dataSource !== 'server' && (
+                                        <button
+                                            title="Discard the loaded file and reload the server curriculum.json"
+                                            onClick={reloadFromServer}
+                                            style={{ background: '#7f1d1d', border: 'none', color: '#fff',
+                                                     borderRadius: '3px', padding: '2px 8px', fontSize: '0.62rem', cursor: 'pointer' }}>
+                                            × discard, reload server
+                                        </button>
+                                    )}
                                 </div>
                                 <button
                                     style={{ width: '100%', padding: '8px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '8px' }}
