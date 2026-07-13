@@ -293,8 +293,14 @@
             const [view, setView] = useState(null);
             const [panState, setPanState] = useState(null);
             // Pending rotate/move preview of the current selection:
-            // { pivot, rot, deltaHex } or null. Data is untouched while set.
+            // { pivot, rot, mir, deltaHex } or null. Data is untouched while set.
             const [floatState, setFloatState] = useState(null);
+            // Named layout snapshots persisted in localStorage.
+            const [snapshots, setSnapshots] = useState(() => {
+                try { return JSON.parse(localStorage.getItem('mapEditorSnapshots') || '{}'); }
+                catch (e) { return {}; }
+            });
+            const [snapName, setSnapName] = useState('');
             const svgRef = React.useRef(null);
             const fitBoundsRef = React.useRef(null);
 
@@ -627,10 +633,13 @@
                 return { rx, ry, rz };
             };
 
-            // n CW 60-degree steps around pivot, then translate by delta.
-            const rotN = (t, piv, n, delta) => {
+            // Orientation R^rot ∘ M^mir around the pivot, then translate.
+            // The mirror swaps cube x/y, which in this pixel mapping
+            // (x ∝ q + r/2) is a horizontal flip through the pivot.
+            const xformN = (t, piv, rot, mir, delta) => {
                 let x = t.q - piv.rx, z = t.r - piv.rz, y = (-t.q - t.r) - piv.ry;
-                const steps = ((n % 6) + 6) % 6;
+                if (mir & 1) { const tmp = x; x = y; y = tmp; }
+                const steps = ((rot % 6) + 6) % 6;
                 for (let k = 0; k < steps; k++) {
                     const nx = -z, ny = -x, nz = -y;
                     x = nx; y = ny; z = nz;
@@ -639,10 +648,11 @@
             };
 
             // Try to commit the transform; if blocked, keep/enter float preview.
-            const applyTransformOrFloat = useCallback((piv, rot, delta) => {
+            const applyTransformOrFloat = useCallback((piv, rot, mir, delta) => {
                 const idSet = new Set(selectedIds);
                 const sel = tiles.filter(t => idSet.has(t.id));
-                const targets = new Map(sel.map(t => [t.id, rotN(t, piv, rot, delta)]));
+                if (sel.length === 0) return false;
+                const targets = new Map(sel.map(t => [t.id, xformN(t, piv, rot, mir, delta)]));
                 const cells = new Set(Array.from(targets.values(), c => `${c.q},${c.r}`));
                 const collision = tiles.some(t => !idSet.has(t.id) && cells.has(`${t.q},${t.r}`));
                 if (!collision) {
@@ -651,7 +661,7 @@
                     setFloatState(null);
                     return true;
                 }
-                setFloatState({ pivot: piv, rot, deltaHex: delta });
+                setFloatState({ pivot: piv, rot, mir, deltaHex: delta });
                 return false;
             }, [selectedIds, tiles, saveHistory]);
 
@@ -662,9 +672,67 @@
                 if (sel.length < 2) return;
                 const piv = floatState ? floatState.pivot : cubePivotOf(sel);
                 const rot = (floatState ? floatState.rot : 0) + (dir === 'cw' ? 1 : -1);
+                const mir = floatState ? (floatState.mir || 0) : 0;
                 const delta = floatState ? floatState.deltaHex : { q: 0, r: 0 };
-                applyTransformOrFloat(piv, rot, delta);
+                applyTransformOrFloat(piv, rot, mir, delta);
             }, [selectedIds, tiles, floatState, applyTransformOrFloat]);
+
+            // Horizontal flip through the selection's pivot. Composing an
+            // outer mirror with R^rot ∘ M^mir gives R^(-rot) ∘ M^(mir+1);
+            // the translation is unchanged (the shape flips in place).
+            const flipSelection = useCallback(() => {
+                if (selectedIds.length < 2) return;
+                const idSet = new Set(selectedIds);
+                const sel = tiles.filter(t => idSet.has(t.id));
+                if (sel.length < 2) return;
+                const piv = floatState ? floatState.pivot : cubePivotOf(sel);
+                const rot = -(floatState ? floatState.rot : 0);
+                const mir = (floatState ? (floatState.mir || 0) : 0) ^ 1;
+                const delta = floatState ? floatState.deltaHex : { q: 0, r: 0 };
+                applyTransformOrFloat(piv, rot, mir, delta);
+            }, [selectedIds, tiles, floatState, applyTransformOrFloat]);
+
+            // Nudge the selection by one hex (arrow keys). Works for any
+            // selection size and folds into a floating preview if present.
+            const nudgeSelection = useCallback((d) => {
+                if (selectedIds.length === 0) return false;
+                const piv = floatState ? floatState.pivot : { rx: 0, ry: 0, rz: 0 };
+                const rot = floatState ? floatState.rot : 0;
+                const mir = floatState ? (floatState.mir || 0) : 0;
+                const delta = floatState
+                    ? { q: floatState.deltaHex.q + d.q, r: floatState.deltaHex.r + d.r }
+                    : d;
+                applyTransformOrFloat(piv, rot, mir, delta);
+                return true;
+            }, [selectedIds, floatState, applyTransformOrFloat]);
+
+            const persistSnapshots = (next) => {
+                setSnapshots(next);
+                try { localStorage.setItem('mapEditorSnapshots', JSON.stringify(next)); } catch (e) {}
+            };
+            const saveSnapshot = () => {
+                const name = snapName.trim() || 'layout-' + new Date().toISOString().slice(0, 16).replace('T', ' ');
+                const coords = {};
+                tiles.forEach(t => { coords[t.id] = [t.q, t.r]; });
+                persistSnapshots({ ...snapshots, [name]: { savedAt: Date.now(), coords } });
+                setSnapName('');
+            };
+            const loadSnapshot = (name) => {
+                const snap = snapshots[name];
+                if (!snap) return;
+                saveHistory(tiles);
+                setFloatState(null);
+                setSelectedTile(null);
+                setSelectedIds([]);
+                setTiles(tiles.map(t => snap.coords[t.id]
+                    ? { ...t, q: snap.coords[t.id][0], r: snap.coords[t.id][1] }
+                    : t));
+            };
+            const deleteSnapshot = (name) => {
+                const next = { ...snapshots };
+                delete next[name];
+                persistSnapshots(next);
+            };
 
             // Select every tile of a section (including its reserved slots)
             // so the whole territory can be dragged as one unit. The move
@@ -844,16 +912,25 @@
                         setAnalysisMode(null);
                         setFloatState(null);
                     }
-                    if (e.key === 'r' || e.key === 'R') {
-                        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT' || document.activeElement.tagName === 'TEXTAREA') return;
+                    const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
+                    if ((e.key === 'r' || e.key === 'R') && !typing) {
                         e.preventDefault();
                         rotateSelection(e.shiftKey ? 'ccw' : 'cw');
+                    }
+                    if ((e.key === 'f' || e.key === 'F') && !typing) {
+                        e.preventDefault();
+                        flipSelection();
+                    }
+                    const arrowDir = { ArrowLeft: { q: -1, r: 0 }, ArrowRight: { q: 1, r: 0 },
+                                       ArrowUp: { q: 0, r: -1 }, ArrowDown: { q: 0, r: 1 } }[e.key];
+                    if (arrowDir && !typing) {
+                        if (nudgeSelection(arrowDir)) e.preventDefault();
                     }
                 };
                 
                 window.addEventListener('keydown', handleKeyDown);
                 return () => window.removeEventListener('keydown', handleKeyDown);
-            }, [undo, deleteSelectedReserved, rotateSelection]);
+            }, [undo, deleteSelectedReserved, rotateSelection, flipSelection, nudgeSelection]);
             
             const activeTiles = useMemo(() => {
                 return tiles.filter(t => showReserved || !t.isReserved);
@@ -871,6 +948,31 @@
                 tiles.forEach(t => { if (!idSet.has(t.id)) cells.add(`${t.q},${t.r}`); });
                 return cells;
             }, [tiles, selectedIds]);
+
+            // Layout quality: total hex length of all prerequisite edges and
+            // of cross-cluster edges (different section or topicGroup), plus
+            // the longest cross-cluster edges for targeted improvement.
+            const layoutMetrics = useMemo(() => {
+                const byId = new Map(tiles.map(t => [t.id, t]));
+                const hexDist = (a, b) => {
+                    const dq = a.q - b.q, dr = a.r - b.r;
+                    return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
+                };
+                let total = 0, cross = 0, crossCount = 0;
+                const edges = [];
+                tiles.forEach(t => (t.prereqs || []).forEach(pid => {
+                    const p = byId.get(pid);
+                    if (!p) return;
+                    const d = hexDist(t, p);
+                    total += d;
+                    if (p.section !== t.section || p.topicGroup !== t.topicGroup) {
+                        cross += d; crossCount++;
+                        edges.push({ a: p, b: t, d });
+                    }
+                }));
+                edges.sort((x, y) => y.d - x.d);
+                return { total, cross, crossCount, top: edges.slice(0, 5) };
+            }, [tiles]);
 
             const emptySlots = useMemo(() => {
                 const slots = [];
@@ -1019,7 +1121,7 @@
                 const inFloat = !!floatState && !isEmpty && selectedIds.includes(tile.id);
                 let pos;
                 if (inFloat) {
-                    pos = rotN(tile, floatState.pivot, floatState.rot, {
+                    pos = xformN(tile, floatState.pivot, floatState.rot, floatState.mir || 0, {
                         q: floatState.deltaHex.q + (isDragging ? dragState.deltaHex.q : 0),
                         r: floatState.deltaHex.r + (isDragging ? dragState.deltaHex.r : 0)
                     });
@@ -1164,7 +1266,7 @@
                     <div style={{ fontSize: '0.65rem', color: '#6b7280', marginBottom: '10px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                         <span>🔍 <b>Wheel</b> zoom, <b>Alt/Middle-Drag</b> pan</span>
                         <span>🗺 <b>select</b> button on a section row to grab the whole section</span>
-                        <span>⟳ <b>R / Shift+R</b> rotate selection 60°</span>
+                        <span>⟳ <b>R / Shift+R</b> rotate, <b>F</b> flip, <b>arrows</b> nudge selection</span>
                         <span>🖱 <b>Drag Tile</b> to move</span>
                         <span>📐 <b>Drag Background</b> to box select</span>
                         <span>🔀 <b>Drag onto</b> another tile to swap</span>
@@ -1314,7 +1416,7 @@
                                             // delta into the pending transform; commits if
                                             // free, otherwise stays floating where dropped.
                                             if (floatState) {
-                                                applyTransformOrFloat(floatState.pivot, floatState.rot, {
+                                                applyTransformOrFloat(floatState.pivot, floatState.rot, floatState.mir || 0, {
                                                     q: floatState.deltaHex.q + deltaHex.q,
                                                     r: floatState.deltaHex.r + deltaHex.r
                                                 });
@@ -1541,6 +1643,11 @@
                                             onClick={() => rotateSelection('cw')}>
                                             ⟳ Rotate CW
                                         </button>
+                                        <button style={{ ...buttonBaseStyle, backgroundColor: '#374151', flex: 1 }}
+                                            title="Horizontal flip (F)"
+                                            onClick={() => flipSelection()}>
+                                            ⇋ Flip
+                                        </button>
                                     </div>
                                 </div>
                             ) : (
@@ -1626,6 +1733,30 @@
                             </div>
                             
                             <div className="info-box">
+                                <h3>📏 Layout Metrics</h3>
+                                <div style={{ fontSize: '0.75rem', color: '#d1d5db', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>Total edge length</span><b>{layoutMetrics.total}</b>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#d1d5db', display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                    <span>Cross-cluster ({layoutMetrics.crossCount} edges)</span><b>{layoutMetrics.cross}</b>
+                                </div>
+                                <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginBottom: '2px' }}>Longest bridges (click to select the pair):</div>
+                                {layoutMetrics.top.map((e, i) => (
+                                    <div key={i}
+                                        onClick={() => { setFloatState(null); setSelectedTile(null); setSelectedIds([e.a.id, e.b.id]); }}
+                                        style={{ fontSize: '0.68rem', color: '#e5e7eb', cursor: 'pointer', padding: '2px 4px',
+                                                 borderRadius: '3px', display: 'flex', justifyContent: 'space-between', gap: '6px' }}
+                                        onMouseEnter={ev => ev.currentTarget.style.background = '#374151'}
+                                        onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {e.a.id} ↔ {e.b.id}
+                                        </span>
+                                        <b>{e.d}</b>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="info-box">
                                 <h3>Island Layout</h3>
                                 <p style={{ color: '#9ca3af', marginBottom: '8px' }}>
                                     Compacts every topic-group island into a tight hub-centered blob, in place.
@@ -1644,6 +1775,33 @@
                                 <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '8px' }}>
                                     Tip: double-click a tile to select its whole island, then drag to reposition.
                                 </p>
+                            </div>
+
+                            <div className="info-box">
+                                <h3>📸 Layout Snapshots</h3>
+                                <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                                    <input value={snapName} onChange={e => setSnapName(e.target.value)}
+                                        placeholder="name (A-plan, B-plan...)"
+                                        style={{ flex: 1, background: '#111827', color: '#e5e7eb', border: '1px solid #374151',
+                                                 borderRadius: '4px', padding: '4px 6px', fontSize: '0.7rem' }} />
+                                    <button onClick={saveSnapshot}
+                                        style={{ background: '#374151', border: 'none', color: '#e5e7eb',
+                                                 borderRadius: '4px', padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer' }}>
+                                        Save
+                                    </button>
+                                </div>
+                                {Object.keys(snapshots).length === 0 && (
+                                    <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>No snapshots yet. Saved layouts live in this browser (localStorage).</div>
+                                )}
+                                {Object.entries(snapshots).sort((a, b) => b[1].savedAt - a[1].savedAt).map(([name, snap]) => (
+                                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', padding: '2px 0' }}>
+                                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={new Date(snap.savedAt).toLocaleString()}>{name}</span>
+                                        <button onClick={() => loadSnapshot(name)}
+                                            style={{ background: '#1f4b8f', border: 'none', color: '#fff', borderRadius: '3px', padding: '2px 7px', fontSize: '0.62rem', cursor: 'pointer' }}>Load</button>
+                                        <button onClick={() => deleteSnapshot(name)}
+                                            style={{ background: '#7f1d1d', border: 'none', color: '#fff', borderRadius: '3px', padding: '2px 6px', fontSize: '0.62rem', cursor: 'pointer' }}>×</button>
+                                    </div>
+                                ))}
                             </div>
 
                             <div className="info-box" style={{ marginTop: 'auto' }}>
