@@ -600,6 +600,41 @@
                 }));
             };
 
+            // Rotate the multi-selection by one 60-degree hex step around the
+            // rounded cube-coordinate centroid. dir: 'cw' | 'ccw'.
+            const rotateSelection = useCallback((dir) => {
+                if (selectedIds.length < 2) return;
+                const idSet = new Set(selectedIds);
+                const sel = tiles.filter(t => idSet.has(t.id));
+                if (sel.length < 2) return;
+
+                // Centroid in cube coordinates, rounded to the nearest hex
+                let cx = 0, cy = 0, cz = 0;
+                sel.forEach(t => { const x = t.q, z = t.r, y = -x - z; cx += x; cy += y; cz += z; });
+                cx /= sel.length; cy /= sel.length; cz /= sel.length;
+                let rx = Math.round(cx), ry = Math.round(cy), rz = Math.round(cz);
+                const dxx = Math.abs(rx - cx), dyy = Math.abs(ry - cy), dzz = Math.abs(rz - cz);
+                if (dxx > dyy && dxx > dzz) rx = -ry - rz;
+                else if (dyy > dzz) ry = -rx - rz;
+                else rz = -rx - ry;
+
+                // 60-degree cube rotation about the pivot
+                const rot = (t) => {
+                    const x = t.q - rx, z = t.r - rz, y = (-t.q - t.r) - ry;
+                    const nx = dir === 'cw' ? -z : -y;
+                    const nz = dir === 'cw' ? -y : -x;
+                    return { q: nx + rx, r: nz + rz };
+                };
+
+                const targets = new Map(sel.map(t => [t.id, rot(t)]));
+                const targetCells = new Set(Array.from(targets.values(), c => `${c.q},${c.r}`));
+                const collision = tiles.some(t => !idSet.has(t.id) && targetCells.has(`${t.q},${t.r}`));
+                if (collision) return;
+
+                saveHistory(tiles);
+                setTiles(tiles.map(t => targets.has(t.id) ? { ...t, ...targets.get(t.id) } : t));
+            }, [selectedIds, tiles, saveHistory]);
+
             // Select every tile of a section (including its reserved slots)
             // so the whole territory can be dragged as one unit. The move
             // itself reuses the existing multi-drag with collision checking.
@@ -776,11 +811,16 @@
                         setSelectedIds([]);
                         setAnalysisMode(null);
                     }
+                    if (e.key === 'r' || e.key === 'R') {
+                        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT' || document.activeElement.tagName === 'TEXTAREA') return;
+                        e.preventDefault();
+                        rotateSelection(e.shiftKey ? 'ccw' : 'cw');
+                    }
                 };
                 
                 window.addEventListener('keydown', handleKeyDown);
                 return () => window.removeEventListener('keydown', handleKeyDown);
-            }, [undo, deleteSelectedReserved]);
+            }, [undo, deleteSelectedReserved, rotateSelection]);
             
             const activeTiles = useMemo(() => {
                 return tiles.filter(t => showReserved || !t.isReserved);
@@ -1072,6 +1112,7 @@
                     <div style={{ fontSize: '0.65rem', color: '#6b7280', marginBottom: '10px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                         <span>🔍 <b>Wheel</b> zoom, <b>Alt/Middle-Drag</b> pan</span>
                         <span>🗺 <b>select</b> button on a section row to grab the whole section</span>
+                        <span>⟳ <b>R / Shift+R</b> rotate selection 60°</span>
                         <span>🖱 <b>Drag Tile</b> to move</span>
                         <span>📐 <b>Drag Background</b> to box select</span>
                         <span>🔀 <b>Drag onto</b> another tile to swap</span>
@@ -1414,6 +1455,23 @@
                                             🗑 Delete Reserved Tile
                                         </button>
                                     )}
+                                </div>
+                            ) : selectedIds.length >= 2 ? (
+                                <div className="info-box">
+                                    <h3>🧩 {selectedIds.length} tiles selected</h3>
+                                    <p style={{ color: '#9ca3af', marginBottom: '8px' }}>Drag any of them to move the group.</p>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                        <button style={{ ...buttonBaseStyle, backgroundColor: '#374151', flex: 1 }}
+                                            title="Rotate 60 degrees counter-clockwise (Shift+R)"
+                                            onClick={() => rotateSelection('ccw')}>
+                                            ⟲ Rotate CCW
+                                        </button>
+                                        <button style={{ ...buttonBaseStyle, backgroundColor: '#374151', flex: 1 }}
+                                            title="Rotate 60 degrees clockwise (R)"
+                                            onClick={() => rotateSelection('cw')}>
+                                            ⟳ Rotate CW
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="info-box" style={{ color: '#9ca3af' }}>Click a tile to see details</div>
