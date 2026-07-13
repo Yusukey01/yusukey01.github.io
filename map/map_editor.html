@@ -26,10 +26,24 @@
         .main-content { display: flex; gap: 16px; }
         .map-container { 
             flex: 1; background: #030712; border-radius: 8px; 
-            overflow: auto; max-height: 65vh; min-height: 400px;
+            overflow: hidden; max-height: 65vh; min-height: 400px;
             height: calc(100vh - 120px);
             max-height: none;
+            position: relative;
+            overscroll-behavior: contain;
         }
+        .zoom-controls-editor {
+            position: absolute; top: 8px; right: 8px;
+            display: flex; gap: 6px; z-index: 5;
+        }
+        .zoom-controls-editor button {
+            width: 30px; height: 30px;
+            background: rgba(31, 41, 55, 0.9);
+            color: #fff; border: 1px solid #374151; border-radius: 6px;
+            font-size: 0.9rem; cursor: pointer; line-height: 1;
+        }
+        .zoom-controls-editor button:hover { background: #374151; }
+        .zoom-controls-editor button.fit { width: auto; padding: 0 8px; font-size: 0.7rem; }
         .map-container svg { 
             width: 100%;
             height: 100%;
@@ -274,23 +288,31 @@
             const [showBridges, setShowBridges] = useState(false);
             const [showIslandHulls, setShowIslandHulls] = useState(false);
 
+            // Zoom / pan: null = auto-fit to content; an object = user-set
+            // camera that stays put while tiles move (no mid-drag refits).
+            const [view, setView] = useState(null);
+            const [panState, setPanState] = useState(null);
+            const svgRef = React.useRef(null);
+            const fitBoundsRef = React.useRef(null);
+
             const hexSize = 28;
 
             // --- Undo Logic ---
+            // Full-array snapshots: coordinate-only history could not undo
+            // adding or deleting reserved tiles (their ids no longer matched).
             const saveHistory = useCallback((currentTilesBeforeChange) => {
-                undoStack.current.push(currentTilesBeforeChange.map(({ q, r, id }) => ({ q, r, id })));
+                undoStack.current.push(currentTilesBeforeChange.map(t => ({ ...t })));
                 if (undoStack.current.length > 50) undoStack.current.shift();
             }, []);
 
             const undo = useCallback(() => {
                 const snapshot = undoStack.current.pop();
                 if (!snapshot) return;
-                setTiles(currentTiles =>
-                    currentTiles.map(tile => {
-                        const ht = snapshot.find(h => h.id === tile.id);
-                        return ht ? { ...tile, q: ht.q, r: ht.r } : tile;
-                    })
-                );
+                setTiles(snapshot);
+                // Selections may reference tiles that no longer exist (or
+                // resurrect ones that do again) - clear to stay consistent.
+                setSelectedTile(null);
+                setSelectedIds([]);
             }, []);
 
             // ---  Multi-Select Logic ---
@@ -662,6 +684,9 @@
                 if (!originalData) return;
 
                 const exportData = JSON.parse(JSON.stringify(originalData));
+                if (exportData.meta) {
+                    exportData.meta.lastUpdated = new Date().toISOString().slice(0, 10);
+                }
 
                 // Reset all reservedSlots — will rebuild from current tiles
                 Object.keys(exportData.sections).forEach(key => {
@@ -736,6 +761,9 @@
                     }
                     if (e.key === 'Escape') {
                         setAddReservedTarget(null);
+                        setSelectedTile(null);
+                        setSelectedIds([]);
+                        setAnalysisMode(null);
                     }
                 };
                 
@@ -841,6 +869,46 @@
                 const padding = hexSize * 2;
                 return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
             }, [emptySlots, activeTiles]);
+
+            // Effective camera: user view if set, else auto-fit bounds.
+            fitBoundsRef.current = viewBox;
+            const vb = view || viewBox;
+
+            const zoomBy = (f) => setView(v0 => {
+                const fit = fitBoundsRef.current;
+                const v = v0 || fit;
+                const cx = v.x + v.width / 2, cy = v.y + v.height / 2;
+                const w = Math.min(Math.max(v.width * f, 120), fit.width * 3);
+                const h = v.height * (w / v.width);
+                return { x: cx - w / 2, y: cy - h / 2, width: w, height: h };
+            });
+
+            // Wheel zoom centered on the cursor. Native non-passive listener
+            // so preventDefault reliably stops page scrolling.
+            useEffect(() => {
+                const el = svgRef.current;
+                if (!el) return;
+                const onWheel = (e) => {
+                    e.preventDefault();
+                    setView(v0 => {
+                        const fit = fitBoundsRef.current;
+                        const v = v0 || fit;
+                        const rect = el.getBoundingClientRect();
+                        const px = v.x + (e.clientX - rect.left) * (v.width / rect.width);
+                        const py = v.y + (e.clientY - rect.top) * (v.height / rect.height);
+                        const f = e.deltaY > 0 ? 1.15 : 1 / 1.15;
+                        const w = Math.min(Math.max(v.width * f, 120), fit.width * 3);
+                        const h = v.height * (w / v.width);
+                        return {
+                            x: px - (px - v.x) * (w / v.width),
+                            y: py - (py - v.y) * (h / v.height),
+                            width: w, height: h
+                        };
+                    });
+                };
+                el.addEventListener('wheel', onWheel, { passive: false });
+                return () => el.removeEventListener('wheel', onWheel);
+            }, [loading]);
             
             const hexPath = (cx, cy, size) => {
                 const points = [];
@@ -920,6 +988,8 @@
                     onClick={(e) => { if (!dragState?.moved) handleTileClick(e, tile); }}
                     onDoubleClick={(e) => { e.stopPropagation(); if (!isEmpty) selectIsland(tile); }}
                     onMouseDown={(e) => {
+                            // Middle button / Alt+drag = camera pan, even over tiles
+                            if (e.button === 1 || e.altKey) return;
                             e.stopPropagation();
                             const idsToDrag = selectedIds.includes(tile.id) ? selectedIds : [tile.id];
                             const anchorTile = tiles.find(t => t.id === idsToDrag[0]);
@@ -985,6 +1055,7 @@
                     </div>
 
                     <div style={{ fontSize: '0.65rem', color: '#6b7280', marginBottom: '10px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                        <span>🔍 <b>Wheel</b> zoom, <b>Alt/Middle-Drag</b> pan</span>
                         <span>🖱 <b>Drag Tile</b> to move</span>
                         <span>📐 <b>Drag Background</b> to box select</span>
                         <span>🔀 <b>Drag onto</b> another tile to swap</span>
@@ -996,16 +1067,28 @@
                     
                     <div className="main-content">
                         <div className="map-container">
+                            <div className="zoom-controls-editor">
+                                <button title="Zoom in" onClick={() => zoomBy(1 / 1.3)}>+</button>
+                                <button title="Zoom out" onClick={() => zoomBy(1.3)}>&minus;</button>
+                                <button className="fit" title="Fit to content" onClick={() => setView(null)}>Fit</button>
+                            </div>
                             <svg
-                                viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
+                                ref={svgRef}
+                                viewBox={`${vb.x} ${vb.y} ${vb.width} ${vb.height}`}
                                 onMouseDown={(e) => {
+                                    // Middle button or Alt+drag pans the camera
+                                    if (e.button === 1 || e.altKey) {
+                                        e.preventDefault();
+                                        setPanState({ startX: e.clientX, startY: e.clientY, view: vb });
+                                        return;
+                                    }
                                     // Start Box Selection if clicked on the SVG background
                                     const svg = e.currentTarget;
                                     const rect = svg.getBoundingClientRect();
-                                    const scaleX = viewBox.width / rect.width;
-                                    const scaleY = viewBox.height / rect.height;
-                                    const x = (e.clientX - rect.left) * scaleX + viewBox.x;
-                                    const y = (e.clientY - rect.top) * scaleY + viewBox.y;
+                                    const scaleX = vb.width / rect.width;
+                                    const scaleY = vb.height / rect.height;
+                                    const x = (e.clientX - rect.left) * scaleX + vb.x;
+                                    const y = (e.clientY - rect.top) * scaleY + vb.y;
 
                                     setSelectionBox({
                                         startX: x,
@@ -1018,13 +1101,24 @@
                                 onMouseMove={(e) => {
                                     const svg = e.currentTarget;
                                     const rect = svg.getBoundingClientRect();
-                                    const scaleX = viewBox.width / rect.width;
-                                    const scaleY = viewBox.height / rect.height;
+                                    const scaleX = vb.width / rect.width;
+                                    const scaleY = vb.height / rect.height;
+
+                                    // Handle camera panning (delta from gesture start,
+                                    // against the view captured at gesture start)
+                                    if (panState) {
+                                        setView({
+                                            ...panState.view,
+                                            x: panState.view.x - (e.clientX - panState.startX) * (panState.view.width / rect.width),
+                                            y: panState.view.y - (e.clientY - panState.startY) * (panState.view.height / rect.height)
+                                        });
+                                        return;
+                                    }
 
                                     // Handle Box Selection
                                     if (selectionBox) {
-                                        const x = (e.clientX - rect.left) * scaleX + viewBox.x;
-                                        const y = (e.clientY - rect.top) * scaleY + viewBox.y;
+                                        const x = (e.clientX - rect.left) * scaleX + vb.x;
+                                        const y = (e.clientY - rect.top) * scaleY + vb.y;
                                         setSelectionBox(prev => ({ ...prev, currentX: x, currentY: y }));
                                         return;
                                     }
@@ -1040,6 +1134,8 @@
                                     setDragState(s => ({...s, deltaHex: pixelToHex(dx, dy), moved: true }));
                                 }}
                                 onMouseUp={() => {
+                                    // Finish camera panning
+                                    if (panState) { setPanState(null); return; }
                                     // Finish Box Selection
                                     if (selectionBox) {
                                         const minX = Math.min(selectionBox.startX, selectionBox.currentX);
@@ -1125,9 +1221,11 @@
                                     setDraggingId(null);
                                     setDragHex(null);
                                     setSelectionBox(null); // Cancel box selection if mouse leaves SVG
+                                    setDragState(null);    // A drag released outside the SVG must not stay stuck
+                                    setPanState(null);
                                 }}
                             >
-                                <rect x={viewBox.x} y={viewBox.y} width={viewBox.width} height={viewBox.height} fill="url(#grid)" />
+                                <rect x={vb.x} y={vb.y} width={vb.width} height={vb.height} fill="url(#grid)" />
                                 {showBridges && bridges.map((b, i) => (
                                     <line key={`bridge-${i}`} x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2}
                                         stroke={b.color} strokeWidth={1.5} strokeOpacity={0.55} strokeLinecap="round" />
@@ -1143,7 +1241,7 @@
                                         height={Math.abs(selectionBox.currentY - selectionBox.startY)}
                                         fill="rgba(139, 92, 246, 0.15)"
                                         stroke="#8b5cf6"
-                                        strokeWidth={1.5 * (viewBox.width / 800)} // Scale line width based on zoom
+                                        strokeWidth={1.5 * (vb.width / 800)} // Scale line width based on zoom
                                         strokeDasharray="4,4"
                                         pointerEvents="none" // Prevent the box from blocking mouse events
                                     />
