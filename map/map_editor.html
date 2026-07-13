@@ -1036,34 +1036,10 @@
                     return { mode: 'selection', edges, bundles: [] };
                 }
 
-                // Aggregate: one line per island pair, weighted by edge count
-                const islandKey = t => `${t.section}/${t.topicGroup || t.id}`;
-                const centroids = new Map();
-                active.forEach(t => {
-                    const k = islandKey(t);
-                    const px = hexToPixel(t.q, t.r);
-                    const c = centroids.get(k) || { sx: 0, sy: 0, n: 0 };
-                    c.sx += px.x; c.sy += px.y; c.n++;
-                    centroids.set(k, c);
-                });
-                const pairs = new Map();
-                crossEdges.forEach(e => {
-                    const k1 = islandKey(e.p), k2 = islandKey(e.t);
-                    const key = k1 < k2 ? k1 + '|' + k2 : k2 + '|' + k1;
-                    pairs.set(key, (pairs.get(key) || 0) + 1);
-                });
-                const bundles = [];
-                pairs.forEach((count, key) => {
-                    const [k1, k2] = key.split('|');
-                    const c1 = centroids.get(k1), c2 = centroids.get(k2);
-                    if (!c1 || !c2) return;
-                    bundles.push({
-                        x1: c1.sx / c1.n, y1: c1.sy / c1.n,
-                        x2: c2.sx / c2.n, y2: c2.sy / c2.n,
-                        count
-                    });
-                });
-                return { mode: 'islands', edges: [], bundles };
+                // No selection: draw nothing. A whole-map view was tried
+                // twice (raw edges, then island bundles) and both were noise;
+                // the macro picture lives in Layout Metrics instead.
+                return { mode: 'off', edges: [], bundles: [] };
             }, [showBridges, tiles, selectedIds, selectedTile]);
 
             const pixelToHex = (x, y) => {
@@ -1304,7 +1280,7 @@
                         </label>
                         <label>
                             <input type="checkbox" checked={showBridges} onChange={(e) => setShowBridges(e.target.checked)} />
-                            <span title="No selection: island-to-island bundles with edge counts. With a selection: only that selection's cross-cluster edges, with hex distances.">Bridges</span>
+                            <span title="Shows the cross-cluster edges of the CURRENT selection (tile / island / section), with hex distances. Select something to see its bridges.">Bridges</span>
                         </label>
                     </div>
 
@@ -1494,18 +1470,6 @@
                                 }}
                             >
                                 <rect x={vb.x} y={vb.y} width={vb.width} height={vb.height} fill="url(#grid)" />
-                                {showBridges && bridges.mode === 'islands' && bridges.bundles.map((b, i) => (
-                                    <g key={`bundle-${i}`} style={{ pointerEvents: 'none' }}>
-                                        <line x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2}
-                                            stroke="#94a3b8" strokeWidth={Math.min(1 + b.count, 6)}
-                                            strokeOpacity={0.45} strokeLinecap="round" />
-                                        <text x={(b.x1 + b.x2) / 2} y={(b.y1 + b.y2) / 2 - 4}
-                                            textAnchor="middle" fill="#e5e7eb" fontSize={11} fontWeight="bold"
-                                            style={{ paintOrder: 'stroke', stroke: '#030712', strokeWidth: 3 }}>
-                                            {b.count}
-                                        </text>
-                                    </g>
-                                ))}
                                 {showEmptySlots && emptySlots.map(tile => renderTile(tile, true))}
                                 {activeTiles.map(tile => renderTile(tile, false))}
                                 {showBridges && bridges.mode === 'selection' && bridges.edges.map((b, i) => (
