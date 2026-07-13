@@ -292,6 +292,9 @@
             // camera that stays put while tiles move (no mid-drag refits).
             const [view, setView] = useState(null);
             const [panState, setPanState] = useState(null);
+            // Pending rotate/move preview of the current selection:
+            // { pivot, rot, deltaHex } or null. Data is untouched while set.
+            const [floatState, setFloatState] = useState(null);
             const svgRef = React.useRef(null);
             const fitBoundsRef = React.useRef(null);
 
@@ -309,6 +312,7 @@
                 const snapshot = undoStack.current.pop();
                 if (!snapshot) return;
                 setTiles(snapshot);
+                setFloatState(null);
                 // Selections may reference tiles that no longer exist (or
                 // resurrect ones that do again) - clear to stay consistent.
                 setSelectedTile(null);
@@ -317,6 +321,7 @@
 
             // ---  Multi-Select Logic ---
            const handleTileClick = (e, tile) => {
+                setFloatState(null); // a click outside the float gesture cancels the preview
                 if (tile.section === 'EMPTY') {
                     setAddReservedTarget({ q: tile.q, r: tile.r });
                     setSelectedTile(null);
@@ -600,15 +605,17 @@
                 }));
             };
 
-            // Rotate the multi-selection by one 60-degree hex step around the
-            // rounded cube-coordinate centroid. dir: 'cw' | 'ccw'.
-            const rotateSelection = useCallback((dir) => {
-                if (selectedIds.length < 2) return;
-                const idSet = new Set(selectedIds);
-                const sel = tiles.filter(t => idSet.has(t.id));
-                if (sel.length < 2) return;
+            // --- SELECTION ROTATION with float preview ---
+            // Rotation always succeeds as an OPERATION: if the rotated shape
+            // collides with outside tiles, nothing is committed - instead the
+            // selection enters a floating preview (rendered at the rotated
+            // position, colliding cells outlined red) that the user can keep
+            // rotating and drag to a free spot. The transform commits
+            // automatically the moment it is collision-free. Esc cancels the
+            // preview (the underlying data never moved).
 
-                // Centroid in cube coordinates, rounded to the nearest hex
+            // Rounded cube-coordinate centroid of a set of tiles.
+            const cubePivotOf = (sel) => {
                 let cx = 0, cy = 0, cz = 0;
                 sel.forEach(t => { const x = t.q, z = t.r, y = -x - z; cx += x; cy += y; cz += z; });
                 cx /= sel.length; cy /= sel.length; cz /= sel.length;
@@ -617,23 +624,47 @@
                 if (dxx > dyy && dxx > dzz) rx = -ry - rz;
                 else if (dyy > dzz) ry = -rx - rz;
                 else rz = -rx - ry;
+                return { rx, ry, rz };
+            };
 
-                // 60-degree cube rotation about the pivot
-                const rot = (t) => {
-                    const x = t.q - rx, z = t.r - rz, y = (-t.q - t.r) - ry;
-                    const nx = dir === 'cw' ? -z : -y;
-                    const nz = dir === 'cw' ? -y : -x;
-                    return { q: nx + rx, r: nz + rz };
-                };
+            // n CW 60-degree steps around pivot, then translate by delta.
+            const rotN = (t, piv, n, delta) => {
+                let x = t.q - piv.rx, z = t.r - piv.rz, y = (-t.q - t.r) - piv.ry;
+                const steps = ((n % 6) + 6) % 6;
+                for (let k = 0; k < steps; k++) {
+                    const nx = -z, ny = -x, nz = -y;
+                    x = nx; y = ny; z = nz;
+                }
+                return { q: x + piv.rx + (delta ? delta.q : 0), r: z + piv.rz + (delta ? delta.r : 0) };
+            };
 
-                const targets = new Map(sel.map(t => [t.id, rot(t)]));
-                const targetCells = new Set(Array.from(targets.values(), c => `${c.q},${c.r}`));
-                const collision = tiles.some(t => !idSet.has(t.id) && targetCells.has(`${t.q},${t.r}`));
-                if (collision) return;
-
-                saveHistory(tiles);
-                setTiles(tiles.map(t => targets.has(t.id) ? { ...t, ...targets.get(t.id) } : t));
+            // Try to commit the transform; if blocked, keep/enter float preview.
+            const applyTransformOrFloat = useCallback((piv, rot, delta) => {
+                const idSet = new Set(selectedIds);
+                const sel = tiles.filter(t => idSet.has(t.id));
+                const targets = new Map(sel.map(t => [t.id, rotN(t, piv, rot, delta)]));
+                const cells = new Set(Array.from(targets.values(), c => `${c.q},${c.r}`));
+                const collision = tiles.some(t => !idSet.has(t.id) && cells.has(`${t.q},${t.r}`));
+                if (!collision) {
+                    saveHistory(tiles);
+                    setTiles(tiles.map(t => targets.has(t.id) ? { ...t, ...targets.get(t.id) } : t));
+                    setFloatState(null);
+                    return true;
+                }
+                setFloatState({ pivot: piv, rot, deltaHex: delta });
+                return false;
             }, [selectedIds, tiles, saveHistory]);
+
+            const rotateSelection = useCallback((dir) => {
+                if (selectedIds.length < 2) return;
+                const idSet = new Set(selectedIds);
+                const sel = tiles.filter(t => idSet.has(t.id));
+                if (sel.length < 2) return;
+                const piv = floatState ? floatState.pivot : cubePivotOf(sel);
+                const rot = (floatState ? floatState.rot : 0) + (dir === 'cw' ? 1 : -1);
+                const delta = floatState ? floatState.deltaHex : { q: 0, r: 0 };
+                applyTransformOrFloat(piv, rot, delta);
+            }, [selectedIds, tiles, floatState, applyTransformOrFloat]);
 
             // Select every tile of a section (including its reserved slots)
             // so the whole territory can be dragged as one unit. The move
@@ -641,6 +672,7 @@
             const selectSection = (key) => {
                 const ids = tiles.filter(t => t.section === key).map(t => t.id);
                 if (ids.length === 0) return;
+                setFloatState(null);
                 setSelectedIds(ids);
                 setSelectedTile(null);
                 setAnalysisMode(null);
@@ -810,6 +842,7 @@
                         setSelectedTile(null);
                         setSelectedIds([]);
                         setAnalysisMode(null);
+                        setFloatState(null);
                     }
                     if (e.key === 'r' || e.key === 'R') {
                         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT' || document.activeElement.tagName === 'TEXTAREA') return;
@@ -832,6 +865,13 @@
                 return map;
             }, [activeTiles]);
             
+            const occupiedExclSelection = useMemo(() => {
+                const idSet = new Set(selectedIds);
+                const cells = new Set();
+                tiles.forEach(t => { if (!idSet.has(t.id)) cells.add(`${t.q},${t.r}`); });
+                return cells;
+            }, [tiles, selectedIds]);
+
             const emptySlots = useMemo(() => {
                 const slots = [];
                 const checked = new Set();
@@ -976,7 +1016,17 @@
                     const src = tiles.find(t => t.id === dragState.ids[0]);
                     return src && tile.q === src.q + dragState.deltaHex.q && tile.r === src.r + dragState.deltaHex.r;
                 })();
-                const pos = isDragging ? {q: tile.q + dragState.deltaHex.q, r: tile.r + dragState.deltaHex.r} : tile;
+                const inFloat = !!floatState && !isEmpty && selectedIds.includes(tile.id);
+                let pos;
+                if (inFloat) {
+                    pos = rotN(tile, floatState.pivot, floatState.rot, {
+                        q: floatState.deltaHex.q + (isDragging ? dragState.deltaHex.q : 0),
+                        r: floatState.deltaHex.r + (isDragging ? dragState.deltaHex.r : 0)
+                    });
+                } else {
+                    pos = isDragging ? {q: tile.q + dragState.deltaHex.q, r: tile.r + dragState.deltaHex.r} : tile;
+                }
+                const floatCollides = inFloat && occupiedExclSelection.has(`${pos.q},${pos.r}`);
                 const {x, y} = hexToPixel(pos.q, pos.r);
                 const color = SECTION_COLORS[tile.section] || '#888';
                 
@@ -1033,6 +1083,8 @@
                 if (isSingleSelected) { stroke = '#fff'; strokeWidth = 2.5; }
                 if (isDragging) { stroke = '#00e5ff'; }
                 if (isSwapTarget) { stroke = '#fbbf24'; strokeWidth = 2.5; opacity = 1; }
+                if (inFloat) { stroke = '#00e5ff'; strokeWidth = 2; }
+                if (floatCollides) { stroke = '#ef4444'; strokeWidth = 2.5; }
 
                 return (
                     <g key={tile.id} className={isPrereq && !analysisMode ? 'prereq-glow' : ''}
@@ -1258,6 +1310,18 @@
                                                 }
                                             }
 
+                                            // Dropping a floating selection: fold the drag
+                                            // delta into the pending transform; commits if
+                                            // free, otherwise stays floating where dropped.
+                                            if (floatState) {
+                                                applyTransformOrFloat(floatState.pivot, floatState.rot, {
+                                                    q: floatState.deltaHex.q + deltaHex.q,
+                                                    r: floatState.deltaHex.r + deltaHex.r
+                                                });
+                                                setDragState(null);
+                                                return;
+                                            }
+
                                             // Multi-tile or no collision — normal move
                                             const targetPositions = new Set(ids.map(id => {
                                                 const t = tiles.find(ti => ti.id === id);
@@ -1459,7 +1523,13 @@
                             ) : selectedIds.length >= 2 ? (
                                 <div className="info-box">
                                     <h3>🧩 {selectedIds.length} tiles selected</h3>
-                                    <p style={{ color: '#9ca3af', marginBottom: '8px' }}>Drag any of them to move the group.</p>
+                                    {floatState ? (
+                                        <p style={{ color: '#ef4444', marginBottom: '8px' }}>
+                                            ⚠ Rotated shape overlaps other tiles — keep rotating (R) or drag it to a free spot; it commits automatically. Esc cancels.
+                                        </p>
+                                    ) : (
+                                        <p style={{ color: '#9ca3af', marginBottom: '8px' }}>Drag any of them to move the group.</p>
+                                    )}
                                     <div style={{ display: 'flex', gap: '6px' }}>
                                         <button style={{ ...buttonBaseStyle, backgroundColor: '#374151', flex: 1 }}
                                             title="Rotate 60 degrees counter-clockwise (Shift+R)"
