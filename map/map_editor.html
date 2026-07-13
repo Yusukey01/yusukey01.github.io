@@ -600,6 +600,17 @@
                 }));
             };
 
+            // Select every tile of a section (including its reserved slots)
+            // so the whole territory can be dragged as one unit. The move
+            // itself reuses the existing multi-drag with collision checking.
+            const selectSection = (key) => {
+                const ids = tiles.filter(t => t.section === key).map(t => t.id);
+                if (ids.length === 0) return;
+                setSelectedIds(ids);
+                setSelectedTile(null);
+                setAnalysisMode(null);
+            };
+
             // Select all tiles in the same island as the given tile.
             const selectIsland = (anchorTile) => {
                 if (!anchorTile || !anchorTile.topicGroup) {
@@ -990,6 +1001,10 @@
                     onMouseDown={(e) => {
                             // Middle button / Alt+drag = camera pan, even over tiles
                             if (e.button === 1 || e.altKey) return;
+                            // Empty slots are not draggable: no id means the drag
+                            // matched every empty slot at once. Let the event fall
+                            // through to the background (box select).
+                            if (isEmpty) return;
                             e.stopPropagation();
                             const idsToDrag = selectedIds.includes(tile.id) ? selectedIds : [tile.id];
                             const anchorTile = tiles.find(t => t.id === idsToDrag[0]);
@@ -1056,6 +1071,7 @@
 
                     <div style={{ fontSize: '0.65rem', color: '#6b7280', marginBottom: '10px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                         <span>🔍 <b>Wheel</b> zoom, <b>Alt/Middle-Drag</b> pan</span>
+                        <span>🗺 <b>select</b> button on a section row to grab the whole section</span>
                         <span>🖱 <b>Drag Tile</b> to move</span>
                         <span>📐 <b>Drag Background</b> to box select</span>
                         <span>🔀 <b>Drag onto</b> another tile to swap</span>
@@ -1430,7 +1446,17 @@
                                                 opacity: highlightSections.size > 0 && !isActive ? 0.4 : 1,
                                                 transition: 'all 0.15s' }}>
                                             <span style={{ color: SECTION_COLORS[key] }}>{key}: {name}</span>
-                                            <span>{count} {reserved > 0 && <span className="count-reserved">(+{reserved})</span>}</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                {count} {reserved > 0 && <span className="count-reserved">(+{reserved})</span>}
+                                                <button
+                                                    title="Select all tiles in this section (drag any of them to move the whole section)"
+                                                    onClick={(e) => { e.stopPropagation(); selectSection(key); }}
+                                                    style={{ background: '#374151', border: 'none', color: '#e5e7eb',
+                                                             borderRadius: '4px', padding: '1px 6px', fontSize: '0.6rem',
+                                                             cursor: 'pointer' }}>
+                                                    select
+                                                </button>
+                                            </span>
                                         </div>
                                     );
                                 })}
