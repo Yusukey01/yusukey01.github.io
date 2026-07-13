@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math-CS Compass | Site Atlas</title>
+    <meta name="description" content="A complete linear index of every page on MATH-CS COMPASS, organized by section and topic group.">
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --text-color: #e0e0e0;
+            --muted-color: #8a93a5;
+            --glass-bg: rgba(15, 20, 30, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --row-hover: rgba(255, 255, 255, 0.06);
+        }
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif;
+            -webkit-text-size-adjust: 100%;
+        }
+        .atlas-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px 16px 80px;
+        }
+        header.atlas-header {
+            padding: 8px 0 4px;
+        }
+        header.atlas-header h1 {
+            font-size: 1.6rem;
+            margin: 0 0 4px;
+            letter-spacing: 0.02em;
+        }
+        header.atlas-header p.subtitle {
+            margin: 0;
+            color: var(--muted-color);
+            font-size: 0.95rem;
+        }
+        nav.atlas-nav {
+            margin: 10px 0 18px;
+            font-size: 0.9rem;
+        }
+        nav.atlas-nav a {
+            color: var(--muted-color);
+            text-decoration: none;
+            margin-right: 16px;
+            border-bottom: 1px dotted var(--glass-border);
+        }
+        nav.atlas-nav a:hover { color: var(--text-color); }
+        .filter-box {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: var(--bg-color);
+            padding: 10px 0 12px;
+        }
+        .filter-box input {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 1rem;
+            color: var(--text-color);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            outline: none;
+        }
+        .filter-box input:focus { border-color: rgba(100, 180, 255, 0.5); }
+        .filter-meta {
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: var(--muted-color);
+        }
+        section.atlas-section { margin-top: 28px; }
+        .section-head {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 6px;
+        }
+        .section-chip {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex: 0 0 auto;
+            transform: translateY(1px);
+        }
+        .section-head h2 {
+            font-size: 1.15rem;
+            margin: 0;
+            font-weight: 600;
+        }
+        .section-head .count {
+            color: var(--muted-color);
+            font-size: 0.85rem;
+        }
+        .group-block { margin: 14px 0 4px; }
+        .group-block h3 {
+            font-size: 0.95rem;
+            margin: 0 0 6px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        .group-block h3 .count {
+            color: var(--muted-color);
+            font-weight: 400;
+            font-size: 0.8rem;
+        }
+        ol.page-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            column-width: 330px;
+            column-gap: 28px;
+        }
+        ol.page-list li {
+            break-inside: avoid;
+        }
+        ol.page-list a {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            padding: 3px 6px;
+            border-radius: 5px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.92rem;
+            line-height: 1.35;
+        }
+        ol.page-list a:hover { background: var(--row-hover); }
+        .page-num {
+            flex: 0 0 2.1em;
+            text-align: right;
+            color: var(--muted-color);
+            font-variant-numeric: tabular-nums;
+            font-size: 0.85em;
+        }
+        .page-id {
+            margin-left: auto;
+            color: var(--muted-color);
+            font-family: 'Consolas', 'Menlo', monospace;
+            font-size: 0.72em;
+            white-space: nowrap;
+        }
+        .hidden { display: none !important; }
+        .load-error {
+            margin-top: 24px;
+            color: #e08080;
+        }
+        @media (max-width: 520px) {
+            .page-id { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="atlas-wrap">
+    <header class="atlas-header">
+        <h1>Site Atlas</h1>
+        <p class="subtitle">Every page of MATH-CS COMPASS at a glance — organized by section and topic group.</p>
+    </header>
+    <nav class="atlas-nav">
+        <a href="/index.html">Home</a>
+        <a href="compass.html">Knowledge Map</a>
+    </nav>
+
+    <div class="filter-box">
+        <input id="atlas-filter" type="search" placeholder="Filter by title, id, or topic group&hellip;" autocomplete="off">
+        <div class="filter-meta"><span id="atlas-count"></span></div>
+    </div>
+
+    <main id="atlas-root"></main>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    /* Display names for topicGroup slugs.
+       NOTE: keep in sync with build_atlas.js (and with SectionCards, if it
+       carries its own mapping). Unknown slugs fall back to Title Case. */
+    var GROUP_TITLES = {
+        'la-core': 'Core Linear Algebra',
+        'matrix-analysis': 'Matrix Analysis',
+        'group-theory': 'Group Theory',
+        'ring-and-field': 'Rings & Fields',
+        'lie-theory': 'Lie Theory',
+        'representation-theory': 'Representation Theory',
+        'quantum': 'Quantum Computation',
+        'lattice': 'Lattice Geometry',
+        'derivatives': 'Derivatives',
+        'optimization': 'Optimization',
+        'integration-and-measure': 'Integration & Measure',
+        'fourier': 'Fourier Analysis',
+        'topology-and-metric': 'Topology & Metric Spaces',
+        'functional-analysis': 'Functional Analysis',
+        'manifold-foundations': 'Manifold Foundations',
+        'submanifolds-and-maps': 'Submanifolds & Smooth Maps',
+        'lie-groups-on-manifolds': 'Lie Groups on Manifolds',
+        'vector-fields-and-flows': 'Vector Fields & Flows',
+        'bundles-on-manifolds': 'Bundles',
+        'tensors-on-manifolds': 'Tensors',
+        'riemannian-geometry': 'Riemannian Geometry',
+        'differential-forms': 'Differential Forms',
+        'orientations': 'Orientations',
+        'integration': 'Integration on Manifolds',
+        'foundations': 'Foundations',
+        'distributions': 'Distributions',
+        'multivariate': 'Multivariate Analysis',
+        'classical-inference': 'Classical Inference',
+        'information': 'Information Theory',
+        'measure-theoretic': 'Measure-Theoretic Probability',
+        'bayesian': 'Bayesian Methods',
+        'stochastic-processes': 'Stochastic Processes',
+        'graph-theory': 'Graph Theory',
+        'combinatorics': 'Combinatorics',
+        'computation': 'Theory of Computation',
+        'logic': 'Logic & Formal Methods',
+        'algebraic-topology': 'Algebraic Topology',
+        'category-theory': 'Category Theory',
+        'cryptography': 'Cryptography',
+        'ml-foundations': 'ML Foundations',
+        'deep-learning': 'Deep Learning',
+        'generative-models': 'Generative Models',
+        'security': 'Security'
+    };
+
+    var SECTION_ORDER = ['I', 'II', 'III', 'IV', 'V'];
+    var DATA_URLS = ['../data/curriculum.json', '/data/curriculum.json'];
+
+    function groupTitle(slug) {
+        if (GROUP_TITLES[slug]) return GROUP_TITLES[slug];
+        if (!slug) return 'Other';
+        return slug.split('-').map(function (w) {
+            return w.charAt(0).toUpperCase() + w.slice(1);
+        }).join(' ');
+    }
+
+    function pageNumber(id) {
+        var m = /-(\d+)$/.exec(id || '');
+        return m ? m[1] : '';
+    }
+
+    function fetchFirst(urls) {
+        if (!urls.length) return Promise.reject(new Error('curriculum.json not found'));
+        return fetch(urls[0], { credentials: 'same-origin' }).then(function (r) {
+            if (!r.ok) throw new Error(r.status);
+            return r.json();
+        }).catch(function () { return fetchFirst(urls.slice(1)); });
+    }
+
+    function el(tag, cls, text) {
+        var e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text !== undefined) e.textContent = text;
+        return e;
+    }
+
+    function render(data) {
+        var root = document.getElementById('atlas-root');
+        var total = 0;
+
+        SECTION_ORDER.forEach(function (key) {
+            var sec = data.sections && data.sections[key];
+            if (!sec || !sec.parts || !sec.parts.length) return;
+
+            var secEl = el('section', 'atlas-section');
+            secEl.dataset.count = sec.parts.length;
+
+            var head = el('div', 'section-head');
+            var chip = el('span', 'section-chip');
+            chip.style.background = (data.sectionColors && data.sectionColors[key]) || '#888';
+            head.appendChild(chip);
+            head.appendChild(el('h2', null, key + ' — ' + sec.title));
+            head.appendChild(el('span', 'count', String(sec.parts.length)));
+            secEl.appendChild(head);
+
+            /* group in first-appearance order (curriculum order is authoritative) */
+            var order = [];
+            var byGroup = {};
+            sec.parts.forEach(function (p) {
+                var g = p.topicGroup || 'other';
+                if (!byGroup[g]) { byGroup[g] = []; order.push(g); }
+                byGroup[g].push(p);
+            });
+
+            order.forEach(function (g) {
+                var block = el('div', 'group-block');
+                var h3 = el('h3', null, groupTitle(g) + ' ');
+                h3.appendChild(el('span', 'count', '(' + byGroup[g].length + ')'));
+                block.appendChild(h3);
+
+                var ol = el('ol', 'page-list');
+                byGroup[g].forEach(function (p) {
+                    total += 1;
+                    var li = el('li');
+                    var a = el('a');
+                    a.href = '../' + (sec.baseUrl || '') + (p.url || '');
+                    a.appendChild(el('span', 'page-num', pageNumber(p.id) + '.'));
+                    a.appendChild(el('span', 'page-title', p.title || p.id));
+                    a.appendChild(el('span', 'page-id', p.id));
+                    /* filter haystack */
+                    li.dataset.haystack = [p.title, p.id, groupTitle(g), g, sec.title, key]
+                        .join(' ').toLowerCase();
+                    li.appendChild(a);
+                    ol.appendChild(li);
+                });
+                block.appendChild(ol);
+                secEl.appendChild(block);
+            });
+
+            root.appendChild(secEl);
+        });
+
+        var countEl = document.getElementById('atlas-count');
+        countEl.textContent = total + ' pages';
+
+        /* --- filtering --- */
+        var input = document.getElementById('atlas-filter');
+        input.addEventListener('input', function () {
+            var q = input.value.trim().toLowerCase();
+            var shown = 0;
+            root.querySelectorAll('section.atlas-section').forEach(function (secEl) {
+                var secShown = 0;
+                secEl.querySelectorAll('.group-block').forEach(function (block) {
+                    var gShown = 0;
+                    block.querySelectorAll('li').forEach(function (li) {
+                        var hit = !q || li.dataset.haystack.indexOf(q) !== -1;
+                        li.classList.toggle('hidden', !hit);
+                        if (hit) gShown += 1;
+                    });
+                    block.classList.toggle('hidden', gShown === 0);
+                    secShown += gShown;
+                });
+                secEl.classList.toggle('hidden', secShown === 0);
+                shown += secShown;
+            });
+            countEl.textContent = q ? (shown + ' / ' + total + ' pages') : (total + ' pages');
+        });
+    }
+
+    fetchFirst(DATA_URLS).then(render).catch(function (err) {
+        var root = document.getElementById('atlas-root');
+        root.appendChild(el('p', 'load-error',
+            'Could not load curriculum data (' + err.message + ').'));
+    });
+})();
+</script>
+</body>
+</html>
