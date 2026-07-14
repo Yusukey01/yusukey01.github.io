@@ -1,6 +1,9 @@
 // main.js - Main website functionality
 // v2.1: single menu-toggle listener (accidental scroll-tap fix),
 //       throw-proof anchor scrolling, passive scroll listener.
+// v2.2: removed the legacy body.dark-mode block — no page contains
+//       #dark-mode-toggle; theming is handled by theme-switcher.js
+//       via html[data-theme].
 
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -74,24 +77,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
-    // Implement dark mode toggle if present
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', function() {
-            document.body.classList.toggle('dark-mode');
-            
-            // Save preference to localStorage
-            const isDarkMode = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDarkMode);
-        });
-        
-        // Check for saved user preference
-        const savedDarkMode = localStorage.getItem('darkMode');
-        if (savedDarkMode === 'true') {
-            document.body.classList.add('dark-mode');
-        }
-    }
     
     // Handle card hover effects
     const cards = document.querySelectorAll('.card:not(.card-disabled)');
