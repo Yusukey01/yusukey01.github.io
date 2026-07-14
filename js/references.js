@@ -1,5 +1,10 @@
 /* ══════════════════════════════════════════════════════════
- * references.js — Renders the References section from JSON
+ * references.js — Renders the References section from JSON  (v1.1)
+ * v1.1: "By Section" view now CLONES items, so a reference tagged with
+ *       several sections appears under each of them (previously
+ *       appendChild MOVED the node, leaving it only under its last
+ *       section); filtering operates on the live list so it works in
+ *       both views; empty group headings are skipped.
  * Depends on: data/references.json
  * Container:  <div id="references-content"></div>
  * ══════════════════════════════════════════════════════════ */
@@ -50,10 +55,14 @@
         const bookHeading   = groupHeading('<i class="fas fa-book"></i> Books');
         const courseHeading  = groupHeading('<i class="fas fa-graduation-cap"></i> Online Courses');
 
-        refList.appendChild(bookHeading);
-        bookEls.forEach(e => refList.appendChild(e));
-        refList.appendChild(courseHeading);
-        courseEls.forEach(e => refList.appendChild(e));
+        if (bookEls.length) {
+            refList.appendChild(bookHeading);
+            bookEls.forEach(e => refList.appendChild(e));
+        }
+        if (courseEls.length) {
+            refList.appendChild(courseHeading);
+            courseEls.forEach(e => refList.appendChild(e));
+        }
 
         CONTAINER.appendChild(controls);
         CONTAINER.appendChild(refList);
@@ -64,12 +73,16 @@
 
         /* ── Filter logic ── */
         function applyFilter(f) {
-            allItems.forEach(item => {
+            refList.querySelectorAll('.ref-item').forEach(item => {
                 if (f === 'all') {
                     item.classList.remove('ref-hidden');
                 } else {
                     const secs = item.dataset.sections.split(',');
-                    item.classList.toggle('ref-hidden', !secs.includes(f));
+                    /* in the section view, also hide clones hosted under a
+                       non-matching section group, so filtering shows exactly
+                       that section's group */
+                    const hostOk = !item.dataset.inSection || item.dataset.inSection === f;
+                    item.classList.toggle('ref-hidden', !secs.includes(f) || !hostOk);
                 }
             });
             /* Hide headings whose items are all hidden */
@@ -107,6 +120,10 @@
                 refList.querySelectorAll('.ref-section-heading').forEach(e => e.remove());
 
                 if (btn.dataset.view === 'alpha') {
+                    /* clear the list first: the section view is made of
+                       clones, which re-appending the originals would not
+                       remove */
+                    while (refList.firstChild) refList.removeChild(refList.firstChild);
                     alphaOrder.forEach(e => refList.appendChild(e));
                 } else {
                     while (refList.firstChild) refList.removeChild(refList.firstChild);
@@ -120,7 +137,13 @@
                         h.innerHTML = '<span class="ref-section-dot" style="background:' +
                             sectionColors[s] + '"></span> Section ' + s + ' — ' + sectionNames[s];
                         refList.appendChild(h);
-                        matching.forEach(item => refList.appendChild(item));
+                        // Clones, not the originals: a reference tagged with
+                        // several sections must appear under each of them.
+                        matching.forEach(item => {
+                            const clone = item.cloneNode(true);
+                            clone.dataset.inSection = s;
+                            refList.appendChild(clone);
+                        });
                     });
                 }
 

@@ -1,4 +1,6 @@
 // main.js - Main website functionality
+// v2.1: single menu-toggle listener (accidental scroll-tap fix),
+//       throw-proof anchor scrolling, passive scroll listener.
 
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -7,28 +9,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelector('.nav-links');
 
     if (menuToggle && navLinks) {
-        // Replace addEventListener with direct property assignment
-        menuToggle.onclick = function(e) {
+        // Single click listener. (v2.1: the previous onclick/ontouchend pair
+        // is replaced — touchend fires even when a scroll gesture ends on the
+        // button, toggling the menu by accident, and modern mobile browsers
+        // deliver a normal click with no delay, so one listener suffices.)
+        menuToggle.addEventListener('click', function(e) {
             e.preventDefault();
-            // Explicit toggle instead of using classList.toggle
-            if (navLinks.classList.contains('active')) {
-                navLinks.classList.remove('active');
-            } else {
-                navLinks.classList.add('active');
-            }
-            return false; // Prevent event bubbling
-        };
-        
-        // Add direct touch handler for mobile devices
-        menuToggle.ontouchend = function(e) {
-            e.preventDefault();
-            if (navLinks.classList.contains('active')) {
-                navLinks.classList.remove('active');
-            } else {
-                navLinks.classList.add('active');
-            }
-            return false;
-        };
+            navLinks.classList.toggle('active');
+        });
         
         // Close menu when clicking on links 
         const mobileNavLinks = document.querySelectorAll('.nav-links a');
@@ -59,9 +47,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('a[href^="#"]:not(.ref-link)').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
-            if (href !== '#' && document.querySelector(href)) {
+            // getElementById never throws, unlike querySelector on ids that
+            // are not valid CSS selectors
+            const target = href && href.length > 1 ? document.getElementById(href.slice(1)) : null;
+            if (target) {
                 e.preventDefault();
-                document.querySelector(href).scrollIntoView({
+                target.scrollIntoView({
                     behavior: 'smooth'
                 });
             }
@@ -172,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 goTopButton.style.display = 'none';
             }
-        });
+        }, { passive: true });
         
         // When the user clicks on the button, scroll to the top of the document
         goTopButton.addEventListener('click', function() {
