@@ -8,6 +8,18 @@
  *
  * Dependencies: none (vanilla ES6).
  * Data source:  /data/previews.json (built by build_previews.js).
+ *
+ * v1.1:
+ *  - Links INSIDE preview boxes are now resolved against the preview's
+ *    SOURCE page (previously they kept hrefs relative to the source and
+ *    broke when the preview was viewed from a different directory);
+ *    ref-links inside previews also open nested previews.
+ *  - Ctrl/Cmd/Shift/Alt+click on a ref-link bypasses the preview and
+ *    lets the browser do its native open-in-new-tab behavior.
+ *  - If previews.json fails to load, same-page ref-links degrade to a
+ *    smooth scroll instead of a dead click.
+ *  - Sidenote stacking sorts by vertical position; sidenotes are
+ *    dismissed on window resize (their anchor positions go stale).
  */
 (function () {
     'use strict';
@@ -69,6 +81,7 @@
         const content = document.createElement('div');
         content.className = 'ref-preview-content';
         content.innerHTML = html;
+        resolveInnerLinks(content, source);
         container.appendChild(content);
 
         // Footer with source link
@@ -100,6 +113,35 @@
         return container;
     }
 
+    /**
+     * Preview HTML is captured verbatim from its SOURCE page, so any
+     * relative hrefs inside it are relative to the source page's
+     * directory — not to the page the preview is being viewed on.
+     * Rewrite them against the source path (site pages live under
+     * /Mathematics/<Section>/), and give inner ref-links the preview
+     * behavior so they open nested previews.
+     */
+    function resolveInnerLinks(content, source) {
+        const anchors = content.querySelectorAll('a[href]');
+        if (anchors.length === 0) return;
+        const base = source
+            ? window.location.origin + '/Mathematics/' + source
+            : null;
+        anchors.forEach(function (a) {
+            const href = a.getAttribute('href');
+            const isAbsolute = /^(https?:)?\/\//.test(href) || href.charAt(0) === '/';
+            if (base && !isAbsolute) {
+                try {
+                    const u = new URL(href, base);
+                    a.setAttribute('href', u.pathname + u.search + u.hash);
+                } catch (err) { /* leave href as-is */ }
+            }
+            if (a.classList.contains('ref-link')) {
+                a.addEventListener('click', handleRefClick);
+            }
+        });
+    }
+
     /* ── Desktop: Sidenotes ────────────────────────────────── */
 
     /**
@@ -121,7 +163,7 @@
     function hasRoomForSidenote() {
         const left = getSidenoteLeft();
         if (left === null) return false;
-        // Need at least 300px for the sidenote
+        // Need at least 280px for the sidenote
         return (window.innerWidth - left) >= 280;
     }
 
@@ -141,8 +183,12 @@
         const scrollY  = window.scrollY || document.documentElement.scrollTop;
         let topPos     = linkRect.top + scrollY;
 
-        // Avoid overlapping existing sidenotes
-        for (const sn of sidenotes) {
+        // Avoid overlapping existing sidenotes (sorted by vertical
+        // position so the single pass is correct for 3+ notes)
+        const ordered = [...sidenotes].sort(function (a, b) {
+            return a.getBoundingClientRect().top - b.getBoundingClientRect().top;
+        });
+        for (const sn of ordered) {
             const snRect = sn.getBoundingClientRect();
             const snTop  = snRect.top + scrollY;
             const snBottom = snTop + snRect.height;
@@ -196,6 +242,15 @@
             return;
         }
 
+        // Determine the insertion point BEFORE closing the current
+        // preview: if the clicked ref-link lives INSIDE the open preview
+        // (a nested reference), its own ancestors are about to be removed
+        // from the document, so we reuse the open preview's slot instead.
+        let anchorEl = link.closest('p') || link.parentElement;
+        if (activeInline && activeInline.contains(link)) {
+            anchorEl = activeInline.previousElementSibling || anchorEl;
+        }
+
         // Close any other open inline preview first
         if (activeInline) {
             collapseInline(activeInline, true);  // immediate
@@ -204,8 +259,7 @@
         const el = buildPreview(id, html, source, origHref, 'inline');
 
         // Insert after the containing <p> (or after link's parentElement if no <p>)
-        const parentP = link.closest('p') || link.parentElement;
-        parentP.insertAdjacentElement('afterend', el);
+        anchorEl.insertAdjacentElement('afterend', el);
 
         // Set initial collapsed state
         el.style.maxHeight = '0px';
@@ -292,6 +346,12 @@
     /* ── Click handler ─────────────────────────────────────── */
 
     function handleRefClick(e) {
+        // Modified clicks (new tab / new window) keep their native
+        // browser behavior — never intercept them.
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) {
+            return;
+        }
+
         const link = e.currentTarget;
         e.preventDefault();
         e.stopPropagation();
@@ -311,7 +371,18 @@
         const isSamePage = (parsed.page === '');
 
         ensureData().then(function (data) {
-            if (!data || !data[parsed.id]) {
+            if (!data) {
+                // previews.json could not be loaded at all — degrade to
+                // native behavior instead of a dead click.
+                if (isSamePage) {
+                    const target = document.getElementById(parsed.id);
+                    if (target) target.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    window.location.href = rawHref;
+                }
+                return;
+            }
+            if (!data[parsed.id]) {
                 // No preview available.
                 if (isSamePage) {
                     // Same-page target without preview data: do nothing
@@ -375,15 +446,27 @@
         document.addEventListener('click', dismissOnOutsideClick);
         document.addEventListener('keydown', dismissOnEscape);
 
+        // Sidenote positions are computed against the container's edge,
+        // which moves on resize — dismiss rather than float wrongly.
+        let resizeTimer = null;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () {
+                if (sidenotes.length) removeAllSidenotes();
+            }, 150);
+        });
+
         // Prefetch data on first hover of any ref-link (eager but non-blocking)
         let prefetched = false;
         links.forEach(function (link) {
-            link.addEventListener('mouseenter', function () {
+            const prefetch = function () {
                 if (!prefetched) {
                     prefetched = true;
                     ensureData();
                 }
-            }, { once: true });
+            };
+            link.addEventListener('mouseenter', prefetch, { once: true });
+            link.addEventListener('touchstart', prefetch, { once: true, passive: true });
         });
     }
 
