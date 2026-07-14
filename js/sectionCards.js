@@ -1,11 +1,43 @@
 /**
  * MATH-CS COMPASS: Section Card Generator
  * @author Yusuke Yokota
- * @version 1.1.0 
- * 
+ * @version 2.0.0
+ *
  * Generates topic cards dynamically from centralized curriculum.json data.
  * This ensures consistency between section pages and the compass map.
- * 
+ *
+ * v2.0.0 — compact grouped redesign:
+ *  - Cards are grouped under topicGroup headings (titles come from
+ *    curriculum.json "topicGroupTitles"; Title Case fallback for
+ *    unknown slugs).
+ *  - The WHOLE card is a link (previously only the title was clickable).
+ *  - Keywords render as one muted, comma-separated line (CSS-clamped);
+ *    the "+N more" tooltip interaction is gone — it conflicted with the
+ *    card-level link and hid information behind a hover.
+ *  - Each card carries id="{part.id}" so section pages support deep
+ *    links like linear_algebra.html#linalg-7.
+ *  - Badges render as compact pills (Demo / Code).
+ *  - Section accent color is exposed as --tcard-accent on the container
+ *    (value from curriculum.json sectionColors).
+ *
+ * Markup produced (new class names — the legacy .card styles used on the
+ * homepage are untouched):
+ *   <div class="tcard-group">
+ *     <h3 class="tcard-group-title"><span class="tcard-group-dot"></span>
+ *         Group Name <span class="tcard-group-count">(N)</span></h3>
+ *     <div class="tcard-grid">
+ *       <a class="tcard" href="..." id="linalg-7">
+ *         <div class="tcard-top">
+ *           <span class="tcard-icon">∇</span>
+ *           <span class="tcard-num">Part 7</span>
+ *           <span class="tcard-badge">Demo</span>
+ *         </div>
+ *         <h4 class="tcard-title">Orthogonality</h4>
+ *         <p class="tcard-keywords">Inner product, Orthogonality, ...</p>
+ *       </a>
+ *       ...
+ *     </div>
+ *   </div>
  */
 
 const SectionCards = (function() {
@@ -13,8 +45,12 @@ const SectionCards = (function() {
 
     // Configuration
     const CONFIG = {
-        dataPath: '/data/curriculum.json',
-        maxKeywords: 4 // Maximum keywords to display per card
+        dataPath: '/data/curriculum.json'
+    };
+
+    const BADGE_LABELS = {
+        'interactive': 'Demo',
+        'code': 'Code'
     };
 
     let curriculumData = null;
@@ -30,11 +66,24 @@ const SectionCards = (function() {
     }
 
     /**
+     * Display title for a topicGroup slug: curriculum.json
+     * "topicGroupTitles" first, Title Case fallback.
+     */
+    function groupTitle(slug, data) {
+        const map = (data && data.topicGroupTitles) || {};
+        if (map[slug]) return map[slug];
+        if (!slug) return 'Other';
+        return slug.split('-')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ');
+    }
+
+    /**
      * Fetch and cache the curriculum data
      */
     async function loadData() {
         if (curriculumData) return curriculumData;
-        
+
         try {
             const response = await fetch(CONFIG.dataPath);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -48,84 +97,60 @@ const SectionCards = (function() {
     }
 
     /**
-     * Create a single card element
-     * @param {Object} part - The part data from curriculum.json
-     * @param {string} baseUrl - The base URL for this section
-     * @returns {HTMLElement} The card element
+     * Create a single card element (an <a> — the whole card is the link).
      */
-    function createCard(part, baseUrl) {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.setAttribute('data-part-id', part.id);
-
-        // Card icon
-        const iconDiv = document.createElement('div');
-        iconDiv.className = 'card-icon';
-        iconDiv.textContent = part.icon;
-        card.appendChild(iconDiv);
-
-        // Card title with link
-        const titleH3 = document.createElement('h3');
-        const titleLink = document.createElement('a');
-
-        titleLink.href = part.url;
-        titleLink.textContent = `Part ${partNumberFromId(part.id)}: ${part.title}`;
-        titleH3.appendChild(titleLink);
-        card.appendChild(titleH3);
-
-        if (part.badges && part.badges.length > 0) {
-            const badgesDiv = document.createElement('div');
-            badgesDiv.className = 'card-badges';
-            
-            part.badges.forEach(badge => {
-                const badgeSpan = document.createElement('span');
-                badgeSpan.className = `card-badge card-badge-${badge}`;
-                
-                // Add icon and text
-                if (badge === 'code') {
-                    badgeSpan.innerHTML = '<i class="fas fa-code"></i> Code Included';
-                } else if (badge === 'interactive') {
-                    badgeSpan.innerHTML = '<i class="fas fa-hand-pointer"></i> Interactive Demo';
-                } else {
-                    badgeSpan.textContent = badge;
-                }
-                badgesDiv.appendChild(badgeSpan);
-            });
-            
-            card.appendChild(badgesDiv);
+    function createCard(part) {
+        const card = document.createElement('a');
+        card.className = 'tcard';
+        card.href = part.url;
+        if (part.id) {
+            card.id = part.id;                 // deep-link anchor
+            card.setAttribute('data-part-id', part.id);
         }
 
-        // Keywords (limited to maxKeywords)
-        if (part.keywords && part.keywords.length > 0) {
-            const keywordsDiv = document.createElement('div');
-            keywordsDiv.className = 'keywords';
-            
-            const displayKeywords = part.keywords.slice(0, CONFIG.maxKeywords);
-            const remainingCount = part.keywords.length - CONFIG.maxKeywords;
-            
-            displayKeywords.forEach(keyword => {
-                const span = document.createElement('span');
-                span.textContent = keyword;
-                keywordsDiv.appendChild(span);
-            });
+        // Top row: icon + part number + badges
+        const top = document.createElement('div');
+        top.className = 'tcard-top';
 
-            // Show "+N more" if there are more keywords
-            if (remainingCount > 0) {
-                const moreSpan = document.createElement('span');
-                moreSpan.className = 'keywords-more';
-                moreSpan.textContent = `+${remainingCount} more`;
-                moreSpan.setAttribute('data-tooltip', part.keywords.slice(CONFIG.maxKeywords).join(', '));
-                keywordsDiv.appendChild(moreSpan);
-            }
-            
-            card.appendChild(keywordsDiv);
+        const icon = document.createElement('span');
+        icon.className = 'tcard-icon';
+        icon.textContent = part.icon || '';
+        top.appendChild(icon);
+
+        const num = document.createElement('span');
+        num.className = 'tcard-num';
+        num.textContent = 'Part ' + partNumberFromId(part.id);
+        top.appendChild(num);
+
+        (part.badges || []).forEach(badge => {
+            const b = document.createElement('span');
+            b.className = `tcard-badge tcard-badge-${badge}`;
+            b.textContent = BADGE_LABELS[badge] || badge;
+            top.appendChild(b);
+        });
+
+        card.appendChild(top);
+
+        // Title
+        const title = document.createElement('h4');
+        title.className = 'tcard-title';
+        title.textContent = part.title || part.id;
+        card.appendChild(title);
+
+        // Keywords: full list, one muted line, clamped by CSS
+        if (part.keywords && part.keywords.length > 0) {
+            const kw = document.createElement('p');
+            kw.className = 'tcard-keywords';
+            kw.textContent = part.keywords.join(', ');
+            kw.title = part.keywords.join(', ');   // full list on hover
+            card.appendChild(kw);
         }
 
         return card;
     }
 
     /**
-     * Render all cards for a section
+     * Render all cards for a section, grouped by topicGroup
      * @param {string} sectionId - The section identifier (I, II, III, IV, V)
      * @param {string} containerId - The container element ID (default: 'topic-cards-container')
      */
@@ -145,32 +170,63 @@ const SectionCards = (function() {
         const container = document.getElementById(containerId);
         if (!container) {
             console.error(`SectionCards: Container "#${containerId}" not found in DOM`);
-            console.error('SectionCards: Make sure the container element exists before calling init()');
             return;
         }
+
+        // Section accent color for hover glows etc.
+        const accent = (data.sectionColors && data.sectionColors[sectionId]) || '#3498db';
+        container.style.setProperty('--tcard-accent', accent);
 
         // Clear existing content
         container.innerHTML = '';
 
-        // Create cards container
-        const cardsDiv = document.createElement('div');
-        cardsDiv.className = 'topic-cards';
-
-        // Generate cards for each part
+        // Group parts by topicGroup in curriculum (first-appearance) order
+        const order = [];
+        const byGroup = {};
         section.parts.forEach(part => {
-            const card = createCard(part, section.baseUrl);
-            cardsDiv.appendChild(card);
+            const g = part.topicGroup || 'other';
+            if (!byGroup[g]) { byGroup[g] = []; order.push(g); }
+            byGroup[g].push(part);
         });
 
-        container.appendChild(cardsDiv);
-        
-        console.log(`SectionCards: Rendered ${section.parts.length} cards for Section ${sectionId}`);
+        order.forEach(g => {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'tcard-group';
+
+            const h = document.createElement('h3');
+            h.className = 'tcard-group-title';
+            const dot = document.createElement('span');
+            dot.className = 'tcard-group-dot';
+            h.appendChild(dot);
+            h.appendChild(document.createTextNode(groupTitle(g, data) + ' '));
+            const count = document.createElement('span');
+            count.className = 'tcard-group-count';
+            count.textContent = '(' + byGroup[g].length + ')';
+            h.appendChild(count);
+            groupDiv.appendChild(h);
+
+            const grid = document.createElement('div');
+            grid.className = 'tcard-grid';
+            byGroup[g].forEach(part => grid.appendChild(createCard(part)));
+            groupDiv.appendChild(grid);
+
+            container.appendChild(groupDiv);
+        });
+
+        console.log(`SectionCards: Rendered ${section.parts.length} cards in ${order.length} groups for Section ${sectionId}`);
+
+        // If the URL carries a deep link to a part id, scroll to it.
+        if (location.hash) {
+            const target = document.getElementById(location.hash.slice(1));
+            if (target && target.classList.contains('tcard')) {
+                target.scrollIntoView({ block: 'center' });
+                target.classList.add('tcard-highlight');
+            }
+        }
     }
 
     /**
      * Get section data (for use in other scripts)
-     * @param {string} sectionId - The section identifier
-     * @returns {Object|null} Section data or null
      */
     async function getSectionData(sectionId) {
         const data = await loadData();
@@ -179,23 +235,17 @@ const SectionCards = (function() {
 
     /**
      * Get all parts across all sections (for compass map)
-     * @returns {Array} Array of all parts with section info
      */
     async function getAllParts() {
         const data = await loadData();
         if (!data) return [];
 
         const allParts = [];
-        
-        // Add home node
+
         if (data.homeNode) {
-            allParts.push({
-                ...data.homeNode,
-                section: 'HOME'
-            });
+            allParts.push({ ...data.homeNode, section: 'HOME' });
         }
 
-        // Add all parts from all sections
         Object.entries(data.sections).forEach(([sectionId, section]) => {
             section.parts.forEach(part => {
                 allParts.push({
@@ -211,7 +261,6 @@ const SectionCards = (function() {
 
     /**
      * Get the curriculum data (for compass map)
-     * @returns {Object|null} Full curriculum data
      */
     async function getCurriculumData() {
         return await loadData();
@@ -219,20 +268,15 @@ const SectionCards = (function() {
 
     /**
      * Initialize the section cards
-     * @param {string} sectionId - The section identifier (I, II, III, IV, V)
-     * @param {Object} options - Optional configuration overrides
      */
     function init(sectionId, options = {}) {
-        // Merge options
         Object.assign(CONFIG, options);
 
-        // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 renderSection(sectionId, options.containerId);
             });
         } else {
-            // DOM is already ready, render immediately
             renderSection(sectionId, options.containerId);
         }
     }

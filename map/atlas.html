@@ -219,9 +219,9 @@
 (function () {
     'use strict';
 
-    /* Display names for topicGroup slugs.
-       NOTE: keep in sync with build_atlas.js (and with SectionCards, if it
-       carries its own mapping). Unknown slugs fall back to Title Case. */
+    /* Fallback display names for topicGroup slugs. The primary source
+       is curriculum.json "topicGroupTitles" (read at render time); this
+       map only covers older curriculum.json files without that key. */
     var GROUP_TITLES = {
         'la-core': 'Core Linear Algebra',
         'matrix-analysis': 'Matrix Analysis',
@@ -274,7 +274,10 @@
 
     /* ---------- helpers ---------- */
 
+    var DATA_GROUP_TITLES = null;  // from curriculum.json topicGroupTitles
+
     function groupTitle(slug) {
+        if (DATA_GROUP_TITLES && DATA_GROUP_TITLES[slug]) return DATA_GROUP_TITLES[slug];
         if (GROUP_TITLES[slug]) return GROUP_TITLES[slug];
         if (!slug) return 'Other';
         return slug.split('-').map(function (w) {
@@ -345,6 +348,7 @@
     var total = 0;
 
     function render(data) {
+        DATA_GROUP_TITLES = data.topicGroupTitles || null;
         var root = document.getElementById('atlas-root');
         var badgeCounts = {};
         var newCount = 0;

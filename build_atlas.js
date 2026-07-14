@@ -7,7 +7,9 @@
  *
  * Defaults: data/curriculum.json -> SITE_ATLAS.md
  *
- * NOTE: GROUP_TITLES must be kept in sync with map/atlas.html.
+ * Group display names come from curriculum.json "topicGroupTitles"
+ * (single source of truth); the GROUP_TITLES map below is only a
+ * fallback for older curriculum.json files.
  */
 'use strict';
 
@@ -62,7 +64,10 @@ const GROUP_TITLES = {
 
 const SECTION_ORDER = ['I', 'II', 'III', 'IV', 'V'];
 
+let DATA_GROUP_TITLES = null;  // populated from curriculum.json topicGroupTitles
+
 function groupTitle(slug) {
+  if (DATA_GROUP_TITLES && DATA_GROUP_TITLES[slug]) return DATA_GROUP_TITLES[slug];
   if (GROUP_TITLES[slug]) return GROUP_TITLES[slug];
   if (!slug) return 'Other';
   return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -78,6 +83,7 @@ function main() {
   const outPath = process.argv[3] || 'SITE_ATLAS.md';
 
   const data = JSON.parse(fs.readFileSync(inPath, 'utf8'));
+  DATA_GROUP_TITLES = data.topicGroupTitles || null;
   const lines = [];
   let total = 0;
 
