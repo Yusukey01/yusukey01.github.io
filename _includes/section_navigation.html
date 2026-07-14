@@ -1,6 +1,16 @@
 {% comment %}
-  Section Navigation - Loads curriculum.json via JavaScript
+  Section Navigation v2 - Loads curriculum.json via JavaScript
   (Because data files are in /data/ not /_data/)
+
+  v2:
+   - Links are grouped under topicGroup headings (titles from
+     curriculum.json "topicGroupTitles"; Title Case fallback).
+   - Incremental filter box (matches title, id, group, keywords -
+     same haystack as the Atlas).
+   - Prev / Next links in curriculum order (detail pages).
+   - Current page is highlighted and scrolled into view on open.
+   - Footer links to the Knowledge Map and the Atlas pre-filtered
+     to this section (atlas.html#s=<key>).
 {% endcomment %}
 
 <div class="quick-jump-container">
@@ -9,8 +19,15 @@
     </button>
     <div id="quick-jump-menu" class="quick-jump-menu">
       <h3 id="nav-section-heading">Loading...</h3>
+      <div id="qj-prevnext" class="qj-prevnext"></div>
+      <input type="search" id="qj-filter" class="qj-filter"
+             placeholder="Filter pages or concepts&hellip;" autocomplete="off">
       <div class="quick-jump-links" id="nav-links-container">
         <!-- Links will be populated by JavaScript -->
+      </div>
+      <div class="qj-tools">
+        <a href="/map/compass.html"><i class="fas fa-compass"></i> Knowledge Map</a>
+        <a id="qj-atlas-link" href="/map/atlas.html"><i class="fas fa-list-ul"></i> Atlas</a>
       </div>
     </div>
 </div>
@@ -21,7 +38,7 @@
   const path = window.location.pathname;
   let sectionKey = null;
   let overviewFile = null;
-  
+
   if (path.includes('Linear_algebra')) {
     sectionKey = 'I';
     overviewFile = 'linear_algebra.html';
@@ -38,16 +55,24 @@
     sectionKey = 'V';
     overviewFile = 'ml.html';
   }
-  
+
   if (!sectionKey) {
     // Not in a section page, hide navigation
     document.querySelector('.quick-jump-container').style.display = 'none';
     return;
   }
-  
+
   // Check if this is a detail page (has level: detail in front matter)
   const isDetailPage = '{{ page.level }}' === 'detail';
-  
+  const currentFile = path.split('/').pop();
+
+  function groupTitle(slug, data) {
+    const map = (data && data.topicGroupTitles) || {};
+    if (map[slug]) return map[slug];
+    if (!slug) return 'Other';
+    return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
   // Load curriculum data
   fetch('/data/curriculum.json')
     .then(response => response.json())
@@ -57,45 +82,89 @@
         console.error('Section not found:', sectionKey);
         return;
       }
-      
+
       // Update section title
-      document.getElementById('nav-section-title').innerHTML = 
+      document.getElementById('nav-section-title').innerHTML =
         'Section ' + sectionKey + ' Navigation';
       document.getElementById('nav-section-heading').textContent = section.title;
-      
-      // Build navigation links
-      const container = document.getElementById('nav-links-container');
-      let html = '';
-      
-      // Add back link for detail pages
-      if (isDetailPage) {
-        html += '<a href="' + overviewFile + '">← Back to Section ' + sectionKey + ' Overview</a>';
-        html += '<hr style="margin: 8px 0; border: 1px solid #ddd;">';
+
+      // Atlas link pre-filtered to this section
+      document.getElementById('qj-atlas-link').href = '/map/atlas.html#s=' + sectionKey;
+
+      const partHref = part => isDetailPage
+        ? part.url
+        : '../' + section.baseUrl.split('/')[1] + '/' + part.url;
+
+      // --- Prev / Next (curriculum order; detail pages only) ---
+      const idx = section.parts.findIndex(p => p.url === currentFile);
+      const pn = document.getElementById('qj-prevnext');
+      if (isDetailPage && idx !== -1) {
+        const mk = (part, label, cls) => part
+          ? '<a class="' + cls + '" href="' + partHref(part) + '" title="' +
+            (part.title || '').replace(/"/g, '&quot;') + '">' + label + '</a>'
+          : '<span class="' + cls + ' qj-disabled">' + label + '</span>';
+        pn.innerHTML =
+          mk(section.parts[idx - 1], '&larr; Prev', 'qj-prev') +
+          '<a class="qj-up" href="' + overviewFile + '">Overview</a>' +
+          mk(section.parts[idx + 1], 'Next &rarr;', 'qj-next');
+      } else {
+        pn.style.display = 'none';
       }
-      
-      // Add part links
+
+      // --- Grouped link list ---
+      const container = document.getElementById('nav-links-container');
+      const order = [];
+      const byGroup = {};
       section.parts.forEach(part => {
-        let partUrl;
-        if (isDetailPage) {
-          partUrl = part.url;
-        } else {
-          // For overview pages, construct relative path
-          const folderName = section.baseUrl.split('/')[1];
-          partUrl = '../' + folderName + '/' + part.url;
-        }
-        
-        // Check if current page (exact filename match — substring
-        // matching highlighted e.g. 'integration.html' on
-        // 'integration_measure.html' too)
-        const isCurrent = path.split('/').pop() === part.url;
-        
-        html += '<a href="' + partUrl + '"' + (isCurrent ? ' class="current-page"' : '') + '>';
-        const partNum = (/(\d+)$/.exec(part.id) || [])[1] || '';
-        html += 'Part ' + partNum + ': ' + part.title;
-        html += '</a>';
+        const g = part.topicGroup || 'other';
+        if (!byGroup[g]) { byGroup[g] = []; order.push(g); }
+        byGroup[g].push(part);
       });
-      
+
+      let html = '';
+      order.forEach(g => {
+        html += '<div class="qj-group">';
+        html += '<div class="qj-group-head">' + groupTitle(g, curriculum) +
+                ' <span class="qj-group-n">(' + byGroup[g].length + ')</span></div>';
+        byGroup[g].forEach(part => {
+          const partNum = (/(\d+)$/.exec(part.id) || [])[1] || '';
+          const isCurrent = part.url === currentFile;
+          const hay = [part.title, part.id, g, groupTitle(g, curriculum)]
+            .concat(part.keywords || []).join(' ').toLowerCase();
+          html += '<a href="' + partHref(part) + '"' +
+                  (isCurrent ? ' class="current-page"' : '') +
+                  ' data-hay="' + hay.replace(/"/g, '&quot;') + '">' +
+                  partNum + '. ' + part.title + '</a>';
+        });
+        html += '</div>';
+      });
       container.innerHTML = html;
+
+      // --- Filter ---
+      const filter = document.getElementById('qj-filter');
+      filter.addEventListener('input', function () {
+        const q = filter.value.trim().toLowerCase();
+        container.querySelectorAll('.qj-group').forEach(group => {
+          let shown = 0;
+          group.querySelectorAll('a').forEach(a => {
+            const hit = !q || a.getAttribute('data-hay').indexOf(q) !== -1;
+            a.style.display = hit ? '' : 'none';
+            if (hit) shown++;
+          });
+          group.style.display = shown ? '' : 'none';
+        });
+      });
+
+      // --- Scroll current page into view when the menu opens ---
+      const toggle = document.getElementById('quick-jump-toggle');
+      toggle.addEventListener('click', function () {
+        const cur = container.querySelector('a.current-page');
+        if (cur) {
+          requestAnimationFrame(() => {
+            cur.scrollIntoView({ block: 'center' });
+          });
+        }
+      });
     })
     .catch(error => {
       console.error('Failed to load curriculum:', error);
