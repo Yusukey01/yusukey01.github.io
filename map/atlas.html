@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math-CS Compass | Site Atlas</title>
-    <meta name="description" content="A complete linear index of every page on MATH-CS COMPASS, organized by section and topic group.">
+    <meta name="description" content="A complete linear index of every page on MATH-CS COMPASS, organized by section and topic group, searchable by concept keywords.">
     <style>
         :root {
             --bg-color: #0b0e14;
@@ -13,6 +13,8 @@
             --glass-bg: rgba(15, 20, 30, 0.7);
             --glass-border: rgba(255, 255, 255, 0.1);
             --row-hover: rgba(255, 255, 255, 0.06);
+            --kw-bg: rgba(100, 180, 255, 0.12);
+            --kw-border: rgba(100, 180, 255, 0.35);
         }
         * { box-sizing: border-box; }
         html, body {
@@ -28,9 +30,7 @@
             margin: 0 auto;
             padding: 24px 16px 80px;
         }
-        header.atlas-header {
-            padding: 8px 0 4px;
-        }
+        header.atlas-header { padding: 8px 0 4px; }
         header.atlas-header h1 {
             font-size: 1.6rem;
             margin: 0 0 4px;
@@ -41,10 +41,7 @@
             color: var(--muted-color);
             font-size: 0.95rem;
         }
-        nav.atlas-nav {
-            margin: 10px 0 18px;
-            font-size: 0.9rem;
-        }
+        nav.atlas-nav { margin: 10px 0 14px; font-size: 0.9rem; }
         nav.atlas-nav a {
             color: var(--muted-color);
             text-decoration: none;
@@ -52,12 +49,13 @@
             border-bottom: 1px dotted var(--glass-border);
         }
         nav.atlas-nav a:hover { color: var(--text-color); }
+
         .filter-box {
             position: sticky;
             top: 0;
             z-index: 5;
             background: var(--bg-color);
-            padding: 10px 0 12px;
+            padding: 10px 0 10px;
         }
         .filter-box input {
             width: 100%;
@@ -70,11 +68,51 @@
             outline: none;
         }
         .filter-box input:focus { border-color: rgba(100, 180, 255, 0.5); }
-        .filter-meta {
-            margin-top: 6px;
-            font-size: 0.8rem;
-            color: var(--muted-color);
+
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
         }
+        .chip {
+            font-size: 0.78rem;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--glass-border);
+            background: transparent;
+            color: var(--muted-color);
+            cursor: pointer;
+            user-select: none;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+        .chip:hover { color: var(--text-color); }
+        .chip.active {
+            color: #fff;
+            border-color: transparent;
+            background: #3a4a63;
+        }
+        .chip.section-chip.active { background: var(--chip-color, #3a4a63); }
+        .chip .n { opacity: 0.65; font-size: 0.9em; margin-left: 3px; }
+        .chip-sep {
+            width: 1px;
+            height: 16px;
+            background: var(--glass-border);
+            margin: 0 4px;
+        }
+        .chip-clear {
+            border: none;
+            background: none;
+            color: var(--muted-color);
+            font-size: 0.75rem;
+            cursor: pointer;
+            text-decoration: underline dotted;
+            padding: 3px 4px;
+        }
+        .filter-meta { margin-top: 6px; font-size: 0.8rem; color: var(--muted-color); }
+
         section.atlas-section { margin-top: 28px; }
         .section-head {
             display: flex;
@@ -83,7 +121,7 @@
             border-bottom: 1px solid var(--glass-border);
             padding-bottom: 6px;
         }
-        .section-chip {
+        .section-chip-dot {
             display: inline-block;
             width: 12px;
             height: 12px;
@@ -91,15 +129,8 @@
             flex: 0 0 auto;
             transform: translateY(1px);
         }
-        .section-head h2 {
-            font-size: 1.15rem;
-            margin: 0;
-            font-weight: 600;
-        }
-        .section-head .count {
-            color: var(--muted-color);
-            font-size: 0.85rem;
-        }
+        .section-head h2 { font-size: 1.15rem; margin: 0; font-weight: 600; }
+        .section-head .count { color: var(--muted-color); font-size: 0.85rem; }
         .group-block { margin: 14px 0 4px; }
         .group-block h3 {
             font-size: 0.95rem;
@@ -107,11 +138,7 @@
             font-weight: 600;
             color: var(--text-color);
         }
-        .group-block h3 .count {
-            color: var(--muted-color);
-            font-weight: 400;
-            font-size: 0.8rem;
-        }
+        .group-block h3 .count { color: var(--muted-color); font-weight: 400; font-size: 0.8rem; }
         ol.page-list {
             list-style: none;
             margin: 0;
@@ -119,9 +146,7 @@
             column-width: 330px;
             column-gap: 28px;
         }
-        ol.page-list li {
-            break-inside: avoid;
-        }
+        ol.page-list li { break-inside: avoid; }
         ol.page-list a {
             display: flex;
             align-items: baseline;
@@ -141,6 +166,19 @@
             font-variant-numeric: tabular-nums;
             font-size: 0.85em;
         }
+        .kw-hit {
+            font-size: 0.68em;
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: var(--kw-bg);
+            border: 1px solid var(--kw-border);
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 11em;
+        }
+        .kw-hit:empty { display: none; }
         .page-id {
             margin-left: auto;
             color: var(--muted-color);
@@ -149,10 +187,7 @@
             white-space: nowrap;
         }
         .hidden { display: none !important; }
-        .load-error {
-            margin-top: 24px;
-            color: #e08080;
-        }
+        .load-error { margin-top: 24px; color: #e08080; }
         @media (max-width: 520px) {
             .page-id { display: none; }
         }
@@ -162,7 +197,7 @@
 <div class="atlas-wrap">
     <header class="atlas-header">
         <h1>Site Atlas</h1>
-        <p class="subtitle">Every page of MATH-CS COMPASS at a glance — organized by section and topic group.</p>
+        <p class="subtitle">Every page of MATH-CS COMPASS at a glance — search by title or concept, filter by section.</p>
     </header>
     <nav class="atlas-nav">
         <a href="/index.html">Home</a>
@@ -170,7 +205,10 @@
     </nav>
 
     <div class="filter-box">
-        <input id="atlas-filter" type="search" placeholder="Filter by title, id, or topic group&hellip;" autocomplete="off">
+        <input id="atlas-filter" type="search"
+               placeholder="Search titles, ids, topic groups, or concepts (e.g. Radon-Nikodym, Yoneda, spectral)&hellip;"
+               autocomplete="off">
+        <div class="chip-row" id="chip-row"></div>
         <div class="filter-meta"><span id="atlas-count"></span></div>
     </div>
 
@@ -232,6 +270,9 @@
 
     var SECTION_ORDER = ['I', 'II', 'III', 'IV', 'V'];
     var DATA_URLS = ['../data/curriculum.json', '/data/curriculum.json'];
+    var NEW_DAYS = 30;
+
+    /* ---------- helpers ---------- */
 
     function groupTitle(slug) {
         if (GROUP_TITLES[slug]) return GROUP_TITLES[slug];
@@ -244,6 +285,13 @@
     function pageNumber(id) {
         var m = /-(\d+)$/.exec(id || '');
         return m ? m[1] : '';
+    }
+
+    function isNew(datePublished) {
+        if (!datePublished) return false;
+        var d = new Date(datePublished + 'T00:00:00');
+        if (isNaN(d)) return false;
+        return (Date.now() - d.getTime()) <= NEW_DAYS * 86400000;
     }
 
     function fetchFirst(urls) {
@@ -261,21 +309,57 @@
         return e;
     }
 
+    /* ---------- state (mirrored in URL hash) ---------- */
+
+    var state = { q: '', sections: {}, badges: {}, newOnly: false };
+
+    function readHash() {
+        var h = location.hash.replace(/^#/, '');
+        if (!h) return;
+        h.split('&').forEach(function (kv) {
+            var i = kv.indexOf('=');
+            if (i < 0) return;
+            var k = kv.slice(0, i), v = decodeURIComponent(kv.slice(i + 1));
+            if (k === 'q') state.q = v;
+            if (k === 's') v.split(',').forEach(function (s) { if (s) state.sections[s] = true; });
+            if (k === 'b') v.split(',').forEach(function (b) { if (b) state.badges[b] = true; });
+            if (k === 'new') state.newOnly = (v === '1');
+        });
+    }
+
+    function writeHash() {
+        var parts = [];
+        if (state.q) parts.push('q=' + encodeURIComponent(state.q));
+        var s = Object.keys(state.sections).filter(function (k) { return state.sections[k]; });
+        if (s.length) parts.push('s=' + s.join(','));
+        var b = Object.keys(state.badges).filter(function (k) { return state.badges[k]; });
+        if (b.length) parts.push('b=' + b.map(encodeURIComponent).join(','));
+        if (state.newOnly) parts.push('new=1');
+        var hash = parts.length ? '#' + parts.join('&') : '';
+        history.replaceState(null, '', location.pathname + location.search + hash);
+    }
+
+    /* ---------- render ---------- */
+
+    var ITEMS = [];   /* { li, kwEl, keywords[], haystack, section, badges[], isNew } */
+    var total = 0;
+
     function render(data) {
         var root = document.getElementById('atlas-root');
-        var total = 0;
+        var badgeCounts = {};
+        var newCount = 0;
 
         SECTION_ORDER.forEach(function (key) {
             var sec = data.sections && data.sections[key];
             if (!sec || !sec.parts || !sec.parts.length) return;
 
             var secEl = el('section', 'atlas-section');
-            secEl.dataset.count = sec.parts.length;
+            secEl.dataset.section = key;
 
             var head = el('div', 'section-head');
-            var chip = el('span', 'section-chip');
-            chip.style.background = (data.sectionColors && data.sectionColors[key]) || '#888';
-            head.appendChild(chip);
+            var dot = el('span', 'section-chip-dot');
+            dot.style.background = (data.sectionColors && data.sectionColors[key]) || '#888';
+            head.appendChild(dot);
             head.appendChild(el('h2', null, key + ' — ' + sec.title));
             head.appendChild(el('span', 'count', String(sec.parts.length)));
             secEl.appendChild(head);
@@ -298,17 +382,34 @@
                 var ol = el('ol', 'page-list');
                 byGroup[g].forEach(function (p) {
                     total += 1;
+                    var badges = p.badges || [];
+                    badges.forEach(function (b) { badgeCounts[b] = (badgeCounts[b] || 0) + 1; });
+                    var fresh = isNew(p.datePublished);
+                    if (fresh) newCount += 1;
+
                     var li = el('li');
                     var a = el('a');
                     a.href = '../' + (sec.baseUrl || '') + (p.url || '');
                     a.appendChild(el('span', 'page-num', pageNumber(p.id) + '.'));
                     a.appendChild(el('span', 'page-title', p.title || p.id));
+                    var kwEl = el('span', 'kw-hit', '');
+                    a.appendChild(kwEl);
                     a.appendChild(el('span', 'page-id', p.id));
-                    /* filter haystack */
-                    li.dataset.haystack = [p.title, p.id, groupTitle(g), g, sec.title, key]
-                        .join(' ').toLowerCase();
                     li.appendChild(a);
                     ol.appendChild(li);
+
+                    var keywords = (p.keywords || []).slice();
+                    var base = [p.title, p.id, groupTitle(g), g, sec.title].join(' ').toLowerCase();
+                    ITEMS.push({
+                        li: li,
+                        kwEl: kwEl,
+                        keywords: keywords,
+                        keywordsLower: keywords.map(function (k) { return k.toLowerCase(); }),
+                        base: base,
+                        section: key,
+                        badges: badges,
+                        isNew: fresh
+                    });
                 });
                 block.appendChild(ol);
                 secEl.appendChild(block);
@@ -317,33 +418,144 @@
             root.appendChild(secEl);
         });
 
-        var countEl = document.getElementById('atlas-count');
-        countEl.textContent = total + ' pages';
+        buildChips(data, badgeCounts, newCount);
+        applyFilter();
 
-        /* --- filtering --- */
         var input = document.getElementById('atlas-filter');
+        input.value = state.q;
         input.addEventListener('input', function () {
-            var q = input.value.trim().toLowerCase();
-            var shown = 0;
-            root.querySelectorAll('section.atlas-section').forEach(function (secEl) {
-                var secShown = 0;
-                secEl.querySelectorAll('.group-block').forEach(function (block) {
-                    var gShown = 0;
-                    block.querySelectorAll('li').forEach(function (li) {
-                        var hit = !q || li.dataset.haystack.indexOf(q) !== -1;
-                        li.classList.toggle('hidden', !hit);
-                        if (hit) gShown += 1;
-                    });
-                    block.classList.toggle('hidden', gShown === 0);
-                    secShown += gShown;
-                });
-                secEl.classList.toggle('hidden', secShown === 0);
-                shown += secShown;
-            });
-            countEl.textContent = q ? (shown + ' / ' + total + ' pages') : (total + ' pages');
+            state.q = input.value;
+            writeHash();
+            applyFilter();
         });
     }
 
+    /* ---------- chips ---------- */
+
+    function buildChips(data, badgeCounts, newCount) {
+        var row = document.getElementById('chip-row');
+
+        SECTION_ORDER.forEach(function (key) {
+            if (!(data.sections && data.sections[key])) return;
+            var c = el('button', 'chip section-chip', key);
+            c.type = 'button';
+            c.style.setProperty('--chip-color', (data.sectionColors && data.sectionColors[key]) || '#3a4a63');
+            c.title = data.sections[key].title;
+            if (state.sections[key]) c.classList.add('active');
+            c.addEventListener('click', function () {
+                state.sections[key] = !state.sections[key];
+                c.classList.toggle('active', state.sections[key]);
+                writeHash();
+                applyFilter();
+            });
+            row.appendChild(c);
+        });
+
+        row.appendChild(el('span', 'chip-sep'));
+
+        Object.keys(badgeCounts).sort().forEach(function (b) {
+            var c = el('button', 'chip', b);
+            c.type = 'button';
+            c.appendChild(el('span', 'n', String(badgeCounts[b])));
+            if (state.badges[b]) c.classList.add('active');
+            c.addEventListener('click', function () {
+                state.badges[b] = !state.badges[b];
+                c.classList.toggle('active', state.badges[b]);
+                writeHash();
+                applyFilter();
+            });
+            row.appendChild(c);
+        });
+
+        row.appendChild(el('span', 'chip-sep'));
+
+        var nc = el('button', 'chip', 'New (' + NEW_DAYS + 'd)');
+        nc.type = 'button';
+        nc.appendChild(el('span', 'n', String(newCount)));
+        if (state.newOnly) nc.classList.add('active');
+        nc.addEventListener('click', function () {
+            state.newOnly = !state.newOnly;
+            nc.classList.toggle('active', state.newOnly);
+            writeHash();
+            applyFilter();
+        });
+        row.appendChild(nc);
+
+        var clear = el('button', 'chip-clear', 'clear');
+        clear.type = 'button';
+        clear.addEventListener('click', function () {
+            state.q = '';
+            state.sections = {};
+            state.badges = {};
+            state.newOnly = false;
+            document.getElementById('atlas-filter').value = '';
+            row.querySelectorAll('.chip.active').forEach(function (c) { c.classList.remove('active'); });
+            writeHash();
+            applyFilter();
+        });
+        row.appendChild(clear);
+    }
+
+    /* ---------- filtering (text AND facets; OR within a facet) ---------- */
+
+    function applyFilter() {
+        var q = state.q.trim().toLowerCase();
+        var secKeys = Object.keys(state.sections).filter(function (k) { return state.sections[k]; });
+        var badgeKeys = Object.keys(state.badges).filter(function (k) { return state.badges[k]; });
+        var shown = 0;
+
+        ITEMS.forEach(function (it) {
+            var ok = true;
+
+            if (secKeys.length && secKeys.indexOf(it.section) === -1) ok = false;
+
+            if (ok && badgeKeys.length) {
+                ok = badgeKeys.some(function (b) { return it.badges.indexOf(b) !== -1; });
+            }
+
+            if (ok && state.newOnly && !it.isNew) ok = false;
+
+            var kwLabel = '';
+            if (ok && q) {
+                if (it.base.indexOf(q) !== -1) {
+                    /* matched by title/id/group — no tag needed */
+                } else {
+                    var ki = -1;
+                    for (var i = 0; i < it.keywordsLower.length; i++) {
+                        if (it.keywordsLower[i].indexOf(q) !== -1) { ki = i; break; }
+                    }
+                    if (ki >= 0) {
+                        kwLabel = it.keywords[ki];
+                    } else {
+                        ok = false;
+                    }
+                }
+            }
+
+            it.kwEl.textContent = kwLabel;
+            it.li.classList.toggle('hidden', !ok);
+            if (ok) shown += 1;
+        });
+
+        /* hide empty groups / sections */
+        document.querySelectorAll('#atlas-root section.atlas-section').forEach(function (secEl) {
+            var secShown = 0;
+            secEl.querySelectorAll('.group-block').forEach(function (block) {
+                var g = block.querySelectorAll('li:not(.hidden)').length;
+                block.classList.toggle('hidden', g === 0);
+                secShown += g;
+            });
+            secEl.classList.toggle('hidden', secShown === 0);
+        });
+
+        var filtered = q || secKeys.length || badgeKeys.length || state.newOnly;
+        document.getElementById('atlas-count').textContent =
+            filtered ? (shown + ' / ' + total + ' pages') : (total + ' pages');
+    }
+
+    /* ---------- boot ---------- */
+
+    readHash();
     fetchFirst(DATA_URLS).then(render).catch(function (err) {
         var root = document.getElementById('atlas-root');
         root.appendChild(el('p', 'load-error',
