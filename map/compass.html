@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>[TEST] Math-CS Compass | Knowledge Map</title>
+    <title>Math-CS Compass | Knowledge Map</title>
     <style>
         :root { 
             --bg-color: #0b0e14; 
@@ -1272,10 +1272,10 @@ async function loadCurriculumData() {
     try {
         let response;
         try {
-            response = await fetch('../data/curriculum_test.json');
+            response = await fetch('../data/curriculum.json');
             if (!response.ok) throw new Error('Relative path failed');
         } catch {
-            response = await fetch('/data/curriculum_test.json');
+            response = await fetch('/data/curriculum.json');
         }
         
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1286,7 +1286,7 @@ async function loadCurriculumData() {
         
         knowledgeData = [];
         
-        if (data.homeNode) {
+        if (data.homeNode && data.homeNode.mapCoords) {
             knowledgeData.push({
                 id: data.homeNode.id,
                 section: 'HOME',
@@ -1298,7 +1298,7 @@ async function loadCurriculumData() {
             });
         }
 
-        if (data.researchNode) {
+        if (data.researchNode && data.researchNode.mapCoords) {
             knowledgeData.push({
                 id: data.researchNode.id,
                 section: 'RESEARCH',
@@ -1315,6 +1315,10 @@ async function loadCurriculumData() {
         
         Object.entries(data.sections).forEach(([sectionId, section]) => {
             section.parts.forEach(part => {
+                if (!part.mapCoords) {
+                    console.warn('compass: skipping part without mapCoords:', part.id);
+                    return;
+                }
                 knowledgeData.push({
                     id: part.id,
                     section: sectionId,
