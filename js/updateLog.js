@@ -4,6 +4,11 @@
  * Dependencies: none (vanilla JS)
  * Expected DOM: <div id="update-log"></div> inside <div class="update-notice">
  * Expected data: updates.json with fields: date, content, url?, section, type
+ *
+ * v1.1: entries older than 30 days show an absolute date instead of a
+ *       coarse relative one; every date carries an exact-date tooltip;
+ *       filter buttons show cross-faceted counts and aria-pressed;
+ *       unknown types render neutrally instead of masquerading as "New".
  */
 document.addEventListener("DOMContentLoaded", function () {
     "use strict";
@@ -52,6 +57,11 @@ document.addEventListener("DOMContentLoaded", function () {
         return MONTHS[parseInt(parts[0], 10) - 1] + " " + parts[2];
     }
 
+    function fullDate(dateStr) {
+        var d = parseDate(dateStr);
+        return MONTHS[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+    }
+
     function relativeTime(dateStr) {
         var date = parseDate(dateStr);
         var now = new Date();
@@ -62,8 +72,13 @@ document.addEventListener("DOMContentLoaded", function () {
         if (diff === 1) return "Yesterday";
         if (diff < 7)   return diff + "d ago";
         if (diff < 30)  return Math.floor(diff / 7) + "w ago";
-        if (diff < 365) return Math.floor(diff / 30) + "mo ago";
-        return Math.floor(diff / 365) + "y ago";
+        /* Beyond a month, a coarse "3mo ago" carries less information
+           than the actual date. */
+        var label = MONTHS[date.getMonth()] + " " + date.getDate();
+        if (date.getFullYear() !== now.getFullYear()) {
+            label += ", " + date.getFullYear();
+        }
+        return label;
     }
 
     function el(tag, cls, attrs) {
@@ -118,6 +133,27 @@ document.addEventListener("DOMContentLoaded", function () {
         var filtered = getFiltered();
         var groups = groupByMonth(filtered);
 
+        /* Cross-faceted counts: section counts respect the active type
+           filter, type counts respect the active section filter. */
+        var sectionCounts = { all: 0 };
+        var typeCounts = { all: 0 };
+        allUpdates.forEach(function (u) {
+            if (activeType === "all" || u.type === activeType) {
+                sectionCounts[u.section] = (sectionCounts[u.section] || 0) + 1;
+                sectionCounts.all++;
+            }
+            if (activeSection === "all" || u.section === activeSection) {
+                typeCounts[u.type] = (typeCounts[u.type] || 0) + 1;
+                typeCounts.all++;
+            }
+        });
+
+        function countSpan(nvalue) {
+            var s = el("span", "ul-fcount", { textContent: " " + nvalue });
+            setStyles(s, { opacity: "0.55", fontSize: "0.85em", marginLeft: "3px" });
+            return s;
+        }
+
         /* — Filter bar — */
         var filterBar = el("div", "ul-filter-row");
 
@@ -139,6 +175,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 btn.appendChild(dot);
                 btn.appendChild(document.createTextNode(key));
             }
+
+            btn.appendChild(countSpan(sectionCounts[key] || 0));
+            btn.setAttribute("aria-pressed", activeSection === key ? "true" : "false");
 
             /* Active state coloring */
             if (activeSection === key && meta) {
@@ -169,6 +208,8 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 btn.textContent = TYPE_META[key].icon + " " + TYPE_META[key].label;
             }
+            btn.appendChild(countSpan(typeCounts[key] || 0));
+            btn.setAttribute("aria-pressed", activeType === key ? "true" : "false");
             btn.addEventListener("click", function () {
                 activeType = key;
                 visibleCount = INITIAL_COUNT;
@@ -206,7 +247,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 toShow.forEach(function (item) {
                     var sec = SECTION_META[item.section] || SECTION_META.general;
-                    var typ = TYPE_META[item.type] || TYPE_META["new"];
+                    var typ = TYPE_META[item.type] || { icon: "•", label: item.type || "" };
 
                     var entry;
                     if (item.url) {
@@ -243,7 +284,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     meta.appendChild(secBadge);
 
                     meta.appendChild(el("span", "ul-type-label", { textContent: typ.label }));
-                    meta.appendChild(el("span", "ul-date", { textContent: relativeTime(item.date) }));
+                    meta.appendChild(el("span", "ul-date", {
+                        textContent: relativeTime(item.date),
+                        title: fullDate(item.date)
+                    }));
 
                     body.appendChild(meta);
                     entry.appendChild(body);
