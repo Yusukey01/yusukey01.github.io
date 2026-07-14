@@ -12,27 +12,38 @@ uses_python: false
     
     {% include footer.html %}
     
-    <script src="{% if page.level == 'home' %}js/main.js?v={{ site.version }}{% elsif page.level == 'section' %}../../js/main.js?v={{ site.version }}{% else %}../../../js/main.js?v={{ site.version }}{% endif %}"></script>
-    <script src="{% if page.level == 'home' %}js/search.js?v={{ site.version }}{% elsif page.level == 'section' %}../../js/search.js?v={{ site.version }}{% else %}../../../js/search.js?v={{ site.version }}{% endif %}"></script>
-    
-    <script src="{% if page.level == 'home' %}js/theme-switcher.js?v={{ site.version }}{% elsif page.level == 'section' %}../../js/theme-switcher.js?v={{ site.version }}{% else %}../../../js/theme-switcher.js?v={{ site.version }}{% endif %}"></script>
-
-    <!-- Site-wide UX scripts (loaded on every page via absolute paths) -->
+    <!-- Site-wide scripts. Root-absolute paths: identical markup on every
+         page (same policy as header/footer), with site.version cache busting. -->
+    <script src="/js/main.js?v={{ site.version }}"></script>
+    <script src="/js/search.js?v={{ site.version }}"></script>
+    <script src="/js/theme-switcher.js?v={{ site.version }}"></script>
     <script src="/js/ref-preview.js?v={{ site.version }}"></script>
     <script src="/js/link-confirm.js?v={{ site.version }}"></script>
 
     {% if page.level == 'home' %}
-    <script src="js/updateLog.js?v={{ site.version }}"></script>
+    <script src="/js/updateLog.js?v={{ site.version }}"></script>
     {% endif %}
 
     <button id="go-to-top-btn" class="go-to-top-btn" title="Go to top">
         <i class="fas fa-arrow-up"></i>
     </button>
     <script>
-        // Register the service worker
+        // Register the service worker.
+        // NOTE: the worker must live at the SITE ROOT (/service-worker.js).
+        // A worker served from /js/ has default scope /js/ and can never
+        // control the site's pages (browsers cap scope at the script's
+        // directory unless the server sends Service-Worker-Allowed, which
+        // GitHub Pages does not).
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/js/service-worker.js')
+            // Clean up the old registration whose scope was /js/ (it never
+            // controlled any page, but lingers in visitors' browsers).
+            navigator.serviceWorker.getRegistrations().then(regs => {
+              regs.forEach(reg => {
+                if (reg.scope.endsWith('/js/')) reg.unregister();
+              });
+            });
+            navigator.serviceWorker.register('/service-worker.js')
               .then(registration => {
                 console.log('ServiceWorker registration successful with scope: ', registration.scope);
               })
