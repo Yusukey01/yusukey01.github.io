@@ -62,8 +62,16 @@
             btn.innerHTML = '<i class="fas fa-chevron-down"></i> <span>Read More</span>';
             section.parentNode.insertBefore(btn, section.nextSibling);
 
-            // Set initial collapsed height after layout settles
+            // Set initial collapsed height after layout settles.
+            // If the content is barely taller than the collapsed height,
+            // collapsing adds a button + fade for ~nothing — skip it.
             requestAnimationFrame(function () {
+                if (section.scrollHeight <= collapsedPx + 32) {
+                    section.classList.remove('collapsed');
+                    btn.remove();
+                    fade.remove();
+                    return;
+                }
                 section.style.maxHeight = collapsedPx + 'px';
             });
 
@@ -76,12 +84,27 @@
                 btn.setAttribute('aria-expanded', isCollapsed ? 'true' : 'false');
 
                 if (isCollapsed) {
-                    // Expand
+                    // Expand — after the transition, release maxHeight so
+                    // content that grows later (MathJax typesetting, lazy
+                    // images) is not clipped at the old scrollHeight.
                     section.style.maxHeight = section.scrollHeight + 'px';
+                    var release = function (ev) {
+                        if (ev && ev.propertyName && ev.propertyName !== 'max-height') return;
+                        section.removeEventListener('transitionend', release);
+                        if (!section.classList.contains('collapsed')) {
+                            section.style.maxHeight = 'none';
+                        }
+                    };
+                    section.addEventListener('transitionend', release);
+                    setTimeout(release, 600);  // fallback if no transition fires
                     btn.innerHTML = '<i class="fas fa-chevron-up"></i> <span>Show Less</span>';
                 } else {
-                    // Collapse
-                    section.style.maxHeight = collapsedPx + 'px';
+                    // Collapse — re-pin maxHeight from 'none' to a pixel
+                    // value first so the transition has a starting point.
+                    section.style.maxHeight = section.scrollHeight + 'px';
+                    requestAnimationFrame(function () {
+                        section.style.maxHeight = collapsedPx + 'px';
+                    });
                     btn.innerHTML = '<i class="fas fa-chevron-down"></i> <span>Read More</span>';
                 }
             });

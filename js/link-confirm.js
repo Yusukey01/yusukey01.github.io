@@ -20,6 +20,10 @@
  *   - the <a> does NOT have class "ref-link" (those are handled by ref-preview.js)
  *   - the <a> does NOT have class "no-confirm" (escape hatch)
  *
+ * v1.1: modified clicks (Ctrl/Cmd/Shift/Alt) bypass the confirmation
+ *       and keep native new-tab behavior; stale sidenotes are dismissed
+ *       on window resize; unused duplicate click handler removed.
+ *
  * Dependencies: none (vanilla ES6).
  * Data source:  /data/curriculum.json (single source of truth for page metadata)
  *
@@ -329,25 +333,6 @@
 
     /* ── Click handling ────────────────────────────────────── */
 
-    function handleClick(e) {
-        const link = e.currentTarget;
-        if (!shouldIntercept(link)) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        const href = link.getAttribute('href');
-        const key  = urlToKey(href);
-
-        // If we have curriculum data, look up the destination's metadata.
-        // If not (or destination unknown), still show a box with the raw URL —
-        // the confirmation is the point, regardless of whether we can label it nicely.
-        ensureData().then(function (idx) {
-            const info = (idx && key && idx[key]) ? idx[key] : null;
-            showBox(link, info, href);
-        });
-    }
-
     function dismissOnOutsideClick(e) {
         if (!activeBox) return;
         const target = e.target;
@@ -378,6 +363,10 @@
                 // originated inside our own confirm box, or inside a
                 // ref-preview box (which has its own "View full context"
                 // navigation link).
+                // Modified clicks (new tab / new window) keep native
+                // browser behavior — never intercept them.
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+
                 if (e.target.closest('.link-confirm-box')) return;
                 if (e.target.closest('.ref-preview-container')) return;
 
@@ -400,6 +389,17 @@
 
         document.addEventListener('click', dismissOnOutsideClick);
         document.addEventListener('keydown', dismissOnEscape);
+
+        // Sidenote positions go stale when the container edge moves.
+        let resizeTimer = null;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () {
+                if (activeBox && activeBox.classList.contains('ref-preview-sidenote')) {
+                    removeBox(activeBox, true);
+                }
+            }, 150);
+        });
 
         // Prefetch curriculum on first hover (non-blocking)
         let prefetched = false;

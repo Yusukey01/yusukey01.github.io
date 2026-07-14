@@ -34,8 +34,13 @@
         return DARK;
     }
 
-    // Apply theme by enabling/disabling dark stylesheet
-    function applyTheme(theme) {
+    // Apply theme by enabling/disabling dark stylesheet.
+    // persist=false is used for automatic application (initial load,
+    // system-preference changes) so that only an explicit user toggle
+    // counts as a "manual preference". Previously every application
+    // persisted, which made the system-preference listener dead code.
+    function applyTheme(theme, persist) {
+        if (persist === undefined) persist = true;
         const darkStylesheet = getDarkStylesheet();
         
         if (darkStylesheet) {
@@ -47,8 +52,8 @@
         // Set data attribute on html for any additional CSS hooks
         document.documentElement.setAttribute('data-theme', theme);
         
-        // Save preference
-        localStorage.setItem(THEME_KEY, theme);
+        // Save preference (explicit user choice only)
+        if (persist) localStorage.setItem(THEME_KEY, theme);
         
         // Update button
         updateToggleButton(theme);
@@ -86,7 +91,7 @@
     // Initialize
     function init() {
         const theme = getSavedTheme();
-        applyTheme(theme);
+        applyTheme(theme, false);
 
         // Set up toggle button
         const toggleBtn = document.getElementById('theme-toggle');
@@ -99,19 +104,23 @@
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
                 // Only auto-switch if user hasn't set a manual preference
                 if (!localStorage.getItem(THEME_KEY)) {
-                    applyTheme(e.matches ? DARK : LIGHT);
+                    applyTheme(e.matches ? DARK : LIGHT, false);
                 }
             });
         }
     }
 
-    // Apply theme immediately to prevent flash
-    // This runs before DOM is ready
+    // Apply theme immediately to prevent flash. This script is loaded
+    // at the end of <body>, so the <link id="dark-theme-stylesheet"> in
+    // <head> already exists and can be toggled right now — not just the
+    // data attribute.
     (function() {
         const theme = getSavedTheme();
-        // We can't disable the stylesheet yet (DOM not ready), 
-        // but we can set the data attribute
         document.documentElement.setAttribute('data-theme', theme);
+        const darkStylesheet = getDarkStylesheet();
+        if (darkStylesheet) {
+            darkStylesheet.disabled = (theme === LIGHT);
+        }
     })();
 
     // Initialize when DOM is ready
