@@ -4,6 +4,8 @@
 // v2.2: removed the legacy body.dark-mode block — no page contains
 //       #dark-mode-toggle; theming is handled by theme-switcher.js
 //       via html[data-theme].
+// v2.3: menu-toggle now keeps its aria-expanded attribute in sync
+//       (header.html declares it but it was never updated).
 
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -16,9 +18,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // is replaced — touchend fires even when a scroll gesture ends on the
         // button, toggling the menu by accident, and modern mobile browsers
         // deliver a normal click with no delay, so one listener suffices.)
+        function syncMenuAria() {
+            menuToggle.setAttribute('aria-expanded',
+                navLinks.classList.contains('active') ? 'true' : 'false');
+        }
+
         menuToggle.addEventListener('click', function(e) {
             e.preventDefault();
             navLinks.classList.toggle('active');
+            syncMenuAria();
         });
         
         // Close menu when clicking on links 
@@ -27,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
             link.addEventListener('click', function() {
                 if (window.innerWidth <= 992) {
                     navLinks.classList.remove('active');
+                    syncMenuAria();
                 }
             });
         });
@@ -38,6 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!isClickInsideNav && !isClickOnToggle && navLinks.classList.contains('active')) {
                 navLinks.classList.remove('active');
+                syncMenuAria();
             }
         });
     }
