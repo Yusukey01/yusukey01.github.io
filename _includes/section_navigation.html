@@ -7,7 +7,10 @@
      curriculum.json "topicGroupTitles"; Title Case fallback).
    - Incremental filter box (matches title, id, group, keywords -
      same haystack as the Atlas).
-   - Prev / Next links in curriculum order (detail pages).
+   - Prev / Next links in curriculum order (detail pages). There is
+     no separate Overview button: the grouped list below IS the
+     overview, the navbar links to the section home on every page,
+     and on detail pages the menu heading links to it as well.
    - Current page is highlighted and scrolled into view on open.
    - Footer links to the Knowledge Map and the Atlas pre-filtered
      to this section (atlas.html#s=<key>).
@@ -83,10 +86,17 @@
         return;
       }
 
-      // Update section title
+      // Update section title. On detail pages the heading links to the
+      // section overview (there is no separate Overview button).
       document.getElementById('nav-section-title').innerHTML =
         'Section ' + sectionKey + ' Navigation';
-      document.getElementById('nav-section-heading').textContent = section.title;
+      const heading = document.getElementById('nav-section-heading');
+      if (isDetailPage) {
+        heading.innerHTML = '<a href="' + overviewFile + '" class="qj-overview-link"></a>';
+        heading.firstChild.textContent = section.title;
+      } else {
+        heading.textContent = section.title;
+      }
 
       // Atlas link pre-filtered to this section
       document.getElementById('qj-atlas-link').href = '/map/atlas.html#s=' + sectionKey;
@@ -105,7 +115,6 @@
           : '<span class="' + cls + ' qj-disabled">' + label + '</span>';
         pn.innerHTML =
           mk(section.parts[idx - 1], '&larr; Prev', 'qj-prev') +
-          '<a class="qj-up" href="' + overviewFile + '">Overview</a>' +
           mk(section.parts[idx + 1], 'Next &rarr;', 'qj-next');
       } else {
         pn.style.display = 'none';
