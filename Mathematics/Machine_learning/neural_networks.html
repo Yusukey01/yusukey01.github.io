@@ -242,7 +242,8 @@ uses_python: false
                 <div id="neural_network_visualizer" class="demo-breakout"></div>
                 <p>
                     This interactive demo showcases how a simple neural network can learn to classify non-linear patterns. 
-                    You can generate datasets, tweak model parameters, and visualize the training process in real time.
+                    You can generate datasets, tweak model parameters, and visualize the training process in real time. 
+                    On load, the demo verifies its own gradient computations against finite differences and refuses to render if any check fails.
                 </p>
 
                 <ul style="padding-left: 40px;">
@@ -259,27 +260,26 @@ uses_python: false
                     </li>
                     <li><strong>Training:</strong>
                         The network is trained using <strong>mini-batch gradient descent with backpropagation</strong> to minimize 
-                        binary cross-entropy loss. Each iteration uses a small, randomly sampled subset of the training data to 
-                        update weights.
+                        binary cross-entropy loss. Each iteration uses a randomly sampled mini-batch of the training data to 
+                        update weights; the batch size is adjustable, all the way up to full-batch gradient descent.
                     <ul style="padding-left: 40px;">
                         <li>Faster and more stable than full-batch training</li>
                         <li>Helps escape flat regions and saddle points</li>
                         <li>More closely mirrors how real-world neural networks are trained</li>
                     </ul>
                     </li>
-                    <li><strong>Training Optimizations:</strong>
+                    <li><strong>Regularization &amp; Failure Modes:</strong>
                     <ul style="padding-left: 40px;">
-                        <li>Dynamic learning rate adjustment</li>
-                        <li><strong>Gradient clipping</strong>: Prevents instability due to the <strong>exploding gradients</strong> by scaling them when their norm exceeds a threshold.</li>
-                        <li>Early stopping when performance stabilizes</li>
-                        <li>\(\ell_2\) regularization (λ) to reduce overfitting</li>
+                        <li>\(\ell_2\) regularization (λ) discourages large weights; combine it with label noise to watch the train/test accuracy gap open and close</li>
+                        <li>The demo applies exactly the hyperparameters you set — no hidden learning-rate adjustment, gradient clipping, or early stopping. If the learning rate is too large, training visibly fails, and that failure is part of the lesson.</li>
                     </ul>
                     </li>
                     <li><strong>Visualizations:</strong>
                     <ul style="padding-left: 40px;">
-                        <li>Color-coded data points for training and test sets</li>
+                        <li>Color-coded data points for training (circles) and test (squares) sets</li>
                         <li>Decision boundary (green) shows where prediction = 0.5</li>
                         <li>Probability contours reveal model confidence</li>
+                        <li>Training curves track train and test loss across iterations</li>
                         <li>Dynamic network graph and forward pass breakdown</li>
                     </ul>
                     </li>
@@ -288,9 +288,11 @@ uses_python: false
                 <h3>Try Adjusting:</h3>
                 <ul style="padding-left: 40px;">
                     <li><strong>Hidden Units:</strong> More neurons allow for more complex decision boundaries</li>
+                    <li><strong>Label Noise:</strong> Flips a fraction of the labels; with noise present, the gap between train and test accuracy makes overfitting visible</li>
                     <li><strong>Regularization (λ):</strong> Helps prevent overfitting by discouraging large weights</li>
-                    <li><strong>Learning Rate:</strong> Controls how quickly the model updates</li>
-                    <li><strong>Max Iterations:</strong> Sets how long the training runs before stopping</li>
+                    <li><strong>Learning Rate:</strong> Controls how quickly the model updates — too large and training visibly diverges</li>
+                    <li><strong>Batch Size:</strong> Small batches give noisy but frequent updates; 70 corresponds to full-batch gradient descent</li>
+                    <li><strong>Iterations per Run:</strong> How many SGD steps each press of Train performs; Train (Continue) accumulates further steps</li>
                 </ul>
             </section>
 
