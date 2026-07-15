@@ -79,7 +79,7 @@ uses_python: false
                 <h2>Kernel PCA</h2>
                 <p> 
                     Given an \(N \times D\) data matrix, PCA requires the eigenvectors of the \(D \times D\) 
-                    covariance matrix \(X^\top X\). If \(D \gg N\), working with the \(N \times N\) <strong>Gram matrix</strong> 
+                    covariance matrix \(\frac{1}{N} X^\top X\) (of the centered data matrix \(X\); the factor \(\frac{1}{N}\) does not change the eigenvectors). If \(D \gg N\), working with the \(N \times N\) <strong>Gram matrix</strong> 
                     \(K = \Phi \Phi^\top\) is much more efficient - its entries are inner products 
                     \(\langle \phi(x_i), \phi(x_j) \rangle\). In the linear case, \(\phi\) is the identity and 
                     \(K_{ij} = x_i^\top x_j\).        
@@ -100,9 +100,9 @@ uses_python: false
                     design matrix.
                     Assuming the features are centered, the covariance matrix in feature space is represented by:
                     \[
-                    S_{\phi} = \frac{1}{N} \sum_i \phi_i \phi_i^T.
+                    S_{\phi} = \frac{1}{N} \sum_i \phi_i \phi_i^\top.
                     \]
-                    The normalized eigenvectors of \(S\) are given by:
+                    The normalized eigenvectors of \(S_{\phi}\) are given by:
                     \[
                     V_{kPCA} = \Phi^\top U \Lambda^{-\frac{1}{2}}
                     \]
@@ -146,7 +146,7 @@ uses_python: false
                         \[
                         \begin{align*}
                         \tilde{K} &= C_N K C_N \\\\
-                                  &= K - \frac{1}{N}JK - \frac{1}{N}KJ + \frac{1}{N^2}1^\top K 1
+                                  &= K - \frac{1}{N}JK - \frac{1}{N}KJ + \frac{1}{N^2}J K J
                         \end{align*}
                         \]
                         where 
@@ -163,7 +163,7 @@ uses_python: false
                         \[
                         \begin{align*}
                         \tilde{K}_{ij} &= \tilde{x}_i^\top \tilde{x}_j \\\\
-                                        &= \left(x_i - \frac{1}{N} \sum_{k=1}^N x_k \right)\left(x_j - \frac{1}{N} \sum_{l=1}^N x_l \right) \\\\
+                                        &= \left(x_i - \frac{1}{N} \sum_{k=1}^N x_k \right)^{\!\top}\left(x_j - \frac{1}{N} \sum_{l=1}^N x_l \right) \\\\
                                         &= x_i^\top x_j - \frac{1}{N} \sum_{l=1}^N x_i^\top x_l - \frac{1}{N} \sum_{k=1}^N x_k^\top x_j 
                                             + \frac{1}{N^2} \sum_{k=1}^N \sum_{l=1}^N x_k^\top x_l.
                         \end{align*}
@@ -226,35 +226,66 @@ uses_python: false
                 </p> 
             </section>
 
-            <section id="demo" class="section-content">
-                <h2>Demo: Kernel PCA and Autoencoders</h2>
-                <p>
-                    This interactive demo allows you to explore and compare different dimensionality reduction techniques:
-                </p>
-                
-                <h3>PCA Comparison Tab</h3>
-                <p>
-                    Compare how <strong>standard PCA</strong> and <strong>Kernel PCA</strong> handle non-linear datasets. 
-                    Standard PCA finds linear projections, while Kernel PCA can "unfold" complex structures like circles and spirals 
-                    using the kernel trick. Try different kernels (RBF, polynomial) and adjust parameters to see their effects.
-                </p>
-                
-                <h3>Autoencoder Tab</h3>
-                <p>
-                    Explore how a <strong>neural network autoencoder</strong> with a 1D bottleneck learns to compress and reconstruct 
-                    2D data. Unlike PCA which finds linear subspaces, the autoencoder learns non-linear mappings through its hidden layers. 
-                    The 1D latent space visualization shows how the network arranges data points along a single dimension, effectively 
-                    finding the principal curve through the data.
-                </p>
-
-                <p>
-                    <strong>💡Tip:</strong><br>
-                    Start with the "circles" dataset to see how each method handles non-linear structure. PCA will struggle, Kernel PCA (with RBF kernel) 
-                    will separate the circles, and the autoencoder will "unfold" them into a line.
-                </p>
-
+            <section id="demo" class="section-content section-wide">
+                <h2>Demo: One Dataset, Three Lenses</h2>
                 <div id="kernel_pca_visualizer"></div>
-                         
+                <p>
+                    This demo passes a single dataset through the three constructions of this page: closed-form linear PCA,
+                    kernel PCA computed exactly as derived above, and autoencoders. The point colors mark the generating
+                    class only &mdash; none of the three methods ever sees a label. All of them must discover the structure
+                    from coordinates alone.
+                </p>
+
+                <h3>The Kernel PCA Tab</h3>
+                <p>
+                    Pressing <strong>Compute</strong> builds the Gram matrix \(K\), centers it by the double centering trick
+                    \(\tilde{K} = C_N K C_N\), and extracts the top four eigenpairs of \(\tilde{K}\) by subspace iteration.
+                    The solver does not stop on a heuristic: it stops only when the residual
+                    \(\|\tilde{K}u - \lambda u\|\) certifies the eigenpairs to within \(10^{-8}\) relative to the leading
+                    eigenvalue, and the certificate
+                    (residual, iteration count, converged yes/no) is displayed in the metrics panel. Training scores are then
+                    computed in the projection form derived above, \(\tilde{k}^\top U \Lambda^{-1/2}\), and the explained
+                    variance ratios divide each \(\lambda_j\) by \(\operatorname{tr} \tilde{K}\) &mdash; the total variance
+                    in feature space.
+                </p>
+                <p>
+                    A useful sanity check is built into the controls: with the <em>linear</em> kernel, kernel PCA reproduces
+                    ordinary PCA exactly &mdash; the two score plots agree up to a sign, and the kernel eigenvalues are
+                    \(N\) times the covariance eigenvalues. The kernel trick changes nothing until the kernel does.
+                </p>
+
+                <h3>The Autoencoder Tab</h3>
+                <p>
+                    The <em>linear</em> autoencoder is precisely the architecture of the theorem above: \(z = W_1 x\),
+                    \(\hat{x} = W_2 z\), no biases, trained by plain full-batch gradient descent on the mean squared
+                    reconstruction error. Watching it train is watching the theorem: the learned one-dimensional subspace
+                    (solid line) rotates onto the first principal component (dashed line), and the loss curve settles onto the
+                    dashed reference level \(\lambda_2\) &mdash; the variance discarded by a one-component PCA, which is
+                    exactly the best any linear reconstruction can do.
+                </p>
+                <p>
+                    Switching to the <em>nonlinear</em> model (a small \(\tanh\) network with the same one-dimensional
+                    bottleneck) breaks that floor: on the circles dataset its loss dives well below \(\lambda_2\), because a
+                    curve through the data can follow the rings where a line cannot. The one-dimensional latent panel shows
+                    what the bottleneck learned. Stopping a training run midway discards the partial model entirely; nothing
+                    partially trained is ever displayed as a result.
+                </p>
+
+                <h3>Experiment Suggestions</h3>
+                <ol style="padding-left: 40px;">
+                    <li><strong>Circles, RBF kernel, \(\gamma = 3\)</strong>: the two rings, hopelessly concentric for PCA,
+                        become separable already in the first two kernel principal components. Then push \(\gamma\) to 30:
+                        the kernel becomes so local that the global ring structure fragments and the separation degrades.</li>
+                    <li><strong>Two moons, RBF kernel, \(\gamma = 10\)</strong>: a single kernel principal component
+                        separates the classes, while no linear principal component can.</li>
+                    <li><strong>Linear kernel, any dataset</strong>: confirm the PCA equivalence with your own eyes &mdash;
+                        the two score panels should show the same picture up to reflection.</li>
+                    <li><strong>Blobs</strong>: here linear PCA is already adequate &mdash; a reminder that nonlinear
+                        machinery earns its cost only when the structure is nonlinear.</li>
+                    <li><strong>Linear autoencoder on any dataset</strong>: verify that the final loss matches
+                        \(\lambda_2\) in the metrics panel to several decimal places, then train the nonlinear model on
+                        circles and watch it go below.</li>
+                </ol>
             </section>
 
             <section id="noise" class="section-content">
