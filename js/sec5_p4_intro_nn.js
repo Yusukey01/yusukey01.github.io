@@ -584,6 +584,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
         '        <span><span class="sw" style="background:' + C.class0Test + '"></span>Test class 0</span>' +
         '        <span><span class="sw" style="background:' + C.class1Test + '"></span>Test class 1</span>' +
         '        <span><span class="sw" style="background:' + C.boundary + '"></span>Boundary (&#375; = 0.5)</span>' +
+        '        <span><span class="sw" style="background:linear-gradient(90deg,' + C.class0 + ',' + C.class1 + ')"></span>Probability shading</span>' +
         '      </div>' +
         '    </div>' +
         '    <div class="nnv-card">' +
