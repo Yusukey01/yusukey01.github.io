@@ -2794,10 +2794,8 @@ footer::after {
     .search-container {
       width: 50%;
     }
-    
-    .topic-nav {
-      flex-direction: column;
-    }
+    /* legacy vertical stacking removed: the chapter rail is a single
+       horizontal line at every width (v2 design) */
   
     .pseudocode,
     .python-code,
@@ -3565,6 +3563,14 @@ body[data-section] .card:hover h3 a {
     color: var(--sec-color) !important;
 }
 
+/* ============================================
+   TOPIC CARDS v2 (.tcard) — compact grouped section cards
+   Rendered by sectionCards.js v2. New class names: the legacy
+   .card styles above remain for the homepage Explore grid.
+   Accent color comes from --tcard-accent, set per section by
+   sectionCards.js from curriculum.json sectionColors.
+   ============================================ */
+
 .tcard-group {
     margin: 2rem 0 0.5rem;
 }
@@ -3731,7 +3737,6 @@ html[data-theme="dark"] .tcard-keywords {
     margin-right: auto;
 }
 
-.update-notice,
 section.references {
     max-width: 860px;
     margin-left: auto;
@@ -3875,10 +3880,23 @@ section.references {
     color: var(--primary-color);
 }
 
+
+/* ============================================
+   STICKY SUBSECTION NAV (.topic-nav) — desktop
+   After scrolling, subsections stay one click away instead of
+   requiring a trip back to the top. Mobile keeps the static row
+   (a wrapping sticky pill bar would cost too much viewport).
+   scroll-margin keeps anchor targets clear of the stuck bar —
+   this also benefits ref-link "View full context" arrivals.
+   NOTE: the navbar is not sticky (a dead position:sticky was
+   removed), so top:0 here is correct. If the navbar is ever made
+   sticky, raise this offset accordingly.
+   ============================================ */
+
 .section-content,
 .theorem[id],
 .proof[id] {
-    scroll-margin-top: 84px;
+    scroll-margin-top: 76px;
 }
 
 .hero-section {
@@ -3908,6 +3926,9 @@ section.references {
 }
 
 .hero-section .webpage-name {
+    /* Source titles are already properly title-cased, so the legacy
+       uppercase transform is lifted (ALL CAPS hurt readability on
+       long titles); tracking tightened for mixed case. */
     text-transform: none;
     letter-spacing: 0.8px;
     text-shadow:
@@ -3917,23 +3938,33 @@ section.references {
 }
 
 .topic-nav {
-    position: sticky;
-    top: 0;
-    z-index: 900;
     display: flex;
     flex-wrap: nowrap;
     justify-content: flex-start;
     gap: 30px;
     overflow-x: auto;
-    padding: 0 24px;
+    padding: 0 20px 0 max(20px, calc((100% - 860px) / 2));
     counter-reset: topicnav;
     scrollbar-width: thin;
     border-radius: 0;
 }
 
-/* center when it fits, scroll when it does not */
-.topic-nav a:first-child { margin-left: auto; }
-.topic-nav a:last-child { margin-right: auto; }
+/* The rail is one line everywhere, so sticky is cheap even on mobile;
+   the scrollspy in main.js keeps the active item scrolled into view. */
+.topic-nav {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+}
+
+@media (max-width: 768px) {
+    .topic-nav {
+        gap: 20px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    .topic-nav a { padding-top: 9px; padding-bottom: 7px; }
+}
 
 .topic-nav a {
     counter-increment: topicnav;

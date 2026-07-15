@@ -1,4 +1,13 @@
 // main.js - Main website functionality
+// v2.1: single menu-toggle listener (accidental scroll-tap fix),
+//       throw-proof anchor scrolling, passive scroll listener.
+// v2.2: removed the legacy body.dark-mode block — no page contains
+//       #dark-mode-toggle; theming is handled by theme-switcher.js
+//       via html[data-theme].
+// v2.3: menu-toggle now keeps its aria-expanded attribute in sync
+//       (header.html declares it but it was never updated).
+// v2.4: topic-nav scrollspy (IntersectionObserver) for the sticky
+//       chapter rail.
 
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -153,6 +162,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (targets.size > 0) {
             const setActive = function(link) {
                 links.forEach(l => l.classList.toggle('active', l === link));
+                // keep the active item visible in the (possibly
+                // overflowing) rail — centers it without moving the page
+                if (topicNav.scrollWidth > topicNav.clientWidth) {
+                    topicNav.scrollTo({
+                        left: link.offsetLeft - topicNav.clientWidth / 2 + link.clientWidth / 2,
+                        behavior: 'smooth'
+                    });
+                }
             };
             const visible = new Set();
             const spy = new IntersectionObserver(function(entries) {
