@@ -14,6 +14,9 @@
    - Current page is highlighted and scrolled into view on open.
    - Footer links to the Knowledge Map and the Atlas pre-filtered
      to this section (atlas.html#s=<key>).
+   - An "On this page" group (built from the page's own .topic-nav
+     anchors) sits at the top of the list, so subsections stay
+     reachable after scrolling; picking one closes the menu.
 {% endcomment %}
 
 <div class="quick-jump-container">
@@ -148,6 +151,34 @@
         html += '</div>';
       });
       container.innerHTML = html;
+
+      // --- "On this page": mirror the page's own .topic-nav anchors ---
+      const tocAnchors = Array.from(document.querySelectorAll('.topic-nav a'));
+      if (tocAnchors.length) {
+        const g = document.createElement('div');
+        g.className = 'qj-group qj-onpage';
+        const head = document.createElement('div');
+        head.className = 'qj-group-head';
+        head.textContent = 'On this page';
+        g.appendChild(head);
+        tocAnchors.forEach(src => {
+          const a = document.createElement('a');
+          a.href = src.getAttribute('href');
+          a.textContent = src.textContent.trim();
+          a.setAttribute('data-hay', src.textContent.trim().toLowerCase());
+          g.appendChild(a);
+        });
+        container.insertBefore(g, container.firstChild);
+      }
+
+      // In-page anchor picks should close the menu (the page does not
+      // reload, so it would otherwise stay open over the content).
+      container.addEventListener('click', function (e) {
+        const a = e.target.closest('a');
+        if (a && (a.getAttribute('href') || '').charAt(0) === '#') {
+          document.getElementById('quick-jump-menu').classList.remove('active');
+        }
+      });
 
       // --- Filter ---
       const filter = document.getElementById('qj-filter');
