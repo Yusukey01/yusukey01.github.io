@@ -143,8 +143,7 @@
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.3),
         0 1px 0 rgba(100, 180, 255, 0.1) inset;
-    position: sticky;
-    top: 0;
+    /* dead sticky removed (a later position:relative overrode it) */
     z-index: 1000;
     min-height: 80px;
     border-bottom: 1px solid rgba(100, 180, 255, 0.15);
@@ -3892,22 +3891,128 @@ section.references {
    (a wrapping sticky pill bar would cost too much viewport).
    scroll-margin keeps anchor targets clear of the stuck bar —
    this also benefits ref-link "View full context" arrivals.
-   NOTE: .navbar declares position:sticky but a later
-   position:relative in the same rule overrides it, so the navbar
-   is NOT sticky and top:0 here is correct. If the navbar is ever
-   made sticky for real, raise this offset accordingly.
+   NOTE: the navbar is not sticky (a dead position:sticky was
+   removed), so top:0 here is correct. If the navbar is ever made
+   sticky, raise this offset accordingly.
    ============================================ */
 
-@media (min-width: 993px) {
-    .topic-nav {
-        position: sticky;
-        top: 0;
-        z-index: 900;
-    }
+.section-content,
+.theorem[id],
+.proof[id] {
+    scroll-margin-top: 84px;
+}
 
-    .section-content,
-    .theorem[id],
-    .proof[id] {
-        scroll-margin-top: 96px;
-    }
+
+/* ============================================
+   HERO v2 (proposal B) + TOPIC-NAV CHAPTER RAIL (proposal C)
+   - Hero keeps the hexagonal field and blue band untouched; adds a
+     large watermark glyph (.hero-mark, injected by
+     section_navigation.html from curriculum.json part icons) and a
+     stronger glow on the title.
+   - .topic-nav becomes a numbered chapter rail: CSS counters supply
+     the 01/02 indices (no markup change on any page), a top-border
+     indicator marks hover/active, and the row is a single line with
+     horizontal scroll — which is why sticky is now enabled at ALL
+     widths. Scrollspy in main.js drives the .active class.
+   ============================================ */
+
+.hero-section {
+    overflow: hidden;
+}
+
+.hero-mark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(8rem, 24vw, 19rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: rgba(255, 255, 255, 0.055);
+    text-shadow: none;
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+}
+
+.hero-section .webpage-name {
+    text-shadow:
+        0 0 18px rgba(120, 190, 255, 0.55),
+        0 0 60px rgba(66, 165, 245, 0.35),
+        0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.topic-nav {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 30px;
+    overflow-x: auto;
+    padding: 0 24px;
+    counter-reset: topicnav;
+    scrollbar-width: thin;
+    border-radius: 0;
+}
+
+/* center when it fits, scroll when it does not */
+.topic-nav a:first-child { margin-left: auto; }
+.topic-nav a:last-child { margin-right: auto; }
+
+.topic-nav a {
+    counter-increment: topicnav;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 11px 2px 9px;
+    margin: 0;
+    background: transparent;
+    border-radius: 0;
+    border-top: 2px solid transparent;
+    white-space: nowrap;
+    color: var(--text-muted, #667);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.topic-nav a::before {
+    content: counter(topicnav, decimal-leading-zero);
+    font-family: 'Consolas', 'Menlo', monospace;
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--primary-color);
+    opacity: 0.75;
+}
+
+.topic-nav a:hover,
+.topic-nav a.active {
+    color: var(--secondary-color);
+    border-top-color: var(--primary-color);
+    background: transparent;
+}
+
+.topic-nav a.active::before {
+    opacity: 1;
+}
+
+/* dark theme: neutralize the legacy pill styling (dark stylesheet
+   loads after this file, so these need the data-theme scope) */
+html[data-theme="dark"] .topic-nav a {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+html[data-theme="dark"] .topic-nav a:hover,
+html[data-theme="dark"] .topic-nav a.active {
+    background: transparent;
+    color: #fff;
+    border-top-color: var(--section-i-light, #42a5f5);
 }

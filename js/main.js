@@ -1,11 +1,4 @@
 // main.js - Main website functionality
-// v2.1: single menu-toggle listener (accidental scroll-tap fix),
-//       throw-proof anchor scrolling, passive scroll listener.
-// v2.2: removed the legacy body.dark-mode block — no page contains
-//       #dark-mode-toggle; theming is handled by theme-switcher.js
-//       via html[data-theme].
-// v2.3: menu-toggle now keeps its aria-expanded attribute in sync
-//       (header.html declares it but it was never updated).
 
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -147,6 +140,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Topic-nav scrollspy: highlight the subsection currently being read
+    // (pairs with the sticky chapter rail; .active styles in styles.css)
+    const topicNav = document.querySelector('.topic-nav');
+    if (topicNav && 'IntersectionObserver' in window) {
+        const links = Array.from(topicNav.querySelectorAll('a[href^="#"]'));
+        const targets = new Map();
+        links.forEach(function(link) {
+            const el = document.getElementById(link.getAttribute('href').slice(1));
+            if (el) targets.set(el, link);
+        });
+        if (targets.size > 0) {
+            const setActive = function(link) {
+                links.forEach(l => l.classList.toggle('active', l === link));
+            };
+            const visible = new Set();
+            const spy = new IntersectionObserver(function(entries) {
+                entries.forEach(function(e) {
+                    if (e.isIntersecting) visible.add(e.target);
+                    else visible.delete(e.target);
+                });
+                if (visible.size > 0) {
+                    const top = Array.from(visible).sort(function(a, b) {
+                        return a.getBoundingClientRect().top - b.getBoundingClientRect().top;
+                    })[0];
+                    setActive(targets.get(top));
+                }
+            }, { rootMargin: '-70px 0px -55% 0px' });
+            targets.forEach(function(_, el) { spy.observe(el); });
+            // immediate feedback on click, before the observer catches up
+            links.forEach(function(link) {
+                link.addEventListener('click', function() { setActive(link); });
+            });
+        }
+    }
+
     // Go To Top Button
     const goTopButton = document.getElementById('go-to-top-btn');
     

@@ -1,22 +1,5 @@
 {% comment %}
-  Section Navigation v2 - Loads curriculum.json via JavaScript
-  (Because data files are in /data/ not /_data/)
-
-  v2:
-   - Links are grouped under topicGroup headings (titles from
-     curriculum.json "topicGroupTitles"; Title Case fallback).
-   - Incremental filter box (matches title, id, group, keywords -
-     same haystack as the Atlas).
-   - Prev / Next links in curriculum order (detail pages). There is
-     no separate Overview button: the grouped list below IS the
-     overview, the navbar links to the section home on every page,
-     and on detail pages the menu heading links to it as well.
-   - Current page is highlighted and scrolled into view on open.
-   - Footer links to the Knowledge Map and the Atlas pre-filtered
-     to this section (atlas.html#s=<key>).
-   - An "On this page" group (built from the page's own .topic-nav
-     anchors) sits at the top of the list, so subsections stay
-     reachable after scrolling; picking one closes the menu.
+  Section Navigation v2.2 - Loads curriculum.json via JavaScript
 {% endcomment %}
 
 <div class="quick-jump-container">
@@ -110,6 +93,17 @@
 
       // --- Prev / Next (curriculum order; detail pages only) ---
       const idx = section.parts.findIndex(p => p.url === currentFile);
+
+      if (idx !== -1 && section.parts[idx].icon) {
+        const heroEl = document.querySelector('.hero-section');
+        if (heroEl && !heroEl.querySelector('.hero-mark')) {
+          const mark = document.createElement('span');
+          mark.className = 'hero-mark';
+          mark.setAttribute('aria-hidden', 'true');
+          mark.textContent = section.parts[idx].icon;
+          heroEl.insertBefore(mark, heroEl.firstChild);
+        }
+      }
       const pn = document.getElementById('qj-prevnext');
       if (isDetailPage && idx !== -1) {
         const mk = (part, label, cls) => part
