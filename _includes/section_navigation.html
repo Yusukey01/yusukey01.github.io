@@ -1,5 +1,5 @@
 {% comment %}
-  Section Navigation v2.2 - Loads curriculum.json via JavaScript
+  Section Navigation v2 - Loads curriculum.json via JavaScript
 {% endcomment %}
 
 <div class="quick-jump-container">
@@ -94,13 +94,24 @@
       // --- Prev / Next (curriculum order; detail pages only) ---
       const idx = section.parts.findIndex(p => p.url === currentFile);
 
+      // --- Hero watermark glyph (design v2): inject the page's icon
+      //     from curriculum.json behind the hero title ---
       if (idx !== -1 && section.parts[idx].icon) {
         const heroEl = document.querySelector('.hero-section');
         if (heroEl && !heroEl.querySelector('.hero-mark')) {
           const mark = document.createElement('span');
           mark.className = 'hero-mark';
           mark.setAttribute('aria-hidden', 'true');
-          mark.textContent = section.parts[idx].icon;
+          const glyph = section.parts[idx].icon;
+          mark.textContent = glyph;
+          // Long glyphs (e.g. "P(θ|D)") must not overflow the hero:
+          // scale the size down with the glyph length. 1-2 chars keep
+          // the CSS ceiling; longer strings shrink proportionally.
+          const len = Math.max(Array.from(glyph).length, 1);  // code points, not UTF-16 units
+          const scale = Math.min(1, 2.2 / len);
+          if (scale < 1) {
+            mark.style.setProperty('--mark-scale', scale.toFixed(2));
+          }
           heroEl.insertBefore(mark, heroEl.firstChild);
         }
       }
