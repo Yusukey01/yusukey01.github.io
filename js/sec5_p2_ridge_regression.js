@@ -1,1484 +1,768 @@
-// ridge_regression.js
-// An interactive demo for ridge regression vs. linear regression
+/* ============================================================
+ * Regression demos — shared math core (RegCore)
+ * Pure functions, no DOM. Conventions match the page:
+ *   ridge penalizes the FULL coefficient vector beta, including
+ *   the intercept, exactly as in T-ridge_regression_solution:
+ *   argmin ||y - X beta||^2 + lambda ||beta||^2.
+ * Solver: Householder QR on the augmented system
+ *   [X; sqrt(lambda) I] beta = [y; 0],
+ * which for lambda = 0 reduces to genuine ordinary least squares
+ * (condition number kappa(X), not kappa(X)^2). Rank deficiency is
+ * reported honestly ({ok:false}) instead of being papered over.
+ * ============================================================ */
+var RegCore = (function () {
+    'use strict';
 
-document.addEventListener('DOMContentLoaded', function() {
-  // Get the container element
-  const container = document.getElementById('ridge_regression_visualizer');
-  
-  if (!container) {
-    console.error('Container element not found!');
-    return;
-  }
-  
-  // Create HTML structure
-  container.innerHTML = `
-    <div class="visualizer-container">
-      <div class="visualizer-layout">
-        <div class="canvas-container">
-          <div class="visualization-mode-toggle">
-            <label class="toggle-control">
-              <select id="dataset-type" class="full-width">
-                <option value="polynomial">Polynomial Data</option>
-                <option value="noisy">Noisy Data</option>
-                <option value="outliers">Data with Outliers</option>
-              </select>
-            </label>
-          </div>
-          <div class="instruction">Comparing Linear Regression vs. Ridge Regression</div>
-          <div id="canvas-wrapper">
-            <canvas id="ridge-regression-canvas" width="800" height="500"></canvas>
-          </div>
-          <div class="legend">
-            <div class="legend-item"><span class="legend-color training"></span> Training Data</div>
-            <div class="legend-item"><span class="legend-color test"></span> Test Data</div>
-            <div class="legend-item"><span class="legend-color linear"></span> Linear Regression</div>
-            <div class="legend-item"><span class="legend-color ridge"></span> Ridge Regression</div>
-            <div class="legend-item"><span class="legend-color true"></span> True Function</div>
-          </div>
-        </div>
-        
-        <div class="controls-panel">
-          <div class="control-group">
-            <label for="lambda-value">Regularization Parameter (λ):</label>
-            <input type="range" id="lambda-value" min="0" max="5" step="0.1" value="3" class="full-width">
-            <span id="lambda-display">λ = 3</span>
-          </div>
-          
-          <div class="control-group">
-            <label for="train-size">Training Set Size:</label>
-            <input type="range" id="train-size" min="5" max="50" step="1" value="30" class="full-width">
-            <span id="train-size-display">30 points</span>
-          </div>
-          
-          <div class="control-group">
-            <label for="noise-level">Noise Level:</label>
-            <input type="range" id="noise-level" min="0" max="2" step="0.1" value="0.5" class="full-width">
-            <span id="noise-level-display">0.5</span>
-          </div>
-          
-          <div class="control-group" id="polynomial-params">
-            <label for="polynomial-degree">Polynomial Degree:</label>
-            <input type="range" id="polynomial-degree" min="1" max="15" step="1" value="9" class="full-width">
-            <span id="polynomial-degree-display">9</span>
-          </div>
-          
-          <div class="results-box">
-            <h3>Regression Results:</h3>
-            <div class="result-row">
-              <div class="result-label">Linear Regression:</div>
-              <div class="result-value" id="linear-train-error">Train MSE: 0.000</div>
-              <div class="result-value" id="linear-test-error">Test MSE: 0.000</div>
-            </div>
-            <div class="result-row">
-              <div class="result-label">Ridge Regression:</div>
-              <div class="result-value" id="ridge-train-error">Train MSE: 0.000</div>
-              <div class="result-value" id="ridge-test-error">Test MSE: 0.000</div>
-            </div>
-            <div class="result-row">
-              <div class="result-label">Weights L2 Norm:</div>
-              <div class="result-value" id="linear-weights">Linear: 0.000</div>
-              <div class="result-value" id="ridge-weights">Ridge: 0.000</div>
-            </div>
-
-            <div id="model-comparison-message" style="margin-top: 10px; font-weight: bold; color: #c0392b;"></div>
-
-          </div>
-          
-          <div class="weight-visualization">
-            <h3>Weight Comparison:</h3>
-            <div id="weight-bars-container"></div>
-          </div>
-          
-          <button id="generate-btn" class="primary-btn">Generate New Data</button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  // Add styles
-  const styleElement = document.createElement('style');
-  styleElement.textContent = `
-    .visualizer-container {
-      font-family: Arial, sans-serif;
-      margin-bottom: 20px;
-    }
-    
-    .visualizer-layout {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    
-    @media (min-width: 992px) {
-      .visualizer-layout {
-        flex-direction: row;
-      }
-      
-      .canvas-container {
-        flex: 3;
-        order: 1;
-      }
-      
-      .controls-panel {
-        flex: 2;
-        order: 2;
-      }
-    }
-    
-    .canvas-container {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    #canvas-wrapper {
-      position: relative;
-      width: 100%;
-    }
-    
-    #ridge-regression-canvas {
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: white;
-      max-width: 100%;
-      height: auto;
-      display: block;
-    }
-    
-    .controls-panel {
-      background-color: rgba(255, 255, 255, 0.03);
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-    
-    .control-group {
-      margin-bottom: 20px;
-    }
-    
-    .control-group label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
-    
-    .full-width {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    
-    .instruction {
-      text-align: center;
-      margin-bottom: 10px;
-      font-size: 0.9rem;
-      color: #666;
-    }
-    
-    .legend {
-      margin-top: 10px;
-      display: flex;
-      gap: 15px;
-      font-size: 0.9rem;
-      color: #666;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    
-    .legend-item {
-      display: flex;
-      align-items: center;
-    }
-    
-    .legend-color {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      margin-right: 5px;
-      border-radius: 2px;
-    }
-    
-    .legend-color.training {
-      background-color: #3498db;
-    }
-    
-    .legend-color.test {
-      background-color: #9b59b6;
-    }
-    
-    .legend-color.linear {
-      background-color: #e74c3c;
-    }
-    
-    .legend-color.ridge {
-      background-color: #2ecc71;
-    }
-    
-    .legend-color.true {
-      background-color: #f39c12;
-    }
-    
-    .primary-btn {
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 10px 15px;
-      font-size: 1rem;
-      cursor: pointer;
-      width: 100%;
-      margin-bottom: 15px;
-    }
-    
-    .primary-btn:hover {
-      background-color: #2980b9;
-    }
-    
-    .results-box {
-      background-color: rgba(255, 255, 255, 0.03);
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    
-    .results-box h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 1rem;
-    }
-    
-    .result-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    
-    .result-label {
-      font-weight: bold;
-      flex-basis: 100%;
-    }
-    
-    .result-value {
-      font-family: monospace;
-      flex: 1;
-    }
-    
-    .weight-visualization {
-      margin-bottom: 20px;
-    }
-    
-    .weight-visualization h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 1rem;
-    }
-    
-    #weight-bars-container {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-    
-    .weight-bar-row {
-      display: flex;
-      align-items: center;
-      height: 20px;
-      margin-bottom: 5px;
-    }
-    
-    .weight-bar-label {
-      width: 60px;
-      font-size: 0.8rem;
-    }
-    
-    .weight-bar-container {
-      flex: 1;
-      height: 18px;
-      background-color: #eee;
-      border-radius: 3px;
-      overflow: hidden;
-      position: relative;
-    }
-    
-    .weight-bar {
-      height: 100%;
-      position: absolute;
-      transition: width 0.3s ease;
-    }
-    
-    .weight-bar.linear {
-      background-color: rgba(231, 76, 60, 0.7);
-      border-right: 1px solid #c0392b;
-    }
-    
-    .weight-bar.ridge {
-      background-color: rgba(46, 204, 113, 0.7);
-      border-right: 1px solid #27ae60;
-    }
-  `;
-  
-  document.head.appendChild(styleElement);
-  
-  // Get DOM elements
-  const canvas = document.getElementById('ridge-regression-canvas');
-  const ctx = canvas.getContext('2d');
-  const canvasWidth = canvas.width;
-  const canvasHeight = canvas.height;
-
-  // Control elements
-  const datasetSelect = document.getElementById('dataset-type');
-  const lambdaInput = document.getElementById('lambda-value');
-  const lambdaDisplay = document.getElementById('lambda-display');
-  const trainSizeInput = document.getElementById('train-size');
-  const trainSizeDisplay = document.getElementById('train-size-display');
-  const noiseLevelInput = document.getElementById('noise-level');
-  const noiseLevelDisplay = document.getElementById('noise-level-display');
-  const polynomialDegreeInput = document.getElementById('polynomial-degree');
-  const polynomialDegreeDisplay = document.getElementById('polynomial-degree-display');
-  const generateBtn = document.getElementById('generate-btn');
-  
-  // Result elements
-  const linearTrainError = document.getElementById('linear-train-error');
-  const linearTestError = document.getElementById('linear-test-error');
-  const ridgeTrainError = document.getElementById('ridge-train-error');
-  const ridgeTestError = document.getElementById('ridge-test-error');
-  const linearWeightsNorm = document.getElementById('linear-weights');
-  const ridgeWeightsNorm = document.getElementById('ridge-weights');
-  const weightBarsContainer = document.getElementById('weight-bars-container');
-  
-  // State variables
-  let trainingData = [];
-  let testData = [];
-  let linearWeights = [];
-  let ridgeWeights = [];
-  let datasetType = 'polynomial';
-  let lambda;
-  let trainSize = 20;
-  let noiseLevel = 0.8;
-  let polynomialDegree = 10;
-  
-  // Drawing settings
-  const plotMargin = 50;
-  const plotWidth = canvasWidth - 2 * plotMargin;
-  const plotHeight = canvasHeight - 2 * plotMargin;
-
-  lambda = Math.pow(10, parseFloat(lambdaInput.value) - 3);
-  lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
-
-  let allPoints = [];
-  // Functions to generate different types of datasets
-  function generateData() {
-    const totalPoints = trainSize * 3;
-    const xMin = -1;
-    const xMax = 1;
-    
-    allPoints = [];
-    
-    // Generate x values
-    for (let i = 0; i < totalPoints; i++) {
-      const x = Math.random() * (xMax - xMin) + xMin;
-      allPoints.push({ x });
-    }
-    
-    // Shuffle the array
-    for (let i = allPoints.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [allPoints[i], allPoints[j]] = [allPoints[j], allPoints[i]];
-    }
-    
-    // Generate y values based on dataset type
-    for (let i = 0; i < allPoints.length; i++) {
-      const x = allPoints[i].x;
-      let y = 0;
-      
-      switch (datasetType) {
-        case 'polynomial':
-          y = 0.8* Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 0.3 * x + 1 + (Math.random() * 2 - 1) * 0.5;
-          break;
-        
-        case 'noisy':
-          // CHANGE: Added more high-frequency components
-          y = Math.sin(x) + 0.3 * Math.sin(5 * x) + 0.1 * Math.sin(12 * x) + (x > 0) ? 0.5 * x : -0.2 * x + (Math.random() * 2 - 1) * 0.5;
-          break;
-        
-        case 'outliers':
-          y = 1.2 * x + 2 + (Math.random() * 2 - 1) * 0.5;
-          if (Math.random() < 0.20) { // 20% chance of outlier
-            const direction = (Math.random() < 0.7) ? 1 : -1;
-            y += direction * (10 + Math.random() * 15);
-          }
-          break;
-      }
-      
-      // Add noise based on the noise level
-      y += (Math.random() * 2 - 1) * noiseLevel;
-      
-      allPoints[i].y = y;
-    }
-    
-    // Split into training and test sets
-    const shuffled = [...allPoints];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    /* ---------- seeded RNG (mulberry32) ---------- */
+    function createRng(seed) {
+        var s = seed >>> 0;
+        return function () {
+            s |= 0; s = (s + 0x6D2B79F5) | 0;
+            var t = Math.imul(s ^ (s >>> 15), 1 | s);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
     }
 
-    // Split with remaining data used as test
-    trainingData = shuffled.slice(0, trainSize);
-    testData = shuffled.slice(trainSize);
-    
-    // Fit models
-    fitModels();
-    
-    // Draw the canvas
-    drawCanvas();
-  }
-
-  // Create design matrix for polynomial regression
-  function createDesignMatrix(data, degree) {
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      console.error("Invalid data for design matrix");
-      return [];
-    }
-  
-    const X = [];
-    
-    for (let i = 0; i < data.length; i++) {
-      const row = [1]; // Intercept term
-      
-      for (let j = 1; j <= degree; j++) {
-        row.push(Math.pow(data[i].x, j));
-      }
-      
-      X.push(row);
-    }
-    
-    return X;
-  }
-
-  // Matrix multiplication: A * B
-  function matrixMultiply(A, B) {
-    if (!A || !B || !Array.isArray(A) || !Array.isArray(B) || A.length === 0 || B.length === 0) {
-      console.error("Invalid matrices for multiplication");
-      return [];
-    }
-  
-    if (A[0].length !== B.length) {
-      console.error("Matrix dimensions do not match for multiplication");
-      return [];
-    }
-  
-    const result = [];
-    const rowsA = A.length;
-    const colsB = B[0].length;
-    
-    for (let i = 0; i < rowsA; i++) {
-      result[i] = [];
-      for (let j = 0; j < colsB; j++) {
-        let sum = 0;
-        for (let k = 0; k < B.length; k++) {
-          sum += A[i][k] * B[k][j];
+    /* ---------- target functions (single source of truth) ----------
+     * Both the data generator and any "true function" rendering MUST
+     * use these; the generator/renderer mismatch bug class dies here. */
+    var TARGETS = {
+        cubic: {
+            label: 'Cubic polynomial',
+            f: function (x) { return 0.8 * x * x * x - 0.5 * x * x + 0.3 * x + 1; }
+        },
+        sinusoid: {
+            label: 'Sinusoid',
+            f: function (x) { return Math.sin(3 * x) + 0.3 * Math.sin(9 * x); }
         }
-        result[i][j] = sum;
-      }
-    }
-    
-    return result;
-  }
-
-  // Matrix transpose
-  function transpose(A) {
-    if (!A || !Array.isArray(A) || A.length === 0) {
-      console.error("Invalid matrix for transpose");
-      return [];
-    }
-  
-    const result = [];
-    const rows = A.length;
-    const cols = A[0].length;
-    
-    for (let j = 0; j < cols; j++) {
-      result[j] = [];
-      for (let i = 0; i < rows; i++) {
-        result[j][i] = A[i][j];
-      }
-    }
-    
-    return result;
-  }
-
-  // Matrix addition: A + B
-  function matrixAdd(A, B) {
-    if (!A || !B || !Array.isArray(A) || !Array.isArray(B) || 
-        A.length !== B.length || A[0].length !== B[0].length) {
-      console.error("Invalid matrices for addition");
-      return [];
-    }
-  
-    const result = [];
-    const rows = A.length;
-    const cols = A[0].length;
-    
-    for (let i = 0; i < rows; i++) {
-      result[i] = [];
-      for (let j = 0; j < cols; j++) {
-        result[i][j] = A[i][j] + B[i][j];
-      }
-    }
-    
-    return result;
-  }
-  
-
-  // Matrix inverse (using simplified approach for demo)
-  // Improved matrix inverse with better pivoting and condition number checking
-  function matrixInverse(A) {
-    if (!A || !Array.isArray(A) || A.length === 0 || A[0].length !== A.length) {
-      console.error("Invalid matrix for inversion");
-      return [];
-    }
-
-    // Create a copy to avoid modifying the original
-    const n = A.length;
-    const matrix = [];
-    for (let i = 0; i < n; i++) {
-      matrix[i] = [...A[i]];
-    }
-    
-    // Create identity matrix for result
-    const result = [];
-    for (let i = 0; i < n; i++) {
-      result[i] = [];
-      for (let j = 0; j < n; j++) {
-        result[i][j] = i === j ? 1 : 0;
-      }
-    }
-    
-    // Estimate condition number (very approximate)
-    let maxVal = 0;
-    let minVal = Infinity;
-    for (let i = 0; i < n; i++) {
-      let rowSum = 0;
-      for (let j = 0; j < n; j++) {
-        rowSum += Math.abs(matrix[i][j]);
-      }
-      maxVal = Math.max(maxVal, rowSum);
-      if (rowSum > 0) minVal = Math.min(minVal, rowSum);
-    }
-    
-    // If condition number is too high, return identity matrix with a warning
-    const approxCondition = maxVal / (minVal > 0 ? minVal : 1e-10);
-    if (approxCondition > 1e14) {
-      console.warn("Matrix is nearly singular with approximate condition number: " + approxCondition);
-      // Return identity instead of failing completely
-      return result;
-    }
-
-    // Gaussian elimination with partial pivoting
-    for (let i = 0; i < n; i++) {
-      // Find pivot
-      let maxVal = Math.abs(matrix[i][i]);
-      let maxRow = i;
-      
-      for (let k = i + 1; k < n; k++) {
-        if (Math.abs(matrix[k][i]) > maxVal) {
-          maxVal = Math.abs(matrix[k][i]);
-          maxRow = k;
-        }
-      }
-
-      // Check for singularity
-      if (maxVal < 1e-10) {
-        console.warn("Matrix nearly singular at row " + i);
-        // Use a tiny value instead of exactly zero
-        matrix[i][i] += 1e-10;
-      }
-
-      // Swap rows if needed
-      if (maxRow !== i) {
-        [matrix[i], matrix[maxRow]] = [matrix[maxRow], matrix[i]];
-        [result[i], result[maxRow]] = [result[maxRow], result[i]];
-      }
-
-      // Scale row
-      const pivot = matrix[i][i];
-      for (let j = 0; j < n; j++) {
-        matrix[i][j] /= pivot;
-        result[i][j] /= pivot;
-      }
-
-      // Eliminate other rows
-      for (let k = 0; k < n; k++) {
-        if (k !== i) {
-          const factor = matrix[k][i];
-          for (let j = 0; j < n; j++) {
-            matrix[k][j] -= factor * matrix[i][j];
-            result[k][j] -= factor * result[i][j];
-          }
-        }
-      }
-    }
-    
-    return result;
-  }
-
-  // Fit linear regression and ridge regression models
-  function fitModels() {
-    if (!trainingData || trainingData.length === 0) {
-      console.error("No training data available");
-      return;
-    }
-  
-    const degree = parseInt(polynomialDegreeInput.value);
-    
-    // Create design matrices
-    const X_train = createDesignMatrix(trainingData, degree);
-    const y_train = trainingData.map(point => [point.y]);
-    
-    const X_test = createDesignMatrix(testData, degree);
-    const y_test = testData.map(point => [point.y]);
-    
-    if (X_train.length === 0 || y_train.length === 0) {
-      console.error("Failed to create design matrices");
-      return;
-    }
-    
-    // Compute X^T * X
-    const XtX = matrixMultiply(transpose(X_train), X_train);
-    
-    // Compute X^T * y
-    const Xty = matrixMultiply(transpose(X_train), y_train);
-    
-    if (XtX.length === 0 || Xty.length === 0) {
-      console.error("Failed to compute X^T * X or X^T * y");
-      return;
-    }
-    
-    try {
-      // CORRECTED: For true linear regression, use no regularization at all
-      // Attempt to compute the inverse without any regularization
-      let linearSuccess = true;
-      let XtX_inv;
-      
-      try {
-        // Add minimal regularization for numerical stability
-        const minimalLambda = 0.0001;
-        const minimalRegularized = [];
-        for (let i = 0; i < XtX.length; i++) {
-          minimalRegularized[i] = [];
-          for (let j = 0; j < XtX[0].length; j++) {
-            minimalRegularized[i][j] = XtX[i][j];
-            if (i === j) {
-              minimalRegularized[i][j] += minimalLambda;
-            }
-          }
-        }
-        XtX_inv = matrixInverse(minimalRegularized);
-      } catch (e) {
-        console.error("Linear regression failed: Matrix is singular", e);
-        linearSuccess = false;
-        
-        // Set linear model error messages
-        linearTrainError.textContent = "Matrix is singular";
-        linearTestError.textContent = "Cannot compute";
-        linearWeightsNorm.textContent = "N/A";
-        
-        // Set empty weights for linear model
-        linearWeights = Array(XtX.length).fill(0);
-      }
-      
-      if (linearSuccess) {
-        const linearWeightMatrix = matrixMultiply(XtX_inv, Xty);
-        linearWeights = linearWeightMatrix.map(row => row[0]); // Extract to 1D array
-      }
-      
-      // For ridge regression, use the actual lambda from the UI
-      const ridgeIdentity = [];
-      for (let i = 0; i < XtX.length; i++) {
-        ridgeIdentity[i] = [];
-        for (let j = 0; j < XtX[0].length; j++) {
-          ridgeIdentity[i][j] = i === j ? lambda : 0;
-        }
-      }
-      
-      const ridgeRegularized = matrixAdd(XtX, ridgeIdentity);
-      const ridge_inv = matrixInverse(ridgeRegularized);
-      
-      if (ridge_inv.length === 0) {
-        throw new Error("Failed to compute ridge matrix inverse");
-      }
-      
-      const ridgeWeightMatrix = matrixMultiply(ridge_inv, Xty);
-      ridgeWeights = ridgeWeightMatrix.map(row => row[0]); // Extract to 1D array
-      
-      // Calculate predictions and MSE as before...
-      // [rest of the function remains the same]
-      
-      // Calculate predictions and MSE only if linear regression succeeded
-      const linear_train_preds = [];
-      const ridge_train_preds = [];
-      const linear_test_preds = [];
-      const ridge_test_preds = [];
-  
-      // Calculate ridge regression predictions for training data
-      for (let i = 0; i < X_train.length; i++) {
-        let ridgePred = 0;
-        for (let j = 0; j < ridgeWeights.length; j++) {
-          ridgePred += X_train[i][j] * ridgeWeights[j];
-        }
-        ridge_train_preds.push(ridgePred);
-        
-        // Only calculate linear predictions if linear regression succeeded
-        if (linearSuccess) {
-          let linearPred = 0;
-          for (let j = 0; j < linearWeights.length; j++) {
-            linearPred += X_train[i][j] * linearWeights[j];
-          }
-          linear_train_preds.push(linearPred);
-        }
-      }
-  
-      // Calculate ridge regression predictions for test data
-      for (let i = 0; i < X_test.length; i++) {
-        let ridgePred = 0;
-        for (let j = 0; j < ridgeWeights.length; j++) {
-          ridgePred += X_test[i][j] * ridgeWeights[j];
-        }
-        ridge_test_preds.push(ridgePred);
-        
-        // Only calculate linear predictions if linear regression succeeded
-        if (linearSuccess) {
-          let linearPred = 0;
-          for (let j = 0; j < linearWeights.length; j++) {
-            linearPred += X_test[i][j] * linearWeights[j];
-          }
-          linear_test_preds.push(linearPred);
-        }
-      }
-  
-      // Extract flat arrays from y_train and y_test
-      const y_train_flat = y_train.map(item => item[0]);
-      const y_test_flat = y_test.map(item => item[0]);
-      
-      // Calculate MSE for ridge regression
-      const ridge_train_mse = calculateMSE(ridge_train_preds, y_train_flat);
-      const ridge_test_mse = calculateMSE(ridge_test_preds, y_test_flat);
-      
-      // Update ridge regression result display
-      ridgeTrainError.textContent = `Train MSE: ${ridge_train_mse.toFixed(3)}`;
-      ridgeTestError.textContent = `Test MSE: ${ridge_test_mse.toFixed(3)}`;
-      
-      // Calculate and update linear regression results only if it succeeded
-      if (linearSuccess) {
-        const linear_train_mse = calculateMSE(linear_train_preds, y_train_flat);
-        const linear_test_mse = calculateMSE(linear_test_preds, y_test_flat);
-        
-        linearTrainError.textContent = `Train MSE: ${linear_train_mse.toFixed(3)}`;
-        linearTestError.textContent = `Test MSE: ${linear_test_mse.toFixed(3)}`;
-        
-        // Calculate L2 norm for linear weights (excluding bias term)
-        const linear_l2 = Math.sqrt(linearWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
-        linearWeightsNorm.textContent = `Linear: ${linear_l2.toFixed(3)}`;
-      }
-      
-      // Calculate L2 norm for ridge weights (excluding bias term)
-      const ridge_l2 = Math.sqrt(ridgeWeights.slice(1).reduce((sum, w) => sum + w * w, 0));
-      ridgeWeightsNorm.textContent = `Ridge: ${ridge_l2.toFixed(3)}`;
-      
-
-      // Optional model comparison message
-      const msgDiv = document.getElementById("model-comparison-message");
-
-      if (linearSuccess) {
-        const linear_test_mse = parseFloat(linearTestError.textContent.split(":")[1]);
-        const ridge_test_mse = parseFloat(ridgeTestError.textContent.split(":")[1]);
-
-        if (linear_test_mse > ridge_test_mse * 10) {
-          msgDiv.textContent = "⚠️ Linear regression is overfitting.";
-        } else if (ridge_test_mse > linear_test_mse * 5) {
-          msgDiv.textContent = "⚠️ Ridge regression may be underfitting due to too much regularization.";
-        } else {
-          msgDiv.textContent = "";
-        }
-      } else {
-        msgDiv.textContent = "";
-      }
-
-      // Update weight bars visualization
-      updateWeightBars();
-    } catch (e) {
-      console.error("Error fitting models:", e);
-      linearTrainError.textContent = "Error";
-      linearTestError.textContent = "Error";
-      ridgeTrainError.textContent = "Error";
-      ridgeTestError.textContent = "Error";
-      
-      linearWeights = [];
-      ridgeWeights = [];
-      
-      updateWeightBars();
-    }
-  }
-
-  // Calculate Mean Squared Error
-  function calculateMSE(predictions, actual) {
-    if (!predictions || !actual || !Array.isArray(predictions) || !Array.isArray(actual)) {
-      console.error("Invalid inputs for MSE calculation");
-      return 0;
-    }
-  
-    if (predictions.length !== actual.length) {
-      console.error(`Mismatched lengths in MSE calculation: predictions=${predictions.length}, actual=${actual.length}`);
-      return 0;
-    }
-    
-    let sum = 0;
-    for (let i = 0; i < predictions.length; i++) {
-      const diff = predictions[i] - actual[i];
-      sum += diff * diff;
-    }
-    
-    return sum / predictions.length;
-  }
-
-  // Update weight bars visualization
-  function updateWeightBars() {
-    weightBarsContainer.innerHTML = '';
-    
-    // Skip visualization if linear regression failed
-    if (linearTrainError.textContent.includes("Matrix is singular") && ridgeWeights.length === 0) {
-      const messageEl = document.createElement('div');
-      messageEl.className = 'weight-error-message';
-      messageEl.textContent = 'Linear regression failed due to singular matrix. Ridge regression stabilizes the solution.';
-      messageEl.style.color = '#e74c3c';
-      messageEl.style.padding = '10px 0';
-      weightBarsContainer.appendChild(messageEl);
-      return;
-    }
-    
-    // Determine max absolute weight for scaling
-    let maxAbsWeight = 0;
-    
-    // Include ridge weights
-    if (ridgeWeights.length > 0) {
-      maxAbsWeight = Math.max(maxAbsWeight, ...ridgeWeights.map(w => Math.abs(w)));
-    }
-    
-    // Include linear weights only if linear regression succeeded
-    if (linearWeights.length > 0 && !linearTrainError.textContent.includes("Matrix is singular")) {
-      maxAbsWeight = Math.max(maxAbsWeight, ...linearWeights.map(w => Math.abs(w)));
-    }
-    
-    // If no valid weights, exit
-    if (maxAbsWeight === 0) return;
-    
-    // Create bars for each weight
-    const numWeights = Math.max(
-      linearTrainError.textContent.includes("Matrix is singular") ? 0 : linearWeights.length,
-      ridgeWeights.length
-    );
-    
-    for (let i = 0; i < numWeights; i++) {
-      const rowEl = document.createElement('div');
-      rowEl.className = 'weight-bar-row';
-      
-      const labelEl = document.createElement('div');
-      labelEl.className = 'weight-bar-label';
-      labelEl.textContent = i === 0 ? 'Bias' : `w${i}`;
-      
-      const containerEl = document.createElement('div');
-      containerEl.className = 'weight-bar-container';
-      
-      // Add a center line
-      const centerLine = document.createElement('div');
-      centerLine.style.position = 'absolute';
-      centerLine.style.left = '50%';
-      centerLine.style.top = '0';
-      centerLine.style.bottom = '0';
-      centerLine.style.width = '1px';
-      centerLine.style.backgroundColor = '#888';
-      containerEl.appendChild(centerLine);
-      
-      // Linear weight bar - only if linear regression succeeded
-      if (!linearTrainError.textContent.includes("Matrix is singular") && i < linearWeights.length) {
-        const linearBarEl = document.createElement('div');
-        linearBarEl.className = 'weight-bar linear';
-        const linearWidth = (Math.abs(linearWeights[i]) / maxAbsWeight) * 100;
-        linearBarEl.style.width = `${linearWidth}%`;
-        linearBarEl.style.left = linearWeights[i] >= 0 ? '50%' : `${50 - linearWidth}%`;
-        linearBarEl.title = `Linear: ${linearWeights[i].toFixed(3)}`;
-        containerEl.appendChild(linearBarEl);
-      }
-      
-      // Ridge weight bar
-      if (i < ridgeWeights.length) {
-        const ridgeBarEl = document.createElement('div');
-        ridgeBarEl.className = 'weight-bar ridge';
-        const ridgeWidth = (Math.abs(ridgeWeights[i]) / maxAbsWeight) * 100;
-        ridgeBarEl.style.width = `${ridgeWidth}%`;
-        ridgeBarEl.style.left = ridgeWeights[i] >= 0 ? '50%' : `${50 - ridgeWidth}%`;
-        ridgeBarEl.title = `Ridge: ${ridgeWeights[i].toFixed(3)}`;
-        containerEl.appendChild(ridgeBarEl);
-      }
-      
-      rowEl.appendChild(labelEl);
-      rowEl.appendChild(containerEl);
-      
-      weightBarsContainer.appendChild(rowEl);
-    }
-    
-    // Add explanation message if linear regression failed
-    if (linearTrainError.textContent.includes("Matrix is singular")) {
-      const messageEl = document.createElement('div');
-      messageEl.className = 'weight-explanation';
-      messageEl.innerHTML = '<strong>Note:</strong> Linear regression failed due to singular matrix. Ridge regression provides a stable solution through regularization.';
-      messageEl.style.marginTop = '15px';
-      messageEl.style.fontSize = '0.9rem';
-      messageEl.style.padding = '8px';
-      messageEl.style.backgroundColor = '#f8f9fa';
-      messageEl.style.borderRadius = '4px';
-      weightBarsContainer.appendChild(messageEl);
-    }
-  }
-
-  // Draw the canvas
-  function drawCanvas() {
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
-    // Draw coordinate axes
-    drawAxes();
-    
-    // Calculate display range based on data
-    const xRange = calculateXRange();
-    const yRange = calculateYRange();
-    
-    // Draw true function if applicable
-    drawTrueFunction(xRange, yRange);
-    
-    // Draw regression lines
-    drawRegressionLines(xRange, yRange);
-    
-    // Draw data points
-    drawDataPoints(xRange, yRange);
-  }
-
-  // Calculate appropriate X range for display
-  function calculateXRange() {
-    const allPoints = [...trainingData, ...testData];
-    
-    if (allPoints.length === 0) {
-      return { min: -5, max: 5 };
-    }
-    
-    const xValues = allPoints.map(point => point.x);
-    let min = Math.min(...xValues);
-    let max = Math.max(...xValues);
-    
-    // Add some padding
-    const padding = (max - min) * 0.1;
-    min -= padding;
-    max += padding;
-    
-    return { min, max };
-  }
-
-  // Calculate appropriate Y range for display
-  function calculateYRange() {
-    const allPoints = [...trainingData, ...testData];
-    
-    if (allPoints.length === 0) {
-      return { min: -5, max: 5 };
-    }
-    
-    // First calculate range based only on actual data points
-    const yValues = allPoints.map(point => point.y);
-    let min = Math.min(...yValues);
-    let max = Math.max(...yValues);
-    
-    // Add some padding for data points
-    const dataRangePadding = (max - min) * 0.2;
-    let rangeMin = min - dataRangePadding;
-    let rangeMax = max + dataRangePadding;
-    
-    // Add predicted values ONLY from ridge regression to ensure they're in view
-    // This prevents extreme linear regression values from distorting the scale
-    if (ridgeWeights.length > 0) {
-      const xRange = calculateXRange();
-      const numPoints = 100;
-      const xStep = (xRange.max - xRange.min) / (numPoints - 1);
-      
-      const ridgePredictions = [];
-      
-      for (let i = 0; i < numPoints; i++) {
-        const x = xRange.min + i * xStep;
-        
-        // Generate features
-        const features = [1];
-        for (let j = 1; j <= polynomialDegree; j++) {
-          features.push(Math.pow(x, j));
-        }
-        
-        // Calculate predictions for ridge regression only
-        let ridgePred = 0;
-        for (let j = 0; j < Math.min(features.length, ridgeWeights.length); j++) {
-          ridgePred += features[j] * ridgeWeights[j];
-        }
-        
-        ridgePredictions.push(ridgePred);
-      }
-      
-      // Only expand range if ridge predictions are within a reasonable range of data points
-      // This prevents extreme values from distorting the scale
-      const ridgeMin = Math.min(...ridgePredictions);
-      const ridgeMax = Math.max(...ridgePredictions);
-      
-      // Check if ridge predictions are within a reasonable range (10x the data range)
-      const dataRange = max - min;
-      const reasonableMin = min - 10 * dataRange;
-      const reasonableMax = max + 10 * dataRange;
-      
-      if (ridgeMin > reasonableMin && ridgeMin < reasonableMax) {
-        rangeMin = Math.min(rangeMin, ridgeMin);
-      }
-      
-      if (ridgeMax > reasonableMin && ridgeMax < reasonableMax) {
-        rangeMax = Math.max(rangeMax, ridgeMax);
-      }
-    }
-    
-    // Add linear predictions only if linear regression succeeded and values are reasonable
-    if (linearWeights.length > 0 && !linearTrainError.textContent.includes("Matrix is singular")) {
-      const xRange = calculateXRange();
-      const numPoints = 100;
-      const xStep = (xRange.max - xRange.min) / (numPoints - 1);
-      
-      const linearPredictions = [];
-      
-      for (let i = 0; i < numPoints; i++) {
-        const x = xRange.min + i * xStep;
-        
-        // Generate features
-        const features = [1];
-        for (let j = 1; j <= polynomialDegree; j++) {
-          features.push(Math.pow(x, j));
-        }
-        
-        // Calculate predictions for linear regression
-        let linearPred = 0;
-        for (let j = 0; j < Math.min(features.length, linearWeights.length); j++) {
-          linearPred += features[j] * linearWeights[j];
-        }
-        
-        linearPredictions.push(linearPred);
-      }
-      
-      // Only include linear predictions that are within a reasonable range
-      const dataRange = max - min;
-      const reasonableMin = min - 10 * dataRange;
-      const reasonableMax = max + 10 * dataRange;
-      
-      const filteredLinearPreds = linearPredictions.filter(
-        pred => pred > reasonableMin && pred < reasonableMax
-      );
-      
-      if (filteredLinearPreds.length > 0) {
-        rangeMin = Math.min(rangeMin, Math.min(...filteredLinearPreds));
-        rangeMax = Math.max(rangeMax, Math.max(...filteredLinearPreds));
-      }
-    }
-    
-    // Add some final padding
-    const rangePadding = (rangeMax - rangeMin) * 0.1;
-    return { 
-      min: rangeMin - rangePadding, 
-      max: rangeMax + rangePadding 
     };
-  }
 
-  // Draw coordinate axes
-  function drawAxes() {
-    const xRange = calculateXRange();
-    const yRange = calculateYRange();
-    
-    // Calculate scale
-    const xScale = plotWidth / (xRange.max - xRange.min);
-    const yScale = plotHeight / (yRange.max - yRange.min);
-    
-    ctx.strokeStyle = '#888';
-    ctx.lineWidth = 1;
-    
-    // X-axis
-    ctx.beginPath();
-    const yAxisPos = canvasHeight - plotMargin - (-yRange.min) * yScale;
-    ctx.moveTo(plotMargin, yAxisPos);
-    ctx.lineTo(canvasWidth - plotMargin, yAxisPos);
-    ctx.stroke();
-    
-    // Y-axis
-    ctx.beginPath();
-    const xAxisPos = plotMargin + (-xRange.min) * xScale;
-    ctx.moveTo(xAxisPos, plotMargin);
-    ctx.lineTo(xAxisPos, canvasHeight - plotMargin);
-    ctx.stroke();
-    
-    // Draw x-axis ticks and labels
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.font = '12px Arial';
-    ctx.fillStyle = '#333';
-    
-    const xStep = (xRange.max - xRange.min) / 5;
-    for (let x = Math.ceil(xRange.min / xStep) * xStep; x <= xRange.max; x += xStep) {
-      const xPos = plotMargin + (x - xRange.min) * xScale;
-      
-      // Draw tick
-      ctx.beginPath();
-      ctx.moveTo(xPos, yAxisPos - 5);
-      ctx.lineTo(xPos, yAxisPos + 5);
-      ctx.stroke();
-      
-      // Draw label
-      ctx.fillText(x.toFixed(1), xPos, yAxisPos + 8);
-    }
-    
-    // Draw y-axis ticks and labels
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    
-    const yStep = (yRange.max - yRange.min) / 5;
-    for (let y = Math.ceil(yRange.min / yStep) * yStep; y <= yRange.max; y += yStep) {
-      const yPos = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-      
-      // Draw tick
-      ctx.beginPath();
-      ctx.moveTo(xAxisPos - 5, yPos);
-      ctx.lineTo(xAxisPos + 5, yPos);
-      ctx.stroke();
-      
-      // Draw label
-      ctx.fillText(y.toFixed(1), xAxisPos - 8, yPos);
-    }
-  }
-
-  // Draw the true function
-  function drawTrueFunction(xRange, yRange) {
-    ctx.strokeStyle = '#f39c12';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 2]);
-    
-    // Calculate scale
-    const xScale = plotWidth / (xRange.max - xRange.min);
-    const yScale = plotHeight / (yRange.max - yRange.min);
-    
-    ctx.beginPath();
-    
-    const numPoints = 100;
-    const xStep = (xRange.max - xRange.min) / (numPoints - 1);
-    
-    for (let i = 0; i < numPoints; i++) {
-      const x = xRange.min + i * xStep;
-      let y;
-      
-      switch (datasetType) {
-        case 'polynomial':
-          y = 0.8 * Math.pow(x, 3) - 0.5 * Math.pow(x, 2) + 0.3 * x + 1;
-          break;
-        
-        case 'noisy':
-          y = Math.sin(x) + 0.3 * Math.sin(5 * x) + (x > 0 ? 0.2 * x : -0.2 * x);
-          break;
-        
-        case 'outliers':
-          y = 1.2 * x + 0.5;
-          break;
-      }
-      
-      const canvasX = plotMargin + (x - xRange.min) * xScale;
-      const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-      
-      if (i === 0) {
-        ctx.moveTo(canvasX, canvasY);
-      } else {
-        ctx.lineTo(canvasX, canvasY);
-      }
-    }
-    
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // Draw regression lines
-  function drawRegressionLines(xRange, yRange) {
-    // Calculate scale
-    const xScale = plotWidth / (xRange.max - xRange.min);
-    const yScale = plotHeight / (yRange.max - yRange.min);
-    
-    const numPoints = 200; // Increased number of points for smoother lines
-    const xStep = (xRange.max - xRange.min) / (numPoints - 1);
-    
-    // Draw linear regression line only if it succeeded
-    if (linearWeights.length > 0 && !linearTrainError.textContent.includes("Matrix is singular")) {
-      ctx.strokeStyle = '#e74c3c';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      
-      let firstPoint = true;
-      
-      for (let i = 0; i < numPoints; i++) {
-        const x = xRange.min + i * xStep;
-        
-        // Generate features for polynomial regression
-        const features = [1]; // Start with bias term
-        for (let j = 1; j <= polynomialDegree; j++) {
-          features.push(Math.pow(x, j));
+    /* generate n points, x uniform on [-1, 1], y = f(x) + uniform noise
+     * of half-width noise. Returns array of {x, y}. */
+    function generatePoints(targetKey, n, noise, rng) {
+        var f = TARGETS[targetKey].f;
+        var pts = [];
+        for (var i = 0; i < n; i++) {
+            var x = rng() * 2 - 1;
+            pts.push({ x: x, y: f(x) + (rng() * 2 - 1) * noise });
         }
-        
-        // Calculate prediction using dot product directly
-        let y = 0;
-        for (let j = 0; j < Math.min(features.length, linearWeights.length); j++) {
-          y += features[j] * linearWeights[j];
-        }
-        
-        // Skip drawing if the y value is extremely large or small (outside reasonable range)
-        // This prevents very large values from making the rest of the visualization unusable
-        const dataPoints = [...trainingData, ...testData];
-        const yValues = dataPoints.map(point => point.y);
-        const dataMin = Math.min(...yValues);
-        const dataMax = Math.max(...yValues);
-        const dataRange = dataMax - dataMin;
-        
-        // Skip if the prediction is more than 20x the data range away from the center
-        if (y < dataMin - 20 * dataRange || y > dataMax + 20 * dataRange) {
-          continue;
-        }
-        
-        const canvasX = plotMargin + (x - xRange.min) * xScale;
-        const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-        
-        // Skip points that would be outside the visible canvas area
-        if (canvasY < 0 || canvasY > canvasHeight) {
-          continue;
-        }
-        
-        // Only draw points that are within the canvas boundaries
-        if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
-          if (firstPoint) {
-            ctx.moveTo(canvasX, canvasY);
-            firstPoint = false;
-          } else {
-            ctx.lineTo(canvasX, canvasY);
-          }
-        }
-      }
-      ctx.stroke();
+        return pts;
     }
-    
-    // Draw ridge regression line
-    if (ridgeWeights.length > 0) {
-      ctx.strokeStyle = '#2ecc71';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      
-      let firstPoint = true;
-      
-      for (let i = 0; i < numPoints; i++) {
-        const x = xRange.min + i * xStep;
-        
-        // Generate features for polynomial regression
-        const features = [1]; // Start with bias term
-        for (let j = 1; j <= polynomialDegree; j++) {
-          features.push(Math.pow(x, j));
+
+    /* Fisher-Yates shuffle (in place) with provided rng */
+    function shuffle(arr, rng) {
+        for (var i = arr.length - 1; i > 0; i--) {
+            var j = Math.floor(rng() * (i + 1));
+            var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
         }
-        
-        // Calculate prediction using dot product directly
-        let y = 0;
-        for (let j = 0; j < Math.min(features.length, ridgeWeights.length); j++) {
-          y += features[j] * ridgeWeights[j];
+        return arr;
+    }
+
+    /* partition data into K folds whose sizes differ by at most 1;
+     * every element appears in exactly one fold. */
+    function makeFolds(data, K, rng) {
+        var idx = shuffle(data.slice(), rng);
+        var folds = [], base = Math.floor(idx.length / K), rem = idx.length % K, pos = 0;
+        for (var k = 0; k < K; k++) {
+            var size = base + (k < rem ? 1 : 0);
+            folds.push(idx.slice(pos, pos + size));
+            pos += size;
         }
-        
-        const canvasX = plotMargin + (x - xRange.min) * xScale;
-        const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-        
-        // Only draw points that are within the canvas boundaries
-        if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin) {
-          if (firstPoint) {
-            ctx.moveTo(canvasX, canvasY);
-            firstPoint = false;
-          } else {
-            ctx.lineTo(canvasX, canvasY);
-          }
+        return folds;
+    }
+
+    /* ---------- design matrix ---------- */
+    function designMatrix(xs, degree) {
+        var X = [];
+        for (var i = 0; i < xs.length; i++) {
+            var row = [1], p = 1;
+            for (var j = 1; j <= degree; j++) { p *= xs[i]; row.push(p); }
+            X.push(row);
         }
-      }
-      
-      ctx.stroke();
+        return X;
     }
-  }
 
-  // Draw data points
-  function drawDataPoints(xRange, yRange) {
-    // Calculate scale
-    const xScale = plotWidth / (xRange.max - xRange.min);
-    const yScale = plotHeight / (yRange.max - yRange.min);
-    
-    // Draw grid lines for better visualization
-    ctx.strokeStyle = '#eee';
-    ctx.lineWidth = 1;
-    
-    // Horizontal grid lines
-    const yStep = (yRange.max - yRange.min) / 10;
-    for (let y = Math.ceil(yRange.min / yStep) * yStep; y <= yRange.max; y += yStep) {
-      const canvasY = canvasHeight - plotMargin - (y - yRange.min) * yScale;
-      
-      ctx.beginPath();
-      ctx.moveTo(plotMargin, canvasY);
-      ctx.lineTo(canvasWidth - plotMargin, canvasY);
-      ctx.stroke();
+    /* ---------- Householder QR least squares ----------
+     * Solves min_beta ||A beta - b||_2 for A (m x p), m >= p.
+     * Returns { ok: true, beta } or { ok: false, reason }. */
+    function solveLeastSquaresQR(A, b) {
+        var m = A.length, p = A[0].length;
+        if (m < p) return { ok: false, reason: 'underdetermined' };
+        var R = [], i, j, k;
+        for (i = 0; i < m; i++) R.push(A[i].slice());
+        var qtb = b.slice();
+
+        for (k = 0; k < p; k++) {
+            var norm = 0;
+            for (i = k; i < m; i++) norm += R[i][k] * R[i][k];
+            norm = Math.sqrt(norm);
+            if (norm === 0) return { ok: false, reason: 'rank-deficient' };
+            var alpha = R[k][k] > 0 ? -norm : norm;
+            var v = new Array(m - k);
+            v[0] = R[k][k] - alpha;
+            for (i = k + 1; i < m; i++) v[i - k] = R[i][k];
+            var vnorm2 = 0;
+            for (i = 0; i < v.length; i++) vnorm2 += v[i] * v[i];
+            if (vnorm2 > 0) {
+                for (j = k; j < p; j++) {
+                    var dot = 0;
+                    for (i = 0; i < v.length; i++) dot += v[i] * R[k + i][j];
+                    var s = 2 * dot / vnorm2;
+                    for (i = 0; i < v.length; i++) R[k + i][j] -= s * v[i];
+                }
+                var dotb = 0;
+                for (i = 0; i < v.length; i++) dotb += v[i] * qtb[k + i];
+                var sb = 2 * dotb / vnorm2;
+                for (i = 0; i < v.length; i++) qtb[k + i] -= sb * v[i];
+            }
+        }
+
+        /* honest rank check on R's diagonal (relative) */
+        var maxDiag = 0;
+        for (k = 0; k < p; k++) maxDiag = Math.max(maxDiag, Math.abs(R[k][k]));
+        for (k = 0; k < p; k++) {
+            if (Math.abs(R[k][k]) < 1e-10 * maxDiag) {
+                return { ok: false, reason: 'rank-deficient' };
+            }
+        }
+
+        var beta = new Array(p);
+        for (k = p - 1; k >= 0; k--) {
+            var acc = qtb[k];
+            for (j = k + 1; j < p; j++) acc -= R[k][j] * beta[j];
+            beta[k] = acc / R[k][k];
+        }
+        return { ok: true, beta: beta };
     }
-    
-    // Vertical grid lines
-    const xStep = (xRange.max - xRange.min) / 10;
-    for (let x = Math.ceil(xRange.min / xStep) * xStep; x <= xRange.max; x += xStep) {
-      const canvasX = plotMargin + (x - xRange.min) * xScale;
-      
-      ctx.beginPath();
-      ctx.moveTo(canvasX, plotMargin);
-      ctx.lineTo(canvasX, canvasHeight - plotMargin);
-      ctx.stroke();
+
+    /* ridge via augmentation: min ||y - X b||^2 + lambda ||b||^2
+     * (penalty on ALL coordinates including the intercept, per the
+     * page's theorem). lambda = 0 gives genuine OLS. */
+    function solveRidge(X, y, lambda) {
+        var p = X[0].length, i, j;
+        if (lambda === 0) return solveLeastSquaresQR(X, y);
+        var A = [], b = [];
+        for (i = 0; i < X.length; i++) { A.push(X[i].slice()); b.push(y[i]); }
+        var sq = Math.sqrt(lambda);
+        for (i = 0; i < p; i++) {
+            var row = new Array(p).fill(0);
+            row[i] = sq;
+            A.push(row);
+            b.push(0);
+        }
+        return solveLeastSquaresQR(A, b);
     }
-    
-    // Draw training data points
-    ctx.fillStyle = '#3498db';
-    for (const point of trainingData) {
-      const canvasX = plotMargin + (point.x - xRange.min) * xScale;
-      const canvasY = canvasHeight - plotMargin - (point.y - yRange.min) * yScale;
-      
-      // Only draw points within the canvas boundaries
-      if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin &&
-          canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin) {
-        ctx.beginPath();
-        ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI);
-        ctx.fill();
-      }
+
+    /* convenience: fit polynomial ridge on {x,y} data */
+    function fitPolyRidge(data, degree, lambda) {
+        var xs = data.map(function (d) { return d.x; });
+        var ys = data.map(function (d) { return d.y; });
+        return solveRidge(designMatrix(xs, degree), ys, lambda);
     }
-    
-    // Draw test data points
-    ctx.fillStyle = '#9b59b6';
-    for (const point of testData) {
-      const canvasX = plotMargin + (point.x - xRange.min) * xScale;
-      const canvasY = canvasHeight - plotMargin - (point.y - yRange.min) * yScale;
-      
-      // Only draw points within the canvas boundaries
-      if (canvasY >= plotMargin && canvasY <= canvasHeight - plotMargin &&
-          canvasX >= plotMargin && canvasX <= canvasWidth - plotMargin) {
-        ctx.beginPath();
-        ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI);
-        ctx.fill();
-      }
+
+    function predictOne(beta, x) {
+        var acc = 0, p = 1;
+        for (var j = 0; j < beta.length; j++) { acc += beta[j] * p; p *= x; }
+        return acc;
     }
-  }
 
-  // Handle window resize
-  function handleResize() {
-    // Maintain aspect ratio but scale to window size
-    const parent = canvas.parentElement;
-    const ratio = canvasHeight / canvasWidth;
-    const newWidth = parent.clientWidth;
-    const newHeight = newWidth * ratio;
-    
-    canvas.style.width = newWidth + 'px';
-    canvas.style.height = newHeight + 'px';
-    
-    drawCanvas();
-  }
+    function predictAll(beta, data) {
+        return data.map(function (d) { return predictOne(beta, d.x); });
+    }
 
-  // Handle dataset type change
-  function handleDatasetChange() {
-    datasetType = datasetSelect.value;
-    
-    lambdaInput.value = 3;
-    lambda = Math.pow(10, 3 - 3); // For 0-5 range
-    lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
+    function mse(preds, ys) {
+        var s = 0;
+        for (var i = 0; i < preds.length; i++) {
+            var d = preds[i] - ys[i]; s += d * d;
+        }
+        return s / preds.length;
+    }
 
-    // Adjust polynomial degree based on dataset type
-    switch (datasetType) {
-      case 'noisy':
-        // Use medium polynomial degree for noisy data
-        polynomialDegreeInput.value = 8;
-        polynomialDegreeDisplay.textContent = "8";
-        polynomialDegree = 8;     
-        break;
-      case 'outliers':
-        // Use higher polynomial degree for outlier data to show the difference
-        polynomialDegreeInput.value = 6;
-        polynomialDegreeDisplay.textContent = "6";
-        polynomialDegree = 6;
-        break;
-      default: 
-        // Use higher polynomial degree for polynomial data
-        polynomialDegreeInput.value = 12;
-        polynomialDegreeDisplay.textContent = "12";
-        polynomialDegree = 12;
-      break;
-    }  
-    generateData();
-  }
+    function normL2(beta) {
+        var s = 0;
+        for (var i = 0; i < beta.length; i++) s += beta[i] * beta[i];
+        return Math.sqrt(s);
+    }
 
-  // Handle lambda change
-  function handleLambdaChange() {
-    // Convert slider value to logarithmic scale
-    const sliderValue = parseFloat(lambdaInput.value);
-    lambda = Math.pow(10, sliderValue - 3); // For 0-5 range, gives approximately 0.001 to 100
-    
-    // Format displayed value to appropriate decimal places based on magnitude
-    lambdaDisplay.textContent = `λ = ${lambda.toFixed(lambda < 0.01 ? 4 : lambda < 0.1 ? 3 : lambda < 1 ? 2 : 1)}`;
-    
-    // Just refit models without generating new data
-    fitModels();
-    drawCanvas();
-  }
+    /* ---------- self-tests ---------- */
+    function runSelfTests() {
+        var failures = [];
 
-  // Handle training size change
-  function handleTrainSizeChange() {
-    trainSize = parseInt(trainSizeInput.value);
-    trainSizeDisplay.textContent = `${trainSize} points`;
-    
-    // Generate new data
-    generateData();
-  }
+        /* T1: exact recovery of a line, lambda = 0 */
+        (function () {
+            var data = [-1, -0.4, 0.1, 0.6, 1].map(function (x) { return { x: x, y: 2 * x + 1 }; });
+            var r = fitPolyRidge(data, 1, 0);
+            if (!r.ok || Math.abs(r.beta[0] - 1) > 1e-9 || Math.abs(r.beta[1] - 2) > 1e-9) {
+                failures.push('T1 exact line recovery failed: ' + JSON.stringify(r));
+            }
+        })();
 
-  // Handle noise level change
-  function handleNoiseLevelChange() {
-    noiseLevel = parseFloat(noiseLevelInput.value);
-    noiseLevelDisplay.textContent = noiseLevel.toFixed(1);
-    
-    // Generate new data
-    generateData();
-  }
+        /* T2: ridge solution satisfies the normal equations
+         * (X^T X + lambda I) beta = X^T y to high precision */
+        (function () {
+            var rng = createRng(99);
+            var data = generatePoints('cubic', 40, 0.4, rng);
+            var degree = 3, lambda = 0.7;
+            var r = fitPolyRidge(data, degree, lambda);
+            if (!r.ok) { failures.push('T2 solver failed unexpectedly'); return; }
+            var X = designMatrix(data.map(function (d) { return d.x; }), degree);
+            var y = data.map(function (d) { return d.y; });
+            var p = degree + 1;
+            for (var i = 0; i < p; i++) {
+                var lhs = lambda * r.beta[i], rhs = 0;
+                for (var k = 0; k < X.length; k++) {
+                    var xk = X[k], dotXb = 0;
+                    for (var j = 0; j < p; j++) dotXb += xk[j] * r.beta[j];
+                    lhs += xk[i] * dotXb;
+                    rhs += xk[i] * y[k];
+                }
+                if (Math.abs(lhs - rhs) > 1e-8) {
+                    failures.push('T2 normal-equation residual too large at row ' + i + ': ' + Math.abs(lhs - rhs));
+                    break;
+                }
+            }
+        })();
 
-  // Handle polynomial degree change
-  function handlePolynomialDegreeChange() {
-    polynomialDegree = parseInt(polynomialDegreeInput.value);
-    polynomialDegreeDisplay.textContent = polynomialDegree;
-    
-    // Just refit models without generating new data
-    fitModels();
-    drawCanvas();
-  }
+        /* T3: ||beta(lambda)|| strictly decreases in lambda, and -> 0 */
+        (function () {
+            var rng = createRng(7);
+            var data = generatePoints('cubic', 30, 0.4, rng);
+            var lambdas = [0, 0.1, 1, 10], norms = [];
+            for (var i = 0; i < lambdas.length; i++) {
+                var r = fitPolyRidge(data, 6, lambdas[i]);
+                if (!r.ok) { failures.push('T3 solver failed at lambda=' + lambdas[i]); return; }
+                norms.push(normL2(r.beta));
+            }
+            for (var k = 1; k < norms.length; k++) {
+                if (!(norms[k] < norms[k - 1])) {
+                    failures.push('T3 norm not decreasing: ' + norms.join(', '));
+                    return;
+                }
+            }
+            var big = fitPolyRidge(data, 6, 1e6);
+            if (!big.ok || normL2(big.beta) > 1e-2 * norms[0]) {
+                failures.push('T3 beta does not shrink toward 0 for huge lambda');
+            }
+        })();
 
-  // Add event listeners
-  datasetSelect.addEventListener('change', handleDatasetChange);
-  lambdaInput.addEventListener('input', handleLambdaChange);
-  trainSizeInput.addEventListener('input', handleTrainSizeChange);
-  noiseLevelInput.addEventListener('input', handleNoiseLevelChange);
-  polynomialDegreeInput.addEventListener('input', handlePolynomialDegreeChange);
-  generateBtn.addEventListener('click', generateData);
-  
-  window.addEventListener('resize', handleResize);
-  
-  // Initialize the visualization
-  generateData();
-  handleResize();
-}); 
+        /* T4: honest singularity: 3 points cannot determine degree 8 at
+         * lambda = 0, but lambda > 0 must succeed */
+        (function () {
+            var data = [{ x: -0.5, y: 1 }, { x: 0.1, y: 2 }, { x: 0.7, y: 0 }];
+            var r0 = fitPolyRidge(data, 8, 0);
+            if (r0.ok) failures.push('T4 underdetermined OLS was not rejected');
+            var r1 = fitPolyRidge(data, 8, 0.01);
+            if (!r1.ok) failures.push('T4 ridge with lambda > 0 should succeed');
+        })();
+
+        /* T5: design matrix values */
+        (function () {
+            var X = designMatrix([0.5], 3);
+            var exp = [1, 0.5, 0.25, 0.125];
+            for (var j = 0; j < 4; j++) {
+                if (Math.abs(X[0][j] - exp[j]) > 1e-15) {
+                    failures.push('T5 design matrix wrong: ' + JSON.stringify(X[0]));
+                    break;
+                }
+            }
+        })();
+
+        /* T6: MSE known value: preds [1,2] vs actual [0,4] -> 2.5 */
+        (function () {
+            if (Math.abs(mse([1, 2], [0, 4]) - 2.5) > 1e-15) failures.push('T6 mse value wrong');
+        })();
+
+        /* T7: fold partition: n = 23, K = 5 -> sizes {5,5,5,4,4},
+         * disjoint cover of all elements */
+        (function () {
+            var rng = createRng(3);
+            var data = [];
+            for (var i = 0; i < 23; i++) data.push({ id: i });
+            var folds = makeFolds(data, 5, rng);
+            var sizes = folds.map(function (f) { return f.length; }).sort().join(',');
+            if (sizes !== '4,4,5,5,5') failures.push('T7 fold sizes wrong: ' + sizes);
+            var seen = {};
+            var total = 0;
+            folds.forEach(function (f) {
+                f.forEach(function (el) {
+                    if (seen[el.id]) failures.push('T7 duplicate element in folds');
+                    seen[el.id] = true; total++;
+                });
+            });
+            if (total !== 23) failures.push('T7 folds do not cover all elements: ' + total);
+        })();
+
+        /* T8: generator/target consistency: noise = 0 => y = f(x) exactly,
+         * for every registered target */
+        (function () {
+            Object.keys(TARGETS).forEach(function (key) {
+                var rng = createRng(11);
+                var pts = generatePoints(key, 25, 0, rng);
+                for (var i = 0; i < pts.length; i++) {
+                    if (pts[i].y !== TARGETS[key].f(pts[i].x)) {
+                        failures.push('T8 generator disagrees with target ' + key);
+                        return;
+                    }
+                }
+            });
+        })();
+
+        /* T4b: rank-deficient with m >= p: 6 points but only 2 distinct
+         * x-values cannot determine a cubic; must be reported, not fudged */
+        (function () {
+            var data = [
+                { x: -0.3, y: 1.0 }, { x: -0.3, y: 1.1 }, { x: -0.3, y: 0.9 },
+                { x: 0.6, y: 2.0 }, { x: 0.6, y: 2.1 }, { x: 0.6, y: 1.9 }
+            ];
+            var r = fitPolyRidge(data, 3, 0);
+            if (r.ok) failures.push('T4b rank-deficient system was not rejected');
+        })();
+
+        /* T8b: pinned target values (the target functions are part of the
+         * page's spec; silent drift must fail) */
+        (function () {
+            if (Math.abs(TARGETS.cubic.f(0) - 1) > 1e-15 ||
+                Math.abs(TARGETS.cubic.f(1) - 1.6) > 1e-15 ||
+                Math.abs(TARGETS.cubic.f(-1) - (-0.6)) > 1e-15) {
+                failures.push('T8b cubic target drifted from spec');
+            }
+            if (Math.abs(TARGETS.sinusoid.f(0)) > 1e-15 ||
+                Math.abs(TARGETS.sinusoid.f(1) - (Math.sin(3) + 0.3 * Math.sin(9))) > 1e-15) {
+                failures.push('T8b sinusoid target drifted from spec');
+            }
+        })();
+
+        /* T9: predictOne matches design-matrix contraction */
+        (function () {
+            var beta = [0.3, -1.2, 0.5, 2.0];
+            var x = -0.73;
+            var X = designMatrix([x], 3);
+            var viaX = 0;
+            for (var j = 0; j < 4; j++) viaX += X[0][j] * beta[j];
+            if (Math.abs(viaX - predictOne(beta, x)) > 1e-12) failures.push('T9 predict mismatch');
+        })();
+
+        return { passed: failures.length === 0, failures: failures };
+    }
+
+    return {
+        createRng: createRng,
+        TARGETS: TARGETS,
+        generatePoints: generatePoints,
+        shuffle: shuffle,
+        makeFolds: makeFolds,
+        designMatrix: designMatrix,
+        solveLeastSquaresQR: solveLeastSquaresQR,
+        solveRidge: solveRidge,
+        fitPolyRidge: fitPolyRidge,
+        predictOne: predictOne,
+        predictAll: predictAll,
+        mse: mse,
+        normL2: normL2,
+        runSelfTests: runSelfTests
+    };
+})();
+
+if (typeof module !== 'undefined' && module.exports) { module.exports = RegCore; }
+/* ============================================================
+ * Ridge Regression Demo — UI layer (v2)
+ * Self-contained dark island. Depends only on RegCore above.
+ * Refuses to render if RegCore.runSelfTests() fails.
+ * When OLS is genuinely singular (n < d+1 or rank-deficient), the
+ * demo says so honestly while ridge keeps working — this IS the
+ * point of T-ridge_regression_solution, not a failure to hide.
+ * ============================================================ */
+(function () {
+    'use strict';
+
+    function initRidgeDemo() {
+        var container = document.getElementById('ridge_regression_visualizer');
+        if (!container) return;
+
+        var testResult = RegCore.runSelfTests();
+        if (!testResult.passed) {
+            container.innerHTML =
+                '<div style="background:rgba(40,20,24,0.95);border:1px solid #ff6b5e;' +
+                'border-radius:8px;padding:20px;color:#ffb3ab;font-family:monospace;font-size:0.85rem;">' +
+                '<strong>Demo disabled: mathematical self-tests failed.</strong><br>' +
+                '<pre style="white-space:pre-wrap;">' +
+                testResult.failures.map(function (f) {
+                    return f.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+                }).join('\n') + '</pre></div>';
+            return;
+        }
+
+        /* ---------- palette (self-contained) ---------- */
+        var C = {
+            island: 'rgba(20,28,40,0.95)',
+            panel: 'rgba(255,255,255,0.04)',
+            panelBorder: 'rgba(255,255,255,0.10)',
+            plotBg: '#101826',
+            grid: 'rgba(255,255,255,0.07)',
+            axis: 'rgba(255,255,255,0.25)',
+            text: 'rgba(255,255,255,0.88)',
+            muted: 'rgba(255,255,255,0.55)',
+            train: '#4da3ff',
+            test: '#f5a623',
+            ols: '#ff6b5e',
+            ridge: '#2ecc71',
+            truth: '#c084fc',
+            warn: '#ffb3ab'
+        };
+
+        /* ---------- state ---------- */
+        var rng = RegCore.createRng((Date.now() ^ 0x51ED2701) >>> 0);
+        var LAMBDA_STOPS = [0, 1e-4, 1e-3, 1e-2, 1e-1, 1, 10, 100];
+        var TEST_N = 60;
+        var params = { target: 'cubic', degree: 9, nTrain: 30, noise: 0.5, lambda: 1 };
+        var train = [], test = [];
+        var olsFit = { ok: false }, ridgeFit = { ok: false };
+        var DOM_MIN = -1.15, DOM_MAX = 1.15;
+
+        /* ---------- DOM ---------- */
+        var style = document.createElement('style');
+        style.textContent = [
+            '#ridge_regression_visualizer .rr-root{background:' + C.island + ';border:1px solid ' + C.panelBorder + ';border-radius:10px;padding:18px;color:' + C.text + ';font-family:"Segoe UI",system-ui,sans-serif;}',
+            '#ridge_regression_visualizer .rr-grid{display:flex;flex-direction:column;gap:16px;}',
+            '@media (min-width:992px){#ridge_regression_visualizer .rr-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start;}}',
+            '#ridge_regression_visualizer .rr-card{background:' + C.panel + ';border:1px solid ' + C.panelBorder + ';border-radius:8px;padding:14px;}',
+            '#ridge_regression_visualizer .rr-card h3{margin:0 0 10px 0;font-size:1.02rem;color:' + C.text + ';font-weight:600;}',
+            '#ridge_regression_visualizer .rr-main{display:flex;flex-direction:column;gap:16px;min-width:0;}',
+            '#ridge_regression_visualizer canvas{display:block;width:100%;height:auto;border-radius:6px;}',
+            '#ridge_regression_visualizer .rr-legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px;font-size:0.82rem;color:' + C.muted + ';}',
+            '#ridge_regression_visualizer .rr-legend span.sw{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:3px;}',
+            '#ridge_regression_visualizer .rr-legend span.pt{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;}',
+            '#ridge_regression_visualizer .rr-legend span.sq{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px;}',
+            '#ridge_regression_visualizer .rr-ctl{margin-bottom:14px;}',
+            '#ridge_regression_visualizer .rr-ctl label{display:flex;justify-content:space-between;font-size:0.86rem;margin-bottom:6px;color:' + C.text + ';}',
+            '#ridge_regression_visualizer .rr-ctl label .val{font-family:monospace;color:' + C.muted + ';}',
+            '#ridge_regression_visualizer input[type=range]{width:100%;accent-color:#4da3ff;}',
+            '#ridge_regression_visualizer .rr-seg{display:flex;gap:6px;}',
+            '#ridge_regression_visualizer .rr-seg button{flex:1;padding:7px 0;border-radius:6px;border:1px solid ' + C.panelBorder + ';background:transparent;color:' + C.muted + ';cursor:pointer;font-size:0.86rem;}',
+            '#ridge_regression_visualizer .rr-seg button.on{background:rgba(77,163,255,0.18);border-color:#4da3ff;color:' + C.text + ';}',
+            '#ridge_regression_visualizer .rr-btn{width:100%;padding:10px 0;border:none;border-radius:6px;font-size:0.95rem;cursor:pointer;margin-bottom:8px;color:' + C.text + ';background:rgba(255,255,255,0.10);}',
+            '#ridge_regression_visualizer .rr-btn:hover{background:rgba(255,255,255,0.16);}',
+            '#ridge_regression_visualizer .rr-metrics{font-family:monospace;font-size:0.86rem;line-height:1.9;}',
+            '#ridge_regression_visualizer .rr-metrics .row{display:flex;justify-content:space-between;}',
+            '#ridge_regression_visualizer .rr-metrics .hd{color:' + C.muted + ';margin-top:6px;font-family:"Segoe UI",system-ui,sans-serif;font-size:0.8rem;}',
+            '#ridge_regression_visualizer .rr-msg{color:' + C.warn + ';font-size:0.84rem;margin-top:10px;line-height:1.5;}',
+            '#ridge_regression_visualizer .rr-wrow{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-family:monospace;font-size:0.78rem;}',
+            '#ridge_regression_visualizer .rr-wlabel{width:44px;text-align:right;color:' + C.muted + ';flex-shrink:0;}',
+            '#ridge_regression_visualizer .rr-wtrack{position:relative;flex:1;height:14px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}',
+            '#ridge_regression_visualizer .rr-wcenter{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.35);}',
+            '#ridge_regression_visualizer .rr-wbar{position:absolute;top:2px;height:4px;border-radius:2px;}',
+            '#ridge_regression_visualizer .rr-wbar.ridge{top:8px;}',
+            '#ridge_regression_visualizer .rr-wnote{font-size:0.75rem;color:' + C.muted + ';margin-top:8px;}'
+        ].join('\n');
+        container.appendChild(style);
+
+        var root = document.createElement('div');
+        root.className = 'rr-root';
+        root.innerHTML =
+            '<div class="rr-grid">' +
+            '  <div class="rr-main">' +
+            '    <div class="rr-card">' +
+            '      <h3>OLS vs Ridge Fit</h3>' +
+            '      <canvas id="rr-plot"></canvas>' +
+            '      <div class="rr-legend">' +
+            '        <span><span class="pt" style="background:' + C.train + '"></span>Train</span>' +
+            '        <span><span class="sq" style="background:' + C.test + '"></span>Test</span>' +
+            '        <span><span class="sw" style="background:' + C.ols + '"></span>OLS (&lambda; = 0)</span>' +
+            '        <span><span class="sw" style="background:' + C.ridge + '"></span>Ridge</span>' +
+            '        <span><span class="sw" style="background:' + C.truth + '"></span>True function (dashed)</span>' +
+            '      </div>' +
+            '    </div>' +
+            '    <div class="rr-card">' +
+            '      <h3>Coefficient Comparison</h3>' +
+            '      <div id="rr-weights"></div>' +
+            '      <div class="rr-wnote">Bar length on a log scale (coefficients can differ by orders of magnitude); hover a bar for the exact value. Red = OLS, green = Ridge; left of center = negative.</div>' +
+            '    </div>' +
+            '  </div>' +
+            '  <div class="rr-side">' +
+            '    <div class="rr-card">' +
+            '      <div class="rr-ctl"><label>Target function</label>' +
+            '        <div class="rr-seg">' +
+            '          <button id="rr-t-cubic" class="on">Cubic</button>' +
+            '          <button id="rr-t-sinusoid">Sinusoid</button>' +
+            '        </div>' +
+            '      </div>' +
+            '      <div class="rr-ctl"><label>Polynomial degree <span class="val" id="rr-deg-val">9</span></label>' +
+            '        <input type="range" id="rr-deg" min="1" max="15" step="1" value="9"></div>' +
+            '      <div class="rr-ctl"><label>Training points <span class="val" id="rr-n-val">30</span></label>' +
+            '        <input type="range" id="rr-n" min="10" max="50" step="1" value="30"></div>' +
+            '      <div class="rr-ctl"><label>Noise level <span class="val" id="rr-noise-val">0.5</span></label>' +
+            '        <input type="range" id="rr-noise" min="0" max="1" step="0.1" value="0.5"></div>' +
+            '      <div class="rr-ctl"><label>Regularization &lambda; <span class="val" id="rr-lam-val">1</span></label>' +
+            '        <input type="range" id="rr-lam" min="0" max="7" step="1" value="5"></div>' +
+            '      <button id="rr-newdata" class="rr-btn">New Data</button>' +
+            '    </div>' +
+            '    <div class="rr-card" style="margin-top:16px;">' +
+            '      <h3>Metrics</h3>' +
+            '      <div class="rr-metrics" id="rr-metrics"></div>' +
+            '      <div class="rr-msg" id="rr-msg"></div>' +
+            '    </div>' +
+            '  </div>' +
+            '</div>';
+        container.appendChild(root);
+
+        var plotCanvas = document.getElementById('rr-plot');
+        var metricsEl = document.getElementById('rr-metrics');
+        var msgEl = document.getElementById('rr-msg');
+        var weightsEl = document.getElementById('rr-weights');
+
+        /* ---------- canvas sizing (DPR-aware, padding-cached) ---------- */
+        var padCache = {};
+        function sizeCanvas(canvas, aspect) {
+            var parent = canvas.parentElement;
+            var pad = padCache[canvas.id];
+            if (pad === undefined) {
+                var cs = window.getComputedStyle ? window.getComputedStyle(parent) : null;
+                pad = cs ? (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) : 0;
+                padCache[canvas.id] = pad;
+            }
+            var cssW = parent.clientWidth - pad;
+            if (cssW <= 0) cssW = 300;
+            var cssH = Math.round(cssW * aspect);
+            var dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssW * dpr);
+            canvas.height = Math.round(cssH * dpr);
+            canvas.style.width = cssW + 'px';
+            canvas.style.height = cssH + 'px';
+            var ctx = canvas.getContext('2d');
+            if (ctx && ctx.setTransform) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            return { w: cssW, h: cssH, ctx: ctx };
+        }
+
+        /* ---------- model pipeline ---------- */
+        function regenerate() {
+            train = RegCore.generatePoints(params.target, params.nTrain, params.noise, rng);
+            test = RegCore.generatePoints(params.target, TEST_N, params.noise, rng);
+            refit();
+        }
+
+        function refit() {
+            olsFit = RegCore.fitPolyRidge(train, params.degree, 0);
+            ridgeFit = RegCore.fitPolyRidge(train, params.degree, params.lambda);
+            renderAll();
+        }
+
+        /* ---------- plot ---------- */
+        function yRangeFromData() {
+            var ys = train.concat(test).map(function (d) { return d.y; });
+            var lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+            var pad = Math.max((hi - lo) * 0.15, 0.2);
+            return { min: lo - pad, max: hi + pad };
+        }
+
+        function drawPlot() {
+            var s = sizeCanvas(plotCanvas, 0.62);
+            var ctx = s.ctx; if (!ctx) return;
+            var m = { l: 40, r: 12, t: 10, b: 26 };
+            var pw = s.w - m.l - m.r, ph = s.h - m.t - m.b;
+            var yr = yRangeFromData();
+            function X(x) { return m.l + (x - DOM_MIN) / (DOM_MAX - DOM_MIN) * pw; }
+            function Y(y) { return m.t + (yr.max - y) / (yr.max - yr.min) * ph; }
+
+            ctx.fillStyle = C.plotBg;
+            ctx.fillRect(0, 0, s.w, s.h);
+
+            /* grid + axis labels */
+            ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+            ctx.fillStyle = C.muted; ctx.font = '11px monospace';
+            [-1, -0.5, 0, 0.5, 1].forEach(function (gx) {
+                ctx.beginPath(); ctx.moveTo(X(gx), m.t); ctx.lineTo(X(gx), m.t + ph); ctx.stroke();
+            });
+            ctx.textAlign = 'center';
+            [-1, 0, 1].forEach(function (gx) { ctx.fillText(String(gx), X(gx), s.h - 8); });
+            var ySpan = yr.max - yr.min;
+            var yStep = Math.pow(10, Math.floor(Math.log(ySpan / 4) / Math.LN10));
+            if (ySpan / yStep > 8) yStep *= 2;
+            ctx.textAlign = 'right';
+            for (var gy = Math.ceil(yr.min / yStep) * yStep; gy <= yr.max; gy += yStep) {
+                ctx.strokeStyle = C.grid;
+                ctx.beginPath(); ctx.moveTo(m.l, Y(gy)); ctx.lineTo(m.l + pw, Y(gy)); ctx.stroke();
+                ctx.fillText(gy.toFixed(yStep < 1 ? 1 : 0), m.l - 6, Y(gy) + 4);
+            }
+            ctx.strokeStyle = C.axis; ctx.lineWidth = 1.2;
+            if (yr.min < 0 && yr.max > 0) {
+                ctx.beginPath(); ctx.moveTo(m.l, Y(0)); ctx.lineTo(m.l + pw, Y(0)); ctx.stroke();
+            }
+            ctx.beginPath(); ctx.moveTo(X(0), m.t); ctx.lineTo(X(0), m.t + ph); ctx.stroke();
+
+            /* clip curves to the plot area so exploding OLS stays honest but tidy */
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(m.l, m.t, pw, ph);
+            ctx.clip();
+
+            function curve(f, color, dashed) {
+                ctx.strokeStyle = color; ctx.lineWidth = 2;
+                ctx.setLineDash(dashed ? [6, 4] : []);
+                ctx.beginPath();
+                var N = 240;
+                for (var i = 0; i <= N; i++) {
+                    var x = DOM_MIN + (i / N) * (DOM_MAX - DOM_MIN);
+                    var y = f(x);
+                    if (i === 0) ctx.moveTo(X(x), Y(y));
+                    else ctx.lineTo(X(x), Y(y));
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            curve(RegCore.TARGETS[params.target].f, C.truth, true);
+            if (olsFit.ok) curve(function (x) { return RegCore.predictOne(olsFit.beta, x); }, C.ols, false);
+            if (ridgeFit.ok) curve(function (x) { return RegCore.predictOne(ridgeFit.beta, x); }, C.ridge, false);
+            ctx.restore();
+
+            /* points */
+            train.forEach(function (d) {
+                ctx.fillStyle = C.train;
+                ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.arc(X(d.x), Y(d.y), 4, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+            });
+            test.forEach(function (d) {
+                ctx.fillStyle = 'rgba(245,166,35,0.55)';
+                ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.rect(X(d.x) - 3.5, Y(d.y) - 3.5, 7, 7); ctx.fill(); ctx.stroke();
+            });
+        }
+
+        /* ---------- metrics ---------- */
+        function fmtMSE(fit, data) {
+            if (!fit.ok) return '&mdash;';
+            return RegCore.mse(RegCore.predictAll(fit.beta, data), data.map(function (d) { return d.y; })).toFixed(3);
+        }
+        function fmtNorm(fit) {
+            if (!fit.ok) return '&mdash;';
+            var v = RegCore.normL2(fit.beta);
+            return v >= 1000 ? v.toExponential(2) : v.toFixed(3);
+        }
+
+        function renderMetrics() {
+            metricsEl.innerHTML =
+                '<div class="hd">OLS (&lambda; = 0)</div>' +
+                '<div class="row"><span>Train MSE</span><span>' + fmtMSE(olsFit, train) + '</span></div>' +
+                '<div class="row"><span>Test MSE</span><span>' + fmtMSE(olsFit, test) + '</span></div>' +
+                '<div class="row"><span>&#8214;&beta;&#8214;&#8322;</span><span>' + fmtNorm(olsFit) + '</span></div>' +
+                '<div class="hd">Ridge (&lambda; = ' + fmtLambda(params.lambda) + ')</div>' +
+                '<div class="row"><span>Train MSE</span><span>' + fmtMSE(ridgeFit, train) + '</span></div>' +
+                '<div class="row"><span>Test MSE</span><span>' + fmtMSE(ridgeFit, test) + '</span></div>' +
+                '<div class="row"><span>&#8214;&beta;&#8214;&#8322;</span><span>' + fmtNorm(ridgeFit) + '</span></div>';
+
+            var msgs = [];
+            if (!olsFit.ok) {
+                msgs.push('OLS is singular here: with ' + params.nTrain + ' points and degree ' +
+                    params.degree + ' (' + (params.degree + 1) + ' coefficients), X<sup>&#8868;</sup>X is not invertible. ' +
+                    'Ridge still has a unique solution because &lambda;I makes X<sup>&#8868;</sup>X + &lambda;I positive definite &mdash; ' +
+                    'exactly the guarantee in the theorem above.');
+            }
+            if (!ridgeFit.ok) msgs.push('Ridge solve failed unexpectedly.');
+            if (params.lambda === 0 && olsFit.ok) {
+                msgs.push('&lambda; = 0: the two fits coincide (ridge reduces to OLS).');
+            }
+            msgEl.innerHTML = msgs.join('<br>');
+        }
+
+        function fmtLambda(l) {
+            if (l === 0) return '0';
+            return l >= 1 ? String(l) : l.toPrecision(1);
+        }
+
+        /* ---------- weight bars (symmetric log scale) ---------- */
+        function renderWeights() {
+            weightsEl.innerHTML = '';
+            var p = params.degree + 1;
+            var w0 = 0.01;
+            var maxMag = 0;
+            [olsFit, ridgeFit].forEach(function (f) {
+                if (f.ok) f.beta.forEach(function (w) { maxMag = Math.max(maxMag, Math.abs(w)); });
+            });
+            if (maxMag === 0) maxMag = 1;
+            var logMax = Math.log10(1 + maxMag / w0);
+            function halfWidth(w) { return 50 * Math.log10(1 + Math.abs(w) / w0) / logMax; }
+
+            for (var i = 0; i < p; i++) {
+                var row = document.createElement('div');
+                row.className = 'rr-wrow';
+                var label = document.createElement('div');
+                label.className = 'rr-wlabel';
+                label.textContent = i === 0 ? 'bias' : 'w' + i;
+                var track = document.createElement('div');
+                track.className = 'rr-wtrack';
+                var center = document.createElement('div');
+                center.className = 'rr-wcenter';
+                track.appendChild(center);
+                [{ fit: olsFit, color: C.ols, cls: '' }, { fit: ridgeFit, color: C.ridge, cls: 'ridge' }]
+                    .forEach(function (spec) {
+                        if (!spec.fit.ok) return;
+                        var w = spec.fit.beta[i];
+                        var hw = halfWidth(w);
+                        var bar = document.createElement('div');
+                        bar.className = 'rr-wbar ' + spec.cls;
+                        bar.style.background = spec.color;
+                        bar.style.width = hw + '%';
+                        bar.style.left = (w >= 0 ? 50 : 50 - hw) + '%';
+                        bar.title = (spec.cls ? 'Ridge: ' : 'OLS: ') +
+                            (Math.abs(w) >= 1000 ? w.toExponential(3) : w.toFixed(4));
+                        track.appendChild(bar);
+                    });
+                row.appendChild(label);
+                row.appendChild(track);
+                weightsEl.appendChild(row);
+            }
+        }
+
+        function renderAll() { renderMetrics(); renderWeights(); drawPlot(); }
+
+        /* ---------- controls ---------- */
+        function bindRange(id, fn) {
+            var el = document.getElementById(id);
+            el.addEventListener('input', function () { fn(el); });
+        }
+        bindRange('rr-deg', function (el) {
+            params.degree = parseInt(el.value, 10);
+            document.getElementById('rr-deg-val').textContent = String(params.degree);
+            refit();
+        });
+        bindRange('rr-n', function (el) {
+            params.nTrain = parseInt(el.value, 10);
+            document.getElementById('rr-n-val').textContent = String(params.nTrain);
+            regenerate();
+        });
+        bindRange('rr-noise', function (el) {
+            params.noise = parseFloat(el.value);
+            document.getElementById('rr-noise-val').textContent = params.noise.toFixed(1);
+            regenerate();
+        });
+        bindRange('rr-lam', function (el) {
+            params.lambda = LAMBDA_STOPS[parseInt(el.value, 10)];
+            document.getElementById('rr-lam-val').textContent = fmtLambda(params.lambda);
+            refit();
+        });
+        function setTarget(t) {
+            params.target = t;
+            document.getElementById('rr-t-cubic').classList.toggle('on', t === 'cubic');
+            document.getElementById('rr-t-sinusoid').classList.toggle('on', t === 'sinusoid');
+            regenerate();
+        }
+        document.getElementById('rr-t-cubic').addEventListener('click', function () { setTarget('cubic'); });
+        document.getElementById('rr-t-sinusoid').addEventListener('click', function () { setTarget('sinusoid'); });
+        document.getElementById('rr-newdata').addEventListener('click', regenerate);
+
+        var resizeTimer = null;
+        window.addEventListener('resize', function () {
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () { padCache = {}; drawPlot(); }, 120);
+        });
+
+        regenerate();
+    }
+
+    if (typeof document === 'undefined') { return; }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initRidgeDemo);
+    } else {
+        initRidgeDemo();
+    }
+})();
