@@ -276,9 +276,25 @@ uses_python: false
                 </div>
             </section>
 
-             <section id="demo" class="section-content">
-                <h2>Demo</h2>
+             <section id="demo" class="section-content section-wide">
+                <h2>Demo: The Three Algorithms, Live</h2>
                 <div id="clustering_visualizer"></div>
+                <p>
+                    The three tabs of this demo run the three algorithms of this page on one dataset. Point colors always
+                    show the current <strong>cluster assignments</strong> &mdash; the generating classes are never given to any
+                    of the methods, and the metrics panel reports how well the discovered clusters happen to match them.
+                </p>
+
+                <h3>The K-means Tab</h3>
+                <p>
+                    The <strong>Step</strong> button executes Lloyd’s iteration one half-step at a time: an assignment step
+                    (each point moves to its nearest center) or an update step (each center moves to the mean of its points).
+                    The distortion \(J(M, Z)\) defined above is recorded after <em>every</em> half-step, and the curve never
+                    rises: both half-steps can only decrease \(J\), which is exactly why the algorithm converges. Convergence
+                    itself is declared by the honest criterion &mdash; an assignment step that reproduces the previous
+                    assignment is a fixed point of the iteration, after which nothing can change. Stopping a run midway keeps
+                    the intermediate state on screen but labels it explicitly as a non-converged Lloyd iterate.
+                </p>
                 <p>
                     <strong>Note:</strong> In random initialization, we simply pick \(K\) data points uniformly at random to serve as the initial cluster centers. 
                     While this method is fast, it can be highly sensitive to outliers or imbalanced data distributions, often leading to poor cluster quality 
@@ -305,6 +321,69 @@ uses_python: false
                         <li>Proceed with the standard K-means algorithm using these \(K\) initial centers.</li>
                     </ol>
                  </div>
+
+                <p>
+                    The <strong>Compare inits</strong> button makes this concrete: it runs ten restarts with each
+                    initialization and reports the mean, best, and worst final distortion. On the blob datasets with elevated
+                    noise, a typical outcome is that every k-means++ restart lands on the same optimum while random
+                    initialization averages noticeably worse and its worst restart ends at roughly three times the best
+                    distortion &mdash; stuck with two centers inside one cloud.
+                </p>
+
+                <h3>The Spectral Tab</h3>
+                <p>
+                    The pipeline is the algorithm box above, executed literally. The similarity graph uses
+                    \(w_{ij} = \exp(-\|x_i - x_j\|^2 / 2\sigma^2)\) with no self-loops, shown in the first panel with edge
+                    opacity proportional to the weight. The bottom \(K\) eigenvectors of \(\mathbf{L}_{\text{sym}}\) are
+                    computed by subspace iteration on the flipped operator \(\mathbf{M} = 2\mathbf{I} - \mathbf{L}_{\text{sym}}\),
+                    whose largest eigenvalues are exactly the smallest of \(\mathbf{L}_{\text{sym}}\) (its spectrum lies in
+                    \([0, 2]\), so no sign tricks are needed). The solver stops only on a certificate: the residual
+                    \(\|(\mathbf{I} - \mathbf{V}\mathbf{V}^\top)\mathbf{M}\mathbf{V}\|\) of the computed invariant
+                    <em>subspace</em>. The subspace &mdash; not the individual eigenvectors &mdash; is the right object to
+                    certify, because the K-means step that follows sees only the rows of \(\mathbf{T}\), and those are
+                    unchanged (up to rotation) by any orthogonal mixing of the eigenvectors. The middle panel plots the rows
+                    of \(\mathbf{T}\): the moment the graph has \(K\) well-separated groups, these rows collapse onto
+                    \(K\) tight clumps that K-means separates trivially &mdash; the nullspace picture from the connectivity
+                    result above, made visible.
+                </p>
+                <p>
+                    The width \(\sigma\) is a genuine modeling choice, and the demo does not hide its failure modes. At
+                    \(\sigma = 0.05\) the graph shatters into many near-components: the bottom eigenspace becomes enormous,
+                    the certificate correctly reports <strong>NO</strong>, and the status explains that a \(K\)-cluster
+                    spectral structure does not exist at that scale. At the other extreme, a very large \(\sigma\) connects
+                    everything to everything, and spectral clustering degrades to roughly K-means performance. The sweet spot
+                    in between is where the connectivity structure lives.
+                </p>
+
+                <h3>The Vector Quantization Tab</h3>
+                <p>
+                    Here K-means acts as an image codec, exactly as in the vector quantization section: each pixel is a point
+                    in RGB space, the codebook is the set of cluster centers, and every pixel is replaced by its nearest
+                    codebook color. The metrics panel reports the normalized distortion
+                    \(\frac{1}{N} \sum_n \|x_n - \mu_{z_n}\|^2\). The four-color band image makes the codebook idea exact:
+                    with \(K = 4\), the learned codebook is precisely the four colors and the distortion is
+                    <em>exactly zero</em> &mdash; lossless compression, because the image truly lives on four prototypes. The
+                    sweep button plots distortion against \(K\) and shows it never increases.
+                </p>
+
+                <h3>Experiment Suggestions</h3>
+                <ol style="padding-left: 40px;">
+                    <li><strong>The headline contrast</strong>: on concentric circles, run K-means (even with restarts it
+                        stays near 51&ndash;57% agreement with the generating rings &mdash; no placement of two centers can
+                        separate concentric shapes), then run spectral clustering at \(\sigma = 0.2\) and watch it recover
+                        the rings essentially perfectly.</li>
+                    <li><strong>Watch \(J\) fall twice per round</strong>: on blobs, press Step repeatedly and check that
+                        both the assignment and the update half-steps lower the distortion curve.</li>
+                    <li><strong>Initialization traps</strong>: raise the noise on blobs and use Compare inits &mdash; the gap
+                        between the worst random restart and the k-means++ runs is the page’s claim about better local
+                        optima, in numbers.</li>
+                    <li><strong>Break the graph on purpose</strong>: set \(\sigma = 0.05\) and run spectral clustering to
+                        see an honest failure &mdash; the certificate refuses, because the graph no longer has a
+                        \(K\)-component structure. Then try \(\sigma = 1\) and compare with plain K-means.</li>
+                    <li><strong>Lossless at \(K = 4\)</strong>: quantize the band image with \(K = 4\) and confirm the
+                        distortion is exactly zero; then sweep \(K\) on the gradient image, where no finite codebook is
+                        exact and the distortion decays smoothly instead.</li>
+                </ol>
 
                 <p>
                     Clustering completes our tour of the core ML toolkit: from supervised methods (<a href="regression.html"><strong>regression</strong></a>, 
