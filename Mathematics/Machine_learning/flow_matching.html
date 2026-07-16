@@ -331,11 +331,42 @@ uses_python: false
             <section id="demo" class="section-content section-wide">
                 <h2>Interactive Demo</h2>
                 <p>
-                    Both panels start from the same noise sample and aim at the same five target modes (rings); only the
-                    path differs &mdash; straight on the left, curved on the right. Blue points reached a mode, orange
-                    missed. Drag N to change the number of Euler steps.
+                    Both panels integrate the same seeded batch of particles through the <em>exact</em> marginal velocity
+                    field of a five-mode Gaussian-mixture target &mdash; the field is available in closed form here
+                    (mixture responsibilities and a per-mode posterior mean), so nothing is trained or approximated; only
+                    the probability path differs between the panels. Blue terminals landed within a mode, orange missed.
+                    The slider sets the number of Euler steps \(N\), and each panel reports two numbers: \(E(N)\), the
+                    mean distance between its terminals and a fine reference solution of the same ODE &mdash; the pure
+                    discretization error, which falls toward zero as \(N\) grows &mdash; and a straightness ratio, the
+                    trajectory path length divided by the displacement, which equals \(1\) exactly when the marginal
+                    trajectories are straight lines.
                 </p>
+
                 <div id="flow_matching_demo_visualizer"></div>
+
+                <p>
+                    The ratio is where the demo earns its keep, because it comes out backwards from what a first reading
+                    of flow matching might suggest. The linear path's <em>conditional</em> trajectories are straight
+                    segments by construction &mdash; yet its <em>marginal</em> trajectories, the ones actually drawn in the
+                    left panel, are visibly bent (ratio around \(1.6\), against roughly \(1.15\) for the cosine path).
+                    The mechanism is in the field itself: the term \(\dot\beta_t/\beta_t = -1/(1-t)\) contracts every
+                    particle toward the origin while the mode-committed component pulls outward, so particles dip inward
+                    before swinging out to their mode. Conditional straightness does not survive marginalization &mdash;
+                    the marginal field is a posterior-weighted <em>average</em> of conditional fields, and averaging
+                    bends. This gap is exactly what the rectification (Reflow) step of rectified flow exists to close:
+                    re-coupling noise samples to the points the flow actually transports them to, then re-fitting with
+                    straight conditional segments between the <em>coupled</em> pairs, straightens the marginal
+                    trajectories themselves. One round of flow matching with straight conditional paths, as shown here,
+                    does not.
+                </p>
+
+                <p>
+                    The \(E(N)\) readout tells the complementary story: for both schedules the Euler error decays as
+                    \(N\) grows, and at this problem scale the difference between the two paths is modest &mdash; a few
+                    steps suffice for either once the field is exact. The dramatic step-count savings quoted for
+                    rectified-flow systems in production belong to the <em>rectified</em> regime, where the marginal
+                    paths have been straightened; the toy here shows honestly where the baseline stands before that step.
+                </p>
             </section>
 
         </div>
