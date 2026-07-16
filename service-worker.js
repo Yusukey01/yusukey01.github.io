@@ -1,16 +1,28 @@
-/* v3 (first version actually controlling the site — the worker previously
+/* v4:
+ *  - FIX (stale-while-revalidate): networkResponse.clone() ran inside
+ *    caches.open().then(...), i.e. AFTER the response body had been handed
+ *    to the page and consumption had begun -> "Response body is already
+ *    used" on every revalidation, so SWR cache entries could NEVER update:
+ *    once a JS/CSS file was cached, later deploys were invisible. The clone
+ *    is now taken synchronously before any async step.
+ *  - Cache version bumped so activate() purges the stale v3 entries.
+ *
+ * NOTE (v4): the site does NOT version asset URLs (no ?v= query — a
+ * v3-era comment here wrongly claimed otherwise). With the SWR clone
+ * fix, cached JS/CSS is at most ONE page-load stale: the stale copy is
+ * served while the network copy replaces it for the next load.
+ *
+ * v3 (first version actually controlling the site — the worker previously
  * lived under /js/ and its scope never covered any page):
- *  - JS/CSS removed from the precache list: pages request them with
- *    ?v={{ site.version }}, so unversioned precache keys never matched.
- *    Runtime stale-while-revalidate (keyed by the full URL incl. ?v)
- *    handles them correctly instead.
+ *  - JS/CSS removed from the precache list; runtime stale-while-revalidate
+ *    handles them instead.
  *  - Ad/analytics hosts fully bypass the worker (never cache ads).
  *  - Same-origin JSON (/data/*.json etc.) is network-first so a freshly
  *    published curriculum/previews update is never masked by cache.
  *  - ml.html added to core pages; offline fallback hardened; opaque
  *    cross-origin responses cacheable; HTML network-first gets a timeout.
  */
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const PAGES_CACHE = `pages-${CACHE_VERSION}`;
 const EXTERNAL_CACHE = `external-${CACHE_VERSION}`;
@@ -289,10 +301,14 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         const fetchPromise = fetch(event.request).then(networkResponse => {
-          // Update the cache with the new response
+          // Update the cache with the new response. The clone MUST be taken
+          // synchronously, BEFORE returning the response to the page: once
+          // the page starts consuming the body, clone() throws ("Response
+          // body is already used") and the cache silently never updates.
           if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
             caches.open(STATIC_CACHE).then(cache => {
-              cache.put(event.request, networkResponse.clone());
+              cache.put(event.request, responseToCache);
             });
           }
           return networkResponse;
