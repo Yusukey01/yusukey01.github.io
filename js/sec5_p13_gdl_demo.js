@@ -1,1923 +1,1264 @@
-// sec5_p13_gdl_demo.js
-// Permutation Equivariance Visualizer — MATH-CS COMPASS, ml-13
+// ============================================================
+// sec5_p13_gdl_demo.js — GdlCore (pure math layer)
 //
-// Architecture comparison demo showing that GNN and Transformer outputs
-// reorder consistently when node labels are permuted, while MLP outputs do not.
+// One layer template, three structure matrices:
+//   h^{(l+1)} = tanh( w_l * (A_op h^{(l)}) + b_l )        (GNN / Transformer)
+//   h^{(l+1)} = tanh( W_l h^{(l)} + b_l )                 (MLP: learned dense
+//                                                          index-dependent mixing)
+//   GNN:         A_op = D^{-1/2}(A+I)D^{-1/2}   (fixed, sparse, Kipf-Welling)
+//   Transformer: A_op = softmax_j(h_i h_j / tau) (computed from features each
+//                layer; dot-product attention with identity query/key maps at
+//                feature dimension 1 — at d=1 any linear Q,K collapse into tau,
+//                so this IS the general form; tau = 0.15, a design constant)
+//   MLP:         no structure matrix — dense W mixes node indices directly,
+//                which is exactly why it is NOT permutation equivariant.
 //
-// Built from six modules:
-//   1. Math core            — pure linear algebra and forward-pass primitives
-//   2. Graph state          — topology, layout, central state object
-//   3. Architecture         — weight management, forward pass orchestration
-//   4. Canvas rendering     — visual output
-//   5. UI controls panel    — DOM and CSS
-//   6. Wiring               — entry point, event handlers, animation
-
-
-// ====== MODULE 1 ======
-// sec5_p13_gdl_demo.js — Module 1: Math core (pure functions)
-// Mathematical primitives for permutation-equivariance demonstration.
-// All functions are pure; no DOM, no global state.
-
-// ============================================================
-// Linear algebra primitives
+// GNN and Transformer share the SAME scalar weight stack (w_l, b_l): the only
+// difference between the two panels is the structure matrix.
+//
+// Design constants (selected by parameter validation, July 2026; every
+// displayed number remains computed — seeds chosen FOR sustained per-layer
+// node-color spread across depths 1..4 at the shipped graph/features):
+//   weight distribution  w = sign * U(0.8, 2.0)  (no dead layers), b ~ U(-.3,.3)
+//   shared weight seed base 149, MLP seed base 240 (seed = base + numLayers)
+//   attention temperature tau = 0.15
+//   graph n=10, 5 extra chords, graphSeed 42, featureSeed 23, shuffleSeed 1337
+//
+// No training => no gradients => finite-difference checks are N/A for this
+// demo (recorded deviation from the FD requirement; deep_nn precedent).
 // ============================================================
 
-/**
- * Matrix-vector product: returns M @ v.
- * @param {number[][]} M  n×n matrix as array of rows
- * @param {number[]}   v  length-n vector
- * @returns {number[]}    length-n vector
- */
-function matVec(M, v) {
-    const n = v.length;
-    const out = new Array(n).fill(0);
-    for (let i = 0; i < n; i++) {
-        let s = 0;
-        for (let j = 0; j < n; j++) s += M[i][j] * v[j];
-        out[i] = s;
-    }
-    return out;
-}
-
-/**
- * Matrix-matrix product: returns A @ B.
- * @param {number[][]} A
- * @param {number[][]} B
- * @returns {number[][]}
- */
-function matMat(A, B) {
-    const n = A.length;
-    const m = B[0].length;
-    const k = B.length;
-    const C = Array.from({length: n}, () => new Array(m).fill(0));
-    for (let i = 0; i < n; i++) {
-        for (let j = 0; j < m; j++) {
-            let s = 0;
-            for (let p = 0; p < k; p++) s += A[i][p] * B[p][j];
-            C[i][j] = s;
-        }
-    }
-    return C;
-}
-
-/**
- * L2 norm of a vector.
- */
-function l2norm(v) {
-    let s = 0;
-    for (let i = 0; i < v.length; i++) s += v[i] * v[i];
-    return Math.sqrt(s);
-}
-
-/**
- * Element-wise tanh activation.
- */
-function tanhVec(v) {
-    return v.map(Math.tanh);
-}
-
-// ============================================================
-// Graph normalization (Kipf-Welling)
-// ============================================================
-
-/**
- * Compute Â = (D+I)^{-1/2} (A+I) (D+I)^{-1/2}.
- * Symmetric self-loop normalized adjacency from Kipf & Welling 2017.
- * @param {number[][]} A  symmetric 0/1 adjacency matrix (no self-loops on input)
- * @returns {number[][]}  Â as n×n matrix
- */
-function normalizeAdjacency(A) {
-    const n = A.length;
-    // A_tilde = A + I
-    const A_tilde = A.map((row, i) =>
-        row.map((v, j) => v + (i === j ? 1 : 0))
-    );
-    // degree of A_tilde
-    const d = A_tilde.map(row => row.reduce((a, b) => a + b, 0));
-    // D^{-1/2}
-    const dInvSqrt = d.map(di => di > 0 ? 1 / Math.sqrt(di) : 0);
-    // Â_{ij} = (1/sqrt(d_i)) * A_tilde_{ij} * (1/sqrt(d_j))
-    const Ahat = Array.from({length: n}, () => new Array(n).fill(0));
-    for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-            Ahat[i][j] = dInvSqrt[i] * A_tilde[i][j] * dInvSqrt[j];
-        }
-    }
-    return Ahat;
-}
-
-/**
- * Construct the complete-graph adjacency on n nodes (no self-loops).
- * Used for the Transformer (no PE) view: every token attends to every other.
- */
-function completeAdjacency(n) {
-    const A = Array.from({length: n}, () => new Array(n).fill(0));
-    for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-            if (i !== j) A[i][j] = 1;
-        }
-    }
-    return A;
-}
-
-// ============================================================
-// Forward passes
-// ============================================================
-
-/**
- * Apply one GCN layer: h_out = tanh(w * (Â h) + b).
- * Scalar features per node; w, b are scalars, shared across all nodes.
- * This makes permutation equivariance hold exactly (no per-node parameters).
- *
- * @param {number[]}   h     length-n feature vector
- * @param {number[][]} Ahat  normalized adjacency (or Â for any propagation matrix)
- * @param {number}     w     scalar weight
- * @param {number}     b     scalar bias
- * @returns {number[]} length-n updated features
- */
-function applyGCNLayer(h, Ahat, w, b) {
-    const Ah = matVec(Ahat, h);
-    const out = Ah.map(x => Math.tanh(w * x + b));
-    return out;
-}
-
-/**
- * Apply a stack of GCN layers (or Transformer layers — same operator with different Â).
- * @param {number[]}   h0     initial features
- * @param {number[][]} Ahat
- * @param {Array<{w:number,b:number}>} layers
- * @returns {number[]}        final features after all layers
- */
-function forwardGNN(h0, Ahat, layers) {
-    let h = h0.slice();
-    for (const layer of layers) {
-        h = applyGCNLayer(h, Ahat, layer.w, layer.b);
-    }
-    return h;
-}
-
-/**
- * Apply one MLP layer: h_out = tanh(W h + b).
- * Dense weight matrix W ∈ R^{n×n}, dense bias b ∈ R^n.
- * No parameter sharing across nodes → not permutation equivariant.
- *
- * @param {number[]}   h
- * @param {number[][]} W   n×n
- * @param {number[]}   b   length n
- * @returns {number[]}
- */
-function applyMLPLayer(h, W, b) {
-    const Wh = matVec(W, h);
-    const out = Wh.map((x, i) => Math.tanh(x + b[i]));
-    return out;
-}
-
-/**
- * Apply a stack of MLP layers.
- * @param {number[]} h0
- * @param {Array<{W:number[][], b:number[]}>} layers
- */
-function forwardMLP(h0, layers) {
-    let h = h0.slice();
-    for (const layer of layers) {
-        h = applyMLPLayer(h, layer.W, layer.b);
-    }
-    return h;
-}
-
-// ============================================================
-// Permutations
-// ============================================================
-
-/**
- * Apply a permutation π to a vector v: returns w with w[i] = v[π(i)].
- * @param {number[]} v
- * @param {number[]} perm  permutation array, perm[i] = π(i)
- */
-function permuteVector(v, perm) {
-    return perm.map(pi => v[pi]);
-}
-
-/**
- * Apply a permutation π to an adjacency matrix A: returns Â with Â[i][j] = A[π(i)][π(j)].
- * Equivalent to P A P^T where P is the permutation matrix of π.
- */
-function permuteAdjacency(A, perm) {
-    const n = perm.length;
-    const out = Array.from({length: n}, () => new Array(n).fill(0));
-    for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-            out[i][j] = A[perm[i]][perm[j]];
-        }
-    }
-    return out;
-}
-
-/**
- * Generate a random permutation of length n using Fisher-Yates with a seedable RNG.
- * The seed is mandatory to make tests reproducible; in the demo, the user clicks Shuffle
- * and the function is called with a fresh time-based seed.
- */
-function randomPermutation(n, rng) {
-    const arr = Array.from({length: n}, (_, i) => i);
-    for (let i = n - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
-/**
- * Identity permutation, useful for unit tests.
- */
-function identityPermutation(n) {
-    return Array.from({length: n}, (_, i) => i);
-}
-
-// ============================================================
-// Equivariance test
-// ============================================================
-
-/**
- * Equivariance error for a graph-aware architecture (GNN, Transformer):
- *   ‖ f(Ph, PAP^T) − P f(h, A) ‖_2
- * Returns 0 (up to FP error) iff f is S_n-equivariant.
- *
- * @param {function(number[], number[][]): number[]} f  forward function (h, A) → h_out
- * @param {number[]}   h
- * @param {number[][]} A     un-normalized adjacency
- * @param {number[]}   perm
- */
-function equivarianceErrorGraph(f, h, A, perm) {
-    // RHS: P f(h, A)
-    const fOriginal = f(h, A);
-    const rhs = permuteVector(fOriginal, perm);
-    // LHS: f(Ph, PAP^T)
-    const hPerm = permuteVector(h, perm);
-    const APerm = permuteAdjacency(A, perm);
-    const lhs = f(hPerm, APerm);
-    // ‖ lhs − rhs ‖
-    const diff = lhs.map((x, i) => x - rhs[i]);
-    return l2norm(diff);
-}
-
-/**
- * Equivariance error for an architecture with no graph input (MLP):
- *   ‖ f(Ph) − P f(h) ‖_2
- * Generally non-zero for dense MLPs.
- */
-function equivarianceErrorPlain(f, h, perm) {
-    const fOriginal = f(h);
-    const rhs = permuteVector(fOriginal, perm);
-    const hPerm = permuteVector(h, perm);
-    const lhs = f(hPerm);
-    const diff = lhs.map((x, i) => x - rhs[i]);
-    return l2norm(diff);
-}
-
-// ============================================================
-// Seedable RNG (mulberry32)
-// ============================================================
-
-/**
- * A small deterministic PRNG. Used for fixed-seed weight initialization
- * so that Shuffle does not regenerate the model.
- */
-function mulberry32(seed) {
-    let a = seed >>> 0;
-    return function() {
-        a |= 0;
-        a = (a + 0x6D2B79F5) | 0;
-        let t = Math.imul(a ^ (a >>> 15), 1 | a);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
-/**
- * Initialize a stack of GNN layers with fixed seed.
- * Each layer is {w, b} with w ~ U(-1, 1), b ~ U(-0.3, 0.3).
- */
-function initGNNWeights(numLayers, seed) {
-    const rng = mulberry32(seed);
-    const layers = [];
-    for (let i = 0; i < numLayers; i++) {
-        layers.push({
-            w: 2 * rng() - 1,
-            b: 0.6 * rng() - 0.3,
-        });
-    }
-    return layers;
-}
-
-/**
- * Initialize a stack of MLP layers with fixed seed.
- * W_{ij} ~ U(-1/sqrt(n), 1/sqrt(n)) (Xavier-like for tanh), b_i ~ U(-0.3, 0.3).
- */
-function initMLPWeights(numLayers, n, seed) {
-    const rng = mulberry32(seed);
-    const scale = 1 / Math.sqrt(n);
-    const layers = [];
-    for (let l = 0; l < numLayers; l++) {
-        const W = Array.from({length: n}, () =>
-            Array.from({length: n}, () => 2 * scale * (rng() - 0.5))
-        );
-        const b = Array.from({length: n}, () => 0.6 * rng() - 0.3);
-        layers.push({W, b});
-    }
-    return layers;
-}
-
-// ============================================================
-// Unit tests (run on script load in dev; remove or guard for prod)
-// ============================================================
-
-
-
-// Run tests on load (dev mode). Comment out or guard before deploying to production.
-
-// ====== MODULE 2 ======
-// sec5_p13_gdl_demo.js — Module 2: Graph state & layout
-// Defines initial graph topology, node positions, and the central state object.
-// Depends on Module 1 (mulberry32, identityPermutation).
-
-// ============================================================
-// Graph topology construction
-// ============================================================
-
-/**
- * Build a "small-world-ish" graph on n nodes:
- *   • Each node connects to its 2 immediate ring neighbors (cycle backbone).
- *   • Plus a few randomly added long-range edges, controlled by the seed.
- * The result is structured enough that the visualization is readable, and
- * irregular enough that automorphisms beyond cyclic rotation are unlikely —
- * which makes the equivariance demonstration visually meaningful (shuffles
- * produce visibly different vertex layouts but mathematically identical outputs).
- *
- * @param {number} n          number of nodes
- * @param {number} numExtras  number of random extra edges to add
- * @param {number} seed       RNG seed
- * @returns {{edges: number[][], A: number[][]}}
- */
-function buildSmallWorldGraph(n, numExtras, seed) {
-    const rng = mulberry32(seed);
-    const edgeSet = new Set();  // canonical "i<j" string keys to avoid duplicates
-
-    const addEdge = (i, j) => {
-        if (i === j) return;
-        const a = Math.min(i, j), b = Math.max(i, j);
-        edgeSet.add(`${a},${b}`);
-    };
-
-    // Ring backbone: 0-1, 1-2, ..., (n-1)-0
-    for (let i = 0; i < n; i++) {
-        addEdge(i, (i + 1) % n);
-    }
-
-    // Random long-range edges (chord-like)
-    let attempts = 0;
-    while (edgeSet.size < n + numExtras && attempts < 100) {
-        const i = Math.floor(rng() * n);
-        const j = Math.floor(rng() * n);
-        addEdge(i, j);
-        attempts++;
-    }
-
-    // Convert to edge list
-    const edges = Array.from(edgeSet).map(k => k.split(',').map(Number));
-
-    // Build symmetric adjacency matrix
-    const A = Array.from({length: n}, () => new Array(n).fill(0));
-    for (const [i, j] of edges) {
-        A[i][j] = 1;
-        A[j][i] = 1;
-    }
-
-    return {edges, A};
-}
-
-// ============================================================
-// Node layout (visual positions on canvas)
-// ============================================================
-
-/**
- * Place n nodes on a circle of radius r centered at (cx, cy),
- * with a small per-node radial perturbation so the layout is not perfectly symmetric.
- * Perfect symmetry would make the visual shuffle effect less striking.
- *
- * @param {number} n
- * @param {number} cx     center x
- * @param {number} cy     center y
- * @param {number} r      base radius
- * @param {number} jitter perturbation magnitude (fraction of r)
- * @param {number} seed
- * @returns {Array<{x:number, y:number}>}
- */
-function buildCircleLayout(n, cx, cy, r, jitter, seed) {
-    const rng = mulberry32(seed);
-    const positions = [];
-    for (let i = 0; i < n; i++) {
-        const theta = (2 * Math.PI * i) / n - Math.PI / 2;  // start at top
-        const dr = r * (1 + jitter * (2 * rng() - 1));
-        positions.push({
-            x: cx + dr * Math.cos(theta),
-            y: cy + dr * Math.sin(theta),
-        });
-    }
-    return positions;
-}
-
-// ============================================================
-// Initial features
-// ============================================================
-
-/**
- * Initialize node features ~ U(-1, 1) with a fixed seed.
- * Using a fixed seed (not Math.random()) is essential: Shuffle must NOT
- * regenerate the underlying features, only relabel them.
- */
-function initNodeFeatures(n, seed) {
-    const rng = mulberry32(seed);
-    return Array.from({length: n}, () => 2 * rng() - 1);
-}
-
-// ============================================================
-// Central state object
-// ============================================================
-
-/**
- * Construct the demo's central state. All mutable demo state lives here;
- * UI handlers and rendering read/write this object.
- *
- * Note on naming: `currentH` represents the features as the user sees them
- * AFTER the active permutation has been applied to the original `originalH`.
- * The underlying mathematical content is preserved; only the labelling changes.
- */
-function createDemoState(config) {
-    const n = config.n;
-
-    // Topology and visual layout
-    const {edges, A} = buildSmallWorldGraph(n, config.extraEdges, config.graphSeed);
-    const positions = buildCircleLayout(
-        n, config.cx, config.cy, config.radius, config.jitter, config.layoutSeed
-    );
-    const originalH = initNodeFeatures(n, config.featureSeed);
-
-    return {
-        // Topology
-        n,
-        edges,
-        A,                   // current adjacency matrix (changes under permutation)
-        originalA: A.map(row => row.slice()),  // deep copy of pristine A
-        positions,           // visual positions, do not change under permutation
-
-        // Features
-        originalH: originalH.slice(),    // pristine initial features
-        currentH: originalH.slice(),     // features as currently labelled
-
-        // Permutation state
-        perm: identityPermutation(n),    // π such that the i-th visual slot now holds originalH[perm[i]]
-        isPermuted: false,
-
-        // Architecture configuration (mutated by UI)
-        architecture: 'GNN',             // 'MLP' | 'Transformer' | 'GNN'
-        numLayers: 2,
-
-        // Forward-pass cache (filled in by Module 3)
-        layerHistory: [],                // h^{(0)}, h^{(1)}, ..., h^{(L)} along the current pass
-        equivarianceError: 0,            // most recent equivariance test result
-    };
-}
-
-// ============================================================
-// State mutations
-// ============================================================
-
-/**
- * Apply a permutation π to the demo state.
- * After this call, the i-th visual slot holds the feature originalH[π(i)],
- * and the adjacency seen at slot i is the row-and-column π-permutation of originalA.
- *
- * Mathematically: currentH ← P · originalH,  A ← P A P^T  where P_{ij} = δ_{i, π(j)}.
- *
- * @param {object}    state
- * @param {number[]}  perm   length-n permutation array
- */
-function applyPermutationToState(state, perm) {
-    state.perm = perm.slice();
-    state.currentH = permuteVector(state.originalH, perm);
-    state.A = permuteAdjacency(state.originalA, perm);
-    state.isPermuted = !perm.every((p, i) => p === i);
-}
-
-/**
- * Reset the state to identity permutation.
- */
-function resetPermutation(state) {
-    applyPermutationToState(state, identityPermutation(state.n));
-}
-
-// ============================================================
-// Default configuration
-// ============================================================
-
-const DEFAULT_DEMO_CONFIG = {
-    n: 10,
-    extraEdges: 5,        // 10 ring + 5 chord = 15 edges total
-    graphSeed: 42,
-    layoutSeed: 7,
-    featureSeed: 23,
-    cx: 350,              // canvas center x
-    cy: 250,              // canvas center y
-    radius: 180,          // ring radius
-    jitter: 0.08,         // 8% radial perturbation
-};
-
-// ============================================================
-// Module 2 unit tests
-// ============================================================
-
-
-
-// ====== MODULE 4 ======
-// sec5_p13_gdl_demo.js — Module 4: Canvas rendering
-// Pure rendering: takes state and draws to canvas. No state mutation.
-// Depends on Module 1 (matVec, etc.) and Module 2 (state object shape).
-
-// ============================================================
-// Color palette
-// ============================================================
-
-const PALETTE = {
-    bg:           '#0b0e14',
-    nodeStroke:   'rgba(255, 255, 255, 0.85)',
-    nodeStrokeShuffled: 'rgba(255, 200, 100, 0.95)',  // amber when permuted
-    edgeGNN:      'rgba(0, 255, 255, 0.55)',          // cyan, solid
-    edgeTransformer: 'rgba(0, 255, 255, 0.10)',       // cyan, very faint
-    label:        '#e8eaed',
-    labelDim:     'rgba(255, 255, 255, 0.45)',
-    layerBadge:   '#00ffff',
-    okGreen:      '#26c6da',
-    failRed:      '#ff5252',
-};
-
-/**
- * Map a feature value h ∈ [-1, 1] to a hex-like color string.
- * Diverging palette: blue (h=-1) → midtone (h=0) → red (h=+1).
- * Uses HSL space for smooth interpolation.
- */
-function featureColor(h) {
-    // Clamp
-    const x = Math.max(-1, Math.min(1, h));
-    if (x >= 0) {
-        // 0 → cyan-grey (#5b6378-ish), 1 → red-orange (#ff6b6b)
-        const t = x;  // 0..1
-        const r = Math.round(91  + (255 - 91)  * t);
-        const g = Math.round(99  + (107 - 99)  * t);
-        const b = Math.round(120 + (107 - 120) * t);
-        return `rgb(${r}, ${g}, ${b})`;
-    } else {
-        const t = -x;  // 0..1
-        const r = Math.round(91  + (77  - 91)  * t);
-        const g = Math.round(99  + (171 - 99)  * t);
-        const b = Math.round(120 + (247 - 120) * t);
-        return `rgb(${r}, ${g}, ${b})`;
-    }
-}
-
-// ============================================================
-// Canvas rendering primitives
-// ============================================================
-
-function clearCanvas(ctx, W, H) {
-    ctx.fillStyle = PALETTE.bg;
-    ctx.fillRect(0, 0, W, H);
-}
-
-function drawEdges(ctx, state) {
-    const arch = state.architecture;
-    if (arch === 'MLP') return;  // MLP: no edges drawn
-
-    if (arch === 'Transformer') {
-        // Complete graph: faint lines between every pair
-        ctx.strokeStyle = PALETTE.edgeTransformer;
-        ctx.lineWidth = 1;
-        for (let i = 0; i < state.n; i++) {
-            for (let j = i + 1; j < state.n; j++) {
-                const p = state.positions[i];
-                const q = state.positions[j];
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(q.x, q.y);
-                ctx.stroke();
-            }
-        }
-        return;
-    }
-
-    // GNN: actual graph edges. Draw using the CURRENT (possibly permuted) adjacency,
-    // because the visual node at slot i now corresponds to row i of state.A.
-    ctx.strokeStyle = PALETTE.edgeGNN;
-    ctx.lineWidth = 1.6;
-    for (let i = 0; i < state.n; i++) {
-        for (let j = i + 1; j < state.n; j++) {
-            if (state.A[i][j]) {
-                const p = state.positions[i];
-                const q = state.positions[j];
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(q.x, q.y);
-                ctx.stroke();
-            }
-        }
-    }
-}
-
-function drawNodes(ctx, state, displayedH) {
-    // displayedH: feature values to render (typically state.layerHistory[currentLayer])
-    const r = 18;
-    const strokeColor = state.isPermuted ? PALETTE.nodeStrokeShuffled : PALETTE.nodeStroke;
-
-    for (let i = 0; i < state.n; i++) {
-        const p = state.positions[i];
-        const h = displayedH[i];
-
-        // Outer halo (subtle glow)
-        const grad = ctx.createRadialGradient(p.x, p.y, r * 0.3, p.x, p.y, r * 1.6);
-        grad.addColorStop(0, featureColor(h));
-        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r * 1.6, 0, 2 * Math.PI);
-        ctx.fill();
-
-        // Solid node
-        ctx.fillStyle = featureColor(h);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, 2 * Math.PI);
-        ctx.fill();
-
-        // Stroke
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = state.isPermuted ? 2 : 1.4;
-        ctx.stroke();
-    }
-}
-
-function drawNodeLabels(ctx, state) {
-    ctx.font = 'bold 11px "JetBrains Mono", "Fira Code", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for (let i = 0; i < state.n; i++) {
-        const p = state.positions[i];
-        // The slot index i is the "visual position".
-        // The original-feature index that currently sits here is state.perm[i].
-        // We display the original index in white so the user can track where each
-        // original feature has moved to under the shuffle.
-        const origIdx = state.perm[i];
-        ctx.fillStyle = PALETTE.label;
-        ctx.fillText(String(origIdx), p.x, p.y);
-    }
-}
-
-function drawLayerBadge(ctx, layerIdx, totalLayers, W) {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(W - 130, 14, 116, 28);
-    ctx.strokeStyle = PALETTE.layerBadge;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(W - 130, 14, 116, 28);
-
-    ctx.font = '600 11px "JetBrains Mono", "Fira Code", monospace';
-    ctx.fillStyle = PALETTE.layerBadge;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    if (layerIdx === 0) {
-        ctx.fillText('LAYER 0 (input)', W - 72, 28);
-    } else {
-        ctx.fillText(`LAYER ${layerIdx} / ${totalLayers}`, W - 72, 28);
-    }
-}
-
-function drawArchitectureBadge(ctx, arch) {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(14, 14, 120, 28);
-    ctx.strokeStyle = PALETTE.layerBadge;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(14, 14, 120, 28);
-
-    ctx.font = '600 11px "JetBrains Mono", "Fira Code", monospace';
-    ctx.fillStyle = PALETTE.layerBadge;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(arch.toUpperCase(), 74, 28);
-}
-
-function drawShuffleIndicator(ctx, state, W) {
-    if (!state.isPermuted) return;
-    ctx.fillStyle = 'rgba(255, 200, 100, 0.15)';
-    ctx.fillRect(W / 2 - 80, 14, 160, 28);
-    ctx.strokeStyle = PALETTE.nodeStrokeShuffled;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(W / 2 - 80, 14, 160, 28);
-
-    ctx.font = '600 11px "JetBrains Mono", "Fira Code", monospace';
-    ctx.fillStyle = PALETTE.nodeStrokeShuffled;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('NODE LABELS SHUFFLED', W / 2, 28);
-}
-
-// ============================================================
-// Top-level render function
-// ============================================================
-
-/**
- * Render the demo state to the canvas.
- * @param {CanvasRenderingContext2D} ctx
- * @param {object} state                       Module 2 state object
- * @param {number[]} displayedH                features to display at each node
- *                                              (typically state.layerHistory[currentLayer])
- * @param {number} currentLayer                index into layerHistory being shown
- * @param {number} totalLayers                 number of layers in current architecture
- * @param {number} W                           canvas width
- * @param {number} H                           canvas height
- */
-function renderDemo(ctx, state, displayedH, currentLayer, totalLayers, W, H) {
-    // The interior drawing code (node positions, badge offsets, edge
-    // coordinates) is written against a fixed logical canvas of 700 × 500.
-    // On smaller viewports we draw into the same logical space and uniformly
-    // scale the output to the real canvas size; this keeps the layout intact
-    // (badges don't overlap, nodes don't go off-screen) at the cost of
-    // proportionally smaller text on narrow screens.
-    const LW = 700, LH = 500;
-    ctx.save();
-    ctx.scale(W / LW, H / LH);
-    clearCanvas(ctx, LW, LH);
-    drawEdges(ctx, state);
-    drawNodes(ctx, state, displayedH);
-    drawNodeLabels(ctx, state);
-    drawArchitectureBadge(ctx, state.architecture);
-    drawLayerBadge(ctx, currentLayer, totalLayers, LW);
-    drawShuffleIndicator(ctx, state, LW);
-    ctx.restore();
-}
-
-// ============================================================
-// Animation utilities
-// ============================================================
-
-/**
- * Linearly interpolate two feature vectors.
- *   result = (1 - t) * a + t * b
- */
-function lerpFeatures(a, b, t) {
-    return a.map((ai, i) => (1 - t) * ai + t * b[i]);
-}
-
-/**
- * Smoothstep easing: smooth begin/end.
- */
-function smoothstep(t) {
-    return t * t * (3 - 2 * t);
-}
-
-// ============================================================
-// Module 4 unit tests
-// ============================================================
-// (Pure rendering is hard to unit-test without a canvas. Instead, we sanity-check
-// the pure helper functions: featureColor and lerpFeatures.)
-
-
-
-// ====== MODULE 3 ======
-// sec5_p13_gdl_demo.js — Module 3: Architecture switching
-// Manages weight initialization per (architecture, numLayers) combination,
-// runs forward passes, and computes equivariance errors.
-// Depends on Module 1 (forward funcs, weight init) and Module 2 (state shape).
-
-// ============================================================
-// Weight cache management
-// ============================================================
-
-/**
- * Fixed seeds per architecture so that switching architectures gives
- * deterministic, reproducible weight sets. Different per arch so the
- * three forward passes look genuinely different.
- */
-const ARCH_SEEDS = {
-    GNN:         101,
-    Transformer: 202,
-    MLP:         303,
-};
-
-/**
- * Lazy weight initialization: returns cached weights for (arch, numLayers),
- * generating them on first request and storing on state.weightCache.
- *
- * @param {object} state                 demo state
- * @param {string} arch                  'GNN' | 'Transformer' | 'MLP'
- * @param {number} numLayers
- * @returns {Array}                      layer parameter list
- */
-function getWeights(state, arch, numLayers) {
-    if (!state.weightCache) state.weightCache = {};
-    if (!state.weightCache[arch]) state.weightCache[arch] = {};
-    if (state.weightCache[arch][numLayers]) {
-        return state.weightCache[arch][numLayers];
-    }
-
-    const seed = ARCH_SEEDS[arch] + numLayers;  // distinct seed per (arch, depth)
-    let layers;
-    if (arch === 'GNN' || arch === 'Transformer') {
-        layers = initGNNWeights(numLayers, seed);
-    } else if (arch === 'MLP') {
-        layers = initMLPWeights(numLayers, state.n, seed);
-    } else {
-        throw new Error(`Unknown architecture: ${arch}`);
-    }
-
-    state.weightCache[arch][numLayers] = layers;
-    return layers;
-}
-
-// ============================================================
-// Forward pass orchestration
-// ============================================================
-
-/**
- * Run a forward pass on the current state and store the per-layer history.
- * After this call, state.layerHistory[k] holds h^{(k)} for k = 0..numLayers.
- *
- * @param {object} state
- */
-function runForwardPass(state) {
-    const arch = state.architecture;
-    const L = state.numLayers;
-    const layers = getWeights(state, arch, L);
-
-    const history = [state.currentH.slice()];
-
-    if (arch === 'GNN') {
-        const Ahat = normalizeAdjacency(state.A);
-        let h = state.currentH.slice();
-        for (const layer of layers) {
-            h = applyGCNLayer(h, Ahat, layer.w, layer.b);
-            history.push(h.slice());
-        }
-    } else if (arch === 'Transformer') {
-        // Complete-graph adjacency, normalized the same way.
-        // Note: the complete-graph A is by construction permutation-invariant
-        // (PAP^T = A for any P), so the Transformer's equivariance is "free."
-        const Afull = completeAdjacency(state.n);
-        const Ahat = normalizeAdjacency(Afull);
-        let h = state.currentH.slice();
-        for (const layer of layers) {
-            h = applyGCNLayer(h, Ahat, layer.w, layer.b);
-            history.push(h.slice());
-        }
-    } else if (arch === 'MLP') {
-        let h = state.currentH.slice();
-        for (const layer of layers) {
-            h = applyMLPLayer(h, layer.W, layer.b);
-            history.push(h.slice());
-        }
-    } else {
-        throw new Error(`Unknown architecture: ${arch}`);
-    }
-
-    state.layerHistory = history;
-}
-
-// ============================================================
-// Equivariance error computation
-// ============================================================
-
-/**
- * Given the current architecture and weights, build a forward function
- * that takes (h, A) and returns the final layer output. Used by the
- * equivarianceError* functions from Module 1.
- *
- * For MLP, the function ignores A (MLP has no graph input).
- */
-function buildForwardFunction(state) {
-    const arch = state.architecture;
-    const L = state.numLayers;
-    const layers = getWeights(state, arch, L);
-
-    if (arch === 'GNN') {
-        return (h, A) => forwardGNN(h, normalizeAdjacency(A), layers);
-    } else if (arch === 'Transformer') {
-        // Note: the Transformer ignores the input adjacency entirely — it always
-        // operates on the complete graph. This is exactly why it is S_n-equivariant
-        // unconditionally.
-        return (h, A) => {
-            const Afull = completeAdjacency(h.length);
-            return forwardGNN(h, normalizeAdjacency(Afull), layers);
+var GdlCore = (function () {
+    'use strict';
+
+    // ---------- RNG ----------
+    function mulberry32(seed) {
+        let t = seed >>> 0;
+        return function () {
+            t |= 0; t = (t + 0x6D2B79F5) | 0;
+            let r = Math.imul(t ^ (t >>> 15), 1 | t);
+            r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+            return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
         };
-    } else if (arch === 'MLP') {
-        return (h) => forwardMLP(h, layers);
-    } else {
-        throw new Error(`Unknown architecture: ${arch}`);
     }
-}
 
-/**
- * Compute the equivariance error for the current state's architecture
- * and the current permutation π = state.perm:
- *
- *   GNN/Transformer: ‖ f(P h_orig, P A_orig P^T) − P f(h_orig, A_orig) ‖_2
- *   MLP:             ‖ f(P h_orig)               − P f(h_orig)         ‖_2
- *
- * Stores the result on state.equivarianceError.
- *
- * Important: this test uses originalH and originalA — i.e. it asks
- * "does the architecture commute with the permutation as a mathematical
- * property?" — independent of whatever the user has currently displayed.
- */
-function computeEquivarianceError(state) {
-    const f = buildForwardFunction(state);
-    let err;
-    if (state.architecture === 'MLP') {
-        err = equivarianceErrorPlain(f, state.originalH, state.perm);
-    } else {
-        err = equivarianceErrorGraph(f, state.originalH, state.originalA, state.perm);
+    // ---------- small linear algebra ----------
+    function matVec(M, v) {
+        const n = M.length, out = new Array(n);
+        for (let i = 0; i < n; i++) {
+            let s = 0;
+            const row = M[i];
+            for (let j = 0; j < row.length; j++) s += row[j] * v[j];
+            out[i] = s;
+        }
+        return out;
     }
-    state.equivarianceError = err;
-    return err;
-}
 
-// ============================================================
-// State change handlers
-// ============================================================
-
-/**
- * Switch architecture. Triggers a fresh forward pass.
- * Weights for the new arch may need to be initialized; getWeights handles caching.
- */
-function switchArchitecture(state, newArch) {
-    if (!['GNN', 'Transformer', 'MLP'].includes(newArch)) {
-        throw new Error(`Unknown architecture: ${newArch}`);
+    function l2diff(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++) { const d = a[i] - b[i]; s += d * d; }
+        return Math.sqrt(s);
     }
-    state.architecture = newArch;
-    runForwardPass(state);
-    computeEquivarianceError(state);
-}
 
-/**
- * Change the number of layers. Triggers a fresh forward pass.
- * New depth uses fresh weights (different seed → different model).
- */
-function changeNumLayers(state, newNumLayers) {
-    if (newNumLayers < 1 || newNumLayers > 5) {
-        throw new Error(`numLayers ${newNumLayers} out of supported range [1, 5]`);
+    function maxAbsDiffMat(A, B) {
+        let m = 0;
+        for (let i = 0; i < A.length; i++)
+            for (let j = 0; j < A[i].length; j++)
+                m = Math.max(m, Math.abs(A[i][j] - B[i][j]));
+        return m;
     }
-    state.numLayers = newNumLayers;
-    runForwardPass(state);
-    computeEquivarianceError(state);
-}
 
-/**
- * After applying a permutation to the state (Module 2's applyPermutationToState),
- * recompute the forward pass and equivariance error.
- */
-function refreshAfterPermutation(state) {
-    runForwardPass(state);
-    computeEquivarianceError(state);
-}
+    function stddev(v) {
+        const n = v.length;
+        let m = 0;
+        for (let i = 0; i < n; i++) m += v[i];
+        m /= n;
+        let s = 0;
+        for (let i = 0; i < n; i++) { const d = v[i] - m; s += d * d; }
+        return Math.sqrt(s / n);
+    }
 
-// ============================================================
-// Module 3 unit tests
-// ============================================================
+    // ---------- structure matrices ----------
 
+    // Symmetric self-loop normalized adjacency (Kipf-Welling):
+    // A_hat = D~^{-1/2} (A + I) D~^{-1/2},  D~ from A + I.
+    function normalizeAdjacency(A) {
+        const n = A.length;
+        const At = A.map((row, i) => row.map((v, j) => v + (i === j ? 1 : 0)));
+        const d = At.map(row => row.reduce((a, b) => a + b, 0));
+        const inv = d.map(x => 1 / Math.sqrt(x)); // d_i >= 1 always (self-loop)
+        const Ahat = new Array(n);
+        for (let i = 0; i < n; i++) {
+            Ahat[i] = new Array(n);
+            for (let j = 0; j < n; j++) Ahat[i][j] = inv[i] * At[i][j] * inv[j];
+        }
+        return Ahat;
+    }
 
+    function completeAdjacency(n) {
+        const A = new Array(n);
+        for (let i = 0; i < n; i++) {
+            A[i] = new Array(n);
+            for (let j = 0; j < n; j++) A[i][j] = (i === j) ? 0 : 1;
+        }
+        return A;
+    }
 
-// ====== MODULE 5 ======
-// sec5_p13_gdl_demo.js — Module 5: UI controls panel
-// Builds the HTML structure and CSS for the demo, and exposes a function
-// that collects references to all interactive elements for Module 6 to wire up.
+    // Dot-product attention on the complete graph (self included):
+    // A_hat(h)_{ij} = exp(h_i h_j / tau) / sum_k exp(h_i h_k / tau).
+    // Row-stochastic by construction; equivariant: A_hat(Ph) = P A_hat(h) P^T.
+    function attentionMatrix(h, tau) {
+        const n = h.length;
+        const M = new Array(n);
+        for (let i = 0; i < n; i++) {
+            const s = new Array(n);
+            let mx = -Infinity;
+            for (let j = 0; j < n; j++) {
+                s[j] = h[i] * h[j] / tau;
+                if (s[j] > mx) mx = s[j];
+            }
+            let Z = 0;
+            const row = new Array(n);
+            for (let j = 0; j < n; j++) { row[j] = Math.exp(s[j] - mx); Z += row[j]; }
+            for (let j = 0; j < n; j++) row[j] /= Z;
+            M[i] = row;
+        }
+        return M;
+    }
 
-// ============================================================
-// HTML structure
-// ============================================================
+    // ---------- layers ----------
+    function applyGCNLayer(h, Aop, w, b) {
+        const Ah = matVec(Aop, h);
+        const out = new Array(h.length);
+        for (let i = 0; i < h.length; i++) out[i] = Math.tanh(w * Ah[i] + b);
+        return out;
+    }
 
-/**
- * Returns the inner HTML for the demo container.
- * Pure string output; no DOM mutation here.
- */
-function buildDemoHTML() {
-    return `
-      <div class="gdl-container">
-        <div class="gdl-layout">
+    function applyMLPLayer(h, W, b) {
+        const Wh = matVec(W, h);
+        const out = new Array(h.length);
+        for (let i = 0; i < h.length; i++) out[i] = Math.tanh(Wh[i] + b[i]);
+        return out;
+    }
 
-          <!-- Left: canvas + legend + layer scrubber -->
-          <div class="gdl-canvas-area">
-            <div class="gdl-instruction">
-              Click <strong>Shuffle Node Labels</strong> to apply a random permutation.
-              GNN and Transformer outputs reorder consistently — MLP does not.
-              Drag the <strong>Layer</strong> slider to scrub through the forward pass.
-            </div>
-            <div class="gdl-canvas-wrapper">
-              <canvas id="gdl-canvas" width="700" height="500"></canvas>
-            </div>
-            <div class="gdl-legend">
-              <div class="gdl-legend-item"><span class="gdl-swatch gdl-swatch-pos"></span> feature ≈ +1</div>
-              <div class="gdl-legend-item"><span class="gdl-swatch gdl-swatch-zero"></span> feature ≈ 0</div>
-              <div class="gdl-legend-item"><span class="gdl-swatch gdl-swatch-neg"></span> feature ≈ −1</div>
-              <div class="gdl-legend-item"><span class="gdl-swatch gdl-swatch-edge-gnn"></span> GNN edges</div>
-              <div class="gdl-legend-item"><span class="gdl-swatch gdl-swatch-edge-tf"></span> Transformer (complete)</div>
-            </div>
-            <div class="gdl-layer-control">
-              <label class="gdl-layer-label">Layer</label>
-              <input type="range" id="gdl-layer-slider" min="0" max="2" step="1" value="0">
-              <span class="gdl-layer-readout" id="gdl-layer-readout">0 / 2</span>
-            </div>
-          </div>
+    // ---------- forward passes (ONE code path for GNN and Transformer) ----------
+    // ahatProvider: (currentH) => structure matrix for this layer.
+    // GNN passes a constant provider; Transformer recomputes attention from h.
+    // Returns { history, aopHistory } — aopHistory[k] is the structure matrix
+    // used by layer k+1 (needed for the layer-synced heatmap display).
+    function forwardGraphOp(h0, ahatProvider, layers) {
+        let h = h0.slice();
+        const history = [h.slice()];
+        const aopHistory = [];
+        for (let k = 0; k < layers.length; k++) {
+            const Aop = ahatProvider(h);
+            aopHistory.push(Aop);
+            h = applyGCNLayer(h, Aop, layers[k].w, layers[k].b);
+            history.push(h.slice());
+        }
+        return { history: history, aopHistory: aopHistory };
+    }
 
-          <!-- Right: controls panel -->
-          <div class="gdl-controls-panel">
+    function forwardMLP(h0, layers) {
+        let h = h0.slice();
+        const history = [h.slice()];
+        for (let k = 0; k < layers.length; k++) {
+            h = applyMLPLayer(h, layers[k].W, layers[k].b);
+            history.push(h.slice());
+        }
+        return { history: history };
+    }
 
-            <div class="gdl-info-card">
-              <div class="gdl-card-title">Architecture</div>
-              <div class="gdl-card-subtitle">Where does the message-passing happen?</div>
-              <div class="gdl-arch-segmented" id="gdl-arch-segmented">
-                <button class="gdl-seg-btn" data-arch="MLP">MLP</button>
-                <button class="gdl-seg-btn" data-arch="Transformer">Transformer</button>
-                <button class="gdl-seg-btn gdl-seg-active" data-arch="GNN">GNN</button>
-              </div>
-              <div class="gdl-arch-desc" id="gdl-arch-desc">
-                Message passing on the input graph. Permutation acts jointly on (X, A).
-              </div>
-            </div>
+    // Orchestrated forward. For 'Transformer' the input A is ignored BY
+    // CONSTRUCTION (attention lives on the complete graph) — this is asserted
+    // by a self-test, not assumed.
+    function runForward(arch, h0, A, layers, tau) {
+        if (arch === 'GNN') {
+            const Ahat = normalizeAdjacency(A);
+            return forwardGraphOp(h0, function () { return Ahat; }, layers);
+        }
+        if (arch === 'Transformer') {
+            return forwardGraphOp(h0, function (h) { return attentionMatrix(h, tau); }, layers);
+        }
+        if (arch === 'MLP') {
+            return forwardMLP(h0, layers);
+        }
+        throw new Error('Unknown architecture: ' + arch);
+    }
 
-            <div class="gdl-info-card">
-              <div class="gdl-card-title">Depth</div>
-              <div class="gdl-card-subtitle">Number of layers</div>
-              <div class="gdl-slider-row">
-                <input type="range" id="gdl-depth-slider" min="1" max="3" step="1" value="2">
-                <span class="gdl-slider-val" id="gdl-depth-val">2</span>
-              </div>
-            </div>
+    // (h, A) => final output; used by the equivariance certificates.
+    function buildForwardFn(arch, layers, tau) {
+        return function (h, A) {
+            const r = runForward(arch, h, A, layers, tau);
+            return r.history[r.history.length - 1];
+        };
+    }
 
-            <div class="gdl-info-card gdl-perm-card">
-              <div class="gdl-card-title">Permutation Test</div>
-              <div class="gdl-card-subtitle">
-                Shuffle the node labels. Does the architecture's output reorder accordingly?
-              </div>
-              <div class="gdl-button-row">
-                <button class="gdl-btn gdl-btn-primary" id="gdl-shuffle-btn">⇆ Shuffle Node Labels</button>
-                <button class="gdl-btn gdl-btn-secondary" id="gdl-reset-btn">↺ Reset</button>
-              </div>
-              <div class="gdl-equiv-meter">
-                <div class="gdl-equiv-row">
-                  <span class="gdl-equiv-label">Equivariance error</span>
-                  <span class="gdl-equiv-val" id="gdl-equiv-val">0.00e+0</span>
-                </div>
-                <div class="gdl-equiv-bar">
-                  <div class="gdl-equiv-fill" id="gdl-equiv-fill"></div>
-                </div>
-                <div class="gdl-equiv-verdict" id="gdl-equiv-verdict">
-                  ✓ EQUIVARIANT (error within numerical precision)
-                </div>
-              </div>
-            </div>
+    // ---------- permutations ----------
+    function identityPermutation(n) {
+        const p = new Array(n);
+        for (let i = 0; i < n; i++) p[i] = i;
+        return p;
+    }
 
-            <div class="gdl-info-card">
-              <div class="gdl-card-title">Output Comparison</div>
-              <div class="gdl-card-subtitle">
-                Slot-by-slot: original output vs current output, expected from equivariance.
-              </div>
-              <div class="gdl-table-wrapper">
-                <table class="gdl-output-table" id="gdl-output-table">
-                  <thead>
-                    <tr>
-                      <th>slot</th>
-                      <th>original y</th>
-                      <th>current y'</th>
-                      <th>expected Py</th>
-                      <th>✓</th>
-                    </tr>
-                  </thead>
-                  <tbody id="gdl-output-tbody"></tbody>
-                </table>
-              </div>
-            </div>
+    function isIdentityPermutation(p) {
+        for (let i = 0; i < p.length; i++) if (p[i] !== i) return false;
+        return true;
+    }
 
-          </div>
+    function randomPermutation(n, rng) {
+        const p = identityPermutation(n);
+        for (let i = n - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            const t = p[i]; p[i] = p[j]; p[j] = t;
+        }
+        return p;
+    }
 
-        </div>
-      </div>
-    `;
-}
+    // Redraw guard: identity draws are rejected (bounded; n < 2 has no
+    // non-identity permutation and returns the identity honestly).
+    function randomNonIdentityPermutation(n, rng) {
+        if (n < 2) return identityPermutation(n);
+        for (let attempt = 0; attempt < 64; attempt++) {
+            const p = randomPermutation(n, rng);
+            if (!isIdentityPermutation(p)) return p;
+        }
+        // Probability (1/n!)^64 — unreachable for n >= 2; swap two entries.
+        const p = identityPermutation(n);
+        p[0] = 1; p[1] = 0;
+        return p;
+    }
 
-// ============================================================
-// CSS — injected once
-// ============================================================
+    function inversePermutation(p) {
+        const inv = new Array(p.length);
+        for (let i = 0; i < p.length; i++) inv[p[i]] = i;
+        return inv;
+    }
 
-const GDL_DEMO_CSS = `
-.gdl-container {
-    width: 100%;
-    font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
-    color: #e8eaed;
-    background: #0b0e14;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    overflow: hidden;
-}
-.gdl-layout {
-    display: flex;
-    min-height: 720px;
-}
-@media (max-width: 1100px) {
-    .gdl-layout { flex-direction: column; }
-}
+    // (Pv)[i] = v[p[i]]
+    function permuteVector(v, p) {
+        const out = new Array(v.length);
+        for (let i = 0; i < v.length; i++) out[i] = v[p[i]];
+        return out;
+    }
 
-.gdl-canvas-area {
-    flex: 1 1 62%;
-    display: flex;
-    flex-direction: column;
-    background: #060810;
-    padding: 16px;
-}
-.gdl-instruction {
-    font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.65);
-    line-height: 1.5;
-    padding: 10px 14px;
-    background: rgba(0, 255, 255, 0.04);
-    border-left: 2px solid rgba(0, 255, 255, 0.4);
-    border-radius: 4px;
-    margin-bottom: 12px;
-}
-.gdl-instruction strong { color: #00ffff; font-weight: 600; }
+    // (P A P^T)[i][j] = A[p[i]][p[j]]  (consistent with permuteVector)
+    function permuteAdjacency(A, p) {
+        const n = A.length, out = new Array(n);
+        for (let i = 0; i < n; i++) {
+            out[i] = new Array(n);
+            for (let j = 0; j < n; j++) out[i][j] = A[p[i]][p[j]];
+        }
+        return out;
+    }
 
-.gdl-canvas-wrapper {
-    position: relative;
-    width: 100%;
-    background: #0b0e14;
-    border-radius: 6px;
-    overflow: hidden;
-}
-#gdl-canvas {
-    display: block;
-    width: 100%;
-    height: auto;
-    max-width: 700px;
-    margin: 0 auto;
-}
+    // ---------- equivariance certificates ----------
+    // || f(Ph, PAP^T) - P f(h, A) ||_2
+    function equivarianceErrorGraph(f, h, A, perm) {
+        const lhs = f(permuteVector(h, perm), permuteAdjacency(A, perm));
+        const rhs = permuteVector(f(h, A), perm);
+        return l2diff(lhs, rhs);
+    }
 
-.gdl-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-top: 12px;
-    padding: 10px;
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
-}
-.gdl-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.gdl-swatch {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-.gdl-swatch-pos  { background: rgb(255, 107, 107); }
-.gdl-swatch-zero { background: rgb(91, 99, 120); }
-.gdl-swatch-neg  { background: rgb(77, 171, 247); }
-.gdl-swatch-edge-gnn {
-    border-radius: 0;
-    width: 18px; height: 2px;
-    background: rgba(0, 255, 255, 0.55);
-    border: none;
-}
-.gdl-swatch-edge-tf {
-    border-radius: 0;
-    width: 18px; height: 2px;
-    background: rgba(0, 255, 255, 0.18);
-    border: none;
-}
+    // || f(Ph) - P f(h) ||_2  (MLP: no graph input)
+    function equivarianceErrorPlain(f, h, perm) {
+        const lhs = f(permuteVector(h, perm), null);
+        const rhs = permuteVector(f(h, null), perm);
+        return l2diff(lhs, rhs);
+    }
 
-.gdl-layer-control {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 12px;
-    padding: 10px 14px;
-    background: rgba(20, 28, 40, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-}
-.gdl-layer-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: rgba(0, 255, 255, 0.85);
-    letter-spacing: 0.08em;
-    min-width: 50px;
-}
-#gdl-layer-slider {
-    flex: 1;
-    accent-color: #00ffff;
-}
-.gdl-layer-readout {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #00ffff;
-    min-width: 60px;
-    text-align: right;
-}
+    // All three architectures against ONE permutation, on the ORIGINAL
+    // (unshuffled) h and A — the property is asked of the architecture,
+    // independent of what is currently displayed.
+    function computeAllEquivariance(h, A, perm, sharedLayers, mlpLayers, tau) {
+        return {
+            GNN: equivarianceErrorGraph(buildForwardFn('GNN', sharedLayers, tau), h, A, perm),
+            Transformer: equivarianceErrorGraph(buildForwardFn('Transformer', sharedLayers, tau), h, A, perm),
+            MLP: equivarianceErrorPlain(buildForwardFn('MLP', mlpLayers, tau), h, perm)
+        };
+    }
 
-.gdl-controls-panel {
-    flex: 1 1 38%;
-    background: rgba(20, 28, 40, 0.92);
-    padding: 16px;
-    overflow-y: auto;
-    max-height: 720px;
-}
-.gdl-info-card {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 14px;
-    margin-bottom: 12px;
-}
-.gdl-card-title {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: rgba(0, 255, 255, 0.85);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-}
-.gdl-card-subtitle {
-    font-size: 0.66rem;
-    color: rgba(255, 255, 255, 0.45);
-    line-height: 1.45;
-    margin-bottom: 12px;
-}
+    // ---------- weights ----------
+    // Shared GNN/Transformer stack: w = sign * U(0.8, 2.0) (no dead layers),
+    // b ~ U(-0.3, 0.3). Design constants; see header.
+    function initSharedGraphWeights(numLayers, seed) {
+        const rng = mulberry32(seed);
+        const layers = [];
+        for (let l = 0; l < numLayers; l++) {
+            const sign = rng() < 0.5 ? -1 : 1;
+            const mag = 0.8 + 1.2 * rng();
+            layers.push({ w: sign * mag, b: 0.6 * rng() - 0.3 });
+        }
+        return layers;
+    }
 
-/* Architecture segmented control */
-.gdl-arch-segmented {
-    display: flex;
-    gap: 0;
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-.gdl-seg-btn {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.55);
-    font-family: inherit;
-    font-size: 0.74rem;
-    font-weight: 600;
-    padding: 9px 6px;
-    cursor: pointer;
-    transition: all 0.15s;
-    letter-spacing: 0.04em;
-}
-.gdl-seg-btn:hover {
-    background: rgba(0, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.8);
-}
-.gdl-seg-btn.gdl-seg-active {
-    background: rgba(0, 255, 255, 0.15);
-    color: #00ffff;
-}
-.gdl-arch-desc {
-    margin-top: 10px;
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.55);
-    line-height: 1.5;
-    min-height: 2.5em;
-}
+    // MLP: W_ij ~ U(-1/sqrt(n), 1/sqrt(n)), b_i ~ U(-0.3, 0.3).
+    function initMLPWeights(numLayers, n, seed) {
+        const rng = mulberry32(seed);
+        const scale = 1 / Math.sqrt(n);
+        const layers = [];
+        for (let l = 0; l < numLayers; l++) {
+            const W = new Array(n);
+            for (let i = 0; i < n; i++) {
+                W[i] = new Array(n);
+                for (let j = 0; j < n; j++) W[i][j] = 2 * scale * (rng() - 0.5);
+            }
+            const b = new Array(n);
+            for (let i = 0; i < n; i++) b[i] = 0.6 * rng() - 0.3;
+            layers.push({ W: W, b: b });
+        }
+        return layers;
+    }
 
-/* Sliders */
-.gdl-slider-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.gdl-slider-row input[type="range"] {
-    flex: 1;
-    accent-color: #00ffff;
-}
-.gdl-slider-val {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #00ffff;
-    min-width: 32px;
-    text-align: right;
-}
+    function getWeightsFor(arch, numLayers, n, D) {
+        if (arch === 'MLP') return initMLPWeights(numLayers, n, D.mlpWeightSeedBase + numLayers);
+        return initSharedGraphWeights(numLayers, D.sharedWeightSeedBase + numLayers);
+    }
 
-/* Buttons */
-.gdl-button-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-}
-.gdl-btn {
-    flex: 1;
-    background: transparent;
-    border: 1px solid;
-    border-radius: 4px;
-    color: #e8eaed;
-    font-family: inherit;
-    font-size: 0.76rem;
-    font-weight: 600;
-    padding: 9px 10px;
-    cursor: pointer;
-    transition: all 0.18s;
-    letter-spacing: 0.03em;
-}
-.gdl-btn-primary {
-    border-color: rgba(0, 255, 255, 0.5);
-    color: #00ffff;
-    background: rgba(0, 255, 255, 0.05);
-}
-.gdl-btn-primary:hover {
-    background: rgba(0, 255, 255, 0.18);
-    border-color: #00ffff;
-}
-.gdl-btn-secondary {
-    border-color: rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.7);
-}
-.gdl-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #e8eaed;
-}
+    // ---------- data ----------
+    // Ring backbone (connectivity guaranteed) + deterministic extra chords.
+    function buildSmallWorldGraph(n, numExtras, seed) {
+        const rng = mulberry32(seed);
+        const edges = [];
+        const has = {};
+        function key(a, b) { return a < b ? a + '-' + b : b + '-' + a; }
+        for (let i = 0; i < n; i++) {
+            const j = (i + 1) % n;
+            const k = key(i, j);
+            if (!has[k]) { has[k] = true; edges.push([Math.min(i, j), Math.max(i, j)]); }
+        }
+        let added = 0, attempts = 0;
+        while (added < numExtras && attempts < 1000) {
+            attempts++;
+            const a = Math.floor(rng() * n), b = Math.floor(rng() * n);
+            if (a === b) continue;
+            const k = key(a, b);
+            if (has[k]) continue;
+            has[k] = true;
+            edges.push([Math.min(a, b), Math.max(a, b)]);
+            added++;
+        }
+        const A = new Array(n);
+        for (let i = 0; i < n; i++) A[i] = new Array(n).fill(0);
+        for (let e = 0; e < edges.length; e++) {
+            A[edges[e][0]][edges[e][1]] = 1;
+            A[edges[e][1]][edges[e][0]] = 1;
+        }
+        return { edges: edges, A: A };
+    }
 
-/* Equivariance meter */
-.gdl-equiv-meter {
-    margin-top: 4px;
-}
-.gdl-equiv-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 6px;
-    font-size: 0.72rem;
-}
-.gdl-equiv-label {
-    color: rgba(255, 255, 255, 0.55);
-}
-.gdl-equiv-val {
-    font-weight: 700;
-    color: #00ffff;
-    font-variant-numeric: tabular-nums;
-}
-.gdl-equiv-bar {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 2px;
-    overflow: hidden;
-}
-.gdl-equiv-fill {
-    height: 100%;
-    width: 0%;
-    background: #26c6da;
-    transition: width 0.35s ease, background-color 0.2s;
-}
-.gdl-equiv-fill.gdl-fill-fail {
-    background: #ff5252;
-}
-.gdl-equiv-verdict {
-    margin-top: 9px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    color: #26c6da;
-}
-.gdl-equiv-verdict.gdl-verdict-fail {
-    color: #ff5252;
-}
+    function initNodeFeatures(n, seed) {
+        const rng = mulberry32(seed);
+        const h = new Array(n);
+        for (let i = 0; i < n; i++) h[i] = 2 * rng() - 1;
+        return h;
+    }
 
-/* Output comparison table */
-.gdl-table-wrapper {
-    max-height: 240px;
-    overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-}
-.gdl-output-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.7rem;
-    font-variant-numeric: tabular-nums;
-}
-.gdl-output-table thead {
-    position: sticky;
-    top: 0;
-    background: rgba(20, 28, 40, 1);
-}
-.gdl-output-table th {
-    text-align: right;
-    padding: 7px 8px;
-    font-weight: 600;
-    color: rgba(0, 255, 255, 0.75);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    letter-spacing: 0.02em;
-}
-.gdl-output-table th:first-child { text-align: center; }
-.gdl-output-table th:last-child  { text-align: center; }
-.gdl-output-table td {
-    text-align: right;
-    padding: 5px 8px;
-    color: rgba(255, 255, 255, 0.85);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-}
-.gdl-output-table td:first-child {
-    text-align: center;
-    color: rgba(255, 255, 255, 0.5);
-}
-.gdl-output-table td:last-child {
-    text-align: center;
-    font-weight: 600;
-}
-.gdl-row-match  td:last-child { color: #26c6da; }
-.gdl-row-mismatch td:last-child { color: #ff5252; }
-.gdl-row-mismatch td { background: rgba(255, 82, 82, 0.04); }
-`;
+    // ---------- shipped configuration ----------
+    var DEFAULTS = {
+        n: 10,
+        extraEdges: 5,           // 10 ring + 5 chords = 15 edges
+        graphSeed: 42,
+        layoutSeed: 7,
+        featureSeed: 23,
+        shuffleSeed: 1337,       // fixed-seed shuffle stream (documented)
+        sharedWeightSeedBase: 149, // + numLayers; selected for sustained spread
+        mlpWeightSeedBase: 240,    // + numLayers; selected for spread + margin
+        tau: 0.15,
+        numLayersDefault: 2,
+        maxLayers: 4
+    };
 
-/**
- * Inject the demo's CSS into the document head, exactly once.
- * Subsequent calls are no-ops.
- */
-function injectGDLDemoCSS() {
-    if (document.getElementById('gdl-demo-style')) return;
-    const style = document.createElement('style');
-    style.id = 'gdl-demo-style';
-    style.textContent = GDL_DEMO_CSS;
-    document.head.appendChild(style);
-}
+    // ---------- self-tests ----------
+    function runSelfTests() {
+        const failures = [];
+        function check(name, cond) { if (!cond) failures.push(name); }
+        const TOL = 1e-12;
+        const D = DEFAULTS;
 
-// ============================================================
-// DOM reference collection
-// ============================================================
+        // T1: normalizeAdjacency — pinned on a generic NON-REGULAR graph
+        // (equal-degree graphs hide inv[i]^2-type normalization mutants).
+        // Graph: n=4, edges (0,1),(1,2),(1,3); degrees(A+I) = [2,4,2,2].
+        (function () {
+            const A = [[0, 1, 0, 0], [1, 0, 1, 1], [0, 1, 0, 0], [0, 1, 0, 0]];
+            const Ah = normalizeAdjacency(A);
+            const s8 = 1 / Math.sqrt(8);
+            check('T1 pin (0,0)=1/2', Math.abs(Ah[0][0] - 0.5) < TOL);
+            check('T1 pin (1,1)=1/4', Math.abs(Ah[1][1] - 0.25) < TOL);
+            check('T1 pin (0,1)=1/sqrt(8)', Math.abs(Ah[0][1] - s8) < TOL);
+            check('T1 pin (1,2)=1/sqrt(8)', Math.abs(Ah[1][2] - s8) < TOL);
+            check('T1 pin (0,2)=0', Ah[0][2] === 0);
+            // spec-level symmetry pin on distinct-degree edge (kills inv[i]^2,
+            // which is similar to L_rw and behaviorally near-invisible otherwise)
+            let sym = true;
+            for (let i = 0; i < 4; i++)
+                for (let j = 0; j < 4; j++)
+                    if (Math.abs(Ah[i][j] - Ah[j][i]) > TOL) sym = false;
+            check('T1 symmetry', sym);
+        })();
 
-/**
- * After buildDemoHTML has been inserted into the container, collect references
- * to all interactive elements. Module 6 will use these to wire up event handlers.
- *
- * @param {HTMLElement} container  the demo's root container element
- * @returns {object} dictionary of named element references
- */
-function collectGDLDOMRefs(container) {
-    const $ = (sel) => container.querySelector(sel);
-    const $$ = (sel) => Array.from(container.querySelectorAll(sel));
+        // T2: attentionMatrix — row-stochastic, equivariant, non-degenerate,
+        // temperature-sensitive.
+        (function () {
+            const h = [0.9, -0.7, 0.2, -0.1, 0.5];
+            const M = attentionMatrix(h, D.tau);
+            let ok = true;
+            for (let i = 0; i < 5; i++) {
+                let s = 0;
+                for (let j = 0; j < 5; j++) { s += M[i][j]; if (M[i][j] < 0) ok = false; }
+                if (Math.abs(s - 1) > TOL) ok = false;
+            }
+            check('T2 row-stochastic', ok);
+            // equivariance of the matrix itself: A(Ph) = P A(h) P^T
+            const rng = mulberry32(99);
+            const p = randomNonIdentityPermutation(5, rng);
+            const lhs = attentionMatrix(permuteVector(h, p), D.tau);
+            const rhs = permuteAdjacency(M, p);
+            check('T2 attention equivariance', maxAbsDiffMat(lhs, rhs) < 1e-14);
+            // non-uniformity (kills a return-uniform mutant = the v1 collapse)
+            let spread = 0;
+            for (let j = 0; j < 5; j++) spread = Math.max(spread, Math.abs(M[0][j] - 0.2));
+            check('T2 non-uniform rows', spread > 0.05);
+            // temperature sensitivity (kills a tau-ignored mutant)
+            const M2 = attentionMatrix(h, 1.0);
+            check('T2 tau matters', maxAbsDiffMat(M, M2) > 0.01);
+            // value pins (mechanically computed 2026-07; includes a DIAGONAL
+            // entry — kills a self-attention-excluded variant mutant)
+            const Mp = attentionMatrix([0.9, -0.7, 0.2], 0.15);
+            check('T2 attention value pins',
+                Math.abs(Mp[0][0] - 0.98516023042651202) < TOL &&
+                Math.abs(Mp[0][2] - 0.014773045915840277) < TOL &&
+                Math.abs(Mp[2][0] - 0.66151454885669803) < TOL);
+        })();
+
+        // T3: permutation operations.
+        (function () {
+            const rng = mulberry32(7);
+            let allValid = true;
+            for (let s = 0; s < 20; s++) {
+                const p = randomPermutation(8, rng);
+                const sorted = p.slice().sort(function (a, b) { return a - b; });
+                for (let i = 0; i < 8; i++) if (sorted[i] !== i) allValid = false;
+                const inv = inversePermutation(p);
+                const comp = permuteVector(permuteVector([0, 1, 2, 3, 4, 5, 6, 7], p), inv);
+                for (let i = 0; i < 8; i++) if (comp[i] !== i) allValid = false;
+            }
+            check('T3 permutation validity + inverse', allValid);
+            check('T3 permuteVector pin',
+                JSON.stringify(permuteVector([10, 20, 30], [2, 0, 1])) === '[30,10,20]');
+            let nonId = true;
+            for (let s = 1; s <= 50; s++) {
+                const p = randomNonIdentityPermutation(4, mulberry32(s));
+                if (isIdentityPermutation(p)) nonId = false;
+                // n=2: identity comes up on the FIRST draw with prob 1/2, so
+                // the redraw guard is load-bearing here (30/50 seeds measured)
+                const q = randomNonIdentityPermutation(2, mulberry32(s));
+                if (isIdentityPermutation(q)) nonId = false;
+            }
+            check('T3 non-identity guarantee', nonId);
+            check('T3 n=1 identity honest',
+                isIdentityPermutation(randomNonIdentityPermutation(1, mulberry32(1))));
+        })();
+
+        // T4: conjugation pin on a GENERIC symmetric matrix (structured 0/1
+        // inputs hide algebra mutants) + complete-graph exact invariance.
+        (function () {
+            const M = [[0, 1, 2], [1, 0, 3], [2, 3, 0]];
+            const B = permuteAdjacency(M, [2, 0, 1]);
+            check('T4 PAP^T pin',
+                JSON.stringify(B) === '[[0,2,3],[2,0,1],[3,1,0]]');
+            const C = completeAdjacency(6);
+            const rng = mulberry32(5);
+            const p = randomNonIdentityPermutation(6, rng);
+            const CP = permuteAdjacency(C, p);
+            check('T4 complete invariance', maxAbsDiffMat(C, CP) === 0);
+            let diagZero = true, offOne = true;
+            for (let i = 0; i < 6; i++)
+                for (let j = 0; j < 6; j++) {
+                    if (i === j && C[i][j] !== 0) diagZero = false;
+                    if (i !== j && C[i][j] !== 1) offOne = false;
+                }
+            check('T4 complete structure', diagZero && offOne);
+        })();
+
+        // T5: layer pins (mechanically computed 2026-07; tol 1e-12).
+        (function () {
+            const A = [[0, 1, 0, 0], [1, 0, 1, 1], [0, 1, 0, 0], [0, 1, 0, 0]];
+            const Ah = normalizeAdjacency(A);
+            const out = applyGCNLayer([1, -1, 0.5, 0], Ah, 1.5, -0.2);
+            const pin = [0.019667377703172197, 0.21698992802828734,
+                -0.34109403445213643, -0.62326725114562997];
+            let ok = true;
+            for (let i = 0; i < 4; i++) if (Math.abs(out[i] - pin[i]) > TOL) ok = false;
+            check('T5 GCN layer pin', ok);
+            const o2 = applyMLPLayer([1, -2], [[0.5, -1], [2, 0.25]], [0.1, -0.3]);
+            const pin2 = [0.98902740220109919, 0.83365460701215521];
+            check('T5 MLP layer pin',
+                Math.abs(o2[0] - pin2[0]) < TOL && Math.abs(o2[1] - pin2[1]) < TOL);
+        })();
+
+        // T6: one-code-path + Transformer input-A independence (bitwise).
+        (function () {
+            const g = buildSmallWorldGraph(8, 3, 11);
+            const h0 = initNodeFeatures(8, 4);
+            const layers = initSharedGraphWeights(2, 60);
+            // GNN through runForward == manual fixed-Ahat loop
+            const r1 = runForward('GNN', h0, g.A, layers, D.tau);
+            const Ahat = normalizeAdjacency(g.A);
+            let h = h0.slice();
+            for (let k = 0; k < 2; k++) h = applyGCNLayer(h, Ahat, layers[k].w, layers[k].b);
+            check('T6 GNN path identity', l2diff(r1.history[2], h) === 0);
+            // Transformer ignores A: two different adjacencies, identical output
+            const g2 = buildSmallWorldGraph(8, 3, 77);
+            const t1 = runForward('Transformer', h0, g.A, layers, D.tau);
+            const t2 = runForward('Transformer', h0, g2.A, layers, D.tau);
+            check('T6 Transformer ignores A', l2diff(t1.history[2], t2.history[2]) === 0);
+            // Transformer == manual attention loop
+            let ht = h0.slice();
+            for (let k = 0; k < 2; k++)
+                ht = applyGCNLayer(ht, attentionMatrix(ht, D.tau), layers[k].w, layers[k].b);
+            check('T6 Transformer path identity', l2diff(t1.history[2], ht) === 0);
+            // aopHistory shape
+            check('T6 aopHistory recorded',
+                t1.aopHistory.length === 2 && r1.aopHistory.length === 2);
+        })();
+
+        // T7: equivariance certificates with NEGATIVE control.
+        (function () {
+            let maxG = 0, maxT = 0, minM = Infinity;
+            for (let s = 1; s <= 10; s++) {
+                const g = buildSmallWorldGraph(10, 5, s * 31);
+                const h0 = initNodeFeatures(10, s * 17);
+                const rng = mulberry32(s * 191);
+                const perm = randomNonIdentityPermutation(10, rng);
+                for (let L = 1; L <= 3; L++) {
+                    const shared = initSharedGraphWeights(L, s * 7 + L);
+                    const mlp = initMLPWeights(L, 10, s * 13 + L);
+                    const e = computeAllEquivariance(h0, g.A, perm, shared, mlp, D.tau);
+                    maxG = Math.max(maxG, e.GNN);
+                    maxT = Math.max(maxT, e.Transformer);
+                    minM = Math.min(minM, e.MLP);
+                }
+            }
+            check('T7 GNN equivariant (<1e-12)', maxG < 1e-12);
+            check('T7 Transformer equivariant (<1e-12)', maxT < 1e-12);
+            // negative control: measured min 0.366 over 30 seeds; threshold 0.05
+            check('T7 MLP breaks equivariance (>0.05)', minM > 0.05);
+            // identity permutation: exactly zero for all three (bitwise)
+            const g = buildSmallWorldGraph(10, 5, 42);
+            const h0 = initNodeFeatures(10, 23);
+            const shared = initSharedGraphWeights(2, 151);
+            const mlp = initMLPWeights(2, 10, 242);
+            const eId = computeAllEquivariance(h0, g.A, identityPermutation(10), shared, mlp, D.tau);
+            check('T7 identity perm exact zero',
+                eId.GNN === 0 && eId.Transformer === 0 && eId.MLP === 0);
+            // Negative control FOR THE AUDITOR: a known-violating model pushed
+            // through the GRAPH-path certificate must report a large violation
+            // (a hardcoded-zero mutant inside equivarianceErrorGraph would
+            // otherwise pass every equivariant-architecture test trivially).
+            const badF = buildForwardFn('MLP', mlp, D.tau); // ignores A; not equivariant
+            const rngNC = mulberry32(4242);
+            const permNC = randomNonIdentityPermutation(10, rngNC);
+            check('T7 graph auditor detects violation (>0.05)',
+                equivarianceErrorGraph(badF, h0, g.A, permNC) > 0.05);
+        })();
+
+        // T8: graph builder spec at the shipped seed.
+        (function () {
+            const g = buildSmallWorldGraph(D.n, D.extraEdges, D.graphSeed);
+            check('T8 edge count 15', g.edges.length === 15);
+            let sym = true, noSelf = true;
+            for (let i = 0; i < D.n; i++) {
+                if (g.A[i][i] !== 0) noSelf = false;
+                for (let j = 0; j < D.n; j++) if (g.A[i][j] !== g.A[j][i]) sym = false;
+            }
+            check('T8 A symmetric', sym);
+            check('T8 no self-loops', noSelf);
+            const seen = {};
+            let dup = false;
+            for (let e = 0; e < g.edges.length; e++) {
+                const k = g.edges[e][0] + '-' + g.edges[e][1];
+                if (seen[k]) dup = true;
+                seen[k] = true;
+            }
+            check('T8 no duplicate edges', !dup);
+            // connectivity (BFS; ring backbone should guarantee it)
+            const vis = new Array(D.n).fill(false);
+            const q = [0]; vis[0] = true; let cnt = 1;
+            while (q.length) {
+                const u = q.shift();
+                for (let v = 0; v < D.n; v++)
+                    if (g.A[u][v] === 1 && !vis[v]) { vis[v] = true; cnt++; q.push(v); }
+            }
+            check('T8 connected', cnt === D.n);
+            const g2 = buildSmallWorldGraph(D.n, D.extraEdges, D.graphSeed);
+            check('T8 deterministic', JSON.stringify(g.edges) === JSON.stringify(g2.edges));
+            const g3 = buildSmallWorldGraph(D.n, D.extraEdges, D.graphSeed + 1);
+            check('T8 seed-sensitive', JSON.stringify(g.edges) !== JSON.stringify(g3.edges));
+            // Collision-heavy config (n=4, extras=5): a===b draws occur at
+            // EVERY seed 1..20 (measured), so the self-loop guard is
+            // load-bearing here, not just at the shipped seed.
+            let noSelfDense = true;
+            for (let s = 1; s <= 20; s++) {
+                const gd = buildSmallWorldGraph(4, 5, s);
+                for (let i = 0; i < 4; i++) if (gd.A[i][i] !== 0) noSelfDense = false;
+            }
+            check('T8 no self-loops (collision-heavy)', noSelfDense);
+        })();
+
+        // T9: init determinism and ranges.
+        (function () {
+            const h1 = initNodeFeatures(10, D.featureSeed);
+            const h2 = initNodeFeatures(10, D.featureSeed);
+            check('T9 features deterministic', l2diff(h1, h2) === 0);
+            let inRange = true;
+            for (let i = 0; i < 10; i++) if (h1[i] < -1 || h1[i] >= 1) inRange = false;
+            check('T9 features in [-1,1)', inRange);
+            const ws = initSharedGraphWeights(4, 149 + 4);
+            let magOk = true;
+            for (let k = 0; k < 4; k++) {
+                const m = Math.abs(ws[k].w);
+                if (m < 0.8 || m > 2.0) magOk = false;
+                if (Math.abs(ws[k].b) > 0.3) magOk = false;
+            }
+            check('T9 shared weight ranges', magOk);
+            const ml = initMLPWeights(2, 10, 242);
+            let mOk = true;
+            const sc = 1 / Math.sqrt(10);
+            for (let i = 0; i < 10; i++)
+                for (let j = 0; j < 10; j++)
+                    if (Math.abs(ml[0].W[i][j]) > sc) mOk = false;
+            check('T9 MLP weight range', mOk);
+        })();
+
+        // T10: story test at the SHIPPED defaults — the phenomena the page
+        // prose claims are themselves tests.
+        (function () {
+            const g = buildSmallWorldGraph(D.n, D.extraEdges, D.graphSeed);
+            const h0 = initNodeFeatures(D.n, D.featureSeed);
+            // (a) visible per-layer spread for all three panels, depths 1..4
+            //     (measured mins: GNN 0.280, Transformer 0.563, MLP 0.227)
+            let minStd = Infinity;
+            for (let L = 1; L <= D.maxLayers; L++) {
+                const shared = getWeightsFor('GNN', L, D.n, D);
+                const mlp = getWeightsFor('MLP', L, D.n, D);
+                const rG = runForward('GNN', h0, g.A, shared, D.tau);
+                const rT = runForward('Transformer', h0, g.A, shared, D.tau);
+                const rM = runForward('MLP', h0, g.A, mlp, D.tau);
+                for (let k = 1; k <= L; k++) {
+                    minStd = Math.min(minStd, stddev(rG.history[k]),
+                        stddev(rT.history[k]), stddev(rM.history[k]));
+                }
+            }
+            check('T10 per-layer spread visible (>0.15)', minStd > 0.15);
+            // (b) shuffle stream: first 5 permutations, depth 2
+            //     (measured MLP min 1.016; thresholds 0.5 / 1e-12)
+            const rng = mulberry32(D.shuffleSeed);
+            const shared = getWeightsFor('GNN', 2, D.n, D);
+            const mlp = getWeightsFor('MLP', 2, D.n, D);
+            let okStream = true;
+            for (let t = 0; t < 5; t++) {
+                const perm = randomNonIdentityPermutation(D.n, rng);
+                const e = computeAllEquivariance(h0, g.A, perm, shared, mlp, D.tau);
+                if (!(e.GNN < 1e-12 && e.Transformer < 1e-12 && e.MLP > 0.5)) okStream = false;
+            }
+            check('T10 shuffle stream story', okStream);
+        })();
+
+        // T11: structure-matrix display sources.
+        (function () {
+            const g = buildSmallWorldGraph(6, 2, 3);
+            const h0 = initNodeFeatures(6, 9);
+            const layers = initSharedGraphWeights(2, 55);
+            const rG = runForward('GNN', h0, g.A, layers, D.tau);
+            check('T11 GNN display = normalized A',
+                maxAbsDiffMat(rG.aopHistory[0], normalizeAdjacency(g.A)) === 0);
+            check('T11 GNN display constant across layers',
+                maxAbsDiffMat(rG.aopHistory[0], rG.aopHistory[1]) === 0);
+            const rT = runForward('Transformer', h0, g.A, layers, D.tau);
+            check('T11 Transformer display = attention(h^(k))',
+                maxAbsDiffMat(rT.aopHistory[0], attentionMatrix(h0, D.tau)) === 0 &&
+                maxAbsDiffMat(rT.aopHistory[1], attentionMatrix(rT.history[1], D.tau)) === 0);
+            check('T11 Transformer attention varies by layer',
+                maxAbsDiffMat(rT.aopHistory[0], rT.aopHistory[1]) > 1e-6);
+        })();
+
+        return { passed: failures.length === 0, failures: failures };
+    }
 
     return {
-        canvas:        $('#gdl-canvas'),
-        canvasWrapper: $('.gdl-canvas-wrapper'),
-        archButtons:   $$('.gdl-seg-btn'),
-        archDesc:      $('#gdl-arch-desc'),
-        depthSlider:   $('#gdl-depth-slider'),
-        depthVal:      $('#gdl-depth-val'),
-        layerSlider:   $('#gdl-layer-slider'),
-        layerReadout:  $('#gdl-layer-readout'),
-        shuffleBtn:    $('#gdl-shuffle-btn'),
-        resetBtn:      $('#gdl-reset-btn'),
-        equivVal:      $('#gdl-equiv-val'),
-        equivFill:     $('#gdl-equiv-fill'),
-        equivVerdict:  $('#gdl-equiv-verdict'),
-        outputTbody:   $('#gdl-output-tbody'),
+        mulberry32: mulberry32,
+        matVec: matVec,
+        l2diff: l2diff,
+        maxAbsDiffMat: maxAbsDiffMat,
+        stddev: stddev,
+        normalizeAdjacency: normalizeAdjacency,
+        completeAdjacency: completeAdjacency,
+        attentionMatrix: attentionMatrix,
+        applyGCNLayer: applyGCNLayer,
+        applyMLPLayer: applyMLPLayer,
+        forwardGraphOp: forwardGraphOp,
+        forwardMLP: forwardMLP,
+        runForward: runForward,
+        buildForwardFn: buildForwardFn,
+        identityPermutation: identityPermutation,
+        isIdentityPermutation: isIdentityPermutation,
+        randomPermutation: randomPermutation,
+        randomNonIdentityPermutation: randomNonIdentityPermutation,
+        inversePermutation: inversePermutation,
+        permuteVector: permuteVector,
+        permuteAdjacency: permuteAdjacency,
+        equivarianceErrorGraph: equivarianceErrorGraph,
+        equivarianceErrorPlain: equivarianceErrorPlain,
+        computeAllEquivariance: computeAllEquivariance,
+        initSharedGraphWeights: initSharedGraphWeights,
+        initMLPWeights: initMLPWeights,
+        getWeightsFor: getWeightsFor,
+        buildSmallWorldGraph: buildSmallWorldGraph,
+        initNodeFeatures: initNodeFeatures,
+        DEFAULTS: DEFAULTS,
+        runSelfTests: runSelfTests
     };
-}
+})();
 
-/**
- * Architecture-specific descriptive text shown under the segmented control.
- * Kept here so the description tracks the current architecture without
- * Module 6 needing to know its content.
- */
-const ARCH_DESCRIPTIONS = {
-    MLP:         'Dense fully-connected layers. No graph input; no symmetry encoded. Permuting the inputs gives a different output.',
-    Transformer: 'Message passing on the complete graph (every token attends to every other). Permutation acts on tokens; output reorders identically.',
-    GNN:         'Message passing on the input graph. Permutation acts jointly on features X and adjacency A: f(PX, PAP^T) = Pf(X, A).',
-};
+if (typeof module !== 'undefined' && module.exports) { module.exports = GdlCore; }
+// ============================================================
+// UI layer (#gdl_demo, prefix gdlv-)
+// Three panels — MLP (negative control) | GNN | Transformer — reacting to
+// ONE shared Shuffle. Self-test gate runs before anything renders.
+// Dark island: fixed palette, no var(--), no data-theme/currentColor reads.
+// ============================================================
 
-/**
- * Convenience: update the segmented control's visual active state.
- */
-function setActiveArchButton(refs, arch) {
-    for (const btn of refs.archButtons) {
-        if (btn.dataset.arch === arch) {
-            btn.classList.add('gdl-seg-active');
+(function () {
+    'use strict';
+
+    // ---------- fixed palette ----------
+    var C = {
+        bg: 'rgba(20,28,40,0.95)',
+        panelBg: 'rgba(28,38,54,0.95)',
+        border: 'rgba(90,110,140,0.5)',
+        text: '#dce6f2',
+        dim: '#8fa3bb',
+        accent: '#64b5f6',
+        good: '#66bb6a',
+        bad: '#ef5350',
+        warn: '#ffb74d',
+        nodeStroke: '#e8eef6',
+        edge: 'rgba(150,170,200,0.5)',
+        edgeFaint: 'rgba(150,170,200,0.16)',
+        negR: 33, negG: 150, negB: 243,   // feature < 0  (blue)
+        posR: 239, posG: 83, posB: 80,    // feature > 0  (red)
+        midR: 116, midG: 128, midB: 144,  // feature = 0  (neutral)
+        heatR: 255, heatG: 183, heatB: 77 // nonnegative heatmap high end
+    };
+
+    var ARCHS = ['MLP', 'GNN', 'Transformer'];
+
+    // ---------- helpers ----------
+    function clamp(x, a, b) { return x < a ? a : (x > b ? b : x); }
+
+    function featureColor(h) {
+        var t = clamp(h, -1, 1);
+        var r, g, b;
+        if (t < 0) {
+            var u = -t;
+            r = C.midR + (C.negR - C.midR) * u;
+            g = C.midG + (C.negG - C.midG) * u;
+            b = C.midB + (C.negB - C.midB) * u;
         } else {
-            btn.classList.remove('gdl-seg-active');
+            r = C.midR + (C.posR - C.midR) * t;
+            g = C.midG + (C.posG - C.midG) * t;
+            b = C.midB + (C.posB - C.midB) * t;
         }
-    }
-    if (refs.archDesc) {
-        refs.archDesc.textContent = ARCH_DESCRIPTIONS[arch] || '';
-    }
-}
-
-// ====== MODULE 6 ======
-// sec5_p13_gdl_demo.js — Module 6: Wiring
-// Integrates all modules: state init, DOM build, event binding, animation,
-// comparison table updates, equivariance meter updates.
-
-// ============================================================
-// Extended state: original-side caches
-// ============================================================
-
-/**
- * Augment the demo state with caches of forward-pass results on the
- * unshuffled inputs. These are needed for the output-comparison table
- * (which compares current y' against the original y under any permutation).
- *
- * Called whenever architecture or depth changes — these invalidate the
- * forward pass on the original inputs in addition to the current inputs.
- */
-function refreshOriginalForward(state) {
-    const arch = state.architecture;
-    const L = state.numLayers;
-    const layers = getWeights(state, arch, L);
-
-    let h = state.originalH.slice();
-    const history = [h.slice()];
-
-    if (arch === 'GNN') {
-        const Ahat = normalizeAdjacency(state.originalA);
-        for (const layer of layers) {
-            h = applyGCNLayer(h, Ahat, layer.w, layer.b);
-            history.push(h.slice());
-        }
-    } else if (arch === 'Transformer') {
-        const Afull = completeAdjacency(state.n);
-        const Ahat = normalizeAdjacency(Afull);
-        for (const layer of layers) {
-            h = applyGCNLayer(h, Ahat, layer.w, layer.b);
-            history.push(h.slice());
-        }
-    } else if (arch === 'MLP') {
-        for (const layer of layers) {
-            h = applyMLPLayer(h, layer.W, layer.b);
-            history.push(h.slice());
-        }
+        return 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ')';
     }
 
-    state.originalLayerHistory = history;
-    state.originalY = history[history.length - 1].slice();
-}
+    function smoothstep(t) { return t * t * (3 - 2 * t); }
 
-// ============================================================
-// Comparison table update
-// ============================================================
-
-const EQUIV_MATCH_THRESHOLD = 1e-6;
-
-/**
- * Build the rows of the output-comparison table for the current state.
- * Each row corresponds to a node slot i and shows:
- *   - original y_i             (forward pass on unshuffled input)
- *   - current y'_i             (forward pass on current shuffled input)
- *   - expected y_{π(i)}        (where the original feature would have ended up under equivariance)
- *   - match indicator
- */
-function updateComparisonTable(refs, state) {
-    const tbody = refs.outputTbody;
-    if (!tbody) return;
-
-    const L = state.numLayers;
-    const originalY = state.originalY;
-    const currentY  = state.layerHistory[L];
-    const perm      = state.perm;
-
-    const rows = [];
-    for (let i = 0; i < state.n; i++) {
-        const yOrig    = originalY[i];
-        const yCurr    = currentY[i];
-        const yExpect  = originalY[perm[i]];   // expected from equivariance: P y
-        const diff     = Math.abs(yCurr - yExpect);
-        const matched  = diff < EQUIV_MATCH_THRESHOLD;
-
-        rows.push(`
-            <tr class="${matched ? 'gdl-row-match' : 'gdl-row-mismatch'}">
-                <td>${i}</td>
-                <td>${yOrig.toFixed(4)}</td>
-                <td>${yCurr.toFixed(4)}</td>
-                <td>${yExpect.toFixed(4)}</td>
-                <td>${matched ? '✓' : '✗'}</td>
-            </tr>
-        `);
+    function lerpVec(a, b, t) {
+        var out = new Array(a.length);
+        for (var i = 0; i < a.length; i++) out[i] = a[i] + (b[i] - a[i]) * t;
+        return out;
     }
-    tbody.innerHTML = rows.join('');
-}
 
-// ============================================================
-// Equivariance meter update
-// ============================================================
+    // Circle layout with deterministic jitter (presentation geometry).
+    function buildCircleLayout(n, seed) {
+        var rng = GdlCore.mulberry32(seed);
+        var pts = new Array(n);
+        for (var i = 0; i < n; i++) {
+            var ang = (2 * Math.PI * i) / n - Math.PI / 2;
+            var rad = 0.40 + 0.05 * (rng() - 0.5);
+            pts[i] = {
+                x: 0.5 + rad * Math.cos(ang) + 0.015 * (rng() - 0.5),
+                y: 0.5 + rad * Math.sin(ang) + 0.015 * (rng() - 0.5)
+            };
+        }
+        return pts;
+    }
 
-/**
- * Map a positive error e to a 0-100 percentage on a log scale.
- *   e ≤ 1e-15  → 0% (full saturation; reading at numerical precision)
- *   e ≥ 1e+1   → 100%
- * In-between is logarithmic.
- */
-function errorToPercent(e) {
-    if (e <= 0) return 0;
-    const logE = Math.log10(e);
-    const pct = ((logE - (-15)) / (1 - (-15))) * 100;
-    return Math.max(0, Math.min(100, pct));
-}
+    // ---------- CSS (scoped under #gdl_demo) ----------
+    function injectCSS() {
+        if (document.getElementById('gdlv-style')) return;
+        var css = '' +
+            '#gdl_demo{background:' + C.bg + ';border:1px solid ' + C.border + ';' +
+            'border-radius:10px;padding:16px;color:' + C.text + ';' +
+            'font-family:system-ui,-apple-system,"Segoe UI",sans-serif;}' +
+            '#gdl_demo .gdlv-title{font-size:1.05rem;font-weight:600;margin:0 0 4px 0;}' +
+            '#gdl_demo .gdlv-template{color:' + C.dim + ';font-size:0.88rem;margin:0 0 12px 0;}' +
+            '#gdl_demo .gdlv-template code{color:' + C.accent + ';font-family:ui-monospace,Consolas,monospace;font-size:0.9em;background:transparent;}' +
+            '#gdl_demo .gdlv-panels{display:flex;flex-wrap:wrap;gap:12px;}' +
+            '#gdl_demo .gdlv-panel{flex:1 1 280px;min-width:260px;background:' + C.panelBg + ';' +
+            'border:1px solid ' + C.border + ';border-radius:8px;padding:10px;}' +
+            '#gdl_demo .gdlv-panel-head{font-weight:600;font-size:0.95rem;margin-bottom:2px;' +
+            'display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}' +
+            '#gdl_demo .gdlv-tag{font-size:0.7rem;font-weight:600;color:' + C.warn + ';' +
+            'border:1px solid ' + C.warn + ';border-radius:4px;padding:1px 5px;}' +
+            '#gdl_demo .gdlv-formula{color:' + C.dim + ';font-size:0.78rem;margin-bottom:6px;min-height:2.2em;}' +
+            '#gdl_demo .gdlv-graph{width:100%;height:220px;display:block;border-radius:6px;}' +
+            '#gdl_demo .gdlv-mlabel{color:' + C.dim + ';font-size:0.75rem;margin:8px 0 3px 0;}' +
+            '#gdl_demo .gdlv-heat{width:100%;height:150px;display:block;border-radius:6px;}' +
+            '#gdl_demo .gdlv-eq{margin-top:8px;font-size:0.82rem;font-family:ui-monospace,Consolas,monospace;' +
+            'padding:6px 8px;border-radius:6px;border:1px solid ' + C.border + ';}' +
+            '#gdl_demo .gdlv-eq-good{color:' + C.good + ';}' +
+            '#gdl_demo .gdlv-eq-bad{color:' + C.bad + ';}' +
+            '#gdl_demo .gdlv-eq-idle{color:' + C.dim + ';}' +
+            '#gdl_demo .gdlv-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;' +
+            'margin-top:14px;padding-top:12px;border-top:1px solid ' + C.border + ';}' +
+            '#gdl_demo .gdlv-btn{background:transparent;color:' + C.accent + ';border:1px solid ' + C.accent + ';' +
+            'border-radius:6px;padding:6px 14px;font-size:0.88rem;cursor:pointer;}' +
+            '#gdl_demo .gdlv-btn:hover{background:rgba(100,181,246,0.12);}' +
+            '#gdl_demo .gdlv-ctl{display:flex;align-items:center;gap:6px;font-size:0.85rem;color:' + C.dim + ';}' +
+            '#gdl_demo .gdlv-ctl input[type=range]{width:120px;}' +
+            '#gdl_demo .gdlv-status{margin-top:8px;font-size:0.8rem;color:' + C.dim + ';' +
+            'font-family:ui-monospace,Consolas,monospace;min-height:1.2em;}' +
+            '#gdl_demo .gdlv-refusal{border:1px solid ' + C.bad + ';border-radius:8px;padding:14px;color:' + C.bad + ';}' +
+            '#gdl_demo .gdlv-refusal ul{margin:8px 0 0 18px;padding:0;}' +
+            '@media (max-width: 760px){' +
+            '#gdl_demo .gdlv-panels{flex-direction:column;}' +
+            '#gdl_demo .gdlv-panel{min-width:0;}' +
+            '#gdl_demo .gdlv-graph{height:200px;}' +
+            '#gdl_demo .gdlv-heat{height:130px;}' +
+            '}';
+        var style = document.createElement('style');
+        style.id = 'gdlv-style';
+        style.textContent = css;
+        document.head.appendChild(style);
+    }
 
-function updateEquivarianceMeter(refs, state) {
-    const err = state.equivarianceError;
-    if (refs.equivVal)     refs.equivVal.textContent = err.toExponential(2);
-
-    const pct = errorToPercent(err);
-    if (refs.equivFill) {
-        refs.equivFill.style.width = pct + '%';
-        if (err < EQUIV_MATCH_THRESHOLD) {
-            refs.equivFill.classList.remove('gdl-fill-fail');
+    // ---------- HTML ----------
+    function panelHTML(arch) {
+        var head, formula, mlabel;
+        if (arch === 'MLP') {
+            head = 'MLP <span class="gdlv-tag">negative control</span>';
+            formula = 'h<sup>(k+1)</sup> = tanh(W<sub>k</sub> h<sup>(k)</sup> + b<sub>k</sub>) &mdash; learned dense W: index-dependent, no structure matrix';
+            mlabel = 'W<sub>1</sub> (learned, dense)';
+        } else if (arch === 'GNN') {
+            head = 'GNN';
+            formula = 'h<sup>(k+1)</sup> = tanh(w<sub>k</sub>&nbsp;&Acirc;&thinsp;h<sup>(k)</sup> + b<sub>k</sub>) &mdash; &Acirc; = D&#771;<sup>&minus;1/2</sup>(A+I)D&#771;<sup>&minus;1/2</sup>: fixed, sparse';
+            mlabel = '&Acirc; (fixed across layers)';
         } else {
-            refs.equivFill.classList.add('gdl-fill-fail');
+            head = 'Transformer';
+            formula = 'h<sup>(k+1)</sup> = tanh(w<sub>k</sub>&nbsp;&Acirc;(h<sup>(k)</sup>)&thinsp;h<sup>(k)</sup> + b<sub>k</sub>) &mdash; &Acirc;(h)<sub>ij</sub> = softmax<sub>j</sub>(h<sub>i</sub>h<sub>j</sub>/&tau;): computed from features';
+            mlabel = '&Acirc;(h<sup>(0)</sup>) &mdash; attention at layer 1';
+        }
+        return '<div class="gdlv-panel" id="gdlv-panel-' + arch + '">' +
+            '<div class="gdlv-panel-head">' + head + '</div>' +
+            '<div class="gdlv-formula">' + formula + '</div>' +
+            '<canvas class="gdlv-graph" id="gdlv-graph-' + arch + '"></canvas>' +
+            '<div class="gdlv-mlabel" id="gdlv-mlabel-' + arch + '">' + mlabel + '</div>' +
+            '<canvas class="gdlv-heat" id="gdlv-heat-' + arch + '"></canvas>' +
+            '<div class="gdlv-eq gdlv-eq-idle" id="gdlv-eq-' + arch + '">equivariance: press Shuffle to test</div>' +
+            '</div>';
+    }
+
+    function buildHTML(container) {
+        container.innerHTML =
+            '<div class="gdlv-title">One layer template, three structure matrices</div>' +
+            '<div class="gdlv-template">Shared weights (w<sub>k</sub>, b<sub>k</sub>) between GNN and Transformer; ' +
+            'the ONLY difference between those two panels is the structure matrix. ' +
+            'Node color = scalar feature (blue &lt; 0 &lt; red). ' +
+            'Shuffle applies one permutation P to node features and adjacency in all three panels at once; ' +
+            'equivariance <code>f(Ph, PAP<sup>&#8868;</sup>) = Pf(h, A)</code> is then tested on the original (unshuffled) data. ' +
+            '&tau; = 0.15; weights are untrained, drawn once from a fixed seed.</div>' +
+            '<div class="gdlv-panels">' +
+            panelHTML('MLP') + panelHTML('GNN') + panelHTML('Transformer') +
+            '</div>' +
+            '<div class="gdlv-controls">' +
+            '<button class="gdlv-btn" id="gdlv-shuffle">Shuffle Node Labels</button>' +
+            '<button class="gdlv-btn" id="gdlv-reset">Reset</button>' +
+            '<span class="gdlv-ctl">Layer <input type="range" id="gdlv-layer" min="0" max="2" step="1" value="0">' +
+            '<span id="gdlv-layer-val">0 / 2</span></span>' +
+            '<span class="gdlv-ctl">Depth <input type="range" id="gdlv-depth" min="1" max="4" step="1" value="2">' +
+            '<span id="gdlv-depth-val">2</span></span>' +
+            '</div>' +
+            '<div class="gdlv-status" id="gdlv-status">P = identity (no shuffle applied)</div>';
+    }
+
+    function renderRefusal(container, failures) {
+        injectCSS();
+        var items = '';
+        for (var i = 0; i < failures.length; i++) {
+            items += '<li>' + failures[i] + '</li>';
+        }
+        container.innerHTML =
+            '<div class="gdlv-refusal"><strong>Demo disabled: mathematical self-tests failed.</strong>' +
+            '<ul>' + items + '</ul>' +
+            '<p>The demo refuses to render rather than display unverified quantities.</p></div>';
+    }
+
+    // ---------- canvas plumbing ----------
+    function sizeCanvas(canvas) {
+        var rect = canvas.getBoundingClientRect();
+        var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+        var w = Math.max(1, Math.round(rect.width)), h = Math.max(1, Math.round(rect.height));
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+        var ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { ctx: ctx, W: w, H: h };
+    }
+
+    // ---------- drawing ----------
+    function drawGraph(cv, arch, state, dispH) {
+        var ctx = cv.ctx, W = cv.W, H = cv.H;
+        var n = state.n;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = C.bg;
+        ctx.fillRect(0, 0, W, H);
+        var px = function (p) { return { x: p.x * W, y: p.y * H }; };
+        var i, j, a, b;
+        // edges
+        if (arch === 'GNN') {
+            ctx.strokeStyle = C.edge;
+            ctx.lineWidth = 1.4;
+            for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) {
+                if (state.currentA[i][j] === 1) {
+                    a = px(state.positions[i]); b = px(state.positions[j]);
+                    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                }
+            }
+        } else if (arch === 'Transformer') {
+            ctx.strokeStyle = C.edgeFaint;
+            ctx.lineWidth = 1;
+            for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) {
+                a = px(state.positions[i]); b = px(state.positions[j]);
+                ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+            }
+        }
+        // MLP: no edges — the architecture has no notion of graph structure.
+        // nodes
+        var R = Math.max(7, Math.min(11, Math.round(Math.min(W, H) / 24)));
+        for (i = 0; i < n; i++) {
+            var p = px(state.positions[i]);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, R, 0, 2 * Math.PI);
+            ctx.fillStyle = featureColor(dispH[i]);
+            ctx.fill();
+            ctx.strokeStyle = C.nodeStroke;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            // label: which ORIGINAL node sits in this slot under P
+            ctx.fillStyle = C.text;
+            ctx.font = '10px ui-monospace,Consolas,monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(state.perm[i]), p.x, p.y - R - 8);
         }
     }
 
-    if (refs.equivVerdict) {
-        if (err < EQUIV_MATCH_THRESHOLD) {
-            refs.equivVerdict.textContent = '✓ EQUIVARIANT (error within numerical precision)';
-            refs.equivVerdict.classList.remove('gdl-verdict-fail');
+    function drawHeat(cv, M, signed) {
+        var ctx = cv.ctx, W = cv.W, H = cv.H;
+        var n = M.length;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = C.bg;
+        ctx.fillRect(0, 0, W, H);
+        var side = Math.min(W, H) - 24;
+        var cell = side / n;
+        var x0 = (W - side) / 2, y0 = 8;
+        var mx = 0, i, j;
+        for (i = 0; i < n; i++) for (j = 0; j < n; j++) mx = Math.max(mx, Math.abs(M[i][j]));
+        if (mx === 0) mx = 1;
+        for (i = 0; i < n; i++) {
+            for (j = 0; j < n; j++) {
+                var v = M[i][j] / mx;
+                var r, g, b;
+                if (signed) {
+                    if (v < 0) { var u = -v; r = 20 + (C.negR - 20) * u; g = 28 + (C.negG - 28) * u; b = 40 + (C.negB - 40) * u; }
+                    else { r = 20 + (C.posR - 20) * v; g = 28 + (C.posG - 28) * v; b = 40 + (C.posB - 40) * v; }
+                } else {
+                    r = 20 + (C.heatR - 20) * v; g = 28 + (C.heatG - 28) * v; b = 40 + (C.heatB - 40) * v;
+                }
+                ctx.fillStyle = 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ')';
+                ctx.fillRect(x0 + j * cell, y0 + i * cell, Math.ceil(cell), Math.ceil(cell));
+            }
+        }
+        ctx.strokeStyle = C.border;
+        ctx.strokeRect(x0, y0, side, side);
+        ctx.fillStyle = C.dim;
+        ctx.font = '9px ui-monospace,Consolas,monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('max |entry| = ' + mx.toPrecision(3), x0, y0 + side + 3);
+    }
+
+    // ---------- state & orchestration ----------
+    function makeState() {
+        var D = GdlCore.DEFAULTS;
+        var g = GdlCore.buildSmallWorldGraph(D.n, D.extraEdges, D.graphSeed);
+        var state = {
+            n: D.n,
+            originalA: g.A,
+            originalH: GdlCore.initNodeFeatures(D.n, D.featureSeed),
+            positions: buildCircleLayout(D.n, D.layoutSeed),
+            perm: GdlCore.identityPermutation(D.n),
+            numLayers: D.numLayersDefault,
+            shuffleRng: GdlCore.mulberry32(D.shuffleSeed),
+            displayedLayer: 0,
+            results: null,
+            eq: null,
+            currentH: null,
+            currentA: null,
+            animToken: 0
+        };
+        applyPerm(state);
+        recompute(state);
+        return state;
+    }
+
+    function applyPerm(state) {
+        state.currentH = GdlCore.permuteVector(state.originalH, state.perm);
+        state.currentA = GdlCore.permuteAdjacency(state.originalA, state.perm);
+    }
+
+    function weights(state) {
+        var D = GdlCore.DEFAULTS;
+        return {
+            shared: GdlCore.getWeightsFor('GNN', state.numLayers, state.n, D),
+            mlp: GdlCore.getWeightsFor('MLP', state.numLayers, state.n, D)
+        };
+    }
+
+    // Forward passes for DISPLAY run on the current (possibly shuffled) data.
+    function recompute(state) {
+        var D = GdlCore.DEFAULTS;
+        // weights depend only on numLayers — cached here, never per frame
+        state.w = weights(state);
+        var w = state.w;
+        state.results = {
+            MLP: GdlCore.runForward('MLP', state.currentH, state.currentA, w.mlp, D.tau),
+            GNN: GdlCore.runForward('GNN', state.currentH, state.currentA, w.shared, D.tau),
+            Transformer: GdlCore.runForward('Transformer', state.currentH, state.currentA, w.shared, D.tau)
+        };
+        // The equivariance certificate is asked of the ARCHITECTURE, so it is
+        // always computed on the ORIGINAL (unshuffled) h and A — never on the
+        // displayed state. (v1-regression guard; asserted by the smoke test.)
+        if (GdlCore.isIdentityPermutation(state.perm)) {
+            state.eq = null;
         } else {
-            refs.equivVerdict.textContent = '✗ NOT EQUIVARIANT (output changes with permutation)';
-            refs.equivVerdict.classList.add('gdl-verdict-fail');
+            state.eq = GdlCore.computeAllEquivariance(
+                state.originalH, state.originalA, state.perm, w.shared, w.mlp, D.tau);
         }
     }
-}
 
-// ============================================================
-// Layer slider update
-// ============================================================
-
-function syncLayerSlider(refs, state) {
-    if (!refs.layerSlider) return;
-    refs.layerSlider.max = state.numLayers;
-    if (parseInt(refs.layerSlider.value, 10) > state.numLayers) {
-        refs.layerSlider.value = state.numLayers;
-        state.displayedLayer = state.numLayers;
-    }
-    if (refs.layerReadout) {
-        refs.layerReadout.textContent = `${state.displayedLayer} / ${state.numLayers}`;
-    }
-}
-
-// ============================================================
-// Animation: layer-by-layer reveal
-// ============================================================
-
-/**
- * Smoothly animate from the initial features to the final-layer features by
- * walking through layerHistory[0] → layerHistory[1] → ... → layerHistory[L].
- * Each pair gets PER_LAYER_MS milliseconds of smoothstep easing.
- *
- * The animation modifies state.displayedLayer (integer) and state.animH
- * (current displayed feature vector). On each frame, render and update the
- * layer slider position.
- */
-const PER_LAYER_MS = 600;
-
-function startLayerAnimation(state, refs, canvasState) {
-    if (state._animationFrameId) {
-        cancelAnimationFrame(state._animationFrameId);
-        state._animationFrameId = null;
+    // ---------- rendering at a (possibly fractional) layer ----------
+    function heatFor(state, arch, layerIdx) {
+        // Structure matrix of the transition h^(k) -> h^(k+1), where
+        // k = min(layerIdx, L-1): at the final layer we keep showing the last
+        // applied matrix.
+        var k = Math.min(layerIdx, state.numLayers - 1);
+        if (arch === 'MLP') return state.w.mlp[k].W;
+        return state.results[arch].aopHistory[k];
     }
 
-    const totalDuration = PER_LAYER_MS * state.numLayers;
-    const startTime = performance.now();
+    function mlabelFor(state, arch, layerIdx) {
+        var k = Math.min(layerIdx, state.numLayers - 1);
+        if (arch === 'MLP') return 'W<sub>' + (k + 1) + '</sub> (learned, dense)';
+        if (arch === 'GNN') return '&Acirc; (fixed across layers)';
+        return '&Acirc;(h<sup>(' + k + ')</sup>) &mdash; attention at layer ' + (k + 1);
+    }
 
-    function frame(now) {
-        const elapsed = now - startTime;
-        const tGlobal = Math.min(1, elapsed / totalDuration);
+    function renderAt(state, refs, layerFloat) {
+        var k = Math.floor(layerFloat);
+        var t = layerFloat - k;
+        var i;
+        for (i = 0; i < ARCHS.length; i++) {
+            var arch = ARCHS[i];
+            var hist = state.results[arch].history;
+            var kk = Math.min(k, hist.length - 1);
+            var dispH;
+            if (t > 0 && kk + 1 < hist.length) {
+                dispH = lerpVec(hist[kk], hist[kk + 1], smoothstep(t));
+            } else {
+                dispH = hist[kk];
+            }
+            drawGraph(refs.graph[arch], arch, state, dispH);
+            drawHeat(refs.heat[arch], heatFor(state, arch, kk), arch === 'MLP');
+            refs.mlabel[arch].innerHTML = mlabelFor(state, arch, kk);
+        }
+    }
 
-        // Which layer pair are we between?
-        const fScaled = tGlobal * state.numLayers;     // 0..numLayers
-        const iLow    = Math.floor(fScaled);
-        const iHigh   = Math.min(iLow + 1, state.numLayers);
-        const tLocal  = smoothstep(fScaled - iLow);
+    function renderEq(state, refs) {
+        for (var i = 0; i < ARCHS.length; i++) {
+            var arch = ARCHS[i];
+            var el = refs.eq[arch];
+            if (!state.eq) {
+                el.className = 'gdlv-eq gdlv-eq-idle';
+                el.textContent = 'equivariance: press Shuffle to test';
+            } else {
+                var e = state.eq[arch];
+                if (e < 1e-9) {
+                    el.className = 'gdlv-eq gdlv-eq-good';
+                    el.textContent = 'equivariant: error = ' + e.toExponential(2);
+                } else {
+                    el.className = 'gdlv-eq gdlv-eq-bad';
+                    el.textContent = 'BROKEN: error = ' + e.toExponential(2);
+                }
+            }
+        }
+    }
 
-        const animH = lerpFeatures(
-            state.layerHistory[iLow],
-            state.layerHistory[iHigh],
-            tLocal
-        );
-
-        // Update integer-valued slider position to match approx layer
-        state.displayedLayer = iHigh;
-        if (refs.layerSlider) refs.layerSlider.value = String(iHigh);
-        if (refs.layerReadout) refs.layerReadout.textContent = `${iHigh} / ${state.numLayers}`;
-
-        renderDemo(canvasState.ctx, state, animH, iHigh, state.numLayers, canvasState.W, canvasState.H);
-
-        if (tGlobal < 1) {
-            state._animationFrameId = requestAnimationFrame(frame);
+    function renderStatus(state, refs) {
+        if (GdlCore.isIdentityPermutation(state.perm)) {
+            refs.status.textContent = 'P = identity (no shuffle applied)';
         } else {
-            state._animationFrameId = null;
-            state.displayedLayer = state.numLayers;
-            renderDemo(canvasState.ctx, state, state.layerHistory[state.numLayers],
-                       state.numLayers, state.numLayers, canvasState.W, canvasState.H);
+            refs.status.textContent = 'P = [' + state.perm.join(',') + ']';
         }
     }
 
-    state._animationFrameId = requestAnimationFrame(frame);
-}
-
-// ============================================================
-// Top-level redraw (no animation)
-// ============================================================
-
-function redrawAtCurrentLayer(state, refs, canvasState) {
-    if (state._animationFrameId) {
-        cancelAnimationFrame(state._animationFrameId);
-        state._animationFrameId = null;
+    function setLayerUI(state, refs, layerFloat) {
+        var k = Math.min(Math.round(layerFloat), state.numLayers);
+        refs.layerSlider.value = String(k);
+        refs.layerVal.textContent = k + ' / ' + state.numLayers;
     }
-    const k = state.displayedLayer;
-    const h = state.layerHistory[k];
-    renderDemo(canvasState.ctx, state, h, k, state.numLayers, canvasState.W, canvasState.H);
-}
 
-// ============================================================
-// Full state refresh: forward pass + table + meter + canvas
-// ============================================================
-
-function fullRefresh(state, refs, canvasState, animate) {
-    runForwardPass(state);                         // updates state.layerHistory
-    refreshOriginalForward(state);                 // updates state.originalLayerHistory, originalY
-    computeEquivarianceError(state);               // updates state.equivarianceError
-    updateComparisonTable(refs, state);
-    updateEquivarianceMeter(refs, state);
-    syncLayerSlider(refs, state);
-    if (animate) {
-        state.displayedLayer = 0;
-        startLayerAnimation(state, refs, canvasState);
-    } else {
-        redrawAtCurrentLayer(state, refs, canvasState);
+    // ---------- animation ----------
+    function animateForward(state, refs) {
+        state.animToken++;
+        var token = state.animToken;
+        var msPerLayer = 500;
+        var total = state.numLayers * msPerLayer;
+        var t0 = null;
+        function frame(now) {
+            if (token !== state.animToken) return; // superseded
+            if (t0 === null) t0 = now;
+            var elapsed = now - t0;
+            var lf = Math.min(state.numLayers, (elapsed / total) * state.numLayers);
+            state.displayedLayer = Math.floor(lf);
+            renderAt(state, refs, lf);
+            setLayerUI(state, refs, Math.floor(lf));
+            if (lf < state.numLayers) {
+                requestAnimationFrame(frame);
+            } else {
+                state.displayedLayer = state.numLayers;
+                renderAt(state, refs, state.numLayers);
+                setLayerUI(state, refs, state.numLayers);
+            }
+        }
+        requestAnimationFrame(frame);
     }
-}
 
-// ============================================================
-// Event handlers
-// ============================================================
+    // ---------- init ----------
+    function init() {
+        var container = document.getElementById('gdl_demo');
+        if (!container) return;
+        if (container.dataset.gdlvInit) return; // idempotency guard
+        container.dataset.gdlvInit = '1';
 
-function bindEventHandlers(state, refs, canvasState) {
+        // SELF-TEST GATE: nothing renders on broken math.
+        var gate = GdlCore.runSelfTests();
+        if (!gate.passed) {
+            renderRefusal(container, gate.failures);
+            return;
+        }
 
-    // Architecture buttons
-    for (const btn of refs.archButtons) {
-        btn.addEventListener('click', () => {
-            const newArch = btn.dataset.arch;
-            if (state.architecture === newArch) return;
-            state.architecture = newArch;
-            setActiveArchButton(refs, newArch);
-            fullRefresh(state, refs, canvasState, /* animate */ true);
+        injectCSS();
+        buildHTML(container);
+
+        var refs = {
+            graph: {}, heat: {}, eq: {}, mlabel: {},
+            shuffleBtn: document.getElementById('gdlv-shuffle'),
+            resetBtn: document.getElementById('gdlv-reset'),
+            layerSlider: document.getElementById('gdlv-layer'),
+            layerVal: document.getElementById('gdlv-layer-val'),
+            depthSlider: document.getElementById('gdlv-depth'),
+            depthVal: document.getElementById('gdlv-depth-val'),
+            status: document.getElementById('gdlv-status')
+        };
+        var i;
+        for (i = 0; i < ARCHS.length; i++) {
+            var a = ARCHS[i];
+            refs.graph[a] = sizeCanvas(document.getElementById('gdlv-graph-' + a));
+            refs.heat[a] = sizeCanvas(document.getElementById('gdlv-heat-' + a));
+            refs.eq[a] = document.getElementById('gdlv-eq-' + a);
+            refs.mlabel[a] = document.getElementById('gdlv-mlabel-' + a);
+        }
+
+        var state = makeState();
+        renderEq(state, refs);
+        renderStatus(state, refs);
+        animateForward(state, refs);
+
+        // ---- handlers ----
+        refs.shuffleBtn.addEventListener('click', function () {
+            state.perm = GdlCore.randomNonIdentityPermutation(state.n, state.shuffleRng);
+            applyPerm(state);
+            recompute(state);
+            renderEq(state, refs);
+            renderStatus(state, refs);
+            animateForward(state, refs);
         });
-    }
 
-    // Depth slider
-    if (refs.depthSlider) {
-        refs.depthSlider.addEventListener('input', () => {
-            const newL = parseInt(refs.depthSlider.value, 10);
-            if (refs.depthVal) refs.depthVal.textContent = String(newL);
-            if (newL === state.numLayers) return;
-            state.numLayers = newL;
-            fullRefresh(state, refs, canvasState, /* animate */ true);
+        refs.resetBtn.addEventListener('click', function () {
+            state.perm = GdlCore.identityPermutation(state.n);
+            applyPerm(state);
+            recompute(state);
+            renderEq(state, refs);
+            renderStatus(state, refs);
+            animateForward(state, refs);
         });
-    }
 
-    // Layer slider
-    if (refs.layerSlider) {
-        refs.layerSlider.addEventListener('input', () => {
-            const k = parseInt(refs.layerSlider.value, 10);
+        refs.layerSlider.addEventListener('input', function () {
+            state.animToken++; // cancel any running animation
+            var k = parseInt(refs.layerSlider.value, 10) || 0;
+            k = Math.max(0, Math.min(state.numLayers, k));
             state.displayedLayer = k;
-            if (refs.layerReadout) refs.layerReadout.textContent = `${k} / ${state.numLayers}`;
-            redrawAtCurrentLayer(state, refs, canvasState);
+            refs.layerVal.textContent = k + ' / ' + state.numLayers;
+            renderAt(state, refs, k);
+        });
+
+        refs.depthSlider.addEventListener('input', function () {
+            var L = parseInt(refs.depthSlider.value, 10) || 2;
+            L = Math.max(1, Math.min(GdlCore.DEFAULTS.maxLayers, L));
+            state.numLayers = L;
+            refs.depthVal.textContent = String(L);
+            refs.layerSlider.max = String(L);
+            recompute(state);
+            renderEq(state, refs);
+            renderStatus(state, refs);
+            animateForward(state, refs);
+        });
+
+        // resize: re-size canvases and redraw at the current layer
+        var resizePending = false;
+        window.addEventListener('resize', function () {
+            if (resizePending) return;
+            resizePending = true;
+            requestAnimationFrame(function () {
+                resizePending = false;
+                for (var i = 0; i < ARCHS.length; i++) {
+                    var a = ARCHS[i];
+                    refs.graph[a] = sizeCanvas(document.getElementById('gdlv-graph-' + a));
+                    refs.heat[a] = sizeCanvas(document.getElementById('gdlv-heat-' + a));
+                }
+                renderAt(state, refs, state.displayedLayer);
+            });
         });
     }
 
-    // Shuffle button
-    if (refs.shuffleBtn) {
-        refs.shuffleBtn.addEventListener('click', () => {
-            const seed = (Date.now() & 0xffffffff) >>> 0;
-            const perm = randomPermutation(state.n, mulberry32(seed));
-            applyPermutationToState(state, perm);
-            fullRefresh(state, refs, canvasState, /* animate */ true);
-        });
+    if (typeof document === 'undefined') return;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
-
-    // Reset button
-    if (refs.resetBtn) {
-        refs.resetBtn.addEventListener('click', () => {
-            resetPermutation(state);
-            fullRefresh(state, refs, canvasState, /* animate */ false);
-        });
-    }
-}
-
-// ============================================================
-// Canvas DPI / responsive sizing
-// ============================================================
-
-/**
- * Configure the canvas for crisp rendering at the device pixel ratio.
- * Returns the logical (CSS) dimensions used for layout coordinates.
- */
-function setupCanvas(canvas, wrapper) {
-    // Logical aspect: 700 × 500 (7:5). We scale uniformly to fit the wrapper
-    // up to that maximum. CSS handles the visual size; we just match the
-    // internal pixel buffer for crisp rendering.
-    const ASPECT_W = 700;
-    const ASPECT_H = 500;
-    const MAX_W = 700;
-    const dpr = window.devicePixelRatio || 1;
-    const cssW = Math.min((wrapper && wrapper.clientWidth) || MAX_W, MAX_W);
-    const cssH = cssW * (ASPECT_H / ASPECT_W);
-    canvas.width  = Math.round(cssW * dpr);
-    canvas.height = Math.round(cssH * dpr);
-    // Do NOT set canvas.style.width/height — CSS handles sizing.
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(1, 0, 0, 1, 0, 0);  // reset before scaling (re-setup safety)
-    ctx.scale(dpr, dpr);
-    return {ctx, W: cssW, H: cssH};
-}
-
-// ============================================================
-// Entry point
-// ============================================================
-
-function initGDLDemo() {
-    const container = document.getElementById('gdl_demo');
-    if (!container) {
-        console.error('[GDL demo] container #gdl_demo not found');
-        return;
-    }
-
-    // Inject CSS, build HTML
-    injectGDLDemoCSS();
-    container.innerHTML = buildDemoHTML();
-
-    // Collect DOM refs
-    const refs = collectGDLDOMRefs(container);
-
-    // Setup canvas. We wrap (ctx, W, H) in an object so that the resize
-    // handler can replace them in place — any closure that holds a
-    // reference to canvasState (not the values) sees the new surface.
-    const initial = setupCanvas(refs.canvas, refs.canvasWrapper);
-    const canvasState = { ctx: initial.ctx, W: initial.W, H: initial.H };
-
-    // Initialize state
-    const state = createDemoState(DEFAULT_DEMO_CONFIG);
-    state.displayedLayer = 0;
-    state.architecture = 'GNN';
-    state.numLayers = 2;
-
-    // Initial UI sync
-    setActiveArchButton(refs, state.architecture);
-    if (refs.depthSlider) refs.depthSlider.value = String(state.numLayers);
-    if (refs.depthVal)    refs.depthVal.textContent = String(state.numLayers);
-    if (refs.layerSlider) {
-        refs.layerSlider.max = state.numLayers;
-        refs.layerSlider.value = '0';
-    }
-    if (refs.layerReadout) refs.layerReadout.textContent = `0 / ${state.numLayers}`;
-
-    // Initial forward pass + render with animation
-    fullRefresh(state, refs, canvasState, /* animate */ true);
-
-    // Bind handlers
-    bindEventHandlers(state, refs, canvasState);
-
-    // Resize handler: rebuild the canvas drawing surface to match the
-    // wrapper's current width. Throttle with rAF so rapid resize events
-    // (mobile rotation, devtools open/close) don't thrash the canvas.
-    let resizePending = false;
-    const onResize = () => {
-        if (resizePending) return;
-        resizePending = true;
-        requestAnimationFrame(() => {
-            resizePending = false;
-            const next = setupCanvas(refs.canvas, refs.canvasWrapper);
-            canvasState.ctx = next.ctx;
-            canvasState.W = next.W;
-            canvasState.H = next.H;
-            // Redraw at the currently displayed layer without restarting animation.
-            redrawAtCurrentLayer(state, refs, canvasState);
-        });
-    };
-    window.addEventListener('resize', onResize);
-}
-
-// ============================================================
-// DOM ready bootstrap
-// ============================================================
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initGDLDemo);
-} else {
-    initGDLDemo();
-}
+})();

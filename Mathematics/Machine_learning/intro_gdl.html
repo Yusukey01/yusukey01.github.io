@@ -452,37 +452,69 @@ uses_python: false
                 <div id="gdl_demo"></div>
 
                 <p>
-                    The demo above visualizes the central claim of this page in concrete numerical form.
-                    A small graph carries a scalar feature on each node, displayed as a diverging color
-                    (blue for negative, red for positive). The <strong>Layer</strong> slider scrubs through
-                    a forward pass: layer 0 is the input, and successive layers show the features after
-                    each round of message passing or matrix multiplication. The <strong>Architecture</strong>
-                    selector switches between three regimes — <em>MLP</em>, which performs dense
-                    fully-connected updates with no notion of graph structure; <em>Transformer</em>, which
-                    operates on the complete graph (every node interacts with every other); and
-                    <em>GNN</em>, which uses the displayed graph as its connectivity.
+                    The demo above places the central claim of this page side by side. All three
+                    panels run the same layer template
+                    \[
+                    \mathbf{h}^{(k+1)} = \tanh\!\big( w_k\, \hat{\mathbf{A}}\, \mathbf{h}^{(k)} + b_k \mathbf{1} \big),
+                    \]
+                    and differ only in the structure matrix \(\hat{\mathbf{A}}\). The <strong>GNN</strong>
+                    uses the fixed, sparse, degree-normalized adjacency
+                    \(\hat{\mathbf{A}} = \tilde{\mathbf{D}}^{-1/2}(\mathbf{A} + \mathbf{I})\tilde{\mathbf{D}}^{-1/2}\)
+                    of the displayed graph. The <strong>Transformer</strong> computes a dense attention
+                    matrix \(\hat{\mathbf{A}}(\mathbf{h})_{ij} = \operatorname{softmax}_j(h_i h_j / \tau)\)
+                    from the current features, on the complete graph over the vertices. The
+                    <strong>MLP</strong> replaces \(w_k \hat{\mathbf{A}}\) with a learned dense matrix
+                    \(\mathbf{W}_k\) that mixes node coordinates by their index — no structure matrix at
+                    all, which is why its panel draws no edges. The GNN and Transformer panels share the
+                    <em>same</em> scalar weights \((w_k, b_k)\), so whatever differs between those two
+                    panels is attributable to the structure matrix alone. Node colors show the scalar
+                    feature at each vertex (blue negative, red positive); all weights are untrained and
+                    drawn once from a fixed seed.
                 </p>
 
                 <p>
-                    The <strong>Shuffle Node Labels</strong> button is where the GDL claim becomes testable.
-                    Shuffling applies a random permutation \(P\) jointly to the node features and the
-                    adjacency matrix, then re-runs the same forward pass with the same fixed weights.
-                    For the GNN and Transformer, the equivariance condition
-                    \(f(P\mathbf{X}, P\mathbf{A}P^\top) = Pf(\mathbf{X}, \mathbf{A})\) holds exactly, and
-                    the comparison table on the right shows that every output slot matches the
-                    permutation-predicted value to numerical precision: the equivariance meter sits at
-                    floating-point zero. For the MLP, the same shuffle produces a quantitatively
-                    different output — the dense weight matrix mixes node coordinates in a way that
-                    depends on their indexing, and the meter flags the discrepancy in red. The contrast
-                    is not a matter of better or worse training; it is built into the architectures by
-                    construction, before any training has occurred.
+                    The <strong>Layer</strong> slider scrubs a single forward pass through all three
+                    panels simultaneously: layer 0 is the input, and each successive layer shows the
+                    features after one application of the template. Beneath each graph, a heatmap
+                    displays the structure matrix in effect for the displayed transition. The GNN's
+                    heatmap never changes — its \(\hat{\mathbf{A}}\) is fixed by the graph. The
+                    Transformer's is recomputed from the features at every layer, so it visibly changes
+                    as we scrub. The MLP's shows the learned \(\mathbf{W}_k\), whose entries bear no
+                    relation to the drawn edges because the architecture has no notion of them.
+                </p>
+
+                <p>
+                    The <strong>Shuffle Node Labels</strong> button is where the GDL claim becomes
+                    testable. Shuffling draws a random permutation \(P\) and applies it jointly to the
+                    node features and the adjacency matrix in all three panels at once. The equivariance
+                    condition \(f(P\mathbf{h}, P\mathbf{A}P^\top) = Pf(\mathbf{h}, \mathbf{A})\) is then
+                    evaluated on the original, unshuffled data with the same fixed weights, and each
+                    panel reports its own error. For the GNN and the Transformer the error sits at
+                    floating-point zero; for the MLP the same shuffle produces an order-one discrepancy,
+                    flagged in red — the dense weight matrix mixes node coordinates in a way that depends
+                    on their indexing. The contrast is not a matter of better or worse training; it is
+                    built into the architectures by construction, before any training has occurred.
+                </p>
+
+                <p>
+                    The attention used here is genuine
+                    <a href="deep_nn.html#D-scaled_dot_product_attention" class="ref-link"><strong>scaled dot-product attention</strong></a>,
+                    specialized to scalar features with identity query and key maps. The specialization
+                    loses nothing structural: at feature dimension one, the query and key maps contribute
+                    only a single scalar multiplier on \(h_i h_j\) — absorbed here into the temperature
+                    \(\tau = 0.15\) — and the value map is absorbed into the shared weight \(w_k\). The fully-dimensional mechanism — learned projections, multiple heads, and
+                    positional encoding — is computed exactly, number by number, in the
+                    <a href="deep_nn.html#transformer"><strong>Transformer walkthrough</strong></a>;
+                    the present demo isolates the one structural fact that survives every such
+                    refinement, namely that attention weights computed from the features themselves
+                    transform covariantly under \(S_n\).
                 </p>
 
                 <p>
                     The same construction, extended from discrete graphs to data with continuous
-                    geometric symmetry, motivates equivariant neural networks built on the Lie-theoretic
-                    foundations developed in Section I and the representation theory developed in the
-                    forthcoming pages.
+                    geometric symmetry, motivates equivariant neural networks built on
+                    <a href="../Linear_algebra/lie_groups.html"><strong>matrix Lie group theory</strong></a>
+                    and the representation theory developed in the forthcoming pages.
                 </p>
             </section>
 
