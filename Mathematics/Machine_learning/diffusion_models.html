@@ -767,7 +767,15 @@ uses_python: false
 
                 <p>
                     Try the forward direction first to watch the logo dissolve, then switch to reverse and observe the same construction running
-                    backwards. The time slider lets you scrub through any intermediate state.
+                    backwards. The time slider lets you scrub through any intermediate state. Three overlays expose the machinery rather than
+                    just the result. <strong>Trails</strong> follow twelve tracked points through recent steps: under DDPM they wander in a
+                    Brownian zigzag, while under DDIM the same points move along a few straight, deterministic jumps — the structural difference
+                    between the two samplers, visible per particle. <strong>Score field</strong> draws the \((x, y)\) components of the exact
+                    score \(\nabla_{\mathbf{x}_t} \log q_t\) as arrows at a subsample of the points (arrow length saturates with magnitude so
+                    the near-data regime, where the score blows up, stays readable). <strong>x&#770;<sub>0</sub> ghost</strong> shows, during the
+                    reverse process, the model's current prediction \(\hat{\mathbf{x}}_0\) of where each point will land — the quantity the DDIM
+                    update is built around. Finally, when the reverse process reaches \(t = 0\), a readout reports the mean distance from the
+                    generated points to the data manifold, turning the visual comparison between samplers into a number.
                 </p>
 
                 <div id="diffusion_demo_visualizer"></div>
@@ -786,6 +794,8 @@ uses_python: false
                     <p>
                         One thing the demo makes visible. Because DDIM compresses many small DDPM steps into a few large jumps, the reconstruction
                         in this demo lands close to — but not exactly on — the original logo points; the points look slightly hazier than under DDPM.
+                        The trails overlay shows the cause and the \(t = 0\) readout shows the effect: for the same starting noise, the mean
+                        distance to the data under DDPM is roughly an order of magnitude smaller than under the twenty-step DDIM sampler.
                         This residual is the discretisation error of the few-step DDIM sampler, the small accuracy cost that pays for the speedup.
                         On high-dimensional image data the same gap exists but is imperceptible at the resolution of natural images, which is why
                         DDIM and its variants have been standard samplers in production text-to-image systems, alongside more recent fast samplers
@@ -807,8 +817,10 @@ uses_python: false
                     A closing observation. What makes the reverse direction possible is the score function
                     \(\nabla_{\mathbf{x}_t} \log q_t(\mathbf{x}_t)\): given the gradient of the log-density of every intermediate marginal,
                     walking back from noise to data is a matter of repeated denoising steps, each one guided by the score evaluated at the
-                    current state. In this demo the score is computed exactly from the empirical point cloud; in practice it is learned from
-                    data, which is what diffusion training is really for.
+                    current state. The score-field overlay lets you watch this literally — switch it on during the reverse process and the
+                    arrows point the way from noise back toward the logo, growing sharper as the marginal concentrates. In this demo the
+                    score is computed exactly from the empirical point cloud; in practice it is learned from data, which is what diffusion
+                    training is really for.
                 </p>
 
             </section>

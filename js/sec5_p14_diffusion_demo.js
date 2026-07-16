@@ -1,1948 +1,1486 @@
-// sec5_p14_diffusion_demo.js
-// Diffusion Models Visualizer — MATH-CS COMPASS, ml-14
+// ============================================================
+// sec5_p14_diffusion_demo.js — DiffCore (pure math layer)
 //
-// Forward / reverse diffusion of the COMPASS logo point cloud,
-// with toggleable DDPM (stochastic) and DDIM (deterministic) samplers.
+// Diffusion on the 5-D COMPASS-logo point cloud: each point is
+// (x, y, r, g, b) in [-1,1]^5. The "perfectly trained model" is the EXACT
+// score of the Gaussian-mixture marginal
+//   q_t(x) = (1/N) Σ_i N(x; √ᾱ_t x_0^(i), (1-ᾱ_t) I),
+//   ∇ log q_t(x) = ( √ᾱ_t μ_w(x) − x ) / (1-ᾱ_t),
+// where μ_w is the softmax-weighted mean of the data points — no fake
+// training anywhere; every displayed quantity is computed.
 //
-// Architecture (six modules):
-//   1. Math primitives    — Gaussian sampling, schedule precomputation
-//   2. Score network      — analytical score from empirical data
-//   3. Forward process    — data → noise simulation
-//   4. DDPM sampling      — stochastic ancestral sampling
-//   5. DDIM sampling      — deterministic accelerated sampling
-//   6. Visualization & UI — canvas rendering, controls, animation
-//
-// Mathematical specification follows ml14_demo_spec_handout_v1.md
-// (variance-preserving DDPM, T=200, linear β schedule, joint 5D diffusion
-// on (x, y, r, g, b) ∈ [-1, +1]^5).
+// v2 rebuild notes (July 2026):
+// - All randomness is SEEDED (mulberry32 → Box-Muller); rng streams are
+//   explicit function arguments. Reproducible, testable.
+// - Float64 throughout: makes the finite-difference score check (T4)
+//   meaningful. Memory cost is trivial (N*DIM*8 bytes).
+// - Softmax pruning (threshold 20; measured worst score error 4.6e-10 on
+//   the T5 configuration, vs 1.3e-5 at v1's threshold 12) is kept for
+//   speed but QUANTIFIED: an unpruned reference path exists and T5 bounds
+//   the pruning error.
+// - densifyDDIMCloud semantics FIXED: slider position t shows the sparse
+//   state with the SMALLEST τ_i ≥ t (the last state the reverse process
+//   has computed by the time it reaches t). v1 showed the largest τ_i ≤ t,
+//   i.e. a state the process had not yet produced.
+// - Reverse cloud builders record x̂_0 and the (x,y) score components as
+//   BY-PRODUCTS of steps already computed (zero extra score evaluations)
+//   for the ghost / vector-field overlays.
+// ============================================================
 
+var DiffCore = (function () {
+    'use strict';
 
-// ====== MODULE 1 ======
-// Math primitives: Gaussian sampling, noise schedule, log-sum-exp.
-// All functions are pure (no DOM, no global state).
+    // ---------- constants ----------
+    var DIM = 5;
+    var T = 100;
+    var BETA_MIN = 1e-4;
+    var BETA_MAX = 0.10;
+    var DDIM_STEPS = 20;
+    var SCORE_LOG_THRESHOLD = 20.0;
 
-const DIM = 5;       // (x, y, r, g, b)
-const T = 100;       // total diffusion steps
-const BETA_MIN = 1e-4;
-const BETA_MAX = 0.10;
-
-/**
- * Box-Muller transform for standard Gaussian sampling.
- * Returns one sample ~ N(0, 1).
- */
-function randn() {
-    let u1 = 0, u2 = 0;
-    // Avoid log(0): resample until u1 > 0
-    while (u1 === 0) u1 = Math.random();
-    while (u2 === 0) u2 = Math.random();
-    return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-}
-
-/**
- * Sample a DIM-dimensional standard Gaussian vector ~ N(0, I_DIM).
- */
-function randnVec(dim = DIM) {
-    const v = new Float32Array(dim);
-    for (let i = 0; i < dim; i++) v[i] = randn();
-    return v;
-}
-
-/**
- * Precompute the noise schedule and cumulative products.
- * Returns:
- *   beta:        β_t for t = 1..T,  beta[t-1] = β_t
- *   alpha:       α_t = 1 - β_t
- *   alphaBar:    ᾱ_t = ∏_{s=1}^t α_s
- *   sqrtAlphaBar:      √ᾱ_t
- *   sqrtOneMinusAlphaBar: √(1 - ᾱ_t)
- *   sqrtAlpha:   √α_t
- *
- * Note on indexing: time indices in the math are 1..T. Here we use
- * 0-based arrays of length T where arr[t-1] corresponds to step t.
- * The convention ᾱ_0 = 1 (empty product) is used implicitly when
- * needed (e.g. in DDIM when stepping to s = 0).
- */
-function buildSchedule() {
-    const beta = new Float32Array(T);
-    const alpha = new Float32Array(T);
-    const alphaBar = new Float32Array(T);
-    const sqrtAlphaBar = new Float32Array(T);
-    const sqrtOneMinusAlphaBar = new Float32Array(T);
-    const sqrtAlpha = new Float32Array(T);
-
-    let cumprod = 1.0;
-    for (let i = 0; i < T; i++) {
-        // Linear schedule from β_min to β_max
-        beta[i] = BETA_MIN + (BETA_MAX - BETA_MIN) * (i / (T - 1));
-        alpha[i] = 1.0 - beta[i];
-        cumprod *= alpha[i];
-        alphaBar[i] = cumprod;
-        sqrtAlphaBar[i] = Math.sqrt(cumprod);
-        sqrtOneMinusAlphaBar[i] = Math.sqrt(1.0 - cumprod);
-        sqrtAlpha[i] = Math.sqrt(alpha[i]);
+    // ---------- seeded RNG ----------
+    function mulberry32(seed) {
+        let t = seed >>> 0;
+        return function () {
+            t |= 0; t = (t + 0x6D2B79F5) | 0;
+            let r = Math.imul(t ^ (t >>> 15), 1 | t);
+            r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+            return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+        };
     }
 
-    return {
-        beta, alpha, alphaBar,
-        sqrtAlphaBar, sqrtOneMinusAlphaBar, sqrtAlpha,
-    };
-}
-
-/**
- * Helper: alphaBar at "virtual time" t, where t = 0 means ᾱ_0 = 1
- * (the convention for the endpoint of DDIM sampling).
- * For t in 1..T, returns schedule.alphaBar[t-1].
- */
-function alphaBarAt(schedule, t) {
-    if (t === 0) return 1.0;
-    return schedule.alphaBar[t - 1];
-}
-
-/**
- * Numerically stable log-sum-exp.
- * Given an array of log-weights, returns log(Σ exp(logW_i)).
- * Subtracts the max before exponentiating to avoid overflow.
- */
-function logSumExp(logWeights) {
-    let maxLog = -Infinity;
-    for (let i = 0; i < logWeights.length; i++) {
-        if (logWeights[i] > maxLog) maxLog = logWeights[i];
+    // Box-Muller; rng is an explicit argument everywhere.
+    function randn(rng) {
+        var u1 = 0, u2 = 0;
+        while (u1 === 0) u1 = rng();
+        while (u2 === 0) u2 = rng();
+        return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
     }
-    if (!isFinite(maxLog)) return maxLog;
-    let sum = 0;
-    for (let i = 0; i < logWeights.length; i++) {
-        sum += Math.exp(logWeights[i] - maxLog);
+
+    function randnVec(dim, rng) {
+        var v = new Float64Array(dim);
+        for (var i = 0; i < dim; i++) v[i] = randn(rng);
+        return v;
     }
-    return maxLog + Math.log(sum);
-}
 
-
-// ====== MODULE 2 ======
-// Analytical score function for the empirical data distribution.
-//
-// The data distribution is a finite mixture of point masses on the
-// COMPASS logo points {x_0^(i)}. After applying the forward diffusion
-// kernel, the marginal q_t(x_t) is an exact Gaussian mixture:
-//
-//   q_t(x_t) = (1/N) Σ_i N(x_t; √ᾱ_t · x_0^(i), (1 - ᾱ_t) I)
-//
-// The score ∇_x log q_t(x_t) is computable in closed form:
-//
-//   score(x_t, t) = (1 / (1 - ᾱ_t)) Σ_i w_i(x_t) · (√ᾱ_t · x_0^(i) - x_t)
-//
-// where w_i are softmax weights of the squared distances to each
-// component mean. We use log-sum-exp for numerical stability.
-
-// Score function configuration.
-// Threshold-based softmax pruning: components with log-weight < (maxLog - SCORE_LOG_THRESHOLD)
-// contribute exp(-SCORE_LOG_THRESHOLD) ≈ exp(-12) ≈ 6e-6 to the normalized softmax.
-const SCORE_LOG_THRESHOLD = 12.0;
-
-// Module-level buffers reused across calls to avoid allocation overhead.
-const _scoreBuffers = {
-    logW: null,
-    score: null,
-    dataFlat: null,    // Flattened (N×DIM) data array, contiguous storage.
-    scaledData: null,  // Precomputed √ᾱ_t · dataFlat for current step.
-    cachedTIdx: -1,    // Last tIdx the scaledData was prepared for.
-};
-
-/**
- * Prepare module-level buffers and the flat data array.
- * Call once when the data set (or its size) changes.
- */
-function prepareDataBuffers(dataPts) {
-    const N = dataPts.length;
-    _scoreBuffers.logW = new Float32Array(N);
-    _scoreBuffers.score = new Float32Array(DIM);
-    _scoreBuffers.dataFlat = new Float32Array(N * DIM);
-    _scoreBuffers.scaledData = new Float32Array(N * DIM);
-    for (let i = 0; i < N; i++) {
-        const v = dataPts[i];
-        const base = i * DIM;
-        for (let d = 0; d < DIM; d++) {
-            _scoreBuffers.dataFlat[base + d] = v[d];
+    // ---------- schedule ----------
+    // beta[t-1] = β_t, linear from BETA_MIN to BETA_MAX over t = 1..T.
+    function buildSchedule() {
+        var beta = new Float64Array(T);
+        var alpha = new Float64Array(T);
+        var alphaBar = new Float64Array(T);
+        var sqrtAlpha = new Float64Array(T);
+        var sqrtAlphaBar = new Float64Array(T);
+        var sqrtOneMinusAlphaBar = new Float64Array(T);
+        var prod = 1.0;
+        for (var i = 0; i < T; i++) {
+            beta[i] = BETA_MIN + (BETA_MAX - BETA_MIN) * (i / (T - 1));
+            alpha[i] = 1.0 - beta[i];
+            prod *= alpha[i];
+            alphaBar[i] = prod;
+            sqrtAlpha[i] = Math.sqrt(alpha[i]);
+            sqrtAlphaBar[i] = Math.sqrt(prod);
+            sqrtOneMinusAlphaBar[i] = Math.sqrt(1.0 - prod);
         }
+        return {
+            beta: beta, alpha: alpha, alphaBar: alphaBar,
+            sqrtAlpha: sqrtAlpha, sqrtAlphaBar: sqrtAlphaBar,
+            sqrtOneMinusAlphaBar: sqrtOneMinusAlphaBar
+        };
     }
-    _scoreBuffers.cachedTIdx = -1;  // invalidate
-}
 
-/**
- * Update _scoreBuffers.scaledData to hold √ᾱ_t · dataFlat for the given tIdx.
- * Idempotent — does nothing if already cached for this tIdx.
- */
-function updateScaledData(tIdx, schedule) {
-    if (_scoreBuffers.cachedTIdx === tIdx) return;
-    const sqrtAB = schedule.sqrtAlphaBar[tIdx];
-    const dataFlat = _scoreBuffers.dataFlat;
-    const scaledData = _scoreBuffers.scaledData;
-    const N5 = dataFlat.length;
-    for (let i = 0; i < N5; i++) {
-        scaledData[i] = sqrtAB * dataFlat[i];
+    // ᾱ at MATH time t ∈ 0..T, with the convention ᾱ_0 = 1 (empty product).
+    function alphaBarAt(schedule, tMath) {
+        return tMath === 0 ? 1.0 : schedule.alphaBar[tMath - 1];
     }
-    _scoreBuffers.cachedTIdx = tIdx;
-}
 
-/**
- * Compute the score ∇_x log q_t(x_t) for a single point x_t at time t.
- *
- * Optimizations:
- *  - Pre-allocated buffers (no per-call allocation).
- *  - Flat 5D data array with cache-friendly contiguous access.
- *  - Pre-scaled data √ᾱ_t · x_0^(i), cached per step (shared across all
- *    samples that hit this score function at the same time index).
- *  - Unrolled 5-dimensional distance computation.
- *  - Threshold-based softmax pruning: Math.exp only on components within
- *    SCORE_LOG_THRESHOLD of the maximum.
- *
- * The returned buffer is shared; callers that need to retain the value
- * must copy it before another computeScore call.
- *
- * Requires prepareDataBuffers(dataPts) to have been called earlier.
- */
-function computeScore(xt, tIdx, dataPts, schedule) {
-    const N = dataPts.length;
-    if (!_scoreBuffers.scaledData || _scoreBuffers.scaledData.length !== N * DIM) {
-        prepareDataBuffers(dataPts);
-    }
-    updateScaledData(tIdx, schedule);
-
-    const logW = _scoreBuffers.logW;
-    const score = _scoreBuffers.score;
-    const scaledData = _scoreBuffers.scaledData;
-    const dataFlat = _scoreBuffers.dataFlat;
-
-    const oneMinusAB = 1.0 - schedule.alphaBar[tIdx];
-    const invOneMinusAB = 1.0 / oneMinusAB;
-    const sqrtAB = schedule.sqrtAlphaBar[tIdx];
-    const halfInvOMAB = 0.5 * invOneMinusAB;
-
-    // Unrolled 5D distance, working from pre-scaled data
-    const xt0 = xt[0], xt1 = xt[1], xt2 = xt[2], xt3 = xt[3], xt4 = xt[4];
-    let maxLog = -Infinity;
-    for (let i = 0; i < N; i++) {
-        const base = i * 5;
-        const e0 = xt0 - scaledData[base    ];
-        const e1 = xt1 - scaledData[base + 1];
-        const e2 = xt2 - scaledData[base + 2];
-        const e3 = xt3 - scaledData[base + 3];
-        const e4 = xt4 - scaledData[base + 4];
-        const sq = e0*e0 + e1*e1 + e2*e2 + e3*e3 + e4*e4;
-        const lw = -sq * halfInvOMAB;
-        logW[i] = lw;
-        if (lw > maxLog) maxLog = lw;
-    }
-    const cutoff = maxLog - SCORE_LOG_THRESHOLD;
-
-    // Pass 2: accumulate weighted mean μ_w (in score buffer), skipping
-    // negligible components.
-    let s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0;
-    let sumExp = 0;
-    for (let i = 0; i < N; i++) {
-        if (logW[i] < cutoff) continue;
-        const w = Math.exp(logW[i] - maxLog);
-        sumExp += w;
-        const base = i * 5;
-        s0 += w * dataFlat[base    ];
-        s1 += w * dataFlat[base + 1];
-        s2 += w * dataFlat[base + 2];
-        s3 += w * dataFlat[base + 3];
-        s4 += w * dataFlat[base + 4];
-    }
-    const invSum = 1.0 / sumExp;
-    score[0] = invOneMinusAB * (sqrtAB * s0 * invSum - xt0);
-    score[1] = invOneMinusAB * (sqrtAB * s1 * invSum - xt1);
-    score[2] = invOneMinusAB * (sqrtAB * s2 * invSum - xt2);
-    score[3] = invOneMinusAB * (sqrtAB * s3 * invSum - xt3);
-    score[4] = invOneMinusAB * (sqrtAB * s4 * invSum - xt4);
-
-    return score;
-}
-
-/**
- * Convert score to noise-prediction (DDPM-SGM bridge):
- *   ε_θ(x_t, t) = -√(1-ᾱ_t) · score(x_t, t)
- *
- * @returns Float32Array of length DIM, the predicted noise
- */
-function scoreToNoise(score, tIdx, schedule) {
-    const sigma = schedule.sqrtOneMinusAlphaBar[tIdx];
-    const eps = new Float32Array(DIM);
-    for (let d = 0; d < DIM; d++) {
-        eps[d] = -sigma * score[d];
-    }
-    return eps;
-}
-
-/**
- * Convenience: compute the predicted noise ε_θ(x_t, t) directly.
- * Composes computeScore and scoreToNoise.
- */
-function predictNoise(xt, tIdx, dataPts, schedule) {
-    const score = computeScore(xt, tIdx, dataPts, schedule);
-    return scoreToNoise(score, tIdx, schedule);
-}
-
-
-// ====== MODULE 3 ======
-// Forward diffusion: simulate x_0 → x_T step by step (or sample directly
-// using the closed-form marginal).
-//
-// Two interfaces:
-//   forwardStep(xPrev, tIdx, schedule)  — one step x_{t-1} → x_t
-//   forwardTrajectory(x0, schedule)     — full trajectory [x_0, x_1, ..., x_T]
-//   forwardJump(x0, tIdx, schedule)     — direct sampling from q(x_t | x_0)
-//                                          using the one-shot reparametrisation.
-
-/**
- * One forward step using the kernel q(x_t | x_{t-1}) = N(√(1-β_t) x_{t-1}, β_t I).
- *
- * @param xPrev    Float32Array of length DIM, the previous state x_{t-1}
- * @param tIdx     0-based time index (math step t = tIdx + 1)
- * @param schedule output of buildSchedule()
- * @returns        Float32Array of length DIM, the next state x_t
- */
-function forwardStep(xPrev, tIdx, schedule) {
-    const sqrtAlpha = schedule.sqrtAlpha[tIdx];
-    const sqrtBeta = Math.sqrt(schedule.beta[tIdx]);
-    const eps = randnVec(DIM);
-    const xt = new Float32Array(DIM);
-    for (let d = 0; d < DIM; d++) {
-        xt[d] = sqrtAlpha * xPrev[d] + sqrtBeta * eps[d];
-    }
-    return xt;
-}
-
-/**
- * Full forward trajectory [x_0, x_1, ..., x_T], step by step.
- * Returns an Array of length T+1 of Float32Array(DIM).
- *
- * For visualization purposes when we want to see the chain evolve.
- */
-function forwardTrajectory(x0, schedule) {
-    const traj = new Array(T + 1);
-    traj[0] = x0.slice();  // copy
-    let xt = x0.slice();
-    for (let i = 0; i < T; i++) {
-        xt = forwardStep(xt, i, schedule);
-        traj[i + 1] = xt;
-    }
-    return traj;
-}
-
-/**
- * Direct sample from the closed-form marginal q(x_t | x_0):
- *   x_t = √ᾱ_t · x_0 + √(1-ᾱ_t) · ε,  ε ~ N(0, I).
- *
- * Useful when we only need a specific time index, or when computing
- * the forward visualization with fixed noise (slider scrubbing).
- *
- * @param x0      Float32Array of length DIM
- * @param tIdx    0-based time index
- * @param schedule schedule
- * @param eps     optional pre-drawn noise (Float32Array). If omitted, fresh noise.
- */
-function forwardJump(x0, tIdx, schedule, eps) {
-    const sqrtAB = schedule.sqrtAlphaBar[tIdx];
-    const sqrtOMAB = schedule.sqrtOneMinusAlphaBar[tIdx];
-    const e = eps || randnVec(DIM);
-    const xt = new Float32Array(DIM);
-    for (let d = 0; d < DIM; d++) {
-        xt[d] = sqrtAB * x0[d] + sqrtOMAB * e[d];
-    }
-    return xt;
-}
-
-/**
- * Run forward diffusion on the entire point cloud, producing a trajectory
- * for each point. To keep memory bounded, we use forwardJump with shared
- * noise per timestep across all points (faithful — each point gets its
- * own independent noise per step, but the noise SCHEDULE is deterministic
- * if we cache the ε draws).
- *
- * Returns:
- *   trajectories[t] = Array of Float32Array(DIM), length N
- *     where t ranges 0..T and trajectories[0] is the data point cloud.
- *
- * Implementation strategy: precompute a noise tensor ε[t][i] ∈ R^DIM,
- * then at any t the noisy state of point i is determined by the one-shot
- * formula. This makes slider scrubbing free of stochastic re-draw.
- */
-function buildForwardCloud(dataPts, schedule) {
-    const N = dataPts.length;
-    // Pre-draw one independent ε per (point, step). We use the one-shot
-    // formula with a SINGLE ε per (i, t) — this is the closed-form
-    // marginal sampling and is consistent (mathematically equivalent
-    // for the marginal at time t).
-    const cloud = new Array(T + 1);
-    cloud[0] = dataPts.map(p => p.slice());  // x_0
-
-    // Pre-draw a "noise tensor" of shape (T, N, DIM). One ε vector per point
-    // per timestep, used in the one-shot formula. Memory: T·N·DIM·4 bytes
-    // = 200·1500·5·4 = 6 MB — acceptable.
-    const eps = new Array(T);
-    for (let t = 0; t < T; t++) {
-        eps[t] = new Array(N);
-        for (let i = 0; i < N; i++) {
-            eps[t][i] = randnVec(DIM);
+    // ---------- score engine (per-dataset instance) ----------
+    // createScoreEngine(dataPts) returns closed-form score / logDensity for
+    // the GMM marginal of the empirical distribution on dataPts.
+    function createScoreEngine(dataPts) {
+        var N = dataPts.length;
+        var dataFlat = new Float64Array(N * DIM);
+        var scaledData = new Float64Array(N * DIM);
+        var logW = new Float64Array(N);
+        var i, d;
+        for (i = 0; i < N; i++) {
+            for (d = 0; d < DIM; d++) dataFlat[i * DIM + d] = dataPts[i][d];
         }
-    }
+        var cachedT = -1;
+        var cachedSqrtAB = 0;
 
-    for (let t = 1; t <= T; t++) {
-        const sqrtAB = schedule.sqrtAlphaBar[t - 1];
-        const sqrtOMAB = schedule.sqrtOneMinusAlphaBar[t - 1];
-        const layer = new Array(N);
-        for (let i = 0; i < N; i++) {
-            const x0i = dataPts[i];
-            const e = eps[t - 1][i];
-            const xt = new Float32Array(DIM);
-            for (let d = 0; d < DIM; d++) {
-                xt[d] = sqrtAB * x0i[d] + sqrtOMAB * e[d];
+        function prepare(tIdx, schedule) {
+            if (cachedT === tIdx) return;
+            var s = schedule.sqrtAlphaBar[tIdx];
+            for (var k = 0; k < N * DIM; k++) scaledData[k] = s * dataFlat[k];
+            cachedT = tIdx;
+            cachedSqrtAB = s;
+        }
+
+        // Fill logW with the UNNORMALIZED log weights; return maxLog.
+        function fillLogWeights(xt, tIdx, schedule) {
+            prepare(tIdx, schedule);
+            var halfInv = 0.5 / (1.0 - schedule.alphaBar[tIdx]);
+            var x0 = xt[0], x1 = xt[1], x2 = xt[2], x3 = xt[3], x4 = xt[4];
+            var maxLog = -Infinity;
+            for (var j = 0; j < N; j++) {
+                var b = j * 5;
+                var e0 = x0 - scaledData[b];
+                var e1 = x1 - scaledData[b + 1];
+                var e2 = x2 - scaledData[b + 2];
+                var e3 = x3 - scaledData[b + 3];
+                var e4 = x4 - scaledData[b + 4];
+                var lw = -(e0 * e0 + e1 * e1 + e2 * e2 + e3 * e3 + e4 * e4) * halfInv;
+                logW[j] = lw;
+                if (lw > maxLog) maxLog = lw;
             }
-            layer[i] = xt;
+            return maxLog;
         }
-        cloud[t] = layer;
-    }
 
-    return cloud;
-}
-
-
-// ====== MODULE 4 ======
-// DDPM ancestral sampling.
-//
-// Implements Algorithm 25.2 (Murphy) / Ho-Jain-Abbeel 2020 Algorithm 2:
-//   x_T ~ N(0, I)
-//   for t = T, T-1, ..., 1:
-//     z ~ N(0, I) if t > 1, else z = 0
-//     x_{t-1} = (1/√α_t) (x_t - β_t/√(1-ᾱ_t) · ε_θ(x_t, t)) + σ_t · z
-//
-// We use σ_t² = β_t (the upper-bound choice; simpler than β̃_t).
-
-/**
- * One DDPM reverse step: x_t → x_{t-1}.
- *
- * @param xt        Float32Array of length DIM, current noisy state
- * @param tIdx      0-based time index (math step t = tIdx + 1)
- * @param dataPts   logo points (used to compute analytical score)
- * @param schedule  schedule
- * @returns         Float32Array of length DIM, the next state x_{t-1}
- */
-function ddpmStep(xt, tIdx, dataPts, schedule) {
-    const epsTheta = predictNoise(xt, tIdx, dataPts, schedule);
-    const sqrtAlpha = schedule.sqrtAlpha[tIdx];
-    const beta = schedule.beta[tIdx];
-    const sqrtOMAB = schedule.sqrtOneMinusAlphaBar[tIdx];
-
-    // Compute the deterministic mean μ_θ(x_t, t):
-    //   (1/√α_t) · (x_t - β_t/√(1-ᾱ_t) · ε_θ)
-    const coeff = beta / sqrtOMAB;
-    const invSqrtAlpha = 1.0 / sqrtAlpha;
-    const mean = new Float32Array(DIM);
-    for (let d = 0; d < DIM; d++) {
-        mean[d] = invSqrtAlpha * (xt[d] - coeff * epsTheta[d]);
-    }
-
-    // Add noise σ_t · z, except at the final step t = 1 (tIdx = 0).
-    // Use σ_t = √β_t (the simpler upper-bound choice).
-    const xPrev = new Float32Array(DIM);
-    if (tIdx === 0) {
-        // Final step: no noise
-        for (let d = 0; d < DIM; d++) xPrev[d] = mean[d];
-    } else {
-        const sigma = Math.sqrt(beta);
-        const z = randnVec(DIM);
-        for (let d = 0; d < DIM; d++) {
-            xPrev[d] = mean[d] + sigma * z[d];
+        // score(xt, tIdx) with optional pruning threshold (default 12;
+        // pass Infinity for the exact unpruned reference).
+        function score(xt, tIdx, schedule, threshold) {
+            var thr = (threshold === undefined) ? SCORE_LOG_THRESHOLD : threshold;
+            var maxLog = fillLogWeights(xt, tIdx, schedule);
+            var cutoff = maxLog - thr;
+            var s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, sumExp = 0;
+            for (var j = 0; j < N; j++) {
+                if (logW[j] < cutoff) continue;
+                var w = Math.exp(logW[j] - maxLog);
+                sumExp += w;
+                var b = j * 5;
+                s0 += w * dataFlat[b];
+                s1 += w * dataFlat[b + 1];
+                s2 += w * dataFlat[b + 2];
+                s3 += w * dataFlat[b + 3];
+                s4 += w * dataFlat[b + 4];
+            }
+            var invSum = 1.0 / sumExp;
+            var invOMAB = 1.0 / (1.0 - schedule.alphaBar[tIdx]);
+            var sAB = cachedSqrtAB;
+            var out = new Float64Array(DIM);
+            out[0] = invOMAB * (sAB * s0 * invSum - xt[0]);
+            out[1] = invOMAB * (sAB * s1 * invSum - xt[1]);
+            out[2] = invOMAB * (sAB * s2 * invSum - xt[2]);
+            out[3] = invOMAB * (sAB * s3 * invSum - xt[3]);
+            out[4] = invOMAB * (sAB * s4 * invSum - xt[4]);
+            return out;
         }
-    }
-    return xPrev;
-}
 
-/**
- * Full DDPM reverse pass starting from x_T.
- * If x_T is omitted, draws fresh noise.
- *
- * Returns the full trajectory [x_T, x_{T-1}, ..., x_0]
- * as an Array of length T+1 of Float32Array(DIM).
- *
- * For the point-cloud demo this is called once per point.
- */
-function ddpmReverseTrajectory(xT, dataPts, schedule) {
-    const start = xT ? xT.slice() : randnVec(DIM);
-    const traj = new Array(T + 1);
-    traj[T] = start;
-    let xt = start.slice();
-    // Step from t = T down to t = 1, producing x_{T-1}, ..., x_0.
-    for (let t = T; t >= 1; t--) {
-        const tIdx = t - 1;
-        xt = ddpmStep(xt, tIdx, dataPts, schedule);
-        traj[t - 1] = xt;
-    }
-    return traj;
-}
-
-/**
- * Run DDPM reverse on a batch of starting points (one per data point).
- * Returns cloud[t] = Array of Float32Array(DIM), length N, for t in 0..T.
- *
- * Used by the demo to produce a full reverse trajectory cache so that
- * the time slider can scrub through arbitrary intermediate states.
- */
-function ddpmReverseCloud(xTbatch, dataPts, schedule) {
-    const N = xTbatch.length;
-    const cloud = new Array(T + 1);
-    // Initialize cloud[T] with the batch of starting points
-    cloud[T] = xTbatch.map(p => p.slice());
-    // Current state across all N samples
-    let cur = xTbatch.map(p => p.slice());
-
-    for (let t = T; t >= 1; t--) {
-        const tIdx = t - 1;
-        const next = new Array(N);
-        for (let i = 0; i < N; i++) {
-            next[i] = ddpmStep(cur[i], tIdx, dataPts, schedule);
+        // Exact log q_t(x_t) including all constants (for the FD check and
+        // for absolute density pins).
+        function logDensity(xt, tIdx, schedule) {
+            var maxLog = fillLogWeights(xt, tIdx, schedule);
+            var sumExp = 0;
+            for (var j = 0; j < N; j++) sumExp += Math.exp(logW[j] - maxLog);
+            var oneMinusAB = 1.0 - schedule.alphaBar[tIdx];
+            return maxLog + Math.log(sumExp) - Math.log(N)
+                - 0.5 * DIM * Math.log(2 * Math.PI * oneMinusAB);
         }
-        cloud[t - 1] = next;
-        cur = next;
-    }
-    return cloud;
-}
 
-
-// ====== MODULE 5 ======
-// DDIM deterministic sampling.
-//
-// Same trained "noise predictor" (here, analytical), but a different
-// reverse procedure that is deterministic (given x_T) and can skip steps.
-//
-// For step t → s (where s < t, s could be 0 at the end):
-//   x̂_0 = (x_t - √(1-ᾱ_t) · ε_θ(x_t, t)) / √ᾱ_t
-//   x_s = √ᾱ_s · x̂_0 + √(1-ᾱ_s) · ε_θ(x_t, t)
-//
-// The convention ᾱ_0 = 1 makes the final step (s = 0) reduce to
-// x_0 = x̂_0, as expected.
-
-const DDIM_STEPS = 20;  // number of sampling steps (S in handout); with T=100 this is 5x speedup
-
-/**
- * Build a strictly-decreasing schedule of DDIM step indices τ_S > τ_{S-1} > ... > τ_1 > τ_0 = 0
- * with τ_S = T. Implemented as approximately evenly spaced in {0, 1, ..., T}.
- *
- * @returns Int32Array of length S+1, where result[i] = τ_i (math index, 0..T).
- *          result[0] = 0, result[S] = T.
- */
-function buildDDIMSchedule(S = DDIM_STEPS) {
-    const out = new Int32Array(S + 1);
-    out[0] = 0;
-    out[S] = T;
-    // Evenly distribute the intermediate ones in (0, T).
-    // We want τ_1, ..., τ_{S-1} in increasing order.
-    for (let i = 1; i < S; i++) {
-        out[i] = Math.round((i / S) * T);
-    }
-    // Ensure strictly increasing (handle any rounding collisions)
-    for (let i = 1; i <= S; i++) {
-        if (out[i] <= out[i - 1]) out[i] = out[i - 1] + 1;
-    }
-    return out;
-}
-
-/**
- * One DDIM step: x_t → x_s, where t = τ_i and s = τ_{i-1}.
- *
- * Time indices here are MATH indices (1..T or 0 for the endpoint).
- *
- * @param xt        current state at time t
- * @param tMath     math time index of current state (1..T)
- * @param sMath     math time index of target state (0..t-1)
- */
-function ddimStep(xt, tMath, sMath, dataPts, schedule) {
-    const tIdx = tMath - 1;  // 0-based for arrays
-    const alphaBarT = schedule.alphaBar[tIdx];
-    const sqrtABt = schedule.sqrtAlphaBar[tIdx];
-    const sqrtOMABt = schedule.sqrtOneMinusAlphaBar[tIdx];
-
-    // ε_θ at time t (from analytical score)
-    const epsTheta = predictNoise(xt, tIdx, dataPts, schedule);
-
-    // Predicted x_0
-    const x0hat = new Float32Array(DIM);
-    for (let d = 0; d < DIM; d++) {
-        x0hat[d] = (xt[d] - sqrtOMABt * epsTheta[d]) / sqrtABt;
+        return { N: N, score: score, logDensity: logDensity };
     }
 
-    // ᾱ_s (use convention ᾱ_0 = 1)
-    const alphaBarS = alphaBarAt(schedule, sMath);
-    const sqrtABs = Math.sqrt(alphaBarS);
-    const sqrtOMABs = Math.sqrt(1.0 - alphaBarS);
-
-    // x_s = √ᾱ_s · x̂_0 + √(1-ᾱ_s) · ε_θ
-    const xs = new Float32Array(DIM);
-    for (let d = 0; d < DIM; d++) {
-        xs[d] = sqrtABs * x0hat[d] + sqrtOMABs * epsTheta[d];
+    // ---------- score ↔ noise bridge ----------
+    // ε_θ(x_t, t) = −√(1-ᾱ_t) · score(x_t, t)
+    function scoreToNoise(scoreVec, tIdx, schedule) {
+        var sigma = schedule.sqrtOneMinusAlphaBar[tIdx];
+        var eps = new Float64Array(DIM);
+        for (var d = 0; d < DIM; d++) eps[d] = -sigma * scoreVec[d];
+        return eps;
     }
-    return xs;
-}
 
-/**
- * Full DDIM reverse trajectory starting from x_T, with S steps.
- * Returns an Array of length S+1, indexed by stepIdx (NOT by math time t).
- *   result[S] = x_T
- *   result[i] for i = S, S-1, ..., 0 is x_{τ_i}.
- *   result[0] = x_0.
- *
- * If you need to align with the time slider (which goes 0..T), use
- * the τ schedule to look up which slider position corresponds to
- * which sampled state. Intermediate slider positions can be filled
- * by linear interpolation, OR the slider can be restricted to the
- * S+1 sampled positions when DDIM mode is active.
- *
- * For the demo we cache the FULL DDIM cloud (per-point trajectories,
- * resampled onto every t ∈ 0..T via piecewise-constant or linear
- * interpolation for slider compatibility).
- */
-function ddimReverseTrajectory(xT, dataPts, schedule, S = DDIM_STEPS) {
-    const tauSchedule = buildDDIMSchedule(S);
-    const start = xT ? xT.slice() : randnVec(DIM);
-
-    // sparseTraj[i] = state at math time τ_i, for i = 0..S
-    const sparseTraj = new Array(S + 1);
-    sparseTraj[S] = start;
-    let cur = start.slice();
-    for (let i = S; i >= 1; i--) {
-        const tMath = tauSchedule[i];
-        const sMath = tauSchedule[i - 1];
-        cur = ddimStep(cur, tMath, sMath, dataPts, schedule);
-        sparseTraj[i - 1] = cur;
+    function predictNoise(xt, tIdx, engine, schedule) {
+        return scoreToNoise(engine.score(xt, tIdx, schedule), tIdx, schedule);
     }
-    return { sparseTraj, tauSchedule };
-}
 
-/**
- * Run DDIM reverse on a batch of starting points.
- * Returns sparse cloud (only at τ indices), plus the τ schedule.
- *
- *   sparseCloud[i] = Array of Float32Array(DIM), length N
- *                    = state at math time τ_i, for i = 0..S
- *
- * For slider scrubbing, see densifyDDIMCloud below.
- */
-function ddimReverseCloud(xTbatch, dataPts, schedule, S = DDIM_STEPS) {
-    const tauSchedule = buildDDIMSchedule(S);
-    const N = xTbatch.length;
-    const sparseCloud = new Array(S + 1);
-    sparseCloud[S] = xTbatch.map(p => p.slice());
-    let cur = xTbatch.map(p => p.slice());
+    // x̂_0 = (x_t − √(1-ᾱ_t) ε_θ) / √ᾱ_t
+    function predictX0(xt, tIdx, engine, schedule) {
+        var eps = predictNoise(xt, tIdx, engine, schedule);
+        var sAB = schedule.sqrtAlphaBar[tIdx];
+        var sOM = schedule.sqrtOneMinusAlphaBar[tIdx];
+        var out = new Float64Array(DIM);
+        for (var d = 0; d < DIM; d++) out[d] = (xt[d] - sOM * eps[d]) / sAB;
+        return out;
+    }
 
-    for (let i = S; i >= 1; i--) {
-        const tMath = tauSchedule[i];
-        const sMath = tauSchedule[i - 1];
-        const next = new Array(N);
-        for (let n = 0; n < N; n++) {
-            next[n] = ddimStep(cur[n], tMath, sMath, dataPts, schedule);
+    // ---------- forward diffusion ----------
+    // One step: q(x_t | x_{t-1}) = N(√(1-β_t) x_{t-1}, β_t I)
+    function forwardStep(xPrev, tIdx, schedule, rng) {
+        var s = Math.sqrt(1.0 - schedule.beta[tIdx]);
+        var sig = Math.sqrt(schedule.beta[tIdx]);
+        var out = new Float64Array(DIM);
+        for (var d = 0; d < DIM; d++) out[d] = s * xPrev[d] + sig * randn(rng);
+        return out;
+    }
+
+    // Closed-form jump: x_t = √ᾱ_t x_0 + √(1-ᾱ_t) ε   (ε supplied by caller)
+    function forwardJump(x0, tIdx, schedule, eps) {
+        var sAB = schedule.sqrtAlphaBar[tIdx];
+        var sOM = schedule.sqrtOneMinusAlphaBar[tIdx];
+        var out = new Float64Array(DIM);
+        for (var d = 0; d < DIM; d++) out[d] = sAB * x0[d] + sOM * eps[d];
+        return out;
+    }
+
+    // Resumable forward builder: one time-step per stepOnce() so the UI can
+    // chunk the build in ~40 ms slices with live progress (resumable solver
+    // pattern). buildForwardCloud drains it — ONE code path.
+    function createForwardBuilder(dataPts, schedule, rng) {
+        var N = dataPts.length;
+        var cloud = new Array(T + 1);
+        var cur = new Array(N);
+        var i;
+        cloud[0] = new Array(N);
+        for (i = 0; i < N; i++) {
+            cur[i] = Float64Array.from(dataPts[i]);
+            cloud[0][i] = cur[i].slice();
         }
-        sparseCloud[i - 1] = next;
-        cur = next;
+        var t = 1;
+        return {
+            stepOnce: function () {
+                if (t > T) return false;
+                var next = new Array(N);
+                for (var j = 0; j < N; j++) next[j] = forwardStep(cur[j], t - 1, schedule, rng);
+                cloud[t] = next;
+                cur = next;
+                t++;
+                return t <= T;
+            },
+            progress: function () { return (t - 1) / T; },
+            result: function () { return cloud; }
+        };
     }
-    return { sparseCloud, tauSchedule };
-}
 
-/**
- * Densify a DDIM sparse cloud onto every t ∈ 0..T using nearest-tau
- * (piecewise-constant). This is purely for slider visualization;
- * the actual DDIM trajectory has only S+1 distinct states.
- *
- * @param sparseCloud   from ddimReverseCloud
- * @param tauSchedule   from ddimReverseCloud
- * @returns dense cloud, Array of length T+1
- */
-function densifyDDIMCloud(sparseCloud, tauSchedule) {
-    const S = tauSchedule.length - 1;
-    const dense = new Array(T + 1);
-    for (let t = 0; t <= T; t++) {
-        // Find the largest i such that τ_i <= t (nearest below).
-        // The visible state at intermediate slider position t is the
-        // most recently computed sparse state — i.e. the latest τ_i ≤ t.
-        let i = 0;
-        for (let k = S; k >= 0; k--) {
-            if (tauSchedule[k] <= t) { i = k; break; }
+    function buildForwardCloud(dataPts, schedule, rng) {
+        var b = createForwardBuilder(dataPts, schedule, rng);
+        while (b.stepOnce()) { /* drain */ }
+        return b.result();
+    }
+
+    function drawNoiseBatch(N, rng) {
+        var out = new Array(N);
+        for (var i = 0; i < N; i++) out[i] = randnVec(DIM, rng);
+        return out;
+    }
+
+    // ---------- DDPM ancestral sampling ----------
+    //   x_{t-1} = (1/√α_t)(x_t − β_t/√(1-ᾱ_t) ε_θ) + σ_t z,  σ_t = √β_t,
+    //   z = 0 at the final step t = 1.
+    // ONE code path for the DDPM update given eps (used by ddpmStep and by
+    // the batch builder — the by-product recording must not fork the math).
+    function ddpmStepFromEps(xt, tIdx, eps, schedule, rng) {
+        var coeff = schedule.beta[tIdx] / schedule.sqrtOneMinusAlphaBar[tIdx];
+        var invSA = 1.0 / schedule.sqrtAlpha[tIdx];
+        var out = new Float64Array(DIM);
+        var d;
+        if (tIdx === 0) {
+            for (d = 0; d < DIM; d++) out[d] = invSA * (xt[d] - coeff * eps[d]);
+        } else {
+            var sig = Math.sqrt(schedule.beta[tIdx]);
+            for (d = 0; d < DIM; d++) {
+                out[d] = invSA * (xt[d] - coeff * eps[d]) + sig * randn(rng);
+            }
         }
-        dense[t] = sparseCloud[i];
+        return out;
     }
-    return dense;
-}
 
-
-// ====== MODULE 6a ======
-// State management and cache construction.
-//
-// Centralizes all demo state in one object. The caches (forwardCloud,
-// ddpmCloud, ddimCloud) are precomputed full trajectories so that the
-// time slider can scrub through any intermediate state instantly.
-
-/**
- * Default UI configuration.
- */
-const DEMO_DEFAULTS = {
-    direction: 'forward',  // 'forward' | 'reverse'
-    sampler: 'DDPM',       // 'DDPM' | 'DDIM'
-    tIdx: 0,               // 0..T (slider position, math time t)
-    playing: false,
-    speed: 'medium',       // 'slow' | 'medium' | 'fast'
-};
-
-const SPEED_FPS = {
-    slow: 8,
-    medium: 20,
-    fast: 60,
-};
-
-/**
- * Load the COMPASS logo point cloud from window.COMPASS_POINTS.
- * Returns Array of Float32Array(DIM), length N.
- */
-function loadDataPoints() {
-    if (!window.COMPASS_POINTS) {
-        console.error('[ml-14 demo] window.COMPASS_POINTS not loaded');
-        return null;
+    function ddpmStep(xt, tIdx, engine, schedule, rng) {
+        return ddpmStepFromEps(xt, tIdx, predictNoise(xt, tIdx, engine, schedule), schedule, rng);
     }
-    const raw = window.COMPASS_POINTS;
-    const N = raw.length;
-    const out = new Array(N);
-    for (let i = 0; i < N; i++) {
-        out[i] = Float32Array.from(raw[i]);
+
+    // Batch reverse with by-product recording:
+    //   cloud[t][i]   — state at math time t (t = 0..T)
+    //   x0hat[t][i]   — x̂_0 predicted FROM the state at time t (t = 1..T)
+    //   scoreXY[t][i] — [score_x, score_y] at the state at time t (t = 1..T)
+    // x̂_0 and the score are read off the ε_θ already computed inside the
+    // step — no extra score evaluations.
+    // Resumable DDPM builder: one reverse time-step per stepOnce()
+    // (~1500 score evaluations ≈ one 40 ms UI slice at shipped size).
+    function createDdpmBuilder(xTbatch, engine, schedule, rng) {
+        var N = xTbatch.length;
+        var cloud = new Array(T + 1);
+        var x0hat = new Array(T + 1);
+        var scoreXY = new Array(T + 1);
+        cloud[T] = xTbatch.map(function (p) { return Float64Array.from(p); });
+        var cur = xTbatch.map(function (p) { return Float64Array.from(p); });
+        var t = T;
+        return {
+            stepOnce: function () {
+                if (t < 1) return false;
+                var tIdx = t - 1;
+                var next = new Array(N);
+                var xh = new Array(N);
+                var sxy = new Array(N);
+                var sAB = schedule.sqrtAlphaBar[tIdx];
+                var sOM = schedule.sqrtOneMinusAlphaBar[tIdx];
+                for (var i = 0; i < N; i++) {
+                    var eps = predictNoise(cur[i], tIdx, engine, schedule);
+                    // x̂_0 from this ε (by-product, no extra score evaluation)
+                    var h = new Float64Array(DIM);
+                    for (var d = 0; d < DIM; d++) h[d] = (cur[i][d] - sOM * eps[d]) / sAB;
+                    xh[i] = h;
+                    // score = −ε/√(1-ᾱ); record (x,y) components
+                    sxy[i] = [-eps[0] / sOM, -eps[1] / sOM];
+                    next[i] = ddpmStepFromEps(cur[i], tIdx, eps, schedule, rng);
+                }
+                x0hat[t] = xh;
+                scoreXY[t] = sxy;
+                cloud[t - 1] = next;
+                cur = next;
+                t--;
+                return t >= 1;
+            },
+            progress: function () { return (T - t) / T; },
+            result: function () { return { cloud: cloud, x0hat: x0hat, scoreXY: scoreXY }; }
+        };
     }
-    return out;
-}
 
-/**
- * Draw a fresh batch of N starting noise vectors x_T^(i) ~ N(0, I).
- */
-function drawNoiseBatch(N) {
-    const out = new Array(N);
-    for (let i = 0; i < N; i++) {
-        out[i] = randnVec(DIM);
+    function ddpmReverseCloud(xTbatch, engine, schedule, rng) {
+        var b = createDdpmBuilder(xTbatch, engine, schedule, rng);
+        while (b.stepOnce()) { /* drain */ }
+        return b.result();
     }
-    return out;
-}
 
-/**
- * Build the full forward cloud (data → noise) once.
- * This depends only on dataPts and schedule; the random ε draws inside
- * are cached implicitly (one independent draw per (point, step)),
- * so the resulting trajectory is fixed for the lifetime of the cache.
- *
- * The slider scrubbing through forward direction always shows this cache.
- */
-function rebuildForwardCloud(state) {
-    state.forwardCloud = buildForwardCloud(state.dataPts, state.schedule);
-}
+    // ---------- DDIM deterministic sampling ----------
+    // τ_0 = 0 < τ_1 < ... < τ_S = T, approximately evenly spaced.
+    function buildDDIMSchedule(S) {
+        var out = new Int32Array(S + 1);
+        out[0] = 0;
+        out[S] = T;
+        for (var i = 1; i < S; i++) out[i] = Math.round((i / S) * T);
+        for (i = 1; i <= S; i++) if (out[i] <= out[i - 1]) out[i] = out[i - 1] + 1;
+        return out;
+    }
 
-/**
- * Rebuild the DDPM and DDIM reverse clouds from the current xTbatch.
- * Called on initialization and on "regenerate noise" action.
- */
-function rebuildReverseClouds(state) {
-    // DDPM: full ancestral trajectory
-    state.ddpmCloud = ddpmReverseCloud(state.xTbatch, state.dataPts, state.schedule);
+    // One DDIM step t → s (math indices; s may be 0, using ᾱ_0 = 1):
+    //   x̂_0 = (x_t − √(1-ᾱ_t) ε_θ)/√ᾱ_t,   x_s = √ᾱ_s x̂_0 + √(1-ᾱ_s) ε_θ
+    // ONE code path for the DDIM map given eps: returns { xs, x0hat }.
+    function ddimMapFromEps(xt, tIdx, sMath, eps, schedule) {
+        var sABt = schedule.sqrtAlphaBar[tIdx];
+        var sOMt = schedule.sqrtOneMinusAlphaBar[tIdx];
+        var aS = alphaBarAt(schedule, sMath);
+        var sABs = Math.sqrt(aS);
+        var sOMs = Math.sqrt(1.0 - aS);
+        var xs = new Float64Array(DIM);
+        var x0hat = new Float64Array(DIM);
+        for (var d = 0; d < DIM; d++) {
+            var x0h = (xt[d] - sOMt * eps[d]) / sABt;
+            x0hat[d] = x0h;
+            xs[d] = sABs * x0h + sOMs * eps[d];
+        }
+        return { xs: xs, x0hat: x0hat };
+    }
 
-    // DDIM: sparse trajectory + densified for slider use
-    const ddimResult = ddimReverseCloud(state.xTbatch, state.dataPts, state.schedule, DDIM_STEPS);
-    state.ddimSparseCloud = ddimResult.sparseCloud;
-    state.tauSchedule = ddimResult.tauSchedule;
-    state.ddimCloud = densifyDDIMCloud(ddimResult.sparseCloud, ddimResult.tauSchedule);
-}
+    function ddimStep(xt, tMath, sMath, engine, schedule) {
+        var tIdx = tMath - 1;
+        var eps = predictNoise(xt, tIdx, engine, schedule);
+        return ddimMapFromEps(xt, tIdx, sMath, eps, schedule).xs;
+    }
 
-/**
- * Create the demo state object. dataPts must be loaded beforehand.
- *
- * @param dataPts Array of Float32Array(DIM)
- * @returns state object
- */
-function createDemoState(dataPts) {
-    const schedule = buildSchedule();
-    const N = dataPts.length;
+    // Batch DDIM reverse with the same by-product recording, on the sparse
+    // τ grid: sparse[i][n] at math time τ_i; x0hatSparse[i][n] / scoreXYSparse
+    // are predicted FROM the state at τ_i (defined for i = 1..S).
+    // Resumable DDIM builder: one τ-step per stepOnce().
+    function createDdimBuilder(xTbatch, engine, schedule, S) {
+        var tau = buildDDIMSchedule(S);
+        var N = xTbatch.length;
+        var sparse = new Array(S + 1);
+        var x0hatS = new Array(S + 1);
+        var scoreXYS = new Array(S + 1);
+        sparse[S] = xTbatch.map(function (p) { return Float64Array.from(p); });
+        var cur = xTbatch.map(function (p) { return Float64Array.from(p); });
+        var i = S;
+        return {
+            stepOnce: function () {
+                if (i < 1) return false;
+                var tMath = tau[i], sMath = tau[i - 1];
+                var tIdx = tMath - 1;
+                var sOMt = schedule.sqrtOneMinusAlphaBar[tIdx];
+                var next = new Array(N);
+                var xh = new Array(N);
+                var sxy = new Array(N);
+                for (var n = 0; n < N; n++) {
+                    var eps = predictNoise(cur[n], tIdx, engine, schedule);
+                    var m = ddimMapFromEps(cur[n], tIdx, sMath, eps, schedule);
+                    next[n] = m.xs;
+                    xh[n] = m.x0hat;
+                    sxy[n] = [-eps[0] / sOMt, -eps[1] / sOMt];
+                }
+                x0hatS[i] = xh;
+                scoreXYS[i] = sxy;
+                sparse[i - 1] = next;
+                cur = next;
+                i--;
+                return i >= 1;
+            },
+            progress: function () { return (S - i) / S; },
+            result: function () {
+                return { sparseCloud: sparse, x0hatSparse: x0hatS, scoreXYSparse: scoreXYS, tauSchedule: tau };
+            }
+        };
+    }
 
-    // Prepare the score function's data buffers (flat array, scaled buffer)
-    prepareDataBuffers(dataPts);
+    function ddimReverseCloud(xTbatch, engine, schedule, S) {
+        var b = createDdimBuilder(xTbatch, engine, schedule, S);
+        while (b.stepOnce()) { /* drain */ }
+        return b.result();
+    }
 
-    const xTbatch = drawNoiseBatch(N);
+    // FIXED semantics: slider position t shows the sparse state with the
+    // SMALLEST τ_i ≥ t — the most recent state the reverse process has
+    // actually produced by the time it reaches t. Returns index map
+    // denseIdx[t] = i, usable for cloud / x̂_0 / score lookups alike.
+    function ddimDenseIndex(tauSchedule) {
+        var S = tauSchedule.length - 1;
+        var idx = new Int32Array(T + 1);
+        for (var t = 0; t <= T; t++) {
+            var pick = S;
+            for (var k = 0; k <= S; k++) {
+                if (tauSchedule[k] >= t) { pick = k; break; }
+            }
+            idx[t] = pick;
+        }
+        return idx;
+    }
 
-    const state = {
-        // Static data
-        dataPts,
-        schedule,
-        N,
-
-        // UI state
-        direction: DEMO_DEFAULTS.direction,
-        sampler: DEMO_DEFAULTS.sampler,
-        tIdx: DEMO_DEFAULTS.tIdx,
-        playing: DEMO_DEFAULTS.playing,
-        speed: DEMO_DEFAULTS.speed,
-
-        // Reverse-direction initial noise
-        xTbatch,
-
-        // Caches (filled by rebuildXxx functions)
-        forwardCloud: null,
-        ddpmCloud: null,
-        ddimSparseCloud: null,
-        tauSchedule: null,
-        ddimCloud: null,
-
-        // Animation
-        animationHandle: null,
-        lastFrameTime: 0,
+    // ---------- shipped configuration ----------
+    var DEFAULTS = {
+        forwardSeed: 7001,
+        noiseSeed: 7002,   // x_T batch; Regenerate advances this stream
+        ddpmSeed: 7003,
+        ddimSteps: DDIM_STEPS
     };
 
-    rebuildForwardCloud(state);
-    rebuildReverseClouds(state);
+    // ---------- self-tests ----------
+    function runSelfTests() {
+        var failures = [];
+        function check(name, cond) { if (!cond) failures.push(name); }
+        var schedule = buildSchedule();
 
-    return state;
-}
+        // Small synthetic dataset used by several tests: 8 points, seeded.
+        function synthData(n, seed) {
+            var rng = mulberry32(seed);
+            var pts = new Array(n);
+            for (var i = 0; i < n; i++) {
+                var p = new Float64Array(DIM);
+                for (var d = 0; d < DIM; d++) p[d] = 2 * rng() - 1;
+                pts[i] = p;
+            }
+            return pts;
+        }
 
-/**
- * Return the cloud array currently selected by (direction, sampler).
- * The returned cloud is indexed by t in 0..T.
- *
- * @param state demo state
- * @returns Array of length T+1, each entry is Array of Float32Array(DIM)
- */
-function getCurrentCloud(state) {
-    if (state.direction === 'forward') {
-        return state.forwardCloud;
+        // T1: schedule pins and structure.
+        (function () {
+            check('T1 beta endpoints', Math.abs(schedule.beta[0] - 1e-4) < 1e-15 &&
+                Math.abs(schedule.beta[T - 1] - 0.10) < 1e-15);
+            // linearity: midpoint of an odd count is the average of endpoints;
+            // with T=100 test index 50 vs the closed form directly
+            var expected = BETA_MIN + (BETA_MAX - BETA_MIN) * (50 / (T - 1));
+            check('T1 beta linear', Math.abs(schedule.beta[50] - expected) < 1e-15);
+            var mono = true, range = true, roots = true;
+            for (var i = 0; i < T; i++) {
+                if (i > 0 && !(schedule.alphaBar[i] < schedule.alphaBar[i - 1])) mono = false;
+                if (!(schedule.alphaBar[i] > 0 && schedule.alphaBar[i] < 1)) range = false;
+                if (Math.abs(schedule.sqrtAlphaBar[i] * schedule.sqrtAlphaBar[i] - schedule.alphaBar[i]) > 1e-14) roots = false;
+                if (Math.abs(schedule.sqrtOneMinusAlphaBar[i] * schedule.sqrtOneMinusAlphaBar[i] - (1 - schedule.alphaBar[i])) > 1e-14) roots = false;
+            }
+            check('T1 alphaBar monotone decreasing', mono);
+            check('T1 alphaBar in (0,1)', range);
+            check('T1 sqrt caches consistent', roots);
+            check('T1 alphaBarAt(0) = 1', alphaBarAt(schedule, 0) === 1.0);
+            check('T1 alphaBarAt(T) = alphaBar[T-1]', alphaBarAt(schedule, T) === schedule.alphaBar[T - 1]);
+        })();
+
+        // T2: RNG determinism + moments (deterministic given the seed).
+        (function () {
+            var a = randnVec(6, mulberry32(11));
+            var b = randnVec(6, mulberry32(11));
+            var same = true;
+            for (var d = 0; d < 6; d++) if (a[d] !== b[d]) same = false;
+            check('T2 seeded determinism', same);
+            var rng = mulberry32(101);
+            var n = 20000, mean = 0, m2 = 0;
+            for (var i = 0; i < n; i++) { var x = randn(rng); mean += x; m2 += x * x; }
+            mean /= n; var variance = m2 / n - mean * mean;
+            check('T2 randn moments', Math.abs(mean) < 0.03 && Math.abs(variance - 1) < 0.05);
+        })();
+
+        // T3: singleton exact score + symmetric two-point zero.
+        (function () {
+            var x0 = Float64Array.from([0.3, -0.5, 0.1, 0.7, -0.2]);
+            var eng = createScoreEngine([x0]);
+            var tIdx = 40;
+            var xt = Float64Array.from([0.9, 0.2, -0.4, 0.1, 0.5]);
+            var s = eng.score(xt, tIdx, schedule);
+            var omab = 1 - schedule.alphaBar[tIdx];
+            var sab = schedule.sqrtAlphaBar[tIdx];
+            var ok = true;
+            for (var d = 0; d < DIM; d++) {
+                var exact = (sab * x0[d] - xt[d]) / omab;
+                if (Math.abs(s[d] - exact) > 1e-12) ok = false;
+            }
+            check('T3 singleton score exact', ok);
+            // symmetric pair ±a: score at the origin is exactly 0
+            var a = Float64Array.from([0.4, -0.3, 0.2, 0.6, -0.5]);
+            var na = Float64Array.from(a.map(function (v) { return -v; }));
+            var eng2 = createScoreEngine([a, na]);
+            var s2 = eng2.score(new Float64Array(DIM), 30, schedule);
+            var z = true;
+            for (d = 0; d < DIM; d++) if (Math.abs(s2[d]) > 1e-13) z = false;
+            check('T3 symmetric midpoint score zero', z);
+            // singleton absolute log-density pin: exact Gaussian logpdf
+            var xt2 = Float64Array.from([0.1, 0.0, -0.2, 0.3, 0.4]);
+            var ld = eng.logDensity(xt2, tIdx, schedule);
+            var sq = 0;
+            for (d = 0; d < DIM; d++) { var e = xt2[d] - sab * x0[d]; sq += e * e; }
+            var exactLd = -0.5 * sq / omab - 0.5 * DIM * Math.log(2 * Math.PI * omab);
+            check('T3 singleton logDensity pin', Math.abs(ld - exactLd) < 1e-12);
+        })();
+
+        // T4: finite-difference score check (gradients exist in this demo,
+        // so the FD requirement applies; central differences, h = 1e-4).
+        (function () {
+            var pts = synthData(8, 33);
+            var eng = createScoreEngine(pts);
+            var rng = mulberry32(55);
+            var worst = 0;
+            var probes = [[5, 1], [40, 2], [90, 1]]; // [tIdx, numProbes]
+            for (var p = 0; p < probes.length; p++) {
+                var tIdx = probes[p][0];
+                for (var q = 0; q < probes[p][1]; q++) {
+                    var xt = randnVec(DIM, rng);
+                    var s = eng.score(xt, tIdx, schedule, Infinity);
+                    for (var d = 0; d < DIM; d++) {
+                        var h = 1e-4;
+                        var xp = Float64Array.from(xt); xp[d] += h;
+                        var xm = Float64Array.from(xt); xm[d] -= h;
+                        var fd = (eng.logDensity(xp, tIdx, schedule) -
+                            eng.logDensity(xm, tIdx, schedule)) / (2 * h);
+                        var err = Math.abs(fd - s[d]) / Math.max(1, Math.abs(s[d]));
+                        if (err > worst) worst = err;
+                    }
+                }
+            }
+            check('T4 score matches FD of logDensity (<1e-6)', worst < 1e-6);
+        })();
+
+        // T5: pruning error quantified against the unpruned reference.
+        (function () {
+            var pts = synthData(40, 77);
+            var eng = createScoreEngine(pts);
+            var rng = mulberry32(88);
+            var worst = 0;
+            var tIdxs = [3, 50, 95];
+            for (var p = 0; p < tIdxs.length; p++) {
+                for (var q = 0; q < 3; q++) {
+                    var xt = randnVec(DIM, rng);
+                    var a = eng.score(xt, tIdxs[p], schedule);            // pruned
+                    var b = eng.score(xt, tIdxs[p], schedule, Infinity);  // exact
+                    for (var d = 0; d < DIM; d++) {
+                        var e = Math.abs(a[d] - b[d]);
+                        if (e > worst) worst = e;
+                    }
+                }
+            }
+            check('T5 pruning error bounded (<1e-8)', worst < 1e-8);
+        })();
+
+        // T6: singleton noise-inversion certificate — for one data point the
+        // model's ε̂ recovers the TRUE ε of the forward jump exactly.
+        (function () {
+            var x0 = Float64Array.from([-0.6, 0.2, 0.8, -0.1, 0.4]);
+            var eng = createScoreEngine([x0]);
+            var eps = randnVec(DIM, mulberry32(21));
+            var ok = true;
+            var tIdxs = [0, 45, 99];
+            for (var p = 0; p < tIdxs.length; p++) {
+                var tIdx = tIdxs[p];
+                var xt = forwardJump(x0, tIdx, schedule, eps);
+                var epsHat = predictNoise(xt, tIdx, eng, schedule);
+                for (var d = 0; d < DIM; d++) {
+                    if (Math.abs(epsHat[d] - eps[d]) > 1e-10) ok = false;
+                }
+            }
+            check('T6 singleton eps inversion exact', ok);
+        })();
+
+        // T7: DDPM step algebra + final-step no-noise + seeded determinism.
+        (function () {
+            var x0 = Float64Array.from([0.5, -0.4, 0.3, 0.2, -0.1]);
+            var eng = createScoreEngine([x0]);
+            // tIdx = 0 branch is noise-free: two calls must agree bitwise
+            var xt = Float64Array.from([0.6, -0.2, 0.1, 0.4, 0.0]);
+            var r1 = ddpmStep(xt, 0, eng, schedule, mulberry32(1));
+            var r2 = ddpmStep(xt, 0, eng, schedule, mulberry32(2));
+            var det = true;
+            for (var d = 0; d < DIM; d++) if (r1[d] !== r2[d]) det = false;
+            check('T7 final DDPM step noise-free', det);
+            // algebraic pin at tIdx=0 (singleton: eps computable in closed form)
+            var tIdx = 0;
+            var sOM = schedule.sqrtOneMinusAlphaBar[tIdx];
+            var sAB = schedule.sqrtAlphaBar[tIdx];
+            var coeff = schedule.beta[tIdx] / sOM;
+            var invSA = 1.0 / schedule.sqrtAlpha[tIdx];
+            var ok = true;
+            for (d = 0; d < DIM; d++) {
+                var eps = (xt[d] - sAB * x0[d]) / sOM;
+                var expect = invSA * (xt[d] - coeff * eps);
+                if (Math.abs(r1[d] - expect) > 1e-12) ok = false;
+            }
+            check('T7 DDPM step algebraic pin', ok);
+            // stochastic branch: same seed same result; different seed differs
+            var a = ddpmStep(xt, 50, eng, schedule, mulberry32(9));
+            var b = ddpmStep(xt, 50, eng, schedule, mulberry32(9));
+            var c = ddpmStep(xt, 50, eng, schedule, mulberry32(10));
+            var same = true, diff = false;
+            for (d = 0; d < DIM; d++) {
+                if (a[d] !== b[d]) same = false;
+                if (a[d] !== c[d]) diff = true;
+            }
+            check('T7 DDPM stochastic seeded', same && diff);
+            // noise-SCALE spec pin: with eps supplied directly, the spread of
+            // ddpmStepFromEps around its deterministic mean must be sigma_t
+            // = sqrt(beta_t) (kills a sigma = beta_t mutant, which every
+            // lands-near-data test silently rewards)
+            var tI = 50;
+            var eps0 = new Float64Array(DIM);
+            var meanDet = 1.0 / schedule.sqrtAlpha[tI] * xt[0];
+            var rngS = mulberry32(4001);
+            var nS = 4000, sum2 = 0;
+            for (var k = 0; k < nS; k++) {
+                var o = ddpmStepFromEps(xt, tI, eps0, schedule, rngS);
+                var dev = o[0] - meanDet;
+                sum2 += dev * dev;
+            }
+            var sigmaHat = Math.sqrt(sum2 / nS);
+            var sigmaTrue = Math.sqrt(schedule.beta[tI]);
+            check('T7 DDPM noise scale = sqrt(beta) (4 sigma)',
+                Math.abs(sigmaHat - sigmaTrue) < 0.01);
+        })();
+
+        // T8: DDIM structure — τ schedule, determinism, final step = x̂_0,
+        // fixed densify semantics.
+        (function () {
+            var tau = buildDDIMSchedule(DDIM_STEPS);
+            var mono = tau[0] === 0 && tau[DDIM_STEPS] === T;
+            for (var i = 1; i <= DDIM_STEPS; i++) if (tau[i] <= tau[i - 1]) mono = false;
+            check('T8 tau schedule strict, endpoints', mono);
+            var pts = synthData(6, 13);
+            var eng = createScoreEngine(pts);
+            var xt = randnVec(DIM, mulberry32(3));
+            var a = ddimStep(xt, 60, 40, eng, schedule);
+            var b = ddimStep(xt, 60, 40, eng, schedule);
+            var det = true;
+            for (var d = 0; d < DIM; d++) if (a[d] !== b[d]) det = false;
+            check('T8 DDIM deterministic (bitwise)', det);
+            // final step to s = 0 returns x̂_0 exactly (ᾱ_0 = 1 ⇒ √(1-ᾱ_0) = 0)
+            var out = ddimStep(xt, 5, 0, eng, schedule);
+            var x0h = predictX0(xt, 4, eng, schedule);
+            var eq = true;
+            for (d = 0; d < DIM; d++) if (Math.abs(out[d] - x0h[d]) > 1e-14) eq = false;
+            check('T8 DDIM final step equals x0hat', eq);
+            // densify semantics: smallest τ_i ≥ t
+            var tau2 = Int32Array.from([0, 30, 70, 100]);
+            var idx = ddimDenseIndex(tau2);
+            check('T8 densify picks smallest tau >= t',
+                idx[0] === 0 && idx[1] === 1 && idx[30] === 1 && idx[31] === 2 &&
+                idx[70] === 2 && idx[71] === 3 && idx[100] === 3);
+        })();
+
+        // T9: singleton reverse — DDIM lands EXACTLY on the data point
+        // (ε̂ is exact for singleton data, so x̂_0 is exact at every step).
+        (function () {
+            var x0 = Float64Array.from([0.2, 0.6, -0.3, 0.5, -0.7]);
+            var eng = createScoreEngine([x0]);
+            var res = ddimReverseCloud([randnVec(DIM, mulberry32(31))], eng, schedule, 10);
+            var xEnd = res.sparseCloud[0][0];
+            var ok = true;
+            for (var d = 0; d < DIM; d++) if (Math.abs(xEnd[d] - x0[d]) > 1e-10) ok = false;
+            check('T9 singleton DDIM lands exactly on x0', ok);
+            // DDPM final state close to x0 (stochastic, seeded; measured margin)
+            var res2 = ddpmReverseCloud([randnVec(DIM, mulberry32(32))], eng, schedule, mulberry32(33));
+            var xE = res2.cloud[0][0];
+            var dist = 0;
+            for (d = 0; d < DIM; d++) { var e = xE[d] - x0[d]; dist += e * e; }
+            check('T9 singleton DDPM lands near x0 (<0.05)', Math.sqrt(dist) < 0.05);
+        })();
+
+        // T10: story test — the page's claims are tests. Two-cluster synthetic
+        // data (N=40): both samplers end near the data manifold, and the
+        // DDIM end-state is farther on average than DDPM (the "haze" the
+        // prose attributes to few-step discretisation error).
+        (function () {
+            var rng = mulberry32(2026);
+            var pts = [];
+            for (var i = 0; i < 40; i++) {
+                var c = (i % 2 === 0) ? 0.55 : -0.55;
+                var p = new Float64Array(DIM);
+                for (var d = 0; d < DIM; d++) p[d] = c + 0.08 * (2 * rng() - 1);
+                pts.push(p);
+            }
+            var eng = createScoreEngine(pts);
+            var xT = drawNoiseBatch(40, mulberry32(2027));
+            var ddpm = ddpmReverseCloud(xT, eng, schedule, mulberry32(2028));
+            var ddim = ddimReverseCloud(xT, eng, schedule, DDIM_STEPS);
+            function meanNearest(frame) {
+                var tot = 0;
+                for (var i = 0; i < frame.length; i++) {
+                    var best = Infinity;
+                    for (var j = 0; j < pts.length; j++) {
+                        var s = 0;
+                        for (var d = 0; d < DIM; d++) {
+                            var e = frame[i][d] - pts[j][d]; s += e * e;
+                        }
+                        if (s < best) best = s;
+                    }
+                    tot += Math.sqrt(best);
+                }
+                return tot / frame.length;
+            }
+            var mDdpm = meanNearest(ddpm.cloud[0]);
+            var mDdim = meanNearest(ddim.sparseCloud[0]);
+            check('T10 DDPM ends on manifold (<0.15)', mDdpm < 0.15);
+            check('T10 DDIM ends on manifold (<0.25)', mDdim < 0.25);
+            check('T10 DDIM residual exceeds DDPM (haze claim)', mDdim > mDdpm);
+            // by-product recording shape + x̂_0 consistency at one probe:
+            // recorded x̂_0 at time t equals predictX0 of the recorded state
+            var t = 60;
+            var xh = ddpm.x0hat[t][0];
+            var ref = predictX0(ddpm.cloud[t][0], t - 1, eng, schedule);
+            var eq = true;
+            for (var d2 = 0; d2 < DIM; d2++) if (Math.abs(xh[d2] - ref[d2]) > 1e-12) eq = false;
+            check('T10 recorded x0hat consistent with predictX0', eq);
+            // recorded scoreXY consistent with engine.score at the same state
+            var sc = eng.score(ddpm.cloud[t][0], t - 1, schedule);
+            var sxy = ddpm.scoreXY[t][0];
+            check('T10 recorded scoreXY consistent with score',
+                Math.abs(sxy[0] - sc[0]) < 1e-10 && Math.abs(sxy[1] - sc[1]) < 1e-10);
+            // one-code-path certificates (bitwise): the batch builders must
+            // reproduce the single-step functions exactly under the same rng
+            var xT1 = [randnVec(DIM, mulberry32(71))];
+            var b1 = ddpmReverseCloud(xT1, eng, schedule, mulberry32(72));
+            var s1 = ddpmStep(xT1[0], T - 1, eng, schedule, mulberry32(72));
+            var bw = true;
+            for (var d3 = 0; d3 < DIM; d3++) if (b1.cloud[T - 1][0][d3] !== s1[d3]) bw = false;
+            check('T10 DDPM batch == step (bitwise)', bw);
+            var b2 = ddimReverseCloud(xT1, eng, schedule, DDIM_STEPS);
+            var tau = b2.tauSchedule;
+            var s2 = ddimStep(xT1[0], tau[DDIM_STEPS], tau[DDIM_STEPS - 1], eng, schedule);
+            bw = true;
+            for (d3 = 0; d3 < DIM; d3++) if (b2.sparseCloud[DDIM_STEPS - 1][0][d3] !== s2[d3]) bw = false;
+            check('T10 DDIM batch == step (bitwise)', bw);
+        })();
+
+        // T11: forwardJump vs stepwise composition — moment consistency
+        // (seeded, hence deterministic): stepwise x_t must match the
+        // closed-form marginal N(√ᾱ_t x_0, (1-ᾱ_t) I).
+        (function () {
+            var x0 = Float64Array.from([0.4, -0.6, 0.2, 0.0, 0.5]);
+            var rng = mulberry32(404);
+            var tIdx = 60;
+            var n = 2000;
+            var mean = new Float64Array(DIM);
+            var m2 = new Float64Array(DIM);
+            for (var k = 0; k < n; k++) {
+                var x = Float64Array.from(x0);
+                for (var t = 0; t <= tIdx; t++) x = forwardStep(x, t, schedule, rng);
+                for (var d = 0; d < DIM; d++) { mean[d] += x[d]; m2[d] += x[d] * x[d]; }
+            }
+            var sAB = schedule.sqrtAlphaBar[tIdx];
+            var omab = 1 - schedule.alphaBar[tIdx];
+            // standardized 4-sigma bounds (deterministic given the seed):
+            // std(mean-hat) = sqrt(omab/n), std(var-hat) ~ omab*sqrt(2/n)
+            var seMean = Math.sqrt(omab / n);
+            var seVar = omab * Math.sqrt(2 / n);
+            var ok = true;
+            for (d = 0; d < DIM; d++) {
+                mean[d] /= n;
+                var v = m2[d] / n - mean[d] * mean[d];
+                if (Math.abs(mean[d] - sAB * x0[d]) / seMean > 4) ok = false;
+                if (Math.abs(v - omab) / seVar > 4) ok = false;
+            }
+            check('T11 stepwise matches closed-form marginal (4 sigma)', ok);
+        })();
+
+        return { passed: failures.length === 0, failures: failures };
     }
-    // reverse
-    return state.sampler === 'DDPM' ? state.ddpmCloud : state.ddimCloud;
-}
 
-/**
- * Get the point cloud at the current slider position.
- * @returns Array of Float32Array(DIM), length N
- */
-function getCurrentFrame(state) {
-    const cloud = getCurrentCloud(state);
-    return cloud[state.tIdx];
-}
-
-/**
- * Action: regenerate the reverse-direction starting noise.
- * Triggers a recompute of both DDPM and DDIM clouds.
- */
-function regenerateNoise(state) {
-    state.xTbatch = drawNoiseBatch(state.N);
-    rebuildReverseClouds(state);
-}
-
-/**
- * Reset slider to the natural starting state for the current direction:
- *   forward → tIdx = 0 (clean data)
- *   reverse → tIdx = T (pure noise)
- */
-function resetSliderPosition(state) {
-    state.tIdx = (state.direction === 'forward') ? 0 : T;
-}
-
-
-// ====== MODULE 6b ======
-// Canvas rendering.
-// Pure rendering: takes state and writes to canvas. No state mutation.
-// Theme-aware via CSS variables on html[data-theme="dark"].
-
-const CANVAS_LOGICAL_SIZE = 600;  // default logical px size (square)
-const PLOT_MARGIN = 0.18;         // fraction of canvas reserved as margin
-                                  // plot region = [PLOT_MARGIN, 1-PLOT_MARGIN] of canvas
-
-const POINT_RADIUS_PX = 2.5;      // visual radius of each point in CSS pixels
-
-// Theme-dependent palette. Resolved lazily from CSS custom properties so
-// the demo follows the user's site theme automatically.
-function getPalette() {
-    const isDark = (document.documentElement.getAttribute('data-theme') === 'dark');
     return {
-        bg:           isDark ? '#1a1d24' : '#f8f9fb',
-        bgFrame:      isDark ? '#252932' : '#eef0f3',
-        gridLine:     isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
-        axisLine:     isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.20)',
-        boundCircle:  isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.18)',
-        label:        isDark ? 'rgba(230,232,240,0.65)' : 'rgba(40,42,50,0.70)',
+        DIM: DIM, T: T, DDIM_STEPS: DDIM_STEPS,
+        BETA_MIN: BETA_MIN, BETA_MAX: BETA_MAX,
+        SCORE_LOG_THRESHOLD: SCORE_LOG_THRESHOLD,
+        mulberry32: mulberry32,
+        randn: randn,
+        randnVec: randnVec,
+        buildSchedule: buildSchedule,
+        alphaBarAt: alphaBarAt,
+        createScoreEngine: createScoreEngine,
+        scoreToNoise: scoreToNoise,
+        predictNoise: predictNoise,
+        predictX0: predictX0,
+        forwardStep: forwardStep,
+        forwardJump: forwardJump,
+        buildForwardCloud: buildForwardCloud,
+        createForwardBuilder: createForwardBuilder,
+        drawNoiseBatch: drawNoiseBatch,
+        ddpmStep: ddpmStep,
+        ddpmStepFromEps: ddpmStepFromEps,
+        ddpmReverseCloud: ddpmReverseCloud,
+        createDdpmBuilder: createDdpmBuilder,
+        buildDDIMSchedule: buildDDIMSchedule,
+        ddimStep: ddimStep,
+        ddimMapFromEps: ddimMapFromEps,
+        ddimReverseCloud: ddimReverseCloud,
+        createDdimBuilder: createDdimBuilder,
+        ddimDenseIndex: ddimDenseIndex,
+        DEFAULTS: DEFAULTS,
+        runSelfTests: runSelfTests
     };
-}
+})();
 
-/**
- * Initialize a canvas with DPR support, sized to fit its wrapper.
- *
- * The canvas's CSS size is controlled by CSS, which scales to
- * wrapper.clientWidth. We synchronize the canvas's internal pixel buffer
- * to that CSS size so the drawing surface stays sharp on any viewport
- * (mobile included).
- *
- * @param canvas  DOM canvas element
- * @param wrapper DOM element whose clientWidth dictates the canvas size
- * @returns {ctx, W, H} where W=H is the CSS pixel size used for drawing
- */
-function setupDiffusionCanvas(canvas, wrapper) {
-    const dpr = window.devicePixelRatio || 1;
-    const cssSize = Math.min(
-        (wrapper && wrapper.clientWidth) || CANVAS_LOGICAL_SIZE,
-        CANVAS_LOGICAL_SIZE
-    );
-    canvas.width  = Math.round(cssSize * dpr);
-    canvas.height = Math.round(cssSize * dpr);
-    // Do NOT set canvas.style.width/height — CSS handles sizing.
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(1, 0, 0, 1, 0, 0);  // reset before scaling (re-setup safety)
-    ctx.scale(dpr, dpr);
-    return { ctx, W: cssSize, H: cssSize };
-}
+if (typeof module !== 'undefined' && module.exports) { module.exports = DiffCore; }
+// ============================================================
+// UI layer (#diffusion_demo_visualizer, prefix dfv-)
+// Dark island: fixed palette; no var(--), no data-theme/currentColor reads.
+// Gate first; cloud builds are chunked (~40 ms slices) with live progress so
+// the 4-second DDPM build never freezes the page. Overlays: trajectory
+// trails, score vector field, x̂_0 ghost. Reverse t = 0 shows the mean
+// nearest-data distance (the DDPM-vs-DDIM haze, quantified on screen).
+// ============================================================
 
-/**
- * Convert math coordinate (x, y) ∈ [-1, +1]^2 to canvas pixel (cx, cy).
- * The visible math region [-1, +1] maps to the inner plot region of the canvas,
- * with PLOT_MARGIN reserved on each side for breathing room.
- *
- * Returns {cx, cy} in CSS pixel coordinates within the canvas.
- */
-function mathToPixel(x, y, W, H) {
-    const innerW = W * (1 - 2 * PLOT_MARGIN);
-    const innerH = H * (1 - 2 * PLOT_MARGIN);
-    const offsetX = W * PLOT_MARGIN;
-    const offsetY = H * PLOT_MARGIN;
-    // Math y points up; canvas y points down. Flip y.
-    const cx = offsetX + ((x + 1) / 2) * innerW;
-    const cy = offsetY + ((1 - y) / 2) * innerH;
-    return { cx, cy };
-}
+(function () {
+    'use strict';
 
-/**
- * Convert a 5D state value (the colour components) to an "rgb(...)" string.
- * Colour values in the demo live in [-1, +1]; we map to [0, 255] and clip.
- *
- * @param r,g,b channel values in [-1, +1] (may exceed during diffusion)
- * @returns string suitable for fillStyle
- */
-function colorString(r, g, b) {
-    const ri = Math.max(0, Math.min(255, Math.round((r + 1) * 127.5)));
-    const gi = Math.max(0, Math.min(255, Math.round((g + 1) * 127.5)));
-    const bi = Math.max(0, Math.min(255, Math.round((b + 1) * 127.5)));
-    return `rgb(${ri},${gi},${bi})`;
-}
-
-/**
- * Draw the static background: framed plot area, reference grid,
- * bounding circle (r = 0.9 in math units, where the data lives).
- */
-function drawBackground(ctx, W, H, palette) {
-    // Outer canvas fill
-    ctx.fillStyle = palette.bg;
-    ctx.fillRect(0, 0, W, H);
-
-    // Inner plot region with a slightly different shade
-    const offsetX = W * PLOT_MARGIN;
-    const offsetY = H * PLOT_MARGIN;
-    const innerW = W * (1 - 2 * PLOT_MARGIN);
-    const innerH = H * (1 - 2 * PLOT_MARGIN);
-    ctx.fillStyle = palette.bgFrame;
-    ctx.fillRect(offsetX, offsetY, innerW, innerH);
-
-    // Grid: light lines at math-coord 0
-    ctx.strokeStyle = palette.gridLine;
-    ctx.lineWidth = 1;
-    const origin = mathToPixel(0, 0, W, H);
-    ctx.beginPath();
-    ctx.moveTo(offsetX, origin.cy);
-    ctx.lineTo(offsetX + innerW, origin.cy);
-    ctx.moveTo(origin.cx, offsetY);
-    ctx.lineTo(origin.cx, offsetY + innerH);
-    ctx.stroke();
-
-    // Reference circle of radius 0.9 (the data extent)
-    ctx.strokeStyle = palette.boundCircle;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    const radiusPx = (0.9 / 2) * innerW;  // 0.9 in math units → pixels
-    ctx.arc(origin.cx, origin.cy, radiusPx, 0, 2 * Math.PI);
-    ctx.stroke();
-    ctx.setLineDash([]);
-}
-
-/**
- * Draw a frame label in the top-left corner of the canvas, e.g. "t = 87 / 100".
- */
-function drawTimeLabel(ctx, t, totalT, direction, sampler, W, H, palette) {
-    ctx.fillStyle = palette.label;
-    ctx.font = '13px ui-sans-serif, system-ui, sans-serif';
-    ctx.textBaseline = 'top';
-    // Forward direction does not depend on the choice of sampler, so we
-    // omit it from the label to avoid implying otherwise. Only the reverse
-    // direction uses a particular sampler (DDPM vs DDIM).
-    const directionLabel = direction === 'forward'
-        ? 'Forward'
-        : `Reverse · ${sampler}`;
-    const lines = [
-        `t = ${t} / ${totalT}`,
-        directionLabel,
-    ];
-    const x = 14;
-    let y = 14;
-    for (const line of lines) {
-        ctx.fillText(line, x, y);
-        y += 18;
-    }
-}
-
-/**
- * Render the current frame.
- *
- * @param state demo state
- * @param ctx canvas 2D context
- * @param W,H logical canvas size
- */
-function renderFrame(state, ctx, W, H) {
-    const palette = getPalette();
-    drawBackground(ctx, W, H, palette);
-
-    const frame = getCurrentFrame(state);
-    if (!frame) return;
-    const N = frame.length;
-
-    // Draw points as filled circles. Using fillRect+arc is faster than
-    // beginPath/arc/fill per point for hundreds of points.
-    for (let i = 0; i < N; i++) {
-        const p = frame[i];
-        const { cx, cy } = mathToPixel(p[0], p[1], W, H);
-        ctx.fillStyle = colorString(p[2], p[3], p[4]);
-        ctx.beginPath();
-        ctx.arc(cx, cy, POINT_RADIUS_PX, 0, 2 * Math.PI);
-        ctx.fill();
-    }
-
-    // Frame label
-    drawTimeLabel(ctx, state.tIdx, T, state.direction, state.sampler, W, H, palette);
-}
-
-
-// ====== MODULE 6c ======
-// HTML structure generation.
-// Builds the demo's DOM (canvas + controls) as an innerHTML string.
-// Element IDs are prefixed with `diff-` to avoid collisions on the page.
-
-/**
- * Return the full demo HTML as a string for innerHTML insertion into the
- * page-level container (#diffusion_demo_visualizer).
- *
- * Layout:
- *   .diff-demo-root
- *     .diff-canvas-wrap   (canvas + loading overlay)
- *     .diff-controls      (all interactive controls, vertically stacked)
- */
-function buildDemoHTML() {
-    return `
-<div class="diff-demo-root">
-
-    <div class="diff-canvas-wrap">
-        <canvas id="diff-canvas" class="diff-canvas"></canvas>
-        <div id="diff-loading" class="diff-loading">Computing trajectory…</div>
-    </div>
-
-    <div class="diff-controls">
-
-        <div class="diff-row diff-row-slider">
-            <label for="diff-time-slider" class="diff-label">Time</label>
-            <input id="diff-time-slider" type="range" min="0" max="${T}" value="0" step="1" class="diff-slider">
-            <span id="diff-time-val" class="diff-val">t = 0 / ${T}</span>
-        </div>
-
-        <div class="diff-row diff-row-toggles">
-            <div class="diff-toggle-group">
-                <span class="diff-group-label">Direction:</span>
-                <button id="diff-dir-forward" class="diff-seg-btn diff-seg-active" data-value="forward">Forward</button>
-                <button id="diff-dir-reverse" class="diff-seg-btn" data-value="reverse">Reverse</button>
-            </div>
-            <div class="diff-toggle-group">
-                <span class="diff-group-label">Sampler:</span>
-                <button id="diff-sampler-ddpm" class="diff-seg-btn diff-seg-active" data-value="DDPM">DDPM</button>
-                <button id="diff-sampler-ddim" class="diff-seg-btn" data-value="DDIM">DDIM</button>
-            </div>
-        </div>
-
-        <div class="diff-row diff-row-buttons">
-            <button id="diff-play-btn" class="diff-btn diff-btn-primary">▶ Play</button>
-            <button id="diff-reset-btn" class="diff-btn">↺ Reset</button>
-            <button id="diff-regen-btn" class="diff-btn">⟳ Regenerate noise</button>
-        </div>
-
-        <div class="diff-row diff-row-slider">
-            <label for="diff-speed-slider" class="diff-label">Speed</label>
-            <input id="diff-speed-slider" type="range" min="0" max="2" value="1" step="1" class="diff-slider">
-            <span id="diff-speed-val" class="diff-val">medium</span>
-        </div>
-
-    </div>
-
-</div>
-`;
-}
-
-/**
- * After buildDemoHTML's output has been inserted, collect references
- * to all interactive elements for event wiring in module 6e.
- *
- * @param container the demo root container element
- */
-function collectDOMRefs(container) {
-    const $ = (sel) => container.querySelector(sel);
-    return {
-        root:         $('.diff-demo-root'),
-        canvas:       $('#diff-canvas'),
-        loading:      $('#diff-loading'),
-
-        timeSlider:   $('#diff-time-slider'),
-        timeVal:      $('#diff-time-val'),
-
-        dirForward:   $('#diff-dir-forward'),
-        dirReverse:   $('#diff-dir-reverse'),
-
-        samplerDDPM:  $('#diff-sampler-ddpm'),
-        samplerDDIM:  $('#diff-sampler-ddim'),
-
-        playBtn:      $('#diff-play-btn'),
-        resetBtn:     $('#diff-reset-btn'),
-        regenBtn:     $('#diff-regen-btn'),
-
-        speedSlider:  $('#diff-speed-slider'),
-        speedVal:     $('#diff-speed-val'),
+    var C = {
+        bg: 'rgba(20,28,40,0.95)',
+        panelBg: 'rgba(28,38,54,0.95)',
+        border: 'rgba(90,110,140,0.5)',
+        text: '#dce6f2',
+        dim: '#8fa3bb',
+        accent: '#64b5f6',
+        good: '#66bb6a',
+        bad: '#ef5350',
+        warn: '#ffb74d',
+        axis: 'rgba(140,160,190,0.25)',
+        trail: 'rgba(255,183,77,0.85)',   // amber trails
+        trailNode: '#ffd54f',
+        arrow: 'rgba(77,208,225,0.75)'    // cyan score arrows
     };
-}
 
-/**
- * Helper: update segmented-button "active" state within a group.
- * Removes diff-seg-active from siblings of the same group, adds it to target.
- */
-function setActiveSegButton(group, activeBtn) {
-    for (const btn of group) {
-        if (btn === activeBtn) btn.classList.add('diff-seg-active');
-        else btn.classList.remove('diff-seg-active');
+    var TRAIL_COUNT = 12;    // tracked points
+    var TRAIL_LEN = 14;      // frames of history drawn
+    var ARROW_STRIDE = 5;    // every 5th point gets a score arrow (300 of 1500)
+    var ARROW_MAX_PX = 26;   // arrow length cap; length saturates with |score|
+    var PLOT_HALF = 2.2;     // math range [-PLOT_HALF, PLOT_HALF] fills the canvas
+
+    // ---------- CSS ----------
+    function injectCSS() {
+        if (document.getElementById('dfv-style')) return;
+        var css = '' +
+            '#diffusion_demo_visualizer{background:' + C.bg + ';border:1px solid ' + C.border + ';' +
+            'border-radius:10px;padding:16px;color:' + C.text + ';' +
+            'font-family:system-ui,-apple-system,"Segoe UI",sans-serif;}' +
+            '#diffusion_demo_visualizer .dfv-canvas-wrap{max-width:620px;margin:0 auto;}' +
+            '#diffusion_demo_visualizer .dfv-canvas{width:100%;display:block;border-radius:8px;' +
+            'border:1px solid ' + C.border + ';}' +
+            '#diffusion_demo_visualizer .dfv-legend{color:' + C.dim + ';font-size:0.75rem;margin-top:6px;' +
+            'text-align:center;min-height:1.1em;}' +
+            '#diffusion_demo_visualizer .dfv-metric{color:' + C.text + ';font-size:0.85rem;margin-top:4px;' +
+            'text-align:center;font-family:ui-monospace,Consolas,monospace;min-height:1.2em;}' +
+            '#diffusion_demo_visualizer .dfv-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;' +
+            'justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid ' + C.border + ';}' +
+            '#diffusion_demo_visualizer .dfv-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;' +
+            'justify-content:center;width:100%;}' +
+            '#diffusion_demo_visualizer .dfv-btn{background:transparent;color:' + C.accent + ';' +
+            'border:1px solid ' + C.accent + ';border-radius:6px;padding:6px 14px;font-size:0.88rem;cursor:pointer;}' +
+            '#diffusion_demo_visualizer .dfv-btn:hover{background:rgba(100,181,246,0.12);}' +
+            '#diffusion_demo_visualizer .dfv-btn:disabled{opacity:0.35;cursor:default;}' +
+            '#diffusion_demo_visualizer .dfv-seg{display:inline-flex;border:1px solid ' + C.border + ';' +
+            'border-radius:6px;overflow:hidden;}' +
+            '#diffusion_demo_visualizer .dfv-seg button{background:transparent;color:' + C.dim + ';border:none;' +
+            'padding:6px 12px;font-size:0.85rem;cursor:pointer;}' +
+            '#diffusion_demo_visualizer .dfv-seg button.dfv-active{background:rgba(100,181,246,0.18);color:' + C.text + ';}' +
+            '#diffusion_demo_visualizer .dfv-seg button:disabled{opacity:0.35;cursor:default;}' +
+            '#diffusion_demo_visualizer .dfv-ctl{display:flex;align-items:center;gap:6px;font-size:0.85rem;color:' + C.dim + ';}' +
+            '#diffusion_demo_visualizer .dfv-ctl input[type=range]{width:200px;}' +
+            '#diffusion_demo_visualizer .dfv-toggles{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;' +
+            'font-size:0.83rem;color:' + C.dim + ';}' +
+            '#diffusion_demo_visualizer .dfv-toggles label{display:flex;align-items:center;gap:5px;cursor:pointer;}' +
+            '#diffusion_demo_visualizer .dfv-status{margin-top:8px;font-size:0.8rem;color:' + C.dim + ';' +
+            'text-align:center;font-family:ui-monospace,Consolas,monospace;min-height:1.2em;}' +
+            '#diffusion_demo_visualizer .dfv-refusal{border:1px solid ' + C.bad + ';border-radius:8px;' +
+            'padding:14px;color:' + C.bad + ';}' +
+            '#diffusion_demo_visualizer .dfv-refusal ul{margin:8px 0 0 18px;padding:0;}' +
+            '@media (max-width: 700px){' +
+            '#diffusion_demo_visualizer{padding:10px;}' +
+            '#diffusion_demo_visualizer .dfv-ctl input[type=range]{width:140px;}' +
+            '}';
+        var style = document.createElement('style');
+        style.id = 'dfv-style';
+        style.textContent = css;
+        document.head.appendChild(style);
     }
-}
 
-/**
- * Sync DOM controls to current state. Called whenever state changes
- * (programmatic or user-driven) to keep UI consistent.
- */
-function syncControlsToState(state, refs) {
-    // Time slider
-    if (refs.timeSlider) {
+    // ---------- HTML ----------
+    function buildHTML(container) {
+        var T = DiffCore.T;
+        container.innerHTML =
+            '<div class="dfv-canvas-wrap">' +
+            '<canvas class="dfv-canvas" id="dfv-canvas"></canvas>' +
+            '<div class="dfv-legend" id="dfv-legend"></div>' +
+            '<div class="dfv-metric" id="dfv-metric"></div>' +
+            '</div>' +
+            '<div class="dfv-controls">' +
+            '<div class="dfv-row">' +
+            '<span class="dfv-ctl">t <input type="range" id="dfv-time" min="0" max="' + T + '" step="1" value="0">' +
+            '<span id="dfv-time-val">0 / ' + T + '</span></span>' +
+            '</div>' +
+            '<div class="dfv-row">' +
+            '<span class="dfv-seg" id="dfv-dir">' +
+            '<button id="dfv-dir-fwd" class="dfv-active">Forward</button>' +
+            '<button id="dfv-dir-rev">Reverse</button></span>' +
+            '<span class="dfv-seg" id="dfv-sampler">' +
+            '<button id="dfv-samp-ddpm" class="dfv-active" disabled>DDPM</button>' +
+            '<button id="dfv-samp-ddim" disabled>DDIM</button></span>' +
+            '<span class="dfv-seg" id="dfv-speed">' +
+            '<button id="dfv-speed-slow">Slow</button>' +
+            '<button id="dfv-speed-med" class="dfv-active">Medium</button>' +
+            '<button id="dfv-speed-fast">Fast</button></span>' +
+            '</div>' +
+            '<div class="dfv-row">' +
+            '<button class="dfv-btn" id="dfv-play">&#9654; Play</button>' +
+            '<button class="dfv-btn" id="dfv-reset">&#8634; Reset</button>' +
+            '<button class="dfv-btn" id="dfv-regen">&#10227; Regenerate noise</button>' +
+            '</div>' +
+            '<div class="dfv-toggles">' +
+            '<label><input type="checkbox" id="dfv-tg-trails" checked> Trails</label>' +
+            '<label><input type="checkbox" id="dfv-tg-score"> Score field</label>' +
+            '<label><input type="checkbox" id="dfv-tg-ghost"> x&#770;<sub>0</sub> ghost</label>' +
+            '</div>' +
+            '</div>' +
+            '<div class="dfv-status" id="dfv-status"></div>';
+    }
+
+    function renderRefusal(container, title, items) {
+        injectCSS();
+        var lis = '';
+        for (var i = 0; i < items.length; i++) lis += '<li>' + items[i] + '</li>';
+        container.innerHTML =
+            '<div class="dfv-refusal"><strong>' + title + '</strong>' +
+            (items.length ? '<ul>' + lis + '</ul>' : '') +
+            '<p>The demo refuses to render rather than display unverified quantities.</p></div>';
+    }
+
+    // ---------- canvas ----------
+    function sizeCanvas(canvas) {
+        var rect = canvas.getBoundingClientRect();
+        var w = Math.max(1, Math.round(rect.width));
+        var h = w; // square plot, isotropic mapping
+        var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+        canvas.style.height = h + 'px';
+        var ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { ctx: ctx, W: w, H: h };
+    }
+
+    function toPx(x, y, W, H) {
+        return {
+            x: ((x + PLOT_HALF) / (2 * PLOT_HALF)) * W,
+            y: ((PLOT_HALF - y) / (2 * PLOT_HALF)) * H
+        };
+    }
+
+    function colorOf(p) {
+        var r = Math.max(0, Math.min(255, Math.round((p[2] + 1) * 127.5)));
+        var g = Math.max(0, Math.min(255, Math.round((p[3] + 1) * 127.5)));
+        var b = Math.max(0, Math.min(255, Math.round((p[4] + 1) * 127.5)));
+        return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+
+    // ---------- state ----------
+    function makeState(dataPts) {
+        var D = DiffCore.DEFAULTS;
+        return {
+            dataPts: dataPts,
+            N: dataPts.length,
+            schedule: DiffCore.buildSchedule(),
+            engine: DiffCore.createScoreEngine(dataPts),
+            noiseSeed: D.noiseSeed,
+            direction: 'forward',
+            sampler: 'DDPM',
+            tIdx: 0,
+            playing: false,
+            fps: 20,
+            overlays: { trails: true, score: false, ghost: false },
+            forwardCloud: null,
+            ddpm: null,           // {cloud, x0hat, scoreXY}
+            ddim: null,           // {sparseCloud, x0hatSparse, scoreXYSparse, tauSchedule}
+            ddimIdx: null,        // dense index map
+            reverseReady: false,
+            forwardScoreCache: {},   // t -> decimated [x,y,sx,sy] arrays
+            metricCache: {},         // 'ddpm'|'ddim' -> number
+            trailIdx: null,
+            animTimer: null,
+            buildToken: 0
+        };
+    }
+
+    function pickTrailIndices(N) {
+        var out = [];
+        var stride = Math.max(1, Math.floor(N / TRAIL_COUNT));
+        for (var i = 0; i < N && out.length < TRAIL_COUNT; i += stride) out.push(i);
+        return out;
+    }
+
+    // frame for the current (direction, sampler, tIdx)
+    function frameAt(state, t) {
+        if (state.direction === 'forward') return state.forwardCloud[t];
+        if (state.sampler === 'DDPM') return state.ddpm.cloud[t];
+        return state.ddim.sparseCloud[state.ddimIdx[t]];
+    }
+
+    // recorded score (x,y) list for reverse at time t, or null
+    function scoreAtReverse(state, t) {
+        if (t === 0) return null;
+        if (state.sampler === 'DDPM') return state.ddpm.scoreXY[t];
+        var i = state.ddimIdx[t];
+        if (i === 0) return null;
+        return state.ddim.scoreXYSparse[i];
+    }
+
+    // x̂_0 list for reverse at time t, or null
+    function x0hatAtReverse(state, t) {
+        if (t === 0) return null;
+        if (state.sampler === 'DDPM') return state.ddpm.x0hat[t];
+        var i = state.ddimIdx[t];
+        if (i === 0) return null;
+        return state.ddim.x0hatSparse[i];
+    }
+
+    // lazily computed, cached, decimated forward score field at time t
+    function forwardScoreAt(state, t) {
+        if (t === 0) return null; // score of the data delta mixture is undefined at t=0
+        if (state.forwardScoreCache[t]) return state.forwardScoreCache[t];
+        var frame = state.forwardCloud[t];
+        var out = [];
+        for (var i = 0; i < frame.length; i += ARROW_STRIDE) {
+            var s = state.engine.score(frame[i], t - 1, state.schedule);
+            out.push([frame[i][0], frame[i][1], s[0], s[1]]);
+        }
+        state.forwardScoreCache[t] = out;
+        return out;
+    }
+
+    // mean nearest-data distance of a frame (full 5-D), cached per cloud
+    function meanNearestDistance(state, frame) {
+        var pts = state.dataPts;
+        var tot = 0;
+        for (var i = 0; i < frame.length; i++) {
+            var best = Infinity;
+            for (var j = 0; j < pts.length; j++) {
+                var s = 0;
+                for (var d = 0; d < 5; d++) {
+                    var e = frame[i][d] - pts[j][d];
+                    s += e * e;
+                }
+                if (s < best) best = s;
+            }
+            tot += Math.sqrt(best);
+        }
+        return tot / frame.length;
+    }
+
+    // ---------- drawing ----------
+    function drawFrame(state, cv) {
+        var ctx = cv.ctx, W = cv.W, H = cv.H;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = C.bg;
+        ctx.fillRect(0, 0, W, H);
+
+        // axes
+        ctx.strokeStyle = C.axis;
+        ctx.lineWidth = 1;
+        var o = toPx(0, 0, W, H);
+        ctx.beginPath(); ctx.moveTo(0, o.y); ctx.lineTo(W, o.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(o.x, 0); ctx.lineTo(o.x, H); ctx.stroke();
+        // unit box guide (the data lives in [-1,1]^2 spatially)
+        var a = toPx(-1, 1, W, H), b = toPx(1, -1, W, H);
+        ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
+
+        var t = state.tIdx;
+        var frame = frameAt(state, t);
+
+        // ghost x̂_0 (reverse only), drawn beneath the live points
+        if (state.overlays.ghost && state.direction === 'reverse') {
+            var gh = x0hatAtReverse(state, t);
+            if (gh) {
+                ctx.globalAlpha = 0.35;
+                for (var i = 0; i < gh.length; i++) {
+                    var gp = toPx(gh[i][0], gh[i][1], W, H);
+                    ctx.fillStyle = colorOf(gh[i]);
+                    ctx.beginPath();
+                    ctx.arc(gp.x, gp.y, 1.6, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // main points
+        for (i = 0; i < frame.length; i++) {
+            var p = toPx(frame[i][0], frame[i][1], W, H);
+            ctx.fillStyle = colorOf(frame[i]);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2.4, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        // score field arrows
+        if (state.overlays.score) {
+            var arrows = null;
+            if (state.direction === 'forward') {
+                arrows = forwardScoreAt(state, t);
+            } else {
+                var sc = scoreAtReverse(state, t);
+                if (sc) {
+                    frame = frameAt(state, t);
+                    arrows = [];
+                    for (i = 0; i < frame.length; i += ARROW_STRIDE) {
+                        arrows.push([frame[i][0], frame[i][1], sc[i][0], sc[i][1]]);
+                    }
+                }
+            }
+            if (arrows) {
+                ctx.strokeStyle = C.arrow;
+                ctx.fillStyle = C.arrow;
+                ctx.lineWidth = 1.2;
+                for (i = 0; i < arrows.length; i++) {
+                    var ar = arrows[i];
+                    var mag = Math.hypot(ar[2], ar[3]);
+                    if (mag < 1e-12) continue;
+                    // saturating length: L = MAX * |s| / (|s| + 2)
+                    var L = ARROW_MAX_PX * mag / (mag + 2.0);
+                    var ux = ar[2] / mag, uy = ar[3] / mag;
+                    var p0 = toPx(ar[0], ar[1], W, H);
+                    var x1 = p0.x + ux * L, y1 = p0.y - uy * L;
+                    ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(x1, y1); ctx.stroke();
+                    // arrowhead
+                    var hx = -ux * 4, hy = uy * 4;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x1 + hx - hy * 0.6, y1 + hy + hx * 0.6);
+                    ctx.lineTo(x1 + hx + hy * 0.6, y1 + hy - hx * 0.6);
+                    ctx.closePath(); ctx.fill();
+                }
+            }
+        }
+
+        // trails (drawn on top so tracked points stay findable)
+        if (state.overlays.trails) {
+            var idxs = state.trailIdx;
+            ctx.lineWidth = 1.4;
+            for (var k = 0; k < idxs.length; k++) {
+                var pi = idxs[k];
+                // history: frames from t towards the trajectory's past
+                // (forward: t-1, ..., t-TRAIL_LEN; reverse: t+1, ..., t+TRAIL_LEN)
+                var pts = [];
+                for (var m = 0; m <= TRAIL_LEN; m++) {
+                    var tm = state.direction === 'forward' ? t - m : t + m;
+                    if (tm < 0 || tm > DiffCore.T) break;
+                    var fr = frameAt(state, tm);
+                    pts.push(fr[pi]);
+                }
+                for (m = 0; m + 1 < pts.length; m++) {
+                    var q0 = toPx(pts[m][0], pts[m][1], W, H);
+                    var q1 = toPx(pts[m + 1][0], pts[m + 1][1], W, H);
+                    ctx.globalAlpha = 0.85 * (1 - m / (TRAIL_LEN + 1));
+                    ctx.strokeStyle = C.trail;
+                    ctx.beginPath(); ctx.moveTo(q0.x, q0.y); ctx.lineTo(q1.x, q1.y); ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+                if (pts.length > 0) {
+                    var head = toPx(pts[0][0], pts[0][1], W, H);
+                    ctx.fillStyle = C.trailNode;
+                    ctx.beginPath(); ctx.arc(head.x, head.y, 3.2, 0, 2 * Math.PI); ctx.fill();
+                    ctx.strokeStyle = '#1a2230';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.lineWidth = 1.4;
+                }
+            }
+        }
+    }
+
+    function legendText(state) {
+        var parts = ['points: (x, y) position, (r, g, b) color',
+            'box: the [-1,1]\u00b2 data square'];
+        if (state.overlays.trails) parts.push('amber: trails of ' + TRAIL_COUNT + ' tracked points');
+        if (state.overlays.score) parts.push('cyan arrows: score direction (length saturates with magnitude)');
+        if (state.overlays.ghost && state.direction === 'reverse') parts.push('faint: x\u0302\u2080 prediction');
+        return parts.join(' \u00b7 ');
+    }
+
+    function renderMetric(state, refs) {
+        var el = refs.metric;
+        if (state.direction === 'reverse' && state.tIdx === 0 && state.reverseReady) {
+            var key = state.sampler === 'DDPM' ? 'ddpm' : 'ddim';
+            if (state.metricCache[key] === undefined) {
+                state.metricCache[key] = meanNearestDistance(state, frameAt(state, 0));
+            }
+            el.textContent = state.sampler + ' end state: mean distance to data = ' +
+                state.metricCache[key].toFixed(4);
+        } else {
+            el.textContent = '';
+        }
+    }
+
+    function renderAll(state, refs, cv) {
+        drawFrame(state, cv);
+        refs.legend.textContent = legendText(state);
+        refs.timeVal.textContent = state.tIdx + ' / ' + DiffCore.T;
         refs.timeSlider.value = String(state.tIdx);
-        refs.timeVal.textContent = `t = ${state.tIdx} / ${T}`;
+        renderMetric(state, refs);
     }
-    // Direction
-    setActiveSegButton([refs.dirForward, refs.dirReverse],
-        state.direction === 'forward' ? refs.dirForward : refs.dirReverse);
-    // Sampler
-    setActiveSegButton([refs.samplerDDPM, refs.samplerDDIM],
-        state.sampler === 'DDPM' ? refs.samplerDDPM : refs.samplerDDIM);
-    // Play button label
-    if (refs.playBtn) {
-        refs.playBtn.textContent = state.playing ? '❚❚ Pause' : '▶ Play';
-    }
-    // Speed
-    if (refs.speedSlider) {
-        const speedIdx = { slow: 0, medium: 1, fast: 2 }[state.speed] ?? 1;
-        refs.speedSlider.value = String(speedIdx);
-        refs.speedVal.textContent = state.speed;
-    }
-}
 
-/**
- * Show or hide the loading overlay.
- */
-function setLoading(refs, visible) {
-    if (!refs.loading) return;
-    refs.loading.style.display = visible ? 'flex' : 'none';
-}
-
-
-// ====== MODULE 6c ======
-// HTML structure generation.
-// Produces the innerHTML for the demo container. All interactive elements
-// receive stable IDs so collectDOMRefs (in module 6e) can find them.
-
-/**
- * Build the demo's inner HTML as a string. The result is meant to be
- * assigned to container.innerHTML during initialization.
- */
-function buildDemoHTML() {
-    return `
-      <div class="diffusion-container">
-
-        <!-- Canvas with computing overlay -->
-        <div class="diffusion-canvas-wrap" id="diffusion-canvas-wrap">
-          <canvas id="diffusion-canvas"></canvas>
-          <div class="diffusion-status" id="diffusion-status">
-            <div class="diffusion-status-inner">
-              <div class="diffusion-status-spinner"></div>
-              <div class="diffusion-status-text" id="diffusion-status-text">
-                Preparing diffusion trajectories…
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Time slider (always above controls, full width) -->
-        <div class="diffusion-time-control">
-          <label class="diffusion-time-label">Time step</label>
-          <input type="range" id="diffusion-time-slider"
-                 min="0" max="${T}" step="1" value="0"
-                 class="diffusion-slider">
-          <span class="diffusion-time-readout" id="diffusion-time-readout">0 / ${T}</span>
-        </div>
-
-        <!-- Controls grid (2 columns on desktop, stacked on mobile) -->
-        <div class="diffusion-controls">
-
-          <!-- Toggle group: direction -->
-          <div class="diffusion-control-group">
-            <div class="diffusion-control-label">Direction</div>
-            <div class="diffusion-segmented" role="tablist">
-              <button class="diffusion-seg-btn diffusion-seg-active"
-                      id="diffusion-direction-fwd" data-direction="forward">
-                Forward
-              </button>
-              <button class="diffusion-seg-btn"
-                      id="diffusion-direction-rev" data-direction="reverse">
-                Reverse
-              </button>
-            </div>
-            <div class="diffusion-control-hint" id="diffusion-direction-hint">
-              Data → noise
-            </div>
-          </div>
-
-          <!-- Toggle group: sampler -->
-          <div class="diffusion-control-group">
-            <div class="diffusion-control-label">Sampler</div>
-            <div class="diffusion-segmented" role="tablist">
-              <button class="diffusion-seg-btn diffusion-seg-active"
-                      id="diffusion-sampler-ddpm" data-sampler="DDPM">
-                DDPM
-              </button>
-              <button class="diffusion-seg-btn"
-                      id="diffusion-sampler-ddim" data-sampler="DDIM">
-                DDIM
-              </button>
-            </div>
-            <div class="diffusion-control-hint" id="diffusion-sampler-hint">
-              Stochastic, ${T} steps
-            </div>
-          </div>
-
-          <!-- Action buttons -->
-          <div class="diffusion-control-group">
-            <div class="diffusion-control-label">Actions</div>
-            <div class="diffusion-action-row">
-              <button class="diffusion-action-btn diffusion-action-primary"
-                      id="diffusion-play-btn">
-                <span id="diffusion-play-icon">▶</span>
-                <span id="diffusion-play-label">Play</span>
-              </button>
-              <button class="diffusion-action-btn"
-                      id="diffusion-reset-btn">↺ Reset</button>
-              <button class="diffusion-action-btn"
-                      id="diffusion-regen-btn">⟳ Regenerate noise</button>
-            </div>
-          </div>
-
-          <!-- Speed -->
-          <div class="diffusion-control-group">
-            <div class="diffusion-control-label">Animation speed</div>
-            <div class="diffusion-segmented">
-              <button class="diffusion-seg-btn"
-                      id="diffusion-speed-slow" data-speed="slow">Slow</button>
-              <button class="diffusion-seg-btn diffusion-seg-active"
-                      id="diffusion-speed-med" data-speed="medium">Medium</button>
-              <button class="diffusion-seg-btn"
-                      id="diffusion-speed-fast" data-speed="fast">Fast</button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    `;
-}
-
-/**
- * Collect DOM element references from the container after innerHTML insertion.
- * Returns an object with named handles to every interactive element.
- *
- * @param container the root element (#diffusion_demo_visualizer)
- */
-function collectDOMRefs(container) {
-    const $ = (sel) => container.querySelector(sel);
-    return {
-        canvas:          $('#diffusion-canvas'),
-        canvasWrap:      $('#diffusion-canvas-wrap'),
-        status:          $('#diffusion-status'),
-        statusText:      $('#diffusion-status-text'),
-
-        timeSlider:      $('#diffusion-time-slider'),
-        timeReadout:     $('#diffusion-time-readout'),
-
-        directionFwdBtn: $('#diffusion-direction-fwd'),
-        directionRevBtn: $('#diffusion-direction-rev'),
-        directionHint:   $('#diffusion-direction-hint'),
-
-        samplerDDPMBtn:  $('#diffusion-sampler-ddpm'),
-        samplerDDIMBtn:  $('#diffusion-sampler-ddim'),
-        samplerHint:     $('#diffusion-sampler-hint'),
-
-        playBtn:         $('#diffusion-play-btn'),
-        playIcon:        $('#diffusion-play-icon'),
-        playLabel:       $('#diffusion-play-label'),
-        resetBtn:        $('#diffusion-reset-btn'),
-        regenBtn:        $('#diffusion-regen-btn'),
-
-        speedSlowBtn:    $('#diffusion-speed-slow'),
-        speedMedBtn:     $('#diffusion-speed-med'),
-        speedFastBtn:    $('#diffusion-speed-fast'),
-    };
-}
-
-
-// ====== MODULE 6d ======
-// CSS injection.
-// Theme-aware via html[data-theme="dark"]. Mobile-responsive at 640px breakpoint.
-
-const DIFFUSION_DEMO_CSS = `
-/* ===== CSS variables: light theme default ===== */
-.diffusion-container {
-    --d-bg:           #f8f9fb;
-    --d-bg-frame:     #ffffff;
-    --d-fg:           #1f2330;
-    --d-fg-muted:     #5a6172;
-    --d-border:       #d6dae3;
-    --d-border-hover: #b8becb;
-    --d-accent:       #0731a4;
-    --d-accent-fg:    #ffffff;
-    --d-accent-soft:  rgba(7, 49, 164, 0.08);
-    --d-shadow:       0 1px 3px rgba(0, 0, 0, 0.04);
-}
-html[data-theme="dark"] .diffusion-container {
-    --d-bg:           #1a1d24;
-    --d-bg-frame:     #252932;
-    --d-fg:           #e6e8f0;
-    --d-fg-muted:     #969baa;
-    --d-border:       #3a3f4b;
-    --d-border-hover: #4d5360;
-    --d-accent:       #4a78d8;
-    --d-accent-fg:    #ffffff;
-    --d-accent-soft:  rgba(74, 120, 216, 0.15);
-    --d-shadow:       0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-/* ===== Container ===== */
-.diffusion-container {
-    width: 100%;
-    max-width: 720px;
-    margin: 1em auto;
-    padding: 18px;
-    box-sizing: border-box;
-    background: var(--d-bg);
-    color: var(--d-fg);
-    border: 1px solid var(--d-border);
-    border-radius: 10px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-/* ===== Canvas wrap with status overlay ===== */
-.diffusion-canvas-wrap {
-    position: relative;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto 16px;
-    aspect-ratio: 1;
-}
-.diffusion-canvas-wrap canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    border-radius: 6px;
-    background: var(--d-bg-frame);
-}
-.diffusion-status {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--d-bg-frame);
-    border-radius: 6px;
-    z-index: 2;
-    transition: opacity 0.3s ease;
-}
-.diffusion-status.diffusion-hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-.diffusion-status-inner {
-    text-align: center;
-}
-.diffusion-status-spinner {
-    width: 36px;
-    height: 36px;
-    margin: 0 auto 12px;
-    border: 3px solid var(--d-border);
-    border-top-color: var(--d-accent);
-    border-radius: 50%;
-    animation: diffusion-spin 0.9s linear infinite;
-}
-@keyframes diffusion-spin {
-    to { transform: rotate(360deg); }
-}
-.diffusion-status-text {
-    font-size: 0.9rem;
-    color: var(--d-fg-muted);
-}
-
-/* ===== Time slider (full-width, prominent) ===== */
-.diffusion-time-control {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-.diffusion-time-label {
-    flex: 0 0 auto;
-    font-size: 0.85rem;
-    color: var(--d-fg-muted);
-    font-weight: 500;
-}
-.diffusion-slider {
-    flex: 1 1 auto;
-    -webkit-appearance: none;
-    appearance: none;
-    height: 6px;
-    background: var(--d-border);
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
-}
-.diffusion-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    background: var(--d-accent);
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid var(--d-bg);
-    box-shadow: var(--d-shadow);
-}
-.diffusion-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: var(--d-accent);
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid var(--d-bg);
-}
-.diffusion-time-readout {
-    flex: 0 0 auto;
-    font-size: 0.85rem;
-    color: var(--d-fg);
-    font-variant-numeric: tabular-nums;
-    min-width: 70px;
-    text-align: right;
-}
-
-/* ===== Controls grid ===== */
-.diffusion-controls {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
-}
-.diffusion-control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-.diffusion-control-label {
-    font-size: 0.75rem;
-    color: var(--d-fg-muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.diffusion-control-hint {
-    font-size: 0.78rem;
-    color: var(--d-fg-muted);
-    line-height: 1.3;
-    min-height: 1em;
-}
-
-/* ===== Segmented buttons ===== */
-.diffusion-segmented {
-    display: inline-flex;
-    border: 1px solid var(--d-border);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--d-bg-frame);
-}
-.diffusion-seg-btn {
-    flex: 1 1 auto;
-    padding: 8px 12px;
-    font-size: 0.85rem;
-    color: var(--d-fg);
-    background: transparent;
-    border: none;
-    border-right: 1px solid var(--d-border);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    font-family: inherit;
-    min-height: 36px;
-}
-.diffusion-seg-btn:last-child {
-    border-right: none;
-}
-.diffusion-seg-btn:hover:not(.diffusion-seg-active) {
-    background: var(--d-accent-soft);
-}
-.diffusion-seg-btn.diffusion-seg-active {
-    background: var(--d-accent);
-    color: var(--d-accent-fg);
-    font-weight: 500;
-}
-.diffusion-segmented.diffusion-disabled {
-    opacity: 0.45;
-    pointer-events: none;
-}
-
-/* ===== Action buttons ===== */
-.diffusion-action-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-.diffusion-action-btn {
-    padding: 8px 14px;
-    font-size: 0.85rem;
-    color: var(--d-fg);
-    background: var(--d-bg-frame);
-    border: 1px solid var(--d-border);
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: inherit;
-    min-height: 36px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    transition: background 0.15s, border-color 0.15s;
-}
-.diffusion-action-btn:hover {
-    background: var(--d-accent-soft);
-    border-color: var(--d-border-hover);
-}
-.diffusion-action-btn:active {
-    transform: translateY(1px);
-}
-.diffusion-action-primary {
-    background: var(--d-accent);
-    color: var(--d-accent-fg);
-    border-color: var(--d-accent);
-}
-.diffusion-action-primary:hover {
-    background: var(--d-accent);
-    border-color: var(--d-accent);
-    filter: brightness(1.08);
-}
-
-/* ===== Mobile responsive ===== */
-@media (max-width: 640px) {
-    .diffusion-container {
-        padding: 12px;
-    }
-    .diffusion-time-control {
-        flex-wrap: wrap;
-    }
-    .diffusion-time-label {
-        flex: 1 1 100%;
-    }
-    .diffusion-slider {
-        flex: 1 1 calc(100% - 80px);
-    }
-    .diffusion-controls {
-        grid-template-columns: 1fr;
-    }
-    .diffusion-action-row {
-        flex-direction: column;
-    }
-    .diffusion-action-btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-`;
-
-/**
- * Inject the demo's CSS into the document head, once.
- * Subsequent calls are no-ops.
- */
-function injectDiffusionDemoCSS() {
-    if (document.getElementById('diffusion-demo-style')) return;
-    const style = document.createElement('style');
-    style.id = 'diffusion-demo-style';
-    style.textContent = DIFFUSION_DEMO_CSS;
-    document.head.appendChild(style);
-}
-
-
-// ====== MODULE 6e ======
-// Event handlers, animation loop, and entry point.
-// Wires together state, rendering, and DOM controls.
-
-const DIRECTION_HINT = {
-    forward: 'Data → noise',
-    reverse: 'Noise → data',
-};
-const SAMPLER_HINT = {
-    DDPM: `Stochastic, ${T} steps`,
-    DDIM: `Deterministic, ${DDIM_STEPS} steps`,
-};
-
-/**
- * Update the active segmented-button state for a control group.
- * @param btns array of button elements
- * @param activeIdx index of the button to mark active
- */
-function setSegmentedActive(btns, activeIdx) {
-    for (let i = 0; i < btns.length; i++) {
-        if (i === activeIdx) {
-            btns[i].classList.add('diffusion-seg-active');
-        } else {
-            btns[i].classList.remove('diffusion-seg-active');
-        }
-    }
-}
-
-/**
- * Synchronize the slider readout and slider position to state.tIdx.
- */
-function syncTimeUI(state, refs) {
-    refs.timeSlider.value = String(state.tIdx);
-    refs.timeReadout.textContent = `${state.tIdx} / ${T}`;
-}
-
-/**
- * Update the play button label/icon based on playing state.
- */
-function updatePlayButton(refs, isPlaying) {
-    if (isPlaying) {
-        refs.playIcon.textContent = '❚❚';
-        refs.playLabel.textContent = 'Pause';
-    } else {
-        refs.playIcon.textContent = '▶';
-        refs.playLabel.textContent = 'Play';
-    }
-}
-
-/**
- * Synchronize the direction toggle UI to state.direction.
- */
-function syncDirectionUI(state, refs) {
-    const fwd = state.direction === 'forward';
-    setSegmentedActive([refs.directionFwdBtn, refs.directionRevBtn], fwd ? 0 : 1);
-    refs.directionHint.textContent = DIRECTION_HINT[state.direction];
-}
-
-/**
- * Synchronize the sampler toggle UI to state.sampler and state.direction.
- * In forward direction the sampler choice has no effect, so we visually
- * disable the segmented control and replace the hint with an explanation.
- */
-function syncSamplerUI(state, refs) {
-    const isDDPM = state.sampler === 'DDPM';
-    setSegmentedActive([refs.samplerDDPMBtn, refs.samplerDDIMBtn], isDDPM ? 0 : 1);
-
-    const samplerSegmented = refs.samplerDDPMBtn.parentElement;
-    if (state.direction === 'forward') {
-        samplerSegmented.classList.add('diffusion-disabled');
-        refs.samplerHint.textContent = 'Applies only to the reverse direction';
-    } else {
-        samplerSegmented.classList.remove('diffusion-disabled');
-        refs.samplerHint.textContent = SAMPLER_HINT[state.sampler];
-    }
-}
-
-/**
- * Synchronize the speed buttons to state.speed.
- */
-function syncSpeedUI(state, refs) {
-    const idx = { slow: 0, medium: 1, fast: 2 }[state.speed];
-    setSegmentedActive([refs.speedSlowBtn, refs.speedMedBtn, refs.speedFastBtn], idx);
-}
-
-/**
- * Animation loop using requestAnimationFrame.
- * Advances state.tIdx by 1 each "tick" based on state.speed.
- * `canvasState` is read at draw time so a resize mid-animation is picked up.
- */
-function animationLoop(state, refs, canvasState) {
-    if (!state.playing) return;
-    const now = performance.now();
-    const fps = SPEED_FPS[state.speed] || 20;
-    const interval = 1000 / fps;
-    if (now - state.lastFrameTime >= interval) {
-        state.lastFrameTime = now;
-        if (state.direction === 'forward') {
-            state.tIdx++;
-            if (state.tIdx >= T) {
-                state.tIdx = T;
-                state.playing = false;
+    // ---------- build orchestration (chunked) ----------
+    function runBuilders(state, refs, cv, builders, label, onDone) {
+        var token = ++state.buildToken;
+        var total = builders.length;
+        function slice() {
+            if (token !== state.buildToken) return; // superseded (e.g. re-regenerate)
+            var t0 = Date.now();
+            while (Date.now() - t0 < 40) {
+                if (builders.length === 0) break;
+                if (!builders[0].b.stepOnce()) {
+                    builders[0].done();
+                    builders.shift();
+                }
             }
-        } else {
-            state.tIdx--;
-            if (state.tIdx <= 0) {
-                state.tIdx = 0;
-                state.playing = false;
+            if (builders.length === 0) {
+                refs.status.textContent = '';
+                onDone();
+                return;
             }
+            var done = total - builders.length;
+            var frac = (done + builders[0].b.progress()) / total;
+            refs.status.textContent = label + ' ' + Math.round(frac * 100) + '%';
+            setTimeout(slice, 0);
         }
-        syncTimeUI(state, refs);
-        renderFrame(state, canvasState.ctx, canvasState.W, canvasState.H);
-        if (!state.playing) updatePlayButton(refs, false);
+        setTimeout(slice, 0);
     }
-    if (state.playing) {
-        state.animationHandle = requestAnimationFrame(
-            () => animationLoop(state, refs, canvasState)
-        );
+
+    function buildReverse(state, refs, cv, onDone) {
+        state.reverseReady = false;
+        state.metricCache = {};
+        refs.sampDdpm.disabled = true;
+        refs.sampDdim.disabled = true;
+        refs.regenBtn.disabled = true;
+        var D = DiffCore.DEFAULTS;
+        var xT = DiffCore.drawNoiseBatch(state.N, DiffCore.mulberry32(state.noiseSeed));
+        var bDdpm = DiffCore.createDdpmBuilder(xT, state.engine, state.schedule,
+            DiffCore.mulberry32(D.ddpmSeed));
+        var bDdim = DiffCore.createDdimBuilder(xT, state.engine, state.schedule,
+            DiffCore.DDIM_STEPS);
+        runBuilders(state, refs, cv, [
+            { b: bDdpm, done: function () { state.ddpm = bDdpm.result(); } },
+            { b: bDdim, done: function () {
+                state.ddim = bDdim.result();
+                state.ddimIdx = DiffCore.ddimDenseIndex(state.ddim.tauSchedule);
+            } }
+        ], 'computing reverse trajectories\u2026', function () {
+            state.reverseReady = true;
+            refs.sampDdpm.disabled = false;
+            refs.sampDdim.disabled = false;
+            refs.regenBtn.disabled = false;
+            if (onDone) onDone();
+            renderAll(state, refs, cv);
+        });
     }
-}
 
-/**
- * Stop the running animation (if any).
- */
-function stopAnimation(state, refs) {
-    if (state.animationHandle != null) {
-        cancelAnimationFrame(state.animationHandle);
-        state.animationHandle = null;
-    }
-    state.playing = false;
-    updatePlayButton(refs, false);
-}
+    // ---------- init ----------
+    function init() {
+        var container = document.getElementById('diffusion_demo_visualizer');
+        if (!container) return;
+        if (container.dataset.dfvInit) return; // idempotency guard
+        container.dataset.dfvInit = '1';
 
-/**
- * Start (or resume) the animation.
- */
-function startAnimation(state, refs, canvasState) {
-    // If we're at the natural endpoint, jump back to start before playing.
-    if (state.direction === 'forward' && state.tIdx >= T) {
-        state.tIdx = 0;
-        syncTimeUI(state, refs);
-    } else if (state.direction === 'reverse' && state.tIdx <= 0) {
-        state.tIdx = T;
-        syncTimeUI(state, refs);
-    }
-    state.playing = true;
-    state.lastFrameTime = 0;
-    updatePlayButton(refs, true);
-    state.animationHandle = requestAnimationFrame(
-        () => animationLoop(state, refs, canvasState)
-    );
-}
-
-/**
- * Show / hide the "computing" status overlay.
- */
-function showStatus(refs, message) {
-    if (message) refs.statusText.textContent = message;
-    refs.status.classList.remove('diffusion-hidden');
-}
-function hideStatus(refs) {
-    refs.status.classList.add('diffusion-hidden');
-}
-
-/**
- * Bind all interactive event handlers.
- *
- * `canvasState` is an object {ctx, W, H} that the resize handler mutates
- * in place. Event handlers read its current properties at the moment of
- * invocation, so a resize between bind-time and click-time is correctly
- * reflected in the next render.
- */
-function bindEventHandlers(state, refs, canvasState) {
-    const render = () => renderFrame(state, canvasState.ctx, canvasState.W, canvasState.H);
-
-    // Time slider — manual scrubbing pauses any running animation.
-    refs.timeSlider.addEventListener('input', (e) => {
-        stopAnimation(state, refs);
-        state.tIdx = parseInt(e.target.value, 10);
-        refs.timeReadout.textContent = `${state.tIdx} / ${T}`;
-        render();
-    });
-
-    // Direction toggle
-    const onDirectionChange = (newDir) => {
-        if (state.direction === newDir) return;
-        stopAnimation(state, refs);
-        state.direction = newDir;
-        resetSliderPosition(state);
-        syncDirectionUI(state, refs);
-        syncSamplerUI(state, refs);
-        syncTimeUI(state, refs);
-        render();
-    };
-    refs.directionFwdBtn.addEventListener('click', () => onDirectionChange('forward'));
-    refs.directionRevBtn.addEventListener('click', () => onDirectionChange('reverse'));
-
-    // Sampler toggle
-    const onSamplerChange = (newSampler) => {
-        if (state.sampler === newSampler) return;
-        stopAnimation(state, refs);
-        state.sampler = newSampler;
-        syncSamplerUI(state, refs);
-        render();
-    };
-    refs.samplerDDPMBtn.addEventListener('click', () => onSamplerChange('DDPM'));
-    refs.samplerDDIMBtn.addEventListener('click', () => onSamplerChange('DDIM'));
-
-    // Play / Pause
-    refs.playBtn.addEventListener('click', () => {
-        if (state.playing) {
-            stopAnimation(state, refs);
-        } else {
-            startAnimation(state, refs, canvasState);
+        // SELF-TEST GATE — nothing renders on broken math.
+        var gate = DiffCore.runSelfTests();
+        if (!gate.passed) {
+            renderRefusal(container, 'Demo disabled: mathematical self-tests failed.', gate.failures);
+            return;
         }
-    });
+        // Data gate — the logo point cloud must be loaded.
+        if (typeof window === 'undefined' || !window.COMPASS_POINTS ||
+            !window.COMPASS_POINTS.length) {
+            renderRefusal(container, 'Demo disabled: logo point data not loaded.', []);
+            return;
+        }
 
-    // Reset — return slider to natural start of the current direction
-    refs.resetBtn.addEventListener('click', () => {
-        stopAnimation(state, refs);
-        resetSliderPosition(state);
-        syncTimeUI(state, refs);
-        render();
-    });
+        injectCSS();
+        buildHTML(container);
 
-    // Regenerate noise — heavy computation, show status overlay
-    refs.regenBtn.addEventListener('click', () => {
-        stopAnimation(state, refs);
-        showStatus(refs, 'Regenerating diffusion trajectories…');
-        // Defer to next tick so the overlay actually renders before the
-        // synchronous heavy computation begins.
-        setTimeout(() => {
-            regenerateNoise(state);
-            // Snap slider to the noise endpoint so the user can immediately
-            // play the new reverse trajectory if they're in reverse mode.
-            if (state.direction === 'reverse') {
-                state.tIdx = T;
-                syncTimeUI(state, refs);
+        var dataPts = window.COMPASS_POINTS.map(function (p) { return Float64Array.from(p); });
+        var state = makeState(dataPts);
+        state.trailIdx = pickTrailIndices(state.N);
+
+        var refs = {
+            canvas: document.getElementById('dfv-canvas'),
+            legend: document.getElementById('dfv-legend'),
+            metric: document.getElementById('dfv-metric'),
+            timeSlider: document.getElementById('dfv-time'),
+            timeVal: document.getElementById('dfv-time-val'),
+            dirFwd: document.getElementById('dfv-dir-fwd'),
+            dirRev: document.getElementById('dfv-dir-rev'),
+            sampDdpm: document.getElementById('dfv-samp-ddpm'),
+            sampDdim: document.getElementById('dfv-samp-ddim'),
+            speedBtns: [document.getElementById('dfv-speed-slow'),
+                document.getElementById('dfv-speed-med'),
+                document.getElementById('dfv-speed-fast')],
+            playBtn: document.getElementById('dfv-play'),
+            resetBtn: document.getElementById('dfv-reset'),
+            regenBtn: document.getElementById('dfv-regen'),
+            tgTrails: document.getElementById('dfv-tg-trails'),
+            tgScore: document.getElementById('dfv-tg-score'),
+            tgGhost: document.getElementById('dfv-tg-ghost'),
+            status: document.getElementById('dfv-status')
+        };
+        var cv = sizeCanvas(refs.canvas);
+
+        // Forward cloud first (fast); the page is interactive as soon as it
+        // lands. Reverse clouds build next in the background.
+        var fb = DiffCore.createForwardBuilder(dataPts, state.schedule,
+            DiffCore.mulberry32(DiffCore.DEFAULTS.forwardSeed));
+        runBuilders(state, refs, cv, [
+            { b: fb, done: function () { state.forwardCloud = fb.result(); } }
+        ], 'computing forward trajectory\u2026', function () {
+            renderAll(state, refs, cv);
+            buildReverse(state, refs, cv, null);
+        });
+
+        function stopPlay() {
+            state.playing = false;
+            refs.playBtn.innerHTML = '&#9654; Play';
+            if (state.animTimer) { clearTimeout(state.animTimer); state.animTimer = null; }
+        }
+
+        function tick() {
+            if (!state.playing) return;
+            var end = state.direction === 'forward' ? DiffCore.T : 0;
+            var stepDir = state.direction === 'forward' ? 1 : -1;
+            if (state.tIdx === end) { stopPlay(); renderAll(state, refs, cv); return; }
+            state.tIdx += stepDir;
+            renderAll(state, refs, cv);
+            state.animTimer = setTimeout(tick, 1000 / state.fps);
+        }
+
+        function readyForCurrentMode() {
+            return state.direction === 'forward'
+                ? !!state.forwardCloud
+                : state.reverseReady;
+        }
+
+        // ---- handlers ----
+        refs.playBtn.addEventListener('click', function () {
+            if (!readyForCurrentMode()) return;
+            if (state.playing) { stopPlay(); return; }
+            // restart from the natural start if already at the end
+            var end = state.direction === 'forward' ? DiffCore.T : 0;
+            if (state.tIdx === end) {
+                state.tIdx = state.direction === 'forward' ? 0 : DiffCore.T;
             }
-            render();
-            hideStatus(refs);
-        }, 30);
-    });
+            state.playing = true;
+            refs.playBtn.innerHTML = '&#10074;&#10074; Pause';
+            tick();
+        });
 
-    // Speed buttons
-    const onSpeedChange = (newSpeed) => {
-        if (state.speed === newSpeed) return;
-        state.speed = newSpeed;
-        syncSpeedUI(state, refs);
-    };
-    refs.speedSlowBtn.addEventListener('click', () => onSpeedChange('slow'));
-    refs.speedMedBtn.addEventListener('click', () => onSpeedChange('medium'));
-    refs.speedFastBtn.addEventListener('click', () => onSpeedChange('fast'));
-}
+        refs.resetBtn.addEventListener('click', function () {
+            stopPlay();
+            state.tIdx = state.direction === 'forward' ? 0 : DiffCore.T;
+            renderAll(state, refs, cv);
+        });
 
-/**
- * Watch for theme changes on the <html> element and re-render the canvas
- * so the visualization tracks site theme without a page reload.
- */
-function observeThemeChanges(state, canvasState) {
-    const obs = new MutationObserver(() => {
-        renderFrame(state, canvasState.ctx, canvasState.W, canvasState.H);
-    });
-    obs.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['data-theme'],
-    });
-}
+        refs.timeSlider.addEventListener('input', function () {
+            stopPlay();
+            var v = parseInt(refs.timeSlider.value, 10) || 0;
+            state.tIdx = Math.max(0, Math.min(DiffCore.T, v));
+            renderAll(state, refs, cv);
+        });
 
-/**
- * Entry point. Locates the demo container, sets up canvas and HTML, then
- * defers the heavy initial computation to a follow-up tick so that the
- * "computing" status overlay actually paints before we block.
- */
-function initDiffusionDemo() {
-    const container = document.getElementById('diffusion_demo_visualizer');
-    if (!container) {
-        // The page may not contain a demo container; that's fine.
-        return;
-    }
+        function setDirection(dir) {
+            if (state.direction === dir) return;
+            if (dir === 'reverse' && !state.reverseReady) return;
+            stopPlay();
+            state.direction = dir;
+            state.tIdx = dir === 'forward' ? 0 : DiffCore.T;
+            refs.dirFwd.className = dir === 'forward' ? 'dfv-active' : '';
+            refs.dirRev.className = dir === 'reverse' ? 'dfv-active' : '';
+            renderAll(state, refs, cv);
+        }
+        refs.dirFwd.addEventListener('click', function () { setDirection('forward'); });
+        refs.dirRev.addEventListener('click', function () { setDirection('reverse'); });
 
-    injectDiffusionDemoCSS();
-    container.innerHTML = buildDemoHTML();
-    const refs = collectDOMRefs(container);
+        function setSampler(s) {
+            if (!state.reverseReady) return;
+            state.sampler = s;
+            refs.sampDdpm.className = s === 'DDPM' ? 'dfv-active' : '';
+            refs.sampDdim.className = s === 'DDIM' ? 'dfv-active' : '';
+            renderAll(state, refs, cv);
+        }
+        refs.sampDdpm.addEventListener('click', function () { setSampler('DDPM'); });
+        refs.sampDdim.addEventListener('click', function () { setSampler('DDIM'); });
 
-    // Canvas setup. We wrap (ctx, W, H) in an object so that the resize
-    // handler can replace them in place — any closure that holds a reference
-    // to canvasState (rather than the values) will see the new surface.
-    const initial = setupDiffusionCanvas(refs.canvas, refs.canvasWrap);
-    const canvasState = { ctx: initial.ctx, W: initial.W, H: initial.H };
+        var speeds = [8, 20, 60];
+        refs.speedBtns.forEach(function (btn, i) {
+            btn.addEventListener('click', function () {
+                state.fps = speeds[i];
+                refs.speedBtns.forEach(function (b, j) {
+                    b.className = i === j ? 'dfv-active' : '';
+                });
+            });
+        });
 
-    // Load the COMPASS logo data set.
-    const dataPts = loadDataPoints();
-    if (!dataPts) {
-        refs.statusText.textContent = 'Error: logo data not loaded.';
-        return;
-    }
+        refs.regenBtn.addEventListener('click', function () {
+            if (!state.reverseReady) return;
+            stopPlay();
+            state.noiseSeed += 1; // advance the documented seed stream
+            buildReverse(state, refs, cv, function () {
+                if (state.direction === 'reverse') state.tIdx = DiffCore.T;
+            });
+        });
 
-    // Convenience wrapper: always renders with the current canvas surface.
-    const render = (state) => renderFrame(state, canvasState.ctx, canvasState.W, canvasState.H);
+        refs.tgTrails.addEventListener('change', function () {
+            state.overlays.trails = refs.tgTrails.checked;
+            renderAll(state, refs, cv);
+        });
+        refs.tgScore.addEventListener('change', function () {
+            state.overlays.score = refs.tgScore.checked;
+            renderAll(state, refs, cv);
+        });
+        refs.tgGhost.addEventListener('change', function () {
+            state.overlays.ghost = refs.tgGhost.checked;
+            renderAll(state, refs, cv);
+        });
 
-    // Defer the heavy state construction so the status overlay gets a
-    // chance to render. ~30 ms is plenty for one paint cycle.
-    setTimeout(() => {
-        const t0 = performance.now();
-        const state = createDemoState(dataPts);
-        const elapsed = (performance.now() - t0).toFixed(0);
-        console.log(`[ml-14 demo] state built in ${elapsed} ms`);
-
-        // Resize handler: rebuild the canvas drawing surface to match the
-        // wrapper's current width. Throttle with rAF so rapid resize events
-        // (mobile rotation, devtools open/close) don't thrash the canvas.
-        let resizePending = false;
-        const onResize = () => {
+        var resizePending = false;
+        window.addEventListener('resize', function () {
             if (resizePending) return;
             resizePending = true;
-            requestAnimationFrame(() => {
+            setTimeout(function () {
                 resizePending = false;
-                const next = setupDiffusionCanvas(refs.canvas, refs.canvasWrap);
-                canvasState.ctx = next.ctx;
-                canvasState.W = next.W;
-                canvasState.H = next.H;
-                render(state);
-            });
-        };
-        window.addEventListener('resize', onResize);
+                cv = sizeCanvas(refs.canvas);
+                if (readyForCurrentMode()) renderAll(state, refs, cv);
+            }, 100);
+        });
+    }
 
-        bindEventHandlers(state, refs, canvasState);
-        observeThemeChanges(state, canvasState);
-
-        // Initial sync of all UI to default state
-        syncDirectionUI(state, refs);
-        syncSamplerUI(state, refs);
-        syncSpeedUI(state, refs);
-        syncTimeUI(state, refs);
-
-        render(state);
-        hideStatus(refs);
-    }, 30);
-}
-
-// DOM ready bootstrap. The demo can also be re-initialized externally by
-// calling initDiffusionDemo() if needed.
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDiffusionDemo);
-} else {
-    initDiffusionDemo();
-}
+    if (typeof document === 'undefined') return;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
