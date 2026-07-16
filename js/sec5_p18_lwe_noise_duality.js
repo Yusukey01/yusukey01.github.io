@@ -1,4 +1,23 @@
-// sec5_p18_lwe_noise_duality.js
+// ============================================================
+// sec5_p18_lwe_noise_duality.js — LndCore (pure math layer)
+//
+// v2 (July 2026, demo-rebuild series): the reviewed v1 math and self-tests
+// are preserved VERBATIM except for (i) seeded RNG threaded through every
+// random draw (mulberry32; the UI runs one session stream, the gate uses
+// fixed per-test seeds, so the v1 comment's "unlucky draw fails the render"
+// concern is gone by construction), (ii) console removal (the refusal card
+// already carries the diagnostic), (iii) two new pins: P*DELTA === q and
+// enc's own Z_q membership (hAdd and dec both re-mod, which shadowed a
+// missing reduction in enc from every round-trip test).
+// All v1 honesty guardrails are unchanged — see the design notes below.
+//
+// Equivalent mutants (documented, by design): (i) decoding on the CENTERED
+// residue is provably identical to the non-centered decode because q = P*DELTA
+// exactly (pinned in T0): the centered lift shifts the argument by a multiple
+// of P slots, invisible mod P; (ii) Math.round vs floor(x+0.5) — dec only ever
+// receives non-negative arguments, where the two agree (the roundHalfUp pin
+// exists so a later edit cannot silently change the negative-half behaviour).
+//
 // ml-18 "Learning With Errors, Read Twice" — noise-duality visualizer.
 //
 // ONE honest thesis, shown two ways: the SAME small centered noise chi = Uniform[-w,w]
@@ -20,7 +39,7 @@
 //  - Keep P = 16; do not engineer the scale gap away. The gap IS the lesson.
 //
 // House rules: no scheme/algorithm names in UI; no efficiency claims; toy sizes only;
-// math core self-tested (console.error + return on failure, UI stays hidden).
+// math core self-tested (refusal card on failure, UI stays hidden).
 // Theme-safety: every visible element sits on a self-contained opaque dark panel;
 // no CSS var(--), no data-theme read, no currentColor.
 //
@@ -29,19 +48,24 @@
 // w = DELTA/4 the first breaking width (verified exhaustively over all m1,m2,e1,e2).
 // Decrypt decodes on the NON-centered residue round(mod(c)/Delta) % P.
 
-document.addEventListener('DOMContentLoaded', function () {
-  const container = document.getElementById('lwe_noise_duality_visualizer');
-  if (!container) { console.error('lwe_noise_duality_visualizer container not found!'); return; }
-  if (container.dataset.init === '1') return;
-  container.dataset.init = '1';
 
-  // ============================================================
-  // M1 — MATH CORE (verified)
-  // ============================================================
+var LndCore = (function () {
+  'use strict';
+
+  function mulberry32(seed) {
+    let t = seed >>> 0;
+    return function () {
+      t |= 0; t = (t + 0x6D2B79F5) | 0;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
   const q = 256, n = 4, m = 8, P = 16, DELTA = q / P; // Delta = 16, and P*DELTA === q exactly
 
-  function randInt(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); } // inclusive
-  function centeredNoise(w) { return w === 0 ? 0 : randInt(-w, w); }                    // chi = Uniform[-w,w]
+  function randInt(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }   // inclusive
+  function centeredNoise(rng, w) { return w === 0 ? 0 : randInt(rng, -w, w); }          // chi = Uniform[-w,w]
   function mod(x) { return ((x % q) + q) % q; }                                         // in [0,q)
   function centeredLift(x) { const r = mod(x); return r >= q / 2 ? r - q : r; }         // image is [-q/2, q/2)
   function dot(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
@@ -56,13 +80,13 @@ document.addEventListener('DOMContentLoaded', function () {
     return out;
   })();
   function eqVec(a, b) { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; }
-  function sampleSecret() { const s = []; for (let j = 0; j < n; j++) s.push(randInt(-2, 2)); return s; }
+  function sampleSecret(rng) { const s = []; for (let j = 0; j < n; j++) s.push(randInt(rng, -2, 2)); return s; }
 
-  function genLWE(s, w) {                             // b_i = <a_i, s> + e_i (mod q)
+  function genLWE(rng, s, w) {                        // b_i = <a_i, s> + e_i (mod q)
     const A = [], b = [];
     for (let i = 0; i < m; i++) {
-      const a = []; for (let j = 0; j < n; j++) a.push(randInt(0, q - 1));
-      A.push(a); b.push(mod(dot(a, s) + centeredNoise(w)));
+      const a = []; for (let j = 0; j < n; j++) a.push(randInt(rng, 0, q - 1));
+      A.push(a); b.push(mod(dot(a, s) + centeredNoise(rng, w)));
     }
     return { A, b };
   }
@@ -90,27 +114,33 @@ document.addEventListener('DOMContentLoaded', function () {
   // Resamples A as well as e, so this rate marginalizes over matrices too. That is the
   // right quantity for the thesis, but it means a single on-screen instance can disagree
   // with the plotted rate: one unlucky A can stay identifiable well past the average wall.
-  function identifiableRate(s, w, reps) {             // fraction of instances where best === s
+  function identifiableRate(rng, s, w, reps) {        // fraction of instances where best === s
     let hit = 0;
-    for (let r = 0; r < reps; r++) { const { A, b } = genLWE(s, w); if (eqVec(bruteBest(A, b).best, s)) hit++; }
+    for (let r = 0; r < reps; r++) { const { A, b } = genLWE(rng, s, w); if (eqVec(bruteBest(A, b).best, s)) hit++; }
     return hit / reps;
   }
 
   // --- compute core (additive homomorphic toy) ---
-  function enc(msg, w) { return mod(DELTA * msg + centeredNoise(w)); }   // msg in [0,P)
+  function enc(rng, msg, w) { return mod(DELTA * msg + centeredNoise(rng, w)); } // msg in [0,P)
   function dec(c) { return roundHalfUp(mod(c) / DELTA) % P; }            // decode on non-centered residue
   function hAdd(c1, c2) { return mod(c1 + c2); }                        // additive homomorphism
 
-  // ============================================================
-  // M5 — SELF-TESTS (run once; console.error + return on any failure, UI stays hidden)
-  // ============================================================
-  // Every test below must be capable of FAILING on a plausible bug. Tests that merely
-  // confirm a property already guaranteed by their own loop bounds are not tests.
-  // Each returns null on success or a diagnostic string on failure.
+
   function selfTest() {
+    // v2: every random draw below is SEEDED (fixed per test), so the gate is
+    // deterministic — the v1 concern "a rendering failure on an unlucky draw"
+    // no longer exists; margins are kept anyway for robustness to edits.
+    // T0 — seed pins: P*DELTA must tile Z_q exactly; RNG must be deterministic.
+    {
+      if (P * DELTA !== q) return 'T0: P*DELTA !== q (' + (P * DELTA) + ')';
+      const a = sampleSecret(mulberry32(3)), b = sampleSecret(mulberry32(3));
+      if (!eqVec(a, b)) return 'T0: seeded RNG not deterministic';
+    }
+
     // T1 — zero noise: the secret is the unique exact minimiser (score 0, and no tie).
     {
-      const s = sampleSecret(); const { A, b } = genLWE(s, 0);
+      const rng = mulberry32(6601);
+      const s = sampleSecret(rng); const { A, b } = genLWE(rng, s, 0);
       if (score(A, b, s) !== 0) return 'T1: secret does not achieve zero residual at w=0';
       if (!eqVec(bruteBest(A, b).best, s)) return 'T1: argmin is not the secret at w=0';
       let zeros = 0;
@@ -121,13 +151,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // T2 — the identifiability curve must COLLAPSE, not merely fail to rise.
     // Positive control at w=0, negative control at w=q/2. A flat or inverted curve fails.
     {
-      const s = sampleSecret();
-      const lo = identifiableRate(s, 0, 24);
-      const hi = identifiableRate(s, q / 2, 24);
+      const rng = mulberry32(6602);
+      const s = sampleSecret(rng);
+      const lo = identifiableRate(rng, s, 0, 24);
+      const hi = identifiableRate(rng, s, q / 2, 24);
       if (lo < 0.99) return 'T2: not identifiable at zero noise (' + lo + ')';
       if (hi > 0.10) return 'T2: still identifiable at modulus-scale noise (' + hi + ')';
       // and it must be weakly decreasing across the sweep
-      const pts = [0, 32, 64, 96].map(w => identifiableRate(s, w, 20));
+      const pts = [0, 32, 64, 96].map(w => identifiableRate(rng, s, w, 20));
       for (let i = 1; i < pts.length; i++) if (pts[i] > pts[i - 1] + 0.2) return 'T2: curve not decreasing';
     }
 
@@ -161,18 +192,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // T4 — accumulator: exact at w=0 over a long chain; and at slot-scale noise a break
     // is reached. The high-noise width is DERIVED from DELTA, not a magic constant.
     {
-      let acc = hAdd(enc(3, 0), enc(5, 0)), expected = 8;
+      const rng = mulberry32(6603);
+      let acc = hAdd(enc(rng, 3, 0), enc(rng, 5, 0)), expected = 8;
       for (let k = 0; k < 15; k++) {
-        acc = hAdd(acc, enc(3, 0)); expected = (expected + 3) % P;
+        acc = hAdd(acc, enc(rng, 3, 0)); expected = (expected + 3) % P;
         if (dec(acc) !== expected) return 'T4: drift at zero noise';
       }
     }
     {
+      const rng = mulberry32(6604);
       const w = DELTA;              // comfortably past the single-add wall
       let broke = 0;
       for (let t = 0; t < 40; t++) {
-        let acc = hAdd(enc(3, w), enc(5, w)), expected = 8, hit = (dec(acc) !== expected);
-        for (let k = 0; k < 6 && !hit; k++) { acc = hAdd(acc, enc(3, w)); expected = (expected + 3) % P; if (dec(acc) !== expected) hit = true; }
+        let acc = hAdd(enc(rng, 3, w), enc(rng, 5, w)), expected = 8, hit = (dec(acc) !== expected);
+        for (let k = 0; k < 6 && !hit; k++) { acc = hAdd(acc, enc(rng, 3, w)); expected = (expected + 3) % P; if (dec(acc) !== expected) hit = true; }
         if (hit) broke++;
       }
       if (broke / 40 < 0.6) return 'T4: high-noise break too rare (' + broke + '/40)';
@@ -181,8 +214,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // T4c — hAdd must land back in Z_q. dec() applies its own mod, so a missing reduction
     // in hAdd is invisible to every round-trip test above. Pin the ciphertext space directly.
     {
+      const rng = mulberry32(6605);
       for (let t = 0; t < 200; t++) {
-        const c = hAdd(enc(randInt(0, P - 1), 3), enc(randInt(0, P - 1), 3));
+        const e1 = enc(rng, randInt(rng, 0, P - 1), 3), e2 = enc(rng, randInt(rng, 0, P - 1), 3);
+        // enc must land in Z_q ITSELF: hAdd and dec both re-mod, so a missing
+        // reduction in enc is invisible to every round-trip test (v2 pin).
+        if (e1 < 0 || e1 >= q || e2 < 0 || e2 >= q) return 'T4c: enc left Z_q';
+        const c = hAdd(e1, e2);
         if (!Number.isInteger(c) || c < 0 || c >= q) return 'T4c: hAdd left Z_q (' + c + ')';
       }
     }
@@ -191,13 +229,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // the 0.5 crossing of a per-instance failure probability. Mixing observables (e.g. a
     // 6-add chain on one side) makes the ratio an artefact of the chain length.
     {
-      const s = sampleSecret();
+      const rng = mulberry32(6606);
+      const s = sampleSecret(rng);
       let wAtk = null;
-      for (let w = 0; w <= q / 2; w += 4) { if (identifiableRate(s, w, 24) < 0.5) { wAtk = w; break; } }
+      for (let w = 0; w <= q / 2; w += 4) { if (identifiableRate(rng, s, w, 24) < 0.5) { wAtk = w; break; } }
       let wDef = null;
       for (let w = 1; w <= DELTA && wDef === null; w++) {
         let broke = 0;
-        for (let t = 0; t < 200; t++) if (dec(hAdd(enc(3, w), enc(5, w))) !== 8) broke++;
+        for (let t = 0; t < 200; t++) if (dec(hAdd(enc(rng, 3, w), enc(rng, 5, w))) !== 8) broke++;
         if (broke / 200 >= 0.5) wDef = w;
       }
       if (wAtk === null) return 'T5: attack wall never reached';
@@ -212,16 +251,64 @@ document.addEventListener('DOMContentLoaded', function () {
     return null;
   }
 
-  const failure = selfTest();
-  if (failure !== null) {
-    console.error('lwe demo: ' + failure);
-    container.innerHTML =
-      '<div style="padding:16px;color:#ff8a80;background:rgba(20,28,40,0.95);border-radius:8px;' +
-      'font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;">' +
-      'Demo failed its internal consistency check and was not rendered.' +
-      '<div style="margin-top:8px;font-size:0.85em;opacity:0.75;">' + failure + '</div></div>';
-    return;
+  function runSelfTests() {
+    const f = selfTest();
+    return { passed: f === null, failures: f === null ? [] : [f] };
   }
+
+  return {
+    q: q, n: n, m: m, P: P, DELTA: DELTA, CANDS: CANDS,
+    mulberry32: mulberry32,
+    randInt: randInt, centeredNoise: centeredNoise,
+    mod: mod, centeredLift: centeredLift, dot: dot, roundHalfUp: roundHalfUp,
+    eqVec: eqVec, sampleSecret: sampleSecret, genLWE: genLWE,
+    score: score, bruteBest: bruteBest, identifiableRate: identifiableRate,
+    enc: enc, dec: dec, hAdd: hAdd,
+    DEFAULTS: { sessionSeed: 6001 },
+    runSelfTests: runSelfTests
+  };
+})();
+
+if (typeof module !== 'undefined' && module.exports) { module.exports = LndCore; }
+
+// ============================================================
+// UI layer (#lwe_noise_duality_visualizer, prefix lnd-)
+// Verbatim v1 UI (reviewed) driven by LndCore through a single seeded
+// session stream: boot state and any fixed interaction sequence are
+// reproducible (seed advances only by consumption; "New secret", slider
+// moves and adds draw from the same stream in event order).
+// ============================================================
+
+(function () {
+  'use strict';
+
+  function init() {
+    const container = document.getElementById('lwe_noise_duality_visualizer');
+    if (!container) return;
+    if (container.dataset.init === '1') return;
+    container.dataset.init = '1';
+
+    // SELF-TEST GATE — refusal card on failure, nothing renders.
+    const gate = LndCore.runSelfTests();
+    if (!gate.passed) {
+      container.innerHTML =
+        '<div style="padding:16px;color:#ff8a80;background:rgba(20,28,40,0.95);border-radius:8px;' +
+        'font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;">' +
+        'Demo failed its internal consistency check and was not rendered.' +
+        '<div style="margin-top:8px;font-size:0.85em;opacity:0.75;">' + gate.failures[0] + '</div></div>';
+      return;
+    }
+
+    // ---- core aliases bound to ONE seeded session stream ----
+    const q = LndCore.q, n = LndCore.n, m = LndCore.m, P = LndCore.P, DELTA = LndCore.DELTA;
+    const CANDS = LndCore.CANDS;
+    const RNG = LndCore.mulberry32(LndCore.DEFAULTS.sessionSeed);
+    const sampleSecret = () => LndCore.sampleSecret(RNG);
+    const genLWE = (s, w) => LndCore.genLWE(RNG, s, w);
+    const centeredNoise = (w) => LndCore.centeredNoise(RNG, w);
+    const identifiableRate = (s, w, reps) => LndCore.identifiableRate(RNG, s, w, reps);
+    const mod = LndCore.mod, dec = LndCore.dec, hAdd = LndCore.hAdd;
+    const score = LndCore.score, eqVec = LndCore.eqVec;
 
   // ============================================================
   // M2 — STATE
@@ -766,4 +853,13 @@ document.addEventListener('DOMContentLoaded', function () {
   renderAttack();
   renderCompute();
   renderCaption();
-});
+
+  }
+
+  if (typeof document === 'undefined') return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
