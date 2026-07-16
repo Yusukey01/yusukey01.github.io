@@ -630,7 +630,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LtCore; 
       '#linear-transformation-visualizer .ltv-canvaswrap{flex:2;background:' + C.panel + ';padding:15px;border-radius:8px;border:1px solid ' + C.border + ';}' +
       '#linear-transformation-visualizer .ltv-group{margin-bottom:16px;}' +
       '#linear-transformation-visualizer .ltv-group label{display:block;font-weight:bold;margin-bottom:6px;color:' + C.textDim + ';}' +
-      '#linear-transformation-visualizer .ltv-full{width:100%;padding:8px;background:rgba(255,255,255,0.05);border:1px solid ' + C.borderStrong + ';border-radius:4px;color:' + C.text + ';}' +
+      '#linear-transformation-visualizer .ltv-full{width:100%;padding:8px;background:rgba(255,255,255,0.05);border:1px solid ' + C.borderStrong + ';border-radius:4px;color:' + C.text + ';color-scheme:dark;}' +
+      '#linear-transformation-visualizer .ltv-full option{background-color:#141c28;color:' + C.text + ';}' +
       '#linear-transformation-visualizer .ltv-matrix{display:flex;align-items:center;justify-content:center;margin:10px 0;}' +
       '#linear-transformation-visualizer .ltv-bracket{font-size:2rem;margin:0 5px;color:' + C.accent + ';}' +
       '#linear-transformation-visualizer .ltv-cells{display:grid;grid-template-columns:1fr 1fr;grid-gap:8px;}' +
