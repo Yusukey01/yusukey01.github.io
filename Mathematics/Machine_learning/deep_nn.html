@@ -323,8 +323,8 @@ uses_python: false
             <section id="position" class="section-content"> 
                 <h2>Positional Encoding</h2> 
                 <p> 
-                    The standard self-attention is permutation invariant, which means the model ignores the order of tokens in an 
-                    input sequence. To address this, <strong>positional encoding</strong> is added to the input embeddings to inject information about 
+                    Standard self-attention is permutation-equivariant: reordering the input tokens simply reorders 
+                    the outputs in the same way, so the mechanism itself carries no information about token order. To address this, <strong>positional encoding</strong> is added to the input embeddings to inject information about 
                     the position of each token. A widely used method is to define fixed, deterministic positional encodings using 
                     sine and cosine functions of varying frequencies. 
                 </p> 
@@ -451,9 +451,9 @@ uses_python: false
                     <p>
                         A pattern recurs across the architectures we have surveyed: each is built around a 
                         <em>symmetry</em> of the input domain. Convolutional networks are translation-equivariant — their 
-                        convolutional layers commute with shifts of the input image. Self-attention is permutation-equivariant — 
-                        outputs are unchanged when input tokens are reordered — which is precisely why positional encoding must be 
-                        added back to inject ordering information.
+                        convolutional layers commute with shifts of the input image. Self-attention is permutation-equivariant — reordering the input tokens 
+                        reorders the outputs in exactly the same way, \(f(P\mathbf{X}) = P\,f(\mathbf{X})\) — which is precisely why 
+                        positional encoding must be added back to inject ordering information.
                     </p>
                     <p>
                         This perspective generalizes far beyond CNNs and Transformers. Architectures designed for graphs respect 
@@ -470,8 +470,25 @@ uses_python: false
             </section>
 
             <section id="demo" class="section-content section-wide">
-                <h2>Demo</h2>
-                 <div id="transformer_demo"></div>
+                <h2>Demo: One Decoder Block, Computed Exactly</h2>
+                <p>
+                    The demo below runs a single decoder block — embedding, positional encoding, masked self-attention, 
+                    residual connections, layer normalization, a feed-forward network, and the output softmax — as an 
+                    <strong>exact computation</strong> at toy dimension (\(d_{\text{model}} = 8\), two heads). Every matrix 
+                    displayed is the actual result of the forward pass on the current sequence: attention rows sum to 
+                    exactly 1, each normalized row has mean \(0\) and variance \(v/(v+\epsilon)\) as the layer-norm 
+                    formula dictates, and the greedy prediction is the true argmax of the computed distribution. The 
+                    weights are untrained random draws, so the demo illustrates the architecture's mechanics rather than 
+                    a trained model's knowledge.
+                </p>
+                <p>
+                    The final step verifies the symmetry principle of the previous section numerically: for the block 
+                    \(f\) without positional encoding and without the causal mask, the permutation equivariance identity 
+                    \(f(P\mathbf{X}) = P\,f(\mathbf{X})\) holds to machine precision, while adding either positional 
+                    encoding or the mask breaks it by a measurable amount — the mechanism by which order enters an 
+                    otherwise order-blind architecture.
+                </p>
+                <div id="transformer_demo"></div>
 
                 <p>
                     The Transformer architecture provides the computational backbone for modern ML systems, from language models to vision transformers. 
@@ -482,6 +499,6 @@ uses_python: false
             </section>
 
         </div>
-<script src="/js/sec5_p9_deep_nn.js"></script>  
+        <script src="/js/sec5_p9_deep_nn.js"></script>  
     </body>
 </html>
