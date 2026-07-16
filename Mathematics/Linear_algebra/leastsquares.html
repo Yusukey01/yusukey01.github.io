@@ -119,9 +119,9 @@ uses_python: false
                         Substituting into the normal equations \(A^\top A\hat{\mathbf{x}} = A^\top\mathbf{b}\),
                         \[
                         (QR)^\top(QR)\hat{\mathbf{x}} = (QR)^\top\mathbf{b}
-                        \;\Longrightarrow\;
+                        \Longrightarrow
                         R^\top \underbrace{Q^\top Q}_{=\,I} R \hat{\mathbf{x}} = R^\top Q^\top \mathbf{b}
-                        \;\Longrightarrow\;
+                        \Longrightarrow
                         R^\top R \hat{\mathbf{x}} = R^\top Q^\top \mathbf{b}.
                         \]
                         Since \(R\) is invertible, so is \(R^\top\); multiplying both sides by \((R^\top)^{-1}\) yields
@@ -283,13 +283,30 @@ uses_python: false
             <section id="demo" class="section-content section-wide">
                 <h2>Interactive Linear Regression Demo</h2>
                 <p>
-                    Linear regression finds the best-fitting line or curve for a set of data points by minimizing the sum of squared differences between observed and predicted values. This interactive demo lets you explore how polynomial regression works with different datasets.
+                    The demo below fits polynomials (and, in 3D mode, surfaces) to data by least squares — and it 
+                    practices what this page preaches: the solver runs through the <strong>QR factorization</strong> 
+                    (Gram-Schmidt on the columns of the design matrix, then back-substitution on \(R\hat{\boldsymbol{\beta}} = Q^\top \mathbf{Y}\)) 
+                    rather than forming \(X^\top X\), avoiding the condition-number squaring described in the 
+                    Computational Insight above.
                 </p>
                 <p>
-                    Try adding your own data points by clicking on the plot, or use the example datasets to see how different polynomial degrees fit various patterns. The demo visually demonstrates key concepts from least-squares theory and the normal equations.
+                    Two readouts turn the theory into checkable numbers. First, \(\|X^\top \boldsymbol{\epsilon}\|\) is displayed 
+                    after every fit: the residual is orthogonal to every column of \(X\), which is exactly the statement of the 
+                    normal equations, i.e. \(\hat{\mathbf{Y}} = \operatorname{proj}_{\operatorname{Col} X} \mathbf{Y}\). 
+                    Second, toggle "Show squared errors" to see the geometry behind the name: each residual becomes the side 
+                    of a square, and the fit is the choice of coefficients minimizing the total area of those squares.
+                </p>
+                <p>
+                    The demo is also honest about when the theory says <em>no</em>. With fewer points than parameters 
+                    (\(n \lt p\)), or with repeated \(x\)-values, the columns of \(X\) are linearly dependent, \(X^\top X\) is singular, 
+                    and there is no unique least-squares solution — the demo reports this (pointing back to the pseudo-inverse 
+                    section) instead of plotting garbage. At exactly \(n = p\) it flags the interpolation regime, where the residual 
+                    is zero and "fitting" degenerates into passing through every point — watch a quartic do this with five points. 
+                    In 3D mode, compare the plane and quadratic surface models on the saddle dataset: the plane underfits 
+                    (large residuals in a telltale pattern), yet \(\|X^\top \boldsymbol{\epsilon}\|\) stays at zero — it is still 
+                    the <em>best</em> plane, just not a good model.
                 </p>
                 
-                <!-- Here, the visualizer will be rendered -->
                 <div id="linear-regression-visualizer"></div>
             </section>
            
