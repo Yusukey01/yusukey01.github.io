@@ -348,7 +348,8 @@ uses_python: false
                 
                 <p>
                     A rigid box of adjustable mass \(m\) sits on the ground plane. Its <strong>center of mass (CoM)</strong> 
-                    is offset from its geometric center by a user-controlled displacement \(\mathbf{c} = (c_x, c_y, c_z)\). 
+                    is offset from its geometric center by a user-controlled displacement \(\mathbf{c} = (c_x, c_y, c_z)\), 
+                    where the \(y\)-axis is vertical, matching the torque formula below. 
                     This offset serves as the primary source of <strong>epistemic uncertainty</strong>: the robot 
                     cannot directly observe the true CoM location and must infer the resulting torque anomalies 
                     from sensor feedback during the initial lift phase.
@@ -384,7 +385,11 @@ uses_python: false
                 <p>
                     where \(I\) is the moment of inertia, \(\boldsymbol{\omega}\) is the angular velocity, and \(C_d\) is the damping coefficient. 
                     This produces the visible tilt of the box during lifting. Higher mass or larger CoM offset leads to larger torques, faster rotation, 
-                    and more pronounced tilt - all signals that feed into the VAE.
+                    and more pronounced tilt - all signals that feed into the VAE. 
+                    For on-screen legibility the integrated orientation is rendered through a fixed visualization gain 
+                    (each frame's rotation increment is \(\|\boldsymbol{\omega}\|\,\Delta t \cdot k_{\text{display}}\) with 
+                    \(k_{\text{display}} = 0.008\)); the dynamics above are integrated as stated, and the gain rescales 
+                    only what is drawn.
                 </p>
 
                 <h3>VAE Posterior: \(q(\mathbf{z} \mid \mathbf{x})\)</h3>
@@ -457,6 +462,9 @@ uses_python: false
                 </p>
 
                 <p>
+                    One boundary case deserves disclosure: as \(\sigma \to 0\) the KL divergence diverges (an infinitely 
+                    confident posterior is infinitely far from the prior), so the telemetry evaluates the formula with 
+                    \(\sigma\) floored at \(0.05\). The floor engages only when the torque is nearly zero. 
                     This quantity measures the "information gain" or surprise from the sensory input. A large KL divergence indicates that the 
                     physical interaction has pushed the robot's belief significantly away from its prior expectations - a sign of an unusual 
                     or difficult grasp configuration.
@@ -474,7 +482,9 @@ uses_python: false
                 </p>
                 <p>
                     where \(\boldsymbol{\epsilon}^{(i)} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\) are smoothed Gaussian samples 
-                    (using exponential moving average with \(\alpha = 0.92\) for visual stability). When \(\sigma\) is small, the ghosts cluster 
+                    (using exponential moving average with \(\alpha = 0.92\) for visual stability), the 2D latent is mapped to 
+                    the horizontal plane (\(z_1 \to x\), \(z_2 \to z\); the vertical component is unperturbed), and the display 
+                    scales are \((s_{\mu}, s_{\sigma}) = (12, 18)\). When \(\sigma\) is small, the ghosts cluster 
                     tightly around the primary arm. When \(\sigma\) is large, they splay outward, creating a visual "cloud of possible robot states" 
                     that communicates the degree of uncertainty.
                 </p>
@@ -514,7 +524,8 @@ uses_python: false
                 </p>
                 <p>
                     <strong>Box Mass</strong>: Scales the gravitational force \(mg\), amplifying the torque for a given CoM offset. Heavy objects 
-                    are harder to lift safely.
+                    are harder to lift safely. The "Grip Force" telemetry shows the commanded force \(1.6\,mg\) (a fixed 
+                    safety factor); it is a display quantity, not a simulated contact model.
                 </p>
                 <p>
                     <strong>\(\sigma\) Threshold</strong>: The abort boundary. Lowering it makes the robot more cautious (aborting earlier); 
