@@ -1,30 +1,11 @@
-// sec2_p35_trichotomy_demo.js
-// Trichotomy of Classical PDEs — MATH-CS COMPASS, calc-35
-//
-// Three-panel interactive demonstration of how the same initial bump
-// evolves under the heat, wave, and Laplace equations — exhibiting
-// the three controlling quantities (initial-data bound, energy invariant,
-// boundary-data bound) catalogued in the trichotomy comparison table.
-//
-// Architecture (six modules, per spec v2):
-//   1. Math primitives    — complex FFT/IFFT, interpolation, finite differences
-//   2. Initial profiles   — Gaussian, triangle, bimodal
-//   3. PDE solvers        — heat (spectral), wave (d'Alembert), Laplace (Poisson)
-//   4. Canvas rendering   — 3-panel visualization
-//   5. UI panel + CSS     — DOM template, theme-aware styles
-//   6. Wiring             — event handlers, animation loop
-//
-// Mathematical specification follows calc35_trichotomy_demo_spec_v2.md.
-// Grid: N = 256 points on x ∈ [-1, 1], physical length L = 2.
-//
-// The entire module is wrapped in an IIFE so no symbols leak into the
-// global scope. The demo auto-initializes on DOMContentLoaded by looking
-// for a host element with id 'trichotomy_demo_visualizer'; if absent,
-// it silently no-ops.
-
-(function () {
-    'use strict';
-
+//======================================================================
+// sec2_p35_trichotomy_demo.js (v2) -- calc-35
+// [Core IIFE] TriCore: heat / wave / Laplace mathematics, DOM-free.
+// The solver code below is carried over from v1 (spec v2) verbatim; the
+// v1 load-time self-tests are ported into the blocking runSelfTests()
+// gate and extended with route-independence and closed-form certificates.
+//======================================================================
+var TriCore = (function () {
 
 // ============================================================
 // ====== MODULE 1: Math primitives ===========================
@@ -238,78 +219,11 @@ function fftReal(fReal) {
 // ------------------------------------------------------------
 // FFT self-tests (executed once at module load, console-only)
 // ------------------------------------------------------------
-// These run on every page load and emit a single console.log line.
+// (v1 ran these at load time; v2 ports them into the blocking gate.)
 // They are cheap (~1ms total) and catch the FFT implementation bugs
 // that historically caused weeks of debugging in similar projects.
 
-(function fftSelfTest() {
-    // Test 1: FFT of constant signal {1, 1, ..., 1}
-    //   ⟹ F_0 = N, F_{n>0} = 0
-    {
-        const re = new Float64Array(N).fill(1.0);
-        const im = new Float64Array(N);
-        fft(re, im);
-        const err0 = Math.abs(re[0] - N) + Math.abs(im[0]);
-        let errRest = 0;
-        for (let n = 1; n < N; n++) {
-            errRest += Math.abs(re[n]) + Math.abs(im[n]);
-        }
-        if (err0 > 1e-10 || errRest > 1e-10) {
-            console.error('[calc35 FFT self-test 1] FAILED:',
-                'F_0 error =', err0, ', sum of |F_{n>0}| =', errRest);
-        }
-    }
-    // Test 2: FFT then IFFT recovers a random input
-    {
-        const re = new Float64Array(N);
-        const im = new Float64Array(N);
-        const orig = new Float64Array(N);
-        for (let j = 0; j < N; j++) {
-            orig[j] = Math.sin(0.123 * j) + 0.5 * Math.cos(0.7 * j);
-            re[j] = orig[j];
-        }
-        fft(re, im);
-        ifft(re, im);
-        let maxErr = 0;
-        for (let j = 0; j < N; j++) {
-            maxErr = Math.max(maxErr,
-                Math.abs(re[j] - orig[j]),
-                Math.abs(im[j]));
-        }
-        if (maxErr > 1e-12) {
-            console.error('[calc35 FFT self-test 2] FAILED: round-trip max error =', maxErr);
-        }
-    }
-    // Test 3: FFT of pure tone e^{2πi · 5 · j / N}
-    //   ⟹ F_5 = N (single nonzero bin), all others zero
-    {
-        const re = new Float64Array(N);
-        const im = new Float64Array(N);
-        const K0 = 5;
-        for (let j = 0; j < N; j++) {
-            const theta = (2.0 * Math.PI * K0 * j) / N;
-            re[j] = Math.cos(theta);
-            im[j] = Math.sin(theta);
-        }
-        fft(re, im);
-        // The FFT convention F_n = Σ f_j exp(-2πi j n / N) gives a single
-        // spike at n = K0 with magnitude N (since e^{+2πi K0 j/N} =
-        // e^{-2πi (-K0) j/N} and -K0 ≡ K0 only when convention matches).
-        // With our convention, the spike lands at n = K0 with re = N.
-        const errSpike = Math.abs(re[K0] - N) + Math.abs(im[K0]);
-        let errRest = 0;
-        for (let n = 0; n < N; n++) {
-            if (n === K0) continue;
-            errRest += Math.abs(re[n]) + Math.abs(im[n]);
-        }
-        if (errSpike > 1e-9 || errRest > 1e-9) {
-            console.error('[calc35 FFT self-test 3] FAILED:',
-                'spike at K0 error =', errSpike,
-                ', residual energy =', errRest);
-        }
-    }
-    console.log('[calc35] FFT self-tests passed');
-})();
+
 
 
 // ------------------------------------------------------------
@@ -517,8 +431,7 @@ function buildProfile(name) {
         case 'triangle':  return profileTriangle();
         case 'bimodal':   return profileBimodal();
         default:
-            console.error('[calc35] Unknown profile:', name, '— falling back to gaussian');
-            return profileGaussian();
+            throw new Error('Unknown profile: ' + name);
     }
 }
 
@@ -599,8 +512,7 @@ function buildGProfile(name) {
         case 'outward_kick':  return gProfileOutwardKick();
         case 'uniform_push':  return gProfileUniformPush();
         default:
-            console.error('[calc35] Unknown g profile:', name, '— falling back to at_rest');
-            return gProfileAtRest();
+            throw new Error('Unknown g profile: ' + name);
     }
 }
 
@@ -612,34 +524,7 @@ function buildGProfile(name) {
 // These are essential because the rest of the demo relies on these
 // invariants for the bound-violation indicator to work correctly.
 
-(function profileSelfTest() {
-    const profiles = ['gaussian', 'triangle', 'bimodal'];
-    const TAIL_TOL = 1e-4;        // a bit looser than 1e-5 to be safe
-    const NORM_TOL = 1e-3;        // max f should be 1 ± 1e-3
-    let allOk = true;
-    for (const name of profiles) {
-        const f = buildProfile(name);
-        let fmax = -Infinity, fmin = +Infinity;
-        for (let j = 0; j < N; j++) {
-            if (f[j] > fmax) fmax = f[j];
-            if (f[j] < fmin) fmin = f[j];
-        }
-        const tailLeft  = Math.abs(f[0]);
-        const tailRight = Math.abs(f[N - 1]);
-        const normErr = Math.abs(fmax - 1.0);
-        const minErr  = Math.abs(fmin - 0.0);
-        if (normErr > NORM_TOL || minErr > NORM_TOL ||
-            tailLeft > TAIL_TOL || tailRight > TAIL_TOL) {
-            console.error('[calc35 profile self-test] FAILED:', name,
-                '— max=', fmax, 'min=', fmin,
-                'tail(-1)=', tailLeft, 'tail(+1)=', tailRight);
-            allOk = false;
-        }
-    }
-    if (allOk) {
-        console.log('[calc35] profile self-tests passed');
-    }
-})();
+
 
 
 // ============================================================
@@ -896,215 +781,281 @@ function evolveLaplace(f, y, uOut) {
 //   L. Laplace solution is bounded by boundary data (max principle).
 // Each test runs on a Gaussian initial profile, default parameters.
 
-(function pdeSolverSelfTest() {
-    const f = profileGaussian();
-    const fp = centralDiff(f);
-    const fHat = fftReal(f);
-    const fHatReCache = fHat.re;     // these get mutated by ifft, so keep copies
-    const fHatImCache = fHat.im;
 
-    // Wave-test auxiliaries: g profiles and their cumulative integrals
-    const gZero  = gProfileAtRest();
-    const gKick  = gProfileOutwardKick();
-    const gPush  = gProfileUniformPush();
-    const GZero  = cumulativeIntegrate(gZero);
-    const GKick  = cumulativeIntegrate(gKick);
-    const GPush  = cumulativeIntegrate(gPush);
 
-    // Test H1: heat conservation of the DC mode
-    //   The spectral heat semigroup leaves û(ξ_0) untouched (since ξ_0 = 0
-    //   gives damp = 1), so the discrete sum Σ_j u_j(t) is conserved
-    //   exactly. Note: trapezoidal quadrature trapz(u) is NOT exactly
-    //   conserved because the endpoint half-weights see boundary values
-    //   that grow under periodic diffusion (the Gaussian tails wrap around);
-    //   the discrete sum is the right invariant to test.
-    {
-        const re = new Float64Array(N);
-        const im = new Float64Array(N);
-        const reCp = new Float64Array(fHatReCache);   // fresh copies (ifft mutates)
-        const imCp = new Float64Array(fHatImCache);
-        evolveHeat(reCp, imCp, 1.0, 0.01, re, im);
-        let sumInit = 0, sumLater = 0;
-        for (let j = 0; j < N; j++) {
-            sumInit += f[j];
-            sumLater += re[j];
-        }
-        const err = Math.abs(sumLater - sumInit);
-        if (err > 1e-10) {
-            console.error('[calc35 PDE self-test H1] Heat DC mode not conserved:',
-                'init=', sumInit, 'at t=1:', sumLater, 'diff=', err);
-        }
+  //====================================================================
+  // Self-tests (blocking gate; v1 tests F1-F3, P, H1-H2, W1-W6, L1-L3
+  // ported, plus new certificates N1, N4-N7)
+  //====================================================================
+  function runSelfTests() {
+    var failures = [];
+    function check(name, cond, detail) {
+      if (!cond) failures.push(name + (detail !== undefined ? ' [' + detail + ']' : ''));
+    }
+    var j;
+
+    (function () {
+      var re = new Float64Array(N).fill(1.0), im = new Float64Array(N);
+      fft(re, im);
+      var err0 = Math.abs(re[0] - N) + Math.abs(im[0]), errRest = 0;
+      for (var n = 1; n < N; n++) errRest += Math.abs(re[n]) + Math.abs(im[n]);
+      check('F1 FFT of constant: single DC spike', err0 < 1e-10 && errRest < 1e-10);
+    })();
+    (function () {
+      var re = new Float64Array(N), im = new Float64Array(N), orig = new Float64Array(N);
+      for (j = 0; j < N; j++) { orig[j] = Math.sin(0.123 * j) + 0.5 * Math.cos(0.7 * j); re[j] = orig[j]; }
+      fft(re, im); ifft(re, im);
+      var maxErr = 0;
+      for (j = 0; j < N; j++) maxErr = Math.max(maxErr, Math.abs(re[j] - orig[j]), Math.abs(im[j]));
+      check('F2 ifft(fft(x)) == x', maxErr < 1e-12, maxErr.toExponential(2));
+    })();
+    (function () {
+      var re = new Float64Array(N), im = new Float64Array(N), K0 = 5;
+      for (j = 0; j < N; j++) {
+        var th = 2 * Math.PI * K0 * j / N;
+        re[j] = Math.cos(th); im[j] = Math.sin(th);
+      }
+      fft(re, im);
+      var errSpike = Math.abs(re[K0] - N) + Math.abs(im[K0]), errRest = 0;
+      for (var n = 0; n < N; n++) { if (n !== K0) errRest += Math.abs(re[n]) + Math.abs(im[n]); }
+      check('F3 pure tone -> single bin', errSpike < 1e-9 && errRest < 1e-9);
+    })();
+
+    (function () {
+      ['gaussian', 'triangle', 'bimodal'].forEach(function (nm) {
+        var f = buildProfile(nm);
+        var mx = -Infinity, mn = Infinity;
+        for (j = 0; j < N; j++) { mx = Math.max(mx, f[j]); mn = Math.min(mn, f[j]); }
+        check('P max ~ 1, min >= 0: ' + nm, Math.abs(mx - 1) < 1e-4 && mn >= 0, mx + ',' + mn);
+        check('P boundary tails < 1e-5: ' + nm, Math.abs(f[0]) < 1e-5 && Math.abs(f[N - 1]) < 1e-5);
+      });
+      var bad = false;
+      try { buildProfile('nope'); } catch (e) { bad = true; }
+      check('P unknown profile throws', bad);
+    })();
+
+    var f = profileGaussian();
+    var fp = centralDiff(f);
+    var fHat = fftReal(f);
+    var gZero = gProfileAtRest(), gKick = gProfileOutwardKick(), gPush = gProfileUniformPush();
+    var GZero = cumulativeIntegrate(gZero), GKick = cumulativeIntegrate(gKick), GPush = cumulativeIntegrate(gPush);
+    function freshHeat(tt, k) {
+      var re = new Float64Array(N), im = new Float64Array(N);
+      evolveHeat(new Float64Array(fHat.re), new Float64Array(fHat.im), tt, k, re, im);
+      return re;
     }
 
-    // Test H2: heat maximum principle on Gaussian (max=1, min=0)
-    //   0 ≤ u(·, t) ≤ 1 for all t ≥ 0
-    {
-        const re = new Float64Array(N);
-        const im = new Float64Array(N);
-        const reCp = new Float64Array(fHatReCache);
-        const imCp = new Float64Array(fHatImCache);
-        for (const t of [0.5, 1.0, 5.0]) {
-            const reCp2 = new Float64Array(fHatReCache);
-            const imCp2 = new Float64Array(fHatImCache);
-            evolveHeat(reCp2, imCp2, t, 0.01, re, im);
-            let mx = -Infinity, mn = Infinity;
-            for (let j = 0; j < N; j++) {
-                if (re[j] > mx) mx = re[j];
-                if (re[j] < mn) mn = re[j];
-            }
-            if (mx > 1.0 + 1e-10 || mn < 0.0 - 1e-10) {
-                console.error('[calc35 PDE self-test H2] Heat max principle violated at t=', t,
-                    ': max=', mx, 'min=', mn);
-            }
-        }
-    }
+    (function () {
+      var re = freshHeat(1.0, 0.01);
+      var s0 = 0, s1 = 0;
+      for (j = 0; j < N; j++) { s0 += f[j]; s1 += re[j]; }
+      check('H1 heat conserves the discrete sum', Math.abs(s1 - s0) < 1e-10, (s1 - s0).toExponential(2));
+    })();
+    (function () {
+      var prevMax = 1.0 + 1e-12, ok = true, mono = true;
+      [0.5, 1.0, 5.0].forEach(function (tt) {
+        var re = freshHeat(tt, 0.01);
+        var mx = -Infinity, mn = Infinity;
+        for (j = 0; j < N; j++) { mx = Math.max(mx, re[j]); mn = Math.min(mn, re[j]); }
+        if (mx > 1 + 1e-10 || mn < -1e-10) ok = false;
+        if (mx > prevMax + 1e-10) mono = false;
+        prevMax = mx;
+      });
+      check('H2a heat maximum principle 0 <= u <= 1', ok);
+      check('H2b heat max non-increasing in t (dissipation)', mono);
+    })();
+    (function () {
+      var mode = new Float64Array(N);
+      for (j = 0; j < N; j++) mode[j] = Math.cos(Math.PI * X_GRID[j]);
+      var mh = fftReal(mode);
+      var re = new Float64Array(N), im = new Float64Array(N);
+      var k = 0.02, tt = 0.7;
+      evolveHeat(mh.re, mh.im, tt, k, re, im);
+      var damp = Math.exp(-k * Math.PI * Math.PI * tt);
+      var worst = 0;
+      for (j = 0; j < N; j++) worst = Math.max(worst, Math.abs(re[j] - damp * mode[j]));
+      check('N1 heat closed form on cos(pi x)', worst < 1e-12, worst.toExponential(2));
+    })();
 
-    // Test W1: wave energy conservation, g = 0
-    //   E(t) = E(0) for all t (within tolerance)
-    {
-        const c = 0.3;
-        const E0 = waveEnergy(fp, gZero, 0.0, c);
-        for (const t of [0.3, 0.7, 1.0]) {
-            const Et = waveEnergy(fp, gZero, t, c);
-            const ratio = Et / E0;
-            if (Math.abs(ratio - 1.0) > 0.01) {
-                console.error('[calc35 PDE self-test W1] Wave energy drift (g=0) at t=', t,
-                    ': E(t)/E(0)=', ratio.toFixed(6));
-            }
+    (function () {
+      var c = 0.3, E0 = waveEnergy(fp, gZero, 0, c), ok = true;
+      [0.3, 0.7, 1.0].forEach(function (tt) {
+        if (Math.abs(waveEnergy(fp, gZero, tt, c) / E0 - 1) > 0.01) ok = false;
+      });
+      check('W1 wave energy conserved (g = 0)', ok);
+    })();
+    (function () {
+      var u = new Float64Array(N), worst = 0;
+      evolveWave(f, GZero, 0, 0.3, u);
+      for (j = 0; j < N; j++) worst = Math.max(worst, Math.abs(u[j] - f[j]));
+      check('W2 wave at t=0 (g=0) == f', worst < 1e-14, worst.toExponential(2));
+      worst = 0;
+      evolveWave(f, GKick, 0, 0.3, u);
+      for (j = 0; j < N; j++) worst = Math.max(worst, Math.abs(u[j] - f[j]));
+      check('W4 wave at t=0 (g!=0) == f', worst < 1e-13);
+    })();
+    (function () {
+      var c = 0.3, E0 = waveEnergy(fp, gKick, 0, c), ok = true;
+      [0.1, 0.2].forEach(function (tt) {
+        if (Math.abs(waveEnergy(fp, gKick, tt, c) / E0 - 1) > 0.02) ok = false;
+      });
+      check('W3 wave energy conserved (g = kick, small t)', ok);
+    })();
+    check('W5a cumulative integral of uniform 0.5 == 1', Math.abs(GPush[N] - 1.0) < 0.01, GPush[N]);
+    check('W5b cumulative integral of zero g == 0', Math.abs(GZero[N]) < 1e-14);
+    // constant-continuation contract: G-tilde is 0 left of the window and
+    // the total mass right of it (documented; d'Alembert relies on it
+    // whenever a characteristic leaves the window)
+    check('W5c interpCumul right continuation == total mass', interpCumul(GPush, 2.0) === GPush[N]);
+    check('W5d interpCumul left continuation == 0', interpCumul(GPush, -2.0) === 0.0);
+    (function () {
+      var u = new Float64Array(N), maxOverall = -Infinity;
+      [0.5, 1.0, 1.5].forEach(function (tt) {
+        evolveWave(f, GPush, tt, 0.3, u);
+        for (j = 0; j < N; j++) maxOverall = Math.max(maxOverall, u[j]);
+      });
+      check('W6 g != 0 breaks the pointwise bound (max u > 1.05)', maxOverall > 1.05,
+        maxOverall.toFixed(3));
+    })();
+    (function () {
+      var c = 0.3, T = 0.3, dt = 0.5 * DX / c;
+      var steps = Math.round(T / dt);
+      dt = T / steps;
+      var lam2 = (c * dt / DX) * (c * dt / DX);
+      var uPrev = new Float64Array(f);
+      var uCur = new Float64Array(N);
+      for (j = 0; j < N; j++) {
+        var jm = (j + N - 1) % N, jp = (j + 1) % N;
+        uCur[j] = f[j] + 0.5 * lam2 * (f[jp] - 2 * f[j] + f[jm]);
+      }
+      for (var st = 1; st < steps; st++) {
+        var uNext = new Float64Array(N);
+        for (j = 0; j < N; j++) {
+          var jm2 = (j + N - 1) % N, jp2 = (j + 1) % N;
+          uNext[j] = 2 * uCur[j] - uPrev[j] + lam2 * (uCur[jp2] - 2 * uCur[j] + uCur[jm2]);
         }
-    }
+        uPrev = uCur; uCur = uNext;
+      }
+      var uDal = new Float64Array(N);
+      evolveWave(f, GZero, T, c, uDal);
+      var worst = 0;
+      for (j = 8; j < N - 8; j++) worst = Math.max(worst, Math.abs(uCur[j] - uDal[j]));
+      check("N4 d'Alembert == leapfrog FD route (t=0.3)", worst < 5e-3, worst.toExponential(2));
+    })();
+    (function () {
+      var tri = profileTriangle();
+      var u = new Float64Array(N), c = 0.4, tt = 0.8;
+      evolveWave(tri, GZero, tt, c, u);
+      var front = 0.3 + c * tt;
+      var outside = 0, nearFront = 0;
+      for (j = 0; j < N; j++) {
+        var x = X_GRID[j];
+        if (Math.abs(x) > front + 0.03) outside = Math.max(outside, Math.abs(u[j]));
+        if (Math.abs(Math.abs(x) - (front - 0.05)) < 0.02) nearFront = Math.max(nearFront, Math.abs(u[j]));
+      }
+      check('N5a zero outside the characteristic fronts', outside < 1e-12, outside.toExponential(2));
+      check('N5b nonzero just inside the fronts', nearFront > 0.02, nearFront.toFixed(4));
+    })();
+    (function () {
+      var c = 0.3, tt = 0.4, dt = 1e-4;
+      var uM = new Float64Array(N), uP = new Float64Array(N), u0 = new Float64Array(N);
+      evolveWave(f, GKick, tt - dt, c, uM);
+      evolveWave(f, GKick, tt + dt, c, uP);
+      evolveWave(f, GKick, tt, c, u0);
+      var E = 0;
+      for (j = 0; j < N; j++) {
+        var jm = (j + N - 1) % N, jp = (j + 1) % N;
+        var ut = (uP[j] - uM[j]) / (2 * dt);
+        var ux = (u0[jp] - u0[jm]) / (2 * DX);
+        E += 0.5 * (ut * ut + c * c * ux * ux) * DX;
+      }
+      var Ea = waveEnergy(fp, gKick, tt, c);
+      check('N7 waveEnergy == numerical energy from samples',
+        Math.abs(E - Ea) / Ea < 0.03, (E / Ea).toFixed(4));
+    })();
 
-    // Test W2: wave initial condition u(·, 0) = f, g = 0
-    //   d'Alembert at t = 0: [f(x) + f(x)] / 2 + 0 = f(x).
-    {
-        const uW = new Float64Array(N);
-        evolveWave(f, GZero, 0.0, 0.3, uW);
-        let maxErr = 0;
-        for (let j = 0; j < N; j++) {
-            maxErr = Math.max(maxErr, Math.abs(uW[j] - f[j]));
-        }
-        if (maxErr > 1e-14) {
-            console.error('[calc35 PDE self-test W2] Wave at t=0 (g=0) differs from f, max err=', maxErr);
-        }
-    }
+    (function () {
+      var u = new Float64Array(N), worst = 0;
+      evolveLaplace(f, 0, u);
+      for (j = 0; j < N; j++) worst = Math.max(worst, Math.abs(u[j] - f[j]));
+      check('L1 Laplace at y=0 == f', worst === 0);
+    })();
+    (function () {
+      var u = new Float64Array(N), ok = true;
+      [0.05, 0.2, 0.5, 0.8].forEach(function (y) {
+        evolveLaplace(f, y, u);
+        for (j = 0; j < N; j++) if (u[j] > 1 + 1e-10 || u[j] < -1e-10) ok = false;
+      });
+      check('L2 Laplace maximum principle 0 <= u <= 1', ok);
+    })();
+    (function () {
+      var u = new Float64Array(N), prevMax = 1.0, ok = true;
+      [0.05, 0.1, 0.3, 0.5, 0.8].forEach(function (y) {
+        evolveLaplace(f, y, u);
+        var mx = -Infinity;
+        for (j = 0; j < N; j++) mx = Math.max(mx, u[j]);
+        if (mx > prevMax + 1e-10) ok = false;
+        prevMax = mx;
+      });
+      check('L3 Laplace max monotone in depth', ok);
+    })();
+    (function () {
+      var y0 = 0.05, y = 0.1;
+      var ker = new Float64Array(N), deep = new Float64Array(N), u = new Float64Array(N);
+      for (j = 0; j < N; j++) {
+        var x = X_GRID[j];
+        ker[j] = (1 / Math.PI) * y0 / (x * x + y0 * y0);
+        deep[j] = (1 / Math.PI) * (y0 + y) / (x * x + (y0 + y) * (y0 + y));
+      }
+      evolveLaplace(ker, y, u);
+      var worst = 0;
+      for (j = 0; j < N; j++) {
+        if (Math.abs(X_GRID[j]) < 0.4) worst = Math.max(worst, Math.abs(u[j] - deep[j]));
+      }
+      check('N6 Poisson kernel semigroup P_{y0} -> P_{y0+y}', worst < 5e-3, worst.toExponential(2));
+    })();
 
-    // Test W3: wave energy conservation, g ≠ 0 (outward kick)
-    //   For small t (disturbance stays inside [-1, 1]), energy should
-    //   be conserved within tolerance. Large t suffers window loss.
-    {
-        const c = 0.3;
-        const E0 = waveEnergy(fp, gKick, 0.0, c);
-        for (const t of [0.1, 0.2]) {
-            const Et = waveEnergy(fp, gKick, t, c);
-            const ratio = Et / E0;
-            if (Math.abs(ratio - 1.0) > 0.02) {
-                console.error('[calc35 PDE self-test W3] Wave energy drift (g=kick) at t=', t,
-                    ': E(t)/E(0)=', ratio.toFixed(6));
-            }
-        }
-    }
+    return { pass: failures.length === 0, failures: failures };
+  }
 
-    // Test W4: wave initial condition u(·, 0) = f even with g ≠ 0
-    //   The integral term has zero width at t = 0, so u(·, 0) = f
-    //   regardless of g.
-    {
-        const uW = new Float64Array(N);
-        evolveWave(f, GKick, 0.0, 0.3, uW);
-        let maxErr = 0;
-        for (let j = 0; j < N; j++) {
-            maxErr = Math.max(maxErr, Math.abs(uW[j] - f[j]));
-        }
-        if (maxErr > 1e-13) {
-            console.error('[calc35 PDE self-test W4] Wave at t=0 (g≠0) differs from f, max err=', maxErr);
-        }
-    }
-
-    // Test W5: cumulativeIntegrate consistency
-    //   For uniform g = 0.5, ∫_{-1}^{+1} g dx = 1.0 expected.
-    //   For zero g, total = 0.
-    {
-        const total = GPush[N];
-        const expected = 0.5 * 2.0;
-        if (Math.abs(total - expected) > 0.01) {
-            console.error('[calc35 PDE self-test W5a] cumulativeIntegrate uniform g:',
-                'got', total, 'expected', expected);
-        }
-        if (Math.abs(GZero[N]) > 1e-14) {
-            console.error('[calc35 PDE self-test W5b] cumulativeIntegrate of zero g not zero:',
-                GZero[N]);
-        }
-    }
-
-    // Test W6: bound violation for g ≠ 0 (uniform push)
-    //   Confirm the pedagogical claim: max u > 1 for some (x, t) when
-    //   g is the uniform_push profile.
-    {
-        const c = 0.3;
-        const uW = new Float64Array(N);
-        let maxOverall = -Infinity;
-        for (const t of [0.5, 1.0, 1.5]) {
-            evolveWave(f, GPush, t, c, uW);
-            for (let j = 0; j < N; j++) {
-                if (uW[j] > maxOverall) maxOverall = uW[j];
-            }
-        }
-        if (maxOverall <= 1.05) {
-            console.error('[calc35 PDE self-test W6] Wave bound-violation insufficient:',
-                'max u =', maxOverall.toFixed(4), '(expected > 1.05)');
-        }
-    }
-
-    // Test L1: Laplace y = 0 returns f exactly
-    {
-        const uL = new Float64Array(N);
-        evolveLaplace(f, 0.0, uL);
-        let maxErr = 0;
-        for (let j = 0; j < N; j++) {
-            maxErr = Math.max(maxErr, Math.abs(uL[j] - f[j]));
-        }
-        if (maxErr > 0.0) {
-            console.error('[calc35 PDE self-test L1] Laplace at y=0 differs from f, max err=', maxErr);
-        }
-    }
-
-    // Test L2: Laplace maximum principle
-    //   min f ≤ u(x, y) ≤ max f for all interior (x, y)
-    // For Gaussian: 0 ≤ u(x, y) ≤ 1.
-    {
-        const uL = new Float64Array(N);
-        for (const y of [0.05, 0.2, 0.5, 0.8]) {
-            evolveLaplace(f, y, uL);
-            let mx = -Infinity, mn = Infinity;
-            for (let j = 0; j < N; j++) {
-                if (uL[j] > mx) mx = uL[j];
-                if (uL[j] < mn) mn = uL[j];
-            }
-            if (mx > 1.0 + 1e-10 || mn < 0.0 - 1e-10) {
-                console.error('[calc35 PDE self-test L2] Laplace max principle violated at y=', y,
-                    ': max=', mx, 'min=', mn);
-            }
-        }
-    }
-
-    // Test L3: Laplace decay — max u decreases monotonically in y
-    //   This is the "boundary controls solution" signature.
-    {
-        const uL = new Float64Array(N);
-        let prevMax = 1.0;   // for Gaussian, max f = 1
-        for (const y of [0.05, 0.1, 0.3, 0.5, 0.8]) {
-            evolveLaplace(f, y, uL);
-            let mx = -Infinity;
-            for (let j = 0; j < N; j++) if (uL[j] > mx) mx = uL[j];
-            if (mx > prevMax + 1e-10) {
-                console.error('[calc35 PDE self-test L3] Laplace max not monotone in y:',
-                    'prev=', prevMax, 'at y=', y, ':', mx);
-            }
-            prevMax = mx;
-        }
-    }
-
-    console.log('[calc35] PDE solver self-tests passed');
+  return {
+    N: N, L: L, DX: DX,
+    X_GRID: X_GRID, XI: XI,
+    fft: fft, ifft: ifft, fftReal: fftReal,
+    interp1d: interp1d, centralDiff: centralDiff, trapz: trapz,
+    buildProfile: buildProfile, buildGProfile: buildGProfile,
+    profileGaussian: profileGaussian, profileTriangle: profileTriangle, profileBimodal: profileBimodal,
+    gProfileAtRest: gProfileAtRest, gProfileOutwardKick: gProfileOutwardKick, gProfileUniformPush: gProfileUniformPush,
+    evolveHeat: evolveHeat, evolveWave: evolveWave,
+    cumulativeIntegrate: cumulativeIntegrate, interpCumul: interpCumul,
+    waveEnergy: waveEnergy, evolveLaplace: evolveLaplace,
+    runSelfTests: runSelfTests
+  };
 })();
+
+if (typeof module !== 'undefined' && module.exports) { module.exports = TriCore; }
+
+//======================================================================
+// [UI IIFE] #trichotomy_demo_visualizer -- modules 4-6 carried over from
+// v1 and adapted: fixed dark island, blocking gate, characteristic
+// markers, no console, idempotent init.
+//======================================================================
+(function () {
+'use strict';
+if (typeof document === 'undefined') return;
+
+var N = TriCore.N;
+var X_GRID = TriCore.X_GRID;
+var buildProfile = TriCore.buildProfile;
+var buildGProfile = TriCore.buildGProfile;
+var cumulativeIntegrate = TriCore.cumulativeIntegrate;
+var centralDiff = TriCore.centralDiff;
+var evolveHeat = TriCore.evolveHeat;
+var evolveWave = TriCore.evolveWave;
+var evolveLaplace = TriCore.evolveLaplace;
+var waveEnergy = TriCore.waveEnergy;
+var fft = TriCore.fft;
+
 
 
 // ============================================================
@@ -1121,7 +1072,7 @@ function evolveLaplace(f, y, uOut) {
 //   - bound indicators (max f, min f as dashed lines) — Heat and Laplace only
 //   - panel title and status readouts below the canvas (DOM, not canvas)
 //
-// Theme: light by default, dark via html[data-theme="dark"]. Palette is
+// Theme: fixed dark island (v2). Palette is
 // resolved lazily on each render via getPalette() — the demo follows the
 // user's theme switch without any explicit notification.
 
@@ -1154,43 +1105,24 @@ const Y_VIEW_MAX =  1.20;              // a touch above 1 to accommodate bound l
  * @returns {object} palette dictionary
  */
 function getPalette() {
-    const isDark = (document.documentElement.getAttribute('data-theme') === 'dark');
-    if (isDark) {
-        return {
-            bg:           '#1a1d24',
-            bgFrame:      '#252932',
-            gridLine:     'rgba(255,255,255,0.08)',
-            axisLine:     'rgba(255,255,255,0.25)',
-            axisLabel:    'rgba(230,232,240,0.65)',
-            refCurve:     'rgba(255,255,255,0.18)',    // initial f reference
-            boundLine:    'rgba(255,255,255,0.30)',    // dashed sup/inf lines
-            gCurve:       'rgba(77, 208, 225, 0.55)',  // teal: initial velocity g(x) on wave panel
-            // Per-panel accent colors
-            heatCurve:    '#4a9eff',    // blue (cool color for heat)
-            heatFill:     'rgba(74, 158, 255, 0.16)',
-            waveCurve:    '#5eda8e',    // green (section accent)
-            waveFill:     'rgba(94, 218, 142, 0.16)',
-            laplaceCurve: '#ffb84a',    // amber (elliptic distinct)
-            laplaceFill:  'rgba(255, 184, 74, 0.16)',
-        };
-    } else {
-        return {
-            bg:           '#fbfcfe',
-            bgFrame:      '#f0f2f6',
-            gridLine:     'rgba(0,0,0,0.06)',
-            axisLine:     'rgba(0,0,0,0.30)',
-            axisLabel:    'rgba(40,42,50,0.70)',
-            refCurve:     'rgba(0,0,0,0.22)',
-            boundLine:    'rgba(0,0,0,0.35)',
-            gCurve:       'rgba(0, 131, 143, 0.65)',   // teal: g(x) on wave panel
-            heatCurve:    '#1565c0',
-            heatFill:     'rgba(21, 101, 192, 0.12)',
-            waveCurve:    '#2e7d32',
-            waveFill:     'rgba(46, 125, 50, 0.12)',
-            laplaceCurve: '#ef6c00',
-            laplaceFill:  'rgba(239, 108, 0, 0.12)',
-        };
-    }
+    // v2: self-contained dark island (site theme is deliberately NOT read)
+    return {
+        bg:           '#1a1d24',
+        bgFrame:      '#252932',
+        gridLine:     'rgba(255,255,255,0.08)',
+        axisLine:     'rgba(255,255,255,0.25)',
+        axisLabel:    'rgba(230,232,240,0.65)',
+        refCurve:     'rgba(255,255,255,0.18)',
+        boundLine:    'rgba(255,255,255,0.30)',
+        gCurve:       'rgba(77, 208, 225, 0.55)',
+        charCurve:    'rgba(94, 218, 142, 0.55)',
+        heatCurve:    '#4a9eff',
+        heatFill:     'rgba(74, 158, 255, 0.16)',
+        waveCurve:    '#5eda8e',
+        waveFill:     'rgba(94, 218, 142, 0.16)',
+        laplaceCurve: '#ffb84a',
+        laplaceFill:  'rgba(255, 184, 74, 0.16)'
+    };
 }
 
 
@@ -1475,7 +1407,7 @@ function renderHeatPanel(ctx, state, W, H, palette) {
     drawBoundLines(ctx, 1.0, 0.0, W, H, palette);  // max f = 1, min f = 0 by construction
     drawReferenceProfile(ctx, state.f, W, H, palette);
     drawCurve(ctx, state.uH, W, H, palette.heatCurve, palette.heatFill, 2);
-    drawPanelTitle(ctx, 'Heat   ∂\u209C u = k ∂\u02E3\u02E3 u', palette);
+    drawPanelTitle(ctx, 'Heat \u2014 parabolic   ∂\u209C u = k ∂\u2093\u2093 u', palette);
 }
 
 /**
@@ -1499,8 +1431,34 @@ function renderWavePanel(ctx, state, W, H, palette) {
     drawAxes(ctx, W, H, palette);
     drawReferenceProfile(ctx, state.f, W, H, palette);
     drawInitialVelocity(ctx, state.g, W, H, palette);
+    // The two characteristics through the origin, x = -ct and x = +ct:
+    // certificate N5 pins that the solution's support edges travel at
+    // exactly these speeds, so the markers ride the two travelling humps
+    // for every centred profile.
+    (function () {
+        var ct = state.tau * T_W_MAX * state.c;
+        if (ct > 1e-6 && ct < 1.02) {
+            ctx.save();
+            ctx.strokeStyle = palette.charCurve;
+            ctx.setLineDash([3, 4]);
+            ctx.lineWidth = 1.2;
+            [-ct, ct].forEach(function (xm) {
+                var px = mathToPixelX(xm, W);
+                ctx.beginPath();
+                ctx.moveTo(px, mathToPixelY(Y_VIEW_MAX, H));
+                ctx.lineTo(px, mathToPixelY(0, H));
+                ctx.stroke();
+            });
+            ctx.fillStyle = palette.charCurve;
+            ctx.font = '10px ui-sans-serif, system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('x=\u2212ct', mathToPixelX(-ct, W), mathToPixelY(Y_VIEW_MAX, H) + 10);
+            ctx.fillText('x=+ct', mathToPixelX(ct, W), mathToPixelY(Y_VIEW_MAX, H) + 10);
+            ctx.restore();
+        }
+    })();
     drawCurve(ctx, state.uW, W, H, palette.waveCurve, palette.waveFill, 2);
-    drawPanelTitle(ctx, 'Wave   ∂\u209C\u209C u = c² ∂\u02E3\u02E3 u', palette);
+    drawPanelTitle(ctx, 'Wave \u2014 hyperbolic   ∂\u209C\u209C u = c² ∂\u2093\u2093 u', palette);
 }
 
 /**
@@ -1515,7 +1473,7 @@ function renderLaplacePanel(ctx, state, W, H, palette) {
     drawBoundLines(ctx, 1.0, 0.0, W, H, palette);
     drawReferenceProfile(ctx, state.f, W, H, palette);
     drawCurve(ctx, state.uL, W, H, palette.laplaceCurve, palette.laplaceFill, 2);
-    drawPanelTitle(ctx, 'Laplace   Δu = 0', palette);
+    drawPanelTitle(ctx, 'Laplace \u2014 elliptic   Δu = 0', palette);
 }
 
 
@@ -1652,9 +1610,7 @@ function updateFrameDiagnostics(state) {
 //   - three panel cards (canvas + readouts) in a horizontal flex row
 //   - controls block (profile select, τ slider, k/c sliders, Play/Reset)
 //
-// Theme: defined via CSS custom properties scoped to .trichotomy-container.
-// Light theme is the default; dark theme is selected by the global
-// html[data-theme="dark"] attribute that the rest of the site sets.
+// Theme: fixed dark island (v2); the site theme is deliberately not read.
 // Mobile breakpoint at 900px stacks the panels vertically.
 
 
@@ -1781,6 +1737,10 @@ function buildDemoHTML() {
       <span class="tri-legend-swatch tri-legend-bound"></span>
       pointwise bound (heat &amp; Laplace only)
     </span>
+    <span class="tri-legend-item">
+      <span class="tri-legend-swatch tri-legend-char"></span>
+      characteristics x = &plusmn;ct (wave only)
+    </span>
   </div>
 
   <!-- Controls -->
@@ -1855,60 +1815,7 @@ function buildDemoHTML() {
 
 const TRICHOTOMY_CSS = `
 /* ===== Light-theme defaults (CSS custom properties on the container) ===== */
-.trichotomy-container {
-    --tri-bg:           #fbfcfe;
-    --tri-bg-panel:     #ffffff;
-    --tri-bg-canvas:    #fbfcfe;
-    --tri-bg-frame:     #eef0f3;
-    --tri-fg:           #1f2330;
-    --tri-fg-muted:     #5a6172;
-    --tri-fg-subtle:    #8a91a3;
-    --tri-border:       #d6dae3;
-    --tri-border-hover: #b8becb;
 
-    --tri-accent-heat:    #1565c0;
-    --tri-accent-heat-bg: rgba(21, 101, 192, 0.08);
-    --tri-accent-wave:    #2e7d32;
-    --tri-accent-wave-bg: rgba(46, 125, 50, 0.08);
-    --tri-accent-laplace: #ef6c00;
-    --tri-accent-laplace-bg: rgba(239, 108, 0, 0.08);
-    --tri-accent-g:       #00838f;   /* teal: initial velocity g on wave panel */
-
-    --tri-readout-ok:     #2e7d32;
-    --tri-readout-warn:   #ef6c00;
-    --tri-readout-bad:    #c62828;
-
-    --tri-shadow:        0 1px 3px rgba(0, 0, 0, 0.04);
-    --tri-shadow-active: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* ===== Dark theme overrides ===== */
-html[data-theme="dark"] .trichotomy-container {
-    --tri-bg:           #1a1d24;
-    --tri-bg-panel:     #252932;
-    --tri-bg-canvas:    #1a1d24;
-    --tri-bg-frame:     #2a2e38;
-    --tri-fg:           #e6e8f0;
-    --tri-fg-muted:     #969baa;
-    --tri-fg-subtle:    #6d7384;
-    --tri-border:       #3a3f4b;
-    --tri-border-hover: #4d5360;
-
-    --tri-accent-heat:    #4a9eff;
-    --tri-accent-heat-bg: rgba(74, 158, 255, 0.12);
-    --tri-accent-wave:    #5eda8e;
-    --tri-accent-wave-bg: rgba(94, 218, 142, 0.12);
-    --tri-accent-laplace: #ffb84a;
-    --tri-accent-laplace-bg: rgba(255, 184, 74, 0.12);
-    --tri-accent-g:       #4dd0e1;   /* teal for dark theme */
-
-    --tri-readout-ok:     #5eda8e;
-    --tri-readout-warn:   #ffb84a;
-    --tri-readout-bad:    #ff5252;
-
-    --tri-shadow:        0 1px 3px rgba(0, 0, 0, 0.3);
-    --tri-shadow-active: 0 2px 6px rgba(0, 0, 0, 0.5);
-}
 
 /* ===== Container ===== */
 .trichotomy-container {
@@ -1916,13 +1823,13 @@ html[data-theme="dark"] .trichotomy-container {
     max-width: 980px;
     margin: 1.5em auto;
     padding: 18px;
-    background: var(--tri-bg);
-    color: var(--tri-fg);
-    border: 1px solid var(--tri-border);
+    background: #1a1d24;
+    color: #e6e8f0;
+    border: 1px solid #3a3f4b;
     border-radius: 8px;
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
                  Roboto, "Helvetica Neue", Arial, sans-serif;
-    box-shadow: var(--tri-shadow);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     box-sizing: border-box;
 }
 .trichotomy-container *,
@@ -1936,17 +1843,17 @@ html[data-theme="dark"] .trichotomy-container {
     gap: 12px;
     margin-bottom: 14px;
     padding-bottom: 10px;
-    border-bottom: 1px solid var(--tri-border);
+    border-bottom: 1px solid #3a3f4b;
 }
 .tri-title {
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--tri-fg);
+    color: #e6e8f0;
     letter-spacing: 0.01em;
 }
 .tri-subtitle {
     font-size: 0.78rem;
-    color: var(--tri-fg-muted);
+    color: #969baa;
     font-style: italic;
 }
 
@@ -1962,21 +1869,21 @@ html[data-theme="dark"] .trichotomy-container {
     min-width: 0;     /* allow flex shrink below content min-width */
     display: flex;
     flex-direction: column;
-    background: var(--tri-bg-panel);
-    border: 1px solid var(--tri-border);
+    background: #252932;
+    border: 1px solid #3a3f4b;
     border-radius: 6px;
     overflow: hidden;
     position: relative;     /* anchor for the absolute-positioned panel tag */
     transition: border-color 0.15s ease;
 }
-.tri-panel-heat    { border-top: 3px solid var(--tri-accent-heat);    }
-.tri-panel-wave    { border-top: 3px solid var(--tri-accent-wave);    }
-.tri-panel-laplace { border-top: 3px solid var(--tri-accent-laplace); }
+.tri-panel-heat    { border-top: 3px solid #4a9eff;    }
+.tri-panel-wave    { border-top: 3px solid #5eda8e;    }
+.tri-panel-laplace { border-top: 3px solid #ffb84a; }
 
 /* ===== Canvas wrapper ===== */
 .tri-canvas-wrap {
     width: 100%;
-    background: var(--tri-bg-canvas);
+    background: #1a1d24;
     position: relative;
     aspect-ratio: 7 / 6;   /* match Module 4's 280×240 logical canvas */
 }
@@ -1989,8 +1896,8 @@ html[data-theme="dark"] .trichotomy-container {
 /* ===== Readouts panel below canvas ===== */
 .tri-readouts {
     padding: 8px 10px;
-    background: var(--tri-bg-frame);
-    border-top: 1px solid var(--tri-border);
+    background: #2a2e38;
+    border-top: 1px solid #3a3f4b;
     font-family: ui-monospace, "JetBrains Mono", "SF Mono", "Menlo",
                  "Consolas", monospace;
 }
@@ -2002,44 +1909,44 @@ html[data-theme="dark"] .trichotomy-container {
     font-size: 0.74rem;
 }
 .tri-readout-label {
-    color: var(--tri-fg-muted);
+    color: #969baa;
     font-weight: 500;
 }
 .tri-readout-value {
-    color: var(--tri-fg);
+    color: #e6e8f0;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 .tri-readout-muted .tri-readout-value,
 .tri-readout-value.tri-readout-muted,
 .tri-readout-aux .tri-readout-value {
-    color: var(--tri-fg-subtle);
+    color: #6d7384;
     font-weight: 500;
 }
 /* Value-status colorings: applied dynamically by the wiring layer */
-.tri-readout-value.tri-status-ok    { color: var(--tri-readout-ok);   }
-.tri-readout-value.tri-status-warn  { color: var(--tri-readout-warn); }
-.tri-readout-value.tri-status-bad   { color: var(--tri-readout-bad);  }
+.tri-readout-value.tri-status-ok    { color: #5eda8e;   }
+.tri-readout-value.tri-status-warn  { color: #ffb84a; }
+.tri-readout-value.tri-status-bad   { color: #ff5252;  }
 
 /* ===== Mobile compact readout (visible only on narrow screens) ===== */
 /* Single-line readout placed below the canvas; activated by media query */
 .tri-readouts-compact {
     display: none;       /* hidden on desktop; shown below 900px */
     padding: 4px 6px;
-    background: var(--tri-bg-frame);
-    border-top: 1px solid var(--tri-border);
+    background: #2a2e38;
+    border-top: 1px solid #3a3f4b;
     font-family: ui-monospace, "JetBrains Mono", monospace;
     font-size: 0.68rem;
     font-variant-numeric: tabular-nums;
     text-align: center;
-    color: var(--tri-fg);
+    color: #e6e8f0;
     font-weight: 600;
 }
-.tri-readout-compact-value.tri-status-ok    { color: var(--tri-readout-ok);   }
-.tri-readout-compact-value.tri-status-warn  { color: var(--tri-readout-warn); }
-.tri-readout-compact-value.tri-status-bad   { color: var(--tri-readout-bad);  }
+.tri-readout-compact-value.tri-status-ok    { color: #5eda8e;   }
+.tri-readout-compact-value.tri-status-warn  { color: #ffb84a; }
+.tri-readout-compact-value.tri-status-bad   { color: #ff5252;  }
 .tri-readout-compact-sep {
-    color: var(--tri-fg-subtle);
+    color: #6d7384;
     margin: 0 4px;
 }
 
@@ -2058,9 +1965,9 @@ html[data-theme="dark"] .trichotomy-container {
     z-index: 2;
     pointer-events: none;
 }
-.tri-tag-heat    { color: var(--tri-accent-heat);    }
-.tri-tag-wave    { color: var(--tri-accent-wave);    }
-.tri-tag-laplace { color: var(--tri-accent-laplace); }
+.tri-tag-heat    { color: #4a9eff;    }
+.tri-tag-wave    { color: #5eda8e;    }
+.tri-tag-laplace { color: #ffb84a; }
 
 /* ===== Legend ===== */
 .tri-legend {
@@ -2069,11 +1976,11 @@ html[data-theme="dark"] .trichotomy-container {
     gap: 18px;
     padding: 8px 14px;
     margin-bottom: 12px;
-    background: var(--tri-bg-frame);
-    border: 1px solid var(--tri-border);
+    background: #2a2e38;
+    border: 1px solid #3a3f4b;
     border-radius: 6px;
     font-size: 0.72rem;
-    color: var(--tri-fg-muted);
+    color: #969baa;
     align-items: center;
 }
 .tri-legend-item {
@@ -2094,23 +2001,27 @@ html[data-theme="dark"] .trichotomy-container {
     /* Use the wave accent as the neutral "all-panels" representative color.
        In practice each panel uses its own color (blue/green/amber); the swatch
        conveys the dash pattern, not the panel identity. */
-    border-top-color: var(--tri-fg);
+    border-top-color: #e6e8f0;
 }
 .tri-legend-dashed {
     border-top-style: dashed;
-    border-top-color: var(--tri-fg-muted);
+    border-top-color: #969baa;
     border-top-width: 1.5px;
 }
 .tri-legend-bound {
     border-top-style: dashed;
-    border-top-color: var(--tri-fg);
+    border-top-color: #e6e8f0;
     border-top-width: 1px;
     opacity: 0.7;
+}
+.tri-legend-char {
+    border-top: 2px dashed rgba(94, 218, 142, 0.75);
+    background: transparent;
 }
 .tri-legend-gvel {
     /* dotted teal — initial velocity g(x) on the wave panel */
     border-top-style: dotted;
-    border-top-color: var(--tri-accent-g);
+    border-top-color: #4dd0e1;
     border-top-width: 1.5px;
 }
 
@@ -2128,8 +2039,8 @@ html[data-theme="dark"] .trichotomy-container {
     gap: 12px 14px;
     align-items: end;
     padding: 12px;
-    background: var(--tri-bg-frame);
-    border: 1px solid var(--tri-border);
+    background: #2a2e38;
+    border: 1px solid #3a3f4b;
     border-radius: 6px;
 }
 /* Row-2 placements */
@@ -2152,14 +2063,14 @@ html[data-theme="dark"] .trichotomy-container {
     justify-content: space-between;
     align-items: baseline;
     font-size: 0.72rem;
-    color: var(--tri-fg-muted);
+    color: #969baa;
     font-weight: 500;
     letter-spacing: 0.02em;
     text-transform: uppercase;
 }
 .tri-control-readout {
     font-family: ui-monospace, "JetBrains Mono", monospace;
-    color: var(--tri-fg);
+    color: #e6e8f0;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     text-transform: none;
@@ -2168,7 +2079,7 @@ html[data-theme="dark"] .trichotomy-container {
 }
 .tri-control-hint {
     font-size: 0.66rem;
-    color: var(--tri-fg-subtle);
+    color: #6d7384;
     font-family: ui-monospace, "JetBrains Mono", monospace;
     margin-top: 2px;
 }
@@ -2176,37 +2087,37 @@ html[data-theme="dark"] .trichotomy-container {
 /* ===== Segmented buttons (profile selector) ===== */
 .tri-segmented {
     display: flex;
-    border: 1px solid var(--tri-border);
+    border: 1px solid #3a3f4b;
     border-radius: 4px;
     overflow: hidden;
-    background: var(--tri-bg-panel);
+    background: #252932;
 }
 .tri-seg-btn {
     flex: 1 1 0;
     padding: 7px 4px;
     background: transparent;
     border: none;
-    border-right: 1px solid var(--tri-border);
+    border-right: 1px solid #3a3f4b;
     font-family: inherit;
     font-size: 0.72rem;
     font-weight: 500;
-    color: var(--tri-fg-muted);
+    color: #969baa;
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
     text-align: center;
 }
 .tri-seg-btn:last-child { border-right: none; }
-.tri-seg-btn:hover { color: var(--tri-fg); background: var(--tri-bg-frame); }
+.tri-seg-btn:hover { color: #e6e8f0; background: #2a2e38; }
 .tri-seg-btn.tri-seg-active {
-    background: var(--tri-fg);
-    color: var(--tri-bg-panel);
+    background: #e6e8f0;
+    color: #252932;
     font-weight: 600;
 }
 /* g-profile segmented uses teal accent when active to signal
    this is the Wave-specific initial-velocity control */
 .tri-segmented-g .tri-seg-btn.tri-seg-active {
-    background: var(--tri-accent-g);
-    color: var(--tri-bg-panel);
+    background: #4dd0e1;
+    color: #252932;
 }
 
 /* ===== Sliders ===== */
@@ -2215,19 +2126,19 @@ html[data-theme="dark"] .trichotomy-container {
     appearance: none;
     width: 100%;
     height: 4px;
-    background: var(--tri-border);
+    background: #3a3f4b;
     border-radius: 2px;
     outline: none;
     cursor: pointer;
     transition: background 0.15s ease;
 }
-.tri-slider:hover { background: var(--tri-border-hover); }
+.tri-slider:hover { background: #4d5360; }
 .tri-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 14px;
     height: 14px;
-    background: var(--tri-fg);
+    background: #e6e8f0;
     border-radius: 50%;
     cursor: pointer;
     transition: transform 0.12s ease;
@@ -2236,13 +2147,13 @@ html[data-theme="dark"] .trichotomy-container {
 .tri-slider::-moz-range-thumb {
     width: 14px;
     height: 14px;
-    background: var(--tri-fg);
+    background: #e6e8f0;
     border-radius: 50%;
     cursor: pointer;
     border: none;
 }
-.tri-slider-tau::-webkit-slider-thumb { background: var(--tri-accent-wave); }
-.tri-slider-tau::-moz-range-thumb     { background: var(--tri-accent-wave); }
+.tri-slider-tau::-webkit-slider-thumb { background: #5eda8e; }
+.tri-slider-tau::-moz-range-thumb     { background: #5eda8e; }
 
 /* ===== Action buttons (Play / Reset) ===== */
 .tri-control-actions {
@@ -2254,29 +2165,29 @@ html[data-theme="dark"] .trichotomy-container {
 .tri-action-btn {
     flex: 1 1 0;
     padding: 8px 10px;
-    background: var(--tri-bg-panel);
-    border: 1px solid var(--tri-border);
+    background: #252932;
+    border: 1px solid #3a3f4b;
     border-radius: 4px;
     font-family: inherit;
     font-size: 0.74rem;
     font-weight: 600;
-    color: var(--tri-fg);
+    color: #e6e8f0;
     cursor: pointer;
     transition: background 0.15s ease, border-color 0.15s ease;
     white-space: nowrap;
 }
 .tri-action-btn:hover {
-    background: var(--tri-bg-frame);
-    border-color: var(--tri-border-hover);
+    background: #2a2e38;
+    border-color: #4d5360;
 }
 .tri-action-btn.tri-action-primary {
-    background: var(--tri-fg);
-    color: var(--tri-bg-panel);
-    border-color: var(--tri-fg);
+    background: #e6e8f0;
+    color: #252932;
+    border-color: #e6e8f0;
 }
 .tri-action-btn.tri-action-primary:hover {
-    background: var(--tri-fg-muted);
-    border-color: var(--tri-fg-muted);
+    background: #969baa;
+    border-color: #969baa;
 }
 
 /* ===== Mobile breakpoint (compact horizontal layout) =====
@@ -2704,6 +2615,24 @@ function setPlayingUI(refs, playing) {
 function initTrichotomyDemo() {
     const container = document.getElementById('trichotomy_demo_visualizer');
     if (!container) return;
+    if (container.dataset.triInit) return; // idempotency guard
+    container.dataset.triInit = '1';
+
+    // 0. Blocking gate: the demo refuses to render on broken mathematics
+    let gateRes;
+    try { gateRes = TriCore.runSelfTests(); }
+    catch (e) { gateRes = { pass: false, failures: ['self-tests crashed: ' + e.message] }; }
+    if (!gateRes.pass) {
+        const items = gateRes.failures.map(f => '<li>' + f + '</li>').join('');
+        container.innerHTML =
+            '<div style="background:rgba(20,28,40,0.95);border:1px solid #ff5252;border-radius:8px;' +
+            'padding:16px;color:#e6e8f0;">' +
+            '<strong style="color:#ff5252;">Demo disabled: mathematical self-tests failed (' +
+            gateRes.failures.length + ').</strong>' +
+            '<p style="color:#969baa;margin:8px 0 4px;">This visualizer refuses to render on broken mathematics.</p>' +
+            '<ul style="color:#969baa;margin:0 0 0 18px;">' + items + '</ul></div>';
+        return;
+    }
 
     // 1. Build DOM and style
     injectTrichotomyCSS();
@@ -2735,7 +2664,6 @@ function initTrichotomyDemo() {
     // 4. Bind events
     bindControlEvents(state, refs, canvases);
     bindResizeHandler(state, refs, canvases, setupAllCanvases);
-    bindThemeObserver(state, refs, canvases);
 
     // 5. Initial render
     renderFullFrame(state, canvases, refs);
@@ -2753,7 +2681,6 @@ function initTrichotomyDemo() {
     // 6. Start animation loop (only animates when state.playing = true)
     startAnimationLoop(state, refs, canvases);
 
-    console.log('[calc35] trichotomy demo initialized');
 }
 
 
@@ -2853,19 +2780,6 @@ function bindResizeHandler(state, refs, canvases, setupAllCanvases) {
     });
 }
 
-/**
- * Theme observer: when html[data-theme] attribute changes, re-render
- * (palette is read lazily from getPalette() so no state change is needed).
- */
-function bindThemeObserver(state, refs, canvases) {
-    const observer = new MutationObserver(() => {
-        renderFullFrame(state, canvases, refs);
-    });
-    observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['data-theme'],
-    });
-}
 
 
 // ------------------------------------------------------------
@@ -2922,4 +2836,5 @@ if (document.readyState === 'loading') {
     initTrichotomyDemo();
 }
 
-})();   // end of IIFE
+
+})();
