@@ -582,27 +582,29 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
           '<div class="rbv-note">The last column is the translation; the 3\u00D73 block is R. One matrix now carries ' +
             '"where it is" and "how it faces".</div>' +
           '<div class="rbv-note" id="rbv-order"></div></div>' +
-        '<div class="rbv-panel"><div class="rbv-paneltitle">Other charts of the same rotation</div>' +
+        '<div class="rbv-gimbal" id="rbv-gimbal" style="display:none;"></div>' +
+        '<details class="rbv-details"><summary>Other charts of the same rotation</summary>' +
           '<div class="rbv-rows">' +
           '<div><span class="rbv-k">Euler (ZYX)</span><span id="rbv-euler" class="rbv-v rbv-mono"></span></div>' +
           '<div><span class="rbv-k">Axis\u2013angle</span><span id="rbv-aa" class="rbv-v rbv-mono"></span></div>' +
           '<div><span class="rbv-k">Quaternion</span><span id="rbv-quat" class="rbv-v rbv-mono"></span></div>' +
-          '</div>' +
-          '<div class="rbv-gimbal" id="rbv-gimbal" style="display:none;"></div></div>' +
-        '<div class="rbv-panel"><div class="rbv-paneltitle">Invariants \u2014 measured from the transformed vertices</div>' +
+          '</div></details>' +
+        '<details class="rbv-details"><summary>Invariants \u2014 measured from the vertices</summary>' +
           '<div class="rbv-rows">' +
           '<div><span class="rbv-k">Edge length</span><span id="rbv-edge" class="rbv-v rbv-mono"></span></div>' +
           '<div><span class="rbv-k">Interior angle</span><span id="rbv-int" class="rbv-v rbv-mono"></span></div>' +
           '<div><span class="rbv-k">Volume scale |det R|</span><span id="rbv-vol" class="rbv-v rbv-mono"></span></div>' +
-          '</div></div>' +
+          '</div></details>' +
         '<div class="rbv-panel"><div class="rbv-paneltitle">Controls</div>' +
+          '<div class="rbv-slidergrid">' +
           '<div class="rbv-slider"><label>roll \u03C6 = <span id="rbv-roll-val">0\u00B0</span></label>' +
             '<input type="range" id="rbv-roll" min="-180" max="180" value="0"></div>' +
           '<div class="rbv-slider"><label>pitch \u03B8 = <span id="rbv-pitch-val">0\u00B0</span></label>' +
             '<input type="range" id="rbv-pitch" min="-90" max="90" value="0"></div>' +
           '<div class="rbv-slider"><label>yaw \u03C8 = <span id="rbv-yaw-val">0\u00B0</span></label>' +
             '<input type="range" id="rbv-yaw" min="-180" max="180" value="0"></div>' +
-          '<div id="rbv-transliders" style="display:none;">' +
+          '</div>' +
+          '<div id="rbv-transliders" class="rbv-slidergrid" style="display:none;">' +
           '<div class="rbv-slider"><label>t\u2093 = <span id="rbv-tx-val">0.0</span></label>' +
             '<input type="range" id="rbv-tx" min="-2" max="2" step="0.1" value="0"></div>' +
           '<div class="rbv-slider"><label>t\u1D67 = <span id="rbv-ty-val">0.0</span></label>' +
@@ -636,6 +638,10 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
         'background:rgba(255,255,255,0.05);color:' + C.text + ';cursor:pointer;font-size:0.8rem;}' +
       '#rigid-body-visualizer-3d .rbv-btn:hover{background:rgba(102,187,106,0.15);border-color:rgba(102,187,106,0.4);}' +
       '#rigid-body-visualizer-3d .rbv-mode.active{background:rgba(102,187,106,0.2);border-color:' + C.accent + ';}' +
+      '#rigid-body-visualizer-3d .rbv-slidergrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:4px 14px;}' +
+      '#rigid-body-visualizer-3d .rbv-details{border:1px solid ' + C.border + ';border-radius:8px;padding:8px 12px;background:rgba(255,255,255,0.02);}' +
+      '#rigid-body-visualizer-3d .rbv-details summary{font-size:0.85rem;color:' + C.accent + ';font-weight:600;cursor:pointer;}' +
+      '#rigid-body-visualizer-3d .rbv-details .rbv-rows{margin-top:8px;}' +
       '#rigid-body-visualizer-3d .rbv-slider label{display:block;font-size:0.82rem;color:' + C.textDim + ';font-weight:bold;margin-bottom:1px;}' +
       '#rigid-body-visualizer-3d .rbv-slider input{width:100%;accent-color:' + C.accent + ';}' +
       '#rigid-body-visualizer-3d .rbv-note{font-size:0.78rem;color:' + C.faint + ';line-height:1.5;margin-top:6px;}' +
@@ -762,7 +768,7 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
       document.getElementById('rbv-so3').classList.toggle('active', m === 'SO3');
       document.getElementById('rbv-se3').classList.toggle('active', m === 'SE3');
       document.getElementById('rbv-Tpanel').style.display = m === 'SE3' ? 'block' : 'none';
-      document.getElementById('rbv-transliders').style.display = m === 'SE3' ? 'block' : 'none';
+      document.getElementById('rbv-transliders').style.display = m === 'SE3' ? 'grid' : 'none';
       document.getElementById('rbv-instruction').textContent = m === 'SO3'
         ? 'SO(3): pure rotation. Drag the coin (shift+drag orbits the camera) or use the sliders. Every readout below is measured from the current matrix, and det(R) stays exactly 1.'
         : 'SE(3): rotation + translation = full rigid-body motion. The 4\u00D74 homogeneous matrix carries both at once; the order experiment below shows why the two ingredients do not commute.';
