@@ -556,8 +556,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = ShorCore
       '<div class="shd-panelbox">' +
         '<div class="shd-charttitle">Argument register after the collapse: the comb (1/\u221Am) \u03A3\u2C7C |jr+s\u27E9</div>' +
         '<svg id="shd-comb" width="100%" height="56" preserveAspectRatio="none"></svg>' +
-        '<div class="shd-sliderrow"><label for="shd-s">offset s = <span id="shd-s-val">0</span></label>' +
-          '<input type="range" id="shd-s" min="0" max="3" value="0" step="1">' +
+        '<div class="shd-sliderrow"><label for="shd-s">offset s = <span id="shd-s-val">0</span> <span class="shd-sub">(only r offsets exist: 0 \u2026 <span id="shd-s-max">3</span>)</span></label>' +
+          '<input type="range" id="shd-s" min="0" max="3" value="0" step="1" list="shd-s-ticks">' +
+          '<datalist id="shd-s-ticks"></datalist>' +
           '<span class="shd-sub">the comb slides; P(b) provably cannot</span></div>' +
       '</div>' +
       '<div class="shd-views">' +
@@ -640,9 +641,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = ShorCore
       var out = '';
       for (var a = s; a < q; a += r) {
         var x = (a / q) * W;
+        var first = a === s;
         out += '<line x1="' + x.toFixed(2) + '" y1="' + (H - 6) + '" x2="' + x.toFixed(2) +
-          '" y2="8" stroke="' + C.comb + '" stroke-width="1.2"/>';
+          '" y2="8" stroke="' + (first ? C.hot : C.comb) + '" stroke-width="' + (first ? '2.4' : '1.2') + '"/>';
       }
+      out += '<text x="4" y="' + (H - 12) + '" fill="' + C.hot + '" font-size="11" font-family="Courier New">s=' + s + '</text>';
       out += '<line x1="0" y1="' + (H - 6) + '" x2="' + W + '" y2="' + (H - 6) +
         '" stroke="rgba(255,255,255,0.18)"/>';
       el.comb.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
@@ -741,6 +744,10 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = ShorCore
       el.s.max = String(st.r - 1);
       el.s.value = '0';
       el.sVal.textContent = '0';
+      document.getElementById('shd-s-max').textContent = String(st.r - 1);
+      var ticks = '';
+      for (var ss = 0; ss < st.r; ss++) ticks += '<option value="' + ss + '"></option>';
+      document.getElementById('shd-s-ticks').innerHTML = ticks;
       el.b.max = String(st.q - 1);
       el.b.value = String(Math.round(st.q / st.r) % st.q);
       el.result.className = 'shd-result';
