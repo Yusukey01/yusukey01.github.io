@@ -871,16 +871,29 @@ uses_python: true
                 </p>
 
 
-                <div class="tab-content" id="demoTabContent" style="padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background: transparent;">
+                <div id="demoTabContent" style="padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background: transparent;">
                     
                     <div class="demo-section" id="demo1d-pane">
-                        <h3>1D Signal & Frequency Spectrum</h3>
+                        <h3>1D Signal &amp; Frequency Spectrum</h3>
                         <p>
-                            This demo shows how two sine waves (plus Gaussian noise) are combined in the <strong>Time Domain</strong> 
-                            to form a composite signal, and simultaneously computes the FFT to display which frequencies dominate the 
-                            <strong>Frequency Domain</strong>. Move the sliders to see how the two domains are linked in real time. 
-                            Notice how the spectral peaks remain clearly visible above the noise floor — a basic illustration of how 
-                            frequency-domain analysis separates deterministic structure from broadband noise.
+                            This demo sums two sine waves and seeded Gaussian noise in the <strong>Time Domain</strong>
+                            and displays the single-sided amplitude spectrum (every bin from DC up to and including the
+                            Nyquist frequency \(f_s/2\)) in the <strong>Frequency Domain</strong>. Move the sliders to see
+                            how the two domains are linked in real time. Notice how the spectral peaks remain clearly
+                            visible above the noise floor &mdash; a basic illustration of how frequency-domain analysis
+                            separates deterministic structure from broadband noise. The noise is drawn from a seeded
+                            stream, so the picture is reproducible; <em>Regenerate noise</em> advances the stream to a
+                            fresh realization.
+                        </p>
+                        <p>
+                            The frequency sliders move in 0.5 Hz steps for a reason: the record is exactly one second
+                            long, so integer frequencies land exactly on DFT bins, while half-integer frequencies land
+                            <em>between</em> bins. At an off-bin frequency the peak's energy <strong>leaks</strong> across
+                            the whole axis and the nearest-bin readout under-reports the amplitude (scalloping) &mdash;
+                            this is the finite-length effect the windowing remark in the DFT section is about. Switch
+                            the window from Rectangular to Hann and watch the leakage skirt collapse; the demo divides
+                            windowed spectra by the window's coherent gain, so an on-bin peak still reads its true
+                            amplitude.
                         </p>
                         <div id="fourier_visualizer_1d"></div>
                     </div>
@@ -888,29 +901,40 @@ uses_python: true
                     <div class="demo-section" id="demo2d-pane" style="margin-top: 40px;">
                         <h3>2D Image & Frequency Domain Filtering</h3>
                         <p>
-                            An image is a 2D signal. This demo computes the 2D FFT to reveal its <strong>magnitude spectrum</strong>: 
+                            An image is a 2D signal. This demo converts the image to grayscale luminance and computes the 2D FFT to reveal its <strong>magnitude spectrum</strong>: 
                             the center represents low frequencies (broad regions, gradients), while points farther from the center 
                             represent high frequencies (edges, fine textures). As established in the 
                             <a href="#convolution"><strong>Convolution Theorem</strong></a> section, multiplication in the frequency 
                             domain corresponds to convolution in the spatial domain, so reshaping the spectrum reshapes the image.
                         </p>
                         <p>
-                            The demo exposes several frequency-domain operations:
+                            The demo exposes one frequency-domain operation at a time:
                         </p>
                         <ul style="padding-left: 40px;">
-                            <li><strong>Low-pass / High-pass / Band-pass filters</strong> attenuate frequencies outside a chosen range — 
+                            <li><strong>Low-pass / High-pass / Band-pass filters</strong> attenuate frequencies outside a chosen range &mdash;
                                 blurring, edge extraction, and texture isolation respectively.</li>
-                            <li><strong>Notch filter (Auto-Remove Periodic Noise)</strong> detects bright spikes in the spectrum and suppresses 
-                                them with Gaussian notches, removing periodic interference patterns that appear as discrete points away 
-                                from the DC center.</li>
-                            <li><strong>Compression</strong> retains only the top-\(k\%\) of Fourier coefficients (by magnitude) and zeroes the rest, 
-                                illustrating the principle behind JPEG-style lossy compression — most image energy is concentrated in 
-                                relatively few coefficients.</li>
-                            <li><strong>Sharpening</strong> amplifies high frequencies via a high-frequency-emphasis filter \(1 + \alpha\, H_{\text{high}}(\xi)\), 
+                            <li><strong>Notch (auto-remove periodic interference)</strong> detects magnitude spikes above the
+                                99.7th percentile of the spectrum (with the DC region protected) and suppresses each one with an
+                                inverted-Gaussian notch that is deepest at the spike itself. Try it on the <em>Photo + interference</em>
+                                image, where the sinusoidal banding collapses to a handful of off-center spikes. Then try it on the
+                                <em>Pattern</em> image for an honest failure: a genuinely periodic image produces exactly the same
+                                kind of spectral spikes as interference does, and the notch cannot tell the two apart &mdash; it will
+                                eat your checkerboard along with the noise.</li>
+                            <li><strong>Compression</strong> retains only the top-\(k\%\) of Fourier coefficients by magnitude and zeroes
+                                the rest, illustrating the principle behind lossy transform compression. The readout shows the fraction
+                                of spectral energy the kept coefficients carry &mdash; and by Parseval's identity, the discarded energy
+                                <em>is</em> the squared reconstruction error, a fact the demo's self-tests verify numerically.</li>
+                            <li><strong>Sharpening</strong> amplifies high frequencies via a high-frequency-emphasis filter \(1 + \alpha\, H_{\text{high}}(\xi)\),
                                 enhancing edges and fine detail.</li>
-                            <li><strong>Phase spectrum</strong>: toggle to see how phase, not magnitude, carries much of the perceptual structure 
-                                — a classic counterintuitive fact about Fourier representations of images.</li>
-                            <li><strong>Custom Mask</strong>: draw on the magnitude spectrum to suppress chosen frequencies and observe the result.</li>
+                            <li><strong>Phase-only and magnitude-only reconstruction</strong> put the classic claim that "phase carries
+                                the structure" to a direct test: phase-only replaces every magnitude by 1 and inverts; magnitude-only
+                                replaces every phase by 0 and inverts. On the <em>Text</em> image the contrast is stark &mdash; the
+                                phase-only image still shows the letter outlines, while the magnitude-only image is an unreadable
+                                centrosymmetric blob (setting all phases to zero forces the output to be symmetric under
+                                \((x, y) \mapsto (-x, -y)\), so spatial layout cannot survive).</li>
+                            <li><strong>Custom Mask</strong>: draw on the magnitude spectrum to suppress chosen frequencies and observe
+                                the result. Since the demo keeps only the real part of the inverse transform, a one-sided mask acts as
+                                its centro-symmetrized average &mdash; a small but instructive consequence of Hermitian symmetry.</li>
                         </ul>
                         <p>
                             <strong>Note on filter shape:</strong> the low/high/band-pass filters use a smooth Butterworth-style 
@@ -926,7 +950,6 @@ uses_python: true
         </div>
 
         <script src="/js/collapsible.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script src="/js/sec2_p15_fft.js"></script>
     </body>
 </html>
