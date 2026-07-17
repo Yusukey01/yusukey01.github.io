@@ -502,7 +502,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = D6Core; 
       '#dihedral-group-visualizer .dgv-wide{width:100%;flex-direction:row;justify-content:center;}' +
       '#dihedral-group-visualizer .dgv-wide:hover{background:rgba(102,187,106,0.15);border-color:rgba(102,187,106,0.4);}' +
       '#dihedral-group-visualizer .dgv-composerow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}' +
-      '#dihedral-group-visualizer .dgv-select{background:rgba(255,255,255,0.06);color:' + C.text + ';border:1px solid ' + C.borderStrong + ';border-radius:4px;padding:4px 6px;}' +
+      '#dihedral-group-visualizer .dgv-select{background:rgba(255,255,255,0.06);color:' + C.text + ';border:1px solid ' + C.borderStrong + ';border-radius:4px;padding:4px 6px;color-scheme:dark;}' +
+      '#dihedral-group-visualizer .dgv-select option{background:#1a2433;color:' + C.text + ';}' +
       '#dihedral-group-visualizer .dgv-op{color:' + C.faint + ';font-size:1.1rem;}' +
       '#dihedral-group-visualizer .dgv-note{font-size:0.78rem;color:' + C.faint + ';line-height:1.5;margin-top:8px;}';
     document.head.appendChild(style);

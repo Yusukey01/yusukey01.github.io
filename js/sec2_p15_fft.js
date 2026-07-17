@@ -993,7 +993,8 @@ var FftDemoGate = (function () {
       '#fourier_visualizer_1d .ft1-sliderrow input{width:100%;accent-color:' + C.accent + ';}' +
       '#fourier_visualizer_1d .ft1-btnrow{display:flex;flex-wrap:wrap;gap:14px;align-items:center;}' +
       '#fourier_visualizer_1d .ft1-inline{font-size:0.85rem;color:' + C.textDim + ';display:flex;gap:6px;align-items:center;}' +
-      '#fourier_visualizer_1d select{background:rgba(255,255,255,0.06);color:' + C.text + ';border:1px solid ' + C.borderStrong + ';border-radius:4px;padding:4px 6px;}' +
+      '#fourier_visualizer_1d select{background:rgba(255,255,255,0.06);color:' + C.text + ';border:1px solid ' + C.borderStrong + ';border-radius:4px;padding:4px 6px;color-scheme:dark;}' +
+      '#fourier_visualizer_1d select option{background:#1a2433;color:' + C.text + ';}' +
       '#fourier_visualizer_1d .ft1-btn{padding:7px 14px;border:1px solid ' + C.borderStrong + ';border-radius:4px;' +
         'background:rgba(255,255,255,0.05);color:' + C.text + ';cursor:pointer;font-size:0.85rem;}' +
       '#fourier_visualizer_1d .ft1-btn:hover{background:rgba(102,187,106,0.15);border-color:rgba(102,187,106,0.4);}' +
