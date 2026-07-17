@@ -408,11 +408,18 @@ var DualCore = (function () {
 
 if (typeof module !== 'undefined' && module.exports) { module.exports = DualCore; }
 // ============================================================================
-// UI layer — LP duality. Primal view (x-space) and dual view (lambda-space),
-// solved independently by DualCore; the readout panel reports p*, d*, the
-// duality gap (verified ~0 live whenever both are finite), the multipliers,
-// and the four complementary-slackness products. Status pairs (infeasible <->
-// unbounded) are reported honestly per LP duality. Prefix: dv-. Dark island.
+// UI layer — LP duality, compact drag-first design.
+// Primal (x-space) and dual (lambda-space) are shown SIDE BY SIDE and update
+// together. Interaction happens directly on the primal canvas:
+//   * drag a constraint line  -> translates it (changes b_i)
+//   * drag the -c arrow head  -> rotates the objective (changes c direction,
+//     magnitude preserved) — watch the optimum hop between vertices and
+//     lambda* slide along the dual region's boundary in real time
+// Active constraints glow; the complementarity chips flip live.
+// Sliders remain available under a collapsed "fine-tune" panel.
+// All values come from certified DualCore (primal and dual solved
+// independently; the gap and the slackness products are live theorem checks).
+// Prefix: dv-. Dark island.
 // ============================================================================
 (function () {
   'use strict';
@@ -480,83 +487,87 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = DualCore
     }
     container.innerHTML =
       '<div class="dv-root">' +
-        '<div class="dv-canvaswrap">' +
-          '<div class="dv-tabs">' +
-            '<button id="dv-tab-primal" class="dv-tab dv-tab-active">Primal (x-space)</button>' +
-            '<button id="dv-tab-dual" class="dv-tab">Dual (\u03BB-space)</button>' +
+        '<div class="dv-hint">Drag a <span style="color:' + C.con1 + ';">constraint line</span> to move it ' +
+          '(changes b<sub>i</sub>); drag the <span style="color:' + C.level + ';">\u2212c arrow head</span> to rotate ' +
+          'the objective and watch x* hop between vertices while \u03BB* slides along the dual region\u2019s edge.</div>' +
+        '<div class="dv-canvasrow">' +
+          '<div class="dv-canvascell">' +
+            '<div class="dv-charttitle">Primal (x-space) \u2014 drag to interact</div>' +
+            '<canvas id="dv-canvas-p"></canvas>' +
+            '<div class="dv-caption"><span style="color:' + C.con1 + ';">\u25AC</span> a\u2081\u1D40x = b\u2081 &nbsp;' +
+              '<span style="color:' + C.con2 + ';">\u25AC</span> a\u2082\u1D40x = b\u2082 &nbsp;' +
+              '<span style="color:' + C.level + ';">\u25AC</span> level line & \u2212c &nbsp;' +
+              '<span style="color:' + C.optim + ';">\u25CF</span> x* &nbsp;' +
+              '<span class="dv-sub">(thick = active constraint)</span></div>' +
           '</div>' +
-          '<div class="dv-charttitle" id="dv-title"></div>' +
-          '<canvas id="dv-canvas"></canvas>' +
-          '<div class="dv-legend" id="dv-legend"></div>' +
+          '<div class="dv-canvascell">' +
+            '<div class="dv-charttitle">Dual (\u03BB-space) \u2014 updates live</div>' +
+            '<canvas id="dv-canvas-d"></canvas>' +
+            '<div class="dv-caption"><span style="color:' + C.con1 + ';">\u25AC</span> a\u2081\u2081\u03BB\u2081 + a\u2082\u2081\u03BB\u2082 = \u2212c\u2081 &nbsp;' +
+              '<span style="color:' + C.con2 + ';">\u25AC</span> a\u2081\u2082\u03BB\u2081 + a\u2082\u2082\u03BB\u2082 = \u2212c\u2082 &nbsp;' +
+              '<span style="color:' + C.optim + ';">\u25CF</span> \u03BB*</div>' +
+          '</div>' +
         '</div>' +
-        '<div class="dv-controls">' +
-          '<div id="dv-readouts" class="dv-group dv-readouts"></div>' +
-          '<div class="dv-group">' +
-            '<label>Presets</label>' +
-            '<div class="dv-btnrow">' +
-              '<button class="dv-preset" data-key="corner">Corner optimum</button>' +
-              '<button class="dv-preset" data-key="interior">Both constraints active</button>' +
-              '<button class="dv-preset" data-key="asym">Asymmetric A</button>' +
+        '<div id="dv-readouts" class="dv-readouts"></div>' +
+        '<div class="dv-bottomrow">' +
+          '<div class="dv-btnrow">' +
+            '<button class="dv-preset" data-key="corner">Corner optimum</button>' +
+            '<button class="dv-preset" data-key="interior">Both constraints active</button>' +
+            '<button class="dv-preset" data-key="asym">Asymmetric A</button>' +
+          '</div>' +
+          '<details class="dv-details"><summary>Fine-tune parameters</summary>' +
+            '<div class="dv-slidergrid">' +
+              sliderRow('c1', 'c\u2081', -5, 5, 0.5, 3) +
+              sliderRow('c2', 'c\u2082', -5, 5, 0.5, 4) +
+              sliderRow('c3', 'c\u2083', -20, 20, 1, -20) +
+              sliderRow('a11', 'a\u2081\u2081', 0, 4, 0.1, 2) +
+              sliderRow('a12', 'a\u2081\u2082', 0, 4, 0.1, 1) +
+              sliderRow('b1', 'b\u2081', 2, 20, 0.5, 10) +
+              sliderRow('a21', 'a\u2082\u2081', 0, 4, 0.1, 1) +
+              sliderRow('a22', 'a\u2082\u2082', 0, 4, 0.1, 3) +
+              sliderRow('b2', 'b\u2082', 2, 20, 0.5, 15) +
             '</div>' +
-          '</div>' +
-          '<div class="dv-group"><label>Objective: min c\u2081x\u2081 + c\u2082x\u2082 + c\u2083</label>' +
-            sliderRow('c1', 'c\u2081', -5, 5, 0.5, 3) +
-            sliderRow('c2', 'c\u2082', -5, 5, 0.5, 4) +
-            sliderRow('c3', 'c\u2083', -20, 20, 1, -20) +
-          '</div>' +
-          '<div class="dv-group"><label>Constraints: Ax \u2264 b, x \u2265 1</label>' +
-            sliderRow('a11', 'a\u2081\u2081', 0, 4, 0.1, 2) +
-            sliderRow('a12', 'a\u2081\u2082', 0, 4, 0.1, 1) +
-            sliderRow('b1', 'b\u2081', 2, 20, 0.5, 10) +
-            sliderRow('a21', 'a\u2082\u2081', 0, 4, 0.1, 1) +
-            sliderRow('a22', 'a\u2082\u2082', 0, 4, 0.1, 3) +
-            sliderRow('b2', 'b\u2082', 2, 20, 0.5, 15) +
-          '</div>' +
+          '</details>' +
         '</div>' +
       '</div>';
 
     var style = document.createElement('style');
     style.textContent =
-      '#duality-visualizer .dv-root{display:flex;flex-direction:column;gap:20px;color:' + C.text + ';margin-bottom:20px;}' +
-      '@media (min-width: 992px){#duality-visualizer .dv-root{flex-direction:row;align-items:flex-start;}' +
-      '#duality-visualizer .dv-canvaswrap{flex:3;}#duality-visualizer .dv-controls{flex:2;max-width:400px;}}' +
-      '#duality-visualizer .dv-canvaswrap,#duality-visualizer .dv-controls{background:' + C.panel + ';padding:15px;border-radius:8px;border:1px solid ' + C.border + ';}' +
-      '#duality-visualizer .dv-controls{box-shadow:0 8px 32px rgba(0,0,0,0.3);}' +
-      '#duality-visualizer .dv-tabs{display:flex;gap:6px;margin-bottom:10px;}' +
-      '#duality-visualizer .dv-tab{flex:1;padding:8px 6px;border:1px solid ' + C.borderStrong + ';border-radius:4px;background:rgba(255,255,255,0.05);color:' + C.text + ';cursor:pointer;font-size:0.88rem;}' +
-      '#duality-visualizer .dv-tab-active{background:linear-gradient(135deg,#1565c0,#42a5f5);border-color:transparent;color:#fff;font-weight:bold;}' +
-      '#duality-visualizer canvas{border:1px solid ' + C.borderStrong + ';border-radius:4px;background:' + C.bg + ';display:block;max-width:100%;}' +
-      '#duality-visualizer .dv-charttitle{font-size:0.88rem;color:' + C.textDim + ';font-weight:bold;margin-bottom:6px;}' +
-      '#duality-visualizer .dv-legend{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:0.84rem;color:' + C.textDim + ';}' +
-      '@media (max-width: 600px){#duality-visualizer .dv-legend{grid-template-columns:1fr;}}' +
-      '#duality-visualizer .dv-li{display:flex;align-items:center;}' +
-      '#duality-visualizer .dv-sw{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:2px;flex:none;}' +
-      '#duality-visualizer .dv-group{background:rgba(255,255,255,0.03);border:1px solid ' + C.border + ';border-radius:8px;padding:12px;margin-bottom:12px;}' +
-      '#duality-visualizer .dv-group > label{display:block;font-weight:bold;margin-bottom:8px;color:' + C.textDim + ';font-size:0.85rem;}' +
+      '#duality-visualizer .dv-root{display:flex;flex-direction:column;gap:12px;color:' + C.text + ';margin-bottom:20px;' +
+        'background:' + C.panel + ';padding:15px;border-radius:8px;border:1px solid ' + C.border + ';}' +
+      '#duality-visualizer .dv-hint{font-size:0.86rem;color:' + C.textDim + ';line-height:1.5;}' +
+      '#duality-visualizer .dv-canvasrow{display:flex;gap:14px;flex-wrap:wrap;}' +
+      '#duality-visualizer .dv-canvascell{flex:1;min-width:280px;}' +
+      '#duality-visualizer canvas{border:1px solid ' + C.borderStrong + ';border-radius:4px;background:' + C.bg + ';display:block;width:100%;}' +
+      '#duality-visualizer .dv-charttitle{font-size:0.86rem;color:' + C.textDim + ';font-weight:bold;margin-bottom:5px;}' +
+      '#duality-visualizer .dv-caption{font-size:0.78rem;color:' + C.faint + ';margin-top:5px;line-height:1.5;}' +
+      '#duality-visualizer .dv-readouts{font-size:0.9rem;line-height:1.65;background:rgba(255,255,255,0.03);' +
+        'border:1px solid ' + C.border + ';border-radius:8px;padding:10px 12px;}' +
+      '#duality-visualizer .dv-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}' +
+      '#duality-visualizer .dv-chip{font-family:"Courier New",monospace;font-size:0.8rem;padding:3px 8px;border-radius:12px;' +
+        'border:1px solid ' + C.border + ';background:rgba(255,255,255,0.04);}' +
+      '#duality-visualizer .dv-chip-ok{border-color:rgba(46,204,113,0.5);}' +
+      '#duality-visualizer .dv-bottomrow{display:flex;flex-direction:column;gap:8px;}' +
       '#duality-visualizer .dv-btnrow{display:flex;flex-wrap:wrap;gap:6px;}' +
-      '#duality-visualizer .dv-preset{flex:1;min-width:100px;padding:7px 4px;border:1px solid ' + C.borderStrong + ';border-radius:4px;background:rgba(255,255,255,0.05);color:' + C.text + ';cursor:pointer;font-size:0.8rem;}' +
+      '#duality-visualizer .dv-preset{flex:1;min-width:110px;padding:7px 4px;border:1px solid ' + C.borderStrong + ';border-radius:4px;background:rgba(255,255,255,0.05);color:' + C.text + ';cursor:pointer;font-size:0.8rem;}' +
       '#duality-visualizer .dv-preset:hover{background:rgba(255,255,255,0.1);}' +
-      '#duality-visualizer .dv-sliderrow{margin-bottom:8px;}' +
-      '#duality-visualizer .dv-sliderrow label{display:block;font-size:0.85rem;color:' + C.textDim + ';margin-bottom:2px;font-weight:bold;}' +
+      '#duality-visualizer .dv-details summary{cursor:pointer;color:' + C.textDim + ';font-size:0.85rem;font-weight:bold;}' +
+      '#duality-visualizer .dv-slidergrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px 16px;margin-top:8px;}' +
+      '#duality-visualizer .dv-sliderrow label{display:block;font-size:0.82rem;color:' + C.textDim + ';margin-bottom:1px;font-weight:bold;}' +
       '#duality-visualizer .dv-sliderrow input[type=range]{width:100%;}' +
       '#duality-visualizer .dv-sliderrow span{color:' + C.accent + ';font-family:"Courier New",monospace;}' +
-      '#duality-visualizer .dv-readouts{font-size:0.9rem;line-height:1.6;}' +
       '#duality-visualizer .dv-val{font-family:"Courier New",monospace;color:' + C.accent + ';}' +
       '#duality-visualizer .dv-opt{font-family:"Courier New",monospace;color:' + C.optim + ';}' +
       '#duality-visualizer .dv-ok{color:' + C.ok + ';font-weight:bold;}' +
       '#duality-visualizer .dv-warn{color:' + C.warn + ';font-weight:bold;}' +
-      '#duality-visualizer .dv-sub{color:' + C.faint + ';font-size:0.85rem;}' +
-      '#duality-visualizer table.dv-table{border-collapse:collapse;width:100%;margin-top:6px;font-size:0.84rem;}' +
-      '#duality-visualizer table.dv-table th,#duality-visualizer table.dv-table td{border:1px solid ' + C.border + ';padding:4px 8px;text-align:right;font-family:"Courier New",monospace;}' +
-      '#duality-visualizer table.dv-table th{color:' + C.textDim + ';background:rgba(255,255,255,0.04);font-family:system-ui,sans-serif;}' +
-      '#duality-visualizer table.dv-table td:first-child{text-align:left;}';
+      '#duality-visualizer .dv-sub{color:' + C.faint + ';font-size:0.82rem;}';
     document.head.appendChild(style);
 
-    var canvas = document.getElementById('dv-canvas');
-    var ctx = canvas.getContext('2d');
+    var canvasP = document.getElementById('dv-canvas-p');
+    var canvasD = document.getElementById('dv-canvas-d');
+    var ctxP = canvasP.getContext('2d');
+    var ctxD = canvasD.getContext('2d');
     var readoutsEl = document.getElementById('dv-readouts');
-    var legendEl = document.getElementById('dv-legend');
-    var titleEl = document.getElementById('dv-title');
 
     var PRESETS = {
       corner: { c1: 3, c2: 4, c3: -20, a11: 2, a12: 1, a21: 1, a22: 3, b1: 10, b2: 15 },
@@ -566,33 +577,36 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = DualCore
     var SLIDER_IDS = ['c1', 'c2', 'c3', 'a11', 'a12', 'a21', 'a22', 'b1', 'b2'];
 
     var state = {
-      view: 'primal',
       prm: Object.assign({}, PRESETS.corner),
-      cssW: 620, cssH: 460
+      cw: 340, ch: 300,
+      drag: null,
+      lastP: null, lastD: null, lastFrameP: null
     };
 
-    function sizeCanvas() {
-      var parentW = canvas.parentElement ? canvas.parentElement.clientWidth : 0;
-      var w = parentW > 0 ? Math.max(320, Math.min(720, parentW - 30)) : 620;
-      state.cssW = w;
-      state.cssH = Math.round(w * 0.75);
+    function sizeCanvases() {
+      var cellW = canvasP.parentElement ? canvasP.parentElement.clientWidth : 0;
+      var w = cellW > 0 ? Math.max(260, Math.min(460, cellW - 4)) : 340;
+      state.cw = w;
+      state.ch = Math.round(w * 0.88);
       var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
-      canvas.style.width = state.cssW + 'px';
-      canvas.style.height = state.cssH + 'px';
-      canvas.width = Math.round(state.cssW * dpr);
-      canvas.height = Math.round(state.cssH * dpr);
-      if (ctx && ctx.setTransform) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      [canvasP, canvasD].forEach(function (cv) {
+        cv.style.height = state.ch + 'px';
+        cv.width = Math.round(state.cw * dpr);
+        cv.height = Math.round(state.ch * dpr);
+        var cx = cv.getContext('2d');
+        if (cx && cx.setTransform) cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      });
     }
 
-    // ---------- frame with equal-ish data ranges ----------
-    function frame(xMin, xMax, yMin, yMax, xLabel, yLabel) {
-      var r = { x0: 46, y0: 12, w: state.cssW - 46 - 14, h: state.cssH - 12 - 34 };
-      ctx.clearRect(0, 0, state.cssW, state.cssH);
+    // ---------- generic frame ----------
+    function frame(ctx, xMin, xMax, yMin, yMax, xLabel, yLabel) {
+      var r = { x0: 38, y0: 8, w: state.cw - 38 - 10, h: state.ch - 8 - 28 };
+      ctx.clearRect(0, 0, state.cw, state.ch);
       ctx.fillStyle = C.bg;
-      ctx.fillRect(0, 0, state.cssW, state.cssH);
+      ctx.fillRect(0, 0, state.cw, state.ch);
       ctx.lineWidth = 1;
-      ctx.font = '11px system-ui, sans-serif';
-      var ticks = 5;
+      ctx.font = '10px system-ui, sans-serif';
+      var ticks = 4;
       for (var i = 0; i <= ticks; i++) {
         var tx = r.x0 + r.w * i / ticks;
         var ty = r.y0 + r.h * i / ticks;
@@ -602,278 +616,339 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = DualCore
         ctx.fillStyle = C.faint;
         var xv = xMin + (xMax - xMin) * i / ticks;
         var yv = yMax - (yMax - yMin) * i / ticks;
-        ctx.fillText(fmt(xv, xMax - xMin > 8 ? 0 : 1), tx - 8, r.y0 + r.h + 16);
-        ctx.fillText(fmt(yv, yMax - yMin > 8 ? 0 : 1), 4, ty + 4);
+        ctx.fillText(fmt(xv, xMax - xMin > 8 ? 0 : 1), tx - 7, r.y0 + r.h + 14);
+        ctx.fillText(fmt(yv, yMax - yMin > 8 ? 0 : 1), 3, ty + 3);
       }
       ctx.strokeStyle = C.axis;
       ctx.strokeRect(r.x0, r.y0, r.w, r.h);
       ctx.fillStyle = C.textDim;
-      ctx.fillText(xLabel, r.x0 + r.w - 8 * xLabel.length, r.y0 + r.h + 30);
-      ctx.fillText(yLabel, r.x0 + 4, r.y0 + 12);
+      ctx.fillText(xLabel, r.x0 + r.w - 7 * xLabel.length, r.y0 + r.h + 24);
+      ctx.fillText(yLabel, r.x0 + 3, r.y0 + 10);
       return {
         r: r,
         px: function (x) { return r.x0 + (x - xMin) / (xMax - xMin) * r.w; },
         py: function (y) { return r.y0 + (1 - (y - yMin) / (yMax - yMin)) * r.h; },
+        dataX: function (px) { return xMin + (px - r.x0) / r.w * (xMax - xMin); },
+        dataY: function (py) { return yMin + (1 - (py - r.y0) / r.h) * (yMax - yMin); },
         xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax
       };
     }
-    // draw the line a x + b y = c across the view
-    function drawBoundary(P, a, b, c, color, width, dash) {
+    function drawBoundary(ctx, P, a, b, c, color, width, dash, glow) {
       ctx.strokeStyle = color;
       ctx.lineWidth = width;
       ctx.setLineDash(dash || []);
+      if (glow) { ctx.shadowColor = color; ctx.shadowBlur = 8; }
       ctx.beginPath();
       if (Math.abs(b) >= Math.abs(a)) {
-        var y1 = (c - a * P.xMin) / b, y2 = (c - a * P.xMax) / b;
-        ctx.moveTo(P.px(P.xMin), P.py(y1));
-        ctx.lineTo(P.px(P.xMax), P.py(y2));
+        ctx.moveTo(P.px(P.xMin), P.py((c - a * P.xMin) / b));
+        ctx.lineTo(P.px(P.xMax), P.py((c - a * P.xMax) / b));
       } else {
-        var x1 = (c - b * P.yMin) / a, x2 = (c - b * P.yMax) / a;
-        ctx.moveTo(P.px(x1), P.py(P.yMin));
-        ctx.lineTo(P.px(x2), P.py(P.yMax));
+        ctx.moveTo(P.px((c - b * P.yMin) / a), P.py(P.yMin));
+        ctx.lineTo(P.px((c - b * P.yMax) / a), P.py(P.yMax));
       }
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.shadowBlur = 0;
     }
-    function drawArrow(P, x0, y0, dx, dy, color, label) {
-      var len = Math.hypot(dx, dy);
-      if (len < 1e-12) return;
-      var ux = dx / len, uy = dy / len;
-      var span = (P.xMax - P.xMin) * 0.09;
-      var x1 = x0 + ux * span, y1 = y0 + uy * span;
-      ctx.strokeStyle = color;
-      ctx.fillStyle = color;
-      ctx.lineWidth = 2;
+    function drawPoly(ctx, P, poly) {
+      if (poly.length < 3) return;
       ctx.beginPath();
-      ctx.moveTo(P.px(x0), P.py(y0));
-      ctx.lineTo(P.px(x1), P.py(y1));
-      ctx.stroke();
-      var ang = Math.atan2(P.py(y1) - P.py(y0), P.px(x1) - P.px(x0));
-      ctx.beginPath();
-      ctx.moveTo(P.px(x1), P.py(y1));
-      ctx.lineTo(P.px(x1) - 9 * Math.cos(ang - 0.4), P.py(y1) - 9 * Math.sin(ang - 0.4));
-      ctx.lineTo(P.px(x1) - 9 * Math.cos(ang + 0.4), P.py(y1) - 9 * Math.sin(ang + 0.4));
+      ctx.moveTo(P.px(poly[0].x), P.py(poly[0].y));
+      for (var i = 1; i < poly.length; i++) ctx.lineTo(P.px(poly[i].x), P.py(poly[i].y));
       ctx.closePath();
+      ctx.fillStyle = C.region;
       ctx.fill();
-      if (label) {
-        ctx.font = 'bold 11px system-ui, sans-serif';
-        ctx.fillText(label, P.px(x1) + 5, P.py(y1) - 5);
-      }
+      ctx.strokeStyle = C.regionEdge;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
     }
 
     // ---------- render ----------
-    function viewBounds(poly, extraPts, floorMin) {
-      var mx = 8, my = 8;
-      for (var i = 0; i < poly.length; i++) {
-        if (poly[i].x < 60 && poly[i].x > mx) mx = poly[i].x;
-        if (poly[i].y < 60 && poly[i].y > my) my = poly[i].y;
-      }
-      for (var j = 0; j < extraPts.length; j++) {
-        if (extraPts[j].x + 1 > mx) mx = extraPts[j].x + 1;
-        if (extraPts[j].y + 1 > my) my = extraPts[j].y + 1;
-      }
-      var M = Math.min(60, Math.max(mx, my) * 1.15);
-      return [floorMin, M];
-    }
-
-    function statusText(status, isPrimal) {
-      if (status === 'infeasible') {
-        return '<span class="dv-warn">' + (isPrimal ? 'infeasible \u2014 p* = +\u221E' : 'infeasible \u2014 d* = \u2212\u221E') + '</span>';
-      }
-      return '<span class="dv-warn">' + (isPrimal ? 'unbounded below \u2014 p* = \u2212\u221E' : 'unbounded above \u2014 d* = +\u221E') + '</span>';
-    }
-
     function render() {
       var prm = state.prm;
       var P = DualCore.solvePrimal(prm);
       var D = DualCore.solveDual(prm);
+      state.lastP = P; state.lastD = D;
 
-      // ----- readouts -----
-      var html = '<div><strong>min c\u1D40x + c\u2083 s.t. Ax \u2264 b, x \u2265 1</strong> ' +
-        '<span class="dv-sub">primal and dual solved independently</span></div>';
-      var expose = { view: state.view, prm: prm, pStatus: P.status, dStatus: D.status };
+      var html = '';
+      var expose = { prm: prm, pStatus: P.status, dStatus: D.status };
       if (P.status === 'optimal' && D.status === 'optimal') {
         var gap = Math.abs(P.pstar - D.dstar);
-        html += '<div>p* = <span class="dv-val">' + fmt(P.pstar, 4) + '</span> at x* = (<span class="dv-opt">' +
-          fmt(P.x.x1, 3) + ', ' + fmt(P.x.x2, 3) + '</span>)</div>';
-        html += '<div>d* = <span class="dv-val">' + fmt(D.dstar, 4) + '</span> at \u03BB* = (<span class="dv-opt">' +
-          fmt(D.lambda.l1, 3) + ', ' + fmt(D.lambda.l2, 3) + '</span>), \u03BC* = (<span class="dv-opt">' +
-          fmt(D.mu.m1, 3) + ', ' + fmt(D.mu.m2, 3) + '</span>)</div>';
-        html += '<div>duality gap |p* \u2212 d*| = <span class="dv-val">' + gap.toExponential(2) + '</span> ' +
-          (gap < 1e-6 * (1 + Math.abs(P.pstar)) ?
-            '<span class="dv-ok">\u2713 strong duality, verified live</span>' :
-            '<span class="dv-warn">nonzero \u2014 numerical issue</span>') + '</div>';
+        var ok = gap < 1e-6 * (1 + Math.abs(P.pstar));
+        html += '<div>p* = <span class="dv-val">' + fmt(P.pstar, 3) + '</span> = d* ' +
+          '<span class="dv-sub">(gap ' + gap.toExponential(1) + ')</span> ' +
+          (ok ? '<span class="dv-ok">\u2713 strong duality, verified live</span>'
+              : '<span class="dv-warn">gap nonzero \u2014 numerical issue</span>') +
+          ' &nbsp; x* = (<span class="dv-opt">' + fmt(P.x.x1, 2) + ', ' + fmt(P.x.x2, 2) + '</span>), ' +
+          '\u03BB* = (<span class="dv-opt">' + fmt(D.lambda.l1, 2) + ', ' + fmt(D.lambda.l2, 2) + '</span>), ' +
+          '\u03BC* = (<span class="dv-opt">' + fmt(D.mu.m1, 2) + ', ' + fmt(D.mu.m2, 2) + '</span>)</div>';
         var comp = DualCore.complementarity(prm, P, D);
-        var s = DualCore.slacks(prm, P.x);
-        function compRow(label, prod) {
-          var ok = Math.abs(prod) < 1e-6 * (1 + Math.abs(P.pstar));
-          return '<tr><td>' + label + '</td><td>' + prod.toExponential(2) + '</td><td>' +
-            (ok ? '<span class="dv-ok">\u2713</span>' : '<span class="dv-warn">\u2717</span>') + '</td></tr>';
-        }
-        html += '<div style="margin-top:6px;"><span class="dv-sub">Complementary slackness (each product must vanish):</span></div>' +
-          '<table class="dv-table"><tr><th>pair</th><th>product</th><th></th></tr>' +
-          compRow('\u03BB\u2081 \u00B7 s\u2081 = ' + fmt(D.lambda.l1, 3) + ' \u00B7 ' + fmt(s.s1, 3), comp.ls1) +
-          compRow('\u03BB\u2082 \u00B7 s\u2082 = ' + fmt(D.lambda.l2, 3) + ' \u00B7 ' + fmt(s.s2, 3), comp.ls2) +
-          compRow('\u03BC\u2081 \u00B7 (x\u2081\u22121) = ' + fmt(D.mu.m1, 3) + ' \u00B7 ' + fmt(P.x.x1 - 1, 3), comp.mx1) +
-          compRow('\u03BC\u2082 \u00B7 (x\u2082\u22121) = ' + fmt(D.mu.m2, 3) + ' \u00B7 ' + fmt(P.x.x2 - 1, 3), comp.mx2) +
-          '</table>';
+        var chip = function (label, prod) {
+          var good = Math.abs(prod) < 1e-6 * (1 + Math.abs(P.pstar));
+          return '<span class="dv-chip' + (good ? ' dv-chip-ok' : '') + '">' + label + ' = ' +
+            prod.toExponential(1) + ' ' + (good ? '<span class="dv-ok">\u2713</span>' : '<span class="dv-warn">\u2717</span>') + '</span>';
+        };
+        html += '<div class="dv-chips"><span class="dv-sub" style="align-self:center;">complementary slackness:</span>' +
+          chip('\u03BB\u2081s\u2081', comp.ls1) + chip('\u03BB\u2082s\u2082', comp.ls2) +
+          chip('\u03BC\u2081(x\u2081\u22121)', comp.mx1) + chip('\u03BC\u2082(x\u2082\u22121)', comp.mx2) + '</div>';
         expose.pstar = P.pstar; expose.dstar = D.dstar; expose.gap = gap;
         expose.x = P.x; expose.lambda = D.lambda; expose.mu = D.mu; expose.comp = comp;
       } else {
-        html += '<div>Primal: ' + (P.status === 'optimal' ?
-          'p* = <span class="dv-val">' + fmt(P.pstar, 4) + '</span>' : statusText(P.status, true)) + '</div>';
-        html += '<div>Dual: ' + (D.status === 'optimal' ?
-          'd* = <span class="dv-val">' + fmt(D.dstar, 4) + '</span>' : statusText(D.status, false)) + '</div>';
-        html += '<div class="dv-sub" style="margin-top:6px;">LP duality pairs the degenerate cases: an infeasible ' +
-          'primal (p* = +\u221E) forces the dual to be unbounded or infeasible, and an unbounded primal ' +
-          '(p* = \u2212\u221E) forces the dual to be infeasible \u2014 weak duality d* \u2264 p* survives with the ' +
-          'conventions \u00B1\u221E.</div>';
-        if (P.status === 'optimal') { expose.pstar = P.pstar; }
-        if (D.status === 'optimal') { expose.dstar = D.dstar; }
+        var pTxt = P.status === 'optimal' ? 'p* = <span class="dv-val">' + fmt(P.pstar, 3) + '</span>' :
+          (P.status === 'infeasible' ? '<span class="dv-warn">primal infeasible (p* = +\u221E)</span>' :
+            '<span class="dv-warn">primal unbounded (p* = \u2212\u221E)</span>');
+        var dTxt = D.status === 'optimal' ? 'd* = <span class="dv-val">' + fmt(D.dstar, 3) + '</span>' :
+          (D.status === 'infeasible' ? '<span class="dv-warn">dual infeasible (d* = \u2212\u221E)</span>' :
+            '<span class="dv-warn">dual unbounded (d* = +\u221E)</span>');
+        html += '<div>' + pTxt + ' &nbsp;\u2014&nbsp; ' + dTxt +
+          '<div class="dv-sub">LP duality pairs the degenerate cases exactly this way; weak duality d* \u2264 p* survives with the conventions \u00B1\u221E.</div></div>';
+        if (P.status === 'optimal') expose.pstar = P.pstar;
+        if (D.status === 'optimal') expose.dstar = D.dstar;
       }
       readoutsEl.innerHTML = html;
       container.dataset.dvState = JSON.stringify(expose);
 
-      // ----- canvas -----
-      if (state.view === 'primal') drawPrimalView(prm, P, D);
-      else drawDualView(prm, P, D);
+      drawPrimal(prm, P, D);
+      drawDual(prm, P, D);
     }
 
-    function drawPrimalView(prm, P, D) {
-      titleEl.textContent = 'Primal: feasible region, objective level line, optimum';
+    function primalViewBounds(prm, P) {
       var hps = DualCore.primalHalfplanes(prm);
       var poly = DualCore.feasiblePolygon(hps, 200);
-      var extra = P.status === 'optimal' ? [{ x: P.x.x1, y: P.x.x2 }] : [];
-      var vb = viewBounds(poly, extra, 0);
-      var F = frame(vb[0], vb[1], vb[0], vb[1], 'x\u2081', 'x\u2082');
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(F.r.x0, F.r.y0, F.r.w, F.r.h);
-      ctx.clip();
-      // region
-      if (poly.length >= 3) {
-        ctx.beginPath();
-        ctx.moveTo(F.px(poly[0].x), F.py(poly[0].y));
-        for (var i = 1; i < poly.length; i++) ctx.lineTo(F.px(poly[i].x), F.py(poly[i].y));
-        ctx.closePath();
-        ctx.fillStyle = C.region;
-        ctx.fill();
-        ctx.strokeStyle = C.regionEdge;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+      var mx = 8;
+      for (var i = 0; i < poly.length; i++) {
+        if (poly[i].x < 60 && poly[i].x > mx) mx = poly[i].x;
+        if (poly[i].y < 60 && poly[i].y > mx) mx = poly[i].y;
       }
-      // constraint boundaries
-      if (Math.abs(prm.a11) + Math.abs(prm.a12) > 1e-12) drawBoundary(F, prm.a11, prm.a12, prm.b1, C.con1, 2);
-      if (Math.abs(prm.a21) + Math.abs(prm.a22) > 1e-12) drawBoundary(F, prm.a21, prm.a22, prm.b2, C.con2, 2);
-      drawBoundary(F, 1, 0, 1, C.boundLine, 1, [4, 4]); // x1 = 1
-      drawBoundary(F, 0, 1, 1, C.boundLine, 1, [4, 4]); // x2 = 1
-      if (P.status === 'optimal') {
-        // level line c1 x + c2 y = p* - c3 and the descent direction -c
-        if (Math.abs(prm.c1) + Math.abs(prm.c2) > 1e-12) {
-          drawBoundary(F, prm.c1, prm.c2, P.pstar - prm.c3, C.level, 2, [7, 5]);
-          drawArrow(F, P.x.x1, P.x.x2, -prm.c1, -prm.c2, C.level, '\u2212c');
-        }
-        // vertices + optimum
-        for (var v = 0; v < P.vertices.length; v++) {
-          ctx.beginPath();
-          ctx.arc(F.px(P.vertices[v].x), F.py(P.vertices[v].y), 3, 0, 2 * Math.PI);
-          ctx.fillStyle = C.vert;
-          ctx.fill();
-        }
-        ctx.beginPath();
-        ctx.arc(F.px(P.x.x1), F.py(P.x.x2), 6, 0, 2 * Math.PI);
-        ctx.fillStyle = C.optim;
-        ctx.fill();
-        ctx.font = 'bold 12px system-ui, sans-serif';
-        ctx.fillText('x*', F.px(P.x.x1) + 8, F.py(P.x.x2) - 8);
-      }
-      ctx.restore();
-      setLegend([
-        [C.region, 'feasible region {Ax \u2264 b, x \u2265 1}'],
-        [C.con1, 'a\u2081\u2081x\u2081 + a\u2081\u2082x\u2082 = b\u2081'],
-        [C.con2, 'a\u2082\u2081x\u2081 + a\u2082\u2082x\u2082 = b\u2082'],
-        [C.level, 'objective level c\u1D40x = p* \u2212 c\u2083 (dashed) and \u2212c'],
-        [C.optim, 'optimal vertex x*'],
-        [C.vert, 'feasible-region vertices']
-      ]);
+      if (P.status === 'optimal') mx = Math.max(mx, P.x.x1 + 1, P.x.x2 + 1);
+      return { poly: poly, M: Math.min(60, mx * 1.15) };
     }
 
-    function drawDualView(prm, P, D) {
-      titleEl.textContent = 'Dual: multiplier region {\u03BB \u2265 0, A\u1D40\u03BB \u2265 \u2212c}, optimum \u03BB*';
+    function drawPrimal(prm, P, D) {
+      var vb = primalViewBounds(prm, P);
+      var F = frame(ctxP, 0, vb.M, 0, vb.M, 'x\u2081', 'x\u2082');
+      state.lastFrameP = F;
+      var hit = {};
+      ctxP.save();
+      ctxP.beginPath();
+      ctxP.rect(F.r.x0, F.r.y0, F.r.w, F.r.h);
+      ctxP.clip();
+      drawPoly(ctxP, F, vb.poly);
+      var s = P.status === 'optimal' ? DualCore.slacks(prm, P.x) : null;
+      var act1 = s !== null && Math.abs(s.s1) < 1e-6;
+      var act2 = s !== null && Math.abs(s.s2) < 1e-6;
+      if (Math.abs(prm.a11) + Math.abs(prm.a12) > 1e-12) {
+        drawBoundary(ctxP, F, prm.a11, prm.a12, prm.b1, C.con1, act1 ? 3.5 : 1.6, [], act1);
+        hit.line1 = samplePointOnLine(F, prm.a11, prm.a12, prm.b1);
+      }
+      if (Math.abs(prm.a21) + Math.abs(prm.a22) > 1e-12) {
+        drawBoundary(ctxP, F, prm.a21, prm.a22, prm.b2, C.con2, act2 ? 3.5 : 1.6, [], act2);
+        hit.line2 = samplePointOnLine(F, prm.a21, prm.a22, prm.b2);
+      }
+      drawBoundary(ctxP, F, 1, 0, 1, C.boundLine, 1, [4, 4]);
+      drawBoundary(ctxP, F, 0, 1, 1, C.boundLine, 1, [4, 4]);
+      if (P.status === 'optimal') {
+        if (Math.abs(prm.c1) + Math.abs(prm.c2) > 1e-12) {
+          drawBoundary(ctxP, F, prm.c1, prm.c2, P.pstar - prm.c3, C.level, 2, [7, 5]);
+          var len = Math.hypot(prm.c1, prm.c2);
+          var span = vb.M * 0.16;
+          var hx = P.x.x1 - prm.c1 / len * span;
+          var hy = P.x.x2 - prm.c2 / len * span;
+          drawArrowPx(ctxP, F.px(P.x.x1), F.py(P.x.x2), F.px(hx), F.py(hy), C.level);
+          ctxP.beginPath();
+          ctxP.arc(F.px(hx), F.py(hy), 7, 0, 2 * Math.PI);
+          ctxP.fillStyle = 'rgba(255, 200, 87, 0.35)';
+          ctxP.fill();
+          ctxP.strokeStyle = C.level;
+          ctxP.lineWidth = 1.5;
+          ctxP.stroke();
+          ctxP.font = 'bold 11px system-ui, sans-serif';
+          ctxP.fillStyle = C.level;
+          ctxP.fillText('\u2212c', F.px(hx) + 8, F.py(hy) - 6);
+          hit.arrowHead = { px: F.px(hx), py: F.py(hy) };
+        }
+        for (var v = 0; v < P.vertices.length; v++) {
+          ctxP.beginPath();
+          ctxP.arc(F.px(P.vertices[v].x), F.py(P.vertices[v].y), 2.5, 0, 2 * Math.PI);
+          ctxP.fillStyle = C.vert;
+          ctxP.fill();
+        }
+        ctxP.beginPath();
+        ctxP.arc(F.px(P.x.x1), F.py(P.x.x2), 6, 0, 2 * Math.PI);
+        ctxP.fillStyle = C.optim;
+        ctxP.fill();
+        ctxP.font = 'bold 12px system-ui, sans-serif';
+        ctxP.fillText('x*', F.px(P.x.x1) + 8, F.py(P.x.x2) - 8);
+      }
+      ctxP.restore();
+      container.dataset.dvHit = JSON.stringify(hit);
+    }
+    function samplePointOnLine(F, a, b, c) {
+      var xm = (F.xMin + F.xMax) / 2;
+      if (Math.abs(b) >= Math.abs(a)) {
+        var y = (c - a * xm) / b;
+        y = Math.max(F.yMin, Math.min(F.yMax, y));
+        var x = Math.abs(a) > 1e-12 ? (c - b * y) / a : xm;
+        if (x < F.xMin || x > F.xMax) { x = xm; y = (c - a * xm) / b; }
+        return { px: F.px(x), py: F.py(y) };
+      }
+      var ym = (F.yMin + F.yMax) / 2;
+      return { px: F.px((c - b * ym) / a), py: F.py(ym) };
+    }
+    function drawArrowPx(ctx, x0, y0, x1, y1, color) {
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+      var ang = Math.atan2(y1 - y0, x1 - x0);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x1 - 9 * Math.cos(ang - 0.4), y1 - 9 * Math.sin(ang - 0.4));
+      ctx.lineTo(x1 - 9 * Math.cos(ang + 0.4), y1 - 9 * Math.sin(ang + 0.4));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawDual(prm, P, D) {
       var hps = DualCore.dualHalfplanes(prm);
       var poly = DualCore.feasiblePolygon(hps, 200);
-      // zoom driven by the dual optimum and the constraint-line intercepts,
-      // not by the (typically unbounded) region's clip box
       var cand = [3];
-      if (D.status === 'optimal') {
-        cand.push(2.2 * D.lambda.l1 + 0.5, 2.2 * D.lambda.l2 + 0.5);
-      }
+      if (D.status === 'optimal') cand.push(2.2 * D.lambda.l1 + 0.5, 2.2 * D.lambda.l2 + 0.5);
       [[prm.a11, -prm.c1], [prm.a21, -prm.c1], [prm.a12, -prm.c2], [prm.a22, -prm.c2]]
-        .forEach(function (t) {
-          if (t[0] > 0.05 && t[1] > 0) cand.push(t[1] / t[0] + 0.5);
-        });
+        .forEach(function (t) { if (t[0] > 0.05 && t[1] > 0) cand.push(t[1] / t[0] + 0.5); });
       var M = Math.min(20, Math.max.apply(null, cand));
-      var F = frame(-0.15, M, -0.15, M, '\u03BB\u2081', '\u03BB\u2082');
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(F.r.x0, F.r.y0, F.r.w, F.r.h);
-      ctx.clip();
-      if (poly.length >= 3) {
-        ctx.beginPath();
-        ctx.moveTo(F.px(poly[0].x), F.py(poly[0].y));
-        for (var i = 1; i < poly.length; i++) ctx.lineTo(F.px(poly[i].x), F.py(poly[i].y));
-        ctx.closePath();
-        ctx.fillStyle = C.region;
-        ctx.fill();
-        ctx.strokeStyle = C.regionEdge;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-      // dual constraint boundaries a11 l1 + a21 l2 = -c1 (note: columns of A)
-      if (Math.abs(prm.a11) + Math.abs(prm.a21) > 1e-12) drawBoundary(F, prm.a11, prm.a21, -prm.c1, C.con1, 2);
-      if (Math.abs(prm.a12) + Math.abs(prm.a22) > 1e-12) drawBoundary(F, prm.a12, prm.a22, -prm.c2, C.con2, 2);
-      drawBoundary(F, 1, 0, 0, C.boundLine, 1, [4, 4]);
-      drawBoundary(F, 0, 1, 0, C.boundLine, 1, [4, 4]);
+      var F = frame(ctxD, -0.1, M, -0.1, M, '\u03BB\u2081', '\u03BB\u2082');
+      ctxD.save();
+      ctxD.beginPath();
+      ctxD.rect(F.r.x0, F.r.y0, F.r.w, F.r.h);
+      ctxD.clip();
+      drawPoly(ctxD, F, poly);
+      if (Math.abs(prm.a11) + Math.abs(prm.a21) > 1e-12) drawBoundary(ctxD, F, prm.a11, prm.a21, -prm.c1, C.con1, 1.6, []);
+      if (Math.abs(prm.a12) + Math.abs(prm.a22) > 1e-12) drawBoundary(ctxD, F, prm.a12, prm.a22, -prm.c2, C.con2, 1.6, []);
+      drawBoundary(ctxD, F, 1, 0, 0, C.boundLine, 1, [4, 4]);
+      drawBoundary(ctxD, F, 0, 1, 0, C.boundLine, 1, [4, 4]);
       var d1 = (prm.a11 + prm.a12) - prm.b1;
       var d2 = (prm.a21 + prm.a22) - prm.b2;
       if (D.status === 'optimal') {
         if (Math.abs(d1) + Math.abs(d2) > 1e-12) {
-          drawBoundary(F, d1, d2, d1 * D.lambda.l1 + d2 * D.lambda.l2, C.level, 2, [7, 5]);
-          drawArrow(F, D.lambda.l1, D.lambda.l2, d1, d2, C.level, 'ascent');
+          drawBoundary(ctxD, F, d1, d2, d1 * D.lambda.l1 + d2 * D.lambda.l2, C.level, 2, [7, 5]);
         }
         for (var v = 0; v < D.vertices.length; v++) {
-          ctx.beginPath();
-          ctx.arc(F.px(D.vertices[v].x), F.py(D.vertices[v].y), 3, 0, 2 * Math.PI);
-          ctx.fillStyle = C.vert;
-          ctx.fill();
+          ctxD.beginPath();
+          ctxD.arc(F.px(D.vertices[v].x), F.py(D.vertices[v].y), 2.5, 0, 2 * Math.PI);
+          ctxD.fillStyle = C.vert;
+          ctxD.fill();
         }
-        ctx.beginPath();
-        ctx.arc(F.px(D.lambda.l1), F.py(D.lambda.l2), 6, 0, 2 * Math.PI);
-        ctx.fillStyle = C.optim;
-        ctx.fill();
-        ctx.font = 'bold 12px system-ui, sans-serif';
-        ctx.fillText('\u03BB*', F.px(D.lambda.l1) + 8, F.py(D.lambda.l2) - 8);
+        ctxD.beginPath();
+        ctxD.arc(F.px(D.lambda.l1), F.py(D.lambda.l2), 6, 0, 2 * Math.PI);
+        ctxD.fillStyle = C.optim;
+        ctxD.fill();
+        ctxD.font = 'bold 12px system-ui, sans-serif';
+        ctxD.fillText('\u03BB*', F.px(D.lambda.l1) + 8, F.py(D.lambda.l2) - 8);
       }
-      ctx.restore();
-      setLegend([
-        [C.region, 'dual feasible region {\u03BB \u2265 0, A\u1D40\u03BB \u2265 \u2212c}'],
-        [C.con1, 'a\u2081\u2081\u03BB\u2081 + a\u2082\u2081\u03BB\u2082 = \u2212c\u2081'],
-        [C.con2, 'a\u2081\u2082\u03BB\u2081 + a\u2082\u2082\u03BB\u2082 = \u2212c\u2082'],
-        [C.level, 'dual objective level (A\ud835\udfd9 \u2212 b)\u1D40\u03BB (dashed) and ascent'],
-        [C.optim, 'dual optimum \u03BB*'],
-        [C.vert, 'dual-region vertices']
-      ]);
+      ctxD.restore();
     }
 
-    function setLegend(items) {
-      var html = '';
-      for (var i = 0; i < items.length; i++) {
-        html += '<div class="dv-li"><span class="dv-sw" style="background:' + items[i][0] + ';"></span>' + items[i][1] + '</div>';
+    // ---------- drag interaction on the primal canvas ----------
+    function pointerPx(ev) {
+      var rect = canvasP.getBoundingClientRect();
+      var cx = (ev.touches && ev.touches.length ? ev.touches[0].clientX : ev.clientX) - rect.left;
+      var cy = (ev.touches && ev.touches.length ? ev.touches[0].clientY : ev.clientY) - rect.top;
+      return { px: cx, py: cy };
+    }
+    function distToLinePx(F, a, b, c, p) {
+      var p1, p2;
+      if (Math.abs(b) >= Math.abs(a)) {
+        p1 = { x: F.xMin, y: (c - a * F.xMin) / b };
+        p2 = { x: F.xMax, y: (c - a * F.xMax) / b };
+      } else {
+        p1 = { x: (c - b * F.yMin) / a, y: F.yMin };
+        p2 = { x: (c - b * F.yMax) / a, y: F.yMax };
       }
-      legendEl.innerHTML = html;
+      var x1 = F.px(p1.x), y1 = F.py(p1.y), x2 = F.px(p2.x), y2 = F.py(p2.y);
+      var dx = x2 - x1, dy = y2 - y1;
+      var L2 = dx * dx + dy * dy;
+      if (L2 < 1e-9) return Infinity;
+      var t = ((p.px - x1) * dx + (p.py - y1) * dy) / L2;
+      t = Math.max(0, Math.min(1, t));
+      return Math.hypot(p.px - (x1 + t * dx), p.py - (y1 + t * dy));
+    }
+    function hitTest(p) {
+      var F = state.lastFrameP;
+      if (!F) return null;
+      var hitData = container.dataset.dvHit ? JSON.parse(container.dataset.dvHit) : {};
+      if (hitData.arrowHead && Math.hypot(p.px - hitData.arrowHead.px, p.py - hitData.arrowHead.py) < 14) return 'arrow';
+      var prm = state.prm;
+      if (Math.abs(prm.a11) + Math.abs(prm.a12) > 1e-12 &&
+          distToLinePx(F, prm.a11, prm.a12, prm.b1, p) < 8) return 'b1';
+      if (Math.abs(prm.a21) + Math.abs(prm.a22) > 1e-12 &&
+          distToLinePx(F, prm.a21, prm.a22, prm.b2, p) < 8) return 'b2';
+      return null;
+    }
+    function applyDrag(mode, p) {
+      var F = state.lastFrameP;
+      if (!F) return;
+      var dx = F.dataX(p.px), dy = F.dataY(p.py);
+      var prm = state.prm;
+      if (mode === 'arrow') {
+        if (!state.lastP || state.lastP.status !== 'optimal') return;
+        var ox = state.lastP.x.x1, oy = state.lastP.x.x2;
+        var vx = dx - ox, vy = dy - oy;      // pointer direction = -c direction
+        var vlen = Math.hypot(vx, vy);
+        if (vlen < 1e-6) return;
+        var mag = Math.hypot(prm.c1, prm.c2);
+        if (mag < 0.5) mag = 3;
+        var nc1 = -vx / vlen * mag, nc2 = -vy / vlen * mag;
+        var over = Math.max(Math.abs(nc1), Math.abs(nc2)) / 5;
+        if (over > 1) { nc1 /= over; nc2 /= over; }
+        prm.c1 = Math.round(nc1 * 2) / 2;   // snap to the slider step 0.5
+        prm.c2 = Math.round(nc2 * 2) / 2;
+      } else if (mode === 'b1') {
+        var nb1 = prm.a11 * dx + prm.a12 * dy;
+        prm.b1 = Math.max(2, Math.min(20, Math.round(nb1 * 2) / 2));
+      } else if (mode === 'b2') {
+        var nb2 = prm.a21 * dx + prm.a22 * dy;
+        prm.b2 = Math.max(2, Math.min(20, Math.round(nb2 * 2) / 2));
+      }
+      syncSliders();
+      render();
+    }
+    function onDown(ev) {
+      var p = pointerPx(ev);
+      var mode = hitTest(p);
+      if (mode) {
+        state.drag = mode;
+        canvasP.style.cursor = 'grabbing';
+        applyDrag(mode, p);
+        if (ev.preventDefault) ev.preventDefault();
+      }
+    }
+    function onMove(ev) {
+      var p = pointerPx(ev);
+      if (state.drag) {
+        applyDrag(state.drag, p);
+        if (ev.preventDefault) ev.preventDefault();
+      } else {
+        canvasP.style.cursor = hitTest(p) ? 'grab' : 'default';
+      }
+    }
+    function onUp() {
+      state.drag = null;
+      canvasP.style.cursor = 'default';
+    }
+    canvasP.addEventListener('mousedown', onDown);
+    canvasP.addEventListener('mousemove', onMove);
+    canvasP.addEventListener('touchstart', onDown, { passive: false });
+    canvasP.addEventListener('touchmove', onMove, { passive: false });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('mouseup', onUp);
+      window.addEventListener('touchend', onUp);
     }
 
-    // ---------- events ----------
+    // ---------- sliders / presets ----------
     function syncSliders() {
       for (var i = 0; i < SLIDER_IDS.length; i++) {
         var id = SLIDER_IDS[i];
@@ -898,25 +973,13 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = DualCore
         render();
       });
     }
-    document.getElementById('dv-tab-primal').addEventListener('click', function () {
-      state.view = 'primal';
-      this.classList.add('dv-tab-active');
-      document.getElementById('dv-tab-dual').classList.remove('dv-tab-active');
-      render();
-    });
-    document.getElementById('dv-tab-dual').addEventListener('click', function () {
-      state.view = 'dual';
-      this.classList.add('dv-tab-active');
-      document.getElementById('dv-tab-primal').classList.remove('dv-tab-active');
-      render();
-    });
 
     if (typeof window !== 'undefined') {
-      window.addEventListener('resize', function () { sizeCanvas(); render(); });
+      window.addEventListener('resize', function () { sizeCanvases(); render(); });
     }
 
     // ---------- boot ----------
-    sizeCanvas();
+    sizeCanvases();
     render();
   }
 
