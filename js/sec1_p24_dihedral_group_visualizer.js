@@ -1,1138 +1,647 @@
-// dihedral_group_visualizer.js
-// A vanilla JavaScript implementation of the Dihedral Group D₆ Visualizer
-// Demonstrates discrete symmetry operations on a regular hexagon
+//======================================================================
+// sec1_p24_dihedral_group_visualizer.js (v2) -- linalg-24, demo 1
+// [Core IIFE] D6Core: the dihedral group D6 with ONE source of truth.
+// Elements are (k, m) meaning r^k s^m; everything else -- matrices,
+// vertex permutations, the Cayley product, orders, axes, the center --
+// is DERIVED from the 2x2 matrix representation. No hand-typed tables.
+// Math convention: y-up plane, vertex i (1..6) at angle (i-1)*60 deg,
+// positive rotation = counterclockwise. (The UI flips y when drawing.)
+//======================================================================
+var D6Core = (function () {
+  'use strict';
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Get the container element
-    const container = document.getElementById('dihedral-group-visualizer');
-    
-    if (!container) {
-        console.error('Dihedral group visualizer container not found!');
-        return;
-    }
-    
-    // Create HTML structure
-    container.innerHTML = `
-      <div class="dihedral-visualizer-container">
-        <div class="dihedral-visualizer-layout">
-          <div class="dihedral-canvas-container">
-            <div class="instruction" id="dihedral-instruction">Click group elements to apply discrete symmetry transformations (instant snap)</div>
-            <div id="dihedral-canvas-wrapper">
-              <canvas id="dihedral-canvas" width="500" height="500"></canvas>
-            </div>
-            <div class="dihedral-legend" id="dihedral-legend">
-              <div class="legend-item"><span class="legend-color rotation-color"></span> Rotations (r<sup>k</sup>)</div>
-              <div class="legend-item"><span class="legend-color reflection-color"></span> Reflections (r<sup>k</sup>s)</div>
-              <div class="legend-item"><span class="legend-color axis-color"></span> Reflection axes</div>
-            </div>
-          </div>
-          
-          <div class="dihedral-controls-panel">
-            <div class="dihedral-state-display" id="state-display">
-              <div class="state-title">Current State</div>
-              <div class="state-content">
-                <div class="state-row">
-                  <span class="state-label">Element:</span>
-                  <span id="current-element" class="state-value element-display">e</span>
-                </div>
-                <div class="state-row">
-                  <span class="state-label">Type:</span>
-                  <span id="element-type" class="state-value">Identity</span>
-                </div>
-                <div class="state-row">
-                  <span class="state-label">Order:</span>
-                  <span id="element-order" class="state-value">|e| = 1</span>
-                </div>
-                <div class="state-row">
-                  <span class="state-label">Permutation:</span>
-                  <span id="element-permutation" class="state-value permutation-display">(1)(2)(3)(4)(5)(6)</span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="dihedral-matrix-display" id="matrix-display">
-              <div class="matrix-title">2×2 Matrix Representation</div>
-              <div class="matrix-content" id="matrix-content">
-                <div class="matrix-bracket left">[</div>
-                <div class="matrix-values">
-                  <div class="matrix-row">
-                    <span id="m00">1.00</span>
-                    <span id="m01">0.00</span>
-                  </div>
-                  <div class="matrix-row">
-                    <span id="m10">0.00</span>
-                    <span id="m11">1.00</span>
-                  </div>
-                </div>
-                <div class="matrix-bracket right">]</div>
-              </div>
-              <div class="matrix-properties">
-                <span id="det-value">det = 1</span>
-                <span id="orthogonal-check">Orthogonal ✓</span>
-              </div>
-            </div>
+  var N = 6;
+  var IDS = ['e', 'r', 'r2', 'r3', 'r4', 'r5', 's', 'rs', 'r2s', 'r3s', 'r4s', 'r5s'];
 
-            <div class="dihedral-elements-group">
-              <div class="elements-section">
-                <div class="section-header rotation-header">
-                  <span class="section-icon">↻</span>
-                  Rotations ⟨r⟩ (cyclic subgroup of order 6)
-                </div>
-                <div class="elements-grid" id="rotation-buttons">
-                  <button class="element-btn rotation-btn active" data-element="e" title="Identity (0°)">
-                    <span class="element-symbol">e</span>
-                    <span class="element-angle">0°</span>
-                  </button>
-                  <button class="element-btn rotation-btn" data-element="r" title="Rotation by 60°">
-                    <span class="element-symbol">r</span>
-                    <span class="element-angle">60°</span>
-                  </button>
-                  <button class="element-btn rotation-btn" data-element="r2" title="Rotation by 120°">
-                    <span class="element-symbol">r²</span>
-                    <span class="element-angle">120°</span>
-                  </button>
-                  <button class="element-btn rotation-btn" data-element="r3" title="Rotation by 180°">
-                    <span class="element-symbol">r³</span>
-                    <span class="element-angle">180°</span>
-                  </button>
-                  <button class="element-btn rotation-btn" data-element="r4" title="Rotation by 240°">
-                    <span class="element-symbol">r⁴</span>
-                    <span class="element-angle">240°</span>
-                  </button>
-                  <button class="element-btn rotation-btn" data-element="r5" title="Rotation by 300°">
-                    <span class="element-symbol">r⁵</span>
-                    <span class="element-angle">300°</span>
-                  </button>
-                </div>
-              </div>
-              
-              <div class="elements-section">
-                <div class="section-header reflection-header">
-                  <span class="section-icon">↔</span>
-                  Reflections (coset ⟨r⟩s)
-                </div>
-                <div class="elements-grid" id="reflection-buttons">
-                  <button class="element-btn reflection-btn" data-element="s" title="Reflection across axis at 0°">
-                    <span class="element-symbol">s</span>
-                    <span class="element-angle">axis 0°</span>
-                  </button>
-                  <button class="element-btn reflection-btn" data-element="rs" title="Reflection across axis at 30°">
-                    <span class="element-symbol">rs</span>
-                    <span class="element-angle">axis 30°</span>
-                  </button>
-                  <button class="element-btn reflection-btn" data-element="r2s" title="Reflection across axis at 60°">
-                    <span class="element-symbol">r²s</span>
-                    <span class="element-angle">axis 60°</span>
-                  </button>
-                  <button class="element-btn reflection-btn" data-element="r3s" title="Reflection across axis at 90°">
-                    <span class="element-symbol">r³s</span>
-                    <span class="element-angle">axis 90°</span>
-                  </button>
-                  <button class="element-btn reflection-btn" data-element="r4s" title="Reflection across axis at 120°">
-                    <span class="element-symbol">r⁴s</span>
-                    <span class="element-angle">axis 120°</span>
-                  </button>
-                  <button class="element-btn reflection-btn" data-element="r5s" title="Reflection across axis at 150°">
-                    <span class="element-symbol">r⁵s</span>
-                    <span class="element-angle">axis 150°</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div class="dihedral-composition-group">
-              <div class="composition-title">Group Composition (g₂ ∘ g₁)</div>
-              <div class="composition-description">Apply g₁ first, then g₂ (read right to left)</div>
-              <div class="composition-controls">
-                <select id="compose-g2" class="compose-select">
-                  <option value="e">e</option>
-                  <option value="r">r</option>
-                  <option value="r2">r²</option>
-                  <option value="r3">r³</option>
-                  <option value="r4">r⁴</option>
-                  <option value="r5">r⁵</option>
-                  <option value="s">s</option>
-                  <option value="rs">rs</option>
-                  <option value="r2s">r²s</option>
-                  <option value="r3s">r³s</option>
-                  <option value="r4s">r⁴s</option>
-                  <option value="r5s">r⁵s</option>
-                </select>
-                <span class="compose-operator">∘</span>
-                <select id="compose-g1" class="compose-select">
-                  <option value="e">e</option>
-                  <option value="r">r</option>
-                  <option value="r2">r²</option>
-                  <option value="r3">r³</option>
-                  <option value="r4">r⁴</option>
-                  <option value="r5">r⁵</option>
-                  <option value="s">s</option>
-                  <option value="rs">rs</option>
-                  <option value="r2s">r²s</option>
-                  <option value="r3s">r³s</option>
-                  <option value="r4s">r⁴s</option>
-                  <option value="r5s">r⁵s</option>
-                </select>
-                <span class="compose-equals">=</span>
-                <span id="compose-result" class="compose-result">e</span>
-              </div>
-              <button id="apply-composition" class="primary-btn">Apply Result</button>
-              <div class="composition-note" id="composition-note"></div>
-            </div>
-              
-            <button id="reset-btn" class="secondary-btn">Reset to Identity</button>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    // Add styles
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-      .dihedral-visualizer-container {
-        margin-bottom: 20px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        color: #e8eaed;
-      }
-      
-      .dihedral-visualizer-layout {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-      
-      @media (min-width: 992px) {
-        .dihedral-visualizer-layout {
-          flex-direction: row;
-        }
-        
-        .dihedral-canvas-container {
-          flex: 1;
-          order: 1;
-        }
-        
-        .dihedral-controls-panel {
-          flex: 1;
-          order: 2;
-          max-width: 450px;
-        }
-      }
-      
-      .dihedral-controls-panel {
-        background: rgba(20, 28, 40, 0.95);
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      }
-      
-      .dihedral-canvas-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      #dihedral-canvas-wrapper {
-        position: relative;
-        width: 100%;
-        max-width: 500px;
-      }
-      
-      #dihedral-canvas {
-        width: 100%;
-        height: auto;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 8px;
-        background: linear-gradient(135deg, #0a0f18 0%, #0f1419 100%);
-      }
-      
-      .instruction {
-        text-align: center;
-        margin-bottom: 10px;
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.5);
-      }
-      
-      .dihedral-legend {
-        margin-top: 10px;
-        display: flex;
-        gap: 20px;
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.7);
-        justify-content: center;
-        flex-wrap: wrap;
-      }
-      
-      .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      
-      .legend-color {
-        width: 14px;
-        height: 14px;
-        border-radius: 3px;
-      }
-      
-      .rotation-color { background: #3498db; }
-      .reflection-color { background: #e74c3c; }
-      .axis-color { 
-        background: transparent;
-        border: 2px dashed #f39c12;
-      }
-      
-      /* State Display */
-      .dihedral-state-display {
-        background: rgba(21, 101, 192, 0.15);
-        border: 1px solid rgba(21, 101, 192, 0.3);
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 15px;
-      }
-      
-      .state-title {
-        font-weight: bold;
-        font-size: 0.95rem;
-        color: #64b4ff;
-        margin-bottom: 10px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      
-      .state-content {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-      }
-      
-      .state-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      
-      .state-label {
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.85rem;
-      }
-      
-      .state-value {
-        color: #e8eaed;
-        font-family: 'Courier New', monospace;
-        font-size: 0.95rem;
-      }
-      
-      .element-display {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #64b4ff;
-      }
-      
-      .permutation-display {
-        font-size: 0.8rem;
-        color: #2ecc71;
-      }
-      
-      /* Matrix Display */
-      .dihedral-matrix-display {
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 15px;
-      }
-      
-      .matrix-title {
-        font-weight: bold;
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.8);
-        margin-bottom: 10px;
-      }
-      
-      .matrix-content {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 5px;
-        margin-bottom: 10px;
-      }
-      
-      .matrix-bracket {
-        font-size: 2.5rem;
-        font-weight: 100;
-        color: rgba(255, 255, 255, 0.5);
-        line-height: 1;
-      }
-      
-      .matrix-values {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      
-      .matrix-row {
-        display: flex;
-        gap: 20px;
-      }
-      
-      .matrix-row span {
-        width: 50px;
-        text-align: right;
-        font-family: 'Courier New', monospace;
-        color: #64b4ff;
-        font-size: 1rem;
-      }
-      
-      .matrix-properties {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        font-size: 0.85rem;
-      }
-      
-      .matrix-properties span {
-        padding: 4px 10px;
-        background: rgba(46, 204, 113, 0.15);
-        border: 1px solid rgba(46, 204, 113, 0.3);
-        border-radius: 4px;
-        color: #2ecc71;
-      }
-      
-      /* Elements Grid */
-      .dihedral-elements-group {
-        margin-bottom: 15px;
-      }
-      
-      .elements-section {
-        margin-bottom: 12px;
-      }
-      
-      .section-header {
-        font-size: 0.85rem;
-        font-weight: 600;
-        padding: 8px 10px;
-        border-radius: 4px;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      
-      .section-icon {
-        font-size: 1rem;
-      }
-      
-      .rotation-header {
-        background: rgba(52, 152, 219, 0.2);
-        border-left: 3px solid #3498db;
-        color: #64b4ff;
-      }
-      
-      .reflection-header {
-        background: rgba(231, 76, 60, 0.2);
-        border-left: 3px solid #e74c3c;
-        color: #e74c3c;
-      }
-      
-      .elements-grid {
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 6px;
-      }
-      
-      .element-btn {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 6px;
-        padding: 8px 4px;
-        cursor: pointer;
-        transition: all 0.15s ease;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-      }
-      
-      .element-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
-      }
-      
-      .element-btn.active {
-        border-width: 2px;
-      }
-      
-      .rotation-btn.active {
-        background: rgba(52, 152, 219, 0.3);
-        border-color: #3498db;
-        box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
-      }
-      
-      .reflection-btn.active {
-        background: rgba(231, 76, 60, 0.3);
-        border-color: #e74c3c;
-        box-shadow: 0 0 10px rgba(231, 76, 60, 0.3);
-      }
-      
-      .element-symbol {
-        font-family: 'Times New Roman', serif;
-        font-size: 1.1rem;
-        font-weight: bold;
-        color: #e8eaed;
-      }
-      
-      .element-angle {
-        font-size: 0.65rem;
-        color: rgba(255, 255, 255, 0.5);
-      }
-      
-      /* Composition Group */
-      .dihedral-composition-group {
-        background: rgba(106, 27, 154, 0.15);
-        border: 1px solid rgba(106, 27, 154, 0.3);
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 15px;
-      }
-      
-      .composition-title {
-        font-weight: bold;
-        font-size: 0.95rem;
-        color: #ab47bc;
-        margin-bottom: 4px;
-      }
-      
-      .composition-description {
-        font-size: 0.75rem;
-        color: rgba(255, 255, 255, 0.5);
-        margin-bottom: 10px;
-      }
-      
-      .composition-controls {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 10px;
-      }
-      
-      .compose-select {
-        padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 4px;
-        color: #e8eaed;
-        font-family: 'Times New Roman', serif;
-        font-size: 1rem;
-        cursor: pointer;
-      }
-      
-      .compose-select:focus {
-        border-color: #ab47bc;
-        outline: none;
-      }
-      
-      .compose-operator, .compose-equals {
-        font-size: 1.2rem;
-        color: rgba(255, 255, 255, 0.6);
-      }
-      
-      .compose-result {
-        font-family: 'Times New Roman', serif;
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #ab47bc;
-        padding: 6px 12px;
-        background: rgba(171, 71, 188, 0.2);
-        border-radius: 4px;
-        min-width: 40px;
-        text-align: center;
-      }
-      
-      .composition-note {
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.6);
-        text-align: center;
-        min-height: 1.2em;
-        margin-top: 8px;
-      }
-      
-      .composition-note.highlight {
-        color: #f39c12;
-      }
+  function idOf(k, m) {
+    k = ((k % N) + N) % N;
+    if (!m) return k === 0 ? 'e' : (k === 1 ? 'r' : 'r' + k);
+    return k === 0 ? 's' : (k === 1 ? 'rs' : 'r' + k + 's');
+  }
+  function parseId(id) {
+    var m = /^r?(\d?)(s?)$/.exec(id === 'e' ? '' : id);
+    if (id === 'e') return { k: 0, m: 0 };
+    if (!m) return null;
+    var k = (id[0] === 'r') ? (m[1] === '' ? 1 : parseInt(m[1], 10)) : 0;
+    return { k: k, m: m[2] === 's' ? 1 : 0 };
+  }
 
-      /* Buttons */
-      .primary-btn, .secondary-btn {
-        width: 100%;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 0.9rem;
-      }
-      
-      .primary-btn {
-        background: linear-gradient(135deg, #6a1b9a, #ab47bc);
-        color: white;
-        margin-bottom: 8px;
-      }
-      
-      .primary-btn:hover {
-        background: linear-gradient(135deg, #7b1fa2, #ba68c8);
-        transform: translateY(-1px);
-      }
-      
-      .secondary-btn {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: #e8eaed;
-      }
-      
-      .secondary-btn:hover {
-        background: rgba(255, 255, 255, 0.12);
-      }
-      
-      /* Responsive */
-      @media (max-width: 768px) {
-        .elements-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-        
-        .composition-controls {
-          flex-direction: column;
-          gap: 6px;
-        }
-        
-        .composition-controls > * {
-          width: 100%;
-          text-align: center;
-        }
-        
-        .compose-operator, .compose-equals {
-          display: block;
-        }
-      }
-    `;
-    document.head.appendChild(styleElement);
-    
-    // ========== MATHEMATICAL DATA STRUCTURES ==========
-    
-    // Display names for elements
-    const ELEMENT_DISPLAY = {
-        'e': 'e', 'r': 'r', 'r2': 'r²', 'r3': 'r³', 'r4': 'r⁴', 'r5': 'r⁵',
-        's': 's', 'rs': 'rs', 'r2s': 'r²s', 'r3s': 'r³s', 'r4s': 'r⁴s', 'r5s': 'r⁵s'
-    };
-    
-    // Group elements with their mathematical properties
-    // For rotations: element r^k rotates by k*60° counterclockwise
-    // For reflections: element r^k*s reflects across axis at k*30°
-    const D6_ELEMENTS = {
-        'e':   { rotationAngle: 0,   isReflection: false, order: 1,  axisAngle: null },
-        'r':   { rotationAngle: 60,  isReflection: false, order: 6,  axisAngle: null },
-        'r2':  { rotationAngle: 120, isReflection: false, order: 3,  axisAngle: null },
-        'r3':  { rotationAngle: 180, isReflection: false, order: 2,  axisAngle: null },
-        'r4':  { rotationAngle: 240, isReflection: false, order: 3,  axisAngle: null },
-        'r5':  { rotationAngle: 300, isReflection: false, order: 6,  axisAngle: null },
-        's':   { rotationAngle: 0,   isReflection: true,  order: 2,  axisAngle: 0 },
-        'rs':  { rotationAngle: 60,  isReflection: true,  order: 2,  axisAngle: 30 },
-        'r2s': { rotationAngle: 120, isReflection: true,  order: 2,  axisAngle: 60 },
-        'r3s': { rotationAngle: 180, isReflection: true,  order: 2,  axisAngle: 90 },
-        'r4s': { rotationAngle: 240, isReflection: true,  order: 2,  axisAngle: 120 },
-        'r5s': { rotationAngle: 300, isReflection: true,  order: 2,  axisAngle: 150 }
-    };
-    
-    // Cayley table for D₆: CAYLEY_TABLE[g2][g1] = g2 ∘ g1 (apply g1 first, then g2)
-    // This is computed using the relations: r⁶ = e, s² = e, sr = r⁻¹s = r⁵s
-    const CAYLEY_TABLE = {
-        'e':   { 'e':'e',   'r':'r',   'r2':'r2', 'r3':'r3', 'r4':'r4', 'r5':'r5', 's':'s',   'rs':'rs',   'r2s':'r2s', 'r3s':'r3s', 'r4s':'r4s', 'r5s':'r5s' },
-        'r':   { 'e':'r',   'r':'r2',  'r2':'r3', 'r3':'r4', 'r4':'r5', 'r5':'e',  's':'rs',  'rs':'r2s',  'r2s':'r3s', 'r3s':'r4s', 'r4s':'r5s', 'r5s':'s' },
-        'r2':  { 'e':'r2',  'r':'r3',  'r2':'r4', 'r3':'r5', 'r4':'e',  'r5':'r',  's':'r2s', 'rs':'r3s',  'r2s':'r4s', 'r3s':'r5s', 'r4s':'s',   'r5s':'rs' },
-        'r3':  { 'e':'r3',  'r':'r4',  'r2':'r5', 'r3':'e',  'r4':'r',  'r5':'r2', 's':'r3s', 'rs':'r4s',  'r2s':'r5s', 'r3s':'s',   'r4s':'rs',  'r5s':'r2s' },
-        'r4':  { 'e':'r4',  'r':'r5',  'r2':'e',  'r3':'r',  'r4':'r2', 'r5':'r3', 's':'r4s', 'rs':'r5s',  'r2s':'s',   'r3s':'rs',  'r4s':'r2s', 'r5s':'r3s' },
-        'r5':  { 'e':'r5',  'r':'e',   'r2':'r',  'r3':'r2', 'r4':'r3', 'r5':'r4', 's':'r5s', 'rs':'s',    'r2s':'rs',  'r3s':'r2s', 'r4s':'r3s', 'r5s':'r4s' },
-        's':   { 'e':'s',   'r':'r5s', 'r2':'r4s','r3':'r3s','r4':'r2s','r5':'rs', 's':'e',   'rs':'r5',   'r2s':'r4',  'r3s':'r3',  'r4s':'r2',  'r5s':'r' },
-        'rs':  { 'e':'rs',  'r':'s',   'r2':'r5s','r3':'r4s','r4':'r3s','r5':'r2s','s':'r',   'rs':'e',    'r2s':'r5',  'r3s':'r4',  'r4s':'r3',  'r5s':'r2' },
-        'r2s': { 'e':'r2s', 'r':'rs',  'r2':'s',  'r3':'r5s','r4':'r4s','r5':'r3s','s':'r2',  'rs':'r',    'r2s':'e',   'r3s':'r5',  'r4s':'r4',  'r5s':'r3' },
-        'r3s': { 'e':'r3s', 'r':'r2s', 'r2':'rs', 'r3':'s',  'r4':'r5s','r5':'r4s','s':'r3',  'rs':'r2',   'r2s':'r',   'r3s':'e',   'r4s':'r5',  'r5s':'r4' },
-        'r4s': { 'e':'r4s', 'r':'r3s', 'r2':'r2s','r3':'rs', 'r4':'s',  'r5':'r5s','s':'r4',  'rs':'r3',   'r2s':'r2',  'r3s':'r',   'r4s':'e',   'r5s':'r5' },
-        'r5s': { 'e':'r5s', 'r':'r4s', 'r2':'r3s','r3':'r2s','r4':'rs', 'r5':'s',  's':'r5',  'rs':'r4',   'r2s':'r3',  'r3s':'r2',  'r4s':'r',   'r5s':'e' }
-    };
-    
-    // ========== CANVAS AND STATE ==========
-    
-    const canvas = document.getElementById('dihedral-canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // State
-    let currentElement = 'e';
-    
-    // DOM elements
-    const currentElementDisplay = document.getElementById('current-element');
-    const elementTypeDisplay = document.getElementById('element-type');
-    const elementOrderDisplay = document.getElementById('element-order');
-    const elementPermutationDisplay = document.getElementById('element-permutation');
-    const m00 = document.getElementById('m00');
-    const m01 = document.getElementById('m01');
-    const m10 = document.getElementById('m10');
-    const m11 = document.getElementById('m11');
-    const detValue = document.getElementById('det-value');
-    const orthogonalCheck = document.getElementById('orthogonal-check');
-    const composeG1 = document.getElementById('compose-g1');
-    const composeG2 = document.getElementById('compose-g2');
-    const composeResult = document.getElementById('compose-result');
-    const compositionNote = document.getElementById('composition-note');
-    const applyCompositionBtn = document.getElementById('apply-composition');
-    const resetBtn = document.getElementById('reset-btn');
-    
-    // ========== MATHEMATICAL FUNCTIONS ==========
-    
-    /**
-     * Compute the 2x2 matrix for a group element
-     * Rotation by θ: [[cos(θ), -sin(θ)], [sin(θ), cos(θ)]]
-     * Reflection across axis at angle α: [[cos(2α), sin(2α)], [sin(2α), -cos(2α)]]
-     */
-    function getMatrix(element) {
-        const elem = D6_ELEMENTS[element];
-        const θ = elem.rotationAngle * Math.PI / 180;
-        
-        if (!elem.isReflection) {
-            // Pure rotation matrix
-            return [
-                [Math.cos(θ), -Math.sin(θ)],
-                [Math.sin(θ),  Math.cos(θ)]
-            ];
-        } else {
-            // Reflection matrix: reflect across line at angle α
-            // This is equivalent to rotation by θ followed by reflection across x-axis
-            // Or: reflection across axis at angle θ/2
-            const α = elem.axisAngle * Math.PI / 180;
-            return [
-                [Math.cos(2 * α),  Math.sin(2 * α)],
-                [Math.sin(2 * α), -Math.cos(2 * α)]
-            ];
-        }
+  // ---------- matrices (the single source of truth) ----------
+  function rot(deg) {
+    var t = deg * Math.PI / 180;
+    return [[Math.cos(t), -Math.sin(t)], [Math.sin(t), Math.cos(t)]];
+  }
+  var REFLECT_X = [[1, 0], [0, -1]]; // reflection across the x-axis (= s)
+  function matMul(A, B) {
+    return [
+      [A[0][0] * B[0][0] + A[0][1] * B[1][0], A[0][0] * B[0][1] + A[0][1] * B[1][1]],
+      [A[1][0] * B[0][0] + A[1][1] * B[1][0], A[1][0] * B[0][1] + A[1][1] * B[1][1]]
+    ];
+  }
+  function matrixOf(id) {
+    var p = parseId(id);
+    var R = rot(60 * p.k);
+    return p.m ? matMul(R, REFLECT_X) : R; // r^k s = rotate after reflecting
+  }
+  function det2(M) { return M[0][0] * M[1][1] - M[0][1] * M[1][0]; }
+  function frobDist(A, B) {
+    var s = 0;
+    for (var i = 0; i < 2; i++) for (var j = 0; j < 2; j++) {
+      s += (A[i][j] - B[i][j]) * (A[i][j] - B[i][j]);
     }
-    
-    /**
-     * Compute the permutation of vertices for a group element
-     * Vertices are labeled 1-6 starting at the right and going counterclockwise
-     */
-    function getPermutation(element) {
-        const elem = D6_ELEMENTS[element];
-        const k = Math.round(elem.rotationAngle / 60) % 6;
-        
-        if (!elem.isReflection) {
-            // Rotation r^k: vertex i maps to vertex ((i - 1 + k) % 6) + 1
-            // In cycle notation, this is (1 2 3 4 5 6) applied k times
-            const result = [];
-            for (let i = 1; i <= 6; i++) {
-                result.push(((i - 1 - k + 600) % 6) + 1);
-            }
-            return result;
-        } else {
-            // Reflection r^k*s: first reflect (s fixes vertex 1, swaps 2↔6, 3↔5, fixes 4 for s)
-            // Then apply r^k
-            // s as permutation: [1, 6, 5, 4, 3, 2] (vertex i goes to position s(i))
-            // r^k*s: vertex i → position of r^k(s(i))
-            
-            // Actually, let's think about where each vertex GOES
-            // For s (reflection across axis through vertices 1 and 4):
-            // vertex 1 stays at 1, vertex 2 goes to 6, vertex 3 goes to 5, etc.
-            const sPermutation = [1, 6, 5, 4, 3, 2]; // where vertex i goes under s
-            
-            // For r^k*s, we first apply s, then r^k
-            // r^k shifts positions by k counterclockwise
-            const result = [];
-            for (let i = 0; i < 6; i++) {
-                // Vertex (i+1) under s goes to position sPermutation[i]
-                // Then r^k rotates that position
-                const afterS = sPermutation[i];
-                const afterRkS = ((afterS - 1 + k) % 6) + 1;
-                result.push(afterRkS);
-            }
-            return result;
-        }
+    return Math.sqrt(s);
+  }
+
+  var MATRICES = {};
+  IDS.forEach(function (id) { MATRICES[id] = matrixOf(id); });
+
+  // identify a 2x2 matrix as a group element (with separation margin)
+  function identify(M) {
+    var best = null, bestD = Infinity, secondD = Infinity;
+    IDS.forEach(function (id) {
+      var d = frobDist(M, MATRICES[id]);
+      if (d < bestD) { secondD = bestD; bestD = d; best = id; }
+      else if (d < secondD) { secondD = d; }
+    });
+    return { id: best, dist: bestD, secondDist: secondD };
+  }
+
+  // group product: product(a, b) = a . b (apply b FIRST, then a).
+  // The UI's "g2 o g1" composition is product(g2, g1).
+  function product(aId, bId) {
+    return identify(matMul(MATRICES[aId], MATRICES[bId])).id;
+  }
+  function inverseOf(id) {
+    for (var i = 0; i < IDS.length; i++) {
+      if (product(id, IDS[i]) === 'e') return IDS[i];
     }
-    
-    /**
-     * Convert permutation to cycle notation string
-     */
-    function permutationToCycleNotation(perm) {
-        // perm[i] is where vertex (i+1) goes
-        const visited = new Array(6).fill(false);
-        const cycles = [];
-        
-        for (let start = 0; start < 6; start++) {
-            if (visited[start]) continue;
-            
-            const cycle = [];
-            let current = start;
-            
-            while (!visited[current]) {
-                visited[current] = true;
-                cycle.push(current + 1);
-                // Find where this vertex goes
-                current = perm[current] - 1;
-            }
-            
-            if (cycle.length > 0) {
-                cycles.push(cycle);
-            }
-        }
-        
-        // Format cycles
-        if (cycles.length === 6 && cycles.every(c => c.length === 1)) {
-            return '(1)(2)(3)(4)(5)(6)'; // Identity
-        }
-        
-        return cycles
-            .filter(c => c.length > 1)
-            .map(c => '(' + c.join(' ') + ')')
-            .join('') || '(1)';
+    return null;
+  }
+  function orderOf(id) {
+    var g = 'e';
+    for (var n = 1; n <= 2 * N; n++) {
+      g = product(g, id);
+      if (g === 'e') return n;
     }
-    
-    /**
-     * Apply matrix transformation to a point
-     */
-    function transformPoint(matrix, x, y) {
-        return {
-            x: matrix[0][0] * x + matrix[0][1] * y,
-            y: matrix[1][0] * x + matrix[1][1] * y
-        };
+    return -1;
+  }
+
+  // reduce a word (sequence of clicks, applied left to right in time)
+  // to a single element: clicking g maps state x to g o x, so the word
+  // [g1, g2, ..., gn] (in click order) reduces to gn o ... o g2 o g1.
+  function reduceWord(clickIds) {
+    var acc = 'e';
+    for (var i = 0; i < clickIds.length; i++) acc = product(clickIds[i], acc);
+    return acc;
+  }
+
+  // ---------- vertices and permutations (derived from matrices) ----------
+  function vertexPos(i) { // label i in 1..6, unit circumradius, y-up
+    var t = (i - 1) * 60 * Math.PI / 180;
+    return { x: Math.cos(t), y: Math.sin(t) };
+  }
+  // perm[i-1] = j means: vertex labeled i is carried to the position
+  // where vertex j sits in the identity configuration.
+  function permutationOf(id) {
+    var M = MATRICES[id];
+    var perm = [];
+    for (var i = 1; i <= N; i++) {
+      var p = vertexPos(i);
+      var q = { x: M[0][0] * p.x + M[0][1] * p.y, y: M[1][0] * p.x + M[1][1] * p.y };
+      var found = -1;
+      for (var j = 1; j <= N; j++) {
+        var r0 = vertexPos(j);
+        if (Math.hypot(q.x - r0.x, q.y - r0.y) < 1e-9) { found = j; break; }
+      }
+      if (found < 0) throw new Error('permutationOf: image of vertex ' + i + ' is not a vertex');
+      perm.push(found);
     }
-    
-    // ========== DRAWING FUNCTIONS ==========
-    
-    function drawCanvas() {
-        const width = canvas.width;
-        const height = canvas.height;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const radius = Math.min(width, height) * 0.35;
-        
-        // Clear canvas
-        ctx.clearRect(0, 0, width, height);
-        
-        // Draw subtle grid
-        drawGrid(centerX, centerY, radius);
-        
-        // Draw reflection axes (behind hexagon)
-        drawReflectionAxes(centerX, centerY, radius * 1.3);
-        
-        // Draw the hexagon with current transformation
-        drawHexagon(centerX, centerY, radius);
-        
-        // Draw coordinate axes
-        drawAxes(centerX, centerY, radius);
+    return perm;
+  }
+  function composePerm(p2, p1) { // (p2 o p1)(i) = p2(p1(i))
+    var out = [];
+    for (var i = 0; i < N; i++) out.push(p2[p1[i] - 1]);
+    return out;
+  }
+  function fixedVertices(perm) {
+    var f = [];
+    for (var i = 0; i < N; i++) if (perm[i] === i + 1) f.push(i + 1);
+    return f;
+  }
+  // cycle notation INCLUDING fixed points as 1-cycles (site decision:
+  // for reflections, the fixed vertices are exactly the axis vertices,
+  // so hiding 1-cycles hides the geometric payoff).
+  function cycleNotation(perm) {
+    var visited = new Array(N).fill(false);
+    var parts = [];
+    for (var start = 0; start < N; start++) {
+      if (visited[start]) continue;
+      var cyc = [], cur = start;
+      while (!visited[cur]) { visited[cur] = true; cyc.push(cur + 1); cur = perm[cur] - 1; }
+      parts.push('(' + cyc.join(' ') + ')');
     }
-    
-    function drawGrid(cx, cy, radius) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.lineWidth = 1;
-        
-        const gridSpacing = radius / 3;
-        const extent = radius * 1.5;
-        
-        // Vertical lines
-        for (let x = -extent; x <= extent; x += gridSpacing) {
-            ctx.beginPath();
-            ctx.moveTo(cx + x, cy - extent);
-            ctx.lineTo(cx + x, cy + extent);
-            ctx.stroke();
-        }
-        
-        // Horizontal lines
-        for (let y = -extent; y <= extent; y += gridSpacing) {
-            ctx.beginPath();
-            ctx.moveTo(cx - extent, cy + y);
-            ctx.lineTo(cx + extent, cy + y);
-            ctx.stroke();
-        }
+    return parts.join('');
+  }
+
+  // reflection axis angle in degrees (from the matrix, not from a table):
+  // [[cos 2a, sin 2a], [sin 2a, -cos 2a]] => a = atan2(M10, M00) / 2
+  function axisAngleOf(id) {
+    var M = MATRICES[id];
+    if (det2(M) > 0) return null; // not a reflection
+    var a = Math.atan2(M[1][0], M[0][0]) / 2 * 180 / Math.PI;
+    return ((a % 180) + 180) % 180;
+  }
+
+  function isReflection(id) { return det2(MATRICES[id]) < 0; }
+
+  function centerOf() {
+    var c = [];
+    IDS.forEach(function (g) {
+      var ok = IDS.every(function (h) { return product(g, h) === product(h, g); });
+      if (ok) c.push(g);
+    });
+    return c;
+  }
+
+  function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+  //====================================================================
+  // Self-tests
+  //====================================================================
+  function runSelfTests() {
+    var failures = [];
+    function check(name, cond, detail) {
+      if (!cond) failures.push(name + (detail !== undefined ? ' [' + detail + ']' : ''));
     }
-    
-    function drawAxes(cx, cy, radius) {
-        const extent = radius * 1.2;
-        
-        // X-axis
-        ctx.strokeStyle = 'rgba(255, 100, 100, 0.4)';
+    var i, j;
+
+    // T1: closure with sharp identification -- every product lands exactly
+    // on one of the 12 matrices, with a wide separation margin
+    (function () {
+      var okDist = true, okMargin = true, minMargin = Infinity;
+      IDS.forEach(function (a) {
+        IDS.forEach(function (b) {
+          var r = identify(matMul(MATRICES[a], MATRICES[b]));
+          if (r.dist > 1e-9) okDist = false;
+          if (r.secondDist < 0.5) okMargin = false;
+          if (r.secondDist < minMargin) minMargin = r.secondDist;
+        });
+      });
+      check('T1a closure: all 144 products identify exactly', okDist);
+      check('T1b identification margin > 0.5', okMargin, minMargin.toFixed(3));
+      // pin the actual margin value: nearest neighbor of I is r (or r5)
+      // at Frobenius distance sqrt(2)
+      var idI = identify([[1, 0], [0, 1]]);
+      check('T1c secondDist(I) == sqrt(2)', Math.abs(idI.secondDist - Math.SQRT2) < 1e-9,
+        idI.secondDist);
+    })();
+
+    // T2: defining relations at matrix level
+    check('T2a r^6 == e', reduceWord(['r', 'r', 'r', 'r', 'r', 'r']) === 'e');
+    check('T2b s^2 == e', product('s', 's') === 'e');
+    check('T2c srs == r^-1', product(product('s', 'r'), 's') === inverseOf('r'),
+      product(product('s', 'r'), 's'));
+
+    // T3: group axioms from the derived table
+    (function () {
+      var okAssoc = true;
+      IDS.forEach(function (a) {
+        IDS.forEach(function (b) {
+          IDS.forEach(function (c) {
+            if (product(product(a, b), c) !== product(a, product(b, c))) okAssoc = false;
+          });
+        });
+      });
+      check('T3a associativity (all 1728 triples)', okAssoc);
+      var okId = IDS.every(function (g) { return product('e', g) === g && product(g, 'e') === g; });
+      check('T3b identity element', okId);
+      var okInv = IDS.every(function (g) {
+        var gi = inverseOf(g);
+        return gi !== null && product(g, gi) === 'e' && product(gi, g) === 'e';
+      });
+      check('T3c two-sided inverses exist', okInv);
+    })();
+
+    // T4: order semantics of the product -- pins which factor acts first.
+    // product(a, b) applies b FIRST. r o s = "reflect, then rotate" = rs.
+    check('T4a product(r, s) == rs', product('r', 's') === 'rs', product('r', 's'));
+    check('T4b product(s, r) == r5s', product('s', 'r') === 'r5s', product('s', 'r'));
+    check('T4c non-commutativity witness rs != sr', product('r', 's') !== product('s', 'r'));
+
+    // T5: the center is exactly {e, r3}
+    (function () {
+      var c = centerOf();
+      check('T5 center == {e, r3}', c.length === 2 && c.indexOf('e') >= 0 && c.indexOf('r3') >= 0,
+        c.join(','));
+    })();
+
+    // T6: element orders follow |r^k| = 6/gcd(k,6); reflections order 2
+    (function () {
+      var ok = true;
+      for (var k = 0; k < N; k++) {
+        var expected = k === 0 ? 1 : N / gcd(k, N);
+        if (orderOf(idOf(k, 0)) !== expected) ok = false;
+        if (orderOf(idOf(k, 1)) !== 2) ok = false;
+      }
+      check('T6 orders: |r^k| = 6/gcd(k,6), reflections have order 2', ok);
+    })();
+
+    // T7: determinant separates rotations (+1) from reflections (-1);
+    // all matrices orthogonal
+    (function () {
+      var ok = true, okOrtho = true;
+      IDS.forEach(function (id) {
+        var M = MATRICES[id], p = parseId(id);
+        var d = det2(M);
+        if (Math.abs(d - (p.m ? -1 : 1)) > 1e-12) ok = false;
+        var MtM = matMul([[M[0][0], M[1][0]], [M[0][1], M[1][1]]], M);
+        if (frobDist(MtM, [[1, 0], [0, 1]]) > 1e-12) okOrtho = false;
+      });
+      check('T7a det == +1 on rotations, -1 on reflections', ok);
+      check('T7b all matrices orthogonal', okOrtho);
+    })();
+
+    // T8: permutation representation -- faithfulness and homomorphism
+    (function () {
+      // convention pin: this kills a flipped rotation sign (the v1 bug
+      // class): rotating by +60 carries vertex 1 to vertex 2's position
+      check('T8a perm(r) == (1 2 3 4 5 6)', cycleNotation(permutationOf('r')) === '(1 2 3 4 5 6)',
+        cycleNotation(permutationOf('r')));
+      check('T8b perm(e) shows all fixed points', cycleNotation(permutationOf('e')) === '(1)(2)(3)(4)(5)(6)');
+      // homomorphism: perm(a o b) == perm(a) o perm(b), all 144 pairs
+      var okHom = true;
+      IDS.forEach(function (a) {
+        IDS.forEach(function (b) {
+          var lhs = permutationOf(product(a, b));
+          var rhs = composePerm(permutationOf(a), permutationOf(b));
+          if (lhs.join(',') !== rhs.join(',')) okHom = false;
+        });
+      });
+      check('T8c perm is a homomorphism (all 144 pairs)', okHom);
+      // faithfulness: 12 distinct permutations
+      var seen = {};
+      IDS.forEach(function (id) { seen[permutationOf(id).join(',')] = true; });
+      check('T8d perm is faithful (12 distinct)', Object.keys(seen).length === 12);
+    })();
+
+    // T9: reflection axes -- geometry pins from the matrix
+    (function () {
+      check('T9a axis(s) == 0 deg', Math.abs(axisAngleOf('s') - 0) < 1e-9, axisAngleOf('s'));
+      check('T9b axis(rs) == 30 deg', Math.abs(axisAngleOf('rs') - 30) < 1e-9, axisAngleOf('rs'));
+      check('T9c axis(r^k s) == 30k deg mod 180', IDS.filter(isReflection).every(function (id) {
+        var k = parseId(id).k;
+        return Math.abs(axisAngleOf(id) - (30 * k) % 180) < 1e-9;
+      }));
+      // vertex-axes fix exactly the two vertices on the axis; edge-axes fix none
+      check('T9d s fixes vertices {1, 4}', fixedVertices(permutationOf('s')).join(',') === '1,4',
+        fixedVertices(permutationOf('s')).join(','));
+      var ok = IDS.filter(isReflection).every(function (id) {
+        var k = parseId(id).k;
+        var f = fixedVertices(permutationOf(id));
+        return (k % 2 === 0) ? f.length === 2 : f.length === 0;
+      });
+      check('T9e even-k reflections fix 2 vertices, odd-k fix none', ok);
+      check('T9f rotations (except e) fix nothing', [1, 2, 3, 4, 5].every(function (k) {
+        return fixedVertices(permutationOf(idOf(k, 0))).length === 0;
+      }));
+    })();
+
+    // T10: <r> is a subgroup of index 2; the reflections are its coset
+    (function () {
+      var rots = IDS.filter(function (id) { return !isReflection(id); });
+      var closed = rots.every(function (a) {
+        return rots.every(function (b) { return rots.indexOf(product(a, b)) >= 0; });
+      });
+      check('T10a <r> closed, order 6', closed && rots.length === 6);
+      var coset = rots.map(function (g) { return product(g, 's'); }).sort().join(',');
+      var refls = IDS.filter(isReflection).sort().join(',');
+      check('T10b <r>s is exactly the reflections', coset === refls);
+    })();
+
+    // T11: word reduction pins (the breadcrumb feature)
+    check('T11a clicks [s, r] reduce to rs', reduceWord(['s', 'r']) === 'rs', reduceWord(['s', 'r']));
+    check('T11b clicks [r, s] reduce to sr = r5s', reduceWord(['r', 's']) === 'r5s', reduceWord(['r', 's']));
+    check('T11c clicks [r, r] reduce to r2', reduceWord(['r', 'r']) === 'r2');
+    check('T11d clicks [s, s] reduce to e', reduceWord(['s', 's']) === 'e');
+
+    return { pass: failures.length === 0, failures: failures };
+  }
+
+  return {
+    IDS: IDS,
+    idOf: idOf,
+    parseId: parseId,
+    matrixOf: function (id) { return MATRICES[id]; },
+    matMul: matMul,
+    det2: det2,
+    identify: identify,
+    product: product,
+    inverseOf: inverseOf,
+    orderOf: orderOf,
+    reduceWord: reduceWord,
+    vertexPos: vertexPos,
+    permutationOf: permutationOf,
+    composePerm: composePerm,
+    fixedVertices: fixedVertices,
+    cycleNotation: cycleNotation,
+    axisAngleOf: axisAngleOf,
+    isReflection: isReflection,
+    centerOf: centerOf,
+    runSelfTests: runSelfTests
+  };
+})();
+
+if (typeof module !== 'undefined' && module.exports) { module.exports = D6Core; }
+
+//======================================================================
+// [UI IIFE] #dihedral-group-visualizer, prefix dgv-
+// Action mode: clicking an element g composes g onto the current state
+// (state <- g o state), with a breadcrumb showing the word and its
+// live reduction. Everything displayed is recomputed from D6Core.
+//======================================================================
+(function () {
+  'use strict';
+  if (typeof document === 'undefined') return;
+
+  var C = {
+    panel: 'rgba(20, 28, 40, 0.95)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    borderStrong: 'rgba(255, 255, 255, 0.2)',
+    text: '#e8eaed',
+    textDim: 'rgba(255, 255, 255, 0.7)',
+    faint: 'rgba(255, 255, 255, 0.5)',
+    grid: 'rgba(255, 255, 255, 0.1)',
+    accent: '#66bb6a',
+    rotCol: '#4da3ff',
+    refCol: '#ff7043',
+    axisCol: '#f0c040',
+    fixedCol: '#f0c040',
+    canvasBg: '#0f1419',
+    bad: '#e74c3c'
+  };
+  var SUP = { 0: '\u2070', 1: '', 2: '\u00B2', 3: '\u00B3', 4: '\u2074', 5: '\u2075' };
+  function pretty(id) {
+    if (id === 'e') return 'e';
+    var p = D6Core.parseId(id);
+    var base = p.k === 0 ? '' : 'r' + (SUP[p.k] || '');
+    return (base + (p.m ? 's' : '')) || 'e';
+  }
+
+  function refusalHtml(res) {
+    var list = res.failures.map(function (f) { return '<li>' + f + '</li>'; }).join('');
+    return '<div style="background:' + C.panel + ';border:1px solid ' + C.bad +
+      ';border-radius:8px;padding:16px;color:' + C.text + ';">' +
+      '<strong style="color:' + C.bad + ';">Demo disabled: mathematical self-tests failed (' +
+      res.failures.length + ').</strong>' +
+      '<p style="color:' + C.textDim + ';margin:8px 0 4px;">This visualizer refuses to render on broken mathematics.</p>' +
+      '<ul style="color:' + C.textDim + ';margin:0 0 0 18px;">' + list + '</ul></div>';
+  }
+
+  function init() {
+    var container = document.getElementById('dihedral-group-visualizer');
+    if (!container) return;
+    if (container.dataset.dgvInit) return; // idempotency guard
+    container.dataset.dgvInit = '1';
+
+    var gate;
+    try { gate = D6Core.runSelfTests(); }
+    catch (e) { gate = { pass: false, failures: ['self-tests crashed: ' + e.message] }; }
+    if (!gate.pass) { container.innerHTML = refusalHtml(gate); return; }
+
+    var G = D6Core;
+    var word = [];          // click history (in click order)
+    var current = 'e';
+
+    var rotBtns = G.IDS.filter(function (id) { return !G.isReflection(id); });
+    var refBtns = G.IDS.filter(G.isReflection);
+    function btnHtml(id, cls) {
+      var sub = G.isReflection(id) ? 'axis ' + Math.round(G.axisAngleOf(id)) + '\u00B0' : (60 * G.parseId(id).k) + '\u00B0';
+      return '<button class="dgv-btn ' + cls + '" data-el="' + id + '">' +
+        '<span class="dgv-btnsym">' + pretty(id) + '</span><span class="dgv-btnsub">' + sub + '</span></button>';
+    }
+    var optionsHtml = G.IDS.map(function (id) {
+      return '<option value="' + id + '">' + pretty(id) + '</option>';
+    }).join('');
+
+    container.innerHTML =
+      '<div class="dgv-root">' +
+      '<div class="dgv-hint">Each button is an element of D\u2086 <em>acting</em> on the hexagon: clicking g replaces the ' +
+        'current state x by g \u2218 x, and the word below reduces live using the relations ' +
+        'r\u2076 = e, s\u00B2 = e, srs = r\u207B\u00B9. There are no in-between angles &mdash; the polygon snaps from one ' +
+        'symmetric configuration to the next. Watch the vertex labels: the permutation shown is derived from the very ' +
+        'matrix displayed on the right, so the numbers, the matrix, and the picture always agree.</div>' +
+      '<div class="dgv-layout">' +
+      '<div class="dgv-canvascell">' +
+        '<canvas id="dgv-canvas" width="480" height="480"></canvas>' +
+        '<div class="dgv-caption"><span style="color:' + C.rotCol + ';">&#9644;</span> current configuration &nbsp;' +
+          '<span style="color:' + C.faint + ';">&#9644;</span> identity (ghost) &nbsp;' +
+          '<span style="color:' + C.axisCol + ';">&#9644;</span> reflection axis / fixed vertices</div>' +
+        '<div id="dgv-word" class="dgv-word"></div>' +
+      '</div>' +
+      '<div class="dgv-side">' +
+        '<div class="dgv-panel"><div class="dgv-paneltitle">Current state</div>' +
+          '<div class="dgv-rows">' +
+          '<div><span class="dgv-k">Element</span><span id="dgv-el" class="dgv-v dgv-big"></span></div>' +
+          '<div><span class="dgv-k">Type</span><span id="dgv-type" class="dgv-v"></span></div>' +
+          '<div><span class="dgv-k">Order</span><span id="dgv-order" class="dgv-v"></span></div>' +
+          '<div><span class="dgv-k">Inverse</span><span id="dgv-inv" class="dgv-v"></span></div>' +
+          '<div><span class="dgv-k">Permutation</span><span id="dgv-perm" class="dgv-v dgv-mono"></span></div>' +
+          '<div id="dgv-fixedrow"><span class="dgv-k">Fixed vertices</span><span id="dgv-fixed" class="dgv-v"></span></div>' +
+          '</div></div>' +
+        '<div class="dgv-panel"><div class="dgv-paneltitle">2\u00D72 matrix (acts on the plane)</div>' +
+          '<div class="dgv-matrix dgv-mono" id="dgv-matrix"></div>' +
+          '<div class="dgv-matprops"><span id="dgv-det"></span><span id="dgv-ortho">orthogonal \u2713</span></div></div>' +
+        '<div class="dgv-panel"><div class="dgv-paneltitle">Rotations \u27E8r\u27E9 &mdash; cyclic subgroup of order 6</div>' +
+          '<div class="dgv-btngrid">' + rotBtns.map(function (id) { return btnHtml(id, 'dgv-rot'); }).join('') + '</div>' +
+          '<div class="dgv-paneltitle" style="margin-top:10px;">Reflections &mdash; the coset \u27E8r\u27E9s</div>' +
+          '<div class="dgv-btngrid">' + refBtns.map(function (id) { return btnHtml(id, 'dgv-ref'); }).join('') + '</div>' +
+          '<div class="dgv-btnrow"><button class="dgv-btn dgv-wide" id="dgv-reset">Reset to e</button></div></div>' +
+        '<div class="dgv-panel"><div class="dgv-paneltitle">Composition calculator (g\u2082 \u2218 g\u2081: apply g\u2081 first)</div>' +
+          '<div class="dgv-composerow">' +
+            '<select id="dgv-g2" class="dgv-select">' + optionsHtml + '</select>' +
+            '<span class="dgv-op">\u2218</span>' +
+            '<select id="dgv-g1" class="dgv-select">' + optionsHtml + '</select>' +
+            '<span class="dgv-op">=</span><span id="dgv-composeres" class="dgv-v dgv-big"></span>' +
+          '</div>' +
+          '<div class="dgv-note">Try g\u2082 = r, g\u2081 = s against g\u2082 = s, g\u2081 = r: ' +
+            'r \u2218 s = ' + pretty(G.product('r', 's')) + ' but s \u2218 r = ' + pretty(G.product('s', 'r')) +
+            ' &mdash; the group is non-Abelian, and this single inequality is why 3D orientation needs matrix products, not addition.</div>' +
+        '</div>' +
+      '</div></div></div>';
+
+    var style = document.createElement('style');
+    style.textContent =
+      '#dihedral-group-visualizer .dgv-root{display:flex;flex-direction:column;gap:12px;color:' + C.text + ';' +
+        'background:' + C.panel + ';padding:15px;border-radius:8px;border:1px solid ' + C.border + ';margin-bottom:20px;}' +
+      '#dihedral-group-visualizer .dgv-hint{font-size:0.86rem;color:' + C.textDim + ';line-height:1.55;}' +
+      '#dihedral-group-visualizer .dgv-layout{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;}' +
+      '#dihedral-group-visualizer .dgv-canvascell{flex:1;min-width:300px;max-width:520px;}' +
+      '#dihedral-group-visualizer canvas{width:100%;height:auto;background:' + C.canvasBg + ';border:1px solid ' + C.border + ';border-radius:4px;display:block;}' +
+      '#dihedral-group-visualizer .dgv-caption{font-size:0.78rem;color:' + C.faint + ';margin-top:5px;line-height:1.5;}' +
+      '#dihedral-group-visualizer .dgv-word{margin-top:8px;font-size:0.95rem;font-family:"Courier New",monospace;' +
+        'background:rgba(255,255,255,0.03);border:1px solid ' + C.border + ';border-radius:8px;padding:8px 10px;min-height:1.4em;}' +
+      '#dihedral-group-visualizer .dgv-word .dgv-eq{color:' + C.accent + ';}' +
+      '#dihedral-group-visualizer .dgv-side{flex:1;min-width:300px;display:flex;flex-direction:column;gap:12px;}' +
+      '#dihedral-group-visualizer .dgv-panel{border:1px solid ' + C.border + ';border-radius:8px;padding:10px 12px;background:rgba(255,255,255,0.02);}' +
+      '#dihedral-group-visualizer .dgv-paneltitle{font-size:0.85rem;color:' + C.accent + ';font-weight:600;margin-bottom:8px;}' +
+      '#dihedral-group-visualizer .dgv-rows > div{display:flex;justify-content:space-between;gap:10px;font-size:0.88rem;margin-bottom:4px;}' +
+      '#dihedral-group-visualizer .dgv-k{color:' + C.textDim + ';}' +
+      '#dihedral-group-visualizer .dgv-v{color:' + C.text + ';text-align:right;}' +
+      '#dihedral-group-visualizer .dgv-big{font-size:1.15rem;font-weight:bold;color:' + C.accent + ';}' +
+      '#dihedral-group-visualizer .dgv-mono{font-family:"Courier New",monospace;}' +
+      '#dihedral-group-visualizer .dgv-matrix{font-size:1rem;line-height:1.6;white-space:pre;text-align:center;}' +
+      '#dihedral-group-visualizer .dgv-matprops{display:flex;justify-content:space-around;font-size:0.82rem;color:' + C.textDim + ';margin-top:6px;}' +
+      '#dihedral-group-visualizer .dgv-btngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;}' +
+      '#dihedral-group-visualizer .dgv-btn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 4px;' +
+        'border:1px solid ' + C.borderStrong + ';border-radius:4px;background:rgba(255,255,255,0.05);color:' + C.text + ';cursor:pointer;}' +
+      '#dihedral-group-visualizer .dgv-btnsym{font-size:0.95rem;font-weight:bold;}' +
+      '#dihedral-group-visualizer .dgv-btnsub{font-size:0.65rem;color:' + C.faint + ';}' +
+      '#dihedral-group-visualizer .dgv-rot:hover{border-color:' + C.rotCol + ';background:rgba(77,163,255,0.12);}' +
+      '#dihedral-group-visualizer .dgv-ref:hover{border-color:' + C.refCol + ';background:rgba(255,112,67,0.12);}' +
+      '#dihedral-group-visualizer .dgv-btnrow{margin-top:8px;}' +
+      '#dihedral-group-visualizer .dgv-wide{width:100%;flex-direction:row;justify-content:center;}' +
+      '#dihedral-group-visualizer .dgv-wide:hover{background:rgba(102,187,106,0.15);border-color:rgba(102,187,106,0.4);}' +
+      '#dihedral-group-visualizer .dgv-composerow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}' +
+      '#dihedral-group-visualizer .dgv-select{background:rgba(255,255,255,0.06);color:' + C.text + ';border:1px solid ' + C.borderStrong + ';border-radius:4px;padding:4px 6px;}' +
+      '#dihedral-group-visualizer .dgv-op{color:' + C.faint + ';font-size:1.1rem;}' +
+      '#dihedral-group-visualizer .dgv-note{font-size:0.78rem;color:' + C.faint + ';line-height:1.5;margin-top:8px;}';
+    document.head.appendChild(style);
+
+    var canvas = document.getElementById('dgv-canvas');
+    var ctx = canvas.getContext('2d');
+    var wordEl = document.getElementById('dgv-word');
+
+    function toScreen(p) { // math y-up -> canvas y-down
+      var cx = canvas.width / 2, cy = canvas.height / 2, R = 150;
+      return { x: cx + p.x * R, y: cy - p.y * R };
+    }
+
+    function draw() {
+      var M = G.matrixOf(current);
+      var w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      // faint grid circle
+      ctx.strokeStyle = C.grid;
+      ctx.beginPath();
+      ctx.arc(w / 2, h / 2, 150, 0, 2 * Math.PI);
+      ctx.stroke();
+      // ghost identity hexagon
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      for (var i = 1; i <= 6; i++) {
+        var g0 = toScreen(G.vertexPos(i));
+        if (i === 1) ctx.moveTo(g0.x, g0.y); else ctx.lineTo(g0.x, g0.y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // reflection axis of the current element
+      if (G.isReflection(current)) {
+        var a = G.axisAngleOf(current) * Math.PI / 180;
+        var p1 = toScreen({ x: 1.25 * Math.cos(a), y: 1.25 * Math.sin(a) });
+        var p2 = toScreen({ x: -1.25 * Math.cos(a), y: -1.25 * Math.sin(a) });
+        ctx.strokeStyle = C.axisCol;
         ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(cx - extent, cy);
-        ctx.lineTo(cx + extent, cy);
-        ctx.stroke();
-        
-        // X-axis arrow
-        ctx.beginPath();
-        ctx.moveTo(cx + extent, cy);
-        ctx.lineTo(cx + extent - 8, cy - 4);
-        ctx.lineTo(cx + extent - 8, cy + 4);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(255, 100, 100, 0.4)';
-        ctx.fill();
-        
-        // Y-axis (pointing up)
-        ctx.strokeStyle = 'rgba(100, 255, 100, 0.4)';
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + extent);
-        ctx.lineTo(cx, cy - extent);
-        ctx.stroke();
-        
-        // Y-axis arrow
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - extent);
-        ctx.lineTo(cx - 4, cy - extent + 8);
-        ctx.lineTo(cx + 4, cy - extent + 8);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(100, 255, 100, 0.4)';
-        ctx.fill();
-        
-        // Labels
-        ctx.font = '12px Arial';
-        ctx.fillStyle = 'rgba(255, 100, 100, 0.6)';
-        ctx.fillText('x', cx + extent - 5, cy + 15);
-        ctx.fillStyle = 'rgba(100, 255, 100, 0.6)';
-        ctx.fillText('y', cx + 8, cy - extent + 12);
-    }
-    
-    function drawReflectionAxes(cx, cy, length) {
-        const elem = D6_ELEMENTS[currentElement];
-        
-        // Draw all 6 reflection axes faintly
-        for (let k = 0; k < 6; k++) {
-            const angle = k * 30 * Math.PI / 180;
-            const isCurrentAxis = elem.isReflection && elem.axisAngle === k * 30;
-            
-            ctx.strokeStyle = isCurrentAxis 
-                ? 'rgba(243, 156, 18, 0.8)' 
-                : 'rgba(255, 255, 255, 0.1)';
-            ctx.lineWidth = isCurrentAxis ? 2 : 1;
-            ctx.setLineDash(isCurrentAxis ? [8, 4] : [4, 4]);
-            
-            ctx.beginPath();
-            ctx.moveTo(cx - length * Math.cos(angle), cy + length * Math.sin(angle));
-            ctx.lineTo(cx + length * Math.cos(angle), cy - length * Math.sin(angle));
-            ctx.stroke();
-        }
-        
+        ctx.setLineDash([8, 5]);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
         ctx.setLineDash([]);
-    }
-    
-    function drawHexagon(cx, cy, radius) {
-        const elem = D6_ELEMENTS[currentElement];
-        const matrix = getMatrix(currentElement);
-        
-        // Calculate vertex positions
-        // Start at angle 0 (right side) and go counterclockwise
-        const vertices = [];
-        for (let i = 0; i < 6; i++) {
-            const angle = i * Math.PI / 3; // 60° intervals
-            const x = radius * Math.cos(angle);
-            const y = radius * Math.sin(angle);
-            
-            // Apply transformation
-            const transformed = transformPoint(matrix, x, y);
-            vertices.push({
-                x: cx + transformed.x,
-                y: cy - transformed.y, // Flip y for canvas coordinates
-                originalIndex: i + 1
-            });
-        }
-        
-        // Draw filled hexagon
+      }
+      // transformed hexagon: vertex i drawn at M . vertexPos(i)
+      var col = G.isReflection(current) ? C.refCol : C.rotCol;
+      var pts = [];
+      for (i = 1; i <= 6; i++) {
+        var p = G.vertexPos(i);
+        pts.push(toScreen({ x: M[0][0] * p.x + M[0][1] * p.y, y: M[1][0] * p.x + M[1][1] * p.y }));
+      }
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      pts.forEach(function (q, idx) { if (idx === 0) ctx.moveTo(q.x, q.y); else ctx.lineTo(q.x, q.y); });
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(77,163,255,0.06)';
+      ctx.fill();
+      // vertex markers with labels that TRAVEL with the vertices
+      var fixed = G.fixedVertices(G.permutationOf(current));
+      for (i = 0; i < 6; i++) {
+        var q2 = pts[i];
+        var isFixed = fixed.indexOf(i + 1) >= 0;
         ctx.beginPath();
-        ctx.moveTo(vertices[0].x, vertices[0].y);
-        for (let i = 1; i < 6; i++) {
-            ctx.lineTo(vertices[i].x, vertices[i].y);
-        }
-        ctx.closePath();
-        
-        // Fill with gradient based on transformation type
-        const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-        if (elem.isReflection) {
-            gradient.addColorStop(0, 'rgba(231, 76, 60, 0.3)');
-            gradient.addColorStop(1, 'rgba(231, 76, 60, 0.1)');
-        } else {
-            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.3)');
-            gradient.addColorStop(1, 'rgba(52, 152, 219, 0.1)');
-        }
-        ctx.fillStyle = gradient;
+        ctx.arc(q2.x, q2.y, 13, 0, 2 * Math.PI);
+        ctx.fillStyle = isFixed ? C.fixedCol : col;
         ctx.fill();
-        
-        // Draw edges
-        ctx.strokeStyle = elem.isReflection ? '#e74c3c' : '#3498db';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        // Draw vertices and labels
-        const permutation = getPermutation(currentElement);
-        
-        for (let i = 0; i < 6; i++) {
-            const v = vertices[i];
-            
-            // Vertex dot
-            ctx.beginPath();
-            ctx.arc(v.x, v.y, 6, 0, Math.PI * 2);
-            ctx.fillStyle = i === 0 ? '#f39c12' : '#e8eaed'; // Highlight vertex 1
-            ctx.fill();
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            
-            // Label showing where this vertex came from
-            // permutation[i] tells us where original vertex (i+1) goes
-            // We want to show the original label at each transformed position
-            const originalVertex = i + 1;
-            
-            // Find which original vertex ended up here
-            let labelAtThisPosition = originalVertex;
-            for (let j = 0; j < 6; j++) {
-                if (permutation[j] === originalVertex) {
-                    labelAtThisPosition = j + 1;
-                    break;
-                }
-            }
-            
-            // Position label outside the hexagon
-            const labelRadius = radius + 25;
-            const angle = i * Math.PI / 3;
-            const labelX = cx + labelRadius * Math.cos(angle);
-            const labelY = cy - labelRadius * Math.sin(angle);
-            
-            ctx.font = 'bold 14px Arial';
-            ctx.fillStyle = labelAtThisPosition === 1 ? '#f39c12' : '#e8eaed';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(labelAtThisPosition.toString(), labelX, labelY);
-        }
-        
-        // Draw small reference indicator for original position of vertex 1
-        if (currentElement !== 'e') {
-            const refAngle = 0;
-            const refX = cx + (radius + 40) * Math.cos(refAngle);
-            const refY = cy - (radius + 40) * Math.sin(refAngle);
-            
-            ctx.font = '10px Arial';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.fillText('(ref)', refX, refY + 12);
-        }
+        ctx.fillStyle = '#0f1419';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(i + 1), q2.x, q2.y);
+      }
     }
-    
-    // ========== UI UPDATE FUNCTIONS ==========
-    
-    function updateStateDisplay() {
-        const elem = D6_ELEMENTS[currentElement];
-        const matrix = getMatrix(currentElement);
-        const permutation = getPermutation(currentElement);
-        
-        // Update element info
-        currentElementDisplay.textContent = ELEMENT_DISPLAY[currentElement];
-        
-        if (currentElement === 'e') {
-            elementTypeDisplay.textContent = 'Identity';
-        } else if (elem.isReflection) {
-            elementTypeDisplay.textContent = `Reflection (axis at ${elem.axisAngle}°)`;
-        } else {
-            elementTypeDisplay.textContent = `Rotation by ${elem.rotationAngle}°`;
-        }
-        
-        elementOrderDisplay.textContent = `|${ELEMENT_DISPLAY[currentElement]}| = ${elem.order}`;
-        elementPermutationDisplay.textContent = permutationToCycleNotation(permutation);
-        
-        // Update matrix display
-        m00.textContent = matrix[0][0].toFixed(2);
-        m01.textContent = matrix[0][1].toFixed(2);
-        m10.textContent = matrix[1][0].toFixed(2);
-        m11.textContent = matrix[1][1].toFixed(2);
-        
-        // Compute determinant
-        const det = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
-        detValue.textContent = `det = ${det.toFixed(0)}`;
-        
-        // Check orthogonality (should always be true for D_n)
-        orthogonalCheck.textContent = elem.isReflection ? 'Orthogonal (det=-1)' : 'Orthogonal (det=1)';
-        
-        // Update button states
-        document.querySelectorAll('.element-btn').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.element === currentElement) {
-                btn.classList.add('active');
-            }
-        });
+
+    function fmt2(v) {
+      var s = (Math.abs(v) < 5e-13 ? 0 : v).toFixed(2);
+      return (v >= 0 ? ' ' : '') + s;
     }
-    
-    function updateComposition() {
-        const g1 = composeG1.value;
-        const g2 = composeG2.value;
-        const result = CAYLEY_TABLE[g2][g1];
-        
-        composeResult.textContent = ELEMENT_DISPLAY[result];
-        
-        // Check if this demonstrates non-commutativity
-        const reverseResult = CAYLEY_TABLE[g1][g2];
-        if (result !== reverseResult) {
-            compositionNote.textContent = `Note: ${ELEMENT_DISPLAY[g1]} ∘ ${ELEMENT_DISPLAY[g2]} = ${ELEMENT_DISPLAY[reverseResult]} ≠ ${ELEMENT_DISPLAY[result]} (non-abelian!)`;
-            compositionNote.classList.add('highlight');
-        } else {
-            compositionNote.textContent = '';
-            compositionNote.classList.remove('highlight');
-        }
+
+    function renderState() {
+      var M = G.matrixOf(current);
+      var perm = G.permutationOf(current);
+      var fixed = G.fixedVertices(perm);
+      document.getElementById('dgv-el').textContent = pretty(current);
+      document.getElementById('dgv-type').textContent =
+        current === 'e' ? 'identity' :
+          (G.isReflection(current)
+            ? 'reflection (axis ' + Math.round(G.axisAngleOf(current)) + '\u00B0)'
+            : 'rotation (' + 60 * G.parseId(current).k + '\u00B0)');
+      document.getElementById('dgv-order').textContent = '|' + pretty(current) + '| = ' + G.orderOf(current);
+      document.getElementById('dgv-inv').textContent = pretty(G.inverseOf(current));
+      document.getElementById('dgv-perm').textContent = G.cycleNotation(perm);
+      document.getElementById('dgv-fixedrow').style.display = G.isReflection(current) ? 'flex' : 'none';
+      document.getElementById('dgv-fixed').textContent =
+        fixed.length ? fixed.join(', ') + ' (on the axis)' : 'none (axis through edge midpoints)';
+      document.getElementById('dgv-matrix').textContent =
+        '[ ' + fmt2(M[0][0]) + '  ' + fmt2(M[0][1]) + ' ]\n[ ' + fmt2(M[1][0]) + '  ' + fmt2(M[1][1]) + ' ]';
+      document.getElementById('dgv-det').textContent = 'det = ' + (G.det2(M) > 0 ? '+1' : '\u22121');
+      // breadcrumb: rightmost factor acts first (= earliest click)
+      if (word.length === 0) {
+        wordEl.innerHTML = 'word: <span class="dgv-eq">e</span> (no clicks yet)';
+      } else {
+        var shown = word.slice(-8);
+        var prefix = word.length > 8 ? '\u2026 \u2218 ' : '';
+        wordEl.innerHTML = 'word: ' + prefix +
+          shown.slice().reverse().map(pretty).join(' \u2218 ') +
+          ' <span class="dgv-eq">= ' + pretty(current) + '</span>';
+      }
+      draw();
     }
-    
-    function applyElement(element) {
-        currentElement = element;
-        updateStateDisplay();
-        drawCanvas();
-    }
-    
-    // ========== EVENT HANDLERS ==========
-    
-    // Element button clicks
-    document.querySelectorAll('.element-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            applyElement(btn.dataset.element);
-        });
+
+    container.querySelectorAll('.dgv-btn[data-el]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        word.push(btn.dataset.el);
+        current = G.product(btn.dataset.el, current); // g o x
+        renderState();
+      });
     });
-    
-    // Composition selects
-    composeG1.addEventListener('change', updateComposition);
-    composeG2.addEventListener('change', updateComposition);
-    
-    // Apply composition button
-    applyCompositionBtn.addEventListener('click', () => {
-        const g1 = composeG1.value;
-        const g2 = composeG2.value;
-        const result = CAYLEY_TABLE[g2][g1];
-        applyElement(result);
+    document.getElementById('dgv-reset').addEventListener('click', function () {
+      word = [];
+      current = 'e';
+      renderState();
     });
-    
-    // Reset button
-    resetBtn.addEventListener('click', () => {
-        applyElement('e');
-        composeG1.value = 'e';
-        composeG2.value = 'e';
-        updateComposition();
-    });
-    
-    // Handle window resize
-    function handleResize() {
-        const wrapper = document.getElementById('dihedral-canvas-wrapper');
-        const size = Math.min(wrapper.clientWidth, 500);
-        canvas.width = size;
-        canvas.height = size;
-        drawCanvas();
+
+    var g1Sel = document.getElementById('dgv-g1'), g2Sel = document.getElementById('dgv-g2');
+    function renderCompose() {
+      document.getElementById('dgv-composeres').textContent =
+        pretty(G.product(g2Sel.value, g1Sel.value));
     }
-    
-    window.addEventListener('resize', handleResize);
-    
-    // ========== INITIALIZATION ==========
-    
-    handleResize();
-    updateStateDisplay();
-    updateComposition();
-    drawCanvas();
-});
+    g1Sel.addEventListener('change', renderCompose);
+    g2Sel.addEventListener('change', renderCompose);
+    g1Sel.value = 's'; g2Sel.value = 'r';
+
+    renderCompose();
+    renderState();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
