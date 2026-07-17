@@ -202,7 +202,7 @@ uses_python: false
                         \(2\)-adic exponent from \(0\) up to \(K_p\). For \(x_p\) uniform in \(U(p)\), the exponent
                         \(k_p\) takes its maximal value \(K_p\) exactly when \(x_p\) generates the full \(2\)-power part,
                         which happens for half the elements; thus \(\Pr[k_p = K_p] = \tfrac{1}{2}\), and the remaining
-                        values \(k_p < K_p\) split the other half, each with probability at most \(\tfrac{1}{2}\). The
+                        values \(k_p \lt K_p\) split the other half, each with probability at most \(\tfrac{1}{2}\). The
                         same holds for \(q\). The precise distribution of \(k_p\) depends on \(K_p\) and so differs
                         between \(p\) and \(q\) in general, but all we need is that no single value is taken with
                         probability exceeding \(\tfrac{1}{2}\), that is \(\max_k \Pr[k_p = k] \leq \tfrac{1}{2}\) and
@@ -251,7 +251,7 @@ uses_python: false
                 <h3>The Circuit</h3>
 
                 <p>
-                    Choose \(q = 2^\ell\) with \(N^2 < q \leq 2N^2\), so that the
+                    Choose \(q = 2^\ell\) with \(N^2 \lt q \leq 2N^2\), so that the
                     <a href="../Linear_algebra/quantum_computation.html#D-quantum_fourier_transform" class="ref-link"><strong>quantum Fourier transform</strong></a>
                     \(F_q\) acts on an \(\ell\)-qubit register. A first register of \(\ell\) qubits will hold the
                     argument \(a\); a second register of \(n = \lceil \log N \rceil\) qubits will hold the value
@@ -366,7 +366,7 @@ uses_python: false
 
                 <p>
                     For the running example \(N = 15\), \(x = 2\), with true period \(r = 4\), the choice
-                    \(N^2 = 225 < q \leq 450\) gives \(q = 256\). The comb has spacing \(4\), and the second transform
+                    \(N^2 = 225 \lt q \leq 450\) gives \(q = 256\). The comb has spacing \(4\), and the second transform
                     concentrates all amplitude on the four multiples of \(q/r = 64\), namely \(b \in \{0, 64, 128,
                     192\}\), each with probability \(1/4\). A measurement returning \(b = 192\) gives \(b/q = 192/256 =
                     3/4\), already in lowest terms, so the denominator exposes \(r = 4\); the outcome \(b = 64\) gives
@@ -487,12 +487,12 @@ uses_python: false
                         Let \(\theta = [a_0, a_1, \ldots]\) with convergents \(p_n / q_n\). Then each convergent
                         approximates \(\theta\) to within the square of its denominator,
                         \[
-                        \left| \theta - \frac{p_n}{q_n} \right| < \frac{1}{q_n^2},
+                        \left| \theta - \frac{p_n}{q_n} \right| \lt \frac{1}{q_n^2},
                         \]
                         and it is the best approximation among all fractions of denominator at most \(q_n\): if
                         \(n > 1\), \(q \leq q_n\), and \(p/q \neq p_n / q_n\), then
                         \[
-                        \left| \theta - \frac{p_n}{q_n} \right| < \left| \theta - \frac{p}{q} \right|.
+                        \left| \theta - \frac{p_n}{q_n} \right| \lt \left| \theta - \frac{p}{q} \right|.
                         \]
                     </p>
                 </div>
@@ -536,16 +536,36 @@ uses_python: false
 
                 <p>
                     The demonstration below runs the whole chain on a small modulus. Choosing \(N\) and a coprime
-                    base \(x\) fixes the period \(r\) and the transform size \(q = 2^\ell\) with \(N^2 < q \leq 2N^2\).
-                    The left panel makes the interference visible: the amplitude at an outcome \(b\) is the sum of
-                    \(m\) unit phase vectors \(e^{2\pi i (jr) b / q}\), drawn as a running-sum walk on the complex
+                    base \(x\) fixes the period \(r\) and the transform size \(q = 2^\ell\) with \(N^2 \lt q \leq 2N^2\).
+                    The top strip shows the state this chapter pivots on: the comb
+                    \(\tfrac{1}{\sqrt{m}} \sum_j |jr + s\rangle\) left in the argument register by the collapse. Slide
+                    the offset \(s\) and watch the comb move while the spectrum does not: the offset retreats into a
+                    global phase, which rigidly rotates the walk below without changing its length. That invariance,
+                    verified exactly by the demo's built-in self-tests, is the reason a direct measurement of the comb
+                    reveals nothing while a measurement after the transform reveals the spacing.
+                </p>
+                <p>
+                    The walk panel makes the interference visible: the amplitude at an outcome \(b\) is the sum of
+                    \(m\) unit phase vectors \(e^{2\pi i (jr + s) b / q}\), drawn as a running-sum walk on the complex
                     plane, with the white arrow the resultant \(S(b)\). When \(b\) is a multiple of \(q/r\) the vectors
                     all point the same way and the walk runs straight out to its full length; between multiples they
-                    turn steadily and the walk curls back on itself, leaving a short resultant. The right panel is the
-                    resulting probability \(P(b) = |S(b)|^2 / (mq)\), with the selected \(b\) marked. Pressing
+                    turn steadily and the walk curls back on itself, leaving a short resultant. The readout displays
+                    \(|S(b)|\) twice, once as the vector sum and once through the sine-ratio closed form derived above
+                    &mdash; the two agreeing live is the geometric-series identity performing on stage. The right panel
+                    is the probability \(P(b) = |S(b)|^2 / (mq)\), with the selected \(b\) marked. Pressing
                     <strong>Measure</strong> samples one outcome \(b\) from \(P\), runs the continued-fraction expansion
                     to recover a candidate period, and applies the gcd step, reporting the factors when the candidate
                     succeeds and rejecting it at no cost when it does not.
+                </p>
+                <p>
+                    The base selector displays the exact one-shot success probability of every choice, computed by
+                    summing \(P(b)\) over the outcomes the classical tail accepts; for the running example
+                    \(N = 15\), \(x = 2\) it is exactly \(\tfrac{1}{2}\). Deliberately unlucky bases are included:
+                    \(x = 4\) modulo \(21\) has odd period \(3\), and \(x = 2\) modulo \(33\) has
+                    \(x^{r/2} \equiv -1\), so each realizes one failure branch of the reduction theorem and can never
+                    succeed &mdash; press <strong>Measure &times;50</strong> on any base to watch the tally of successes
+                    and classified failures converge toward the stated probability. Repetition, not luck, is the
+                    resource the theorem prices.
                 </p>
 
                 <div id="shor_demo"></div>
