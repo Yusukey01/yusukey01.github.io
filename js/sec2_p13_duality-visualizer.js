@@ -1,1595 +1,928 @@
-// duality-visualizer.js
-// An interactive visualization of duality in optimization
+// ============================================================================
+// DualCore — math core for the LP Duality Visualizer (calc-13)
+// DOM-free, Node-requirable.
+//
+// Problem family (2 variables):
+//   PRIMAL   min  c1 x1 + c2 x2 + c3   s.t.  A x <= b,  x >= 1
+//   DUAL     max  (A1 - b)^T lambda + (c1 + c2 + c3)
+//            s.t. lambda >= 0,  A^T lambda >= -c        (A1 = row sums of A)
+// derived from the Lagrangian L = c^T x + lambda^T(Ax - b) + mu^T(1 - x):
+// stationarity gives mu = c + A^T lambda >= 0, and g(lambda) = -b^T lambda
+// + 1^T mu = (A1 - b)^T lambda + c1 + c2.
+//
+// The v1 tool used the WRONG dual (objective +b^T lambda, the dual of an
+// Ax >= b primal) and never actually computed lambda (it stayed at its
+// initialization 0) — masked because the default parameters put the primal
+// optimum at the corner (1,1) where lambda* happens to be 0. Both bug
+// classes are pinned dead below with SciPy/exact-rational verified values.
+//
+// Primal and dual are solved INDEPENDENTLY by the same 2D vertex-enumeration
+// engine (all constraint pairs -> feasibility filter -> best vertex), with
+// unboundedness detected through recession-cone direction candidates.
+// Weak duality, strong duality (LP), and complementary slackness are then
+// THEOREMS CHECKED by the self-tests, not assumptions wired into the code.
+// ============================================================================
+var DualCore = (function () {
+  'use strict';
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Get the container element
-    const container = document.getElementById('duality-visualizer');
-    
-    if (!container) {
-      console.error('Container element not found!');
+  // ---------- seeded RNG ----------
+  function makeRng(seed) {
+    var s = seed >>> 0;
+    return function () {
+      s |= 0; s = (s + 0x6D2B79F5) | 0;
+      var t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ---------- half-planes: { a, b, c } meaning a*x + b*y <= c ----------
+  function satisfies(hp, x, y, tol) {
+    return hp.a * x + hp.b * y <= hp.c + tol * (1 + Math.abs(hp.c) + Math.abs(x) + Math.abs(y));
+  }
+  function feasibleAll(hps, x, y, tol) {
+    for (var i = 0; i < hps.length; i++) {
+      if (!satisfies(hps[i], x, y, tol)) return false;
+    }
+    return true;
+  }
+
+  // ---------- 2D LP by vertex enumeration + recession-cone check ----------
+  // minimize ox*x + oy*y over the intersection of half-planes.
+  // Valid for POINTED feasible sets — every problem in this page's family
+  // includes both coordinate lower bounds, which makes the set pointed.
+  function solveLP2D(ox, oy, hps) {
+    var TOL = 1e-9;
+    var verts = [];
+    for (var i = 0; i < hps.length; i++) {
+      for (var j = i + 1; j < hps.length; j++) {
+        var h1 = hps[i], h2 = hps[j];
+        var det = h1.a * h2.b - h1.b * h2.a;
+        var scale = Math.abs(h1.a) + Math.abs(h1.b) + Math.abs(h2.a) + Math.abs(h2.b);
+        if (Math.abs(det) <= 1e-12 * (1 + scale * scale)) continue;
+        var x = (h1.c * h2.b - h2.c * h1.b) / det;
+        var y = (h1.a * h2.c - h2.a * h1.c) / det;
+        if (feasibleAll(hps, x, y, 1e-7)) {
+          var dup = false;
+          for (var k = 0; k < verts.length; k++) {
+            if (Math.abs(verts[k].x - x) < 1e-7 * (1 + Math.abs(x)) &&
+                Math.abs(verts[k].y - y) < 1e-7 * (1 + Math.abs(y))) { dup = true; break; }
+          }
+          if (!dup) verts.push({ x: x, y: y });
+        }
+      }
+    }
+    if (verts.length === 0) return { status: 'infeasible' };
+
+    // recession cone {d : a_k d <= 0 for all k}; direction candidates:
+    // boundary directions of each constraint, inward normals, and -objective
+    var cands = [];
+    for (var m = 0; m < hps.length; m++) {
+      var na = hps[m].a, nb = hps[m].b;
+      var nn = Math.hypot(na, nb);
+      if (nn < 1e-12) continue;
+      cands.push([-nb / nn, na / nn], [nb / nn, -na / nn], [-na / nn, -nb / nn]);
+    }
+    var on = Math.hypot(ox, oy);
+    if (on > 1e-12) cands.push([-ox / on, -oy / on]);
+    var unbounded = false;
+    for (var q = 0; q < cands.length; q++) {
+      var d = cands[q];
+      var inCone = true;
+      for (var m2 = 0; m2 < hps.length; m2++) {
+        if (hps[m2].a * d[0] + hps[m2].b * d[1] > TOL * (1 + Math.abs(hps[m2].a) + Math.abs(hps[m2].b))) {
+          inCone = false; break;
+        }
+      }
+      if (inCone && ox * d[0] + oy * d[1] < -1e-9 * (1 + on)) { unbounded = true; break; }
+    }
+    if (unbounded) return { status: 'unbounded', vertices: verts };
+
+    var best = null, bestVal = Infinity;
+    for (var v = 0; v < verts.length; v++) {
+      var val = ox * verts[v].x + oy * verts[v].y;
+      if (val < bestVal) { bestVal = val; best = verts[v]; }
+    }
+    return { status: 'optimal', point: best, value: bestVal, vertices: verts };
+  }
+
+  // ---------- problem-specific wrappers ----------
+  // prm = { c1, c2, c3, a11, a12, a21, a22, b1, b2 }
+  function primalHalfplanes(prm) {
+    return [
+      { a: prm.a11, b: prm.a12, c: prm.b1 },
+      { a: prm.a21, b: prm.a22, c: prm.b2 },
+      { a: -1, b: 0, c: -1 },   // x1 >= 1
+      { a: 0, b: -1, c: -1 }    // x2 >= 1
+    ];
+  }
+  // dual variables (l1, l2):  l >= 0,  A^T l >= -c  <=>  -A^T l <= c
+  function dualHalfplanes(prm) {
+    return [
+      { a: -1, b: 0, c: 0 },                          // l1 >= 0
+      { a: 0, b: -1, c: 0 },                          // l2 >= 0
+      { a: -prm.a11, b: -prm.a21, c: prm.c1 },        // a11 l1 + a21 l2 >= -c1
+      { a: -prm.a12, b: -prm.a22, c: prm.c2 }         // a12 l1 + a22 l2 >= -c2
+    ];
+  }
+  function solvePrimal(prm) {
+    var r = solveLP2D(prm.c1, prm.c2, primalHalfplanes(prm));
+    if (r.status !== 'optimal') return { status: r.status, vertices: r.vertices || [] };
+    return {
+      status: 'optimal',
+      x: { x1: r.point.x, x2: r.point.y },
+      pstar: r.value + prm.c3,
+      vertices: r.vertices
+    };
+  }
+  function solveDual(prm) {
+    // maximize (A1 - b)^T l  <=>  minimize -(A1 - b)^T l ; A1 = ROW sums
+    var d1 = (prm.a11 + prm.a12) - prm.b1;
+    var d2 = (prm.a21 + prm.a22) - prm.b2;
+    var r = solveLP2D(-d1, -d2, dualHalfplanes(prm));
+    if (r.status !== 'optimal') return { status: r.status, vertices: r.vertices || [] };
+    var l1 = r.point.x, l2 = r.point.y;
+    return {
+      status: 'optimal',
+      lambda: { l1: l1, l2: l2 },
+      mu: {
+        m1: prm.c1 + prm.a11 * l1 + prm.a21 * l2,
+        m2: prm.c2 + prm.a12 * l1 + prm.a22 * l2
+      },
+      dstar: d1 * l1 + d2 * l2 + prm.c1 + prm.c2 + prm.c3,
+      vertices: r.vertices
+    };
+  }
+  function slacks(prm, x) {
+    return {
+      s1: prm.b1 - (prm.a11 * x.x1 + prm.a12 * x.x2),
+      s2: prm.b2 - (prm.a21 * x.x1 + prm.a22 * x.x2)
+    };
+  }
+  // complementary slackness products (all should be ~0 at joint optimality)
+  function complementarity(prm, primal, dual) {
+    var s = slacks(prm, primal.x);
+    return {
+      ls1: dual.lambda.l1 * s.s1,
+      ls2: dual.lambda.l2 * s.s2,
+      mx1: dual.mu.m1 * (primal.x.x1 - 1),
+      mx2: dual.mu.m2 * (primal.x.x2 - 1)
+    };
+  }
+
+  // ---------- Sutherland-Hodgman clipping (for drawing feasible regions) ----------
+  function clipPolygon(poly, hp) {
+    if (poly.length === 0) return [];
+    var out = [];
+    for (var i = 0; i < poly.length; i++) {
+      var cur = poly[i];
+      var prev = poly[(i + poly.length - 1) % poly.length];
+      var curIn = hp.a * cur.x + hp.b * cur.y <= hp.c + 1e-12;
+      var prevIn = hp.a * prev.x + hp.b * prev.y <= hp.c + 1e-12;
+      if (curIn !== prevIn) {
+        var fPrev = hp.a * prev.x + hp.b * prev.y - hp.c;
+        var fCur = hp.a * cur.x + hp.b * cur.y - hp.c;
+        var t = fPrev / (fPrev - fCur);
+        out.push({ x: prev.x + t * (cur.x - prev.x), y: prev.y + t * (cur.y - prev.y) });
+      }
+      if (curIn) out.push(cur);
+    }
+    return out;
+  }
+  function feasiblePolygon(hps, R) {
+    var poly = [{ x: -R, y: -R }, { x: R, y: -R }, { x: R, y: R }, { x: -R, y: R }];
+    for (var i = 0; i < hps.length; i++) {
+      poly = clipPolygon(poly, hps[i]);
+      if (poly.length === 0) return [];
+    }
+    return poly;
+  }
+
+  // ==========================================================================
+  // Self-tests
+  // ==========================================================================
+  function runSelfTests() {
+    var failures = [];
+    var count = 0;
+    function check(name, cond, detail) {
+      count++;
+      if (!cond) failures.push(name + (detail !== undefined ? ' [' + detail + ']' : ''));
+    }
+    function close(x, y, tol) { return Math.abs(x - y) <= tol; }
+
+    var CASE1 = { c1: 3, c2: 4, c3: -20, a11: 2, a12: 1, a21: 1, a22: 3, b1: 10, b2: 15 };
+    var CASE2 = { c1: -3, c2: -4, c3: -20, a11: 2, a12: 1, a21: 1, a22: 3, b1: 10, b2: 15 };
+    var CASE3 = { c1: -2, c2: -3, c3: 0, a11: 1, a12: 2, a21: 3, a22: 1, b1: 8, b2: 9 };
+
+    // ---- T1: clipping ----
+    var sq = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }];
+    var half = clipPolygon(sq, { a: 1, b: 0, c: 0.5 }); // x <= 0.5
+    var maxX = Math.max.apply(null, half.map(function (p) { return p.x; }));
+    check('T1 clip keeps correct side', half.length === 4 && close(maxX, 0.5, 1e-12), JSON.stringify(half));
+    check('T1 clip to empty', clipPolygon(sq, { a: 1, b: 0, c: -1 }).length === 0);
+    check('T1 vacuous clip is identity', clipPolygon(sq, { a: 1, b: 0, c: 5 }).length === 4);
+    // area of clipped square = 0.5 (shoelace)
+    function area(poly) {
+      var s = 0;
+      for (var i = 0; i < poly.length; i++) {
+        var p = poly[i], q = poly[(i + 1) % poly.length];
+        s += p.x * q.y - q.x * p.y;
+      }
+      return Math.abs(s) / 2;
+    }
+    check('T1 clipped area = 1/2', close(area(half), 0.5, 1e-12));
+
+    // ---- T2: basic LP engine ----
+    var box = [{ a: 1, b: 0, c: 1 }, { a: -1, b: 0, c: 0 }, { a: 0, b: 1, c: 1 }, { a: 0, b: -1, c: 0 }];
+    var r2 = solveLP2D(1, 1, box);
+    check('T2 min x+y over unit square at (0,0)', r2.status === 'optimal' &&
+      close(r2.point.x, 0, 1e-9) && close(r2.point.y, 0, 1e-9) && close(r2.value, 0, 1e-9));
+    var r2b = solveLP2D(-1, -2, box);
+    check('T2 min -x-2y at (1,1)', close(r2b.point.x, 1, 1e-9) && close(r2b.value, -3, 1e-9));
+    check('T2 four vertices found', r2.vertices.length === 4, r2.vertices.length);
+    check('T2 infeasible detected', solveLP2D(1, 0,
+      [{ a: 1, b: 0, c: 0 }, { a: -1, b: 0, c: -1 }, { a: 0, b: 1, c: 1 }, { a: 0, b: -1, c: 0 }]).status === 'infeasible');
+    check('T2 unbounded detected', solveLP2D(-1, 0,
+      [{ a: -1, b: 0, c: 0 }, { a: 0, b: -1, c: 0 }, { a: 0, b: 1, c: 1 }]).status === 'unbounded');
+
+    // ---- T3: primal hand pins (SciPy verified) ----
+    var p1 = solvePrimal(CASE1);
+    check('T3 case1 x* = (1,1)', p1.status === 'optimal' &&
+      close(p1.x.x1, 1, 1e-9) && close(p1.x.x2, 1, 1e-9));
+    check('T3 case1 p* = -13', close(p1.pstar, -13, 1e-9), p1.pstar);
+    var p2 = solvePrimal(CASE2);
+    check('T3 case2 x* = (3,4) (constraint intersection)', p2.status === 'optimal' &&
+      close(p2.x.x1, 3, 1e-9) && close(p2.x.x2, 4, 1e-9));
+    check('T3 case2 p* = -45', close(p2.pstar, -45, 1e-9), p2.pstar);
+    var p3 = solvePrimal(CASE3);
+    check('T3 case3 x* = (2,3) (asymmetric A)', close(p3.x.x1, 2, 1e-9) && close(p3.x.x2, 3, 1e-9));
+    check('T3 case3 p* = -13', close(p3.pstar, -13, 1e-9));
+    // returned point is feasible and its objective equals p*
+    var s3 = slacks(CASE3, p3.x);
+    check('T3 optimal point feasible', s3.s1 >= -1e-9 && s3.s2 >= -1e-9 &&
+      p3.x.x1 >= 1 - 1e-9 && p3.x.x2 >= 1 - 1e-9);
+    check('T3 value recomputes', close(CASE3.c1 * p3.x.x1 + CASE3.c2 * p3.x.x2 + CASE3.c3, p3.pstar, 1e-12));
+    // slack VALUE pin (sign matters: s = b - Ax, positive when strictly inside)
+    var s1pin = slacks(CASE1, p1.x);
+    check('T3 case1 slacks = (7, 11)', close(s1pin.s1, 7, 1e-9) && close(s1pin.s2, 11, 1e-9),
+      s1pin.s1 + ',' + s1pin.s2);
+
+    // ---- T4: dual hand pins (SciPy + exact-rational verified) ----
+    var d1 = solveDual(CASE1);
+    check('T4 case1 lambda* = (0,0)', d1.status === 'optimal' &&
+      close(d1.lambda.l1, 0, 1e-9) && close(d1.lambda.l2, 0, 1e-9));
+    check('T4 case1 mu* = (3,4)', !!d1.mu && close(d1.mu.m1, 3, 1e-9) && close(d1.mu.m2, 4, 1e-9));
+    check('T4 case1 d* = -13', d1.dstar !== undefined && close(d1.dstar, -13, 1e-9), d1.dstar);
+    var d2 = solveDual(CASE2);
+    check('T4 case2 lambda* = (1,1)', !!d2.lambda && close(d2.lambda.l1, 1, 1e-9) && close(d2.lambda.l2, 1, 1e-9));
+    check('T4 case2 mu* = (0,0)', !!d2.mu && close(d2.mu.m1, 0, 1e-9) && close(d2.mu.m2, 0, 1e-9));
+    check('T4 case2 d* = -45', d2.dstar !== undefined && close(d2.dstar, -45, 1e-9), d2.dstar);
+    var d3 = solveDual(CASE3);
+    check('T4 case3 lambda* = (7/5, 1/5) (exact-rational pin)',
+      !!d3.lambda && close(d3.lambda.l1, 1.4, 1e-9) && close(d3.lambda.l2, 0.2, 1e-9),
+      d3.lambda && (d3.lambda.l1 + ',' + d3.lambda.l2));
+    check('T4 case3 d* = -13 (exact-rational pin)', d3.dstar !== undefined && close(d3.dstar, -13, 1e-9), d3.dstar);
+    // THE V1 BUG, PINNED: the wrong dual objective +b^T lambda + sum(mu) + c3
+    // evaluates to 5 at the case-2 optimum, where the true d* is -45
+    var v1style = d2.lambda ? CASE2.b1 * d2.lambda.l1 + CASE2.b2 * d2.lambda.l2 + d2.mu.m1 + d2.mu.m2 + CASE2.c3 : NaN;
+    check('T4 v1 wrong-dual formula gives 5, ours gives -45', close(v1style, 5, 1e-9) &&
+      d2.dstar !== undefined && close(d2.dstar, -45, 1e-9) && Math.abs(v1style - d2.dstar) > 40, v1style);
+
+    // ---- T5-T7: the three theorems, enacted on a seeded parameter sweep ----
+    var rng = makeRng(130001);
+    var sweepOptimal = 0;
+    for (var sw = 0; sw < 60; sw++) {
+      var prm = {
+        c1: -5 + 10 * rng(), c2: -5 + 10 * rng(), c3: -20 + 40 * rng(),
+        a11: 0.2 + 3.8 * rng(), a12: 0.2 + 3.8 * rng(),
+        a21: 0.2 + 3.8 * rng(), a22: 0.2 + 3.8 * rng(),
+        b1: 2 + 18 * rng(), b2: 2 + 18 * rng()
+      };
+      var pp = solvePrimal(prm);
+      var dd = solveDual(prm);
+      if (pp.status === 'optimal') {
+        // LP duality: a finite primal optimum forces a finite dual optimum
+        check('T5 dual solvable when primal optimal #' + sw, dd.status === 'optimal', dd.status);
+        if (dd.status !== 'optimal') continue;
+        sweepOptimal++;
+        var scaleT = 1e-6 * (1 + Math.abs(pp.pstar));
+        check('T5 weak duality d* <= p* #' + sw, dd.dstar <= pp.pstar + scaleT,
+          dd.dstar + ' vs ' + pp.pstar);
+        check('T6 strong duality |p* - d*| = 0 #' + sw, close(pp.pstar, dd.dstar, scaleT),
+          (pp.pstar - dd.dstar));
+        var comp = complementarity(prm, pp, dd);
+        var compTol = 1e-6 * (1 + Math.abs(pp.pstar));
+        check('T7 complementary slackness #' + sw,
+          Math.abs(comp.ls1) < compTol && Math.abs(comp.ls2) < compTol &&
+          Math.abs(comp.mx1) < compTol && Math.abs(comp.mx2) < compTol,
+          JSON.stringify(comp));
+        // dual feasibility of the reported multipliers
+        check('T7 mu* >= 0 #' + sw, dd.mu.m1 >= -1e-9 && dd.mu.m2 >= -1e-9);
+      }
+    }
+    check('T5 sweep hit enough optimal cases', sweepOptimal >= 30, sweepOptimal);
+
+    // ---- T8: status correspondences (SciPy verified) ----
+    var infP = { c1: 3, c2: 4, c3: -20, a11: 2, a12: 1, a21: 1, a22: 3, b1: 1, b2: 15 };
+    check('T8 infeasible primal detected', solvePrimal(infP).status === 'infeasible');
+    check('T8 ...with unbounded dual', solveDual(infP).status === 'unbounded');
+    var unbP = { c1: -3, c2: -4, c3: 0, a11: 2, a12: 0, a21: 0, a22: 0, b1: 10, b2: 5 };
+    check('T8 unbounded primal detected', solvePrimal(unbP).status === 'unbounded');
+    check('T8 ...with infeasible dual', solveDual(unbP).status === 'infeasible');
+
+    // ---- T9: grid sandwich (independent route) ----
+    var rng9 = makeRng(130002);
+    for (var g9 = 0; g9 < 5; g9++) {
+      var prm9 = {
+        c1: -5 + 10 * rng9(), c2: -5 + 10 * rng9(), c3: 0,
+        a11: 0.5 + 3 * rng9(), a12: 0.5 + 3 * rng9(),
+        a21: 0.5 + 3 * rng9(), a22: 0.5 + 3 * rng9(),
+        b1: 4 + 14 * rng9(), b2: 4 + 14 * rng9()
+      };
+      var pp9 = solvePrimal(prm9);
+      if (pp9.status !== 'optimal') { count++; continue; }
+      var hps9 = primalHalfplanes(prm9);
+      var gridMin = Infinity;
+      var span = 40, steps = 220;
+      for (var gx = 0; gx <= steps; gx++) {
+        for (var gy = 0; gy <= steps; gy++) {
+          var X = 1 + span * gx / steps, Y = 1 + span * gy / steps;
+          if (feasibleAll(hps9, X, Y, 1e-9)) {
+            var vv = prm9.c1 * X + prm9.c2 * Y;
+            if (vv < gridMin) gridMin = vv;
+          }
+        }
+      }
+      var spacing = span / steps;
+      var lip = Math.abs(prm9.c1) + Math.abs(prm9.c2);
+      check('T9 grid never beats p* #' + g9, gridMin >= pp9.pstar - 1e-9, gridMin - pp9.pstar);
+      check('T9 grid comes close to p* #' + g9, gridMin - pp9.pstar <= 2 * lip * spacing + 1e-6,
+        gridMin - pp9.pstar);
+    }
+
+    // ---- T10: feasible polygon agrees with the solver ----
+    var rng10 = makeRng(130003);
+    for (var g10 = 0; g10 < 12; g10++) {
+      var prm10 = {
+        c1: 1, c2: 1, c3: 0,
+        a11: 0.2 + 3.8 * rng10(), a12: 0.2 + 3.8 * rng10(),
+        a21: 0.2 + 3.8 * rng10(), a22: 0.2 + 3.8 * rng10(),
+        b1: 1 + 19 * rng10(), b2: 1 + 19 * rng10()
+      };
+      var hps10 = primalHalfplanes(prm10);
+      var poly = feasiblePolygon(hps10, 200);
+      var solv = solvePrimal(prm10);
+      check('T10 polygon nonempty iff feasible #' + g10,
+        (poly.length > 0) === (solv.status !== 'infeasible'),
+        poly.length + ' vs ' + solv.status);
+      var allFeas = true;
+      for (var pv = 0; pv < poly.length; pv++) {
+        if (!feasibleAll(hps10, poly[pv].x, poly[pv].y, 1e-6)) allFeas = false;
+      }
+      check('T10 polygon vertices all feasible #' + g10, allFeas);
+    }
+
+    // ---- T11: determinism ----
+    var ra = makeRng(42), rb = makeRng(42);
+    var same = true;
+    for (var i11 = 0; i11 < 10; i11++) { if (ra() !== rb()) same = false; }
+    check('T11 rng deterministic', same);
+
+    return { pass: failures.length === 0, failures: failures, count: count };
+  }
+
+  return {
+    makeRng: makeRng,
+    clipPolygon: clipPolygon,
+    feasiblePolygon: feasiblePolygon,
+    solveLP2D: solveLP2D,
+    primalHalfplanes: primalHalfplanes,
+    dualHalfplanes: dualHalfplanes,
+    solvePrimal: solvePrimal,
+    solveDual: solveDual,
+    slacks: slacks,
+    complementarity: complementarity,
+    runSelfTests: runSelfTests
+  };
+})();
+
+if (typeof module !== 'undefined' && module.exports) { module.exports = DualCore; }
+// ============================================================================
+// UI layer — LP duality. Primal view (x-space) and dual view (lambda-space),
+// solved independently by DualCore; the readout panel reports p*, d*, the
+// duality gap (verified ~0 live whenever both are finite), the multipliers,
+// and the four complementary-slackness products. Status pairs (infeasible <->
+// unbounded) are reported honestly per LP duality. Prefix: dv-. Dark island.
+// ============================================================================
+(function () {
+  'use strict';
+  if (typeof document === 'undefined') return;
+
+  var C = {
+    bg: '#0f1419',
+    panel: 'rgba(20, 28, 40, 0.95)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    borderStrong: 'rgba(255, 255, 255, 0.15)',
+    text: '#e8eaed',
+    textDim: 'rgba(255, 255, 255, 0.7)',
+    faint: 'rgba(255, 255, 255, 0.5)',
+    accent: '#64b4ff',
+    grid: 'rgba(255, 255, 255, 0.08)',
+    axis: 'rgba(255, 255, 255, 0.3)',
+    region: 'rgba(52, 152, 219, 0.20)',
+    regionEdge: 'rgba(52, 152, 219, 0.85)',
+    con1: '#e74c3c',
+    con2: '#2ecc71',
+    boundLine: 'rgba(255, 255, 255, 0.35)',
+    level: '#ffc857',
+    optim: '#ff8a65',
+    vert: 'rgba(255, 255, 255, 0.6)',
+    ok: '#2ecc71',
+    bad: '#ef5350',
+    warn: '#ffc857'
+  };
+
+  function fmt(x, d) { return (Object.is(x, -0) ? 0 : x).toFixed(d); }
+
+  function init() {
+    var container = document.getElementById('duality-visualizer');
+    if (!container) return;
+    if (container.dataset.dvInit) return;
+    container.dataset.dvInit = '1';
+
+    // ---------- gate ----------
+    var gate;
+    try { gate = DualCore.runSelfTests(); }
+    catch (e) { gate = { pass: false, failures: ['self-tests threw: ' + (e && e.message ? e.message : 'unknown')], count: 0 }; }
+    if (!gate.pass) {
+      var list = '';
+      var shown = gate.failures.slice(0, 10);
+      for (var gi = 0; gi < shown.length; gi++) {
+        list += '<li>' + String(shown[gi]).replace(/</g, '&lt;') + '</li>';
+      }
+      container.innerHTML =
+        '<div class="dv-refusal" style="background:' + C.panel + ';border:1px solid ' + C.bad +
+        ';border-radius:8px;padding:16px;color:' + C.text + ';">' +
+        '<strong style="color:' + C.bad + ';">Demo disabled: mathematical self-tests failed (' +
+        gate.failures.length + ' of ' + gate.count + ' checks).</strong>' +
+        '<p style="color:' + C.textDim + ';margin:8px 0 4px;">This visualizer refuses to render ' +
+        'rather than display incorrect mathematics. Failures:</p>' +
+        '<ul style="color:' + C.textDim + ';margin:0 0 0 18px;">' + list + '</ul></div>';
       return;
     }
-    
-    // Create HTML structure
-    container.innerHTML = `
-      <div class="visualizer-container">
-        <div class="visualizer-layout">
-          <div class="canvas-container">
-            <div class="visualization-header">
-              <h3>Duality Visualization</h3>
-            </div>
-            <div class="instruction">Adjust the constraints to see how primal and dual solutions change</div>
-            <div id="canvas-wrapper">
-              <canvas id="duality-canvas" width="800" height="500"></canvas>
-            </div>
-            <div class="legend">
-              <div class="legend-item"><span class="legend-color primal"></span> Primal Feasible Region</div>
-              <div class="legend-item"><span class="legend-color dual"></span> Dual Solution</div>
-              <div class="legend-item"><span class="legend-color optimal"></span> Optimal Point</div>
-            </div>
-          </div>
-          
-          <div class="controls-panel">
-            <div class="control-group">
-                <h3>Primal Problem</h3>
-                <div class="problem-display">
-                    <div class="equation">Minimize: f(x) = c₁x₁ + c₂x₂ + c₃</div>
-                    <div class="constraint">Subject to:</div>
-                    <div class="constraint-list">
-                        <div class="constraint">a₁₁x₁ + a₁₂x₂ ≤ b₁</div>
-                        <div class="constraint">a₂₁x₁ + a₂₂x₂ ≤ b₂</div>
-                        <div class="constraint">x₁ ≥ 1, x₂ ≥ 1</div>
-                    </div>
-                </div>
-            </div>
-                        
-            <div class="control-group">
-                <h3>Dual Problem</h3>
-                <div class="problem-display">
-                    <div class="equation">Maximize: g(λ) = b₁λ₁ + b₂λ₂ - μ₁ - μ₂ + c₃</div>
-                    <div class="constraint">Subject to:</div>
-                    <div class="constraint-list">
-                        <div class="constraint">a₁₁λ₁ + a₂₁λ₂ - μ₁ ≤ c₁</div>
-                        <div class="constraint">a₁₂λ₁ + a₂₂λ₂ - μ₂ ≤ c₂</div>
-                        <div class="constraint">λ₁, λ₂, μ₁, μ₂ ≥ 0</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="control-group">
-              <h3>Adjust Parameters</h3>
-              <div class="parameter-controls">
-                <div class="parameter-row">
-                  <label for="c1-slider">c₁:</label>
-                  <input type="range" id="c1-slider" class="parameter-slider" min="1" max="10" value="3" step="0.5">
-                  <span class="parameter-value" id="c1-value">3</span>
-                </div>
-                <div class="parameter-row">
-                  <label for="c2-slider">c₂:</label>
-                  <input type="range" id="c2-slider" class="parameter-slider" min="1" max="10" value="4" step="0.5">
-                  <span class="parameter-value" id="c2-value">4</span>
-                </div>
-                <div class="parameter-row">
-                    <label for="c3-slider">c₃:</label>
-                    <input type="range" id="c3-slider" class="parameter-slider" min="-50" max="50" value="-20" step="5">
-                    <span class="parameter-value" id="c3-value">-20</span>
-                </div>
-                <div class="parameter-row">
-                  <label for="a11-slider">a₁₁:</label>
-                  <input type="range" id="a11-slider" class="parameter-slider" min="1" max="10" value="2" step="0.5">
-                  <span class="parameter-value" id="a11-value">2</span>
-                </div>
-                <div class="parameter-row">
-                  <label for="a12-slider">a₁₂:</label>
-                  <input type="range" id="a12-slider" class="parameter-slider" min="1" max="10" value="1" step="0.5">
-                  <span class="parameter-value" id="a12-value">1</span>
-                </div>
-                <div class="parameter-row">
-                  <label for="a21-slider">a₂₁:</label>
-                  <input type="range" id="a21-slider" class="parameter-slider" min="1" max="10" value="1" step="0.5">
-                  <span class="parameter-value" id="a21-value">1</span>
-                </div>
-                <div class="parameter-row">
-                  <label for="a22-slider">a₂₂:</label>
-                  <input type="range" id="a22-slider" class="parameter-slider" min="1" max="10" value="3" step="0.5">
-                  <span class="parameter-value" id="a22-value">3</span>
-                </div>
-                <div class="parameter-row">
-                  <label for="b1-slider">b₁:</label>
-                  <input type="range" id="b1-slider" class="parameter-slider" min="5" max="30" value="10" step="1">
-                  <span class="parameter-value" id="b1-value">10</span>
-                </div>
-                <div class="parameter-row">
-                  <label for="b2-slider">b₂:</label>
-                  <input type="range" id="b2-slider" class="parameter-slider" min="5" max="30" value="15" step="1">
-                  <span class="parameter-value" id="b2-value">15</span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="results-panel">
-              <h3>Optimization Results</h3>
-              <div class="results-grid">
-                <div class="result-item">
-                  <div class="result-label">Primal Optimal:</div>
-                  <div class="result-value" id="primal-optimal">x₁ = 0, x₂ = 0</div>
-                </div>
-                <div class="result-item">
-                  <div class="result-label">Primal Value:</div>
-                  <div class="result-value" id="primal-value">0</div>
-                </div>
-                <div class="result-item">
-                  <div class="result-label">Dual Optimal:</div>
-                  <div class="result-value" id="dual-optimal">λ₁ = 0, λ₂ = 0</div>
-                </div>
-                <div class="result-item">
-                  <div class="result-label">Dual Value:</div>
-                  <div class="result-value" id="dual-value">0</div>
-                </div>
-                <div class="result-item full-width">
-                  <div class="result-label">Duality Gap:</div>
-                  <div class="result-value" id="duality-gap">0</div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="toggle-view">
-              <button id="toggle-view-btn" class="view-btn">Switch to Dual View</button>
-            </div>
-          </div>
-        </div>
-        
-        <div class="explanation">
-          <h3>Understanding Duality Visualization</h3>
-          <p>This visualization demonstrates the relationship between a linear program (primal problem) and its dual problem. The primal problem seeks to find the values of x₁ and x₂ that minimize the objective function while satisfying all constraints.</p>
-          
-          <div class="explanation-grid">
-            <div class="explanation-column">
-              <h4>Key Concepts</h4>
-              <ul>
-                <li><strong>Primal Problem:</strong> The original minimization problem with constraints.</li>
-                <li><strong>Dual Problem:</strong> The corresponding maximization problem derived from the primal.</li>
-                <li><strong>Weak Duality:</strong> The dual optimal value is always ≤ the primal optimal value.</li>
-                <li><strong>Strong Duality:</strong> Under certain conditions (like the ones shown here), the optimal values are equal.</li>
-                <li><strong>Duality Gap:</strong> The difference between primal and dual optimal values, which is zero with strong duality.</li>
-              </ul>
-            </div>
-            <div class="explanation-column">
-              <h4>Visualization Guide</h4>
-              <ul>
-                <li>The <span style="color:#3498db">blue region</span> represents the feasible region of the primal problem.</li>
-                <li>The <span style="color:#e74c3c">red lines</span> in the dual view represent the constraints if the μ variables were zero.</li>
-                <li>The <span style="color:#2ecc71">green point</span> shows the optimal solution.</li>
-                <li>In the dual view, the optimal point may not lie exactly on the constraint lines when the corresponding primal variables are at their bounds.</li>
-                <li>Adjust the sliders to modify parameters and see how both problems change.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    // Add styles
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-      .visualizer-container {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        margin-bottom: 20px;
-        color: #e8eaed;
-      }
-      
-      .visualizer-layout {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-      
-      /* Layout for larger screens */
-      @media (min-width: 992px) {
-        .visualizer-layout {
-          flex-direction: row;
-        }
-        
-        .canvas-container {
-          flex: 3;
-          order: 1;
-        }
-        
-        .controls-panel {
-          flex: 2;
-          order: 2;
-        }
-      }
-      
-      .controls-panel {
-        background: rgba(20, 28, 40, 0.95);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        padding: 15px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      }
-      
-      .canvas-container {
-        display: flex;
-        flex-direction: column;
-      }
-      
-      #canvas-wrapper {
-        position: relative;
-        width: 100%;
-      }
-      
-      .visualization-header {
-        margin-bottom: 10px;
-      }
-      
-      .visualization-header h3 {
-        margin: 0;
-        font-size: 1.1rem;
-        color: #e8eaed;
-      }
-      
-      .control-group {
-        margin-bottom: 20px;
-        background: rgba(255, 255, 255, 0.03);
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      
-      .control-group h3 {
-        margin-top: 0;
-        margin-bottom: 12px;
-        font-size: 16px;
-        color: #e8eaed;
-      }
-      
-      .problem-display {
-        font-family: "Computer Modern", serif;
-        padding: 10px;
-        background: rgba(21, 101, 192, 0.15);
-        border-radius: 5px;
-        font-size: 0.95rem;
-        border: 1px solid rgba(100, 180, 255, 0.2);
-        color: #e8eaed;
-      }
-      
-      .equation, .constraint {
-        margin-bottom: 5px;
-        color: rgba(255, 255, 255, 0.9);
-      }
-      
-      .constraint-list {
-        margin-left: 15px;
-      }
-      
-      .parameter-controls {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      
-      .parameter-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      
-      .parameter-row label {
-        width: 40px;
-        font-family: "Computer Modern", serif;
-        font-weight: 500;
-        color: rgba(255, 255, 255, 0.8);
-      }
-      
-      .parameter-slider {
-        flex: 1;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 4px;
-        height: 6px;
-        -webkit-appearance: none;
-        appearance: none;
-      }
-      
-      .parameter-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 16px;
-        height: 16px;
-        background: linear-gradient(135deg, #42a5f5, #1565c0);
-        border-radius: 50%;
-        cursor: pointer;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-      }
-      
-      .parameter-slider::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
-        background: linear-gradient(135deg, #42a5f5, #1565c0);
-        border-radius: 50%;
-        cursor: pointer;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-      }
-      
-      .parameter-value {
-        width: 30px;
-        text-align: right;
-        font-family: monospace;
-        color: #64b4ff;
-      }
-      
-      .instruction {
-        text-align: center;
-        margin-bottom: 10px;
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.6);
-      }
-      
-      #duality-canvas {
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 8px;
-        background-color: #0f1419;
-        max-width: 100%;
-        height: auto;
-        display: block;
-      }
-      
-      .legend {
-        margin-top: 15px;
-        padding: 10px;
-        background: rgba(20, 28, 40, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-     }
-      
-      .legend-item {
-        display: flex;
-        align-items: center;
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 0.9rem;
-        margin-bottom: 4px;
-      }
-      
-      .legend-item:last-child {
-        margin-bottom: 0;
-      }
-      
-      .legend-color {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        margin-right: 8px;
-        border-radius: 3px;
-      }
-      
-      .legend-color.primal {
-        background-color: rgba(52, 152, 219, 0.4);
-        border: 2px solid rgba(100, 180, 255, 0.8);
-      }
-      
-      .legend-color.dual {
-        background-color: rgba(231, 76, 60, 0.4);
-        border: 2px solid rgba(255, 107, 107, 0.8);
-      }
-      
-      .legend-color.optimal {
-        background-color: #2ecc71;
-        border: 2px solid #27ae60;
-      }
-      
-      .results-panel {
-        background: rgba(255, 255, 255, 0.03);
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        margin-bottom: 20px;
-      }
-      
-      .results-panel h3 {
-        margin-top: 0;
-        margin-bottom: 12px;
-        font-size: 16px;
-        color: #e8eaed;
-      }
-      
-      .results-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-      
-      .full-width {
-        grid-column: span 2;
-      }
-      
-      .result-item {
-        background: rgba(21, 101, 192, 0.1);
-        padding: 8px 12px;
-        border-radius: 5px;
-        border: 1px solid rgba(100, 180, 255, 0.15);
-      }
-      
-      .result-label {
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.6);
-      }
-      
-      .result-value {
-        font-family: "Computer Modern", serif;
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: #64b4ff;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 4px 8px;
-        border-radius: 4px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        display: inline-block;
-        margin-top: 4px;
-      }
-      
-      .toggle-view {
-        text-align: center;
-      }
-      
-      .view-btn {
-        background: linear-gradient(135deg, #1565c0, #42a5f5);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 10px 20px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(21, 101, 192, 0.3);
-      }
-      
-      .view-btn:hover {
-        background: linear-gradient(135deg, #42a5f5, #1565c0);
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(21, 101, 192, 0.4);
-      }
-      
-      .explanation {
-        background: rgba(20, 28, 40, 0.95);
-        backdrop-filter: blur(10px);
-        padding: 20px;
-        border-radius: 12px;
-        margin-top: 20px;
-        border-left: 4px solid #64b4ff;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-left: 4px solid #64b4ff;
-      }
-      
-      .explanation h3 {
-        margin-top: 0;
-        margin-bottom: 10px;
-        font-size: 1.1rem;
-        color: #e8eaed;
-      }
-      
-      .explanation p {
-        margin-bottom: 15px;
-        color: rgba(255, 255, 255, 0.8);
-      }
-      
-      .explanation-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 20px;
-      }
-      
-      @media (min-width: 768px) {
-        .explanation-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-      }
-      
-      .explanation-column h4 {
-        margin-top: 0;
-        margin-bottom: 10px;
-        font-size: 1rem;
-        color: #e8eaed;
-      }
-      
-      .explanation-column ul {
-        padding-left: 20px;
-        margin-bottom: 0;
-      }
-      
-      .explanation-column li {
-        margin-bottom: 8px;
-        line-height: 1.4;
-        color: rgba(255, 255, 255, 0.7);
-      }
-      
-      .explanation-column li strong {
-        color: #64b4ff;
-      }
 
-    `;
-    
-    document.head.appendChild(styleElement);
-    
-    // Initialize variables
-    let primalView = true;
-    let c1 = 3, c2 = 4, c3 = -20;
-    let a11 = 2, a12 = 1, a21 = 1, a22 = 3;
-    let b1 = 10, b2 = 15;
-    let xMin = 0, yMin = 0; 
-    const eps = 1e-8;
-    
-    // Get DOM elements
-    const canvas = document.getElementById('duality-canvas');
-    const ctx = canvas.getContext('2d');
-    const toggleViewBtn = document.getElementById('toggle-view-btn');
+    // ---------- DOM ----------
+    function sliderRow(id, label, min, max, step, val) {
+      return '<div class="dv-sliderrow"><label for="dv-' + id + '">' + label +
+        ' = <span id="dv-' + id + '-val">' + fmt(val, 1) + '</span></label>' +
+        '<input type="range" id="dv-' + id + '" min="' + min + '" max="' + max +
+        '" step="' + step + '" value="' + val + '"></div>';
+    }
+    container.innerHTML =
+      '<div class="dv-root">' +
+        '<div class="dv-canvaswrap">' +
+          '<div class="dv-tabs">' +
+            '<button id="dv-tab-primal" class="dv-tab dv-tab-active">Primal (x-space)</button>' +
+            '<button id="dv-tab-dual" class="dv-tab">Dual (\u03BB-space)</button>' +
+          '</div>' +
+          '<div class="dv-charttitle" id="dv-title"></div>' +
+          '<canvas id="dv-canvas"></canvas>' +
+          '<div class="dv-legend" id="dv-legend"></div>' +
+        '</div>' +
+        '<div class="dv-controls">' +
+          '<div id="dv-readouts" class="dv-group dv-readouts"></div>' +
+          '<div class="dv-group">' +
+            '<label>Presets</label>' +
+            '<div class="dv-btnrow">' +
+              '<button class="dv-preset" data-key="corner">Corner optimum</button>' +
+              '<button class="dv-preset" data-key="interior">Both constraints active</button>' +
+              '<button class="dv-preset" data-key="asym">Asymmetric A</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="dv-group"><label>Objective: min c\u2081x\u2081 + c\u2082x\u2082 + c\u2083</label>' +
+            sliderRow('c1', 'c\u2081', -5, 5, 0.5, 3) +
+            sliderRow('c2', 'c\u2082', -5, 5, 0.5, 4) +
+            sliderRow('c3', 'c\u2083', -20, 20, 1, -20) +
+          '</div>' +
+          '<div class="dv-group"><label>Constraints: Ax \u2264 b, x \u2265 1</label>' +
+            sliderRow('a11', 'a\u2081\u2081', 0, 4, 0.1, 2) +
+            sliderRow('a12', 'a\u2081\u2082', 0, 4, 0.1, 1) +
+            sliderRow('b1', 'b\u2081', 2, 20, 0.5, 10) +
+            sliderRow('a21', 'a\u2082\u2081', 0, 4, 0.1, 1) +
+            sliderRow('a22', 'a\u2082\u2082', 0, 4, 0.1, 3) +
+            sliderRow('b2', 'b\u2082', 2, 20, 0.5, 15) +
+          '</div>' +
+        '</div>' +
+      '</div>';
 
-    // Get parameter sliders and value displays
-    const c1Slider = document.getElementById('c1-slider');
-    const c2Slider = document.getElementById('c2-slider');
-    const c3Slider = document.getElementById('c3-slider');
-    const a11Slider = document.getElementById('a11-slider');
-    const a12Slider = document.getElementById('a12-slider');
-    const a21Slider = document.getElementById('a21-slider');
-    const a22Slider = document.getElementById('a22-slider');
-    const b1Slider = document.getElementById('b1-slider');
-    const b2Slider = document.getElementById('b2-slider');
-    
-    const c1Value = document.getElementById('c1-value');
-    const c2Value = document.getElementById('c2-value');
-    const c3Value = document.getElementById('c3-value');
-    const a11Value = document.getElementById('a11-value');
-    const a12Value = document.getElementById('a12-value');
-    const a21Value = document.getElementById('a21-value');
-    const a22Value = document.getElementById('a22-value');
-    const b1Value = document.getElementById('b1-value');
-    const b2Value = document.getElementById('b2-value');
-    
-    // Result elements
-    const primalOptimalElement = document.getElementById('primal-optimal');
-    const primalValueElement = document.getElementById('primal-value');
-    const dualOptimalElement = document.getElementById('dual-optimal');
-    const dualValueElement = document.getElementById('dual-value');
-    const dualityGapElement = document.getElementById('duality-gap');
-    
-    // Canvas dimensions
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    const padding = 50;
-    let  scale = 20; 
-    
-    // Function to draw the grid and axes
-    function drawGrid() {
-        ctx.strokeStyle = '#2a3544';
-        ctx.lineWidth = 1;
-        
-        // Draw grid lines
-        for (let i = 0; i <= canvasWidth / scale; i++) {
-            const x = padding + i * scale;
-            if (x >= padding && x <= canvasWidth - padding) {
-                ctx.beginPath();
-                ctx.moveTo(x, padding);
-                ctx.lineTo(x, canvasHeight - padding);
-                ctx.stroke();
-                
-                // Draw x-axis labels (every 5 units)
-                if (i % 5 === 0) {
-                    ctx.fillStyle = '#8899aa';
-                    ctx.font = '12px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(i.toString(), x, canvasHeight - padding + 20);
-                }
-            }
-        }
-        
-        for (let i = 0; i <= canvasHeight / scale; i++) {
-            const y = canvasHeight - padding - i * scale;
-            if (y >= padding && y <= canvasHeight - padding) {
-                ctx.beginPath();
-                ctx.moveTo(padding, y);
-                ctx.lineTo(canvasWidth - padding, y);
-                ctx.stroke();
-                
-                // Draw y-axis labels (every 5 units)
-                if (i % 5 === 0) {
-                    ctx.fillStyle = '#8899aa';
-                    ctx.font = '12px Arial';
-                    ctx.textAlign = 'right';
-                    ctx.fillText(i.toString(), padding - 10, y + 4);
-                }
-            }
-        }
-        
-        // Draw axes
-        ctx.strokeStyle = '#4a5568';
-        ctx.lineWidth = 2;
-        
-        // x-axis
-        ctx.beginPath();
-        ctx.moveTo(padding, canvasHeight - padding);
-        ctx.lineTo(canvasWidth - padding, canvasHeight - padding);
-        ctx.stroke();
-        
-        // y-axis
-        ctx.beginPath();
-        ctx.moveTo(padding, canvasHeight - padding);
-        ctx.lineTo(padding, padding);
-        ctx.stroke();
-        
-        // Axis labels
-        ctx.fillStyle = '#e8eaed';
-        ctx.font = '14px Arial';
-        
-        // x-axis label
-        ctx.textAlign = 'center';
-        ctx.fillText(primalView ? 'x₁' : 'λ₁', canvasWidth - padding + 25, canvasHeight - padding + 25);
-        
-        // y-axis label
-        ctx.textAlign = 'center';
-        ctx.fillText(primalView ? 'x₂' : 'λ₂', padding - 25, padding - 15);
-    }
-    
-    // Function to convert data coordinates to canvas coordinates
-    function dataToCanvas(x, y) {
-        return {
-            x: padding + (x - xMin) * scale,
-            y: canvasHeight - padding - (y - yMin) * scale
-        };
-    }
-    
-    // Function to draw a line
-    function drawLine(x1, y1, x2, y2, color = '#333', width = 2, dash = []) {
-        const start = dataToCanvas(x1, y1);
-        const end = dataToCanvas(x2, y2);
-        
-        ctx.beginPath();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = width;
-        
-        if (dash.length > 0) {
-            ctx.setLineDash(dash);
-        } else {
-            ctx.setLineDash([]);
-        }
-        
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.stroke();
-    }
+    var style = document.createElement('style');
+    style.textContent =
+      '#duality-visualizer .dv-root{display:flex;flex-direction:column;gap:20px;color:' + C.text + ';margin-bottom:20px;}' +
+      '@media (min-width: 992px){#duality-visualizer .dv-root{flex-direction:row;align-items:flex-start;}' +
+      '#duality-visualizer .dv-canvaswrap{flex:3;}#duality-visualizer .dv-controls{flex:2;max-width:400px;}}' +
+      '#duality-visualizer .dv-canvaswrap,#duality-visualizer .dv-controls{background:' + C.panel + ';padding:15px;border-radius:8px;border:1px solid ' + C.border + ';}' +
+      '#duality-visualizer .dv-controls{box-shadow:0 8px 32px rgba(0,0,0,0.3);}' +
+      '#duality-visualizer .dv-tabs{display:flex;gap:6px;margin-bottom:10px;}' +
+      '#duality-visualizer .dv-tab{flex:1;padding:8px 6px;border:1px solid ' + C.borderStrong + ';border-radius:4px;background:rgba(255,255,255,0.05);color:' + C.text + ';cursor:pointer;font-size:0.88rem;}' +
+      '#duality-visualizer .dv-tab-active{background:linear-gradient(135deg,#1565c0,#42a5f5);border-color:transparent;color:#fff;font-weight:bold;}' +
+      '#duality-visualizer canvas{border:1px solid ' + C.borderStrong + ';border-radius:4px;background:' + C.bg + ';display:block;max-width:100%;}' +
+      '#duality-visualizer .dv-charttitle{font-size:0.88rem;color:' + C.textDim + ';font-weight:bold;margin-bottom:6px;}' +
+      '#duality-visualizer .dv-legend{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:0.84rem;color:' + C.textDim + ';}' +
+      '@media (max-width: 600px){#duality-visualizer .dv-legend{grid-template-columns:1fr;}}' +
+      '#duality-visualizer .dv-li{display:flex;align-items:center;}' +
+      '#duality-visualizer .dv-sw{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:2px;flex:none;}' +
+      '#duality-visualizer .dv-group{background:rgba(255,255,255,0.03);border:1px solid ' + C.border + ';border-radius:8px;padding:12px;margin-bottom:12px;}' +
+      '#duality-visualizer .dv-group > label{display:block;font-weight:bold;margin-bottom:8px;color:' + C.textDim + ';font-size:0.85rem;}' +
+      '#duality-visualizer .dv-btnrow{display:flex;flex-wrap:wrap;gap:6px;}' +
+      '#duality-visualizer .dv-preset{flex:1;min-width:100px;padding:7px 4px;border:1px solid ' + C.borderStrong + ';border-radius:4px;background:rgba(255,255,255,0.05);color:' + C.text + ';cursor:pointer;font-size:0.8rem;}' +
+      '#duality-visualizer .dv-preset:hover{background:rgba(255,255,255,0.1);}' +
+      '#duality-visualizer .dv-sliderrow{margin-bottom:8px;}' +
+      '#duality-visualizer .dv-sliderrow label{display:block;font-size:0.85rem;color:' + C.textDim + ';margin-bottom:2px;font-weight:bold;}' +
+      '#duality-visualizer .dv-sliderrow input[type=range]{width:100%;}' +
+      '#duality-visualizer .dv-sliderrow span{color:' + C.accent + ';font-family:"Courier New",monospace;}' +
+      '#duality-visualizer .dv-readouts{font-size:0.9rem;line-height:1.6;}' +
+      '#duality-visualizer .dv-val{font-family:"Courier New",monospace;color:' + C.accent + ';}' +
+      '#duality-visualizer .dv-opt{font-family:"Courier New",monospace;color:' + C.optim + ';}' +
+      '#duality-visualizer .dv-ok{color:' + C.ok + ';font-weight:bold;}' +
+      '#duality-visualizer .dv-warn{color:' + C.warn + ';font-weight:bold;}' +
+      '#duality-visualizer .dv-sub{color:' + C.faint + ';font-size:0.85rem;}' +
+      '#duality-visualizer table.dv-table{border-collapse:collapse;width:100%;margin-top:6px;font-size:0.84rem;}' +
+      '#duality-visualizer table.dv-table th,#duality-visualizer table.dv-table td{border:1px solid ' + C.border + ';padding:4px 8px;text-align:right;font-family:"Courier New",monospace;}' +
+      '#duality-visualizer table.dv-table th{color:' + C.textDim + ';background:rgba(255,255,255,0.04);font-family:system-ui,sans-serif;}' +
+      '#duality-visualizer table.dv-table td:first-child{text-align:left;}';
+    document.head.appendChild(style);
 
-    // Improved label rendering - text only with shadow for readability
-    function drawLabel(x, y, text, color = '#e8eaed') {
-        const point = dataToCanvas(x, y);
-        
-        ctx.font = '12px Arial';
-        
-        // Draw text shadow for better readability on dark background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillText(text, point.x + 1, point.y + 1);
-        
-        // Draw text
-        ctx.fillStyle = color;
-        ctx.fillText(text, point.x, point.y);
-    }
-    
-    // Function to fill a polygon
-    function fillPolygon(points, fillColor, strokeColor = null) {
-        if (points.length < 3) return;
-        
-        ctx.beginPath();
-        
-        const start = dataToCanvas(points[0].x, points[0].y);
-        ctx.moveTo(start.x, start.y);
-        
-        for (let i = 1; i < points.length; i++) {
-            const p = dataToCanvas(points[i].x, points[i].y);
-            ctx.lineTo(p.x, p.y);
-        }
-        
-        ctx.closePath();
-        ctx.fillStyle = fillColor;
-        ctx.fill();
-        
-        if (strokeColor) {
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-    }
-    
-    // Function to draw a point
-    function drawPoint(x, y, color = '#333', radius = 5, label = null, labelOffset = {x: 0.3, y: 0.3}) {
-        const p = dataToCanvas(x, y);
-        
-        // Draw point with border for better visibility
-        ctx.beginPath();
-        ctx.fillStyle = color;
-        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Add white border
-        ctx.beginPath();
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 1.5;
-        ctx.arc(p.x, p.y, radius + 1, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // Add label if provided
-        if (label) {
-            drawLabel(x + labelOffset.x, y + labelOffset.y, label, color);
-        }
-    }
+    var canvas = document.getElementById('dv-canvas');
+    var ctx = canvas.getContext('2d');
+    var readoutsEl = document.getElementById('dv-readouts');
+    var legendEl = document.getElementById('dv-legend');
+    var titleEl = document.getElementById('dv-title');
 
-    // Adjust canvas setup for better scaling
-    function setupCanvas() {
-        // Compute visible bounds
-        const bounds = computeVisibleBounds();
-        
-        // Calculate appropriate scale factor
-        const scaleX = (canvasWidth - 2 * padding) / (bounds.maxX - bounds.minX || 1);
-        const scaleY = (canvasHeight - 2 * padding) / (bounds.maxY - bounds.minY || 1);
-        
-        // Use the smaller scale to ensure everything fits
-        scale = Math.min(scaleX, scaleY) * 0.8;
-        
-        // Set origin offsets
-        xMin = bounds.minX;
-        yMin = bounds.minY;
-        
-        // Clear the canvas
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    }
-
-    // Compute bounds that ensure all important parts are visible
-    function computeVisibleBounds() {
-        let points = [];
-        
-        // Add important points from constraints
-        if (a11 !== 0) points.push({x: b1/a11, y: 0});
-        if (a12 !== 0) points.push({x: 0, y: b1/a12});
-        if (a21 !== 0) points.push({x: b2/a21, y: 0});
-        if (a22 !== 0) points.push({x: 0, y: b2/a22});
-        
-        // Add minimum point
-        points.push({x: 1, y: 1});
-        
-        // Add primal solution if available
-        const primalSolution = solvePrimalSimplex();
-        if (primalSolution && primalSolution.point) {
-            points.push(primalSolution.point);
-        }
-        
-        // Find the bounding box
-        let minX = Math.min(...points.map(p => p.x));
-        let maxX = Math.max(...points.map(p => p.x));
-        let minY = Math.min(...points.map(p => p.y));
-        let maxY = Math.max(...points.map(p => p.y));
-        
-        // Add margins
-        const margin = 0.2;
-        const xRange = maxX - minX;
-        const yRange = maxY - minY;
-        
-        minX = Math.max(0, minX - xRange * margin);
-        maxX = maxX + xRange * margin;
-        minY = Math.max(0, minY - yRange * margin);
-        maxY = maxY + yRange * margin;
-        
-        return { minX, maxX, minY, maxY };
-    }
-    
-    // Function to find the bounds of the plot
-    function getPlotBounds() {
-        const maxX = (canvasWidth - 2 * padding) / scale;
-        const maxY = (canvasHeight - 2 * padding) / scale;
-        return { maxX, maxY };
-    }
-    
-    // Function to compute the primal problem's feasible region
-    function computePrimalFeasibleRegion() {
-        let vertices = [];
-        
-        // Add corner point at (1,1)
-        vertices.push({ x: 1, y: 1 });
-        
-        // Find intersections with axes considering minimum constraints
-        if (a11 !== 0) {
-            const xInt = (b1 - a12*1) / a11;
-            if (xInt >= 1 && a21*xInt + a22*1 <= b2) {
-                vertices.push({ x: xInt, y: 1 });
-            }
-        }
-        
-        if (a12 !== 0) {
-            const yInt = (b1 - a11*1) / a12;
-            if (yInt >= 1 && a21*1 + a22*yInt <= b2) {
-                vertices.push({ x: 1, y: yInt });
-            }
-        }
-        
-        if (a21 !== 0) {
-            const xInt = (b2 - a22*1) / a21;
-            if (xInt >= 1 && a11*xInt + a12*1 <= b1) {
-                vertices.push({ x: xInt, y: 1 });
-            }
-        }
-        
-        if (a22 !== 0) {
-            const yInt = (b2 - a21*1) / a22;
-            if (yInt >= 1 && a11*1 + a12*yInt <= b1) {
-                vertices.push({ x: 1, y: yInt });
-            }
-        }
-        
-        // Find intersection of two constraints
-        const det = a11 * a22 - a12 * a21;
-        if (Math.abs(det) > 1e-10) {
-            const x = (b1 * a22 - b2 * a12) / det;
-            const y = (a11 * b2 - a21 * b1) / det;
-            if (x >= 1 && y >= 1) {
-                vertices.push({ x, y });
-            }
-        }
-        
-        // Sort vertices for proper polygon drawing
-        if (vertices.length > 2) {
-            const center = vertices.reduce((acc, v) => {
-                return { x: acc.x + v.x / vertices.length, y: acc.y + v.y / vertices.length };
-            }, { x: 0, y: 0 });
-            
-            vertices.sort((a, b) => {
-                const angleA = Math.atan2(a.y - center.y, a.x - center.x);
-                const angleB = Math.atan2(b.y - center.y, b.x - center.x);
-                return angleA - angleB;
-            });
-        }
-        
-        return vertices;
-    }
-
-    // Function to solve linear program using the simplex method
-    function solvePrimalSimplex() {
-        // For this problem structure:
-        // Minimize: c1*x1 + c2*x2 + c3
-        // Subject to: 
-        //   a11*x1 + a12*x2 <= b1
-        //   a21*x1 + a22*x2 <= b2
-        //   x1 >= 1, x2 >= 1
-        
-        // Compute all possible vertices of the feasible region
-        const vertices = [];
-        
-        // Add minimum boundary point (1,1)
-        vertices.push({ x: 1, y: 1 });
-        
-        // Check constraint 1 intersection with x1 = 1
-        if (a12 !== 0) {
-            const y1 = (b1 - a11) / a12;
-            if (y1 >= 1) {
-                vertices.push({ x: 1, y: y1 });
-            }
-        }
-        
-        // Check constraint 2 intersection with x1 = 1
-        if (a22 !== 0) {
-            const y2 = (b2 - a21) / a22;
-            if (y2 >= 1) {
-                vertices.push({ x: 1, y: y2 });
-            }
-        }
-        
-        // Check constraint 1 intersection with x2 = 1
-        if (a11 !== 0) {
-            const x1 = (b1 - a12) / a11;
-            if (x1 >= 1) {
-                vertices.push({ x: x1, y: 1 });
-            }
-        }
-        
-        // Check constraint 2 intersection with x2 = 1
-        if (a21 !== 0) {
-            const x2 = (b2 - a22) / a21;
-            if (x2 >= 1) {
-                vertices.push({ x: x2, y: 1 });
-            }
-        }
-        
-        // Find intersection of the two main constraints
-        const det = a11 * a22 - a12 * a21;
-        if (Math.abs(det) > eps) {
-            const x = (b1 * a22 - b2 * a12) / det;
-            const y = (a11 * b2 - a21 * b1) / det;
-            if (x >= 1 && y >= 1) {
-                vertices.push({ x, y });
-            }
-        }
-        
-        // Filter out duplicate vertices and non-feasible points
-        const feasibleVertices = [];
-        
-        vertices.forEach(v => {
-            // Check if the vertex is feasible (satisfies all constraints)
-            if (v.x >= 1 && v.y >= 1 && 
-                a11 * v.x + a12 * v.y <= b1 + eps && 
-                a21 * v.x + a22 * v.y <= b2 + eps) {
-                
-                // Check if this vertex is not already in the list (avoid duplicates)
-                const isDuplicate = feasibleVertices.some(existingV => 
-                    Math.abs(existingV.x - v.x) < eps && 
-                    Math.abs(existingV.y - v.y) < eps
-                );
-                
-                if (!isDuplicate) {
-                    feasibleVertices.push(v);
-                }
-            }
-        });
-        
-        if (feasibleVertices.length === 0) {
-            return null; // No feasible solution
-        }
-        
-        // Find optimal solution by evaluating objective function at each vertex
-        let optimalValue = Infinity;
-        let optimalPoint = null;
-        
-        feasibleVertices.forEach(v => {
-            const objValue = c1 * v.x + c2 * v.y + c3;
-            if (objValue < optimalValue) {
-                optimalValue = objValue;
-                optimalPoint = v;
-            }
-        });
-        
-        // Determine active constraints at optimal point
-        const isConstraint1Active = Math.abs(a11 * optimalPoint.x + a12 * optimalPoint.y - b1) < eps;
-        const isConstraint2Active = Math.abs(a21 * optimalPoint.x + a22 * optimalPoint.y - b2) < eps;
-        const isX1Binding = Math.abs(optimalPoint.x - 1) < eps;
-        const isX2Binding = Math.abs(optimalPoint.y - 1) < eps;
-        
-        return {
-            point: optimalPoint,
-            value: optimalValue,
-            feasibleVertices: feasibleVertices,
-            activeConstraints: {
-                constraint1: isConstraint1Active,
-                constraint2: isConstraint2Active,
-                x1Bound: isX1Binding,
-                x2Bound: isX2Binding
-            }
-        };
-    }
-
-    // Function to solve the dual problem using the simplex method
-    // Function to solve the dual problem using the simplex method
-function solveDualSimplex() {
-    // The dual problem for our standard form is:
-    // Maximize: b1*λ1 + b2*λ2 + μ1 + μ2 + c3
-    // Subject to:
-    //   a11*λ1 + a21*λ2 + μ1 = c1
-    //   a12*λ1 + a22*λ2 + μ2 = c2
-    //   λ1, λ2, μ1, μ2 ≥ 0
-    
-    // First, solve the primal to get information about active constraints
-    const primalSolution = solvePrimalSimplex();
-    
-    if (!primalSolution) {
-        return null; // If primal has no solution, dual is unbounded
-    }
-    
-    const { point: pPoint, value: pValue } = primalSolution;
-    
-    // Recompute which constraints are active with explicit checks
-    const isConstraint1Active = Math.abs(a11 * pPoint.x + a12 * pPoint.y - b1) < eps;
-    const isConstraint2Active = Math.abs(a21 * pPoint.x + a22 * pPoint.y - b2) < eps;
-    const isX1Binding = Math.abs(pPoint.x - 1) < eps;
-    const isX2Binding = Math.abs(pPoint.y - 1) < eps;
-    
-    // Initialize dual variables
-    let lambda1 = 0;
-    let lambda2 = 0;
-    let mu1 = 0;
-    let mu2 = 0;
-    
-    // Apply complementary slackness principle:
-    // 1. If a primal constraint is not binding (active), the corresponding dual variable must be zero
-    if (!isConstraint1Active) lambda1 = 0;
-    if (!isConstraint2Active) lambda2 = 0;
-    
-    // 2. If a primal variable is strictly above its lower bound, the corresponding dual constraint must be tight
-    // We need to solve the dual constraint equations:
-    // a11*λ1 + a21*λ2 + μ1 = c1
-    // a12*λ1 + a22*λ2 + μ2 = c2
-    
-    if (isX1Binding) {
-        // x1 = 1 (at lower bound), μ1 can be positive
-        mu1 = c1 - (a11 * lambda1 + a21 * lambda2);
-    } else {
-        // x1 > 1, μ1 must be 0 by complementary slackness
-        mu1 = 0;
-    }
-    
-    if (isX2Binding) {
-        // x2 = 1 (at lower bound), μ2 can be positive
-        mu2 = c2 - (a12 * lambda1 + a22 * lambda2);
-    } else {
-        // x2 > 1, μ2 must be 0 by complementary slackness
-        mu2 = 0;
-    }
-    
-    // Ensure non-negativity
-    lambda1 = Math.max(0, lambda1);
-    lambda2 = Math.max(0, lambda2);
-    mu1 = Math.max(0, mu1);
-    mu2 = Math.max(0, mu2);
-    
-    // Calculate the dual objective value (corrected)
-    const dualValue = b1 * lambda1 + b2 * lambda2 + mu1 + mu2 + c3;
-    
-    return {
-        point: { x: lambda1, y: lambda2 },
-        value: dualValue,
-        mu1: mu1,
-        mu2: mu2
+    var PRESETS = {
+      corner: { c1: 3, c2: 4, c3: -20, a11: 2, a12: 1, a21: 1, a22: 3, b1: 10, b2: 15 },
+      interior: { c1: -3, c2: -4, c3: -20, a11: 2, a12: 1, a21: 1, a22: 3, b1: 10, b2: 15 },
+      asym: { c1: -2, c2: -3, c3: 0, a11: 1, a12: 2, a21: 3, a22: 1, b1: 8, b2: 9 }
     };
-}
-    
-    // Add this helper function to verify strong duality
-    function checkStrongDuality() {
-        const primalSolution = solvePrimalSimplex();
-        const dualSolution = solveDualSimplex();
-        
-        if (!primalSolution || !dualSolution) {
-            console.log("One of the problems has no feasible solution");
-            return false;
-        }
-        
-        const primalValue = primalSolution.value;
-        const dualValue = dualSolution.value;
-        const gap = Math.abs(primalValue - dualValue);
-        
-        console.log("Primal solution:", primalSolution);
-        console.log("Dual solution:", dualSolution);
-        console.log("Primal value:", primalValue);
-        console.log("Dual value:", dualValue);
-        console.log("Duality gap:", gap);
-        
-        return gap < 1e-6;
+    var SLIDER_IDS = ['c1', 'c2', 'c3', 'a11', 'a12', 'a21', 'a22', 'b1', 'b2'];
+
+    var state = {
+      view: 'primal',
+      prm: Object.assign({}, PRESETS.corner),
+      cssW: 620, cssH: 460
+    };
+
+    function sizeCanvas() {
+      var parentW = canvas.parentElement ? canvas.parentElement.clientWidth : 0;
+      var w = parentW > 0 ? Math.max(320, Math.min(720, parentW - 30)) : 620;
+      state.cssW = w;
+      state.cssH = Math.round(w * 0.75);
+      var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+      canvas.style.width = state.cssW + 'px';
+      canvas.style.height = state.cssH + 'px';
+      canvas.width = Math.round(state.cssW * dpr);
+      canvas.height = Math.round(state.cssH * dpr);
+      if (ctx && ctx.setTransform) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    // Function to draw the primal problem
-    function drawPrimal() {
-        // Draw the feasible region
-        const feasibleRegion = computePrimalFeasibleRegion();
-        if (feasibleRegion.length >= 3) {
-            fillPolygon(
-                feasibleRegion, 
-                'rgba(52, 152, 219, 0.2)', 
-                'rgba(52, 152, 219, 0.8)'
-            );
-        }
-        
-        // Draw constraint lines
-        // Constraint 1: a11*x1 + a12*x2 = b1
-        if (a11 !== 0 && a12 !== 0) {
-            const c1x1 = b1 / a11;
-            const c1x2 = b1 / a12;
-            drawLine(c1x1, 0, 0, c1x2, 'rgba(52, 152, 219, 0.8)', 2);
-        }
-        
-        // Constraint 2: a21*x1 + a22*x2 = b2
-        if (a21 !== 0 && a22 !== 0) {
-            const c2x1 = b2 / a21;
-            const c2x2 = b2 / a22;
-            drawLine(c2x1, 0, 0, c2x2, 'rgba(52, 152, 219, 0.8)', 2);
-        }
-        
-        // Draw objective function level curves
-        const optimalSolution = solvePrimalSimplex();
-        if (optimalSolution) {
-            const { point } = optimalSolution;
-            
-            // Draw optimal point - no arrow
-            drawPoint(point.x, point.y, '#2ecc71', 6);
-        }
+    // ---------- frame with equal-ish data ranges ----------
+    function frame(xMin, xMax, yMin, yMax, xLabel, yLabel) {
+      var r = { x0: 46, y0: 12, w: state.cssW - 46 - 14, h: state.cssH - 12 - 34 };
+      ctx.clearRect(0, 0, state.cssW, state.cssH);
+      ctx.fillStyle = C.bg;
+      ctx.fillRect(0, 0, state.cssW, state.cssH);
+      ctx.lineWidth = 1;
+      ctx.font = '11px system-ui, sans-serif';
+      var ticks = 5;
+      for (var i = 0; i <= ticks; i++) {
+        var tx = r.x0 + r.w * i / ticks;
+        var ty = r.y0 + r.h * i / ticks;
+        ctx.strokeStyle = C.grid;
+        ctx.beginPath(); ctx.moveTo(tx, r.y0); ctx.lineTo(tx, r.y0 + r.h); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(r.x0, ty); ctx.lineTo(r.x0 + r.w, ty); ctx.stroke();
+        ctx.fillStyle = C.faint;
+        var xv = xMin + (xMax - xMin) * i / ticks;
+        var yv = yMax - (yMax - yMin) * i / ticks;
+        ctx.fillText(fmt(xv, xMax - xMin > 8 ? 0 : 1), tx - 8, r.y0 + r.h + 16);
+        ctx.fillText(fmt(yv, yMax - yMin > 8 ? 0 : 1), 4, ty + 4);
+      }
+      ctx.strokeStyle = C.axis;
+      ctx.strokeRect(r.x0, r.y0, r.w, r.h);
+      ctx.fillStyle = C.textDim;
+      ctx.fillText(xLabel, r.x0 + r.w - 8 * xLabel.length, r.y0 + r.h + 30);
+      ctx.fillText(yLabel, r.x0 + 4, r.y0 + 12);
+      return {
+        r: r,
+        px: function (x) { return r.x0 + (x - xMin) / (xMax - xMin) * r.w; },
+        py: function (y) { return r.y0 + (1 - (y - yMin) / (yMax - yMin)) * r.h; },
+        xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax
+      };
+    }
+    // draw the line a x + b y = c across the view
+    function drawBoundary(P, a, b, c, color, width, dash) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash(dash || []);
+      ctx.beginPath();
+      if (Math.abs(b) >= Math.abs(a)) {
+        var y1 = (c - a * P.xMin) / b, y2 = (c - a * P.xMax) / b;
+        ctx.moveTo(P.px(P.xMin), P.py(y1));
+        ctx.lineTo(P.px(P.xMax), P.py(y2));
+      } else {
+        var x1 = (c - b * P.yMin) / a, x2 = (c - b * P.yMax) / a;
+        ctx.moveTo(P.px(x1), P.py(P.yMin));
+        ctx.lineTo(P.px(x2), P.py(P.yMax));
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    function drawArrow(P, x0, y0, dx, dy, color, label) {
+      var len = Math.hypot(dx, dy);
+      if (len < 1e-12) return;
+      var ux = dx / len, uy = dy / len;
+      var span = (P.xMax - P.xMin) * 0.09;
+      var x1 = x0 + ux * span, y1 = y0 + uy * span;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(P.px(x0), P.py(y0));
+      ctx.lineTo(P.px(x1), P.py(y1));
+      ctx.stroke();
+      var ang = Math.atan2(P.py(y1) - P.py(y0), P.px(x1) - P.px(x0));
+      ctx.beginPath();
+      ctx.moveTo(P.px(x1), P.py(y1));
+      ctx.lineTo(P.px(x1) - 9 * Math.cos(ang - 0.4), P.py(y1) - 9 * Math.sin(ang - 0.4));
+      ctx.lineTo(P.px(x1) - 9 * Math.cos(ang + 0.4), P.py(y1) - 9 * Math.sin(ang + 0.4));
+      ctx.closePath();
+      ctx.fill();
+      if (label) {
+        ctx.font = 'bold 11px system-ui, sans-serif';
+        ctx.fillText(label, P.px(x1) + 5, P.py(y1) - 5);
+      }
     }
 
-    // Function to draw the dual problem
-    function drawDual() {
-        const { maxX, maxY } = getPlotBounds();
-    
-        // Get dual solution
-        const primalSolution = solvePrimalSimplex();
-        const dualSolution = solveDualSimplex();
-        
-        // Compute dual feasible region vertices
-        // Dual constraints (when μ = 0): 
-        //   a11*λ1 + a21*λ2 ≤ c1
-        //   a12*λ1 + a22*λ2 ≤ c2
-        //   λ1, λ2 ≥ 0
-        const dualVertices = computeDualFeasibleRegion(maxX, maxY);
-        
-        // Draw the filled dual feasible region (red)
-        if (dualVertices.length >= 3) {
-            fillPolygon(dualVertices, 'rgba(231, 76, 60, 0.25)', 'rgba(231, 76, 60, 0.6)');
-        }
-        
-        // Draw the dual constraint lines (without the μ variables)
-        // a11*λ1 + a21*λ2 = c1 - μ1 (when μ1 = 0)
-        // a12*λ1 + a22*λ2 = c2 - μ2 (when μ2 = 0)
-        
-        // Draw first constraint: a11*λ1 + a21*λ2 = c1 (when μ1 = 0)
-        if (a11 !== 0 || a21 !== 0) {
-            let x1, y1, x2, y2;
-            
-            if (a21 !== 0) {
-                // Intersection with y-axis
-                x1 = 0;
-                y1 = c1 / a21;
-            } else {
-                // Vertical line (fallback)
-                x1 = c1 / a11;
-                y1 = 0;
-                x2 = c1 / a11;
-                y2 = maxY;
-                drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
-                
-                // Add label for constraint
-                drawLabel(x1 + 0.3, maxY * 0.7, 'a₁₁λ₁+a₂₁λ₂≤c₁', '#ff6b6b');
-                return;
-            }
-            
-            if (a11 !== 0) {
-                // Intersection with x-axis
-                x2 = c1 / a11;
-                y2 = 0;
-            } else {
-                // Horizontal line (fallback)
-                x1 = 0;
-                y1 = c1 / a21;
-                x2 = maxX;
-                y2 = c1 / a21;
-                drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
-                
-                // Add label for constraint
-                drawLabel(maxX * 0.5, y1 + 0.3, 'a₁₁λ₁+a₂₁λ₂≤c₁', '#ff6b6b');
-                return;
-            }
-            
-            // Draw constraint line
-            drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
-        
-            // Position label away from line intersection
-            const labelX = Math.max(0.2, Math.min(x2 * 0.6, maxX * 0.4));
-            const labelY = y1 > 0 ? Math.max(0.2, y1 * 0.7) : maxY * 0.3;
-            drawLabel(labelX, labelY, 'a₁₁λ₁+a₂₁λ₂≤c₁', '#ff6b6b');
-        }
-        
-        // Draw second constraint: a12*λ1 + a22*λ2 = c2
-        if (a12 !== 0 || a22 !== 0) {
-            let x1, y1, x2, y2;
-            
-            if (a22 !== 0) {
-                // Intersection with y-axis
-                x1 = 0;
-                y1 = c2 / a22;
-            } else {
-                // Vertical line (fallback)
-                x1 = c2 / a12;
-                y1 = 0;
-                x2 = c2 / a12;
-                y2 = maxY;
-                drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
-                
-                // Add label for constraint
-                drawLabel(x1 + 0.3, maxY * 0.5, 'a₁₂λ₁+a₂₂λ₂≤c₂', '#ff6b6b');
-                return;
-            }
-            
-            if (a12 !== 0) {
-                // Intersection with x-axis
-                x2 = c2 / a12;
-                y2 = 0;
-            } else {
-                // Horizontal line (fallback)
-                x1 = 0;
-                y1 = c2 / a22;
-                x2 = maxX;
-                y2 = c2 / a22;
-                drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
-                
-                // Add label for constraint
-                drawLabel(maxX * 0.5, y1 + 0.3, 'a₁₂λ₁+a₂₂λ₂≤c₂', '#ff6b6b');
-                return;
-            }
-            
-            // Draw constraint line
-            drawLine(x1, y1, x2, y2, 'rgba(231, 76, 60, 0.8)', 2);
-            
-            // Position label away from line intersection
-            const labelX = Math.max(0.2, Math.min(x2 * 0.4, maxX * 0.3));
-            const labelY = y1 > 0 ? Math.max(0.2, y1 * 0.5) : maxY * 0.2;
-            drawLabel(labelX, labelY, 'a₁₂λ₁+a₂₂λ₂≤c₂', '#ff6b6b');
-        }
-        
-        // Draw non-negativity constraints
-        drawLine(0, 0, 0, maxY, 'rgba(231, 76, 60, 0.8)', 2); // λ1 = 0
-        drawLine(0, 0, maxX, 0, 'rgba(231, 76, 60, 0.8)', 2); // λ2 = 0
-        
-        
-        // Draw optimal dual solution with clear indication of μ variables
-        if (dualSolution) {
-            const { point } = dualSolution;
-    
-            // Draw optimal point with minimal labeling
-            drawPoint(point.x, point.y, '#2ecc71', 6);
-            
-           
-        }
-        
-        // Update the legend text to clarify what's being shown
-        const legendSection = document.querySelector('.legend');
-        if (legendSection) {
-            const dualItem = legendSection.querySelector('.legend-item:nth-child(2)');
-            if (dualItem) {
-                dualItem.innerHTML = '<span class="legend-color dual"></span> Dual Feasible Region';
-            }
-        }
+    // ---------- render ----------
+    function viewBounds(poly, extraPts, floorMin) {
+      var mx = 8, my = 8;
+      for (var i = 0; i < poly.length; i++) {
+        if (poly[i].x < 60 && poly[i].x > mx) mx = poly[i].x;
+        if (poly[i].y < 60 && poly[i].y > my) my = poly[i].y;
+      }
+      for (var j = 0; j < extraPts.length; j++) {
+        if (extraPts[j].x + 1 > mx) mx = extraPts[j].x + 1;
+        if (extraPts[j].y + 1 > my) my = extraPts[j].y + 1;
+      }
+      var M = Math.min(60, Math.max(mx, my) * 1.15);
+      return [floorMin, M];
     }
-    
-    // Function to compute dual feasible region vertices
-    function computeDualFeasibleRegion(maxX, maxY) {
-        let vertices = [];
-        
-        // Origin is always a vertex (λ1=0, λ2=0)
-        vertices.push({ x: 0, y: 0 });
-        
-        // Find intersection of first constraint with λ2 = 0 (x-axis)
-        // a11*λ1 = c1 => λ1 = c1/a11
-        if (a11 !== 0 && c1 / a11 >= 0) {
-            const x1 = c1 / a11;
-            // Check if it satisfies second constraint: a12*x1 ≤ c2
-            if (a12 * x1 <= c2 + eps) {
-                vertices.push({ x: x1, y: 0 });
-            }
+
+    function statusText(status, isPrimal) {
+      if (status === 'infeasible') {
+        return '<span class="dv-warn">' + (isPrimal ? 'infeasible \u2014 p* = +\u221E' : 'infeasible \u2014 d* = \u2212\u221E') + '</span>';
+      }
+      return '<span class="dv-warn">' + (isPrimal ? 'unbounded below \u2014 p* = \u2212\u221E' : 'unbounded above \u2014 d* = +\u221E') + '</span>';
+    }
+
+    function render() {
+      var prm = state.prm;
+      var P = DualCore.solvePrimal(prm);
+      var D = DualCore.solveDual(prm);
+
+      // ----- readouts -----
+      var html = '<div><strong>min c\u1D40x + c\u2083 s.t. Ax \u2264 b, x \u2265 1</strong> ' +
+        '<span class="dv-sub">primal and dual solved independently</span></div>';
+      var expose = { view: state.view, prm: prm, pStatus: P.status, dStatus: D.status };
+      if (P.status === 'optimal' && D.status === 'optimal') {
+        var gap = Math.abs(P.pstar - D.dstar);
+        html += '<div>p* = <span class="dv-val">' + fmt(P.pstar, 4) + '</span> at x* = (<span class="dv-opt">' +
+          fmt(P.x.x1, 3) + ', ' + fmt(P.x.x2, 3) + '</span>)</div>';
+        html += '<div>d* = <span class="dv-val">' + fmt(D.dstar, 4) + '</span> at \u03BB* = (<span class="dv-opt">' +
+          fmt(D.lambda.l1, 3) + ', ' + fmt(D.lambda.l2, 3) + '</span>), \u03BC* = (<span class="dv-opt">' +
+          fmt(D.mu.m1, 3) + ', ' + fmt(D.mu.m2, 3) + '</span>)</div>';
+        html += '<div>duality gap |p* \u2212 d*| = <span class="dv-val">' + gap.toExponential(2) + '</span> ' +
+          (gap < 1e-6 * (1 + Math.abs(P.pstar)) ?
+            '<span class="dv-ok">\u2713 strong duality, verified live</span>' :
+            '<span class="dv-warn">nonzero \u2014 numerical issue</span>') + '</div>';
+        var comp = DualCore.complementarity(prm, P, D);
+        var s = DualCore.slacks(prm, P.x);
+        function compRow(label, prod) {
+          var ok = Math.abs(prod) < 1e-6 * (1 + Math.abs(P.pstar));
+          return '<tr><td>' + label + '</td><td>' + prod.toExponential(2) + '</td><td>' +
+            (ok ? '<span class="dv-ok">\u2713</span>' : '<span class="dv-warn">\u2717</span>') + '</td></tr>';
         }
-        
-        // Find intersection of second constraint with λ2 = 0 (x-axis)
-        // a12*λ1 = c2 => λ1 = c2/a12
-        if (a12 !== 0 && c2 / a12 >= 0) {
-            const x2 = c2 / a12;
-            // Check if it satisfies first constraint: a11*x2 ≤ c1
-            if (a11 * x2 <= c1 + eps) {
-                vertices.push({ x: x2, y: 0 });
-            }
+        html += '<div style="margin-top:6px;"><span class="dv-sub">Complementary slackness (each product must vanish):</span></div>' +
+          '<table class="dv-table"><tr><th>pair</th><th>product</th><th></th></tr>' +
+          compRow('\u03BB\u2081 \u00B7 s\u2081 = ' + fmt(D.lambda.l1, 3) + ' \u00B7 ' + fmt(s.s1, 3), comp.ls1) +
+          compRow('\u03BB\u2082 \u00B7 s\u2082 = ' + fmt(D.lambda.l2, 3) + ' \u00B7 ' + fmt(s.s2, 3), comp.ls2) +
+          compRow('\u03BC\u2081 \u00B7 (x\u2081\u22121) = ' + fmt(D.mu.m1, 3) + ' \u00B7 ' + fmt(P.x.x1 - 1, 3), comp.mx1) +
+          compRow('\u03BC\u2082 \u00B7 (x\u2082\u22121) = ' + fmt(D.mu.m2, 3) + ' \u00B7 ' + fmt(P.x.x2 - 1, 3), comp.mx2) +
+          '</table>';
+        expose.pstar = P.pstar; expose.dstar = D.dstar; expose.gap = gap;
+        expose.x = P.x; expose.lambda = D.lambda; expose.mu = D.mu; expose.comp = comp;
+      } else {
+        html += '<div>Primal: ' + (P.status === 'optimal' ?
+          'p* = <span class="dv-val">' + fmt(P.pstar, 4) + '</span>' : statusText(P.status, true)) + '</div>';
+        html += '<div>Dual: ' + (D.status === 'optimal' ?
+          'd* = <span class="dv-val">' + fmt(D.dstar, 4) + '</span>' : statusText(D.status, false)) + '</div>';
+        html += '<div class="dv-sub" style="margin-top:6px;">LP duality pairs the degenerate cases: an infeasible ' +
+          'primal (p* = +\u221E) forces the dual to be unbounded or infeasible, and an unbounded primal ' +
+          '(p* = \u2212\u221E) forces the dual to be infeasible \u2014 weak duality d* \u2264 p* survives with the ' +
+          'conventions \u00B1\u221E.</div>';
+        if (P.status === 'optimal') { expose.pstar = P.pstar; }
+        if (D.status === 'optimal') { expose.dstar = D.dstar; }
+      }
+      readoutsEl.innerHTML = html;
+      container.dataset.dvState = JSON.stringify(expose);
+
+      // ----- canvas -----
+      if (state.view === 'primal') drawPrimalView(prm, P, D);
+      else drawDualView(prm, P, D);
+    }
+
+    function drawPrimalView(prm, P, D) {
+      titleEl.textContent = 'Primal: feasible region, objective level line, optimum';
+      var hps = DualCore.primalHalfplanes(prm);
+      var poly = DualCore.feasiblePolygon(hps, 200);
+      var extra = P.status === 'optimal' ? [{ x: P.x.x1, y: P.x.x2 }] : [];
+      var vb = viewBounds(poly, extra, 0);
+      var F = frame(vb[0], vb[1], vb[0], vb[1], 'x\u2081', 'x\u2082');
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(F.r.x0, F.r.y0, F.r.w, F.r.h);
+      ctx.clip();
+      // region
+      if (poly.length >= 3) {
+        ctx.beginPath();
+        ctx.moveTo(F.px(poly[0].x), F.py(poly[0].y));
+        for (var i = 1; i < poly.length; i++) ctx.lineTo(F.px(poly[i].x), F.py(poly[i].y));
+        ctx.closePath();
+        ctx.fillStyle = C.region;
+        ctx.fill();
+        ctx.strokeStyle = C.regionEdge;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      // constraint boundaries
+      if (Math.abs(prm.a11) + Math.abs(prm.a12) > 1e-12) drawBoundary(F, prm.a11, prm.a12, prm.b1, C.con1, 2);
+      if (Math.abs(prm.a21) + Math.abs(prm.a22) > 1e-12) drawBoundary(F, prm.a21, prm.a22, prm.b2, C.con2, 2);
+      drawBoundary(F, 1, 0, 1, C.boundLine, 1, [4, 4]); // x1 = 1
+      drawBoundary(F, 0, 1, 1, C.boundLine, 1, [4, 4]); // x2 = 1
+      if (P.status === 'optimal') {
+        // level line c1 x + c2 y = p* - c3 and the descent direction -c
+        if (Math.abs(prm.c1) + Math.abs(prm.c2) > 1e-12) {
+          drawBoundary(F, prm.c1, prm.c2, P.pstar - prm.c3, C.level, 2, [7, 5]);
+          drawArrow(F, P.x.x1, P.x.x2, -prm.c1, -prm.c2, C.level, '\u2212c');
         }
-        
-        // Find intersection of first constraint with λ1 = 0 (y-axis)
-        // a21*λ2 = c1 => λ2 = c1/a21
-        if (a21 !== 0 && c1 / a21 >= 0) {
-            const y1 = c1 / a21;
-            // Check if it satisfies second constraint: a22*y1 ≤ c2
-            if (a22 * y1 <= c2 + eps) {
-                vertices.push({ x: 0, y: y1 });
-            }
+        // vertices + optimum
+        for (var v = 0; v < P.vertices.length; v++) {
+          ctx.beginPath();
+          ctx.arc(F.px(P.vertices[v].x), F.py(P.vertices[v].y), 3, 0, 2 * Math.PI);
+          ctx.fillStyle = C.vert;
+          ctx.fill();
         }
-        
-        // Find intersection of second constraint with λ1 = 0 (y-axis)
-        // a22*λ2 = c2 => λ2 = c2/a22
-        if (a22 !== 0 && c2 / a22 >= 0) {
-            const y2 = c2 / a22;
-            // Check if it satisfies first constraint: a21*y2 ≤ c1
-            if (a21 * y2 <= c1 + eps) {
-                vertices.push({ x: 0, y: y2 });
-            }
-        }
-        
-        // Find intersection of two constraints
-        // a11*λ1 + a21*λ2 = c1
-        // a12*λ1 + a22*λ2 = c2
-        const det = a11 * a22 - a12 * a21;
-        if (Math.abs(det) > eps) {
-            const λ1 = (c1 * a22 - c2 * a21) / det;
-            const λ2 = (a11 * c2 - a12 * c1) / det;
-            if (λ1 >= -eps && λ2 >= -eps) {
-                vertices.push({ x: Math.max(0, λ1), y: Math.max(0, λ2) });
-            }
-        }
-        
-        // Remove duplicates
-        const uniqueVertices = [];
-        vertices.forEach(v => {
-            const isDuplicate = uniqueVertices.some(uv => 
-                Math.abs(uv.x - v.x) < eps && Math.abs(uv.y - v.y) < eps
-            );
-            if (!isDuplicate && v.x >= -eps && v.y >= -eps) {
-                uniqueVertices.push({ x: Math.max(0, v.x), y: Math.max(0, v.y) });
-            }
+        ctx.beginPath();
+        ctx.arc(F.px(P.x.x1), F.py(P.x.x2), 6, 0, 2 * Math.PI);
+        ctx.fillStyle = C.optim;
+        ctx.fill();
+        ctx.font = 'bold 12px system-ui, sans-serif';
+        ctx.fillText('x*', F.px(P.x.x1) + 8, F.py(P.x.x2) - 8);
+      }
+      ctx.restore();
+      setLegend([
+        [C.region, 'feasible region {Ax \u2264 b, x \u2265 1}'],
+        [C.con1, 'a\u2081\u2081x\u2081 + a\u2081\u2082x\u2082 = b\u2081'],
+        [C.con2, 'a\u2082\u2081x\u2081 + a\u2082\u2082x\u2082 = b\u2082'],
+        [C.level, 'objective level c\u1D40x = p* \u2212 c\u2083 (dashed) and \u2212c'],
+        [C.optim, 'optimal vertex x*'],
+        [C.vert, 'feasible-region vertices']
+      ]);
+    }
+
+    function drawDualView(prm, P, D) {
+      titleEl.textContent = 'Dual: multiplier region {\u03BB \u2265 0, A\u1D40\u03BB \u2265 \u2212c}, optimum \u03BB*';
+      var hps = DualCore.dualHalfplanes(prm);
+      var poly = DualCore.feasiblePolygon(hps, 200);
+      // zoom driven by the dual optimum and the constraint-line intercepts,
+      // not by the (typically unbounded) region's clip box
+      var cand = [3];
+      if (D.status === 'optimal') {
+        cand.push(2.2 * D.lambda.l1 + 0.5, 2.2 * D.lambda.l2 + 0.5);
+      }
+      [[prm.a11, -prm.c1], [prm.a21, -prm.c1], [prm.a12, -prm.c2], [prm.a22, -prm.c2]]
+        .forEach(function (t) {
+          if (t[0] > 0.05 && t[1] > 0) cand.push(t[1] / t[0] + 0.5);
         });
-        
-        // Sort vertices counter-clockwise around centroid
-        if (uniqueVertices.length > 2) {
-            const centroid = {
-                x: uniqueVertices.reduce((sum, v) => sum + v.x, 0) / uniqueVertices.length,
-                y: uniqueVertices.reduce((sum, v) => sum + v.y, 0) / uniqueVertices.length
-            };
-            
-            uniqueVertices.sort((a, b) => {
-                const angleA = Math.atan2(a.y - centroid.y, a.x - centroid.x);
-                const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
-                return angleA - angleB;
-            });
+      var M = Math.min(20, Math.max.apply(null, cand));
+      var F = frame(-0.15, M, -0.15, M, '\u03BB\u2081', '\u03BB\u2082');
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(F.r.x0, F.r.y0, F.r.w, F.r.h);
+      ctx.clip();
+      if (poly.length >= 3) {
+        ctx.beginPath();
+        ctx.moveTo(F.px(poly[0].x), F.py(poly[0].y));
+        for (var i = 1; i < poly.length; i++) ctx.lineTo(F.px(poly[i].x), F.py(poly[i].y));
+        ctx.closePath();
+        ctx.fillStyle = C.region;
+        ctx.fill();
+        ctx.strokeStyle = C.regionEdge;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      // dual constraint boundaries a11 l1 + a21 l2 = -c1 (note: columns of A)
+      if (Math.abs(prm.a11) + Math.abs(prm.a21) > 1e-12) drawBoundary(F, prm.a11, prm.a21, -prm.c1, C.con1, 2);
+      if (Math.abs(prm.a12) + Math.abs(prm.a22) > 1e-12) drawBoundary(F, prm.a12, prm.a22, -prm.c2, C.con2, 2);
+      drawBoundary(F, 1, 0, 0, C.boundLine, 1, [4, 4]);
+      drawBoundary(F, 0, 1, 0, C.boundLine, 1, [4, 4]);
+      var d1 = (prm.a11 + prm.a12) - prm.b1;
+      var d2 = (prm.a21 + prm.a22) - prm.b2;
+      if (D.status === 'optimal') {
+        if (Math.abs(d1) + Math.abs(d2) > 1e-12) {
+          drawBoundary(F, d1, d2, d1 * D.lambda.l1 + d2 * D.lambda.l2, C.level, 2, [7, 5]);
+          drawArrow(F, D.lambda.l1, D.lambda.l2, d1, d2, C.level, 'ascent');
         }
-        
-        return uniqueVertices;
+        for (var v = 0; v < D.vertices.length; v++) {
+          ctx.beginPath();
+          ctx.arc(F.px(D.vertices[v].x), F.py(D.vertices[v].y), 3, 0, 2 * Math.PI);
+          ctx.fillStyle = C.vert;
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(F.px(D.lambda.l1), F.py(D.lambda.l2), 6, 0, 2 * Math.PI);
+        ctx.fillStyle = C.optim;
+        ctx.fill();
+        ctx.font = 'bold 12px system-ui, sans-serif';
+        ctx.fillText('\u03BB*', F.px(D.lambda.l1) + 8, F.py(D.lambda.l2) - 8);
+      }
+      ctx.restore();
+      setLegend([
+        [C.region, 'dual feasible region {\u03BB \u2265 0, A\u1D40\u03BB \u2265 \u2212c}'],
+        [C.con1, 'a\u2081\u2081\u03BB\u2081 + a\u2082\u2081\u03BB\u2082 = \u2212c\u2081'],
+        [C.con2, 'a\u2081\u2082\u03BB\u2081 + a\u2082\u2082\u03BB\u2082 = \u2212c\u2082'],
+        [C.level, 'dual objective level (A\ud835\udfd9 \u2212 b)\u1D40\u03BB (dashed) and ascent'],
+        [C.optim, 'dual optimum \u03BB*'],
+        [C.vert, 'dual-region vertices']
+      ]);
     }
 
-    // Function to draw the entire visualization
-    function drawVisualization() {
-        
-        // Set up the canvas with appropriate scaling
-        setupCanvas();
-
-        // Draw grid and axes
-        drawGrid();
-        
-        // Solve primal problem using the new simplex method
-        const primalSolution = solvePrimalSimplex();
-        // Derive dual solution from primal solution
-        const dualSolution = solveDualSimplex();
-        
-        // Verify strong duality holds
-        const isDualityStrong = checkStrongDuality();
-        console.log("Strong duality satisfied:", isDualityStrong);
-        
-        // Draw the appropriate problem based on current view
-        if (primalView) {
-            drawPrimal();
-        } else {
-            drawDual();
-        }
-        
-        // Update results panel
-        if (primalSolution) {
-            const { point: pPoint, value: pValue } = primalSolution;
-            primalOptimalElement.textContent = `x₁ = ${pPoint.x.toFixed(4)}, x₂ = ${pPoint.y.toFixed(4)}`;
-            primalValueElement.textContent = pValue.toFixed(4);
-        } else {
-            primalOptimalElement.textContent = 'Not feasible';
-            primalValueElement.textContent = '-';
-        }
-        
-        if (dualSolution) {
-            const { point: dPoint, value: dValue, mu1, mu2 } = dualSolution;
-            dualOptimalElement.textContent = `λ₁ = ${dPoint.x.toFixed(4)}, λ₂ = ${dPoint.y.toFixed(4)}, μ₁ = ${mu1.toFixed(4)}, μ₂ = ${mu2.toFixed(4)}`;
-            dualValueElement.textContent = dValue.toFixed(4);
-        } else {
-            dualOptimalElement.textContent = 'Not feasible';
-            dualValueElement.textContent = '-';
-        }
-        
-        // Calculate duality gap with proper precision
-        if (primalSolution && dualSolution) {
-            const primalValue = primalSolution.value;
-            const dualValue = dualSolution.value;
-            const gap = Math.abs(primalValue - dualValue);
-            
-            // Use a small threshold to account for floating-point precision
-            if (isEffectivelyZero(gap)) {
-                dualityGapElement.textContent = "0.0000";
-                dualityGapElement.style.color = '#2ecc71'; // Green for strong duality
-                dualityGapElement.title = "Strong duality achieved";
-            } else {
-                dualityGapElement.textContent = gap.toFixed(8);
-                dualityGapElement.style.color = '#e74c3c'; // Red if there's still a gap
-                dualityGapElement.title = "Unexpected duality gap";
-            }
-        } else {
-            dualityGapElement.textContent = '-';
-            dualityGapElement.style.color = 'inherit';
-        }
+    function setLegend(items) {
+      var html = '';
+      for (var i = 0; i < items.length; i++) {
+        html += '<div class="dv-li"><span class="dv-sw" style="background:' + items[i][0] + ';"></span>' + items[i][1] + '</div>';
+      }
+      legendEl.innerHTML = html;
     }
 
-
-    function isEffectivelyZero(value, epsilon = 1e-5) {
-        return Math.abs(value) < epsilon;
+    // ---------- events ----------
+    function syncSliders() {
+      for (var i = 0; i < SLIDER_IDS.length; i++) {
+        var id = SLIDER_IDS[i];
+        document.getElementById('dv-' + id).value = String(state.prm[id]);
+        document.getElementById('dv-' + id + '-val').textContent = fmt(state.prm[id], 1);
+      }
     }
-
-    // Function to update the display of parameter values
-    function updateParameterDisplay() {
-        c1Value.textContent = c1;
-        c2Value.textContent = c2;
-        c3Value.textContent = c3;
-        a11Value.textContent = a11;
-        a12Value.textContent = a12;
-        a21Value.textContent = a21;
-        a22Value.textContent = a22;
-        b1Value.textContent = b1;
-        b2Value.textContent = b2;
-    }
-
-    // Function to handle slider changes
-    function handleSliderChange() {
-        // Get values from sliders
-        c1 = parseFloat(c1Slider.value);
-        c2 = parseFloat(c2Slider.value);
-        c3 = parseFloat(c3Slider.value);
-        a11 = parseFloat(a11Slider.value);
-        a12 = parseFloat(a12Slider.value);
-        a21 = parseFloat(a21Slider.value);
-        a22 = parseFloat(a22Slider.value);
-        b1 = parseFloat(b1Slider.value);
-        b2 = parseFloat(b2Slider.value);
-        
-        // Update the display of parameter values
-        updateParameterDisplay();
-        
-        // Redraw the visualization
-        drawVisualization();
-    }
-
-     // Function to toggle between primal and dual views
-     function toggleView() {
-        primalView = !primalView;
-        toggleViewBtn.textContent = primalView ? 'Switch to Dual View' : 'Switch to Primal View';
-        drawVisualization();
-    }
-
-     // Add event listeners
-     c1Slider.addEventListener('input', handleSliderChange);
-     c2Slider.addEventListener('input', handleSliderChange);
-     c3Slider.addEventListener('input', handleSliderChange);
-     a11Slider.addEventListener('input', handleSliderChange);
-     a12Slider.addEventListener('input', handleSliderChange);   
-     a21Slider.addEventListener('input', handleSliderChange);
-     a22Slider.addEventListener('input', handleSliderChange);
-     b1Slider.addEventListener('input', handleSliderChange);
-     b2Slider.addEventListener('input', handleSliderChange);
-
-     toggleViewBtn.addEventListener('click', toggleView);
-
-    // Handle window resize to make canvas responsive
-    function handleResize() {
-        const parentWidth = canvas.parentElement.clientWidth;
-        canvas.style.width = '100%';
-        canvas.style.height = 'auto';
-        
-        // We need to call drawVisualization, but ensure it's safe
-        // Just redraw without trying to access primalSolution/dualSolution yet
-        if (!canvas.initialDrawDone) {
-            // Initial draw - just set up the canvas, don't try to evaluate solutions yet
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-            drawGrid();
-            canvas.initialDrawDone = true; // Set flag to indicate initial draw is done
-        } else {
-            // Normal operation - full visualization with solutions
-            drawVisualization();
-        }
-    }
-
-    window.addEventListener('resize', handleResize);
-    handleResize();
-     // Add touch event handlers for mobile devices
-     let touchStartX, touchStartY;
-    
-     canvas.addEventListener('touchstart', function(e) {
-         const touch = e.touches[0];
-         touchStartX = touch.clientX;
-         touchStartY = touch.clientY;
-         e.preventDefault();
-     });
-
-     canvas.addEventListener('touchmove', function(e) {
-        if (!touchStartX || !touchStartY) return;
-        
-        const touch = e.touches[0];
-        const diffX = touch.clientX - touchStartX;
-        const diffY = touch.clientY - touchStartY;
-        
-        // Use the difference to pan the view (not implemented in this version)
-        // This is a placeholder for future enhancement
-        
-        touchStartX = touch.clientX;
-        touchStartY = touch.clientY;
-        e.preventDefault();
-    });
-
-    canvas.addEventListener('touchend', function(e) {
-        touchStartX = null;
-        touchStartY = null;
-    });
-
-    // Add keyboard accessibility
-    document.addEventListener('keydown', function(e) {
-        // Arrow keys to navigate and modify parameters
-        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-            // Up/Down arrows to increase/decrease selected parameter
-            let selectedParam = document.activeElement;
-            if (selectedParam && selectedParam.type === 'range') {
-                const step = parseFloat(selectedParam.step) || 1;
-                if (e.key === 'ArrowUp') {
-                    selectedParam.value = parseFloat(selectedParam.value) + step;
-                } else {
-                    selectedParam.value = parseFloat(selectedParam.value) - step;
-                }
-                // Trigger change event
-                selectedParam.dispatchEvent(new Event('input'));
-                e.preventDefault();
-            }
-        } else if (e.key === 'Tab') {
-            // Allow tab navigation between controls
-        } else if (e.key === ' ' || e.key === 'Enter') {
-            // Space or Enter to toggle view if button is focused
-            if (document.activeElement === toggleViewBtn) {
-                toggleView();
-                e.preventDefault();
-            }
-        }
-    });
-
-    // Add tooltip for explanation when hovering over key elements
-    function addTooltip(element, text) {
-        element.title = text;
-        
-        // Optional: create custom tooltip for better mobile support
-        element.addEventListener('mouseover', function(e) {
-            const tooltip = document.createElement('div');
-            tooltip.className = 'tooltip';
-            tooltip.textContent = text;
-            tooltip.style.position = 'absolute';
-            tooltip.style.left = `${e.clientX + 10}px`;
-            tooltip.style.top = `${e.clientY + 10}px`;
-            tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-            tooltip.style.color = 'white';
-            tooltip.style.padding = '5px 10px';
-            tooltip.style.borderRadius = '4px';
-            tooltip.style.fontSize = '0.8rem';
-            tooltip.style.zIndex = '1000';
-            tooltip.style.pointerEvents = 'none';
-            document.body.appendChild(tooltip);
-            
-            element.addEventListener('mouseout', function() {
-                document.body.removeChild(tooltip);
-            }, { once: true });
+    for (var si = 0; si < SLIDER_IDS.length; si++) {
+      (function (id) {
+        document.getElementById('dv-' + id).addEventListener('input', function () {
+          state.prm[id] = parseFloat(this.value);
+          document.getElementById('dv-' + id + '-val').textContent = fmt(state.prm[id], 1);
+          render();
         });
+      })(SLIDER_IDS[si]);
+    }
+    var presetBtns = container.querySelectorAll('.dv-preset');
+    for (var pb = 0; pb < presetBtns.length; pb++) {
+      presetBtns[pb].addEventListener('click', function () {
+        state.prm = Object.assign({}, PRESETS[this.getAttribute('data-key')]);
+        syncSliders();
+        render();
+      });
+    }
+    document.getElementById('dv-tab-primal').addEventListener('click', function () {
+      state.view = 'primal';
+      this.classList.add('dv-tab-active');
+      document.getElementById('dv-tab-dual').classList.remove('dv-tab-active');
+      render();
+    });
+    document.getElementById('dv-tab-dual').addEventListener('click', function () {
+      state.view = 'dual';
+      this.classList.add('dv-tab-active');
+      document.getElementById('dv-tab-primal').classList.remove('dv-tab-active');
+      render();
+    });
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', function () { sizeCanvas(); render(); });
     }
 
-    // Add tooltips to key elements
-    addTooltip(primalOptimalElement, 'The optimal values of x₁ and x₂ that minimize the objective function');
-    addTooltip(dualOptimalElement, 'The optimal values of λ₁ and λ₂ (shadow prices) that maximize the dual objective');
-    addTooltip(dualityGapElement, 'The difference between primal and dual optimal values. Zero indicates strong duality.');
+    // ---------- boot ----------
+    sizeCanvas();
+    render();
+  }
 
-    // Initialize on page load, need to wait for everything to load completely
-    setTimeout(function() {
-        // Add a small amount of numerical stability to avoid division by zero
-        if (a11 === 0) a11 = 0.001;
-        if (a12 === 0) a12 = 0.001;
-        if (a21 === 0) a21 = 0.001;
-        if (a22 === 0) a22 = 0.001;
-        
-        // Ensure proper scaling for constraints to maintain strong duality
-        // In linear programming with these constraints, strong duality should hold
-        // This ensures that our visualization reflects proper LP theory
-        updateParameterDisplay();
-        drawVisualization();
-    }, 200);
-    setTimeout(function() {
-        // Update parameter values to match sliders
-        c1 = parseFloat(c1Slider.value);
-        c2 = parseFloat(c2Slider.value);
-        c3 = parseFloat(c3Slider.value);
-        a11 = parseFloat(a11Slider.value);
-        a12 = parseFloat(a12Slider.value);
-        a21 = parseFloat(a21Slider.value);
-        a22 = parseFloat(a22Slider.value);
-        b1 = parseFloat(b1Slider.value);
-        b2 = parseFloat(b2Slider.value);
-        
-        // Update the display of parameter values
-        updateParameterDisplay();
-        
-        // Initial draw
-        drawVisualization();
-    }, 100);
-});
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
