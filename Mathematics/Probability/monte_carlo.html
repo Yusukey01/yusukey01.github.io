@@ -123,7 +123,7 @@ uses_python: false
                         and let \(f\) be any function for which \(\mathbb{E}_{p(\theta \mid \mathcal{D})}[|f(\theta)|]\) is finite. 
                         The <strong>Monte Carlo estimator</strong> of \(\mathbb{E}_{p(\theta \mid \mathcal{D})}[f(\theta)]\) based on \(S\) samples is
                         \[
-                        \hat{\mu}_S \;:=\; \frac{1}{S} \sum_{s=1}^{S} f(\theta^{(s)}).
+                        \hat{\mu}_S := \frac{1}{S} \sum_{s=1}^{S} f(\theta^{(s)}).
                         \]
                     </p>
                 </div>
@@ -133,7 +133,7 @@ uses_python: false
                     <p>
                         Under the assumptions above, the Monte Carlo estimator converges to the true expectation almost surely:
                         \[
-                        \hat{\mu}_S \;\xrightarrow{\text{a.s.}}\; \mathbb{E}_{p(\theta \mid \mathcal{D})}[f(\theta)] 
+                        \hat{\mu}_S \xrightarrow{\text{a.s.}} \mathbb{E}_{p(\theta \mid \mathcal{D})}[f(\theta)] 
                         \quad \text{as } S \to \infty.
                         \]
                     </p>
@@ -189,11 +189,11 @@ uses_python: false
                         Let \(X_1, X_2, \ldots\) be iid real-valued random variables with cumulative distribution function \(F\), 
                         and let \(\hat{F}_S\) denote the empirical cdf based on the first \(S\) samples:
                         \[
-                        \hat{F}_S(x) \;:=\; \frac{1}{S} \sum_{s=1}^{S} \mathbb{1}\{X_s \leq x\}.
+                        \hat{F}_S(x) := \frac{1}{S} \sum_{s=1}^{S} \mathbb{1}\{X_s \leq x\}.
                         \]
                         Then \(\hat{F}_S\) converges uniformly to \(F\) almost surely:
                         \[
-                        \sup_{x \in \mathbb{R}} \left| \hat{F}_S(x) - F(x) \right| \;\xrightarrow{\text{a.s.}}\; 0 \quad \text{as } S \to \infty.
+                        \sup_{x \in \mathbb{R}} \left| \hat{F}_S(x) - F(x) \right| \xrightarrow{\text{a.s.}} 0 \quad \text{as } S \to \infty.
                         \]
                     </p>
                 </div>
@@ -229,46 +229,32 @@ uses_python: false
                 <div id="monte_carlo_visualizer"></div>
 
                 <p>
-                    Note: This demo does not perform full Bayesian inference from data. Instead, it uses predefined probability distributions 
-                    to simulate "posterior-like" behavior. This allows us to illustrate how Monte Carlo methods are used to approximate credible 
-                    intervals — particularly central and HPD intervals — without needing a prior or likelihood.
+                    Note: this demo does not perform full Bayesian inference from data. It draws seeded, reproducible samples from a chosen 
+                    "posterior" — for the gamma and beta options, sampling is literally the inverse transform \(\theta = F^{-1}(U)\) with 
+                    \(U \sim U[0,1]\), so the quantile function of this page is also the sampler. This isolates the object of study: 
+                    how well do \(S\) samples recover the interval that the true distribution defines?
                 </p>
 
                 <p>
-                    <strong>Monte Carlo methods</strong> are widely used in Bayesian statistics to approximate posterior distributions, especially 
-                    when closed-form solutions are unavailable. One common application is estimating credible intervals using random 
-                    samples drawn from the posterior.
+                    The central credible interval is computed exactly as derived above: sort the samples and read off the order statistics 
+                    \(\theta^{(\lceil S \alpha/2 \rceil)}\) and \(\theta^{(\lceil S(1 - \alpha/2) \rceil)}\) — the readout displays which order 
+                    statistics were used, and the dashed lines mark the true quantiles \(F^{-1}(\alpha/2)\) and \(F^{-1}(1-\alpha/2)\) for 
+                    comparison. Both convergence theorems of this page run live in the lower plot. In the ECDF view, the empirical cdf 
+                    \(\hat{F}_S\) is drawn over the true \(F\) with the exact sup-distance \(\sup_x |\hat{F}_S(x) - F(x)|\) reported and marked 
+                    at the point where it is attained — increase \(S\) and watch the Glivenko-Cantelli theorem squeeze it toward zero. 
+                    Switching to the convergence trace plots the running mean \(\hat{\mu}_S\) and the interval endpoints against \(S\), 
+                    showing the strong law of large numbers pull them onto the true values.
                 </p>
 
                 <p>
-                    To construct a <strong>central credible interval</strong> via Monte Carlo sampling:
-                </p>
-
-                <ol style="padding-left: 40px;">
-                    <li>Draw many random samples from the posterior distribution</li>
-                    <li>Sort the samples in ascending order</li>
-                    <li>Select the appropriate quantiles (e.g., the 2.5% and 97.5% quantiles for a 95% interval)</li>
-                </ol>
-
-                <p>
-                    As the number of samples increases, the approximation of the posterior improves. 
-                    However, central credible intervals based on quantiles may not accurately reflect the distribution's 
-                    shape — especially in skewed or multimodal cases.
-                </p>
-
-                <p>
-                    For example, in a <strong>bimodal distribution</strong> (with two distinct peaks), the interval may:
-                </p>
-
-                <ul style="padding-left: 40px;">
-                    <li>Fall in a low-probability region between the modes</li>
-                    <li>Omit one of the peaks entirely</li>
-                </ul>
-
-                <p>
-                    In such cases, <strong>highest posterior density (HPD)</strong> regions are preferred. 
-                    They represent the region(s) of highest probability mass and always include the modes, 
-                    even if the result is disjoint. 
+                    However, quantile-based central intervals ignore the <em>shape</em> of the distribution. Try the skewed gamma 
+                    option, or the bimodal mixture: the central interval must place \(\alpha/2\) mass in each tail regardless of where the 
+                    density actually concentrates, so for the mixture it happily covers the low-density valley between the peaks. 
+                    Selecting <strong>HPD</strong> switches to the highest-density construction developed in the next section, estimated 
+                    from the samples by a kernel density estimate with a density-quantile threshold — and, alongside it, the true HPD region 
+                    computed from the exact density by threshold bisection, with the threshold \(p^*\) reported. For the well-separated 
+                    bimodal case the region correctly splits into a disjoint union of two intervals, one around each mode; for the skewed 
+                    gamma it is visibly shorter than the central interval, as the next section proves it must be.
                 </p>
             </section>
 
@@ -288,11 +274,11 @@ uses_python: false
                         For a level \(\alpha \in (0,1)\), the \(100(1-\alpha)\%\) <strong>highest posterior 
                         density (HPD) region</strong> is
                         \[
-                        C_{\alpha}(\mathcal{D}) \;=\; \{\theta : p(\theta \mid \mathcal{D}) \geq p^*\},
+                        C_{\alpha}(\mathcal{D}) = \{\theta : p(\theta \mid \mathcal{D}) \geq p^*\},
                         \]
                         where the threshold \(p^*\) is the largest constant satisfying
                         \[
-                        P(\theta \in C_{\alpha}(\mathcal{D}) \mid \mathcal{D}) \;=\; \int_{\{\theta : p(\theta \mid \mathcal{D}) \geq p^*\}} p(\theta \mid \mathcal{D}) \, d\theta \;=\; 1 - \alpha.
+                        P(\theta \in C_{\alpha}(\mathcal{D}) \mid \mathcal{D}) = \int_{\{\theta : p(\theta \mid \mathcal{D}) \geq p^*\}} p(\theta \mid \mathcal{D}) \, d\theta = 1 - \alpha.
                         \]
                     </p>
                 </div>
@@ -337,7 +323,7 @@ uses_python: false
                     requires integrating over the entire parameter space, which is often intractable in high dimensions. 
                     We can, however, easily evaluate the <strong>unnormalized posterior</strong>
                     \[
-                    \tilde{p}(\theta) \;:=\; p(\mathcal{D} \mid \theta) \cdot p(\theta) \;\propto\; p(\theta \mid \mathcal{D}),
+                    \tilde{p}(\theta) := p(\mathcal{D} \mid \theta) \cdot p(\theta) \propto p(\theta \mid \mathcal{D}),
                     \]
                     since this only requires evaluating the likelihood and prior at a given point \(\theta\).
                 </p>
@@ -411,7 +397,6 @@ uses_python: false
             </section>
         </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
         <script src="/js/sec3_p19_monte_carlo_visualizer.js"></script> 
 
     </body>
