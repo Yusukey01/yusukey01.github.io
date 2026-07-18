@@ -1223,7 +1223,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = KpcaCore
             '#kernel_pca_visualizer .kpca-ctl label{display:flex;justify-content:space-between;font-size:0.86rem;margin-bottom:6px;color:' + C.text + ';}',
             '#kernel_pca_visualizer .kpca-ctl label .val{font-family:monospace;color:' + C.muted + ';}',
             '#kernel_pca_visualizer input[type=range]{width:100%;accent-color:#4da3ff;}',
-            '#kernel_pca_visualizer select{width:100%;background:#1a2534;color:' + C.text + ';border:1px solid ' + C.panelBorder + ';border-radius:5px;padding:6px 8px;font-size:0.88rem;}',
+            '#kernel_pca_visualizer select{width:100%;background:#1a2534;color:' + C.text + ';border:1px solid ' + C.panelBorder + ';border-radius:5px;padding:6px 8px;font-size:0.88rem;color-scheme:dark;}',
+            '#kernel_pca_visualizer select option{background:#1a2534;color:' + C.text + ';}',
             '#kernel_pca_visualizer .kpca-btn{width:100%;padding:10px 0;border:none;border-radius:6px;font-size:0.95rem;cursor:pointer;margin-bottom:8px;color:#fff;}',
             '#kernel_pca_visualizer .kpca-btn.primary{background:#2f7fd6;}',
             '#kernel_pca_visualizer .kpca-btn.primary:hover{background:#3b8de4;}',
@@ -1849,8 +1850,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = KpcaCore
             trainBtn.textContent = aeIter[aeKind] > 0 ? 'Train (Continue)' : 'Train (3000 iterations)';
             renderMetrics(); renderAePane();
         });
-        computeBtn.addEventListener('click', runCompute);
-        trainBtn.addEventListener('click', runTraining);
+        computeBtn.addEventListener('click', function () { showTab('kpca'); runCompute(); });
+        trainBtn.addEventListener('click', function () { showTab('ae'); runTraining(); });
         document.getElementById('kpca-newdata').addEventListener('click', function () { if (!isTraining) regenerate(); });
         document.getElementById('kpca-ae-reset').addEventListener('click', function () { if (!isTraining) resetAes(); });
 
