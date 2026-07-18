@@ -1048,10 +1048,18 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = CluCore;
             '#clustering_visualizer .clu-legend span.pt{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;}',
             '#clustering_visualizer .clu-legend span.sw{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:3px;}',
             '#clustering_visualizer .clu-ctl{margin-bottom:14px;}',
+            '#clustering_visualizer .clu-ctlrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin-bottom:12px;}',
+            '#clustering_visualizer .clu-ctlrow .clu-btn{width:auto;padding:8px 14px;margin-bottom:0;}',
+            '#clustering_visualizer .clu-inline{display:flex;flex-direction:column;gap:4px;min-width:150px;}',
+            '#clustering_visualizer .clu-inline label{display:flex;justify-content:space-between;font-size:0.82rem;color:' + C.text + ';margin:0;}',
+            '#clustering_visualizer .clu-inline select{width:100%;}',
+            '#clustering_visualizer .clu-slider{min-width:190px;}',
+            '#clustering_visualizer .clu-slider input{width:100%;}',
             '#clustering_visualizer .clu-ctl label{display:flex;justify-content:space-between;font-size:0.86rem;margin-bottom:6px;color:' + C.text + ';}',
             '#clustering_visualizer .clu-ctl label .val{font-family:monospace;color:' + C.muted + ';}',
             '#clustering_visualizer input[type=range]{width:100%;accent-color:#4da3ff;}',
-            '#clustering_visualizer select{width:100%;background:#1a2534;color:' + C.text + ';border:1px solid ' + C.panelBorder + ';border-radius:5px;padding:6px 8px;font-size:0.88rem;}',
+            '#clustering_visualizer select{width:100%;background:#1a2534;color:' + C.text + ';border:1px solid ' + C.panelBorder + ';border-radius:5px;padding:6px 8px;font-size:0.88rem;color-scheme:dark;}',
+            '#clustering_visualizer select option{background:#1a2534;color:' + C.text + ';}',
             '#clustering_visualizer .clu-btn{width:100%;padding:10px 0;border:none;border-radius:6px;font-size:0.95rem;cursor:pointer;margin-bottom:8px;color:#fff;}',
             '#clustering_visualizer .clu-btn.primary{background:#2f7fd6;}',
             '#clustering_visualizer .clu-btn.primary:hover{background:#3b8de4;}',
@@ -1078,6 +1086,14 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = CluCore;
             '    </div>' +
             '    <div id="clu-pane-km">' +
             '      <div class="clu-card">' +
+            '        <div class="clu-ctlrow">' +
+            '          <span class="clu-inline"><label for="clu-init">Init</label>' +
+            '            <select id="clu-init"><option value="kmeans++">k-means++</option><option value="random">Random</option></select></span>' +
+            '          <button id="clu-km-run" class="clu-btn primary">Run Lloyd</button>' +
+            '          <button id="clu-km-step" class="clu-btn sec">Step (one half-step)</button>' +
+            '          <button id="clu-km-restarts" class="clu-btn sec">Compare inits (10 restarts)</button>' +
+            '          <button id="clu-km-reset" class="clu-btn sec">Reset</button>' +
+            '        </div>' +
             '        <div class="clu-duo">' +
             '          <div><h4>Assignments &amp; centers</h4><canvas id="clu-km-plot"></canvas></div>' +
             '          <div><h4>Distortion J per half-step (never increases)</h4><canvas id="clu-km-j"></canvas></div>' +
@@ -1092,6 +1108,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = CluCore;
             '    </div>' +
             '    <div id="clu-pane-sp" style="display:none;">' +
             '      <div class="clu-card">' +
+            '        <div class="clu-ctlrow">' +
+            '          <span class="clu-inline clu-slider"><label>Similarity width &sigma; <span class="val" id="clu-sigma-val">0.2</span></label>' +
+            '            <input type="range" id="clu-sigma" min="0" max="5" step="1" value="2"></span>' +
+            '          <button id="clu-sp-run" class="clu-btn primary">Run Spectral Clustering</button>' +
+            '        </div>' +
             '        <div class="clu-trio">' +
             '          <div><h4>Similarity graph (edge &prop; w<sub>ij</sub>)</h4><canvas id="clu-sp-graph"></canvas></div>' +
             '          <div><h4>Embedding: rows of T</h4><canvas id="clu-sp-emb"></canvas></div>' +
@@ -1106,6 +1127,14 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = CluCore;
             '    </div>' +
             '    <div id="clu-pane-vq" style="display:none;">' +
             '      <div class="clu-card">' +
+            '        <div class="clu-ctlrow">' +
+            '          <span class="clu-inline"><label for="clu-vq-image">Image</label>' +
+            '            <select id="clu-vq-image"><option value="bands">Four-color bands</option><option value="gradient">Color gradient</option></select></span>' +
+            '          <span class="clu-inline clu-slider"><label>Codebook K <span class="val" id="clu-vq-k-val">4</span></label>' +
+            '            <input type="range" id="clu-vq-k" min="2" max="8" step="1" value="4"></span>' +
+            '          <button id="clu-vq-run" class="clu-btn primary">Quantize</button>' +
+            '          <button id="clu-vq-sweep" class="clu-btn sec">Sweep K = 2&hellip;8</button>' +
+            '        </div>' +
             '        <div class="clu-trio">' +
             '          <div><h4>Original image</h4><canvas id="clu-vq-orig"></canvas></div>' +
             '          <div><h4>Quantized (codebook size K)</h4><canvas id="clu-vq-quant"></canvas></div>' +
@@ -1126,30 +1155,6 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = CluCore;
             '      <div class="clu-ctl"><label>Sample size <span class="val" id="clu-n-val">150</span></label>' +
             '        <input type="range" id="clu-n" min="50" max="300" step="50" value="150"></div>' +
             '      <button id="clu-newdata" class="clu-btn sec">New Data</button>' +
-            '    </div>' +
-            '    <div class="clu-card" style="margin-top:16px;" id="clu-km-card">' +
-            '      <h3>K-means</h3>' +
-            '      <div class="clu-ctl"><label for="clu-init">Initialization</label>' +
-            '        <select id="clu-init"><option value="kmeans++">k-means++</option><option value="random">Random</option></select></div>' +
-            '      <button id="clu-km-run" class="clu-btn primary">Run Lloyd</button>' +
-            '      <button id="clu-km-step" class="clu-btn sec">Step (one half-step)</button>' +
-            '      <button id="clu-km-restarts" class="clu-btn sec">Compare inits (10 restarts)</button>' +
-            '      <button id="clu-km-reset" class="clu-btn sec">Reset</button>' +
-            '    </div>' +
-            '    <div class="clu-card" style="margin-top:16px;display:none;" id="clu-sp-card">' +
-            '      <h3>Spectral</h3>' +
-            '      <div class="clu-ctl"><label>Similarity width &sigma; <span class="val" id="clu-sigma-val">0.2</span></label>' +
-            '        <input type="range" id="clu-sigma" min="0" max="5" step="1" value="2"></div>' +
-            '      <button id="clu-sp-run" class="clu-btn primary">Run Spectral Clustering</button>' +
-            '    </div>' +
-            '    <div class="clu-card" style="margin-top:16px;display:none;" id="clu-vq-card">' +
-            '      <h3>Vector Quantization</h3>' +
-            '      <div class="clu-ctl"><label for="clu-vq-image">Image</label>' +
-            '        <select id="clu-vq-image"><option value="bands">Four-color bands</option><option value="gradient">Color gradient</option></select></div>' +
-            '      <div class="clu-ctl"><label>Codebook size K <span class="val" id="clu-vq-k-val">4</span></label>' +
-            '        <input type="range" id="clu-vq-k" min="2" max="8" step="1" value="4"></div>' +
-            '      <button id="clu-vq-run" class="clu-btn primary">Quantize</button>' +
-            '      <button id="clu-vq-sweep" class="clu-btn sec">Sweep K = 2&hellip;8</button>' +
             '    </div>' +
             '    <div class="clu-card" style="margin-top:16px;">' +
             '      <h3>Metrics</h3>' +
@@ -1751,9 +1756,6 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = CluCore;
                 document.getElementById('clu-pane-' + t).style.display = t === which ? '' : 'none';
                 document.getElementById('clu-tab-' + t).className = 'clu-tab' + (t === which ? ' active' : '');
             });
-            document.getElementById('clu-km-card').style.display = which === 'km' ? '' : 'none';
-            document.getElementById('clu-sp-card').style.display = which === 'sp' ? '' : 'none';
-            document.getElementById('clu-vq-card').style.display = which === 'vq' ? '' : 'none';
             var dataDim = which === 'vq';
             ['clu-dataset', 'clu-k', 'clu-noise', 'clu-n', 'clu-newdata'].forEach(function (id) {
                 var el = document.getElementById(id);
