@@ -506,7 +506,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = EqvCore;
             '#equivariant_demo .eqv-layout{display:flex;flex-direction:column;gap:16px;}' +
             '@media(min-width:992px){#equivariant_demo .eqv-layout{flex-direction:row;}' +
             '#equivariant_demo .eqv-canvas-area{flex:1;}' +
-            '#equivariant_demo .eqv-panel{flex:1;max-width:480px;}}' +
+            '#equivariant_demo .eqv-panel{flex:1.2;max-width:660px;}}' +
             '#equivariant_demo .eqv-canvas-area,#equivariant_demo .eqv-panel{' +
             'background:' + C.bg + ';padding:14px;border-radius:8px;border:1px solid ' + C.border + ';}' +
             '#equivariant_demo #eqv-three{width:100%;height:420px;border:1px solid rgba(255,255,255,0.15);' +
@@ -516,6 +516,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = EqvCore;
             'justify-content:center;flex-wrap:wrap;}' +
             '#equivariant_demo .eqv-legend-item{display:flex;align-items:center;gap:5px;}' +
             '#equivariant_demo .eqv-dot{width:11px;height:11px;border-radius:50%;display:inline-block;}' +
+            '#equivariant_demo .eqv-mats{display:grid;grid-template-columns:1fr;gap:12px;}' +
+            '@media(min-width:768px){#equivariant_demo .eqv-mats{grid-template-columns:1fr 1fr;align-items:start;}}' +
+            '#equivariant_demo .eqv-mats .eqv-card{margin-bottom:0;}' +
             '#equivariant_demo .eqv-card{background:' + C.cardBg + ';border:1px solid ' + C.border + ';' +
             'border-radius:8px;padding:12px;margin-bottom:12px;}' +
             '#equivariant_demo .eqv-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}' +
@@ -568,8 +571,22 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = EqvCore;
             '<div class="eqv-legend-item"><span class="eqv-dot" style="background:' + C.t0 + '"></span> type-0 scalar (fixed)</div>' +
             '<div class="eqv-legend-item"><span class="eqv-dot" style="background:' + C.t1 + '"></span> type-1 vector</div>' +
             '<div class="eqv-legend-item"><span class="eqv-dot" style="background:' + C.t2 + '"></span> type-2 ellipsoid</div>' +
-            '</div></div>' +
+            '</div>' +
+            // rotation controls
+            '<div class="eqv-card"><div class="eqv-card-title" style="margin-bottom:6px;">Rotation R &isin; SO(3)</div>' +
+            '<div class="eqv-slider-row"><label>Roll (X)</label>' +
+            '<input type="range" id="eqv-roll" min="-180" max="180" step="1" value="0"><span id="eqv-roll-v">0&deg;</span></div>' +
+            '<div class="eqv-slider-row"><label>Pitch (Y)</label>' +
+            '<input type="range" id="eqv-pitch" min="-180" max="180" step="1" value="0"><span id="eqv-pitch-v">0&deg;</span></div>' +
+            '<div class="eqv-slider-row"><label>Yaw (Z)</label>' +
+            '<input type="range" id="eqv-yaw" min="-180" max="180" step="1" value="0"><span id="eqv-yaw-v">0&deg;</span></div>' +
+            '<div class="eqv-btn-row">' +
+            '<button class="eqv-btn sec" id="eqv-reset">Reset to Identity</button>' +
+            '<button class="eqv-btn pri" id="eqv-random">Random Rotation</button></div></div>' +
+            '<div class="eqv-insight"><span id="eqv-insight-text"></span></div>' +
+            '</div>' +
             '<div class="eqv-panel">' +
+            '<div class="eqv-mats">' +
             // rho(R) card
             '<div class="eqv-card"><div class="eqv-card-head">' +
             '<span class="eqv-card-title">Group action &nbsp;&rho;(R) = &rho;<sub>0</sub> &oplus; &rho;<sub>1</sub> &oplus; &rho;<sub>2</sub></span>' +
@@ -590,18 +607,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = EqvCore;
             '<div class="eqv-resid idle" id="eqv-resid"></div>' +
             '<div class="eqv-btn-row"><button class="eqv-btn sec" id="eqv-regen">&#8635; New random W</button></div>' +
             '</div>' +
-            // rotation controls
-            '<div class="eqv-card"><div class="eqv-card-title" style="margin-bottom:6px;">Rotation R &isin; SO(3)</div>' +
-            '<div class="eqv-slider-row"><label>Roll (X)</label>' +
-            '<input type="range" id="eqv-roll" min="-180" max="180" step="1" value="0"><span id="eqv-roll-v">0&deg;</span></div>' +
-            '<div class="eqv-slider-row"><label>Pitch (Y)</label>' +
-            '<input type="range" id="eqv-pitch" min="-180" max="180" step="1" value="0"><span id="eqv-pitch-v">0&deg;</span></div>' +
-            '<div class="eqv-slider-row"><label>Yaw (Z)</label>' +
-            '<input type="range" id="eqv-yaw" min="-180" max="180" step="1" value="0"><span id="eqv-yaw-v">0&deg;</span></div>' +
-            '<div class="eqv-btn-row">' +
-            '<button class="eqv-btn sec" id="eqv-reset">Reset to Identity</button>' +
-            '<button class="eqv-btn pri" id="eqv-random">Random Rotation</button></div></div>' +
-            '<div class="eqv-insight"><span id="eqv-insight-text"></span></div>' +
+            '</div>' +
             '</div></div></div>';
     }
 
