@@ -430,6 +430,16 @@ var NNCore = (function () {
             }
         })();
 
+        (function () {
+            var sPos = sigmoid(2), sNeg = sigmoid(-2), sZero = sigmoid(0);
+            if (!(sPos > 0.85 && sNeg < 0.15 && Math.abs(sZero - 0.5) < 1e-12)) {
+                failures.push('sigmoid orientation pin: sigmoid(2)=' + sPos.toFixed(4) +
+                    ' sigmoid(-2)=' + sNeg.toFixed(4));
+            }
+            if (!(Math.abs(sPos + sNeg - 1) < 1e-12)) {
+                failures.push('sigmoid symmetry sigmoid(z)+sigmoid(-z)==1');
+            }
+        })();
         return { passed: failures.length === 0, failures: failures };
     }
 
@@ -522,7 +532,6 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
     var stopRequested = false;
     var diverged = false;
     var demoPoint = { x1: 0.5, x2: 0.3 };
-    var isDemoMode = false;
 
     /* data domain shown in the plot (data lives in [-1,1]^2) */
     var DOM_MIN = -1.15, DOM_MAX = 1.15;
@@ -556,9 +565,10 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
         '#neural_network_visualizer .nnv-metrics .row{display:flex;justify-content:space-between;}',
         '#neural_network_visualizer .nnv-metrics .warn{color:#ffb3ab;font-family:inherit;}',
         '#neural_network_visualizer .nnv-arch{margin-top:16px;}',
-        '#neural_network_visualizer .nnv-demo-ctl{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;}',
-        '#neural_network_visualizer .nnv-demo-btn{background:#8b5cf6;color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:0.88rem;}',
-        '#neural_network_visualizer .nnv-demo-btn.on{background:#c0564a;}',
+        '#neural_network_visualizer .nnv-demo-ctl{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;}',
+        '#neural_network_visualizer #nnv-plot{cursor:crosshair;}',
+        '#neural_network_visualizer .nnv-plothint{font-size:0.78rem;color:' + C.muted + ';margin:-4px 0 8px;line-height:1.5;}',
+        '#neural_network_visualizer .nnv-ctlgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:2px 14px;}',
         '#neural_network_visualizer .nnv-demo-coord{font-family:monospace;font-size:0.85rem;color:' + C.muted + ';}',
         '#neural_network_visualizer .nnv-steps{font-family:monospace;font-size:0.82rem;line-height:1.55;max-height:320px;overflow-y:auto;margin-top:12px;}',
         '#neural_network_visualizer .nnv-step{background:rgba(255,255,255,0.03);border-left:3px solid #4da3ff;border-radius:0 5px 5px 0;padding:9px 12px;margin-bottom:10px;}',
@@ -577,6 +587,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
         '  <div class="nnv-main">' +
         '    <div class="nnv-card">' +
         '      <h3>Classification &amp; Decision Boundary</h3>' +
+        '      <div class="nnv-plothint">Click anywhere on the plot to move the probe point \u2014 the forward pass below recomputes instantly.</div>' +
         '      <canvas id="nnv-plot"></canvas>' +
         '      <div class="nnv-legend">' +
         '        <span><span class="sw" style="background:' + C.class0 + '"></span>Train class 0</span>' +
@@ -587,12 +598,12 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
         '        <span><span class="sw" style="background:linear-gradient(90deg,' + C.class0 + ',' + C.class1 + ')"></span>Probability shading</span>' +
         '      </div>' +
         '    </div>' +
-        '    <div class="nnv-card">' +
-        '      <h3>Training Curves (binary cross-entropy)</h3>' +
-        '      <canvas id="nnv-curve"></canvas>' +
-        '      <div class="nnv-legend">' +
-        '        <span><span class="sw" style="background:' + C.trainCurve + '"></span>Train loss</span>' +
-        '        <span><span class="sw" style="background:' + C.testCurve + '"></span>Test loss</span>' +
+        '    <div class="nnv-card nnv-arch">' +
+        '      <h3>Network Architecture &amp; Forward Pass</h3>' +
+        '      <div class="nnv-demo-ctl"><span class="nnv-demo-coord" id="nnv-demo-coord"></span></div>' +
+        '      <div class="nnv-arch-grid">' +
+        '        <div><canvas id="nnv-graph"></canvas></div>' +
+        '        <div class="nnv-steps" id="nnv-steps"></div>' +
         '      </div>' +
         '    </div>' +
         '  </div>' +
@@ -604,6 +615,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
         '          <button id="nnv-pat-circle">Circle</button>' +
         '        </div>' +
         '      </div>' +
+        '      <div class="nnv-ctlgrid">' +
         '      <div class="nnv-ctl"><label>Label noise <span class="val" id="nnv-noise-val">0%</span></label>' +
         '        <input type="range" id="nnv-noise" min="0" max="0.3" step="0.05" value="0"></div>' +
         '      <div class="nnv-ctl"><label>Hidden units <span class="val" id="nnv-h-val">4</span></label>' +
@@ -616,25 +628,20 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
         '        <input type="range" id="nnv-bs" min="0" max="4" step="1" value="2"></div>' +
         '      <div class="nnv-ctl"><label>Iterations per run <span class="val" id="nnv-it-val">2000</span></label>' +
         '        <input type="range" id="nnv-it" min="100" max="10000" step="100" value="2000"></div>' +
+        '      </div>' +
         '      <button id="nnv-train" class="nnv-btn train">Train</button>' +
         '      <button id="nnv-newdata" class="nnv-btn sec">New Data</button>' +
         '      <button id="nnv-reset" class="nnv-btn sec">Reset Weights</button>' +
         '    </div>' +
         '    <div class="nnv-card" style="margin-top:16px;">' +
-        '      <h3>Metrics</h3>' +
+        '      <h3>Metrics &amp; Training Curves</h3>' +
         '      <div class="nnv-metrics" id="nnv-metrics"></div>' +
+        '      <canvas id="nnv-curve" style="margin-top:10px;"></canvas>' +
+        '      <div class="nnv-legend">' +
+        '        <span><span class="sw" style="background:' + C.trainCurve + '"></span>Train loss</span>' +
+        '        <span><span class="sw" style="background:' + C.testCurve + '"></span>Test loss</span>' +
+        '      </div>' +
         '    </div>' +
-        '  </div>' +
-        '</div>' +
-        '<div class="nnv-card nnv-arch">' +
-        '  <h3>Network Architecture &amp; Forward Pass</h3>' +
-        '  <div class="nnv-demo-ctl">' +
-        '    <button id="nnv-demo-btn" class="nnv-demo-btn">Select Demo Point</button>' +
-        '    <span class="nnv-demo-coord" id="nnv-demo-coord"></span>' +
-        '  </div>' +
-        '  <div class="nnv-arch-grid">' +
-        '    <div><canvas id="nnv-graph"></canvas></div>' +
-        '    <div class="nnv-steps" id="nnv-steps"></div>' +
         '  </div>' +
         '</div>';
 
@@ -647,7 +654,6 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
     var metricsEl = document.getElementById('nnv-metrics');
     var stepsEl = document.getElementById('nnv-steps');
     var trainBtn = document.getElementById('nnv-train');
-    var demoBtn = document.getElementById('nnv-demo-btn');
     var demoCoordEl = document.getElementById('nnv-demo-coord');
 
     /* ---------- canvas sizing (DPR-aware) ---------- */
@@ -779,13 +785,6 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(dx, dy, 7, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
 
-        if (isDemoMode) {
-            ctx.strokeStyle = C.demoPt; ctx.lineWidth = 2; ctx.setLineDash([8, 5]);
-            ctx.strokeRect(g.m.l, g.m.t, g.pw, g.ph);
-            ctx.setLineDash([]);
-            ctx.fillStyle = C.demoPt; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText('Click inside the plot to place the demo point', s.w / 2, g.m.t + 16);
-        }
     }
 
     /* ---------- loss curve panel ---------- */
@@ -965,7 +964,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
             '<div class="r">&#375; = ' + esc(f.yhat) + ' &nbsp;&rArr;&nbsp; class ' + (f.yhat >= 0.5 ? 1 : 0) + '</div></div>';
 
         stepsEl.innerHTML = html;
-        demoCoordEl.textContent = 'Demo point: (' + demoPoint.x1.toFixed(2) + ', ' + demoPoint.x2.toFixed(2) + ')';
+        demoCoordEl.textContent = 'Probe point (' + demoPoint.x1.toFixed(2) + ', ' + demoPoint.x2.toFixed(2) + ') \u2014 click the plot above to move it';
     }
 
     /* ---------- training (honest: uses exactly the shown hyperparameters) ---------- */
@@ -1092,16 +1091,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = NNCore; 
     document.getElementById('nnv-newdata').addEventListener('click', function () { if (!isTraining) regenerateData(); });
     document.getElementById('nnv-reset').addEventListener('click', function () { if (!isTraining) resetWeights(); });
 
-    demoBtn.addEventListener('click', function () {
-        isDemoMode = !isDemoMode;
-        demoBtn.textContent = isDemoMode ? 'Done' : 'Select Demo Point';
-        demoBtn.classList.toggle('on', isDemoMode);
-        plotCanvas.style.cursor = isDemoMode ? 'crosshair' : 'default';
-        drawPlot();
-    });
-
     plotCanvas.addEventListener('click', function (ev) {
-        if (!isDemoMode) return;
         var rect = plotCanvas.getBoundingClientRect();
         var g = plotGeometry(rect.width, rect.height);
         var x = g.pxToX(ev.clientX - rect.left);
