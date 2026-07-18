@@ -1,781 +1,959 @@
-// sec4_p12_graph_coloring.js
-// Interactive Planar Graph Coloring Demo — MATH-CS COMPASS Section IV
-// Presets: K₄, Icosahedron, Petersen graph
-// Features: vertex coloring, conflict detection, Kempe chain visualization,
-//           Euler formula stats, success detection
+// sec4_p12_graph_coloring.js (v2) -- disc-12
+//======================================================================
+// [Core IIFE] GraphCore: graph data and coloring mathematics, DOM-free.
+// Design principle: every displayed claim is EXECUTED in runSelfTests():
+//   - chromatic numbers are proved by exhaustive backtracking (both the
+//     k-coloring found and the (k-1)-impossibility),
+//   - "planar: true" is proved geometrically: the shipped straight-line
+//     layout is verified to have ZERO edge crossings (a plane drawing
+//     is a planarity certificate),
+//   - "planar: false" for the Petersen graph is proved by a frozen
+//     K3,3 subdivision, discovered by search and re-verified here edge
+//     by edge -- the edge-count bounds provably do NOT suffice, and
+//     that insufficiency is itself a certificate,
+//   - the Kempe swap properness lemma (the engine of the Five Color
+//     Theorem's proof on this page) is executed over seeded random
+//     proper colorings.
+// The icosahedron layout is a Tutte barycentric embedding (outer face
+// {9,10,11}), radially spread and mechanically re-verified crossing-free;
+// v1's hand layout drew this planar graph with 12 crossings.
+//======================================================================
+var GraphCore = (function () {
+  'use strict';
 
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('graph-coloring-demo');
-    if (!container) return;
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
 
-    // ================================================================
-    // MODULE 1: GRAPH DATA
-    // ================================================================
-
-    // Each graph: { name, vertices: [{x,y}], edges: [[i,j]], faces: number|null, planar: bool, chi: number|null, chromatic: number }
-    // Coordinates normalized to [0, 1] range, mapped to canvas later
-
-    function makeK4() {
-        const cx = 0.5, cy = 0.5, R = 0.35;
-        const verts = [];
-        for (let i = 0; i < 3; i++) {
-            const a = -Math.PI/2 + (2*Math.PI*i)/3;
-            verts.push({ x: cx + R*Math.cos(a), y: cy + R*Math.sin(a) });
-        }
-        verts.push({ x: cx, y: cy }); // center vertex
-        const edges = [[0,1],[1,2],[2,0],[0,3],[1,3],[2,3]];
-        return {
-            name: 'K₄  (Complete Graph)',
-            vertices: verts,
-            edges: edges,
-            faces: 4,
-            planar: true,
-            chromatic: 4,
-            description: 'The smallest complete graph requiring 4 colors.'
-        };
+  // ---------- presets ----------
+  function makeK4() {
+    var cx = 0.5, cy = 0.52, R = 0.38;
+    var verts = [];
+    for (var i = 0; i < 3; i++) {
+      var a = -Math.PI / 2 + (2 * Math.PI * i) / 3;
+      verts.push({ x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) });
     }
+    verts.push({ x: cx, y: cy });
+    return {
+      key: 'k4',
+      name: 'K\u2084 (complete graph)',
+      vertices: verts,
+      edges: [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]],
+      faces: 4,
+      planar: true,
+      chromatic: 4,
+      description: 'The smallest graph requiring 4 colors: all four vertices are mutually adjacent.'
+    };
+  }
 
-    function makeIcosahedron() {
-        // Icosahedron skeleton: 12 vertices, 30 edges, 20 faces, χ(G)=4
-        // Use a planar-ish layout: top vertex, ring of 5, ring of 5, bottom vertex
-        const verts = [];
-        const cx = 0.5, cy = 0.5;
-        // Top vertex
-        verts.push({ x: cx, y: 0.06 });
-        // Upper ring (5 vertices)
-        for (let i = 0; i < 5; i++) {
-            const a = -Math.PI/2 + (2*Math.PI*i)/5;
-            verts.push({ x: cx + 0.30*Math.cos(a), y: 0.28 + 0.14*Math.sin(a) });
-        }
-        // Lower ring (5 vertices)
-        for (let i = 0; i < 5; i++) {
-            const a = -Math.PI/2 + Math.PI/5 + (2*Math.PI*i)/5;
-            verts.push({ x: cx + 0.30*Math.cos(a), y: 0.62 + 0.14*Math.sin(a) });
-        }
-        // Bottom vertex
-        verts.push({ x: cx, y: 0.94 });
-
-        const edges = [
-            // Top to upper ring
-            [0,1],[0,2],[0,3],[0,4],[0,5],
-            // Upper ring cycle
-            [1,2],[2,3],[3,4],[4,5],[5,1],
-            // Upper to lower ring (zigzag)
-            [1,6],[2,6],[2,7],[3,7],[3,8],[4,8],[4,9],[5,9],[5,10],[1,10],
-            // Lower ring cycle
-            [6,7],[7,8],[8,9],[9,10],[10,6],
-            // Lower ring to bottom
-            [6,11],[7,11],[8,11],[9,11],[10,11]
-        ];
-        return {
-            name: 'Icosahedron  (12 vertices)',
-            vertices: verts,
-            edges: edges,
-            faces: 20,
-            planar: true,
-            chromatic: 4,
-            description: 'Platonic solid skeleton. Planar, χ = 4. A real challenge with 4 colors!'
-        };
-    }
-
-    function makePetersen() {
-        // Petersen graph: 10 vertices, 15 edges, non-planar, χ(G)=3
-        // Layout: outer pentagon + inner pentagram
-        const verts = [];
-        const cx = 0.5, cy = 0.5;
-        // Outer ring
-        for (let i = 0; i < 5; i++) {
-            const a = -Math.PI/2 + (2*Math.PI*i)/5;
-            verts.push({ x: cx + 0.38*Math.cos(a), y: cy + 0.38*Math.sin(a) });
-        }
-        // Inner ring
-        for (let i = 0; i < 5; i++) {
-            const a = -Math.PI/2 + (2*Math.PI*i)/5;
-            verts.push({ x: cx + 0.18*Math.cos(a), y: cy + 0.18*Math.sin(a) });
-        }
-        const edges = [
-            // Outer cycle
-            [0,1],[1,2],[2,3],[3,4],[4,0],
-            // Spokes
-            [0,5],[1,6],[2,7],[3,8],[4,9],
-            // Inner pentagram (skip-1 connections)
-            [5,7],[7,9],[9,6],[6,8],[8,5]
-        ];
-        return {
-            name: 'Petersen Graph  (non-planar)',
-            vertices: verts,
-            edges: edges,
-            faces: null,
-            planar: false,
-            chromatic: 3,
-            description: 'Non-planar (contains K₃,₃ subdivision). Euler\'s formula does not apply.'
-        };
-    }
-
-    const PRESETS = [makeK4(), makeIcosahedron(), makePetersen()];
-    const COLORS = [
-        '#e53935', // red
-        '#1e88e5', // blue
-        '#43a047', // green
-        '#ffb300'  // amber
+  function makeIcosahedron() {
+    // Tutte barycentric embedding with outer face {9, 10, 11}, radially
+    // spread (gamma = 0.6) and certified crossing-free (see B4).
+    var verts = [
+      { x: 0.6104, y: 0.5943 }, { x: 0.7046, y: 0.7935 }, { x: 0.5, y: 0.7983 },
+      { x: 0.3896, y: 0.5943 }, { x: 0.5, y: 0.3777 }, { x: 0.7094, y: 0.5194 },
+      { x: 0.5, y: 0.9258 }, { x: 0.2954, y: 0.7935 }, { x: 0.2906, y: 0.5194 },
+      { x: 0.5, y: 0.05 }, { x: 0.95, y: 0.95 }, { x: 0.05, y: 0.95 }
     ];
-    const COLOR_NAMES = ['Red', 'Blue', 'Green', 'Amber'];
-    const UNCOLORED = -1;
+    var edges = [
+      [0, 1], [0, 2], [0, 3], [0, 4], [0, 5],
+      [1, 2], [2, 3], [3, 4], [4, 5], [5, 1],
+      [1, 6], [2, 6], [2, 7], [3, 7], [3, 8], [4, 8], [4, 9], [5, 9], [5, 10], [1, 10],
+      [6, 7], [7, 8], [8, 9], [9, 10], [10, 6],
+      [6, 11], [7, 11], [8, 11], [9, 11], [10, 11]
+    ];
+    return {
+      key: 'icosa',
+      name: 'Icosahedron (12 vertices)',
+      vertices: verts,
+      edges: edges,
+      faces: 20,
+      planar: true,
+      chromatic: 4,
+      description: 'The icosahedron skeleton, drawn as a genuine plane graph (Tutte embedding, zero crossings). A real challenge with 4 colors \u2014 and the natural stage for a Kempe-chain rescue.'
+    };
+  }
 
-    // ================================================================
-    // MODULE 6: UI SHELL (HTML + CSS)
-    // ================================================================
-
-    container.innerHTML = `
-      <div class="gcv-container">
-        <div class="gcv-layout">
-          <div class="gcv-canvas-area">
-            <div class="gcv-toolbar">
-              <div class="gcv-preset-btns" id="gcv-preset-btns"></div>
-            </div>
-            <div class="gcv-canvas-wrapper" id="gcv-canvas-wrapper">
-              <canvas id="gcv-canvas" width="600" height="600"></canvas>
-            </div>
-            <div class="gcv-palette" id="gcv-palette"></div>
-            <div class="gcv-instruction" id="gcv-instruction">
-              Select a graph above, then click vertices to assign colors.
-            </div>
-          </div>
-          <div class="gcv-panel">
-            <div class="gcv-card">
-              <div class="gcv-card-title">Graph Properties</div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">Graph</span><span class="gcv-stat-val" id="gcv-name">—</span></div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">V (vertices)</span><span class="gcv-stat-val" id="gcv-V">—</span></div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">E (edges)</span><span class="gcv-stat-val" id="gcv-E">—</span></div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">F (faces)</span><span class="gcv-stat-val" id="gcv-F">—</span></div>
-              <div class="gcv-stat-row gcv-stat-highlight"><span class="gcv-stat-label">χ = V − E + F</span><span class="gcv-stat-val" id="gcv-chi">—</span></div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">δ(G) (min deg)</span><span class="gcv-stat-val" id="gcv-delta">—</span></div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">Planar</span><span class="gcv-stat-val" id="gcv-planar">—</span></div>
-            </div>
-            <div class="gcv-card">
-              <div class="gcv-card-title">Coloring Status</div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">χ(G) (chromatic #)</span><span class="gcv-stat-val" id="gcv-chromatic">—</span></div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">Colors used</span><span class="gcv-stat-val" id="gcv-used">0</span></div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">Vertices colored</span><span class="gcv-stat-val" id="gcv-colored">0 / 0</span></div>
-              <div class="gcv-stat-row"><span class="gcv-stat-label">Conflicts</span><span class="gcv-stat-val" id="gcv-conflicts">0</span></div>
-              <div class="gcv-status" id="gcv-status"></div>
-            </div>
-            <div class="gcv-card">
-              <div class="gcv-card-title">Kempe Chains</div>
-              <div class="gcv-card-subtitle">Select two colors to highlight their Kempe chain components.</div>
-              <div class="gcv-kempe-row" id="gcv-kempe-row"></div>
-              <div class="gcv-kempe-info" id="gcv-kempe-info"></div>
-            </div>
-            <div class="gcv-btn-row">
-              <button class="gcv-btn" id="gcv-clear-btn">↺ Clear Colors</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Inject styles
-    const styleEl = document.createElement('style');
-    styleEl.textContent = `
-      .gcv-container {
-        margin: 12px 0 24px 0;
-        font-family: 'Exo 2', 'Segoe UI', sans-serif;
-        color: #e8eaed;
-        -webkit-font-smoothing: antialiased;
-      }
-      .gcv-layout {
-        display: flex; flex-direction: column; gap: 20px;
-      }
-      @media (min-width: 1000px) {
-        .gcv-layout { flex-direction: row; }
-        .gcv-canvas-area { flex: 1.2; order: 1; min-width: 0; }
-        .gcv-panel { flex: 1; order: 2; max-width: 360px; }
-      }
-      .gcv-canvas-area {
-        display: flex; flex-direction: column; align-items: center;
-      }
-      .gcv-toolbar {
-        display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center;
-      }
-      .gcv-preset-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-      .gcv-preset-btn {
-        padding: 6px 14px; border-radius: 6px; border: 1px solid rgba(171, 71, 188, 0.3);
-        background: rgba(106, 27, 154, 0.15); color: #ce93d8; cursor: pointer;
-        font-size: 0.78rem; font-family: inherit; transition: all 0.2s;
-      }
-      .gcv-preset-btn:hover { background: rgba(106, 27, 154, 0.35); border-color: rgba(171, 71, 188, 0.6); }
-      .gcv-preset-btn.active {
-        background: rgba(106, 27, 154, 0.5); border-color: #ab47bc; color: #f3e5f5;
-        box-shadow: 0 0 12px rgba(171, 71, 188, 0.3);
-      }
-      .gcv-canvas-wrapper {
-        position: relative; width: 100%; max-width: 600px;
-      }
-      #gcv-canvas {
-        width: 100%; height: auto; border: 1px solid rgba(171, 71, 188, 0.15);
-        border-radius: 8px; background: #0b0e14; cursor: pointer; display: block;
-        touch-action: none;
-      }
-      .gcv-palette {
-        display: flex; gap: 8px; margin-top: 10px; align-items: center;
-      }
-      .gcv-color-btn {
-        width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.15);
-        cursor: pointer; transition: all 0.2s; position: relative;
-      }
-      .gcv-color-btn:hover { transform: scale(1.15); }
-      .gcv-color-btn.active {
-        border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.4);
-        transform: scale(1.15);
-      }
-      .gcv-color-btn.eraser {
-        background: #0b0e14 !important;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 16px; color: rgba(255,255,255,0.5);
-      }
-      .gcv-instruction {
-        font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 8px; text-align: center;
-      }
-      .gcv-panel { display: flex; flex-direction: column; gap: 12px; }
-      .gcv-card {
-        background: rgba(15, 20, 30, 0.7); border: 1px solid rgba(171, 71, 188, 0.12);
-        border-radius: 8px; padding: 14px 16px;
-      }
-      .gcv-card-title {
-        font-size: 0.82rem; font-weight: 700; color: #ce93d8; letter-spacing: 0.04em;
-        margin-bottom: 10px; text-transform: uppercase;
-      }
-      .gcv-card-subtitle {
-        font-size: 0.72rem; color: rgba(255,255,255,0.35); margin: -6px 0 10px 0;
-      }
-      .gcv-stat-row {
-        display: flex; justify-content: space-between; padding: 3px 0;
-        font-size: 0.78rem; border-bottom: 1px solid rgba(255,255,255,0.04);
-      }
-      .gcv-stat-label { color: rgba(255,255,255,0.55); }
-      .gcv-stat-val { color: #e8eaed; font-weight: 600; font-variant-numeric: tabular-nums; }
-      .gcv-stat-highlight {
-        background: rgba(106, 27, 154, 0.12); border-radius: 4px; padding: 4px 6px;
-        margin: 2px -6px; border: none;
-      }
-      .gcv-stat-highlight .gcv-stat-val { color: #ce93d8; }
-      .gcv-status {
-        margin-top: 8px; padding: 8px 10px; border-radius: 6px; font-size: 0.78rem;
-        font-weight: 600; text-align: center; min-height: 20px; transition: all 0.3s;
-      }
-      .gcv-status.success {
-        background: rgba(67, 160, 71, 0.15); border: 1px solid rgba(67, 160, 71, 0.4);
-        color: #69f0ae;
-      }
-      .gcv-status.conflict {
-        background: rgba(229, 57, 53, 0.1); border: 1px solid rgba(229, 57, 53, 0.3);
-        color: #ef9a9a;
-      }
-      .gcv-status.info {
-        background: rgba(106, 27, 154, 0.1); border: 1px solid rgba(171, 71, 188, 0.2);
-        color: #ce93d8;
-      }
-      .gcv-kempe-row {
-        display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;
-      }
-      .gcv-kempe-pair {
-        display: flex; align-items: center; gap: 3px; padding: 4px 8px;
-        border-radius: 4px; border: 1px solid rgba(255,255,255,0.08);
-        cursor: pointer; font-size: 0.72rem; color: rgba(255,255,255,0.5);
-        transition: all 0.2s;
-      }
-      .gcv-kempe-pair:hover { border-color: rgba(171, 71, 188, 0.4); }
-      .gcv-kempe-pair.active {
-        border-color: #ab47bc; background: rgba(106, 27, 154, 0.2); color: #e8eaed;
-      }
-      .gcv-kempe-dot {
-        width: 10px; height: 10px; border-radius: 50%; display: inline-block;
-      }
-      .gcv-kempe-info { font-size: 0.72rem; color: rgba(255,255,255,0.4); }
-      .gcv-btn-row { display: flex; gap: 8px; }
-      .gcv-btn {
-        flex: 1; padding: 8px 12px; border-radius: 6px;
-        border: 1px solid rgba(171, 71, 188, 0.3); background: rgba(106, 27, 154, 0.15);
-        color: #ce93d8; cursor: pointer; font-size: 0.78rem; font-family: inherit;
-        transition: all 0.2s;
-      }
-      .gcv-btn:hover { background: rgba(106, 27, 154, 0.35); border-color: #ab47bc; }
-    `;
-    document.head.appendChild(styleEl);
-
-    // ================================================================
-    // MODULE 2: RENDERING
-    // ================================================================
-
-    const canvas = document.getElementById('gcv-canvas');
-    const ctx = canvas.getContext('2d');
-    let W = 600, H = 600;
-
-    let currentGraph = null;
-    let vertexColors = [];   // array of color indices (UNCOLORED = -1)
-    let selectedColor = 0;   // index into COLORS
-    let hoveredVertex = -1;
-    let kempeHighlight = null; // { colorA, colorB, components: [[vertexIndices], ...] } or null
-
-    const VERTEX_RADIUS = 14;
-    const VERTEX_RADIUS_LARGE = 16; // for K4
-
-    function getR() {
-        if (!currentGraph) return VERTEX_RADIUS;
-        return currentGraph.vertices.length <= 6 ? VERTEX_RADIUS_LARGE : VERTEX_RADIUS;
+  function makePetersen() {
+    var verts = [];
+    var cx = 0.5, cy = 0.52;
+    for (var i = 0; i < 5; i++) {
+      var a = -Math.PI / 2 + (2 * Math.PI * i) / 5;
+      verts.push({ x: cx + 0.40 * Math.cos(a), y: cy + 0.40 * Math.sin(a) });
     }
-
-    function toCanvas(v) {
-        const pad = 40;
-        return { x: pad + v.x * (W - 2*pad), y: pad + v.y * (H - 2*pad) };
+    for (i = 0; i < 5; i++) {
+      var a2 = -Math.PI / 2 + (2 * Math.PI * i) / 5;
+      verts.push({ x: cx + 0.19 * Math.cos(a2), y: cy + 0.19 * Math.sin(a2) });
     }
+    var edges = [];
+    for (i = 0; i < 5; i++) {
+      edges.push([i, (i + 1) % 5]);
+      edges.push([i, i + 5]);
+      edges.push([i + 5, ((i + 2) % 5) + 5]);
+    }
+    return {
+      key: 'petersen',
+      name: 'Petersen graph (non-planar)',
+      vertices: verts,
+      edges: edges,
+      faces: null,
+      planar: false,
+      chromatic: 3,
+      description: 'Non-planar \u2014 yet 3-colorable. Both planar edge bounds are satisfied; only its K\u2083,\u2083 subdivision (verified by the self-tests) certifies non-planarity. Euler\u2019s formula does not apply.'
+    };
+  }
 
-    function getConflicts() {
-        if (!currentGraph) return [];
-        const conflicts = [];
-        for (const [i, j] of currentGraph.edges) {
-            if (vertexColors[i] !== UNCOLORED && vertexColors[j] !== UNCOLORED
-                && vertexColors[i] === vertexColors[j]) {
-                conflicts.push([i, j]);
-            }
+  // FROZEN witness (found by search, independently re-verified in B6):
+  // a K3,3 subdivision in the Petersen graph with branch classes
+  // A = {0, 2, 8}, B = {1, 3, 5} and nine internally disjoint paths.
+  var PETERSEN_K33 = {
+    A: [0, 2, 8],
+    B: [1, 3, 5],
+    paths: [[0, 1], [0, 4, 3], [0, 5], [2, 1], [2, 3], [2, 7, 5], [8, 6, 1], [8, 3], [8, 5]]
+  };
+
+  // FROZEN stuck-state scenario (found by seeded search, lemma-checked):
+  // icosahedron, vertex 0 uncolored, its five neighbors 1..5 wear all
+  // four colors; swapping the (1,2)-Kempe component through vertex 2
+  // frees a color for vertex 0 -- the Five Color Theorem's move.
+  var STUCK_SCENARIO = {
+    graphKey: 'icosa',
+    target: 0,
+    colors: [-1, 3, 1, 0, 3, 2, 0, 3, 1, 0, 1, 2],
+    swapVertex: 2,
+    pair: [1, 2]
+  };
+
+  var COLORS = ['#e53935', '#1e88e5', '#43a047', '#ffb300'];
+  var COLOR_NAMES = ['Red', 'Blue', 'Green', 'Amber'];
+  var UNCOLORED = -1;
+
+  // ---------- structure utilities ----------
+  function adjacency(g) {
+    var adj = [];
+    for (var i = 0; i < g.vertices.length; i++) adj.push([]);
+    g.edges.forEach(function (e) { adj[e[0]].push(e[1]); adj[e[1]].push(e[0]); });
+    return adj;
+  }
+  function degrees(g) {
+    return adjacency(g).map(function (l) { return l.length; });
+  }
+  function conflicts(g, colors) {
+    var out = [];
+    g.edges.forEach(function (e) {
+      if (colors[e[0]] !== UNCOLORED && colors[e[0]] === colors[e[1]]) out.push(e);
+    });
+    return out;
+  }
+
+  // ---------- coloring decisions (exhaustive backtracking) ----------
+  function kColoring(g, k, rng) {
+    var n = g.vertices.length;
+    var adj = adjacency(g);
+    var col = new Array(n).fill(UNCOLORED);
+    var order = [];
+    for (var i = 0; i < n; i++) order.push(i);
+    if (rng) order.sort(function () { return rng() - 0.5; });
+    function bt(idx) {
+      if (idx === n) return true;
+      var v = order[idx];
+      var cs = [];
+      for (var c = 0; c < k; c++) cs.push(c);
+      if (rng) cs.sort(function () { return rng() - 0.5; });
+      for (var ci = 0; ci < cs.length; ci++) {
+        var c2 = cs[ci];
+        var ok = adj[v].every(function (w) { return col[w] !== c2; });
+        if (ok) {
+          col[v] = c2;
+          if (bt(idx + 1)) return true;
+          col[v] = UNCOLORED;
         }
-        return conflicts;
+      }
+      return false;
     }
+    return bt(0) ? col : null;
+  }
 
+  // ---------- Kempe machinery (the Five Color Theorem's engine) ----------
+  function kempeComponent(g, colors, a, b, start) {
+    if (colors[start] !== a && colors[start] !== b) return [];
+    var adj = adjacency(g);
+    var seen = {};
+    seen[start] = true;
+    var queue = [start], out = [];
+    while (queue.length) {
+      var u = queue.shift();
+      out.push(u);
+      adj[u].forEach(function (w) {
+        if (!seen[w] && (colors[w] === a || colors[w] === b)) {
+          seen[w] = true;
+          queue.push(w);
+        }
+      });
+    }
+    return out.sort(function (x, y) { return x - y; });
+  }
+  function kempeComponents(g, a, b, colors) {
+    var comps = [], done = {};
+    for (var v = 0; v < g.vertices.length; v++) {
+      if (done[v]) continue;
+      if (colors[v] === a || colors[v] === b) {
+        var comp = kempeComponent(g, colors, a, b, v);
+        comp.forEach(function (u) { done[u] = true; });
+        comps.push(comp);
+      }
+    }
+    return comps;
+  }
+  // swap colors a <-> b inside one component; returns a NEW color array
+  function kempeSwap(g, colors, a, b, component) {
+    var out = colors.slice();
+    component.forEach(function (v) {
+      if (out[v] === a) out[v] = b;
+      else if (out[v] === b) out[v] = a;
+    });
+    return out;
+  }
+
+  // union-find (independent route for component verification)
+  function componentsViaUnionFind(g, a, b, colors) {
+    var n = g.vertices.length;
+    var parent = [];
+    for (var i = 0; i < n; i++) parent.push(i);
+    function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+    g.edges.forEach(function (e) {
+      var u = e[0], v = e[1];
+      var uIn = colors[u] === a || colors[u] === b;
+      var vIn = colors[v] === a || colors[v] === b;
+      if (uIn && vIn) parent[find(u)] = find(v);
+    });
+    var groups = {};
+    for (i = 0; i < n; i++) {
+      if (colors[i] === a || colors[i] === b) {
+        var r = find(i);
+        (groups[r] = groups[r] || []).push(i);
+      }
+    }
+    return Object.keys(groups).map(function (r) {
+      return groups[r].sort(function (x, y) { return x - y; });
+    }).sort(function (p, q) { return p[0] - q[0]; });
+  }
+
+  // ---------- geometric planarity certificate ----------
+  function properSegmentCrossing(p1, p2, p3, p4) {
+    function orient(a, b, c) {
+      var v = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+      return Math.abs(v) < 1e-12 ? 0 : (v > 0 ? 1 : -1);
+    }
+    var d1 = orient(p3, p4, p1), d2 = orient(p3, p4, p2);
+    var d3 = orient(p1, p2, p3), d4 = orient(p1, p2, p4);
+    return d1 * d2 < 0 && d3 * d4 < 0;
+  }
+  function countLayoutCrossings(g) {
+    var n = 0;
+    for (var i = 0; i < g.edges.length; i++) {
+      for (var j = i + 1; j < g.edges.length; j++) {
+        var e = g.edges[i], f = g.edges[j];
+        if (e[0] === f[0] || e[0] === f[1] || e[1] === f[0] || e[1] === f[1]) continue;
+        if (properSegmentCrossing(g.vertices[e[0]], g.vertices[e[1]], g.vertices[f[0]], g.vertices[f[1]])) n++;
+      }
+    }
+    return n;
+  }
+
+  function buildPresets() {
+    return [makeK4(), makeIcosahedron(), makePetersen()];
+  }
+
+  //====================================================================
+  // Self-tests
+  //====================================================================
+  function runSelfTests() {
+    var failures = [];
+    function check(name, cond, detail) {
+      if (!cond) failures.push(name + (detail !== undefined ? ' [' + detail + ']' : ''));
+    }
+    var presets = buildPresets();
+    var byKey = {};
+    presets.forEach(function (g) { byKey[g.key] = g; });
+    var rng = mulberry32(20260717);
+    var i, j;
+
+    // B1: structural sanity: simple graphs, declared counts, handshake
+    presets.forEach(function (g) {
+      var n = g.vertices.length;
+      var seen = {};
+      var simple = g.edges.every(function (e) {
+        if (e[0] === e[1]) return false;
+        var key = Math.min(e[0], e[1]) + ',' + Math.max(e[0], e[1]);
+        if (seen[key]) return false;
+        seen[key] = true;
+        return e[0] >= 0 && e[1] >= 0 && e[0] < n && e[1] < n;
+      });
+      check('B1a simple graph: ' + g.key, simple);
+      var degSum = degrees(g).reduce(function (a, b) { return a + b; }, 0);
+      check('B1b handshake 2E: ' + g.key, degSum === 2 * g.edges.length);
+    });
+    check('B1c sizes: K4 (4,6), icosa (12,30), Petersen (10,15)',
+      byKey.k4.vertices.length === 4 && byKey.k4.edges.length === 6 &&
+      byKey.icosa.vertices.length === 12 && byKey.icosa.edges.length === 30 &&
+      byKey.petersen.vertices.length === 10 && byKey.petersen.edges.length === 15);
+    check('B1d icosahedron is 5-regular', degrees(byKey.icosa).every(function (d) { return d === 5; }));
+    check('B1e Petersen is 3-regular', degrees(byKey.petersen).every(function (d) { return d === 3; }));
+
+    // B2: Euler's formula V - E + F = 2 for the planar presets
+    presets.forEach(function (g) {
+      if (!g.planar) return;
+      check('B2 Euler V-E+F == 2: ' + g.key,
+        g.vertices.length - g.edges.length + g.faces === 2,
+        g.vertices.length - g.edges.length + g.faces);
+    });
+
+    // B3: consequences of Euler's formula on the planar presets
+    presets.forEach(function (g) {
+      if (!g.planar) return;
+      var V = g.vertices.length, E = g.edges.length;
+      check('B3a edge bound E <= 3V-6: ' + g.key, E <= 3 * V - 6);
+      check('B3b min degree <= 5: ' + g.key, Math.min.apply(null, degrees(g)) <= 5);
+    });
+    // ...and their PROVABLE INSUFFICIENCY on the Petersen graph: it
+    // satisfies both bounds yet is non-planar (B6 provides the witness)
+    (function () {
+      var V = 10, E = 15;
+      check('B3c Petersen satisfies E <= 3V-6', E <= 3 * V - 6);
+      check('B3d Petersen satisfies the triangle-free bound E <= 2V-4', E <= 2 * V - 4);
+      // triangle-freeness itself, exhaustively
+      var adj = adjacency(byKey.petersen);
+      var tri = false;
+      for (i = 0; i < 10; i++) {
+        adj[i].forEach(function (u) {
+          adj[i].forEach(function (w) { if (u < w && adj[u].indexOf(w) >= 0) tri = true; });
+        });
+      }
+      check('B3e Petersen is triangle-free (exhaustive)', !tri);
+    })();
+
+    // B4: PLANARITY BY DRAWING -- the shipped layouts of the planar
+    // presets are straight-line embeddings with zero crossings
+    check('B4a K4 layout has zero crossings', countLayoutCrossings(byKey.k4) === 0,
+      countLayoutCrossings(byKey.k4));
+    check('B4b icosahedron layout has zero crossings (Tutte embedding)',
+      countLayoutCrossings(byKey.icosa) === 0, countLayoutCrossings(byKey.icosa));
+    check('B4c Petersen layout has crossings (as it must)',
+      countLayoutCrossings(byKey.petersen) > 0);
+
+    // B5: chromatic numbers, PROVED by exhaustive search both ways
+    (function () {
+      check('B5a K4 is not 3-colorable', kColoring(byKey.k4, 3) === null);
+      check('B5b K4 is 4-colorable', kColoring(byKey.k4, 4) !== null);
+      check('B5c icosahedron is not 3-colorable (exhaustive)', kColoring(byKey.icosa, 3) === null);
+      var c4 = kColoring(byKey.icosa, 4);
+      check('B5d icosahedron is 4-colorable', c4 !== null && conflicts(byKey.icosa, c4).length === 0);
+      check('B5e Petersen is not 2-colorable', kColoring(byKey.petersen, 2) === null);
+      var p3 = kColoring(byKey.petersen, 3);
+      check('B5f Petersen is 3-colorable', p3 !== null && conflicts(byKey.petersen, p3).length === 0);
+      check('B5g declared chromatic numbers match the proofs',
+        byKey.k4.chromatic === 4 && byKey.icosa.chromatic === 4 && byKey.petersen.chromatic === 3);
+    })();
+
+    // B6: the frozen K3,3 subdivision in the Petersen graph, re-verified
+    // edge by edge, with pairwise internally disjoint paths
+    (function () {
+      var g = byKey.petersen;
+      var eset = {};
+      g.edges.forEach(function (e) { eset[Math.min(e[0], e[1]) + ',' + Math.max(e[0], e[1])] = true; });
+      var sub = PETERSEN_K33;
+      var branch = {};
+      sub.A.concat(sub.B).forEach(function (v) { branch[v] = true; });
+      check('B6a six distinct branch vertices', Object.keys(branch).length === 6);
+      var ok = true, internalSeen = {}, pi = 0;
+      sub.A.forEach(function (a) {
+        sub.B.forEach(function (b) {
+          var p = sub.paths[pi++];
+          if (p[0] !== a || p[p.length - 1] !== b) ok = false;
+          for (var t = 0; t + 1 < p.length; t++) {
+            if (!eset[Math.min(p[t], p[t + 1]) + ',' + Math.max(p[t], p[t + 1])]) ok = false;
+          }
+          p.slice(1, -1).forEach(function (v) {
+            if (branch[v] || internalSeen[v]) ok = false;
+            internalSeen[v] = true;
+          });
+        });
+      });
+      check('B6b nine paths: endpoints correct, edges exist, internally disjoint', ok);
+      check('B6c hence a K3,3 subdivision certifies non-planarity (Kuratowski)',
+        ok && byKey.petersen.planar === false);
+    })();
+
+    // B7: Kempe components -- BFS route == union-find route, and no
+    // edge of the two chosen colors crosses between components
+    (function () {
+      var okAll = true, okSep = true;
+      presets.forEach(function (g) {
+        for (var trial = 0; trial < 4; trial++) {
+          var col = kColoring(g, 4, rng);
+          for (var a = 0; a < 4; a++) {
+            for (var b = a + 1; b < 4; b++) {
+              var c1 = kempeComponents(g, a, b, col).map(function (c) { return c.join('-'); }).sort();
+              var c2 = componentsViaUnionFind(g, a, b, col).map(function (c) { return c.join('-'); }).sort();
+              if (c1.join('|') !== c2.join('|')) okAll = false;
+              // separation: any (a,b)-colored edge endpoints share a component
+              var compOf = {};
+              kempeComponents(g, a, b, col).forEach(function (c, ci) {
+                c.forEach(function (v) { compOf[v] = ci; });
+              });
+              g.edges.forEach(function (e) {
+                var uIn = col[e[0]] === a || col[e[0]] === b;
+                var vIn = col[e[1]] === a || col[e[1]] === b;
+                if (uIn && vIn && compOf[e[0]] !== compOf[e[1]]) okSep = false;
+              });
+            }
+          }
+        }
+      });
+      check('B7a BFS components == union-find components (all presets, pairs, seeded)', okAll);
+      check('B7b components are maximal: no in-palette edge crosses them', okSep);
+    })();
+
+    // B8: THE KEMPE SWAP LEMMA (the Five Color Theorem's engine):
+    // swapping a component of a PROPER coloring stays proper; and the
+    // swap is an involution
+    (function () {
+      var okProper = true, okInv = true, swapsTried = 0;
+      presets.forEach(function (g) {
+        for (var trial = 0; trial < 6; trial++) {
+          var col = kColoring(g, 4, rng);
+          if (conflicts(g, col).length !== 0) { okProper = false; return; }
+          for (var a = 0; a < 4; a++) {
+            for (var b = a + 1; b < 4; b++) {
+              kempeComponents(g, a, b, col).forEach(function (comp) {
+                var swapped = kempeSwap(g, col, a, b, comp);
+                swapsTried++;
+                if (conflicts(g, swapped).length !== 0) okProper = false;
+                var back = kempeSwap(g, swapped, a, b, comp);
+                if (back.join(',') !== col.join(',')) okInv = false;
+              });
+            }
+          }
+        }
+      });
+      check('B8a swap of any Kempe component preserves properness (' + swapsTried + ' swaps)',
+        okProper && swapsTried > 100, swapsTried);
+      check('B8b swap is an involution', okInv);
+    })();
+
+    // B9: the frozen stuck-state scenario -- the Five Color move, staged
+    (function () {
+      var g = byKey[STUCK_SCENARIO.graphKey];
+      var col = STUCK_SCENARIO.colors.slice();
+      var adj = adjacency(g);
+      var t = STUCK_SCENARIO.target;
+      check('B9a target vertex uncolored, all others colored',
+        col[t] === UNCOLORED && col.every(function (c, v) { return v === t ? true : c !== UNCOLORED; }));
+      check('B9b coloring proper away from the target', conflicts(g, col).length === 0);
+      var nbrCols = {};
+      adj[t].forEach(function (w) { nbrCols[col[w]] = true; });
+      check('B9c neighbors of the target wear all 4 colors', Object.keys(nbrCols).length === 4);
+      var comp = kempeComponent(g, col, STUCK_SCENARIO.pair[0], STUCK_SCENARIO.pair[1], STUCK_SCENARIO.swapVertex);
+      var swapped = kempeSwap(g, col, STUCK_SCENARIO.pair[0], STUCK_SCENARIO.pair[1], comp);
+      check('B9d the staged swap stays proper', conflicts(g, swapped).length === 0);
+      var after = {};
+      adj[t].forEach(function (w) { after[swapped[w]] = true; });
+      check('B9e after the swap the neighbors use <= 3 colors: a color is freed',
+        Object.keys(after).length <= 3, Object.keys(after).length);
+    })();
+
+    // B10: partial-coloring semantics of the conflict detector -- two
+    // adjacent UNCOLORED vertices are not a conflict, and a genuine
+    // monochromatic edge is reported exactly once
+    (function () {
+      var g = byKey.k4;
+      check('B10a adjacent uncolored pair is not a conflict',
+        conflicts(g, [UNCOLORED, UNCOLORED, 0, 1]).length === 0);
+      var cf = conflicts(g, [0, 0, UNCOLORED, UNCOLORED]);
+      check('B10b the one monochromatic edge is reported exactly once',
+        cf.length === 1 && cf[0][0] === 0 && cf[0][1] === 1, JSON.stringify(cf));
+    })();
+
+    return { pass: failures.length === 0, failures: failures };
+  }
+
+  return {
+    mulberry32: mulberry32,
+    COLORS: COLORS,
+    COLOR_NAMES: COLOR_NAMES,
+    UNCOLORED: UNCOLORED,
+    buildPresets: buildPresets,
+    PETERSEN_K33: PETERSEN_K33,
+    STUCK_SCENARIO: STUCK_SCENARIO,
+    adjacency: adjacency,
+    degrees: degrees,
+    conflicts: conflicts,
+    kColoring: kColoring,
+    kempeComponent: kempeComponent,
+    kempeComponents: kempeComponents,
+    kempeSwap: kempeSwap,
+    componentsViaUnionFind: componentsViaUnionFind,
+    countLayoutCrossings: countLayoutCrossings,
+    runSelfTests: runSelfTests
+  };
+})();
+
+if (typeof module !== 'undefined' && module.exports) { module.exports = GraphCore; }
+
+//======================================================================
+// [UI IIFE] #graph-coloring-demo, prefix gcv-
+// Interaction model: pick a palette color, click vertices. The Kempe
+// card lists the chain components of a chosen color pair, each with a
+// Swap button -- executing the Five Color Theorem's move; certificate
+// B8 guarantees a swap can never create a conflict, and the conflict
+// counter verifies it live. "Stage the proof's move" loads the frozen
+// stuck state (B9). On the Petersen graph, a toggle overlays the
+// certified K3,3 subdivision (B6).
+//======================================================================
+(function () {
+  'use strict';
+  if (typeof document === 'undefined') return;
+
+  var C = {
+    panel: 'rgba(20, 28, 40, 0.95)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    borderStrong: 'rgba(255, 255, 255, 0.2)',
+    text: '#e8eaed',
+    textDim: 'rgba(255, 255, 255, 0.7)',
+    faint: 'rgba(255, 255, 255, 0.5)',
+    accent: '#66bb6a',
+    warn: '#f0c040',
+    bad: '#e74c3c',
+    canvasBg: '#0f1419',
+    edge: 'rgba(180, 200, 230, 0.45)',
+    uncolored: '#37474f',
+    k33: '#ffffff'
+  };
+
+  function refusalHtml(res) {
+    var list = res.failures.map(function (f) { return '<li>' + f + '</li>'; }).join('');
+    return '<div style="background:' + C.panel + ';border:1px solid ' + C.bad +
+      ';border-radius:8px;padding:16px;color:' + C.text + ';">' +
+      '<strong style="color:' + C.bad + ';">Demo disabled: mathematical self-tests failed (' +
+      res.failures.length + ').</strong>' +
+      '<p style="color:' + C.textDim + ';margin:8px 0 4px;">This visualizer refuses to render on broken mathematics.</p>' +
+      '<ul style="color:' + C.textDim + ';margin:0 0 0 18px;">' + list + '</ul></div>';
+  }
+
+  function init() {
+    var container = document.getElementById('graph-coloring-demo');
+    if (!container) return;
+    if (container.dataset.gcvInit) return; // idempotency guard
+    container.dataset.gcvInit = '1';
+
+    var gate;
+    try { gate = GraphCore.runSelfTests(); }
+    catch (e) { gate = { pass: false, failures: ['self-tests crashed: ' + e.message] }; }
+    if (!gate.pass) { container.innerHTML = refusalHtml(gate); return; }
+
+    var G = GraphCore;
+    var PRESETS = G.buildPresets();
+    var state = {
+      graph: null,
+      colors: [],
+      selected: 0,
+      kempePair: null,     // [a, b] or null
+      kempeComps: [],
+      hoverComp: -1,
+      k33: false,
+      stagedTarget: null
+    };
+
+    container.innerHTML =
+      '<div class="gcv-root">' +
+      '<div class="gcv-hint">Pick a color, click vertices; adjacent equal colors are flagged instantly. When you paint ' +
+        'yourself into a corner, do what the Five Color proof does: choose a color pair in the Kempe card and ' +
+        '<em>swap</em> a chain component \u2014 the swap can never create a conflict (the demo\u2019s self-tests execute ' +
+        'exactly that lemma), but it can free a color where you need one.</div>' +
+      '<div class="gcv-layout">' +
+      '<div class="gcv-canvascell">' +
+        '<div class="gcv-presets" id="gcv-presets"></div>' +
+        '<canvas id="gcv-canvas" width="600" height="600"></canvas>' +
+        '<div class="gcv-palette" id="gcv-palette"></div>' +
+        '<div class="gcv-caption" id="gcv-desc"></div>' +
+      '</div>' +
+      '<div class="gcv-side">' +
+        '<div class="gcv-panel"><div class="gcv-paneltitle">Graph properties</div>' +
+          '<div class="gcv-rows">' +
+          '<div><span class="gcv-k">Graph</span><span class="gcv-v" id="gcv-name"></span></div>' +
+          '<div><span class="gcv-k">V / E / F</span><span class="gcv-v gcv-mono" id="gcv-vef"></span></div>' +
+          '<div><span class="gcv-k">V \u2212 E + F</span><span class="gcv-v gcv-mono" id="gcv-euler"></span></div>' +
+          '<div><span class="gcv-k">\u03B4(G) min degree</span><span class="gcv-v gcv-mono" id="gcv-delta"></span></div>' +
+          '<div><span class="gcv-k">Planar</span><span class="gcv-v" id="gcv-planar"></span></div>' +
+          '</div>' +
+          '<div class="gcv-btnrow" id="gcv-k33-row" style="display:none;">' +
+            '<button class="gcv-btn" id="gcv-k33-btn" aria-pressed="false">Show the K\u2083,\u2083 subdivision witness</button>' +
+          '</div></div>' +
+        '<div class="gcv-panel"><div class="gcv-paneltitle">Coloring status</div>' +
+          '<div class="gcv-rows">' +
+          '<div><span class="gcv-k">\u03C7(G), proven by the self-tests</span><span class="gcv-v gcv-mono" id="gcv-chrom"></span></div>' +
+          '<div><span class="gcv-k">Colors used</span><span class="gcv-v gcv-mono" id="gcv-used"></span></div>' +
+          '<div><span class="gcv-k">Vertices colored</span><span class="gcv-v gcv-mono" id="gcv-colored"></span></div>' +
+          '<div><span class="gcv-k">Conflicts</span><span class="gcv-v gcv-mono" id="gcv-conf"></span></div>' +
+          '</div>' +
+          '<div class="gcv-status" id="gcv-status"></div></div>' +
+        '<div class="gcv-panel"><div class="gcv-paneltitle">Kempe chains \u2014 the proof\u2019s move</div>' +
+          '<div class="gcv-note">Choose two colors; each connected component of the two-colored subgraph gets a Swap button.</div>' +
+          '<div class="gcv-kpairs" id="gcv-kpairs"></div>' +
+          '<div class="gcv-kcomps" id="gcv-kcomps"></div>' +
+          '<div class="gcv-btnrow" id="gcv-stage-row" style="display:none;">' +
+            '<button class="gcv-btn" id="gcv-stage-btn">Stage the proof\u2019s move (stuck state)</button>' +
+          '</div></div>' +
+        '<div class="gcv-btnrow">' +
+          '<button class="gcv-btn" id="gcv-clear">\u21BA Clear colors</button></div>' +
+      '</div></div></div>';
+
+    var style = document.createElement('style');
+    style.textContent =
+      '#graph-coloring-demo .gcv-root{display:flex;flex-direction:column;gap:12px;color:' + C.text + ';' +
+        'background:' + C.panel + ';padding:15px;border-radius:8px;border:1px solid ' + C.border + ';margin-bottom:20px;}' +
+      '#graph-coloring-demo .gcv-hint{font-size:0.86rem;color:' + C.textDim + ';line-height:1.55;}' +
+      '#graph-coloring-demo .gcv-layout{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;}' +
+      '#graph-coloring-demo .gcv-canvascell{flex:1.15;min-width:300px;max-width:560px;}' +
+      '#graph-coloring-demo canvas{width:100%;height:auto;background:' + C.canvasBg + ';border:1px solid ' + C.border + ';' +
+        'border-radius:4px;display:block;cursor:pointer;}' +
+      '#graph-coloring-demo .gcv-presets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}' +
+      '#graph-coloring-demo .gcv-palette{display:flex;gap:8px;margin-top:8px;justify-content:center;}' +
+      '#graph-coloring-demo .gcv-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;border:3px solid transparent;}' +
+      '#graph-coloring-demo .gcv-swatch.gcv-selected{border-color:#fff;box-shadow:0 0 8px rgba(255,255,255,0.5);}' +
+      '#graph-coloring-demo .gcv-caption{font-size:0.8rem;color:' + C.faint + ';margin-top:8px;line-height:1.5;}' +
+      '#graph-coloring-demo .gcv-side{flex:1;min-width:300px;display:flex;flex-direction:column;gap:12px;}' +
+      '#graph-coloring-demo .gcv-panel{border:1px solid ' + C.border + ';border-radius:8px;padding:10px 12px;background:rgba(255,255,255,0.02);}' +
+      '#graph-coloring-demo .gcv-paneltitle{font-size:0.85rem;color:' + C.accent + ';font-weight:600;margin-bottom:8px;}' +
+      '#graph-coloring-demo .gcv-rows > div{display:flex;justify-content:space-between;gap:10px;font-size:0.86rem;margin-bottom:4px;}' +
+      '#graph-coloring-demo .gcv-k{color:' + C.textDim + ';}' +
+      '#graph-coloring-demo .gcv-v{text-align:right;}' +
+      '#graph-coloring-demo .gcv-mono{font-family:"Courier New",monospace;}' +
+      '#graph-coloring-demo .gcv-btn{padding:6px 12px;border:1px solid ' + C.borderStrong + ';border-radius:4px;' +
+        'background:rgba(255,255,255,0.05);color:' + C.text + ';cursor:pointer;font-size:0.82rem;}' +
+      '#graph-coloring-demo .gcv-btn:hover{background:rgba(102,187,106,0.15);border-color:rgba(102,187,106,0.4);}' +
+      '#graph-coloring-demo .gcv-btn.gcv-active{background:rgba(102,187,106,0.2);border-color:' + C.accent + ';}' +
+      '#graph-coloring-demo .gcv-btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}' +
+      '#graph-coloring-demo .gcv-note{font-size:0.78rem;color:' + C.faint + ';line-height:1.5;margin-bottom:8px;}' +
+      '#graph-coloring-demo .gcv-kpairs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}' +
+      '#graph-coloring-demo .gcv-kpair{display:flex;align-items:center;gap:3px;padding:4px 8px;border:1px solid ' + C.borderStrong + ';' +
+        'border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.04);}' +
+      '#graph-coloring-demo .gcv-kpair.gcv-active{border-color:' + C.accent + ';background:rgba(102,187,106,0.15);}' +
+      '#graph-coloring-demo .gcv-kdot{width:12px;height:12px;border-radius:50%;display:inline-block;}' +
+      '#graph-coloring-demo .gcv-kcomps{display:flex;flex-direction:column;gap:5px;font-size:0.8rem;}' +
+      '#graph-coloring-demo .gcv-kcomp{display:flex;align-items:center;justify-content:space-between;gap:8px;' +
+        'padding:4px 8px;border:1px solid ' + C.border + ';border-radius:4px;}' +
+      '#graph-coloring-demo .gcv-kcomp:hover{border-color:' + C.warn + ';}' +
+      '#graph-coloring-demo .gcv-status{margin-top:8px;font-size:0.84rem;line-height:1.5;min-height:1.4em;}' +
+      '#graph-coloring-demo .gcv-status.gcv-good{color:' + C.accent + ';}' +
+      '#graph-coloring-demo .gcv-status.gcv-badc{color:' + C.bad + ';}' +
+      '#graph-coloring-demo .gcv-status.gcv-info{color:' + C.warn + ';}';
+    document.head.appendChild(style);
+
+    var canvas = document.getElementById('gcv-canvas');
+    var ctx = canvas.getContext('2d');
+    var el = function (id) { return document.getElementById(id); };
+
+    function toPx(p) { return { x: p.x * canvas.width, y: p.y * canvas.height }; }
+
+    // ---- rendering ----
     function draw() {
-        ctx.clearRect(0, 0, W, H);
-
-        if (!currentGraph) {
-            ctx.fillStyle = 'rgba(255,255,255,0.2)';
-            ctx.font = '16px "Exo 2", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('Select a graph above to begin.', W/2, H/2);
-            return;
+      var g = state.graph;
+      var w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      var confSet = {};
+      G.conflicts(g, state.colors).forEach(function (e) {
+        confSet[Math.min(e[0], e[1]) + ',' + Math.max(e[0], e[1])] = true;
+      });
+      var inPair = null;
+      if (state.kempePair) {
+        inPair = {};
+        state.kempeComps.forEach(function (comp, ci) {
+          comp.forEach(function (v) { inPair[v] = ci; });
+        });
+      }
+      // K3,3 overlay path edges
+      var k33Edges = {}, k33Branch = {};
+      if (state.k33 && g.key === 'petersen') {
+        G.PETERSEN_K33.paths.forEach(function (p) {
+          for (var t = 0; t + 1 < p.length; t++) {
+            k33Edges[Math.min(p[t], p[t + 1]) + ',' + Math.max(p[t], p[t + 1])] = true;
+          }
+        });
+        G.PETERSEN_K33.A.forEach(function (v) { k33Branch[v] = 'A'; });
+        G.PETERSEN_K33.B.forEach(function (v) { k33Branch[v] = 'B'; });
+      }
+      // edges
+      g.edges.forEach(function (e) {
+        var a = toPx(g.vertices[e[0]]), b = toPx(g.vertices[e[1]]);
+        var key = Math.min(e[0], e[1]) + ',' + Math.max(e[0], e[1]);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        if (confSet[key]) {
+          ctx.strokeStyle = C.bad;
+          ctx.lineWidth = 4;
+          ctx.setLineDash([]);
+        } else if (k33Edges[key]) {
+          ctx.strokeStyle = C.k33;
+          ctx.lineWidth = 3;
+          ctx.setLineDash([7, 5]);
+        } else {
+          ctx.strokeStyle = C.edge;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([]);
         }
-
-        const g = currentGraph;
-        const R = getR();
-        const conflicts = getConflicts();
-        const conflictSet = new Set(conflicts.map(([i,j]) => i + ',' + j));
-
-        // Draw edges
-        for (const [i, j] of g.edges) {
-            const a = toCanvas(g.vertices[i]);
-            const b = toCanvas(g.vertices[j]);
-            const isConflict = conflictSet.has(i+','+j) || conflictSet.has(j+','+i);
-
-            // Kempe chain highlight
-            let isKempe = false;
-            if (kempeHighlight) {
-                const cA = kempeHighlight.colorA, cB = kempeHighlight.colorB;
-                const ci = vertexColors[i], cj = vertexColors[j];
-                if ((ci === cA || ci === cB) && (cj === cA || cj === cB)) {
-                    // Check if i and j are in the same kempe component
-                    for (const comp of kempeHighlight.components) {
-                        if (comp.includes(i) && comp.includes(j)) { isKempe = true; break; }
-                    }
-                }
-            }
-
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-
-            if (isConflict) {
-                ctx.strokeStyle = 'rgba(229, 57, 53, 0.8)';
-                ctx.lineWidth = 3;
-                ctx.shadowColor = 'rgba(229, 57, 53, 0.5)';
-                ctx.shadowBlur = 8;
-            } else if (isKempe) {
-                ctx.strokeStyle = 'rgba(255, 215, 0, 0.7)';
-                ctx.lineWidth = 2.5;
-                ctx.shadowColor = 'rgba(255, 215, 0, 0.3)';
-                ctx.shadowBlur = 6;
-            } else {
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-                ctx.lineWidth = 1.5;
-                ctx.shadowBlur = 0;
-            }
-            ctx.stroke();
-            ctx.shadowBlur = 0;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+      // vertices
+      g.vertices.forEach(function (p, v) {
+        var q = toPx(p);
+        var c = state.colors[v];
+        var dim = inPair && inPair[v] === undefined;
+        ctx.beginPath();
+        ctx.arc(q.x, q.y, 17, 0, 2 * Math.PI);
+        ctx.fillStyle = c === G.UNCOLORED ? C.uncolored : G.COLORS[c];
+        ctx.globalAlpha = dim ? 0.25 : 1;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        // hover component halo
+        if (inPair && inPair[v] === state.hoverComp && state.hoverComp >= 0) {
+          ctx.strokeStyle = C.warn;
+          ctx.lineWidth = 4;
+          ctx.stroke();
+        } else {
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
         }
-
-        // Draw vertices
-        for (let i = 0; i < g.vertices.length; i++) {
-            const p = toCanvas(g.vertices[i]);
-            const c = vertexColors[i];
-            const isHovered = (i === hoveredVertex);
-
-            // Kempe dimming: if kempe is active, dim vertices not in kempe colors
-            let dimmed = false;
-            if (kempeHighlight) {
-                const ci = vertexColors[i];
-                if (ci !== kempeHighlight.colorA && ci !== kempeHighlight.colorB) {
-                    dimmed = true;
-                }
-            }
-
-            // Outer glow
-            if (isHovered && !dimmed) {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, R + 6, 0, Math.PI * 2);
-                ctx.fillStyle = c !== UNCOLORED
-                    ? COLORS[c].replace(')', ', 0.2)').replace('rgb', 'rgba')
-                    : 'rgba(171, 71, 188, 0.15)';
-                ctx.fill();
-            }
-
-            // Main circle
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, R, 0, Math.PI * 2);
-            if (c !== UNCOLORED) {
-                ctx.fillStyle = dimmed ? adjustAlpha(COLORS[c], 0.25) : COLORS[c];
-            } else {
-                ctx.fillStyle = dimmed ? 'rgba(30, 35, 50, 0.4)' : 'rgba(30, 35, 50, 0.9)';
-            }
-            ctx.fill();
-
-            // Border
-            ctx.strokeStyle = isHovered
-                ? 'rgba(255,255,255,0.7)'
-                : (c !== UNCOLORED ? 'rgba(255,255,255,0.25)' : 'rgba(171, 71, 188, 0.3)');
-            ctx.lineWidth = isHovered ? 2 : 1.2;
-            ctx.stroke();
-
-            // Vertex label
-            ctx.fillStyle = dimmed ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.8)';
-            ctx.font = `${R < 15 ? 10 : 11}px "Exo 2", sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(i, p.x, p.y);
+        // K3,3 branch marker: square outline
+        if (k33Branch[v]) {
+          ctx.strokeStyle = C.k33;
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(q.x - 24, q.y - 24, 48, 48);
         }
+        // staged target marker
+        if (state.stagedTarget === v) {
+          ctx.strokeStyle = C.warn;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(q.x, q.y, 25, 0, 2 * Math.PI);
+          ctx.setLineDash([4, 4]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        ctx.fillStyle = '#0f1419';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(v), q.x, q.y);
+      });
     }
 
-    function adjustAlpha(hex, alpha) {
-        const r = parseInt(hex.slice(1,3), 16);
-        const g = parseInt(hex.slice(3,5), 16);
-        const b = parseInt(hex.slice(5,7), 16);
-        return `rgba(${r},${g},${b},${alpha})`;
+    // ---- panels ----
+    function updatePanels() {
+      var g = state.graph;
+      el('gcv-name').textContent = g.name;
+      el('gcv-vef').textContent = g.vertices.length + ' / ' + g.edges.length + ' / ' + (g.faces === null ? '\u2014' : g.faces);
+      el('gcv-euler').textContent = g.faces === null
+        ? 'undefined (no embedding)' : String(g.vertices.length - g.edges.length + g.faces);
+      el('gcv-delta').textContent = String(Math.min.apply(null, G.degrees(g)));
+      el('gcv-planar').textContent = g.planar
+        ? 'yes \u2014 drawn with zero crossings'
+        : 'no \u2014 K\u2083,\u2083 subdivision (certified)';
+      el('gcv-desc').textContent = g.description;
+      el('gcv-chrom').textContent = '\u03C7 = ' + g.chromatic;
+      var used = {};
+      var colored = 0;
+      state.colors.forEach(function (c) { if (c !== G.UNCOLORED) { used[c] = true; colored++; } });
+      var nUsed = Object.keys(used).length;
+      el('gcv-used').textContent = String(nUsed);
+      el('gcv-colored').textContent = colored + ' / ' + g.vertices.length;
+      var conf = G.conflicts(g, state.colors);
+      el('gcv-conf').textContent = String(conf.length);
+      var st = el('gcv-status');
+      if (colored === g.vertices.length && conf.length === 0) {
+        st.className = 'gcv-status gcv-good';
+        st.textContent = '\u2713 Proper coloring with ' + nUsed + ' colors' +
+          (nUsed === g.chromatic ? ' \u2014 optimal: matches \u03C7(G)!' : ' (\u03C7(G) = ' + g.chromatic + ' is possible).');
+      } else if (conf.length > 0) {
+        st.className = 'gcv-status gcv-badc';
+        st.textContent = '\u2717 ' + conf.length + ' conflict' + (conf.length > 1 ? 's' : '') +
+          ' \u2014 adjacent vertices share a color. A Kempe swap may untangle it.';
+      } else if (state.stagedTarget !== null) {
+        st.className = 'gcv-status gcv-info';
+        st.textContent = 'Vertex ' + state.stagedTarget + ' is stuck: its neighbors wear all 4 colors. ' +
+          'Swap the highlighted Kempe component, then color it.';
+      } else {
+        st.className = 'gcv-status';
+        st.textContent = '';
+      }
     }
 
-    // ================================================================
-    // MODULE 3: INTERACTION
-    // ================================================================
-
-    function hitVertex(cx, cy) {
-        if (!currentGraph) return -1;
-        const R = getR() + 4;
-        for (let i = 0; i < currentGraph.vertices.length; i++) {
-            const p = toCanvas(currentGraph.vertices[i]);
-            const dx = cx - p.x, dy = cy - p.y;
-            if (dx*dx + dy*dy < R*R) return i;
+    function updateKempe() {
+      var pairsEl = el('gcv-kpairs');
+      var compsEl = el('gcv-kcomps');
+      pairsEl.innerHTML = '';
+      var present = {};
+      state.colors.forEach(function (c) { if (c !== G.UNCOLORED) present[c] = true; });
+      var keys = Object.keys(present).map(Number);
+      if (keys.length < 2) {
+        state.kempePair = null;
+        state.kempeComps = [];
+        compsEl.innerHTML = '<span class="gcv-note">Assign at least two colors to see Kempe chains.</span>';
+        return;
+      }
+      for (var i = 0; i < keys.length; i++) {
+        for (var j = i + 1; j < keys.length; j++) {
+          (function (a, b) {
+            var pair = document.createElement('span');
+            pair.className = 'gcv-kpair' +
+              (state.kempePair && state.kempePair[0] === a && state.kempePair[1] === b ? ' gcv-active' : '');
+            pair.dataset.pair = a + ',' + b;
+            pair.innerHTML = '<span class="gcv-kdot" style="background:' + G.COLORS[a] + '"></span>' +
+              '<span class="gcv-kdot" style="background:' + G.COLORS[b] + '"></span>';
+            pair.addEventListener('click', function () {
+              state.kempePair = [a, b];
+              refreshKempe();
+              refresh();
+            });
+            pairsEl.appendChild(pair);
+          })(keys[i], keys[j]);
         }
-        return -1;
+      }
+      refreshKempe();
     }
 
+    function refreshKempe() {
+      var compsEl = el('gcv-kcomps');
+      if (!state.kempePair) { state.kempeComps = []; compsEl.innerHTML = ''; return; }
+      var a = state.kempePair[0], b = state.kempePair[1];
+      state.kempeComps = G.kempeComponents(state.graph, a, b, state.colors);
+      compsEl.innerHTML = '';
+      state.kempeComps.forEach(function (comp, ci) {
+        var row = document.createElement('div');
+        row.className = 'gcv-kcomp';
+        row.dataset.comp = String(ci);
+        row.innerHTML = '<span>Component {' + comp.join(', ') + '}</span>' +
+          '<button class="gcv-btn gcv-swapbtn" data-comp="' + ci + '">Swap ' +
+          G.COLOR_NAMES[a] + ' \u2194 ' + G.COLOR_NAMES[b] + '</button>';
+        row.addEventListener('mouseenter', function () { state.hoverComp = ci; draw(); });
+        row.addEventListener('mouseleave', function () { state.hoverComp = -1; draw(); });
+        row.querySelector('button').addEventListener('click', function () {
+          state.colors = G.kempeSwap(state.graph, state.colors, a, b, comp);
+          refresh(); // conflicts recomputed: B8 promises zero new ones
+        });
+        compsEl.appendChild(row);
+      });
+      if (!state.kempeComps.length) {
+        compsEl.innerHTML = '<span class="gcv-note">No vertex currently wears these two colors.</span>';
+      }
+    }
+
+    function refresh() {
+      updatePanels();
+      updateKempe();
+      draw();
+    }
+
+    // ---- interactions ----
     function getEventPos(e) {
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = W / rect.width;
-        const scaleY = H / rect.height;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return { cx: (clientX - rect.left) * scaleX, cy: (clientY - rect.top) * scaleY };
+      var rect = canvas.getBoundingClientRect();
+      var scaleX = canvas.width / (rect.width || canvas.width);
+      var scaleY = canvas.height / (rect.height || canvas.height);
+      return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
     }
-
-    canvas.addEventListener('mousemove', function(e) {
-        const { cx, cy } = getEventPos(e);
-        const prev = hoveredVertex;
-        hoveredVertex = hitVertex(cx, cy);
-        if (hoveredVertex !== prev) draw();
-        canvas.style.cursor = hoveredVertex >= 0 ? 'pointer' : 'default';
+    canvas.addEventListener('click', function (e) {
+      var pos = getEventPos(e);
+      var g = state.graph;
+      for (var v = 0; v < g.vertices.length; v++) {
+        var q = toPx(g.vertices[v]);
+        if (Math.hypot(pos.x - q.x, pos.y - q.y) <= 22) {
+          state.colors[v] = (state.colors[v] === state.selected) ? G.UNCOLORED : state.selected;
+          if (state.stagedTarget === v && state.colors[v] !== G.UNCOLORED) state.stagedTarget = null;
+          refresh();
+          return;
+        }
+      }
     });
 
-    canvas.addEventListener('mouseleave', function() {
-        hoveredVertex = -1;
-        draw();
-    });
-
-    canvas.addEventListener('click', function(e) {
-        const { cx, cy } = getEventPos(e);
-        const v = hitVertex(cx, cy);
-        if (v < 0 || !currentGraph) return;
-
-        if (selectedColor === UNCOLORED) {
-            vertexColors[v] = UNCOLORED;
-        } else {
-            vertexColors[v] = selectedColor;
-        }
-
-        kempeHighlight = null; // clear kempe on color change
-        updateKempePairs();
-        draw();
-        updatePanel();
-    });
-
-    // Touch support
-    canvas.addEventListener('touchstart', function(e) {
-        e.preventDefault();
-        const { cx, cy } = getEventPos(e);
-        const v = hitVertex(cx, cy);
-        if (v < 0 || !currentGraph) return;
-        if (selectedColor === UNCOLORED) {
-            vertexColors[v] = UNCOLORED;
-        } else {
-            vertexColors[v] = selectedColor;
-        }
-        kempeHighlight = null;
-        updateKempePairs();
-        draw();
-        updatePanel();
-    }, { passive: false });
-
-    // ================================================================
-    // MODULE 4: INFO PANEL
-    // ================================================================
-
-    function updatePanel() {
-        if (!currentGraph) return;
-        const g = currentGraph;
-
-        document.getElementById('gcv-name').textContent = g.name;
-        document.getElementById('gcv-V').textContent = g.vertices.length;
-        document.getElementById('gcv-E').textContent = g.edges.length;
-        document.getElementById('gcv-F').textContent = g.faces !== null ? g.faces : '—';
-
-        if (g.planar && g.faces !== null) {
-            const chi = g.vertices.length - g.edges.length + g.faces;
-            document.getElementById('gcv-chi').textContent = chi;
-        } else {
-            document.getElementById('gcv-chi').textContent = g.planar ? '—' : 'N/A (non-planar)';
-        }
-
-        // Min degree
-        const deg = new Array(g.vertices.length).fill(0);
-        for (const [i, j] of g.edges) { deg[i]++; deg[j]++; }
-        document.getElementById('gcv-delta').textContent = Math.min(...deg);
-
-        document.getElementById('gcv-planar').textContent = g.planar ? 'Yes' : 'No';
-        document.getElementById('gcv-chromatic').textContent = g.chromatic;
-
-        // Coloring stats
-        const usedSet = new Set(vertexColors.filter(c => c !== UNCOLORED));
-        const numColored = vertexColors.filter(c => c !== UNCOLORED).length;
-        const conflicts = getConflicts();
-
-        document.getElementById('gcv-used').textContent = usedSet.size;
-        document.getElementById('gcv-colored').textContent = numColored + ' / ' + g.vertices.length;
-        document.getElementById('gcv-conflicts').textContent = conflicts.length;
-
-        // Status message
-        const statusEl = document.getElementById('gcv-status');
-        if (numColored === g.vertices.length && conflicts.length === 0) {
-            const usedCount = usedSet.size;
-            if (usedCount <= g.chromatic) {
-                statusEl.className = 'gcv-status success';
-                statusEl.textContent = usedCount === g.chromatic
-                    ? '✓ Optimal! ' + usedCount + ' colors = χ(G)'
-                    : '✓ Valid coloring with ' + usedCount + ' colors!';
-            } else {
-                statusEl.className = 'gcv-status success';
-                statusEl.textContent = '✓ Valid coloring! Can you do it with fewer colors?';
-            }
-        } else if (conflicts.length > 0) {
-            statusEl.className = 'gcv-status conflict';
-            statusEl.textContent = '✗ ' + conflicts.length + ' conflict' + (conflicts.length > 1 ? 's' : '') + ' — adjacent vertices share a color.';
-        } else if (numColored > 0) {
-            statusEl.className = 'gcv-status info';
-            statusEl.textContent = (g.vertices.length - numColored) + ' vertices remaining.';
-        } else {
-            statusEl.className = 'gcv-status';
-            statusEl.textContent = '';
-        }
-    }
-
-    // ================================================================
-    // MODULE 5: KEMPE CHAIN VIEWER
-    // ================================================================
-
-    let kempeSelection = [null, null]; // two color indices
-
-    function computeKempeChains(colorA, colorB) {
-        if (!currentGraph) return [];
-        const g = currentGraph;
-        // Find vertices colored with colorA or colorB
-        const relevant = [];
-        for (let i = 0; i < g.vertices.length; i++) {
-            if (vertexColors[i] === colorA || vertexColors[i] === colorB) {
-                relevant.push(i);
-            }
-        }
-        if (relevant.length === 0) return [];
-
-        // Build adjacency among relevant vertices
-        const adj = {};
-        for (const v of relevant) adj[v] = [];
-        for (const [i, j] of g.edges) {
-            if (adj[i] !== undefined && adj[j] !== undefined) {
-                adj[i].push(j);
-                adj[j].push(i);
-            }
-        }
-
-        // BFS to find connected components
-        const visited = new Set();
-        const components = [];
-        for (const v of relevant) {
-            if (visited.has(v)) continue;
-            const comp = [];
-            const queue = [v];
-            visited.add(v);
-            while (queue.length > 0) {
-                const u = queue.shift();
-                comp.push(u);
-                for (const w of adj[u]) {
-                    if (!visited.has(w)) {
-                        visited.add(w);
-                        queue.push(w);
-                    }
-                }
-            }
-            components.push(comp);
-        }
-        return components;
-    }
-
-    function buildKempePairs() {
-        const row = document.getElementById('gcv-kempe-row');
-        row.innerHTML = '';
-        // Generate all pairs of colors that are actually used
-        const used = [...new Set(vertexColors.filter(c => c !== UNCOLORED))].sort();
-        if (used.length < 2) {
-            document.getElementById('gcv-kempe-info').textContent = 'Need ≥ 2 colors assigned to see Kempe chains.';
-            return;
-        }
-        document.getElementById('gcv-kempe-info').textContent = '';
-
-        for (let a = 0; a < used.length; a++) {
-            for (let b = a + 1; b < used.length; b++) {
-                const cA = used[a], cB = used[b];
-                const pair = document.createElement('div');
-                pair.className = 'gcv-kempe-pair';
-                pair.innerHTML = `<span class="gcv-kempe-dot" style="background:${COLORS[cA]}"></span>` +
-                    `<span style="color:rgba(255,255,255,0.3)">–</span>` +
-                    `<span class="gcv-kempe-dot" style="background:${COLORS[cB]}"></span>`;
-                pair.addEventListener('click', function() {
-                    // Toggle
-                    if (kempeHighlight && kempeHighlight.colorA === cA && kempeHighlight.colorB === cB) {
-                        kempeHighlight = null;
-                        pair.classList.remove('active');
-                    } else {
-                        // Deactivate all
-                        row.querySelectorAll('.gcv-kempe-pair').forEach(p => p.classList.remove('active'));
-                        pair.classList.add('active');
-                        const components = computeKempeChains(cA, cB);
-                        kempeHighlight = { colorA: cA, colorB: cB, components };
-                        const info = document.getElementById('gcv-kempe-info');
-                        info.textContent = components.length + ' Kempe chain' + (components.length !== 1 ? 's' : '') +
-                            ' (' + COLOR_NAMES[cA] + '–' + COLOR_NAMES[cB] + ')';
-                    }
-                    draw();
-                });
-                row.appendChild(pair);
-            }
-        }
-    }
-
-    function updateKempePairs() {
-        kempeHighlight = null;
-        buildKempePairs();
-    }
-
-    // ================================================================
-    // INITIALIZATION: Preset buttons, palette, wiring
-    // ================================================================
-
-    // Preset buttons
-    const presetContainer = document.getElementById('gcv-preset-btns');
-    PRESETS.forEach(function(preset, idx) {
-        const btn = document.createElement('button');
-        btn.className = 'gcv-preset-btn';
-        btn.textContent = preset.name;
-        btn.addEventListener('click', function() {
-            presetContainer.querySelectorAll('.gcv-preset-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            loadGraph(idx);
+    function buildPalette() {
+      var pal = el('gcv-palette');
+      pal.innerHTML = '';
+      G.COLORS.forEach(function (col, ci) {
+        var sw = document.createElement('div');
+        sw.className = 'gcv-swatch' + (ci === state.selected ? ' gcv-selected' : '');
+        sw.style.background = col;
+        sw.title = G.COLOR_NAMES[ci];
+        sw.dataset.color = String(ci);
+        sw.addEventListener('click', function () {
+          state.selected = ci;
+          buildPalette();
         });
-        presetContainer.appendChild(btn);
-    });
-
-    // Color palette
-    const paletteContainer = document.getElementById('gcv-palette');
-    COLORS.forEach(function(color, idx) {
-        const btn = document.createElement('div');
-        btn.className = 'gcv-color-btn' + (idx === 0 ? ' active' : '');
-        btn.style.background = color;
-        btn.title = COLOR_NAMES[idx];
-        btn.addEventListener('click', function() {
-            paletteContainer.querySelectorAll('.gcv-color-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            selectedColor = idx;
-        });
-        paletteContainer.appendChild(btn);
-    });
-    // Eraser
-    const eraser = document.createElement('div');
-    eraser.className = 'gcv-color-btn eraser';
-    eraser.innerHTML = '✕';
-    eraser.title = 'Eraser';
-    eraser.addEventListener('click', function() {
-        paletteContainer.querySelectorAll('.gcv-color-btn').forEach(b => b.classList.remove('active'));
-        eraser.classList.add('active');
-        selectedColor = UNCOLORED;
-    });
-    paletteContainer.appendChild(eraser);
-
-    // Clear button
-    document.getElementById('gcv-clear-btn').addEventListener('click', function() {
-        if (!currentGraph) return;
-        vertexColors = new Array(currentGraph.vertices.length).fill(UNCOLORED);
-        kempeHighlight = null;
-        updateKempePairs();
-        draw();
-        updatePanel();
-    });
-
-    function loadGraph(idx) {
-        currentGraph = PRESETS[idx];
-        vertexColors = new Array(currentGraph.vertices.length).fill(UNCOLORED);
-        selectedColor = 0;
-        hoveredVertex = -1;
-        kempeHighlight = null;
-
-        // Reset palette selection
-        paletteContainer.querySelectorAll('.gcv-color-btn').forEach(function(b, i) {
-            b.classList.toggle('active', i === 0);
-        });
-
-        // Update instruction
-        const instrEl = document.getElementById('gcv-instruction');
-        instrEl.textContent = currentGraph.description;
-
-        updateKempePairs();
-        draw();
-        updatePanel();
+        pal.appendChild(sw);
+      });
     }
 
-    // Resize handler
-    function handleResize() {
-        const wrapper = document.getElementById('gcv-canvas-wrapper');
-        const size = Math.min(wrapper.clientWidth, 600);
-        canvas.width = size;
-        canvas.height = size;
-        W = size;
-        H = size;
-        draw();
+    function loadPreset(key) {
+      PRESETS.forEach(function (g) { if (g.key === key) state.graph = g; });
+      state.colors = new Array(state.graph.vertices.length).fill(G.UNCOLORED);
+      state.kempePair = null;
+      state.kempeComps = [];
+      state.k33 = false;
+      state.stagedTarget = null;
+      el('gcv-k33-btn').setAttribute('aria-pressed', 'false');
+      el('gcv-k33-row').style.display = state.graph.key === 'petersen' ? 'flex' : 'none';
+      el('gcv-stage-row').style.display = state.graph.key === G.STUCK_SCENARIO.graphKey ? 'flex' : 'none';
+      document.querySelectorAll('#gcv-presets .gcv-btn').forEach(function (b) {
+        b.classList.toggle('gcv-active', b.dataset.key === key);
+      });
+      refresh();
     }
-    window.addEventListener('resize', handleResize);
-    handleResize();
 
-    // Initial state: no graph loaded
-    draw();
-});
+    var presetsEl = el('gcv-presets');
+    PRESETS.forEach(function (g) {
+      var b = document.createElement('button');
+      b.className = 'gcv-btn';
+      b.dataset.key = g.key;
+      b.textContent = g.name;
+      b.addEventListener('click', function () { loadPreset(g.key); });
+      presetsEl.appendChild(b);
+    });
+
+    el('gcv-clear').addEventListener('click', function () {
+      state.colors = new Array(state.graph.vertices.length).fill(G.UNCOLORED);
+      state.stagedTarget = null;
+      refresh();
+    });
+
+    el('gcv-k33-btn').addEventListener('click', function () {
+      state.k33 = !state.k33;
+      el('gcv-k33-btn').setAttribute('aria-pressed', String(state.k33));
+      el('gcv-k33-btn').classList.toggle('gcv-active', state.k33);
+      draw();
+    });
+
+    el('gcv-stage-btn').addEventListener('click', function () {
+      var sc = G.STUCK_SCENARIO;
+      if (state.graph.key !== sc.graphKey) return;
+      state.colors = sc.colors.slice();
+      state.stagedTarget = sc.target;
+      state.kempePair = [Math.min(sc.pair[0], sc.pair[1]), Math.max(sc.pair[0], sc.pair[1])];
+      refresh();
+    });
+
+    buildPalette();
+    loadPreset('k4');
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
