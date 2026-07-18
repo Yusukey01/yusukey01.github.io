@@ -18,7 +18,7 @@ var VaeCore = (function () {
         // box geometry & placement
         BW: 12, BH: 18, BD: 12,
         BP: { x: 34, y: 0, z: 0 },
-        GRIP_Y: 22.25,           // = BH + 4.25 (vacuum pad stack: shaft 1.25 + housing 1.8 + bellows 1.2)
+        GRIP_Y: 22.25,           // = BH + 4.25 (suction manifold: shaft 0.75 + housing 1.5 + plate 0.8 + cups 1.2)
         WRIST_X_OFF: -8,         // wrist sits 8 behind box center (= -(BW/2 + 2))
         // choreography waypoints
         HOME: { x: 8, y: 46, z: 0 },
@@ -542,13 +542,16 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
             var BW=K.BW,BH=K.BH,BD=K.BD;
             var BP=new THREE.Vector3(K.BP.x,K.BP.y,K.BP.z);
             var LR=2.0,JR=2.5;
-            // vacuum gripper stack (v10): shaft + housing + bellows pad.
-            // TOTAL HEIGHT = SHAFT_H + HOUS_H + PAD_H = 1.25 + 1.8 + 1.2 = 4.25
-            // = GRIP_Y - BH exactly, so the pad face touches the box top at
-            // GRASP and every CONST / waypoint / certificate is untouched.
-            var SHAFT_H=1.25, SHAFT_R=0.5;
-            var HOUS_H=1.8, HOUS_R=1.4;
-            var PAD_H=1.2, PAD_R=3.2;
+            // vacuum gripper (v11): 4-cup suction manifold, warehouse style.
+            // TOTAL HEIGHT = SHAFT_H + HOUS_H + PLATE_H + CUP_H
+            //             = 0.75 + 1.5 + 0.8 + 1.2 = 4.25 = GRIP_Y - BH exactly,
+            // so the cup faces touch the box top at GRASP and every CONST /
+            // waypoint / certificate is untouched. Only heights are constrained;
+            // radii are free, so the assembly is sized to read against the box.
+            var SHAFT_H=0.75, SHAFT_R=1.0;
+            var HOUS_H=1.5, HOUS_R=2.2;
+            var PLATE_H=0.8, PLATE_W=7;
+            var CUP_H=1.2, CUP_R=1.4, CUP_OFF=2.2;
             var SP_OPEN=BD+12, SP_CLOSED=BD+1.8; // retained: drives bellows compression only
             var EPS_GAP=1.0;
             var NG=K.NG;
@@ -638,17 +641,21 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
             l2.castShadow=true;arm.add(l2);
             var j2=new THREE.Mesh(new THREE.SphereGeometry(JR*0.75,24,24),mJ);
             j2.castShadow=true;arm.add(j2);
-            var conn=new THREE.Mesh(new THREE.CylinderGeometry(LR*0.7,LR*0.7,1,12),mM);
+            var conn=new THREE.Mesh(new THREE.CylinderGeometry(LR*0.9,LR*0.9,1,14),mM);
             conn.castShadow=true;arm.add(conn);
-            var shaft=new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_R,SHAFT_R,SHAFT_H,14),mG);
+            var mGB=new THREE.MeshStandardMaterial({color:0x8494a8,metalness:0.65,roughness:0.3});
+            var mCup=new THREE.MeshStandardMaterial({color:0x37424e,metalness:0.05,roughness:0.9});
+            var shaft=new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_R,SHAFT_R,SHAFT_H,14),mGB);
             shaft.castShadow=true;arm.add(shaft);
-            var hous=new THREE.Mesh(new THREE.CylinderGeometry(HOUS_R,HOUS_R*0.85,HOUS_H,18),mG);
+            var hous=new THREE.Mesh(new THREE.CylinderGeometry(HOUS_R,HOUS_R*0.9,HOUS_H,20),mGB);
             hous.castShadow=true;arm.add(hous);
-            var mPad=new THREE.MeshStandardMaterial({color:0x2b3540,metalness:0.1,roughness:0.85});
-            var pad=new THREE.Mesh(new THREE.CylinderGeometry(PAD_R*0.62,PAD_R,PAD_H,24),mPad);
-            pad.castShadow=true;arm.add(pad);
-            var lip=new THREE.Mesh(new THREE.TorusGeometry(PAD_R*0.93,0.22,10,26),mPad);
-            lip.rotation.x=Math.PI/2;arm.add(lip);
+            var plate=new THREE.Mesh(new THREE.BoxGeometry(PLATE_W,PLATE_H,PLATE_W),mGB);
+            plate.castShadow=true;arm.add(plate);
+            var cups=[];
+            for(var ci=0;ci<4;ci++){
+                var cup=new THREE.Mesh(new THREE.CylinderGeometry(CUP_R*0.6,CUP_R,CUP_H,18),mCup);
+                cup.castShadow=true;arm.add(cup);cups.push(cup);
+            }
 
             // === GHOST ARMS ===
             var ghosts=[];
@@ -659,9 +666,14 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
                     j2:new THREE.Mesh(new THREE.SphereGeometry(JR*0.75,14,14),gM()),
                     conn:new THREE.Mesh(new THREE.CylinderGeometry(LR*0.7,LR*0.7,1,8),gM()),
                     shaft:new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_R,SHAFT_R,SHAFT_H,8),gM()),
-                    hous:new THREE.Mesh(new THREE.CylinderGeometry(HOUS_R,HOUS_R*0.85,HOUS_H,10),gM()),
-                    pad:new THREE.Mesh(new THREE.CylinderGeometry(PAD_R*0.62,PAD_R,PAD_H,14),gM())};
-                gg.parts=[gg.l1,gg.j1,gg.l2,gg.j2,gg.conn,gg.shaft,gg.hous,gg.pad];
+                    hous:new THREE.Mesh(new THREE.CylinderGeometry(HOUS_R,HOUS_R*0.9,HOUS_H,10),gM()),
+                    plate:new THREE.Mesh(new THREE.BoxGeometry(PLATE_W,PLATE_H,PLATE_W),gM()),
+                    cups:[new THREE.Mesh(new THREE.CylinderGeometry(CUP_R*0.6,CUP_R,CUP_H,10),gM()),
+                        new THREE.Mesh(new THREE.CylinderGeometry(CUP_R*0.6,CUP_R,CUP_H,10),gM()),
+                        new THREE.Mesh(new THREE.CylinderGeometry(CUP_R*0.6,CUP_R,CUP_H,10),gM()),
+                        new THREE.Mesh(new THREE.CylinderGeometry(CUP_R*0.6,CUP_R,CUP_H,10),gM())]};
+                gg.parts=[gg.l1,gg.j1,gg.l2,gg.j2,gg.conn,gg.shaft,gg.hous,gg.plate,
+                    gg.cups[0],gg.cups[1],gg.cups[2],gg.cups[3]];
                 gg.parts.forEach(function(p){p.visible=false;scene.add(p);});
                 ghosts.push(gg);
             }
@@ -696,14 +708,18 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
                 posC(l2,ik.elbow,ik.wrist); j2.position.copy(ik.wrist);
                 var gp=gripPos3(ik);
                 posC(conn,ik.wrist,gp);
-                // sp in [SP_CLOSED, SP_OPEN] -> bellows compression c in [0.72, 1]
+                // sp in [SP_CLOSED, SP_OPEN] -> cup compression c in [0.72, 1]
                 var c=0.72+0.28*Math.min(1,Math.max(0,(sp-SP_CLOSED)/(SP_OPEN-SP_CLOSED)));
-                var padH=PAD_H*c, drop=SHAFT_H+HOUS_H+PAD_H;
+                var cupH=CUP_H*c, drop=SHAFT_H+HOUS_H+PLATE_H+CUP_H;
                 shaft.position.set(gp.x, gp.y-SHAFT_H/2, gp.z); shaft.quaternion.identity();
                 hous.position.set(gp.x, gp.y-SHAFT_H-HOUS_H/2, gp.z); hous.quaternion.identity();
-                pad.scale.set(1,c,1);
-                pad.position.set(gp.x, gp.y-drop+padH/2, gp.z); pad.quaternion.identity();
-                lip.position.set(gp.x, gp.y-drop+0.12, gp.z);
+                plate.position.set(gp.x, gp.y-SHAFT_H-HOUS_H-PLATE_H/2, gp.z); plate.quaternion.identity();
+                for(var qi=0;qi<4;qi++){
+                    var ox=(qi<2?-1:1)*CUP_OFF, oz=(qi%2===0?-1:1)*CUP_OFF;
+                    cups[qi].scale.set(1,c,1);
+                    cups[qi].position.set(gp.x+ox, gp.y-drop+cupH/2, gp.z+oz);
+                    cups[qi].quaternion.identity();
+                }
             }
             function poseGh(g,ik,sp,op){
                 posC(g.l1,ik.base,ik.elbow); g.j1.position.copy(ik.elbow);
@@ -711,11 +727,16 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
                 var gp=gripPos3(ik);
                 posC(g.conn,ik.wrist,gp);
                 var c=0.72+0.28*Math.min(1,Math.max(0,(sp-SP_CLOSED)/(SP_OPEN-SP_CLOSED)));
-                var padH=PAD_H*c, drop=SHAFT_H+HOUS_H+PAD_H;
+                var cupH=CUP_H*c, drop=SHAFT_H+HOUS_H+PLATE_H+CUP_H;
                 g.shaft.position.set(gp.x,gp.y-SHAFT_H/2,gp.z); g.shaft.quaternion.identity();
                 g.hous.position.set(gp.x,gp.y-SHAFT_H-HOUS_H/2,gp.z); g.hous.quaternion.identity();
-                g.pad.scale.set(1,c,1);
-                g.pad.position.set(gp.x,gp.y-drop+padH/2,gp.z); g.pad.quaternion.identity();
+                g.plate.position.set(gp.x,gp.y-SHAFT_H-HOUS_H-PLATE_H/2,gp.z); g.plate.quaternion.identity();
+                for(var qi=0;qi<4;qi++){
+                    var ox=(qi<2?-1:1)*CUP_OFF, oz=(qi%2===0?-1:1)*CUP_OFF;
+                    g.cups[qi].scale.set(1,c,1);
+                    g.cups[qi].position.set(gp.x+ox,gp.y-drop+cupH/2,gp.z+oz);
+                    g.cups[qi].quaternion.identity();
+                }
                 g.parts.forEach(function(p){p.visible=true;p.material.opacity=op;});
             }
             function hideGh(g){g.parts.forEach(function(p){p.visible=false;});}
