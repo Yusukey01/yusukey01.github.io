@@ -552,7 +552,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = TfCore; 
                 '#transformer_demo .tf-btn:disabled{opacity:0.35;cursor:not-allowed;}' +
                 '#transformer_demo .tf-body{display:flex;gap:20px;margin-top:18px;}' +
                 '@media (max-width:900px){#transformer_demo .tf-body{flex-direction:column;}}' +
-                '#transformer_demo .tf-svg-wrap{flex:0 0 330px;background:' + C.plotBg + ';border-radius:8px;padding:16px 0;border:1px solid ' + C.panelBorder + ';align-self:flex-start;}' +
+                '#transformer_demo .tf-svg-wrap{flex:0 0 290px;background:' + C.plotBg + ';border-radius:8px;padding:14px 0;border:1px solid ' + C.panelBorder + ';align-self:flex-start;position:sticky;top:12px;}' +
                 '#transformer_demo .tf-panel{flex:1;min-width:0;}' +
                 '#transformer_demo .tf-step-title{color:' + C.warn + ';font-size:1.15rem;font-weight:bold;margin:0 0 8px 0;}' +
                 '#transformer_demo .tf-step-desc{font-size:0.9rem;color:rgba(255,255,255,0.75);line-height:1.55;margin:0 0 12px 0;}' +
@@ -840,7 +840,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = TfCore; 
 
         /* ---------------- static markup ---------------- */
         var svgHTML =
-            '<svg width="330" height="700" viewBox="0 0 350 720" style="display:block;margin:0 auto;">' +
+            '<svg width="290" height="615" viewBox="0 0 350 720" style="display:block;margin:0 auto;">' +
             '<defs>' +
             '<marker id="tf-arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="#445870"/></marker>' +
             '<marker id="tf-arrow-active" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="#69f0ae"/></marker>' +
