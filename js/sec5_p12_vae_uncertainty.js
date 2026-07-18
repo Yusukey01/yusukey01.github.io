@@ -553,7 +553,6 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
             var PLATE_H=0.8, PLATE_W=7;
             var CUP_H=1.2, CUP_R=1.4, CUP_OFF=2.2;
             var SP_OPEN=BD+12, SP_CLOSED=BD+1.8; // retained: drives bellows compression only
-            var EPS_GAP=1.0;
             var NG=K.NG;
             var PRE_LIFT_H=K.PRE_LIFT_H, PRE_LIFT_WAIT=0.5;
 
@@ -822,8 +821,10 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
                     if(t>=d){
                         var ik=solveIK3(eeT);
                         var gp=gripPos3(ik);
+                        // suction (v11): exact contact -- cup faces sit on the box
+                        // top, so the carry offset is the raw grasp-time offset.
+                        // (The finger-era EPS_GAP seating clearance is gone.)
                         boxGripOff.copy(BP).sub(gp);
-                        boxGripOff.y-=EPS_GAP;
                         boxAttached=true;
                         setSt(ST.PRE_LIFT);
                     }break;}
