@@ -18,7 +18,7 @@ var VaeCore = (function () {
         // box geometry & placement
         BW: 12, BH: 18, BD: 12,
         BP: { x: 34, y: 0, z: 0 },
-        GRIP_Y: 22.25,           // = BH - 3 + 1.25 + FL(6)
+        GRIP_Y: 22.25,           // = BH + 4.25 (vacuum pad stack: shaft 1.25 + housing 1.8 + bellows 1.2)
         WRIST_X_OFF: -8,         // wrist sits 8 behind box center (= -(BW/2 + 2))
         // choreography waypoints
         HOME: { x: 8, y: 46, z: 0 },
@@ -542,9 +542,14 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
             var BW=K.BW,BH=K.BH,BD=K.BD;
             var BP=new THREE.Vector3(K.BP.x,K.BP.y,K.BP.z);
             var LR=2.0,JR=2.5;
-            var FL=6,FW=1.8,FD=1.2;
-            var BRK_W=1.0;
-            var SP_OPEN=BD+12, SP_CLOSED=BD+FW;
+            // vacuum gripper stack (v10): shaft + housing + bellows pad.
+            // TOTAL HEIGHT = SHAFT_H + HOUS_H + PAD_H = 1.25 + 1.8 + 1.2 = 4.25
+            // = GRIP_Y - BH exactly, so the pad face touches the box top at
+            // GRASP and every CONST / waypoint / certificate is untouched.
+            var SHAFT_H=1.25, SHAFT_R=0.5;
+            var HOUS_H=1.8, HOUS_R=1.4;
+            var PAD_H=1.2, PAD_R=3.2;
+            var SP_OPEN=BD+12, SP_CLOSED=BD+1.8; // retained: drives bellows compression only
             var EPS_GAP=1.0;
             var NG=K.NG;
             var PRE_LIFT_H=K.PRE_LIFT_H, PRE_LIFT_WAIT=0.5;
@@ -635,12 +640,15 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
             j2.castShadow=true;arm.add(j2);
             var conn=new THREE.Mesh(new THREE.CylinderGeometry(LR*0.7,LR*0.7,1,12),mM);
             conn.castShadow=true;arm.add(conn);
-            var bar=new THREE.Mesh(new THREE.BoxGeometry(BRK_W,2.5,1),mG);
-            bar.castShadow=true;arm.add(bar);
-            var fLm=new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),mG);
-            fLm.castShadow=true;arm.add(fLm);
-            var fRm=new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),mG);
-            fRm.castShadow=true;arm.add(fRm);
+            var shaft=new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_R,SHAFT_R,SHAFT_H,14),mG);
+            shaft.castShadow=true;arm.add(shaft);
+            var hous=new THREE.Mesh(new THREE.CylinderGeometry(HOUS_R,HOUS_R*0.85,HOUS_H,18),mG);
+            hous.castShadow=true;arm.add(hous);
+            var mPad=new THREE.MeshStandardMaterial({color:0x2b3540,metalness:0.1,roughness:0.85});
+            var pad=new THREE.Mesh(new THREE.CylinderGeometry(PAD_R*0.62,PAD_R,PAD_H,24),mPad);
+            pad.castShadow=true;arm.add(pad);
+            var lip=new THREE.Mesh(new THREE.TorusGeometry(PAD_R*0.93,0.22,10,26),mPad);
+            lip.rotation.x=Math.PI/2;arm.add(lip);
 
             // === GHOST ARMS ===
             var ghosts=[];
@@ -650,10 +658,10 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
                     l2:new THREE.Mesh(new THREE.CylinderGeometry(LR*0.85,LR,1,10),gM()),
                     j2:new THREE.Mesh(new THREE.SphereGeometry(JR*0.75,14,14),gM()),
                     conn:new THREE.Mesh(new THREE.CylinderGeometry(LR*0.7,LR*0.7,1,8),gM()),
-                    bar:new THREE.Mesh(new THREE.BoxGeometry(BRK_W,2.5,1),gM()),
-                    fL:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM()),
-                    fR:new THREE.Mesh(new THREE.BoxGeometry(FD,FL,FW),gM())};
-                gg.parts=[gg.l1,gg.j1,gg.l2,gg.j2,gg.conn,gg.bar,gg.fL,gg.fR];
+                    shaft:new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_R,SHAFT_R,SHAFT_H,8),gM()),
+                    hous:new THREE.Mesh(new THREE.CylinderGeometry(HOUS_R,HOUS_R*0.85,HOUS_H,10),gM()),
+                    pad:new THREE.Mesh(new THREE.CylinderGeometry(PAD_R*0.62,PAD_R,PAD_H,14),gM())};
+                gg.parts=[gg.l1,gg.j1,gg.l2,gg.j2,gg.conn,gg.shaft,gg.hous,gg.pad];
                 gg.parts.forEach(function(p){p.visible=false;scene.add(p);});
                 ghosts.push(gg);
             }
@@ -688,20 +696,26 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = VaeCore;
                 posC(l2,ik.elbow,ik.wrist); j2.position.copy(ik.wrist);
                 var gp=gripPos3(ik);
                 posC(conn,ik.wrist,gp);
-                bar.position.copy(gp); bar.scale.z=sp; bar.quaternion.identity();
-                var hs=sp/2, fd=FL/2+1.25;
-                fLm.position.set(gp.x, gp.y-fd, gp.z-hs); fLm.quaternion.identity();
-                fRm.position.set(gp.x, gp.y-fd, gp.z+hs); fRm.quaternion.identity();
+                // sp in [SP_CLOSED, SP_OPEN] -> bellows compression c in [0.72, 1]
+                var c=0.72+0.28*Math.min(1,Math.max(0,(sp-SP_CLOSED)/(SP_OPEN-SP_CLOSED)));
+                var padH=PAD_H*c, drop=SHAFT_H+HOUS_H+PAD_H;
+                shaft.position.set(gp.x, gp.y-SHAFT_H/2, gp.z); shaft.quaternion.identity();
+                hous.position.set(gp.x, gp.y-SHAFT_H-HOUS_H/2, gp.z); hous.quaternion.identity();
+                pad.scale.set(1,c,1);
+                pad.position.set(gp.x, gp.y-drop+padH/2, gp.z); pad.quaternion.identity();
+                lip.position.set(gp.x, gp.y-drop+0.12, gp.z);
             }
             function poseGh(g,ik,sp,op){
                 posC(g.l1,ik.base,ik.elbow); g.j1.position.copy(ik.elbow);
                 posC(g.l2,ik.elbow,ik.wrist); g.j2.position.copy(ik.wrist);
                 var gp=gripPos3(ik);
                 posC(g.conn,ik.wrist,gp);
-                g.bar.position.copy(gp); g.bar.scale.z=sp; g.bar.quaternion.identity();
-                var hs=sp/2,fd=FL/2+1.25;
-                g.fL.position.set(gp.x,gp.y-fd,gp.z-hs); g.fL.quaternion.identity();
-                g.fR.position.set(gp.x,gp.y-fd,gp.z+hs); g.fR.quaternion.identity();
+                var c=0.72+0.28*Math.min(1,Math.max(0,(sp-SP_CLOSED)/(SP_OPEN-SP_CLOSED)));
+                var padH=PAD_H*c, drop=SHAFT_H+HOUS_H+PAD_H;
+                g.shaft.position.set(gp.x,gp.y-SHAFT_H/2,gp.z); g.shaft.quaternion.identity();
+                g.hous.position.set(gp.x,gp.y-SHAFT_H-HOUS_H/2,gp.z); g.hous.quaternion.identity();
+                g.pad.scale.set(1,c,1);
+                g.pad.position.set(gp.x,gp.y-drop+padH/2,gp.z); g.pad.quaternion.identity();
                 g.parts.forEach(function(p){p.visible=true;p.material.opacity=op;});
             }
             function hideGh(g){g.parts.forEach(function(p){p.visible=false;});}
