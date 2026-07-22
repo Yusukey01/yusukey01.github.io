@@ -1,0 +1,572 @@
+---
+layout: default
+title: "Brownian Motion"
+topic_id: prob-27
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Brownian Motion</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#overview">A New Kind of Calculus</a>
+            <a href="#construction">Constructing a Process from its Marginals</a>
+            <a href="#wiener">The Wiener Process</a>
+            <a href="#paths">Path Regularity and Irregularity</a>
+            <a href="#outlook">From Pathwise Failure to an L² Theory</a>
+        </div>
+
+        <div class="container">
+
+            <section id="overview" class="section-content">
+                <h2>A New Kind of Calculus</h2>
+
+                <p>
+                    This page opens a new track, devoted to the mathematics of randomness that evolves in continuous
+                    time. Ordinary calculus describes quantities whose change is governed by a rate. Given an initial
+                    condition, a well-posed differential equation determines the entire future. Many systems are not
+                    like this. A pollen grain is buffeted by molecular collisions, a transmitted signal drifts under
+                    noise, and an image dissolves into static. In such systems the change over each instant carries an
+                    irreducible random component. The object of study is then a stochastic process, and its law is a
+                    probability distribution over entire paths rather than over single values.
+                </p>
+
+                <p>
+                    The track follows a single arc. This page constructs its central object, Brownian motion, the
+                    mathematical model of pure noise accumulating in time. We then establish how its paths behave. They
+                    turn out to be so irregular that ordinary calculus fails on them. The failure is precise and
+                    quantifiable, and it dictates the shape of the remedy. The pages that follow build that remedy.
+                    First comes an integral against Brownian motion with its own chain rule, the Itô calculus.
+                    Differential equations driven by noise come next, and with them the equations that govern how
+                    probability densities evolve under such dynamics.
+                </p>
+
+                <p>
+                    Two earlier threads of the curriculum meet here. In the analysis track, the study of
+                    <a href="../Calculus/fourier_pde_heat.html"><strong>the heat equation</strong></a> showed that its fundamental
+                    solution is the density of a Brownian motion, and the connection was left there as a bridge to be
+                    crossed in either direction. This track is the crossing from the probabilistic side. In Section V,
+                    <a href="../Machine_learning/flow_matching.html"><strong>flow matching</strong></a> manipulates a process
+                    \(\mathbf{w}_t\) and its increments \(d\mathbf{w}_t\) as given, while
+                    <a href="../Machine_learning/diffusion_models.html"><strong>diffusion models</strong></a> invoke Brownian motion as
+                    the continuous-time limit of their forward chain. Both defer the construction of these objects.
+                    That debt begins to be repaid on this page and is settled over the course of the track.
+                </p>
+            </section>
+
+            <section id="construction" class="section-content">
+                <h2>Constructing a Process from its Marginals</h2>
+
+                <p>
+                    We have built the measure-theoretic apparatus of probability:
+                    a <strong>random variable</strong> is a measurable map on a
+                    <a href="../Calculus/measure.html#D-p_space" class="ref-link"><strong>probability space</strong></a>,
+                    its law is a pushforward measure, and the
+                    <a href="limit_theorems_product_measures.html#D-rv-independence" class="ref-link"><strong>independence of random variables</strong></a>
+                    is the independence of the \(\sigma\)-algebras they generate. All of this was static: a fixed,
+                    finite (or countable) collection of random quantities on one space. We now confront a new
+                    object — a family of random variables \(\{\mathbf{X}_t\}_{t \geq 0}\) indexed by a
+                    <em>continuum</em> of times, whose defining feature is not any single marginal law but the way its
+                    values at different times relate to one another.
+                </p>
+
+                <p>
+                    A <strong>stochastic process</strong> with values in \(\mathbb{R}^n\) is such a family
+                    \(\{\mathbf{X}_t\}_{t \in T}\) of random variables on a common probability space
+                    \((\Omega, \mathcal{F}, \mathbb{P})\), where the index set \(T\) is here the half-line \([0, \infty)\).
+                    There are two complementary ways to look at it. Fixing \(t\), the map
+                    \(\omega \mapsto \mathbf{X}_t(\omega)\) is an ordinary random variable — a snapshot. Fixing \(\omega\)
+                    instead, the map
+                    \[
+                    t \mapsto \mathbf{X}_t(\omega)
+                    \]
+                    is a single function of time, called a <strong>path</strong> (or a <strong>sample path</strong>) of
+                    the process. The intuition to keep in mind is that \(t\) is time and each \(\omega\) is one
+                    "experiment" or "particle": \(\mathbf{X}_t(\omega)\) records the state of that particle at time \(t\).
+                </p>
+
+                <p>
+                    How does one <em>build</em> a process indexed by an uncountable set? We cannot list its values, and
+                    it is far from clear how to specify a measure on the space of all paths directly. What we <em>can</em>
+                    specify are the <strong>finite-dimensional distributions</strong>: for every finite tuple of times
+                    \(t_1, \ldots, t_k\), a probability measure \(\nu_{t_1, \ldots, t_k}\) on \(\mathbb{R}^{nk}\) that we
+                    intend to be the joint law of \((\mathbf{X}_{t_1}, \ldots, \mathbf{X}_{t_k})\). This is a
+                    dramatic reduction: an object over a continuum of times is pinned down by a consistent system of
+                    <em>finite</em>-dimensional data. The word "consistent" is doing real work, and two conditions make
+                    it precise.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why finite-dimensional data suffice</h3>
+                    <p>
+                        The building-block events about a process — "the particle is in region \(A\) at time
+                        \(t_1\) and in region \(B\) at time \(t_2\)" — involve only finitely many times at once.
+                        Such events are called <strong>cylinder sets</strong>. If we know the probability of every
+                        cylinder set consistently, we have specified a finitely additive set function on the algebra
+                        they generate; verifying countable additivity and extending does the rest. This is the same philosophy by which the
+                        <a href="limit_theorems_product_measures.html#D-product-sigma" class="ref-link"><strong>product measure</strong></a>
+                        for a finite sequence of independent draws was built from its rectangles — only now the index set
+                        is uncountable, and the rectangles become cylinders over finite time-tuples.
+                    </p>
+                </div>
+
+                <p>
+                    For a family \(\{\nu_{t_1, \ldots, t_k}\}\) to be the finite-dimensional distributions of an actual
+                    process, it must be internally coherent under the two operations that relate different finite tuples:
+                    permuting the times, and forgetting some of them. These are the <strong>Kolmogorov consistency conditions</strong>. 
+                    Writing \(\sigma\) for a permutation of \(\{1, \ldots, k\}\), the first demands
+                    that reordering the times relabels the coordinate sets consistently,
+                    \[
+                    \begin{align*}
+                    \nu_{t_{\sigma(1)}, \ldots, t_{\sigma(k)}}&(F_1 \times \cdots \times F_k) \\\\
+                    &= \nu_{t_1, \ldots, t_k}\bigl(F_{\sigma^{-1}(1)} \times \cdots \times F_{\sigma^{-1}(k)}\bigr),
+                    \end{align*}
+                    \]
+                    and the second demands that appending extra times and then integrating them out over all of
+                    \(\mathbb{R}^n\) recovers the lower-dimensional law,
+                    \[
+                    \begin{align*}
+                    \nu_{t_1, \ldots, t_k}&(F_1 \times \cdots \times F_k) \\\\
+                    &= \nu_{t_1, \ldots, t_{k+m}}\bigl(F_1 \times \cdots \times F_k \times \underbrace{\mathbb{R}^n \times \cdots \times \mathbb{R}^n}_{m}\bigr).
+                    \end{align*}
+                    \]
+                    These are exactly the compatibilities that any genuine joint law automatically satisfies; the content
+                    of the following theorem is that they are also <em>sufficient</em>.
+                </p>
+
+                <div class="theorem" id="T-kolmogorov_extension">
+                    <span class="theorem-title">Theorem: Kolmogorov's Extension Theorem</span>
+                    <p>
+                        Let \(T\) be an index set. Suppose that for every finite tuple \(t_1, \ldots, t_k \in T\)
+                        (with \(k \in \mathbb{N}\)) we are given a probability measure \(\nu_{t_1, \ldots, t_k}\) on
+                        \((\mathbb{R}^{nk}, \mathcal{B}(\mathbb{R}^{nk}))\), and that this family satisfies the two
+                        Kolmogorov consistency conditions above. Then there exist a probability space
+                        \((\Omega, \mathcal{F}, \mathbb{P})\) and a stochastic process
+                        \(\{\mathbf{X}_t\}_{t \in T}\) on it, with values in \(\mathbb{R}^n\), such that
+                        \[
+                        \nu_{t_1, \ldots, t_k}(F_1 \times \cdots \times F_k)
+                        =
+                        \mathbb{P}\bigl[\mathbf{X}_{t_1} \in F_1, \ldots, \mathbf{X}_{t_k} \in F_k\bigr]
+                        \]
+                        for all times \(t_i \in T\), all \(k \in \mathbb{N}\), and all Borel sets \(F_i \subseteq \mathbb{R}^n\).
+                    </p>
+                </div>
+
+                <p>
+                    We take this theorem on faith at this stage: its proof reduces the construction to the
+                    <a href="../Calculus/measure.html#T-caratheodory_extension" class="ref-link"><strong>Carathéodory extension theorem</strong></a>
+                    that produced product measures — one verifies \(\sigma\)-additivity of the induced set function on
+                    the algebra of cylinder sets and then extends, the subtlety being that the
+                    index set is now infinite. The construction belongs to the measure-theoretic foundations of
+                    probability, so we state it here without proof. What matters is the license it grants:
+                    <em>to build a process, it suffices to write down a consistent system of finite-dimensional
+                    laws.</em> The infinite product measure that underwrote i.i.d. sequences in the laws of large
+                    numbers was one special case; Brownian motion is another.
+                </p>
+            </section>
+
+            <section id="wiener" class="section-content">
+                <h2>The Wiener Process</h2>
+
+                <p>
+                    In 1828 the Scottish botanist Robert Brown observed that pollen grains suspended in water executed an
+                    irregular motion, later understood as the aggregate effect of molecular collisions. To model the
+                    displacement of such a grain we want a process
+                    \(\{\mathbf{w}_t\}_{t \geq 0}\) in \(\mathbb{R}^n\) whose increments are random, independent over
+                    disjoint time intervals, and statistically homogeneous in time. We now turn these physical
+                    desiderata into three axioms and then verify — via
+                    <a href="#T-kolmogorov_extension" class="ref-link"><strong>Kolmogorov's extension theorem</strong></a>
+                    — that a process meeting them exists.
+                </p>
+
+                <p>
+                    The first axiom fixes the marginal and joint laws. Recall that a
+                    <a href="gaussian_process.html#D-gaussian_process" class="ref-link"><strong>Gaussian process</strong></a>
+                    is a collection of random variables, any finite subcollection of which has a joint
+                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a>.
+                    Brownian motion is the Gaussian process whose index set is time and whose mean and covariance are
+                    the simplest ones compatible with independent, time-homogeneous increments starting from a point.
+                </p>
+
+                <div class="theorem" id="D-wiener_process">
+                    <span class="theorem-title">Definition: Brownian Motion (Wiener Process)</span>
+                    <p>
+                        An \(n\)-dimensional <strong>Brownian motion</strong> started at \(x \in \mathbb{R}^n\) is a
+                        stochastic process \(\{\mathbf{w}_t\}_{t \geq 0}\) with values in \(\mathbb{R}^n\) satisfying:
+                    </p>
+                    <p>
+                        <strong>(W1) Gaussian process.</strong><br>
+                        \(\{\mathbf{w}_t\}\) is a Gaussian process with
+                        \[
+                        \begin{align*}
+                        &\mathbb{E}[\mathbf{w}_t] = x \quad (t \geq 0), \\\\
+                        &\operatorname{Cov}(\mathbf{w}_s, \mathbf{w}_t) = \min(s, t)\, I_n ,
+                        \end{align*}
+                        \]
+                        where \(\operatorname{Cov}(\mathbf{w}_s, \mathbf{w}_t) = \mathbb{E}\bigl[(\mathbf{w}_s - x)(\mathbf{w}_t - x)^\top\bigr]\)
+                        denotes the matrix of cross-covariances.
+                    </p>
+
+                    <p>
+                        <strong>(W2) Independent increments.</strong><br>
+                        For all
+                        \(0 \leq t_1 \lt t_2 \lt \cdots \lt t_k\), the increments
+                        \[
+                        \mathbf{w}_{t_1},\; \mathbf{w}_{t_2} - \mathbf{w}_{t_1},\; \ldots,\; \mathbf{w}_{t_k} - \mathbf{w}_{t_{k-1}}
+                        \]
+                        are independent.
+                    </p>
+                    <p>
+                        <strong>(W3) Continuous paths.</strong><br>
+                        For almost every \(\omega\), the map
+                        \(t \mapsto \mathbf{w}_t(\omega)\) is continuous.
+                    </p>
+                    <p>
+                        When \(x = 0\) the process is called <strong>standard</strong> Brownian motion. We write
+                        \(\mathbf{w}_t\) throughout; the starting point \(x\) is a fixed (deterministic) point of
+                        \(\mathbb{R}^n\), since (W1) forces \(\operatorname{Var}(\mathbf{w}_0) = 0\).
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Reading the covariance</h3>
+                    <p>
+                        The covariance \(\operatorname{Cov}(\mathbf{w}_s, \mathbf{w}_t) = \min(s,t)\,I_n\) imposed in
+                        (W1) already entails the independent increments of (W2): for a Gaussian process, uncorrelated
+                        random variables are independent, and \(\min(s,t)\,I_n\) is exactly the covariance that makes
+                        increments over disjoint intervals uncorrelated. We list (W2) separately for emphasis, but it is
+                        a consequence of (W1). As a consistency check, the covariance itself follows for \(s \leq t\) by
+                        writing \(\mathbf{w}_t = \mathbf{w}_s + (\mathbf{w}_t - \mathbf{w}_s)\) and using that the
+                        increment \(\mathbf{w}_t - \mathbf{w}_s\) is uncorrelated with \(\mathbf{w}_s\),
+                        \[
+                        \operatorname{Cov}(\mathbf{w}_s, \mathbf{w}_t)
+                        = \operatorname{Cov}(\mathbf{w}_s, \mathbf{w}_s) + \operatorname{Cov}(\mathbf{w}_s, \mathbf{w}_t - \mathbf{w}_s)
+                        = s\, I_n + 0 = \min(s,t)\, I_n .
+                        \]
+                        In particular \(\mathbb{E}\|\mathbf{w}_t - \mathbf{w}_s\|^2 = n\,|t - s|\): the increment over an
+                        interval has variance proportional to the length of that interval, the hallmark of a
+                        diffusion. This scaling — variance growing like \(|t-s|\), not \(|t-s|^2\) — is what makes the
+                        quadratic variation of the paths finite and nonzero, as the next section shows.
+                    </p>
+                </div>
+
+                <p>
+                    <strong>Existence.</strong> Axioms (W1)-(W2) determine every finite-dimensional distribution
+                    explicitly: \((\mathbf{w}_{t_1}, \ldots, \mathbf{w}_{t_k})\) is the multivariate normal with mean
+                    \((x, \ldots, x)\) and covariance block matrix \([\min(t_i, t_j)\, I_n]_{i,j}\). This is well
+                    defined because \(\min(s, t)\) is a
+                    <a href="gaussian_process.html#D-mercer_kernel" class="ref-link"><strong>Mercer kernel</strong></a>:
+                    from \(\min(s, t) = \int_0^\infty \mathbf{1}_{[0,s]}(u)\, \mathbf{1}_{[0,t]}(u)\, du\),
+                    \[
+                    \begin{align*}
+                    \sum_{i,j=1}^{k} c_i c_j \min(t_i, t_j)
+                    &= \int_0^\infty \Bigl(\sum_{i=1}^{k} c_i\, \mathbf{1}_{[0,t_i]}(u)\Bigr)^{2} du \geq 0 ,
+                    \end{align*}
+                    \]
+                    so every matrix \([\min(t_i, t_j)]_{i,j}\) is positive semidefinite. One checks directly
+                    that this family of Gaussian laws satisfies the two consistency conditions — permutation invariance
+                    is symmetry of the covariance matrix under simultaneous row/column permutation, and marginalization
+                    is the fact that a coordinate projection of a Gaussian vector is again Gaussian with the
+                    corresponding sub-mean and sub-covariance. Kolmogorov's extension theorem then furnishes a process
+                    with precisely these finite-dimensional distributions. This settles (W1)-(W2); the continuity axiom
+                    (W3) is of a different nature and cannot come from the finite-dimensional data alone, as we now
+                    explain.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why continuity is not automatic</h3>
+                    <p>
+                        The extension theorem produces a process on the space of <em>all</em>
+                        \(\mathbb{R}^n\)-valued functions of \(t\), with the \(\sigma\)-algebra generated by cylinder
+                        sets. Every event in that \(\sigma\)-algebra is determined by the values of the path at
+                        countably many times, while no countable set of times can decide whether a path is
+                        continuous — so the event "the path is continuous" is not even measurable with respect to
+                        that \(\sigma\)-algebra. Fixing
+                        the finite-dimensional laws leaves the fine structure of the paths undetermined; two processes
+                        with identical marginals can have very different path behavior. The resolution is that we
+                        may <em>choose</em> a version of the process — one agreeing with the given marginals but with
+                        better paths — and a quantitative moment bound guarantees a continuous choice exists.
+                    </p>
+                </div>
+
+                <p>
+                    Two processes \(\{\mathbf{X}_t\}\) and \(\{\mathbf{Y}_t\}\) on the same probability space are called
+                    <strong>versions</strong> (or modifications) of one another if
+                    \(\mathbb{P}[\mathbf{X}_t = \mathbf{Y}_t] = 1\) for every fixed \(t\). Versions share all
+                    finite-dimensional distributions, yet — because the exceptional null set is allowed to depend on
+                    \(t\), and there are uncountably many \(t\) — their sample paths may differ radically. The
+                    continuity of Brownian motion is the statement that among all versions with the Gaussian marginals
+                    above, there is one with continuous paths. This existence is delivered by a general regularity
+                    criterion controlling path oscillation through a single moment estimate.
+                </p>
+
+                <div class="theorem" id="T-kolmogorov_continuity">
+                    <span class="theorem-title">Theorem: Kolmogorov Continuity Criterion</span>
+                    <p>
+                        Let \(\{\mathbf{X}_t\}_{t \geq 0}\) be a stochastic process on \(\mathbb{R}^n\) for which,
+                        for every \(T > 0\), there exist constants \(\alpha, \beta, D > 0\) (possibly depending on
+                        \(T\)) such that
+                        \[
+                        \mathbb{E}\bigl[\|\mathbf{X}_t - \mathbf{X}_s\|^{\alpha}\bigr] \leq D\, |t - s|^{1 + \beta}
+                        \qquad \text{for all } 0 \leq s, t \leq T .
+                        \]
+                        Then \(\{\mathbf{X}_t\}\) admits a version with continuous sample paths.
+                    </p>
+                </div>
+
+                <p>
+                    We take the criterion as given — its proof is a dyadic chaining argument that bounds the maximal
+                    oscillation of the path over successively finer partitions and belongs to the measure-theoretic
+                    development of continuous-time processes rather than to the analytic thread we are following. To
+                    apply it to Brownian motion we need only a single moment bound on the increments. Since
+                    \(\mathbf{w}_t - \mathbf{w}_s\) is, by (W1)-(W2), a centered Gaussian in \(\mathbb{R}^n\) with
+                    covariance \(|t - s|\, I_n\), its fourth moment reduces to a short computation: the coordinates
+                    \(Z_i\) of \(\mathbf{Z} = \mathbf{w}_t - \mathbf{w}_s\) are independent \(N(0, |t-s|)\) variables
+                    with \(\mathbb{E}[Z_i^2] = |t-s|\) and \(\mathbb{E}[Z_i^4] = 3\,|t-s|^2\) (by direct integration),
+                    so expanding \(\|\mathbf{Z}\|^4 = \bigl(\sum_i Z_i^2\bigr)^2\) gives
+                    \[
+                    \begin{align*}
+                    \mathbb{E}\bigl[\|\mathbf{w}_t - \mathbf{w}_s\|^{4}\bigr]
+                    &= \sum_{i} \mathbb{E}[Z_i^4] + \sum_{i \neq j} \mathbb{E}[Z_i^2]\, \mathbb{E}[Z_j^2] \\\\
+                    &= 3n\, |t-s|^2 + n(n-1)\, |t-s|^2 = n(n + 2)\, |t - s|^{2} .
+                    \end{align*}
+                    \]
+                    Thus the hypothesis holds — with constants independent of \(T\) — for \(\alpha = 4\), \(D = n(n+2)\),
+                    and \(\beta = 1\). Brownian motion
+                    therefore has a continuous version, and we henceforth work with it — this is the content of
+                    axiom (W3).
+                </p>
+            </section>
+
+            <section id="paths" class="section-content">
+                <h2>Path Regularity and Irregularity</h2>
+
+                <p>
+                    The continuous version secured, we now examine how <em>rough</em> those continuous paths are:
+                    almost surely, Brownian paths are continuous everywhere but differentiable nowhere, and their
+                    variation over any interval is infinite. We specialize to one dimension, where these phenomena already appear in full
+                    and the notation stays light. The precise carrier of this roughness is the <strong>quadratic
+                    variation</strong>, which — unlike the ordinary (first-order) variation — is finite, deterministic,
+                    and equal to the elapsed time.
+                </p>
+
+                <p>
+                    Fix a time \(t > 0\) and consider a partition
+                    \(\pi = \{0 = s_0 \lt s_1 \lt \cdots \lt s_N = t\}\) of \([0, t]\), with mesh
+                    \(\|\pi\| = \max_i (s_i - s_{i-1})\). For the one-dimensional standard Brownian motion, the
+                    <strong>quadratic variation along \(\pi\)</strong> is the random sum
+                    \[
+                    Q_\pi = \sum_{i=1}^{N} \bigl(w_{s_i} - w_{s_{i-1}}\bigr)^2 .
+                    \]
+                    Contrast this with the first-order sum \(\sum_i |w_{s_i} - w_{s_{i-1}}|\). Taking its
+                    supremum over partitions leads to a classical notion from real analysis.
+                </p>
+
+                <div class="theorem" id="D-total_variation_function">
+                    <span class="theorem-title">Definition: Total Variation of a Function</span>
+                    <p>
+                        For a function \(f\) and an interval \([a, b]\), the <strong>total variation</strong> of
+                        \(f\) over \([a, b]\) is
+                        \[
+                        V_{[a,b]}(f) = \sup_{\pi} \sum_{i} \bigl|f(s_i) - f(s_{i-1})\bigr| ,
+                        \]
+                        the supremum running over all partitions \(\pi\) of \([a, b]\). When
+                        \(V_{[a,b]}(f) \lt \infty\), \(f\) is said to be of <strong>bounded variation</strong> on
+                        \([a, b]\). This is distinct from the
+                        <a href="radon_nikodym.html#D-total_variation" class="ref-link"><strong>total variation of a signed measure</strong></a>,
+                        although the two notions are related through the measures induced by monotone functions.
+                    </p>
+                </div>
+
+                <p>
+                    For a continuously differentiable
+                    function the quadratic sum vanishes as \(\|\pi\| \to 0\) (the squares are second order) while the
+                    first-order sums converge to the total variation \(\int_a^b |f'(s)|\, ds\). For Brownian motion the
+                    roles invert.
+                </p>
+
+                <div class="theorem" id="T-bm_path_properties">
+                    <span class="theorem-title">Theorem: Path Properties of Brownian Motion</span>
+                    <p>
+                        Let \(\{w_t\}_{t \geq 0}\) be a one-dimensional standard Brownian motion. Then:
+                    </p>
+                    <p>
+                        <strong>(i) Quadratic variation.</strong> For partitions \(\pi\) of \([0, t]\), as
+                        \(\|\pi\| \to 0\),
+                        \[
+                        Q_\pi = \sum_{i=1}^{N} \bigl(w_{s_i} - w_{s_{i-1}}\bigr)^2
+                        \xrightarrow{\;L^2\;} t .
+                        \]
+                    </p>
+                    <p>
+                        <strong>(ii) Unbounded variation.</strong> Almost surely, the path \(t \mapsto w_t\) has
+                        infinite total variation on every interval \([a, b]\) with \(a \lt b\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of (i)</span>
+                    <p>
+                        Write \(\Delta_i = w_{s_i} - w_{s_{i-1}}\) and \(\delta_i = s_i - s_{i-1}\). By (W1)-(W2) the
+                        increments \(\Delta_i\) are independent, and each \(\Delta_i\) is centered Gaussian with
+                        variance \(\delta_i\). We show \(Q_\pi \to t\) in \(L^2\) by computing the mean and variance of
+                        \(Q_\pi - t\).
+                    </p>
+                    <p>
+                        For the mean, \(\mathbb{E}[\Delta_i^2] = \delta_i\), so
+                        \[
+                        \begin{align*}
+                        \mathbb{E}[Q_\pi] &= \sum_{i=1}^{N} \mathbb{E}[\Delta_i^2] = \sum_{i=1}^{N} \delta_i = t, \\\\
+                        \mathbb{E}[Q_\pi - t] &= 0 .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        For the variance, the summands \(\Delta_i^2 - \delta_i\) are independent and centered, so their
+                        variances add:
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\bigl[(Q_\pi - t)^2\bigr]
+                        &= \operatorname{Var}\!\left(\sum_{i=1}^N \Delta_i^2\right) \\\\
+                        &= \sum_{i=1}^{N} \operatorname{Var}(\Delta_i^2) .
+                        \end{align*}
+                        \]
+                        For a centered Gaussian \(\Delta_i\) with variance \(\delta_i\) we have
+                        \(\mathbb{E}[\Delta_i^4] = 3\delta_i^2\), whence
+                        \(\operatorname{Var}(\Delta_i^2) = \mathbb{E}[\Delta_i^4] - (\mathbb{E}[\Delta_i^2])^2
+                        = 3\delta_i^2 - \delta_i^2 = 2\delta_i^2\). Therefore
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\bigl[(Q_\pi - t)^2\bigr]
+                        = \sum_{i=1}^{N} 2\delta_i^2
+                        &\leq 2\,\|\pi\| \sum_{i=1}^{N} \delta_i
+                        = 2\,\|\pi\|\, t \\\\
+                        &\xrightarrow[\;\|\pi\| \to 0\;]{} 0 .
+                        \end{align*}
+                        \]
+                        Since the second moment of \(Q_\pi - t\) tends to zero, \(Q_\pi \to t\) in \(L^2\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of (ii)</span>
+                    <p>
+                        Fix an interval \([a, b]\) with \(a \lt b\) and choose any sequence of partitions \(\pi\) of
+                        \([a, b]\) with \(\|\pi\| \to 0\). The computation in (i) used only that the increments along a
+                        partition are independent centered Gaussians whose variances sum to the length of the interval;
+                        it therefore applies verbatim on \([a, b]\) and gives \(Q_\pi \to b - a\) in \(L^2\), that is,
+                        \(\mathbb{E}\bigl[(Q_\pi - (b-a))^2\bigr] \to 0\).
+                    </p>
+                    <p>
+                        Suppose, for contradiction, that the event \(A = \{V_{[a,b]}(w) \lt \infty\}\) has positive
+                        probability. On \(A\), using the uniform continuity of the path on the compact interval
+                        \([a, b]\),
+                        \[
+                        \begin{align*}
+                        Q_\pi
+                        = \sum_{i=1}^{N} \bigl(w_{s_i} - w_{s_{i-1}}\bigr)^2
+                        &\leq \Bigl(\max_i |w_{s_i} - w_{s_{i-1}}|\Bigr) \sum_{i=1}^{N} |w_{s_i} - w_{s_{i-1}}| \\\\
+                        &\leq \Bigl(\max_i |w_{s_i} - w_{s_{i-1}}|\Bigr)\, V_{[a,b]}(w) ,
+                        \end{align*}
+                        \]
+                        and continuity forces \(\max_i |w_{s_i} - w_{s_{i-1}}| \to 0\), so \(Q_\pi \to 0\) pointwise
+                        on \(A\). Applying
+                        <a href="limit_theorems_product_measures.html#T-prob-fatou" class="ref-link"><strong>Fatou's lemma</strong></a>
+                        to the nonnegative random variables \(\mathbf{1}_A \bigl(Q_\pi - (b-a)\bigr)^2\),
+                        \[
+                        \begin{align*}
+                        (b-a)^2\, \mathbb{P}(A)
+                        = \mathbb{E}\Bigl[\liminf_{\|\pi\| \to 0} \mathbf{1}_A \bigl(Q_\pi - (b-a)\bigr)^2\Bigr]
+                        &\leq \liminf_{\|\pi\| \to 0}\, \mathbb{E}\bigl[(Q_\pi - (b-a))^2\bigr] = 0 ,
+                        \end{align*}
+                        \]
+                        forcing \(\mathbb{P}(A) = 0\): for each fixed interval, the total variation is almost surely
+                        infinite.
+                    </p>
+                    <p>
+                        Finally, every interval \([a, b]\) with \(a \lt b\) contains an interval with rational endpoints,
+                        and the total variation can only grow when the interval enlarges. Intersecting the almost-sure
+                        events over the countably many rational pairs yields a single event of probability one on which
+                        the path has infinite total variation on every interval simultaneously.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Nowhere differentiability</h3>
+                    <p>
+                        The roughness has a famous pointwise counterpart: almost surely, the Brownian path is
+                        <em>nowhere</em> differentiable — at no time \(t_0\) does the derivative exist. It strengthens
+                        (ii): a function of bounded variation on an interval is differentiable at almost every point of
+                        it — Lebesgue's differentiation theorem for monotone and BV functions — so a path differentiable
+                        at no point can have bounded variation on no interval. The heuristic is the variance scaling already recorded above: a typical
+                        increment over a step of size \(h\) has standard deviation of order \(\sqrt{h}\), which dwarfs
+                        \(h\) as \(h \to 0\), so the difference quotient \((w_{t_0+h} - w_{t_0})/h\) has no finite limit.
+                        Turning this heuristic into an almost-sure statement holding simultaneously at all \(t_0\)
+                        requires a covering argument over the uncountably many candidate points; we do not carry it out
+                        here, but the fact itself is one of the defining features of Brownian motion and the sharpest
+                        expression of why its calculus cannot be the ordinary one.
+                    </p>
+                </div>
+
+                <p>
+                    Part (i) admits a suggestive shorthand. In \(L^2\), the accumulated squared increments of Brownian
+                    motion over \([0, t]\) equal \(t\) — as if each infinitesimal increment contributed its own
+                    duration. We record this as the informal identity
+                    \[
+                    (dw_t)^2 = dt,
+                    \]
+                    to be understood strictly through the \(L^2\) limit of part (i), never as a pathwise statement. This
+                    is the single algebraic rule that, carried through a second-order Taylor expansion, will later
+                    distinguish the calculus of Brownian motion from ordinary calculus: the term that would be
+                    negligible for a smooth path is here of the same order as \(dt\) and cannot be discarded.
+                </p>
+            </section>
+
+            <section id="outlook" class="section-content">
+                <h2>From Pathwise Failure to an L² Theory</h2>
+
+                <p>
+                    We wanted to model the displacement of a particle buffeted by noise as a differential relation
+                    \(d\mathbf{x}_t = \boldsymbol{\mu}_t\, dt + \sigma_t\, d\mathbf{w}_t\), and to give meaning to the
+                    accumulated noise \(\int_0^t \sigma_s\, d\mathbf{w}_s\). The results of this page show that the
+                    obvious route is closed. A pathwise Stieltjes integral \(\int \sigma_s\, d\mathbf{w}_s\) would exist
+                    if either the integrand or the integrator had bounded variation on each path (the other factor
+                    being continuous); but the integrands we
+                    need typically depend on the same driving noise \(\mathbf{w}\), and so are themselves as rough as
+                    \(\mathbf{w}\), while the
+                    <a href="#T-bm_path_properties" class="ref-link"><strong>unbounded variation of Brownian motion</strong></a>
+                    established above removes the other possibility. With neither factor of bounded variation, the
+                    classical construction has nothing to hold on to — and it fails on almost every sample path, not
+                    merely in exceptional cases.
+                </p>
+
+                <p>
+                    The escape route is dictated by the one piece of good news we found: while the first-order variation
+                    diverges, the <em>quadratic</em> variation converges — and it does so in \(L^2\). This points
+                    away from pathwise integration and toward a construction in the Hilbert space
+                    <a href="../Calculus/lp_spaces.html#D-Lp_space" class="ref-link"><strong>\(L^2\)</strong></a> of the underlying
+                    probability space, where "convergence" means convergence in mean square. The plan, to be carried out
+                    next, is to define the integral first for simple (piecewise-constant) integrands, where no analysis
+                    is needed, and then to extend to general integrands by continuity. Such an extension depends on
+                    one property: that Cauchy sequences of approximate integrals have limits to converge to — that
+                    is, on the
+                    <a href="../Calculus/lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>completeness of \(L^2\)</strong></a>.
+                    On simple integrands, the quadratic-variation identity makes the integral an isometry into
+                    \(L^2\); completeness then guarantees that the isometric extension has somewhere to land. This is
+                    the basis for the construction of the Itô integral. We take it up on the next page.
+                </p>
+            </section>
+
+        </div>
+
+</body>
+</html>
