@@ -2846,8 +2846,15 @@ function panToSection(sectionId) {
 /**
  * Search functionality
  */
+// Normalize text for matching: lowercase + strip diacritics (NFD), so that
+// "ito" matches "Itô" and "holder" matches "Hölder". Kept in sync with the
+// implementation in /js/search.js.
+function normalizeText(str) {
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function performSearch(query) {
-    searchQuery = query.toLowerCase().trim();
+    searchQuery = normalizeText(query).trim();
     
     // Clear section highlight when searching
     highlightedSection = null;
@@ -2860,8 +2867,8 @@ function performSearch(query) {
     searchResults = knowledgeData
         .filter(tile => {
             if (tile.isReserved) return false;
-            const titleMatch = tile.title.toLowerCase().includes(searchQuery);
-            const keywordMatch = tile.keywords && tile.keywords.some(k => k.toLowerCase().includes(searchQuery));
+            const titleMatch = normalizeText(tile.title).includes(searchQuery);
+            const keywordMatch = tile.keywords && tile.keywords.some(k => normalizeText(k).includes(searchQuery));
             return titleMatch || keywordMatch;
         })
         .map(t => t.id);
