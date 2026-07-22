@@ -1,0 +1,1201 @@
+---
+layout: default
+title: "The Itô Integral as a Process"
+topic_id: prob-29
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Itô Integral as a Process</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#properties">What the Construction Already Knows</a>
+            <a href="#martingale">Processes That Forecast Themselves</a>
+            <a href="#doob">Doob's Maximal Inequality</a>
+            <a href="#continuity">A Continuous Version</a>
+            <a href="#stratonovich">Extensions and the Stratonovich Question</a>
+        </div>
+
+        <div class="container">
+
+            <section id="properties" class="section-content">
+                <h2>What the Construction Already Knows</h2>
+
+                <p>
+                    The previous page built the
+                    <a href="ito_integral.html#D-ito_integral" class="ref-link"><strong>Itô integral</strong></a>
+                    \(\int_S^T f(t, \omega)\, dw_t\) for integrands \(f\) in the class
+                    <a href="ito_integral.html#D-ito_class_v" class="ref-link"><strong>\(\mathcal{V}(S, T)\)</strong></a>,
+                    as the \(L^2(\mathbb{P})\) limit of integrals of bounded
+                    <a href="ito_integral.html#D-elementary_process" class="ref-link"><strong>elementary processes</strong></a>,
+                    and it closed with a promise: viewed as a process in its upper limit of integration, the integral is
+                    a martingale and admits a continuous version. This page keeps that promise. Throughout, \(w_t\) is
+                    the standard one-dimensional Brownian motion of the last two pages, carried on
+                    \((\Omega, \mathcal{F}, \mathbb{P})\), and \(\{\mathcal{F}_t\}_{t \geq 0}\) is the
+                    <a href="ito_integral.html#D-brownian_filtration" class="ref-link"><strong>Brownian filtration</strong></a>,
+                    with its convention that every set of \(\mathbb{P}\)-measure zero belongs to each
+                    \(\mathcal{F}_t\); the norm \(\|f\|_{\mathcal{V}}^2 = \mathbb{E}\bigl[\int_S^T f^2\, dt\bigr]\) is
+                    the one along which elementary processes approximate general integrands.
+                </p>
+
+                <p>
+                    Before the process view, we collect what the fixed-interval construction already implies. The four
+                    properties below are routinely summarized as "they hold for elementary processes, hence in the
+                    limit" — but each one in fact crosses the limit by a different mechanism: the first by an exact
+                    identity between approximating sums, the second by the linear structure of \(L^2\) limits, the
+                    third by convergence of expectations, and the fourth by the measurability of almost-everywhere
+                    limits. We cross each bridge in full, because two of them collect a toll: the third needs a norm
+                    comparison between \(L^1\) and \(L^2\), and the fourth needs precisely the null-set convention
+                    quoted above, adopted on the previous page and cashed in here for the first time.
+                </p>
+
+                <div class="theorem" id="T-ito_integral_properties">
+                    <span class="theorem-title">Theorem: Properties of the Itô Integral</span>
+                    <p>
+                        Let \(0 \leq S \lt U \lt T\), let \(f, g \in \mathcal{V}(S, T)\), and let \(a, b \in \mathbb{R}\).
+                        Then \(f \in \mathcal{V}(S, U)\) and \(f \in \mathcal{V}(U, T)\), so that all integrals below
+                        are defined, and the following hold almost surely.
+                    </p>
+                    <p>
+                        <strong>(i) Additivity over intervals.</strong>
+                        \(\displaystyle \int_S^T f\, dw_t = \int_S^U f\, dw_t + \int_U^T f\, dw_t\).
+                    </p>
+                    <p>
+                        <strong>(ii) Linearity.</strong>
+                        \(\displaystyle \int_S^T (a f + b g)\, dw_t = a \int_S^T f\, dw_t + b \int_S^T g\, dw_t\).
+                    </p>
+                    <p>
+                        <strong>(iii) Zero mean.</strong>
+                        \(\displaystyle \mathbb{E}\Bigl[ \int_S^T f\, dw_t \Bigr] = 0\).
+                    </p>
+                    <p>
+                        <strong>(iv) Measurability.</strong> Every representative of the class
+                        \(\int_S^T f\, dw_t \in L^2(\mathbb{P})\) is \(\mathcal{F}_T\)-measurable.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        First the opening claim. Conditions (V1) and (V2) defining
+                        <a href="ito_integral.html#D-ito_class_v" class="ref-link"><strong>\(\mathcal{V}\)</strong></a>
+                        constrain \(f\) as a function on all of \([0, \infty) \times \Omega\) and do not mention the
+                        interval; only (V3) does, and since \(f^2 \geq 0\), the integral of \(f^2\) over
+                        \([S, U]\) or \([U, T]\) is bounded by the integral over \([S, T]\). Hence membership in
+                        \(\mathcal{V}(S, T)\) implies membership in \(\mathcal{V}(S, U)\) and \(\mathcal{V}(U, T)\).
+                        Throughout the proof, fix a sequence \(\{\phi_n\}\) of bounded elementary processes with
+                        \(\|f - \phi_n\|_{\mathcal{V}} \to 0\) on \([S, T]\); such a sequence exists by the three
+                        approximation steps of the previous page.
+                    </p>
+                    <p>
+                        <strong>(i).</strong> Refine the partition of each \(\phi_n\) so that it contains the point
+                        \(U\); as noted with the definition of the elementary integral, refinement changes neither the
+                        function nor its integral. Now split each \(\phi_n\) at \(U\):
+                        \[
+                        \psi_n = \phi_n\, \mathbf{1}_{[S, U)} ,
+                        \qquad
+                        \psi_n' = \phi_n\, \mathbf{1}_{[U, T)} .
+                        \]
+                        The process \(\psi_n\) is bounded elementary on \([S, U]\): its partition is the part of the
+                        refined partition up to \(U\), its levels are those of \(\phi_n\), and multiplication by a
+                        deterministic indicator disturbs neither joint measurability nor adaptedness. The same holds
+                        for \(\psi_n'\) on \([U, T]\). Splitting the defining sum of the elementary integral at \(U\)
+                        gives, for every \(\omega\),
+                        \[
+                        \int_S^T \phi_n\, dw_t = \int_S^U \psi_n\, dw_t + \int_U^T \psi_n'\, dw_t .
+                        \]
+                        The sequences are admissible for \(f\) on the subintervals: since \(\psi_n = \phi_n\) on
+                        \([S, U)\) and the endpoint \(\{U\}\) has Lebesgue measure zero,
+                        \[
+                        \mathbb{E}\Bigl[ \int_S^U (f - \psi_n)^2\, dt \Bigr]
+                        = \mathbb{E}\Bigl[ \int_S^U (f - \phi_n)^2\, dt \Bigr]
+                        \leq \|f - \phi_n\|_{\mathcal{V}}^2 \longrightarrow 0 ,
+                        \]
+                        and likewise on \([U, T]\). By the definition of the integral, the three integrals of
+                        \(\phi_n\), \(\psi_n\), \(\psi_n'\) converge in \(L^2(\mathbb{P})\) to the three integrals of
+                        \(f\) over \([S, T]\), \([S, U]\), \([U, T]\) respectively. Limits in \(L^2\) respect sums,
+                        and two \(L^2\) limits of the same sequence agree almost surely, so the displayed identity
+                        survives the passage: (i) holds almost surely.
+                    </p>
+                    <p>
+                        <strong>(ii).</strong> This was established in the course of proving that the
+                        <a href="ito_integral.html#D-ito_integral" class="ref-link"><strong>definition of the integral</strong></a>
+                        is legitimate: approximating \(f\) and \(g\) separately, combining the approximants linearly,
+                        and using linearity of the elementary integral together with linearity of \(L^2\) limits. We
+                        record the statement here for reference and add nothing to that argument.
+                    </p>
+                    <p>
+                        <strong>(iii).</strong> For a bounded elementary process
+                        \(\phi_n = \sum_j e_j\, \mathbf{1}_{[t_j, t_{j+1})}\), expectation is linear over the finite
+                        defining sum by the
+                        <a href="measure_probability.html#T-expectation-properties" class="ref-link"><strong>properties of expectation</strong></a>,
+                        so
+                        \[
+                        \mathbb{E}\Bigl[ \int_S^T \phi_n\, dw_t \Bigr]
+                        = \sum_{j} \mathbb{E}\bigl[ e_j\, \Delta w_j \bigr] ,
+                        \qquad \Delta w_j = w_{t_{j+1}} - w_{t_j} .
+                        \]
+                        Each term vanishes by the argument that powered the elementary isometry: \(e_j\) is
+                        \(\mathcal{F}_{t_j}\)-measurable and bounded, the increment \(\Delta w_j\) is
+                        <a href="ito_integral.html#T-increment_independence" class="ref-link"><strong>independent of \(\mathcal{F}_{t_j}\)</strong></a>,
+                        the
+                        <a href="limit_theorems_product_measures.html#T-expectation_product_independent" class="ref-link"><strong>expectation of the product factors</strong></a>,
+                        and increments are centered by (W1) of the
+                        <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>definition of Brownian motion</strong></a>.
+                        Hence \(\mathbb{E}\bigl[ \int_S^T \phi_n\, dw_t \bigr] = 0\) for every \(n\). For the limit,
+                        compare the norms of \(L^1\) and \(L^2\): writing
+                        \(X_n = \int_S^T f\, dw_t - \int_S^T \phi_n\, dw_t\), the triangle inequality for expectation
+                        and the
+                        <a href="../Calculus/intro_analysis.html#T-Cauchy-Schwarz_Inequality" class="ref-link"><strong>Cauchy-Schwarz inequality</strong></a>
+                        in the inner product space \(L^2(\mathbb{P})\), applied against the constant function
+                        \(\mathbf{1}\) with \(\|\mathbf{1}\|_{L^2(\mathbb{P})} = 1\), give, the subtracted term
+                        having expectation zero by the above,
+                        \[
+                        \Bigl| \mathbb{E}\Bigl[ \int_S^T f\, dw_t \Bigr] \Bigr|
+                        = \bigl| \mathbb{E}[X_n] \bigr|
+                        \leq \mathbb{E}\bigl[ |X_n| \bigr]
+                        \leq \| X_n \|_{L^2(\mathbb{P})}
+                        \longrightarrow 0 ,
+                        \]
+                        the convergence being the definition of the integral. The left side does not depend on \(n\),
+                        so it is zero.
+                    </p>
+                    <p>
+                        <strong>(iv).</strong> Two steps: exhibit one \(\mathcal{F}_T\)-measurable representative, then
+                        extend to all of them. Each elementary integral \(\sum_j e_j\, \Delta w_j\) is a genuine
+                        function on \(\Omega\), and it is \(\mathcal{F}_T\)-measurable: every level \(e_j\) is
+                        \(\mathcal{F}_{t_j}\)-measurable with \(\mathcal{F}_{t_j} \subseteq \mathcal{F}_T\), every
+                        increment is a difference of values of the path at times at most \(T\), each
+                        \(\mathcal{F}_T\)-measurable by the definition of the
+                        <a href="ito_integral.html#D-brownian_filtration" class="ref-link"><strong>Brownian filtration</strong></a>,
+                        and sums and products of \(\mathcal{F}_T\)-measurable functions are
+                        \(\mathcal{F}_T\)-measurable, the closure already used on the previous page. Since
+                        \(\int_S^T \phi_n\, dw_t \to \int_S^T f\, dw_t\) in \(L^2(\mathbb{P})\), a
+                        <a href="../Calculus/lp_completeness.html#T-lp_subsequence_ae" class="ref-link"><strong>subsequence converges almost surely</strong></a>;
+                        write \(g_k = \int_S^T \phi_{n_k}\, dw_t\) for it, and let \(\widetilde{X}\) equal
+                        \(\lim_k g_k\) where that limit exists in \(\mathbb{R}\), and \(0\) elsewhere. Measurability
+                        survives countable suprema and infima — for instance
+                        \(\{\sup_k g_k \leq a\} = \bigcap_k \{g_k \leq a\}\) — so \(\limsup_k g_k\) and
+                        \(\liminf_k g_k\) are \(\mathcal{F}_T\)-measurable maps into \([-\infty, \infty]\), the set
+                        where they agree and are finite lies in \(\mathcal{F}_T\), and \(\widetilde{X}\) is
+                        \(\mathcal{F}_T\)-measurable. Being the almost-sure limit of a subsequence converging in
+                        \(L^2\), \(\widetilde{X}\) is a representative of \(\int_S^T f\, dw_t\).
+                    </p>
+                    <p>
+                        Now let \(Y\) be any representative. As an element of \(L^2(\mathbb{P})\) it is
+                        \(\mathcal{F}\)-measurable, and \(Y = \widetilde{X}\) off a \(\mathbb{P}\)-null set. For each
+                        \(a \in \mathbb{R}\), the symmetric difference
+                        \(D_a = \{Y \leq a\} \,\triangle\, \{\widetilde{X} \leq a\}\) is an
+                        \(\mathcal{F}\)-measurable subset of \(\{Y \neq \widetilde{X}\}\), hence a set of
+                        \(\mathbb{P}\)-measure zero, hence a member of \(\mathcal{F}_T\) — this is the moment the
+                        null-set convention adopted with the Brownian filtration earns its keep. Since
+                        \(A \,\triangle\, (A \,\triangle\, B) = B\) for any sets \(A, B\), we conclude
+                        \(\{Y \leq a\} = \{\widetilde{X} \leq a\} \,\triangle\, D_a \in \mathcal{F}_T\), and \(Y\) is
+                        \(\mathcal{F}_T\)-measurable.
+                    </p>
+                </div>
+
+                <p>
+                    Property (i) is the license to let the upper endpoint move. For \(f \in \mathcal{V}(0, T)\) and
+                    \(t \in [0, T]\), the integral \(\int_0^t f\, dw_s\) is defined, and additivity makes the family
+                    of integrals over nested intervals consistent: the integral up to \(t\) plus the increment from
+                    \(t\) to \(t'\) is the integral up to \(t'\). Writing
+                    \[
+                    M_t(\omega) = \int_0^t f(s, \omega)\, dw_s ,
+                    \qquad 0 \leq t \leq T ,
+                    \]
+                    we thus obtain not a single random variable but a stochastic process. Property (iv), applied on
+                    the interval \([0, t]\), says that \(M_t\) is \(\mathcal{F}_t\)-measurable for every \(t\) — the
+                    process \(\{M_t\}\) is \(\mathcal{F}_t\)-adapted, inheriting the causality of its integrand — and
+                    property (iii) says that each \(M_t\) is centered. A centered, adapted process whose increments
+                    are built from noise that no one can foresee: the next section gives this combination its name,
+                    and proves that \(\{M_t\}\) deserves it.
+                </p>
+            </section>
+
+            <section id="martingale" class="section-content">
+                <h2>Processes That Forecast Themselves</h2>
+
+                <p>
+                    The process \(\{M_t\}\) assembled at the end of the last section is adapted, centered, and driven
+                    by increments that the present cannot foresee. There is a classical name for processes with this
+                    character. Its defining property is a statement about prediction: given everything observable now,
+                    the best estimate of the process at any future time is its value now. Gains and losses are
+                    possible, but neither is favored — the process models a fair game. The definition is stated
+                    relative to an arbitrary
+                    <a href="ito_integral.html#D-filtration_probability" class="ref-link"><strong>filtration</strong></a>,
+                    not only the Brownian one, because the notion belongs to any setting where information accumulates
+                    over time; the prediction itself is the
+                    <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>conditional expectation</strong></a>
+                    given the current \(\sigma\)-algebra.
+                </p>
+
+                <div class="theorem" id="D-martingale">
+                    <span class="theorem-title">Definition: Martingale</span>
+                    <p>
+                        Let \(\{\mathcal{M}_t\}_{t \geq 0}\) be a filtration on \((\Omega, \mathcal{F}, \mathbb{P})\).
+                        A real-valued stochastic process \(\{X_t\}_{t \geq 0}\) is a <strong>martingale</strong> with
+                        respect to \(\{\mathcal{M}_t\}\) (and with respect to \(\mathbb{P}\)) if:
+                    </p>
+                    <p>
+                        <strong>(M1)</strong> the process \(\{X_t\}\) is
+                        <a href="ito_integral.html#D-adapted_process" class="ref-link"><strong>\(\mathcal{M}_t\)-adapted</strong></a>;
+                    </p>
+                    <p>
+                        <strong>(M2)</strong> \(\mathbb{E}\bigl[ |X_t| \bigr] \lt \infty\) for every \(t \geq 0\);
+                    </p>
+                    <p>
+                        <strong>(M3)</strong> \(\mathbb{E}\bigl[ X_s \mid \mathcal{M}_t \bigr] = X_t\) almost surely,
+                        for all \(0 \leq t \leq s\).
+                    </p>
+                    <p>
+                        Condition (M2) makes the conditional expectation in (M3) meaningful. The definition applies
+                        verbatim when the time index ranges over a bounded interval \([0, T]\), the case our integrals
+                        inhabit.
+                    </p>
+                </div>
+
+                <p>
+                    Two immediate readings. First, applying the averaging identity that defines conditional
+                    expectation with \(A = \Omega\), condition (M3) gives
+                    \(\mathbb{E}[X_s] = \mathbb{E}\bigl[ \mathbb{E}[X_s \mid \mathcal{M}_t] \bigr] = \mathbb{E}[X_t]\):
+                    a martingale has constant expectation. Second, and stronger, (M3) pins down not just the average
+                    over all of \(\Omega\) but the average over every event observable at time \(t\) — on each such
+                    event, the future is expected to go nowhere. Constancy of expectation is what remains of the
+                    martingale property when the information structure is thrown away.
+                </p>
+
+                <p>
+                    The prototype is Brownian motion itself, with respect to its own filtration. The proof is a
+                    dividend of machinery already in place: every step is a citation.
+                </p>
+
+                <div class="theorem" id="T-bm_martingale">
+                    <span class="theorem-title">Theorem: Brownian Motion Is a Martingale</span>
+                    <p>
+                        The process \(\{w_t\}_{t \geq 0}\) is a martingale with respect to the Brownian filtration
+                        \(\{\mathcal{F}_t\}_{t \geq 0}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <strong>(M1).</strong> The event \(\{w_t \in F\}\), for \(F\) Borel, is one of the generating
+                        sets of the
+                        <a href="ito_integral.html#D-brownian_filtration" class="ref-link"><strong>Brownian filtration</strong></a>
+                        at time \(t\), so \(w_t\) is \(\mathcal{F}_t\)-measurable.
+                        <strong>(M2).</strong> By the
+                        <a href="../Calculus/intro_analysis.html#T-Cauchy-Schwarz_Inequality" class="ref-link"><strong>Cauchy-Schwarz inequality</strong></a>
+                        in \(L^2(\mathbb{P})\) against the constant function \(\mathbf{1}\), the same \(L^1\)-\(L^2\)
+                        comparison as in the previous section,
+                        \(\mathbb{E}[|w_t|] \leq \bigl( \mathbb{E}[w_t^2] \bigr)^{1/2} = \sqrt{t} \lt \infty\), the
+                        variance being \(t\) by (W1) of the
+                        <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>definition of Brownian motion</strong></a>.
+                    </p>
+                    <p>
+                        <strong>(M3).</strong> Let \(0 \leq t \leq s\) and write \(w_s = (w_s - w_t) + w_t\), both
+                        summands integrable — \(w_t\) by the bound above, the increment by the triangle inequality. By
+                        <a href="conditional_expectation.html#T-ce_linearity" class="ref-link"><strong>linearity of conditional expectation</strong></a>,
+                        \[
+                        \mathbb{E}[w_s \mid \mathcal{F}_t]
+                        = \mathbb{E}[w_s - w_t \mid \mathcal{F}_t] + \mathbb{E}[w_t \mid \mathcal{F}_t] .
+                        \]
+                        For the first term, the increment is
+                        <a href="ito_integral.html#T-increment_independence" class="ref-link"><strong>independent of \(\mathcal{F}_t\)</strong></a>
+                        — the lemma states precisely that every event \(\{w_s - w_t \in B\}\), and these events
+                        constitute \(\sigma(w_s - w_t)\), decouples from every event in \(\mathcal{F}_t\) — so the
+                        <a href="conditional_expectation.html#T-ce_independence" class="ref-link"><strong>independence collapse</strong></a>
+                        applies and yields \(\mathbb{E}[w_s - w_t \mid \mathcal{F}_t] = \mathbb{E}[w_s - w_t] = 0\),
+                        increments being centered by (W1). For the second term, \(w_t\) is
+                        \(\mathcal{F}_t\)-measurable and integrable, so the
+                        <a href="conditional_expectation.html#T-ce_take_out" class="ref-link"><strong>take-out property</strong></a>
+                        with the constant factor \(X = \mathbf{1}\) gives
+                        \(\mathbb{E}[w_t \mid \mathcal{F}_t] = w_t \cdot \mathbb{E}[\mathbf{1} \mid \mathcal{F}_t] = w_t\).
+                        Hence \(\mathbb{E}[w_s \mid \mathcal{F}_t] = w_t\) almost surely.
+                    </p>
+                </div>
+
+                <p>
+                    Brownian motion is the raw material; the Itô integral is machined from it. The next theorem says
+                    the machining preserves the fair-game property — and the reason is the arrow of time built into
+                    the class \(\mathcal{V}\): because the integrand is adapted, every increment of the integral pairs
+                    a level readable from the past with a piece of noise invisible to it, and the conditional
+                    expectation of such a pairing vanishes. Causality in, martingale out.
+                </p>
+
+                <div class="theorem" id="T-ito_martingale">
+                    <span class="theorem-title">Theorem: The Itô Integral Is a Martingale</span>
+                    <p>
+                        Let \(f \in \mathcal{V}(0, T)\). Then the process
+                        \[
+                        M_t(\omega) = \int_0^t f(s, \omega)\, dw_s ,
+                        \qquad 0 \leq t \leq T ,
+                        \]
+                        with the convention \(M_0 = 0\), is a martingale with respect to
+                        \(\{\mathcal{F}_t\}_{0 \leq t \leq T}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <strong>(M1)</strong> is part (iv) of the
+                        <a href="#T-ito_integral_properties" class="ref-link"><strong>properties theorem</strong></a>
+                        applied on the interval \([0, t]\), and is trivial at \(t = 0\). <strong>(M2)</strong> is
+                        quantitative: by the
+                        <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>
+                        on \([0, t]\) and the \(L^1\)-\(L^2\) comparison,
+                        \[
+                        \mathbb{E}\bigl[ |M_t| \bigr]
+                        \leq \bigl( \mathbb{E}[M_t^2] \bigr)^{1/2}
+                        = \Bigl( \mathbb{E}\Bigl[ \int_0^t f^2\, ds \Bigr] \Bigr)^{1/2}
+                        \leq \|f\|_{\mathcal{V}} \lt \infty ,
+                        \]
+                        the last bound because \(f^2 \geq 0\) makes the integral monotone in the interval.
+                    </p>
+                    <p>
+                        <strong>(M3).</strong> Fix \(0 \leq t \leq s \leq T\). If \(t = s\) the claim is
+                        \(\mathbb{E}[M_t \mid \mathcal{F}_t] = M_t\), which is the take-out property as in the
+                        previous proof; assume \(t \lt s\). For \(t > 0\), additivity — part (i)
+                        of the properties theorem, applied with the triple \((0, t, s)\), the membership
+                        \(f \in \mathcal{V}(0, s)\) holding by the same monotonicity of (V3) — gives, almost surely,
+                        \[
+                        M_s = M_t + \int_t^s f\, dw_u ,
+                        \]
+                        and this identity holds trivially at \(t = 0\), where \(M_t = 0\) by convention and the
+                        remaining integral is \(M_s\) itself. Conditional expectations of almost-surely equal
+                        variables agree almost surely, by the uniqueness clause in their definition. By linearity of
+                        conditional expectation and the take-out property as in the previous proof,
+                        \(\mathbb{E}[M_t \mid \mathcal{F}_t] = M_t\), so everything reduces to a
+                        <strong>conditional zero mean</strong>: almost surely,
+                        \[
+                        \mathbb{E}\Bigl[ \int_t^s f\, dw_u \,\Bigm|\, \mathcal{F}_t \Bigr] = 0 .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 1: bounded elementary integrands.</strong> Membership
+                        \(f \in \mathcal{V}(t, s)\) holds because (V1) and (V2) are interval-free and (V3) is
+                        monotone in the interval — the argument that opened the properties theorem — so the three
+                        approximation steps of the previous page,
+                        applied on \([t, s]\), supply bounded
+                        <a href="ito_integral.html#D-elementary_process" class="ref-link"><strong>elementary processes</strong></a>
+                        \(\phi_n\) with \(\mathbb{E}\bigl[ \int_t^s (f - \phi_n)^2\, du \bigr] \to 0\). Fix one such
+                        \(\phi = \sum_j e_j \mathbf{1}_{[u_j, u_{j+1})}\) with partition
+                        \(t = u_0 \lt u_1 \lt \cdots \lt u_m = s\) and bounded levels \(e_j\), each
+                        \(\mathcal{F}_{u_j}\)-measurable by adaptedness; write
+                        \(\Delta w_j = w_{u_{j+1}} - w_{u_j}\) for the matching increments, so that
+                        \(\int_t^s \phi\, dw_u = \sum_j e_j\, \Delta w_j\). For a single term, since
+                        \(\mathcal{F}_t \subseteq \mathcal{F}_{u_j}\) and \(e_j\, \Delta w_j \in L^1(\mathbb{P})\),
+                        the
+                        <a href="conditional_expectation.html#T-ce_tower" class="ref-link"><strong>tower property</strong></a>
+                        lets us condition first on the larger \(\sigma\)-algebra:
+                        \[
+                        \mathbb{E}\bigl[ e_j\, \Delta w_j \mid \mathcal{F}_t \bigr]
+                        = \mathbb{E}\Bigl[\, \mathbb{E}\bigl[ e_j\, \Delta w_j \mid \mathcal{F}_{u_j} \bigr]
+                        \,\Bigm|\, \mathcal{F}_t \Bigr]
+                        = \mathbb{E}\Bigl[\, e_j\, \mathbb{E}\bigl[ \Delta w_j \mid \mathcal{F}_{u_j} \bigr]
+                        \,\Bigm|\, \mathcal{F}_t \Bigr]
+                        = 0 ,
+                        \]
+                        where the middle equality is the take-out property (the factor \(e_j\) is
+                        \(\mathcal{F}_{u_j}\)-measurable and bounded, the increment integrable), and the last holds
+                        because \(\mathbb{E}[\Delta w_j \mid \mathcal{F}_{u_j}] = \mathbb{E}[\Delta w_j] = 0\) by
+                        increment independence, the independence collapse, and centeredness — the same chain as for
+                        Brownian motion above. Summing over \(j\) by linearity,
+                        \(\mathbb{E}\bigl[ \int_t^s \phi\, dw_u \mid \mathcal{F}_t \bigr] = 0\): the elementary
+                        integral over the future is invisible to the present.
+                    </p>
+                    <p>
+                        <strong>Step 2: passage to the limit.</strong> By the definition of the integral,
+                        \(\int_t^s \phi_n\, dw_u \to \int_t^s f\, dw_u\) in \(L^2(\mathbb{P})\). Conditional
+                        expectation given \(\mathcal{F}_t\) is linear and, by the
+                        <a href="conditional_expectation.html#T-ce_lp_contraction" class="ref-link"><strong>\(L^p\) contraction</strong></a>
+                        with \(p = 2\), a contraction of \(L^2(\mathbb{P})\). Hence, using Step 1 for each \(n\),
+                        \[
+                        \Bigl\| \mathbb{E}\Bigl[ \int_t^s f\, dw_u \Bigm| \mathcal{F}_t \Bigr] \Bigr\|_{L^2(\mathbb{P})}
+                        = \Bigl\| \mathbb{E}\Bigl[ \int_t^s (f - \phi_n)\, dw_u \Bigm| \mathcal{F}_t \Bigr] \Bigr\|_{L^2(\mathbb{P})}
+                        \leq \Bigl\| \int_t^s (f - \phi_n)\, dw_u \Bigr\|_{L^2(\mathbb{P})}
+                        \longrightarrow 0 ,
+                        \]
+                        the middle step also using linearity of the integral. A vector of norm zero in
+                        \(L^2(\mathbb{P})\) vanishes almost surely, which is the conditional zero mean, and with it
+                        (M3).
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Fair Noise Is What Stochastic Gradient Descent Actually Needs</h3>
+                    <p>
+                        A stochastic optimization step
+                        \(\boldsymbol{\theta}_{k+1} = \boldsymbol{\theta}_k - \eta \bigl( \nabla L(\boldsymbol{\theta}_k) + \boldsymbol{\xi}_k \bigr)\)
+                        is driven by gradient noise \(\boldsymbol{\xi}_k\), and convergence analyses assume not that
+                        the \(\boldsymbol{\xi}_k\) are independent — the noise at step \(k\) depends on the current
+                        iterate \(\boldsymbol{\theta}_k\), itself a function of all earlier noise, so independence
+                        across steps fails — but that
+                        \(\mathbb{E}[\boldsymbol{\xi}_k \mid \mathcal{M}_k] = 0\), where \(\mathcal{M}_k\) is the
+                        \(\sigma\)-algebra generated by the run so far. That is exactly the discrete-time shadow of
+                        the conditional zero mean proved in Step 1: each noise term, conditioned on the accumulated
+                        history, contributes nothing. Sequences with this property are called martingale differences,
+                        because their partial sums form a discrete-time martingale by the same tower-property
+                        computation as above, and
+                        the maximal inequalities of the next section are among the standard tools for controlling
+                        their cumulative effect over an entire run rather than one step at a time.
+                    </p>
+                </div>
+
+                <p>
+                    The martingale property, for all its strength, is a statement about two time points. The promises
+                    outstanding from the previous page — a version of \(t \mapsto M_t\) that is continuous, and
+                    control of the whole path — are statements about uncountably many time points at once, and
+                    passing from two to uncountably many requires an inequality of a different caliber: one that
+                    bounds the running maximum of a martingale by its value at the final time alone. That inequality
+                    is due to Doob, and we prove it next.
+                </p>
+            </section>
+
+            <section id="doob" class="section-content">
+                <h2>Doob's Maximal Inequality</h2>
+
+                <p>
+                    Everything proved so far constrains the integral at fixed times, or at pairs of times. The
+                    promises still outstanding — a continuous version, control of a whole trajectory — are statements
+                    about uncountably many times at once, and no union bound survives that passage: summing a
+                    per-time estimate over even countably many times destroys it. What saves the situation is the
+                    fair-game structure itself. If a martingale crosses a high level \(\lambda\) at some moment and
+                    yet ends small, the path must lose ground systematically after the crossing — and (M3) says the
+                    process expects to lose no ground on any event observable at the crossing time. Made precise,
+                    this reasoning bounds the probability that the running maximum ever reaches \(\lambda\) by an
+                    expectation involving the <em>final value alone</em>. The argument runs most naturally not for
+                    martingales but for processes allowed to drift upward, and the inequality is inherited by
+                    \(|M_t|^p\) from the martingale \(M_t\) precisely through that one-sided slack.
+                </p>
+
+                <div class="theorem" id="D-submartingale">
+                    <span class="theorem-title">Definition: Submartingale</span>
+                    <p>
+                        Let \(\{\mathcal{M}_t\}_{t \geq 0}\) be a filtration on \((\Omega, \mathcal{F}, \mathbb{P})\).
+                        A real-valued process \(\{X_t\}_{t \geq 0}\) is a <strong>submartingale</strong> with respect
+                        to \(\{\mathcal{M}_t\}\) if it satisfies (M1) and (M2) of the definition of a
+                        <a href="#D-martingale" class="ref-link"><strong>martingale</strong></a>, together with
+                    </p>
+                    <p>
+                        <strong>(M3')</strong> \(\mathbb{E}\bigl[ X_s \mid \mathcal{M}_t \bigr] \geq X_t\) almost
+                        surely, for all \(0 \leq t \leq s\).
+                    </p>
+                </div>
+
+                <p>
+                    A submartingale is a game tilted in the player's favor: the forecast of the future, given the
+                    present, never falls below the present. Reversing the inequality defines a
+                    <em>supermartingale</em>, which we will not need. Averaging (M3') over \(A = \Omega\) shows that
+                    the expectation \(t \mapsto \mathbb{E}[X_t]\) of a submartingale is nondecreasing, and every
+                    martingale is in particular a submartingale. The maximal inequality is proved first for finitely
+                    many time points — this is where all the probabilistic content lives; the passage to the
+                    continuum afterwards is pure topology.
+                </p>
+
+                <div class="theorem" id="T-submartingale_maximal_inequality">
+                    <span class="theorem-title">Lemma: Maximal Inequality over Finitely Many Times</span>
+                    <p>
+                        Let \(\{X_t\}\) be a nonnegative submartingale with respect to \(\{\mathcal{M}_t\}\), let
+                        \(0 \leq t_0 \lt t_1 \lt \cdots \lt t_n\) be times in its index set, and let \(\lambda > 0\). Then
+                        \[
+                        \lambda\, \mathbb{P}\Bigl[ \max_{0 \leq k \leq n} X_{t_k} \geq \lambda \Bigr]
+                        \leq \mathbb{E}\Bigl[ X_{t_n}\, \mathbf{1}_{\{\max_k X_{t_k} \geq \lambda\}} \Bigr]
+                        \leq \mathbb{E}\bigl[ X_{t_n} \bigr] .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Decompose the event \(A = \{\max_k X_{t_k} \geq \lambda\}\) by the <em>first</em> time the
+                        level is reached: for \(0 \leq k \leq n\), let
+                        \[
+                        A_k = \bigl\{ X_{t_0} \lt \lambda,\; \ldots,\; X_{t_{k-1}} \lt \lambda,\; X_{t_k} \geq \lambda \bigr\} .
+                        \]
+                        The \(A_k\) are pairwise disjoint with union \(A\), and \(A_k \in \mathcal{M}_{t_k}\): each
+                        event \(\{X_{t_j} \lt \lambda\}\) with \(j \lt k\) lies in
+                        \(\mathcal{M}_{t_j} \subseteq \mathcal{M}_{t_k}\), and \(\{X_{t_k} \geq \lambda\}\) lies in
+                        \(\mathcal{M}_{t_k}\), both by adaptedness (M1).
+                    </p>
+                    <p>
+                        On \(A_k\) the process has reached the level, so
+                        \(\lambda\, \mathbf{1}_{A_k} \leq X_{t_k}\, \mathbf{1}_{A_k}\) pointwise, and by monotonicity
+                        of expectation, among the
+                        <a href="measure_probability.html#T-expectation-properties" class="ref-link"><strong>properties of expectation</strong></a>,
+                        \[
+                        \lambda\, \mathbb{P}(A_k) \leq \mathbb{E}\bigl[ X_{t_k}\, \mathbf{1}_{A_k} \bigr] .
+                        \]
+                        Now trade the time-\(t_k\) value for the terminal one. The submartingale inequality (M3')
+                        gives \(X_{t_k} \leq \mathbb{E}[X_{t_n} \mid \mathcal{M}_{t_k}]\) almost surely; multiplying
+                        by the nonnegative \(\mathbf{1}_{A_k}\) and taking expectations,
+                        \[
+                        \mathbb{E}\bigl[ X_{t_k}\, \mathbf{1}_{A_k} \bigr]
+                        \leq \mathbb{E}\bigl[\, \mathbb{E}[X_{t_n} \mid \mathcal{M}_{t_k}]\, \mathbf{1}_{A_k} \bigr]
+                        = \int_{A_k} \mathbb{E}[X_{t_n} \mid \mathcal{M}_{t_k}]\, d\mathbb{P}
+                        = \int_{A_k} X_{t_n}\, d\mathbb{P} ,
+                        \]
+                        the last step being the averaging identity that
+                        <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>defines conditional expectation</strong></a>,
+                        legitimate because \(A_k \in \mathcal{M}_{t_k}\). This is the fair-game mechanism in one
+                        line: on an event decided by time \(t_k\), the terminal value integrates to at least as much
+                        as the value at the crossing.
+                    </p>
+                    <p>
+                        Summing over \(k\) and using disjointness,
+                        \[
+                        \lambda\, \mathbb{P}(A)
+                        = \sum_{k=0}^{n} \lambda\, \mathbb{P}(A_k)
+                        \leq \sum_{k=0}^{n} \mathbb{E}\bigl[ X_{t_n}\, \mathbf{1}_{A_k} \bigr]
+                        = \mathbb{E}\bigl[ X_{t_n}\, \mathbf{1}_{A} \bigr]
+                        \leq \mathbb{E}\bigl[ X_{t_n} \bigr] ,
+                        \]
+                        the final inequality because \(X_{t_n} \geq 0\).
+                    </p>
+                </div>
+
+                <p>
+                    To apply the lemma to a martingale \(M_t\), we feed it \(|M_t|^p\). The observation that convex
+                    images of martingales drift upward is worth isolating: it is the standard device for converting
+                    two-sided processes into nonnegative ones without losing the filtration structure.
+                </p>
+
+                <div class="theorem" id="T-convex_martingale_submartingale">
+                    <span class="theorem-title">Lemma: Convex Images of Martingales Are Submartingales</span>
+                    <p>
+                        Let \(\{X_t\}\) be a martingale with respect to \(\{\mathcal{M}_t\}\), and let
+                        \(\varphi : \mathbb{R} \to \mathbb{R}\) be a
+                        <a href="../Calculus/gradient.html#D-convex_function" class="ref-link"><strong>convex function</strong></a>
+                        with \(\varphi(X_t) \in L^1(\mathbb{P})\) for every \(t\). Then \(\{\varphi(X_t)\}\) is a
+                        submartingale with respect to \(\{\mathcal{M}_t\}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        A convex function on \(\mathbb{R}\) has finite left and right derivatives at every point —
+                        the fact underlying the supporting-line proof of conditional Jensen — and is therefore
+                        continuous, hence Borel measurable; so \(\varphi(X_t)\) is \(\mathcal{M}_t\)-measurable and
+                        (M1) holds. (M2) is the integrability hypothesis. For (M3'), let \(0 \leq t \leq s\). Since
+                        \(X_s \in L^1(\mathbb{P})\) by (M2) for the martingale and
+                        \(\varphi(X_s) \in L^1(\mathbb{P})\) by hypothesis,
+                        <a href="conditional_expectation.html#T-ce_jensen" class="ref-link"><strong>Jensen's inequality for conditional expectation</strong></a>
+                        applies, and almost surely
+                        \[
+                        \varphi(X_t)
+                        = \varphi\bigl( \mathbb{E}[X_s \mid \mathcal{M}_t] \bigr)
+                        \leq \mathbb{E}\bigl[ \varphi(X_s) \mid \mathcal{M}_t \bigr] ,
+                        \]
+                        the first equality being the martingale property (M3) inside the continuous \(\varphi\).
+                    </p>
+                </div>
+
+                <p>
+                    One further reading convention, and the main theorem can be stated. A supremum of \(|M_t|\) over
+                    the uncountable set \([0, T]\) is a supremum of uncountably many random variables and need not be
+                    measurable, so the probability appearing below must be read with care: given the horizon \(T\),
+                    we take the supremum along the countable set \(D = \bigcup_N D_N\) of dyadic times
+                    \(D_N = \{ k T 2^{-N} : k = 0, 1, \ldots, 2^N \}\), which is dense in \([0, T]\) and contains
+                    \(0\) and \(T\). A countable supremum of measurable functions is measurable, as in Section 1. For
+                    almost every \(\omega\) the path \(t \mapsto M_t(\omega)\) is continuous by hypothesis, so
+                    \(t \mapsto |M_t(\omega)|\) is continuous and its supremum over the dense set \(D\) equals its
+                    supremum over all of \([0, T]\): the reading convention costs nothing where it matters.
+                </p>
+
+                <div class="theorem" id="T-doob_martingale_inequality">
+                    <span class="theorem-title">Theorem: Doob's Martingale Inequality</span>
+                    <p>
+                        Let \(T \geq 0\) and let \(\{M_t\}_{0 \leq t \leq T}\) be a martingale with respect to a filtration
+                        \(\{\mathcal{M}_t\}\), such that \(t \mapsto M_t(\omega)\) is continuous for almost every
+                        \(\omega\). Then for every \(p \geq 1\) and \(\lambda > 0\),
+                        \[
+                        \mathbb{P}\Bigl[ \sup_{0 \leq t \leq T} |M_t| \geq \lambda \Bigr]
+                        \leq \frac{1}{\lambda^p}\, \mathbb{E}\bigl[ |M_T|^p \bigr] ,
+                        \]
+                        the supremum read along dyadic times as above.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        If \(\mathbb{E}[|M_T|^p] = \infty\) there is nothing to prove, so assume it finite. The map
+                        \(x \mapsto |x|^p\) is convex for \(p \geq 1\): on \([0, \infty)\) the power
+                        \(u \mapsto u^p\) is convex and nondecreasing, its derivative \(p\, u^{p-1}\) being
+                        nonnegative and nondecreasing, and composing a nondecreasing convex function with the convex
+                        \(x \mapsto |x|\) preserves convexity. Moreover \(|M_t|^p\) is integrable for every
+                        \(t \in [0, T]\): the martingale property gives \(M_t = \mathbb{E}[M_T \mid \mathcal{M}_t]\)
+                        almost surely, so the
+                        <a href="conditional_expectation.html#T-ce_lp_contraction" class="ref-link"><strong>\(L^p\) contraction</strong></a>
+                        yields \(\|M_t\|_{L^p(\mathbb{P})} \leq \|M_T\|_{L^p(\mathbb{P})} \lt \infty\). By the
+                        <a href="#T-convex_martingale_submartingale" class="ref-link"><strong>convex-image lemma</strong></a>,
+                        \(X_t = |M_t|^p\) is therefore a nonnegative submartingale on \([0, T]\).
+                    </p>
+                    <p>
+                        Fix \(0 \lt \mu \lt \lambda\) and \(N \in \mathbb{N}\), and apply the
+                        <a href="#T-submartingale_maximal_inequality" class="ref-link"><strong>maximal inequality</strong></a>
+                        to \(X\) at the finitely many times of \(D_N\), whose largest element is \(T\), with
+                        threshold \(\mu^p\). Since \(u \mapsto u^p\) is strictly increasing on \([0, \infty)\), the
+                        events \(\{\max_{t \in D_N} |M_t| \geq \mu\}\) and \(\{\max_{t \in D_N} X_t \geq \mu^p\}\)
+                        coincide, so
+                        \[
+                        \mathbb{P}\Bigl[ \max_{t \in D_N} |M_t| > \mu \Bigr]
+                        \leq \mathbb{P}\Bigl[ \max_{t \in D_N} |M_t| \geq \mu \Bigr]
+                        \leq \frac{1}{\mu^p}\, \mathbb{E}\bigl[ |M_T|^p \bigr] .
+                        \]
+                        The sets \(D_N\) increase with \(N\), so the events
+                        \(\{\max_{t \in D_N} |M_t| > \mu\}\) increase, and their union over \(N\) is
+                        \(\{\sup_{t \in D} |M_t| > \mu\}\): a supremum exceeds \(\mu\) strictly exactly when some
+                        member does. By
+                        <a href="../Calculus/measure.html#T-continuity_of_measure" class="ref-link"><strong>continuity of measure</strong></a>
+                        from below,
+                        \[
+                        \mathbb{P}\Bigl[ \sup_{t \in D} |M_t| > \mu \Bigr]
+                        = \lim_{N \to \infty} \mathbb{P}\Bigl[ \max_{t \in D_N} |M_t| > \mu \Bigr]
+                        \leq \frac{1}{\mu^p}\, \mathbb{E}\bigl[ |M_T|^p \bigr] .
+                        \]
+                        Finally, \(\{\sup_{t \in D} |M_t| \geq \lambda\} \subseteq \{\sup_{t \in D} |M_t| > \mu\}\)
+                        because \(\mu \lt \lambda\), so the left side of the theorem is bounded by
+                        \(\mu^{-p}\, \mathbb{E}[|M_T|^p]\) for every \(\mu \in (0, \lambda)\); letting
+                        \(\mu \uparrow \lambda\) gives the claim.
+                    </p>
+                </div>
+
+                <p>
+                    Note where each hypothesis worked. The strict inequality \(> \mu\) is what makes the events
+                    increase to the union — with \(\geq\) the identity fails, since a supremum can reach a level no
+                    single term attains — and the reserve \(\mu \lt \lambda\) repays that debt at the end. Path
+                    continuity entered only through the reading convention: it is what entitles a countable set of
+                    times to speak for the continuum.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Watching the Whole Run at Once</h3>
+                    <p>
+                        A confidence bound valid at one prespecified time becomes invalid the moment one monitors
+                        continuously and stops on a favorable fluctuation — the peeking problem of sequential
+                        testing, and the statistical face of taking a supremum over times. Doob's inequality is the
+                        template for the repair: it prices the running maximum of an entire trajectory at the cost of
+                        a single terminal moment, with no union bound over times and no widening factor growing with
+                        the horizon. Modern anytime-valid inference — confidence sequences that a practitioner may
+                        check after every observation, stopping whenever they like — is built on maximal inequalities
+                        for exactly the martingale structures of this section, applied to the likelihood ratios and
+                        error processes of the experiment.
+                    </p>
+                </div>
+
+                <p>
+                    Doob's inequality demands continuous paths, and there lies the last gap. The martingale
+                    \(M_t = \int_0^t f\, dw_s\) of the
+                    <a href="#T-ito_martingale" class="ref-link"><strong>previous section</strong></a>
+                    satisfies (M1)-(M3), but each \(M_t\) was constructed as an \(L^2\) limit, one \(t\) at a time,
+                    determined only up to a null set — and nothing so far ties those uncountably many choices into a
+                    single continuous path. Producing one process that is continuous in \(t\) and represents every
+                    \(M_t\) at once is the task of the next section, and Doob's inequality, applied to the
+                    differences of approximating integrals, is the tool that accomplishes it.
+                </p>
+            </section>
+
+            <section id="continuity" class="section-content">
+                <h2>A Continuous Version</h2>
+
+                <p>
+                    Here is the gap left by the construction, stated plainly. For each fixed \(t\), the integral
+                    \(\int_0^t f\, dw_s\) is an element of \(L^2(\mathbb{P})\) — an equivalence class, pinned down
+                    only up to a null set. A path \(t \mapsto M_t(\omega)\) requires choosing one representative for
+                    every \(t\), and there are uncountably many \(t\): the null sets on which the choices misbehave
+                    can accumulate into a set of full measure, and no property of the individual classes prevents it.
+                    Continuity is a property of the joint selection, not of the separate values, and it must be
+                    engineered. The plan: realize the approximating elementary integrals as genuinely continuous
+                    paths, force a subsequence of them to converge <em>uniformly</em> in \(t\) on a single almost-sure
+                    event — this is where Doob's inequality carries the load — and take the limit path by path. Two
+                    pieces of vocabulary and one classical lemma first.
+                </p>
+
+                <div class="theorem" id="D-process_version">
+                    <span class="theorem-title">Definition: Version of a Process</span>
+                    <p>
+                        Let \(\{X_t\}_{t \in I}\) and \(\{Y_t\}_{t \in I}\) be stochastic processes on
+                        \((\Omega, \mathcal{F}, \mathbb{P})\) with a common index set \(I\). The process \(Y\) is a
+                        <strong>version</strong> (or <strong>modification</strong>) of \(X\) if, for every
+                        \(t \in I\),
+                        \[
+                        \mathbb{P}\bigl[ X_t = Y_t \bigr] = 1 .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The relation is symmetric, and versions agree almost surely at each finite collection of times,
+                    so every statement of the preceding sections — martingale property, isometry, zero mean —
+                    transfers freely between versions. Path properties do not transfer: modifying a process at a
+                    single, randomly located time produces a version with jumps. The saving grace is that continuity,
+                    once achieved, is essentially unique: if two versions of the same process, indexed by an
+                    interval, both have almost surely continuous paths, their difference vanishes almost surely at
+                    each time in a countable dense subset of the interval, hence — one null set for countably many
+                    times — at all of them at once, and continuity propagates the equality to every \(t\). Two
+                    continuous versions are thus equal for all \(t\) simultaneously,
+                    almost surely, and one may speak of <em>the</em> continuous version.
+                </p>
+
+                <div class="theorem" id="T-borel_cantelli">
+                    <span class="theorem-title">Lemma: Borel-Cantelli</span>
+                    <p>
+                        Let \(\{A_k\}_{k \in \mathbb{N}} \subseteq \mathcal{F}\) satisfy
+                        \(\sum_{k=1}^{\infty} \mathbb{P}(A_k) \lt \infty\). Then
+                        \[
+                        \mathbb{P}\Bigl[ \bigcap_{N \geq 1} \bigcup_{k \geq N} A_k \Bigr] = 0 ,
+                        \]
+                        that is, almost every \(\omega\) belongs to only finitely many of the \(A_k\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        First, countable subadditivity. For any sequence \(\{B_k\} \subseteq \mathcal{F}\), the sets
+                        \(C_k = B_k \setminus \bigcup_{j \lt k} B_j\) are disjoint, lie in \(\mathcal{F}\), satisfy
+                        \(C_k \subseteq B_k\), and have the same union as the \(B_k\); by countable additivity, which
+                        is part of the
+                        <a href="../Calculus/measure.html#D-measure" class="ref-link"><strong>definition of a measure</strong></a>,
+                        and by monotonicity — itself immediate from additivity applied to \(B_k = C_k \cup (B_k \setminus C_k)\) —
+                        \[
+                        \mathbb{P}\Bigl[ \bigcup_{k} B_k \Bigr]
+                        = \sum_{k} \mathbb{P}(C_k)
+                        \leq \sum_{k} \mathbb{P}(B_k) .
+                        \]
+                        Now let \(A\) denote the intersection in the statement. For every \(N\), monotonicity and
+                        subadditivity give
+                        \[
+                        \mathbb{P}(A)
+                        \leq \mathbb{P}\Bigl[ \bigcup_{k \geq N} A_k \Bigr]
+                        \leq \sum_{k \geq N} \mathbb{P}(A_k) ,
+                        \]
+                        and the right side is the tail of a convergent series, hence tends to \(0\) as
+                        \(N \to \infty\). The left side does not depend on \(N\), so \(\mathbb{P}(A) = 0\).
+                    </p>
+                </div>
+
+                <p>
+                    The lemma converts a summable sequence of failure probabilities into almost-sure eventual
+                    success, and it is exactly the shape of conclusion we need: Doob's inequality will price each
+                    failure event, the isometry will make the prices summable, and Borel-Cantelli will collect the
+                    winnings. Here is the theorem that keeps the previous page's promise.
+                </p>
+
+                <div class="theorem" id="T-ito_continuous_version">
+                    <span class="theorem-title">Theorem: The Itô Integral Admits a Continuous Version</span>
+                    <p>
+                        Let \(f \in \mathcal{V}(0, T)\). There exists a stochastic process \(\{J_t\}_{0 \leq t \leq T}\)
+                        on \((\Omega, \mathcal{F}, \mathbb{P})\) such that \(t \mapsto J_t(\omega)\) is continuous
+                        for almost every \(\omega\), and, for every \(t \in [0, T]\),
+                        \[
+                        \mathbb{P}\Bigl[ J_t = \int_0^t f\, dw_s \Bigr] = 1 .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <strong>Step 1: elementary integrals have continuous realizations.</strong><br>
+                        Let \(\phi = \sum_{j} e_j\, \mathbf{1}_{[t_j, t_{j+1})}\) be bounded elementary on \([0, T]\) and
+                        define, pointwise in \(\omega\) and for every \(t \in [0, T]\),
+                        \[
+                        I^{\phi}(t, \omega)
+                        = \sum_{j} e_j(\omega) \bigl( w_{t \wedge t_{j+1}}(\omega) - w_{t \wedge t_j}(\omega) \bigr) ,
+                        \]
+                        where \(a \wedge b\) denotes \(\min(a, b)\).
+                        For \(t \in [t_k, t_{k+1})\) the terms with \(j \lt k\) contribute full increments, the term
+                        \(j = k\) contributes \(e_k (w_t - w_{t_k})\), and later terms vanish, while at \(t = T\)
+                        every increment is complete — so \(I^{\phi}(t, \cdot)\)
+                        is precisely the elementary integral of \(\phi\, \mathbf{1}_{[0, t)}\), the representative of
+                        \(\int_0^t \phi\, dw_s\) used throughout Section 1. The formula is unchanged under refinement
+                        of the partition, an inserted point splitting one term into two that telescope, and over a
+                        common partition it is linear in \(\phi\). For almost every \(\omega\) the path
+                        \(s \mapsto w_s(\omega)\) is continuous by (W3), and then each map
+                        \(t \mapsto w_{t \wedge c}(\omega)\) is continuous, being a composition with the continuous
+                        \(t \mapsto t \wedge c\); hence \(t \mapsto I^{\phi}(t, \omega)\), a finite linear
+                        combination of such maps, is continuous.
+                    </p>
+                    <p>
+                        <strong>Step 2: the maximal estimate.</strong><br> 
+                        Fix bounded elementary \(\phi_n\) with
+                        \(\|f - \phi_n\|_{\mathcal{V}} \to 0\) and write \(I_n(t, \omega) = I^{\phi_n}(t, \omega)\).
+                        For \(n, m\), pass to a common refinement: \(\phi_n - \phi_m\) is bounded elementary and, by
+                        the linearity and refinement-invariance of Step 1,
+                        \(I_n - I_m = I^{\phi_n - \phi_m}\) pointwise. For each fixed \(t\) this is a representative
+                        of \(\int_0^t (\phi_n - \phi_m)\, dw_s\), so by the
+                        <a href="#T-ito_martingale" class="ref-link"><strong>martingale theorem</strong></a>
+                        applied to \(\phi_n - \phi_m \in \mathcal{V}(0, T)\), the process
+                        \(\{I_n(t) - I_m(t)\}_{0 \leq t \leq T}\) is a martingale with respect to
+                        \(\{\mathcal{F}_t\}\) — conditions (M2) and (M3) concern only almost-sure classes, and (M1)
+                        holds for every choice of representatives by part (iv) of the properties theorem — and by
+                        Step 1 its paths are continuous almost surely.
+                        <a href="#T-doob_martingale_inequality" class="ref-link"><strong>Doob's inequality</strong></a>
+                        with \(p = 2\), followed by the
+                        <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>
+                        at the terminal time, gives for every \(\varepsilon > 0\)
+                        \[
+                        \mathbb{P}\Bigl[ \sup_{0 \leq t \leq T} |I_n(t) - I_m(t)| \geq \varepsilon \Bigr]
+                        \leq \frac{1}{\varepsilon^2}\, \mathbb{E}\bigl[ (I_n(T) - I_m(T))^2 \bigr]
+                        = \frac{1}{\varepsilon^2}\, \|\phi_n - \phi_m\|_{\mathcal{V}}^2 ,
+                        \]
+                        second moments of almost-surely equal variables being equal. The supremum is read along
+                        dyadic times, as in the previous section; on the almost-sure event of path continuity it is
+                        the full supremum.
+                    </p>
+                    <p>
+                        <strong>Step 3: a fast subsequence.</strong><br> 
+                        Since 
+                        \[
+                        \|\phi_n - \phi_m\|_{\mathcal{V}} \leq \|\phi_n - f\|_{\mathcal{V}} + \|f - \phi_m\|_{\mathcal{V}} \to 0
+                        \]
+                        as \(n, m \to \infty\), we may choose indices \(n_1 \lt n_2 \lt \cdots\) such that
+                        \(\|\phi_n - \phi_m\|_{\mathcal{V}}^2 \lt 2^{-3k}\) whenever \(n, m \geq n_k\). Taking
+                        \(\varepsilon = 2^{-k}\) in Step 2,
+                        \[
+                        \mathbb{P}\Bigl[ \sup_{0 \leq t \leq T} |I_{n_{k+1}}(t) - I_{n_k}(t)| \geq 2^{-k} \Bigr]
+                        \leq 2^{2k} \cdot 2^{-3k} = 2^{-k} .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 4: Borel-Cantelli.</strong><br> 
+                        The bounds \(2^{-k}\) are summable, so by the
+                        <a href="#T-borel_cantelli" class="ref-link"><strong>lemma</strong></a>, for almost every
+                        \(\omega\) there exists \(k_1(\omega)\) such that, for all \(k \geq k_1(\omega)\),
+                        \[
+                        \sup_{0 \leq t \leq T} \bigl| I_{n_{k+1}}(t, \omega) - I_{n_k}(t, \omega) \bigr| \lt 2^{-k} .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 5: uniform convergence.</strong><br> 
+                        Work on the almost-sure event where the
+                        conclusion of Step 4 holds and every path \(I_{n_k}(\cdot, \omega)\) is continuous — a
+                        countable union of null sets is discarded. For \(l > k \geq k_1(\omega)\) and every
+                        \(t \in [0, T]\), the triangle inequality along the chain of consecutive differences gives
+                        \[
+                        \bigl| I_{n_l}(t, \omega) - I_{n_k}(t, \omega) \bigr|
+                        \leq \sum_{j = k}^{l - 1} 2^{-j}
+                        \lt 2^{-k + 1} ,
+                        \]
+                        so the sequence \(\{I_{n_k}(t, \omega)\}_k\) is Cauchy in \(\mathbb{R}\), uniformly in
+                        \(t\). By completeness of \(\mathbb{R}\) the limit
+                        \(J_t(\omega) = \lim_{k} I_{n_k}(t, \omega)\) exists for every \(t\), and letting
+                        \(l \to \infty\) in the display,
+                        \(\sup_{0 \leq t \leq T} |J_t(\omega) - I_{n_k}(t, \omega)| \leq 2^{-k+1}\) for
+                        \(k \geq k_1(\omega)\): the convergence is uniform on \([0, T]\). On the discarded null set,
+                        set \(J_t(\omega) = 0\) for all \(t\).
+                    </p>
+                    <p>
+                        <strong>Step 6: continuity of the limit.</strong><br> 
+                        Fix such an \(\omega\), a point
+                        \(t \in [0, T]\), and \(\varepsilon > 0\). Choose \(k \geq k_1(\omega)\) with
+                        \(2^{-k+1} \lt \varepsilon / 3\), and then \(\delta > 0\) such that
+                        \(|I_{n_k}(s, \omega) - I_{n_k}(t, \omega)| \lt \varepsilon / 3\) whenever
+                        \(|s - t| \lt \delta\), by continuity of \(I_{n_k}(\cdot, \omega)\). For such \(s\),
+                        \[
+                        |J_s - J_t|
+                        \leq |J_s - I_{n_k}(s)| + |I_{n_k}(s) - I_{n_k}(t)| + |I_{n_k}(t) - J_t|
+                        \lt \varepsilon ,
+                        \]
+                        suppressing \(\omega\). Hence \(t \mapsto J_t(\omega)\) is continuous — the classical fact
+                        that a uniform limit of continuous functions is continuous, proved here inline in its
+                        entirety.
+                    </p>
+                    <p>
+                        <strong>Step 7: \(J\) is a version.</strong><br> 
+                        Fix \(t \in (0, T]\); at \(t = 0\) the integral
+                        is \(0\) under the convention adopted with the martingale theorem, and \(J_0 = 0\) by
+                        construction. As in the proof of the properties theorem, \(\phi_{n_k} \mathbf{1}_{[0, t)}\) is
+                        bounded elementary and admissible for \(f\) on \([0, t]\), so
+                        \(I_{n_k}(t) \to \int_0^t f\, dw_s\) in \(L^2(\mathbb{P})\); passing to a further
+                        <a href="../Calculus/lp_completeness.html#T-lp_subsequence_ae" class="ref-link"><strong>subsequence converging almost surely</strong></a>,
+                        and recalling that \(I_{n_k}(t) \to J_t\) almost surely by Step 5, the two almost-sure limits
+                        coincide almost surely. Hence \(J_t\) is a representative of the class
+                        \(\int_0^t f\, dw_s\), which is the displayed claim.
+                    </p>
+                </div>
+
+                <p>
+                    The theorem earns an immediate reward. The continuous version is a martingale whose paths satisfy
+                    the hypothesis of Doob's inequality, and feeding the Itô isometry through it yields a bound on
+                    the entire trajectory of the integral in terms of the plain size of the integrand — the estimate
+                    that closes the circle of this page's first four sections.
+                </p>
+
+                <div class="theorem" id="T-ito_sup_bound">
+                    <span class="theorem-title">Theorem: Maximal Bound for the Itô Integral</span>
+                    <p>
+                        Let \(f \in \mathcal{V}(0, T)\) and let \(\{J_t\}_{0 \leq t \leq T}\) be a continuous version
+                        of the integral process. Then for every \(\lambda > 0\),
+                        \[
+                        \mathbb{P}\Bigl[ \sup_{0 \leq t \leq T} |J_t| \geq \lambda \Bigr]
+                        \leq \frac{1}{\lambda^2}\, \mathbb{E}\Bigl[ \int_0^T f(s, \omega)^2\, ds \Bigr] .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        The process \(J\) is a martingale with respect to \(\{\mathcal{F}_t\}\). For (M1), each
+                        \(J_t\) is \(\mathcal{F}\)-measurable by construction and is a representative of
+                        \(\int_0^t f\, dw_s\), hence \(\mathcal{F}_t\)-measurable by part (iv) of the
+                        <a href="#T-ito_integral_properties" class="ref-link"><strong>properties theorem</strong></a>
+                        — it is precisely here that the every-representative form of (iv), and behind it the null-set
+                        convention, pays for itself: adaptedness costs nothing to transfer. For (M2) and (M3), each
+                        \(J_t\) is almost surely equal to the corresponding value of the martingale of the
+                        <a href="#T-ito_martingale" class="ref-link"><strong>martingale theorem</strong></a>,
+                        integrability transfers, and conditional expectations of almost-surely equal variables agree,
+                        so \(\mathbb{E}[J_s \mid \mathcal{F}_t] = J_t\) almost surely for \(t \leq s\). The paths of
+                        \(J\) are continuous almost surely, so
+                        <a href="#T-doob_martingale_inequality" class="ref-link"><strong>Doob's inequality</strong></a>
+                        applies with \(p = 2\), and with the
+                        <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>
+                        at time \(T\),
+                        \[
+                        \mathbb{P}\Bigl[ \sup_{0 \leq t \leq T} |J_t| \geq \lambda \Bigr]
+                        \leq \frac{1}{\lambda^2}\, \mathbb{E}\bigl[ J_T^2 \bigr]
+                        = \frac{1}{\lambda^2}\, \mathbb{E}\Bigl[ \int_0^T f(s, \omega)^2\, ds \Bigr] .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    From this point on, \(\int_0^t f\, dw_s\), viewed as a process in \(t\), will always denote a
+                    continuous version; since any two continuous versions agree for all \(t\) at once almost surely,
+                    the choice is immaterial and the article <em>the</em> is deserved. Every pathwise statement of
+                    stochastic calculus — beginning with the Itô formula on the next page — is a statement about
+                    this object.
+                </p>
+
+                <div class="insight-box">
+                    <h3>What a Sampler Actually Samples</h3>
+                    <p>
+                        Every numerical scheme that simulates a stochastic differential equation — from
+                        Euler-Maruyama in computational finance to the samplers that integrate the reverse-time
+                        dynamics of <a href="../Machine_learning/diffusion_models.html">diffusion models</a> —
+                        outputs a trajectory: a single continuous curve per random seed. The object such a scheme
+                        approximates is not the family of \(L^2\) classes constructed on the previous page, which has
+                        no trajectories at all, but the continuous version whose existence this section proved. The
+                        theorem is, in that sense, the license under which path simulation operates: it guarantees
+                        that there is a path-valued object to converge to, and the maximal bound above is the shape
+                        of estimate — uniform over the whole time horizon — by which such convergence is measured.
+                    </p>
+                </div>
+
+                <p>
+                    The integral is now everything the previous page promised: a continuous, square-integrable
+                    martingale, isometric to its integrand, vanishing in mean, adapted to the information that
+                    generated it. What remains is to survey how far the construction reaches — to several driving
+                    Brownian motions, to larger filtrations, to integrands beyond \(\mathcal{V}\) — and to settle an
+                    account left open since the previous page's Section 2: what becomes of the calculus if the
+                    evaluation point abandons causality. That is the Stratonovich question, and it closes the page.
+                </p>
+            </section>
+
+            <section id="stratonovich" class="section-content">
+                <h2>Extensions and the Stratonovich Question</h2>
+
+                <p>
+                    The theory now standing was built under four commitments: one driving Brownian motion, its own
+                    filtration, square-integrable integrands, and the left endpoint. The first three are technical
+                    restrictions, and each can be relaxed; we survey the relaxations with precision about what has to
+                    be re-verified, because the verification burden is where the mathematics lives. The fourth is not
+                    a restriction but a decision, made in Section 2 of the previous page and payable now: the page
+                    closes by settling the account with the midpoint convention it set aside there.
+                </p>
+
+                <h3>Larger Filtrations and Several Driving Motions</h3>
+
+                <p>
+                    Read back through the construction and mark every place the Brownian filtration entered. It
+                    played exactly two mathematical roles: the integrand was required to be
+                    \(\mathcal{F}_t\)-adapted, and each increment \(w_v - w_u\) was
+                    <a href="ito_integral.html#T-increment_independence" class="ref-link"><strong>independent of \(\mathcal{F}_u\)</strong></a>
+                    — the input consumed by the elementary isometry, by the zero-mean and martingale computations of
+                    this page, and by nothing else; the null-set convention was bookkeeping, not mathematics. It
+                    follows that the entire theory survives, verbatim, if \(\{\mathcal{F}_t\}\) is replaced by any
+                    larger filtration \(\{\mathcal{H}_t\}\), with \(\mathcal{F}_t \subseteq \mathcal{H}_t\) and each
+                    \(\mathcal{H}_t\) containing the \(\mathbb{P}\)-null sets as before, such that each increment
+                    \(w_v - w_u\) remains
+                    independent of \(\mathcal{H}_u\): integrands may then depend on more information than the history
+                    of \(w\), so long as the extra information never foresees the noise. We stress that independence
+                    of the increment, not merely the weaker conditional centering
+                    \(\mathbb{E}[w_v - w_u \mid \mathcal{H}_u] = 0\), is what the diagonal of the elementary isometry
+                    consumed — the factorization
+                    \(\mathbb{E}[e_j^2 (\Delta w_j)^2] = \mathbb{E}[e_j^2]\, \Delta t_j\) requires the squared
+                    increment, not only the increment, to decouple from the past.
+                </p>
+
+                <p>
+                    The example that makes the enlargement indispensable is several Brownian motions at once. Let
+                    \(\mathbf{w}_t = (w_t^{(1)}, \ldots, w_t^{(n)})\) be \(n\)-dimensional standard
+                    <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>Brownian motion</strong></a>,
+                    and let \(\mathcal{F}_t^{(n)}\) be the filtration generated by <em>all</em> components up to time
+                    \(t\) — the
+                    <a href="ito_integral.html#D-brownian_filtration" class="ref-link"><strong>Brownian filtration</strong></a>
+                    with the generating events ranging over every coordinate, null sets adjoined as before. An
+                    integrand may now read the entire vector history, and the single fact to check is that each
+                    component's increment \(w_v^{(j)} - w_u^{(j)}\) is independent of the joint past
+                    \(\mathcal{F}_u^{(n)}\). The verification is the Gaussian block computation of the increment
+                    lemma over again: the covariance of the increment with an earlier value of the <em>same</em>
+                    component vanishes by the formula \(\min(t_i, v) - \min(t_i, u) = 0\), and with an earlier value
+                    of a <em>different</em> component because the covariance matrix \(\min(s, t)\, I_n\) in (W1) has
+                    no cross-component entries; the passage from generating events to the full \(\sigma\)-algebra is
+                    the same monotone-class step
+                    taken on faith there. With that single input re-verified, each component is a legitimate
+                    integrator for \(\mathcal{F}_t^{(n)}\)-adapted integrands, and matrix-valued integrands assemble
+                    the components into one object.
+                </p>
+
+                <div class="theorem" id="D-multidim_ito_integral">
+                    <span class="theorem-title">Definition: The Multi-Dimensional Itô Integral</span>
+                    <p>
+                        Let \(0 \leq S \lt T\), let \(\mathbf{w}_t = (w_t^{(1)}, \ldots, w_t^{(n)})\) be
+                        \(n\)-dimensional standard Brownian motion, and let \(\{\mathcal{F}_t^{(n)}\}\) be the
+                        filtration generated by all of its components up to time \(t\), null sets adjoined. Let
+                        \(\mathcal{V}^{m \times n}(S, T)\) denote the class of
+                        \(m \times n\) matrix-valued processes
+                        \(\mathbf{v}(t, \omega) = [v_{ij}(t, \omega)]\) whose every entry satisfies conditions
+                        (V1)-(V3) of the
+                        <a href="ito_integral.html#D-ito_class_v" class="ref-link"><strong>class \(\mathcal{V}(S, T)\)</strong></a>
+                        with \(\mathcal{F}_t^{(n)}\) in place of \(\mathcal{F}_t\). For
+                        \(\mathbf{v} \in \mathcal{V}^{m \times n}(S, T)\), the
+                        <strong>multi-dimensional Itô integral</strong>
+                        \[
+                        \int_S^T \mathbf{v}(t, \omega)\, d\mathbf{w}_t
+                        \]
+                        is the \(\mathbb{R}^m\)-valued random vector whose \(i\)-th component is
+                        \[
+                        \sum_{j=1}^{n} \int_S^T v_{ij}(t, \omega)\, dw_t^{(j)} ,
+                        \]
+                        each summand being the one-dimensional Itô integral driven by \(w^{(j)}\), constructed with
+                        respect to the filtration \(\{\mathcal{F}_t^{(n)}\}\).
+                    </p>
+                </div>
+
+                <p>
+                    The notation is chosen so that the mnemonic is the statement: \(\mathbf{v}\, d\mathbf{w}\) is a
+                    matrix multiplying a column of differentials, row by row. Integrands like
+                    \(v(t, \omega) = w_t^{(2)}\) driving \(dw_t^{(1)}\) — one noise source modulating exposure to
+                    another, unreachable in the single-component theory because \(w^{(2)}\) is not measurable for the
+                    filtration of \(w^{(1)}\) alone — are now admissible, and every result of this page applies to
+                    each component sum: zero mean, the isometry summand by summand, the martingale property with
+                    respect to \(\{\mathcal{F}_t^{(n)}\}\), and a continuous version. The multi-dimensional Itô
+                    formula, which the coming pages develop, consumes precisely this object.
+                </p>
+
+                <h3>Weaker Integrability</h3>
+
+                <p>
+                    Condition (V3) can also be relaxed: it suffices to demand
+                    \(\mathbb{P}\bigl[ \int_S^T f(t, \omega)^2\, dt \lt \infty \bigr] = 1\), with no expectation at
+                    all. For such integrands one can still produce approximating step processes, but the
+                    approximation and the resulting integral converge only in the sense of
+                    <a href="convergence.html#D-convergence_in_probability" class="ref-link"><strong>convergence in probability</strong></a>,
+                    and the price is steep: without (V3) the isometry has no finite right-hand side, the zero-mean
+                    property may fail, and the integral need not be a martingale — it retains only a localized
+                    remnant of the property, the notion of a <em>local martingale</em>, which we leave undefined. We
+                    record this extension at statement level and take none of it on: the class \(\mathcal{V}\) and
+                    its martingale calculus suffice for everything on our horizon, and when the weaker class is
+                    eventually wanted, the honest construction will be built, not borrowed.
+                </p>
+
+                <h3>The Stratonovich Question</h3>
+
+                <p>
+                    One account remains open. Section 2 of the previous page discovered that the would-be integral
+                    of \(w\) against itself depends on the evaluation point, the discrepancy between right and left
+                    endpoints being exactly the quadratic variation; it committed to the left endpoint and named the
+                    midpoint alternative — the <strong>Stratonovich integral</strong>, written
+                    \(\int f \circ dw_t\) — with a promise that it would reappear. It reappears now, because for the
+                    test integrand everything is computable. The
+                    <a href="ito_integral.html#T-ito_bdb" class="ref-link"><strong>first computation</strong></a>
+                    gave \(\int_0^T w_s\, dw_s = \tfrac{1}{2} w_T^2 - \tfrac{1}{2} T\); the right-endpoint sums
+                    exceed the left by the quadratic sums converging to \(T\); and the average of the two therefore
+                    converges to the classical value \(\tfrac{1}{2} w_T^2\). The midpoint sums can be shown to share
+                    this limit — a small estimate we record at statement level — so
+                    \(\int_0^T w_s \circ dw_s = \tfrac{1}{2} w_T^2\): the Stratonovich integral of \(w\) obeys the
+                    classical chain rule on the nose, and the Itô-Stratonovich discrepancy for this integrand is
+                    exactly half the quadratic variation, \(\tfrac{1}{2} T\), rigorously accounted for by the
+                    <a href="brownian_motion.html#T-bm_path_properties" class="ref-link"><strong>path properties theorem</strong></a>.
+                </p>
+
+                <p>
+                    This is no isolated coincidence, and the deeper reason lies in the modeling question that opened
+                    the previous page: which integral makes the white-noise equation an honest idealization?
+                    Approximate the rough path by smooth ones — say, the polygonal interpolations of \(w\) along
+                    ever finer dyadic partitions, which converge to \(w\) uniformly on bounded intervals almost
+                    surely — and for each \(\omega\) solve the ordinary differential equation obtained by using the
+                    derivative of the interpolation as the noise. The Wong-Zakai approximation theorem, which we
+                    state without proof — it rests on a finer analysis of pathwise approximation than this page
+                    undertakes — says the solutions converge, and the limit solves the equation in the
+                    <em>Stratonovich</em> sense. Smooth physics,
+                    pushed to the white-noise limit, lands on the midpoint calculus: classical mechanisms have no
+                    arrow-of-time asymmetry inside an infinitesimal interval, and the midpoint is where that symmetry
+                    lives.
+                </p>
+
+                <p>
+                    Yet nothing is lost by refusing the midpoint, because the two calculi are intertranslatable. At
+                    statement level — the displays below are shorthand for integral equations, and the notion of
+                    solving them is itself the business of a coming page — the Stratonovich equation
+                    \[
+                    X_t = X_0 + \int_0^t b(s, X_s)\, ds + \int_0^t \sigma(s, X_s) \circ dw_s
+                    \]
+                    describes the same process as the Itô equation with a corrected drift,
+                    \[
+                    X_t = X_0 + \int_0^t \Bigl( b(s, X_s)
+                    + \tfrac{1}{2}\, \sigma'(s, X_s)\, \sigma(s, X_s) \Bigr) ds
+                    + \int_0^t \sigma(s, X_s)\, dw_s ,
+                    \]
+                    where \(\sigma'\) denotes the derivative of \(\sigma(t, x)\) in \(x\); the correction
+                    \(\tfrac{1}{2} \sigma' \sigma\) is the equation-level face of the half-quadratic-variation gap
+                    computed above, and its derivation is an exercise in the Itô formula, deferred to the page that
+                    proves it. When \(\sigma\) does not depend on \(x\) — additive noise — the correction vanishes
+                    and the two interpretations coincide.
+                </p>
+
+                <p>
+                    The choice, then, is a genuine trade. The Stratonovich calculus keeps the classical chain rule
+                    and transforms cleanly under changes of variables, which makes it the natural language where
+                    geometry dominates — stochastic calculus on manifolds is built on it — and Wong-Zakai makes it
+                    the limit of smooth physical models. The Itô calculus pays a correction term in its chain rule
+                    and receives, in exchange, everything this page proved: the integral never reads the future, has
+                    mean zero, is an isometry, is a martingale, obeys Doob's inequality and the maximal bound, and
+                    admits a continuous version. For estimation, prediction, and control — settings where the
+                    filtration is the point — the martingale structure is not a convenience but the subject matter,
+                    and it is unavailable on the Stratonovich side. Since the drift correction translates freely
+                    between the two, we commit to Itô and lose nothing: whenever a model arrives in Stratonovich
+                    form, the corrected drift converts it.
+                </p>
+
+                <p>
+                    The commitment fixes the direction of the track. The previous page ended by reading the pattern
+                    \(d(w_t^2) = 2 w_t\, dw_t + dt\) off its one computation and calling it the seed of a calculus;
+                    this page has grown the integral into a continuous martingale on which that calculus can act path
+                    by path. What remains is the calculus itself: the Itô formula, the chain rule whose correction
+                    term is the quadratic variation this page has been paying and collecting throughout, and the
+                    gateway to differential equations driven by noise. That is the next page's work.
+                </p>
+            </section>
+
+        </div>
+
+</body>
+</html>
