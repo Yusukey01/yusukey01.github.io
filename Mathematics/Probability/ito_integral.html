@@ -1,0 +1,899 @@
+---
+layout: default
+title: "The Itô Integral"
+topic_id: prob-28
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Itô Integral</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#noise">Why White Noise Is Not a Process</a>
+            <a href="#evaluation">An Integral That Depends on Where You Look</a>
+            <a href="#information">Filtrations and Adapted Processes</a>
+            <a href="#isometry">The Itô Isometry and the L² Extension</a>
+            <a href="#computation">First Computation</a>
+        </div>
+
+        <div class="container">
+
+            <section id="noise" class="section-content">
+                <h2>Why White Noise Is Not a Process</h2>
+
+                <p>
+                    The previous page ended with a promise. Brownian motion has continuous paths of infinite total
+                    variation, so the integrals that a theory of noisy dynamics needs cannot be built pathwise; the
+                    quadratic variation, which converges in \(L^2\), points to a mean-square construction instead. This
+                    page delivers that construction. Throughout, \(w_t\) denotes a standard one-dimensional Brownian
+                    motion, that is, the
+                    <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>Wiener process</strong></a>
+                    with \(n = 1\) and starting point \(x = 0\), carried on a probability space
+                    \((\Omega, \mathcal{F}, \mathbb{P})\), and \(\mathbb{E}\) denotes expectation with respect to
+                    \(\mathbb{P}\).
+                </p>
+
+                <p>
+                    We first make precise what problem the integral is meant to solve. Many systems are naturally
+                    modeled by an ordinary differential equation perturbed by a rapidly fluctuating random term. Writing
+                    \(W_t\) for the hoped-for "noise at time \(t\)" — capital \(W\), with the lowercase \(w_t\) reserved
+                    throughout for Brownian motion — the model reads
+                </p>
+                <p>
+                    \[
+                    \frac{dX_t}{dt} = b(t, X_t) + \sigma(t, X_t)\, W_t ,
+                    \]
+                    where \(b\) and \(\sigma\) are given functions: \(b\) is a systematic drift, and \(\sigma\)
+                    modulates how strongly the noise is felt. Physical reasoning suggests three axioms for the noise
+                    process \(\{W_t\}\).
+                </p>
+                <p>
+                    <strong>(N1) Independence.</strong> If \(t_1 \neq t_2\), then \(W_{t_1}\) and \(W_{t_2}\) are
+                    independent: the fluctuation now carries no information about the fluctuation at any other instant.
+                </p>
+                <p>
+                    <strong>(N2) Stationarity.</strong> The joint law of \((W_{t_1 + t}, \ldots, W_{t_k + t})\) does not
+                    depend on \(t\): the mechanism generating the noise does not change over time.
+                </p>
+                <p>
+                    <strong>(N3) Centering.</strong> \(\mathbb{E}[W_t] = 0\) for all \(t\): the noise has no systematic
+                    direction.
+                </p>
+
+                <p>
+                    No reasonable stochastic process satisfies these demands. A process obeying (N1) and (N2) cannot
+                    have continuous paths, and if one normalizes \(\mathbb{E}[W_t^2] = 1\), the map
+                    \((t, \omega) \mapsto W_t(\omega)\) cannot even be made jointly measurable in its two arguments. We
+                    take both obstructions on faith here; their proofs are measure-theoretic exercises that would pull
+                    us away from the construction, and nothing later depends on them. They can be bypassed by realizing
+                    white noise as a <em>generalized</em> process, a probability measure on a space of tempered
+                    distributions rather than on a space of functions, but we will not need that theory. The lesson we
+                    keep is negative and useful: the noise itself is not a process, so the equation above must be
+                    reshaped until the noise appears only in a form that does exist.
+                </p>
+
+                <p>
+                    Discretization shows what that form is. Fix \(0 = t_0 < t_1 < \cdots < t_m = t\) and consider the
+                    difference scheme
+                </p>
+                <p>
+                    \[
+                    X_{k+1} - X_k = b(t_k, X_k)\, \Delta t_k + \sigma(t_k, X_k)\, W_{t_k}\, \Delta t_k ,
+                    \]
+                    with \(X_k = X_{t_k}\) and \(\Delta t_k = t_{k+1} - t_k\). The noise enters only through the
+                    products \(W_{t_k} \Delta t_k\). We abandon the pointwise noise \(W_{t_k}\) and replace each
+                    product by the increment \(\Delta V_k = V_{t_{k+1}} - V_{t_k}\) of some genuine stochastic process
+                    \(\{V_t\}_{t \geq 0}\): cumulative noise instead of instantaneous noise. Axioms (N1)–(N3) then
+                    translate into requirements on \(V\): it should have stationary, independent increments with mean
+                    zero. Among such processes exactly one has continuous paths, up to scaling, and it is Brownian
+                    motion. We state this uniqueness without proof, as its machinery lies beyond our track, and adopt
+                    its conclusion: we put \(V_t = w_t\). The discrete scheme becomes
+                </p>
+                <p>
+                    \[
+                    X_k = X_0 + \sum_{j=0}^{k-1} b(t_j, X_j)\, \Delta t_j
+                    + \sum_{j=0}^{k-1} \sigma(t_j, X_j)\, \Delta w_j ,
+                    \qquad \Delta w_j = w_{t_{j+1}} - w_{t_j} .
+                    \]
+                </p>
+
+                <p>
+                    If the right-hand side converges in some sense as the mesh goes to zero, the usual integral notation
+                    suggests the limit
+                </p>
+                <p>
+                    \[
+                    X_t = X_0 + \int_0^t b(s, X_s)\, ds + \int_0^t \sigma(s, X_s)\, dw_s .
+                    \]
+                    The first integral is an ordinary integral in the time variable and poses no difficulty. The second
+                    is, at this point, pure notation. The previous page showed that almost every path of \(w\) has
+                    infinite
+                    <a href="brownian_motion.html#D-total_variation_function" class="ref-link"><strong>total variation</strong></a>
+                    on every interval, so in general this expression cannot be interpreted as a pathwise Stieltjes
+                    integral, and no meaning has
+                    yet been assigned to it. Our task for the rest of the page is to supply one: to define
+                    \(\int_S^T f(t, \omega)\, dw_t\) for a wide class of integrands \(f\), by a limit taken in \(L^2\)
+                    rather than path by path. The first step is to see what happens for the simplest imaginable
+                    integrands, where a new phenomenon is already waiting.
+                </p>
+            </section>
+
+            <section id="evaluation" class="section-content">
+                <h2>An Integral That Depends on Where You Look</h2>
+
+                <p>
+                    Fix \(0 \leq S < T\). We want to attach a meaning to \(\int_S^T f(t, \omega)\, dw_t\), and the
+                    reasonable strategy, familiar from the construction of the Lebesgue integral, is to define the integral
+                    on a simple class of integrands and then extend by approximation. The simple class suggests itself:
+                    step processes in time, constant on dyadic intervals,
+                </p>
+                <p>
+                    \[
+                    \phi(t, \omega) = \sum_{j \geq 0} e_j(\omega)\, \mathbf{1}_{[\,j 2^{-n},\, (j+1) 2^{-n})}(t) ,
+                    \]
+                    where \(n\) is a natural number and each \(e_j\) is a random variable. For such a \(\phi\) the
+                    integral should simply pair each level with the increment of \(w\) over its interval:
+                </p>
+                <p>
+                    \[
+                    \int_S^T \phi(t, \omega)\, dw_t = \sum_{j \geq 0} e_j(\omega)\,
+                    \bigl[ w_{t_{j+1}} - w_{t_j} \bigr](\omega) ,
+                    \]
+                    where \(t_k\) denotes \(k\, 2^{-n}\) truncated into \([S, T]\): values below \(S\) are replaced by
+                    \(S\), and values above \(T\) by \(T\). No limit is involved, so nothing can go wrong yet; the
+                    trouble lies instead in the choice of the levels \(e_j\).
+                </p>
+
+                <p>
+                    Take the seemingly innocent target \(f(t, \omega) = w_t(\omega)\) on \([0, T]\), and approximate it by step processes in the two most natural ways: sample the path at the left
+                    endpoint of each dyadic interval, or at the right endpoint,
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    \phi_1(t, \omega) &= \sum_{j \geq 0} w_{j 2^{-n}}(\omega)\,
+                    \mathbf{1}_{[\,j 2^{-n},\, (j+1) 2^{-n})}(t) , \\\\
+                    \phi_2(t, \omega) &= \sum_{j \geq 0} w_{(j+1) 2^{-n}}(\omega)\,
+                    \mathbf{1}_{[\,j 2^{-n},\, (j+1) 2^{-n})}(t) .
+                    \end{align*}
+                    \]
+                    Both converge pointwise to \(w_t\) as \(n \to \infty\), almost surely, by continuity of the paths.
+                    Yet their integrals disagree in expectation, and the disagreement does not shrink as \(n\) grows.
+                    Abbreviating \(\Delta w_j = w_{t_{j+1}} - w_{t_j}\) and \(\Delta t_j = t_{j+1} - t_j\), the left
+                    endpoint gives
+                </p>
+                <p>
+                    \[
+                    \mathbb{E}\Bigl[ \int_0^T \phi_1\, dw_t \Bigr]
+                    = \sum_{j \geq 0} \mathbb{E}\bigl[ w_{t_j}\, \Delta w_j \bigr] = 0 ,
+                    \]
+                    because \(w_{t_j}\) and the increment \(\Delta w_j\) are independent by (W2), so
+                    <a href="limit_theorems_product_measures.html#T-expectation_product_independent" class="ref-link"><strong>the expectation of their product factors</strong></a>
+                    into \(\mathbb{E}[w_{t_j}]\, \mathbb{E}[\Delta w_j]\), and both factors vanish. The right endpoint
+                    gives
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    \mathbb{E}\Bigl[ \int_0^T \phi_2\, dw_t \Bigr]
+                    = \sum_{j \geq 0} \mathbb{E}\bigl[ w_{t_{j+1}}\, \Delta w_j \bigr]
+                    &= \sum_{j \geq 0} \Bigl( \mathbb{E}\bigl[ w_{t_j}\, \Delta w_j \bigr]
+                    + \mathbb{E}\bigl[ (\Delta w_j)^2 \bigr] \Bigr) \\\\
+                    &= \sum_{j \geq 0} \Delta t_j = T ,
+                    \end{align*}
+                    \]
+                    by writing \(w_{t_{j+1}} = w_{t_j} + \Delta w_j\) and using
+                    \(\mathbb{E}[(\Delta w_j)^2] = \Delta t_j\) from (W1). Zero against \(T\), for every \(n\). Unlike
+                    the Riemann–Stieltjes integral, where any evaluation point in each subinterval produces the same
+                    limit, here the choice of where to sample the integrand changes the answer by a fixed, non-vanishing
+                    amount.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Gap Is the Quadratic Variation</h3>
+                    <p>
+                        The discrepancy is not an artifact of taking expectations. Subtracting the two approximating
+                        sums directly,
+                        \[
+                        \int_0^T \phi_2\, dw_t - \int_0^T \phi_1\, dw_t
+                        = \sum_{j \geq 0} (\Delta w_j)^2 ,
+                        \]
+                        which is precisely the quadratic sum whose \(L^2\) limit the
+                        <a href="brownian_motion.html#T-bm_path_properties" class="ref-link"><strong>path properties theorem</strong></a>
+                        identified as \(T\). The ambiguity in the would-be integral is not noise to be averaged away; it
+                        is exactly the quadratic variation of the integrator. Any theory of stochastic integration must
+                        therefore commit to an evaluation convention, and different conventions yield different
+                        calculi.
+                    </p>
+                </div>
+
+                <p>
+                    For a general integrand the same recipe reads
+                    \(\sum_{j} f(t_j^*, \omega)\, \mathbf{1}_{[t_j, t_{j+1})}(t)\), where each sampling point
+                    \(t_j^*\) is chosen in \([t_j, t_{j+1}]\), and the phenomenon above says the choice matters. Two
+                    conventions have proved most useful. Sampling at the left endpoint, \(t_j^* = t_j\), leads to
+                    the <strong>Itô integral</strong>, the object this page constructs. Sampling at the midpoint,
+                    \(t_j^* = (t_j + t_{j+1})/2\), leads to the <strong>Stratonovich integral</strong>, written
+                    \(\int f \circ dw_t\), which we mention now only to name the alternative; it obeys a chain rule
+                    closer to the classical one and will reappear later in the track. Itô's choice is the one compatible with a simple modeling principle: the
+                    integrand at time \(t_j\) should be determined by what is observable up to time \(t_j\), never by
+                    the future of the noise. The left endpoint respects this; the midpoint peeks ahead. Making
+                    "observable up to time \(t\)" precise is the next order of business.
+                </p>
+            </section>
+
+            <section id="information" class="section-content">
+                <h2>Filtrations and Adapted Processes</h2>
+
+                <p>
+                    Section 2 ended with a modeling principle; to build a theory on it we must say, mathematically,
+                    what "observable up to time \(t\)" means. The language is that of
+                    \(\sigma\)-algebras. An event is observable at time \(t\) if, watching the path of \(w\) only up to
+                    time \(t\), one can already decide whether the event has occurred; the collection of all such events
+                    forms a \(\sigma\)-algebra, and letting \(t\) grow produces an increasing family of them, a record
+                    of information accumulating over time.
+                </p>
+
+                <div class="theorem" id="D-filtration_probability">
+                    <span class="theorem-title">Definition: Filtration of a Probability Space</span>
+                    <p>
+                        A <strong>filtration</strong> on a probability space \((\Omega, \mathcal{F}, \mathbb{P})\) is a
+                        family \(\{\mathcal{M}_t\}_{t \geq 0}\) of \(\sigma\)-algebras with
+                        \(\mathcal{M}_s \subseteq \mathcal{M}_t \subseteq \mathcal{F}\) whenever \(0 \leq s \leq t\).
+                        This notion of filtration shares with the
+                        <a href="../Discrete/simplicial_complexes.html#D-filtration" class="ref-link"><strong>filtration of a simplicial complex</strong></a>
+                        only the underlying idea of a nested, growing family; nothing else transfers between the two
+                        theories.
+                    </p>
+                </div>
+
+                <p>
+                    The filtration relevant to us is the one generated by Brownian motion itself.
+                </p>
+
+                <div class="theorem" id="D-brownian_filtration">
+                    <span class="theorem-title">Definition: The Brownian Filtration</span>
+                    <p>
+                        For \(t \geq 0\), let \(\mathcal{F}_t\) be the smallest \(\sigma\)-algebra containing every set
+                        of the form
+                        \[
+                        \{\omega \in \Omega : w_{t_1}(\omega) \in F_1, \ldots, w_{t_k}(\omega) \in F_k\} ,
+                        \]
+                        where \(k \in \mathbb{N}\), \(t_1, \ldots, t_k \leq t\), and \(F_1, \ldots, F_k\) are
+                        <a href="../Calculus/measure.html#D-borel" class="ref-link"><strong>Borel sets</strong></a>
+                        in \(\mathbb{R}\). We adopt the convention that every set of \(\mathbb{P}\)-measure zero belongs
+                        to \(\mathcal{F}_t\) as well. The family \(\{\mathcal{F}_t\}_{t \geq 0}\) is a filtration, since
+                        enlarging \(t\) only enlarges the generating collection, and \(\mathcal{F}_t \subseteq
+                        \mathcal{F}\) for every \(t\).
+                    </p>
+                </div>
+
+                <p>
+                    One reads \(\mathcal{F}_t\) as the history of \(w\) up to time \(t\). The intuition to hold on to is
+                    that a random variable \(h\) is \(\mathcal{F}_t\)-measurable exactly when the value \(h(\omega)\)
+                    can be decided from the values \(w_s(\omega)\) for \(s \leq t\); one can make this precise by
+                    showing that every such \(h\) is a pointwise limit, almost everywhere, of sums of products
+                    \(g_1(w_{t_1}) \cdots g_k(w_{t_k})\) with the \(g_i\) bounded continuous and \(t_i \leq t\), a
+                    characterization we state without proof and will not use. The two standard test cases calibrate the
+                    idea: \(h_1(\omega) = w_{t/2}(\omega)\) is \(\mathcal{F}_t\)-measurable, since \(t/2 \leq t\), while
+                    \(h_2(\omega) = w_{2t}(\omega)\) is not, since deciding its value requires the path strictly beyond
+                    time \(t\).
+                </p>
+
+                <div class="theorem" id="D-adapted_process">
+                    <span class="theorem-title">Definition: Adapted Process</span>
+                    <p>
+                        Let \(\{\mathcal{M}_t\}_{t \geq 0}\) be a filtration on \((\Omega, \mathcal{F}, \mathbb{P})\). A
+                        process \(g(t, \omega) : [0, \infty) \times \Omega \to \mathbb{R}\) is
+                        <strong>\(\mathcal{M}_t\)-adapted</strong> if for each \(t \geq 0\) the map
+                        \(\omega \mapsto g(t, \omega)\) is \(\mathcal{M}_t\)-measurable.
+                    </p>
+                </div>
+
+                <p>
+                    Adaptedness is the process-level form of the causality principle: at every instant, the current
+                    value of the process is determined by information available at that instant. Thus
+                    \(h_1(t, \omega) = w_{t/2}(\omega)\) is \(\mathcal{F}_t\)-adapted, while
+                    \(h_2(t, \omega) = w_{2t}(\omega)\) is not: the latter reads the noise one step ahead of the clock,
+                    exactly the behavior the Itô convention is designed to exclude.
+                </p>
+
+                <p>
+                    We can now assemble the class of integrands for which the Itô integral will be constructed. Three
+                    demands enter: joint measurability, so that integrals in \(t\) make sense at all; adaptedness, the
+                    causality condition; and a square-integrability bound, which will feed the \(L^2\) machinery of the
+                    next section.
+                </p>
+
+                <div class="theorem" id="D-ito_class_v">
+                    <span class="theorem-title">Definition: The Class \(\mathcal{V}(S, T)\)</span>
+                    <p>
+                        Let \(0 \leq S < T\). We write \(\mathcal{V} = \mathcal{V}(S, T)\) for the class of functions
+                        \(f(t, \omega) : [0, \infty) \times \Omega \to \mathbb{R}\) such that
+                    </p>
+                    <p>
+                        <strong>(V1)</strong> \((t, \omega) \mapsto f(t, \omega)\) is measurable with respect to the
+                        <a href="limit_theorems_product_measures.html#D-product-sigma" class="ref-link"><strong>product \(\sigma\)-algebra</strong></a>
+                        \(\mathcal{B}([0, \infty)) \otimes \mathcal{F}\), where \(\mathcal{B}([0, \infty))\) denotes the
+                        Borel \(\sigma\)-algebra on \([0, \infty)\);
+                    </p>
+                    <p>
+                        <strong>(V2)</strong> \(f\) is \(\mathcal{F}_t\)-adapted;
+                    </p>
+                    <p>
+                        <strong>(V3)</strong> \(\displaystyle \mathbb{E}\Bigl[ \int_S^T f(t, \omega)^2\, dt \Bigr] <
+                        \infty\), the inner integral being well defined and its expectation meaningful by
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        applied to the nonnegative product-measurable function \(f^2\).
+                    </p>
+                </div>
+
+                <p>
+                    Each condition will earn its keep. (V1) makes \(f\) a legitimate object of measure theory on
+                    \([0, \infty) \times \Omega\). (V2) is the arrow of time. (V3) equips \(\mathcal{V}\) with the norm
+                    of \(L^2\) on the product space \([S, T] \times \Omega\), and it is along this norm that simple
+                    integrands will approximate general ones. The simple integrands themselves are the step processes of
+                    Section 2, now with their levels required to respect the filtration — and for them, one computation does
+                    most of the work.
+                </p>
+            </section>
+
+            <section id="isometry" class="section-content">
+                <h2>The Itô Isometry and the L² Extension</h2>
+
+                <h3>Elementary Processes and the Elementary Integral</h3>
+
+                <p>
+                    We begin with the integrands for which no limit is needed.
+                </p>
+
+                <div class="theorem" id="D-elementary_process">
+                    <span class="theorem-title">Definition: Elementary Process</span>
+                    <p>
+                        A function \(\phi \in \mathcal{V}(S, T)\) is called <strong>elementary</strong> if it has the
+                        form
+                        \[
+                        \phi(t, \omega) = \sum_{j=0}^{N-1} e_j(\omega)\, \mathbf{1}_{[t_j, t_{j+1})}(t)
+                        \]
+                        for some partition \(S = t_0 < t_1 < \cdots < t_N = T\) and random variables
+                        \(e_0, \ldots, e_{N-1}\). Since \(\phi \in \mathcal{V}\), adaptedness (V2),
+                        applied at the time \(t_j\), forces each level \(e_j\) to be
+                        \(\mathcal{F}_{t_j}\)-measurable.
+                    </p>
+                </div>
+
+                <p>
+                    The two step processes of Section 2 now separate. The left-endpoint approximation \(\phi_1\) is
+                    elementary, because its level on \([t_j, t_{j+1})\) is \(w_{t_j}\), which is
+                    \(\mathcal{F}_{t_j}\)-measurable. The right-endpoint approximation \(\phi_2\) is not: its level on
+                    \([t_j, t_{j+1})\) is \(w_{t_{j+1}}\), a peek into the future that (V2) forbids. The class
+                    \(\mathcal{V}\) has silently made Itô's choice for us. For an elementary \(\phi\) we define, as in
+                    Section 2,
+                </p>
+                <p>
+                    \[
+                    \int_S^T \phi(t, \omega)\, dw_t
+                    = \sum_{j=0}^{N-1} e_j(\omega)\, \Delta w_j ,
+                    \qquad \Delta w_j = w_{t_{j+1}} - w_{t_j} .
+                    \]
+                    The sum is unchanged under refinement of the partition: inserting a point splits one term into two
+                    with the same total.
+                </p>
+
+                <p>
+                    Everything to come rests on computing the second moment of this sum, and that computation needs one
+                    structural fact: an increment of Brownian motion is independent not merely of finitely many earlier
+                    values of the path, which is what (W2) records, but of the entire accumulated history.
+                </p>
+
+                <div class="theorem" id="T-increment_independence">
+                    <span class="theorem-title">Lemma: Increments Are Independent of the Past</span>
+                    <p>
+                        Let \(0 \leq u < v\). Then the increment \(w_v - w_u\) is
+                        <a href="limit_theorems_product_measures.html#D-sigma-independence" class="ref-link"><strong>independent of the \(\sigma\)-algebra</strong></a>
+                        \(\mathcal{F}_u\): for every \(A \in \mathcal{F}_u\) and every Borel set
+                        \(B \subseteq \mathbb{R}\),
+                        \[
+                        \mathbb{P}\bigl( A \cap \{ w_v - w_u \in B \} \bigr)
+                        = \mathbb{P}(A)\, \mathbb{P}\bigl( w_v - w_u \in B \bigr) .
+                        \]
+                        In particular, if a random variable \(X\) is \(\mathcal{F}_u\)-measurable, then \(X\) and
+                        \(w_v - w_u\) are independent.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (with one step taken on faith)</span>
+                    <p>
+                        Consider first a generating event
+                        \(A = \{ w_{t_1} \in F_1, \ldots, w_{t_k} \in F_k \}\) with all \(t_j \leq u\) and \(F_j\)
+                        Borel. Factors with \(t_j = 0\) may be discarded, since \(w_0 = 0\) almost surely makes such a
+                        factor coincide with \(\Omega\) or with the empty set up to a null set; merging repeated
+                        times by intersecting their Borel sets, we may assume \(0 < t_1 < \cdots < t_m \leq u\),
+                        the case of no remaining factors being trivial. The vector
+                        \(Z = (w_{t_1}, \ldots, w_{t_m},\, w_v - w_u)\) is a linear image of values of the path, hence
+                        jointly Gaussian by (W1) — the same closure of Gaussian families under linear maps that the
+                        previous page used throughout — and its covariance matrix is block diagonal: the cross terms vanish,
+                        \[
+                        \operatorname{Cov}(w_{t_i},\, w_v - w_u)
+                        = \min(t_i, v) - \min(t_i, u)
+                        = t_i - t_i = 0 ,
+                        \]
+                        leaving one block \(\Sigma' = [\min(t_i, t_j)]_{i,j}\) for the past values and the scalar block
+                        \(v - u > 0\) for the increment.
+                    </p>
+                    <p>
+                        Both blocks are positive definite. For \(\Sigma'\), the Gram identity
+                        \(\min(s, t) = \int_0^\infty \mathbf{1}_{[0,s]}(r)\, \mathbf{1}_{[0,t]}(r)\, dr\), already used
+                        for the existence argument on the previous page, gives
+                        \(\sum_{i,j} c_i c_j \min(t_i, t_j) = \int_0^\infty \bigl( \sum_i c_i \mathbf{1}_{[0,t_i]}(r)
+                        \bigr)^2 dr\); if this vanishes, the step function \(\sum_i c_i \mathbf{1}_{[0,t_i]}\) is zero
+                        almost everywhere, and reading its value on \((t_{m-1}, t_m)\), then on \((t_{m-2}, t_{m-1})\),
+                        and so on downward kills every coefficient. Hence \(Z\) possesses the
+                        <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal density</strong></a>,
+                        and since both \(\det \Sigma\) and \(\Sigma^{-1}\) split along the blocks, that density is a
+                        product of a density in the first \(m\) coordinates and a density of the increment. Integrating
+                        the product over \(F_1 \times \cdots \times F_m \times B\) and separating the integrals by
+                        <a href="limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>
+                        yields
+                        \[
+                        \mathbb{P}\bigl( A \cap \{ w_v - w_u \in B \} \bigr)
+                        = \mathbb{P}(A)\, \mathbb{P}\bigl( w_v - w_u \in B \bigr)
+                        \]
+                        for every generating event \(A\). This conclusion is specifically Gaussian: zero covariance
+                        alone never implies independence, as the counterexample on <a href="covariance.html">the covariance page</a> records; it is the
+                        factorization of the joint density that converts one into the other.
+                    </p>
+                    <p>
+                        The passage from the generating events to all of \(\mathcal{F}_u\) is the step we take on faith:
+                        the generating events form a system closed under intersection, and a standard monotone-class
+                        argument extends independence from such a system to the \(\sigma\)-algebra it generates. Our
+                        track has not built that machinery, this being its only point of use on the page, so we state
+                        the extension without proof. Sets of measure zero, which our convention places in
+                        \(\mathcal{F}_u\), alter no probability in the displayed identity and so cause no harm.
+                    </p>
+                </div>
+
+                <p>
+                    As a byproduct, the lemma settles rigorously a claim Section 3 made on intuition: if
+                    \(w_{2t}\) were \(\mathcal{F}_t\)-measurable, then so would be the increment
+                    \(w_{2t} - w_t\), which the lemma makes independent of \(\mathcal{F}_t\), hence of itself; a
+                    random variable independent of itself is almost surely constant, while this increment has variance
+                    \(t > 0\).
+                </p>
+
+                <p>
+                    With the lemma in hand, the central computation is short. It says that the elementary integral,
+                    random as it is, has a second moment computable by an ordinary integral — the map
+                    \(\phi \mapsto \int_S^T \phi\, dw_t\) preserves the \(L^2\) norm on the nose.
+                </p>
+
+                <div class="theorem" id="T-ito_isometry_elementary">
+                    <span class="theorem-title">Lemma: The Itô Isometry for Elementary Processes</span>
+                    <p>
+                        Let \(\phi \in \mathcal{V}(S, T)\) be elementary and bounded. Then
+                        \[
+                        \mathbb{E}\Bigl[ \Bigl( \int_S^T \phi(t, \omega)\, dw_t \Bigr)^{2} \Bigr]
+                        = \mathbb{E}\Bigl[ \int_S^T \phi(t, \omega)^2\, dt \Bigr] .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Write \(\Delta t_j = t_{j+1} - t_j\) and expand the square of the finite sum:
+                        \[
+                        \mathbb{E}\Bigl[ \Bigl( \sum_{j} e_j\, \Delta w_j \Bigr)^{2} \Bigr]
+                        = \sum_{i, j} \mathbb{E}\bigl[ e_i e_j\, \Delta w_i\, \Delta w_j \bigr] .
+                        \]
+                        All expectations here are finite: the levels are bounded and the increments are square
+                        integrable. We evaluate the terms in two groups.
+                    </p>
+                    <p>
+                        <strong>Off-diagonal terms.</strong> Let \(i < j\). Each of \(e_i\), \(e_j\), and
+                        \(\Delta w_i\) is \(\mathcal{F}_{t_j}\)-measurable — the first because
+                        \(\mathcal{F}_{t_i} \subseteq \mathcal{F}_{t_j}\), the last because \(w_{t_i}\) and
+                        \(w_{t_{i+1}}\) are values of the path at times at most \(t_j\). Hence the product
+                        \(X = e_i e_j \Delta w_i\) is \(\mathcal{F}_{t_j}\)-measurable and integrable, and by the
+                        <a href="#T-increment_independence" class="ref-link"><strong>lemma above</strong></a>
+                        it is independent of \(\Delta w_j\). The
+                        <a href="limit_theorems_product_measures.html#T-expectation_product_independent" class="ref-link"><strong>expectation of the product factors</strong></a>:
+                        \[
+                        \mathbb{E}\bigl[ X\, \Delta w_j \bigr]
+                        = \mathbb{E}[X]\, \mathbb{E}[\Delta w_j] = 0 ,
+                        \]
+                        since increments are centered by (W1). By symmetry every term with \(i \neq j\) vanishes.
+                    </p>
+                    <p>
+                        <strong>Diagonal terms.</strong> For \(i = j\), the variable \(e_j^2\) is
+                        \(\mathcal{F}_{t_j}\)-measurable, bounded, and by the lemma independent of \(\Delta w_j\),
+                        hence of \((\Delta w_j)^2\). Factoring again and using
+                        \(\mathbb{E}[(\Delta w_j)^2] = \Delta t_j\) from (W1),
+                        \[
+                        \mathbb{E}\bigl[ e_j^2\, (\Delta w_j)^2 \bigr]
+                        = \mathbb{E}[e_j^2]\, \Delta t_j .
+                        \]
+                    </p>
+                    <p>
+                        Summing the surviving terms and noting that the intervals \([t_j, t_{j+1})\) are disjoint, so
+                        that \(\phi^2 = \sum_j e_j^2\, \mathbf{1}_{[t_j, t_{j+1})}\),
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \Bigl( \int_S^T \phi\, dw_t \Bigr)^{2} \Bigr]
+                        = \sum_{j} \mathbb{E}[e_j^2]\, \Delta t_j
+                        &= \mathbb{E}\Bigl[ \sum_{j} e_j^2\, \Delta t_j \Bigr]
+                        = \mathbb{E}\Bigl[ \int_S^T \phi^2\, dt \Bigr] .
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The statement deserves its name. Condition (V3) makes
+                    \(\|f\|_{\mathcal{V}}^2 = \mathbb{E}\bigl[ \int_S^T f^2\, dt \bigr]\) the squared norm of \(f\) in
+                    \(L^2\) of the product space \([S, T] \times \Omega\), while the left-hand side is the squared norm
+                    of the integral in \(L^2(\mathbb{P})\). The lemma says the elementary integral is an isometry
+                    between these two spaces — it moves vectors from one \(L^2\) into another without changing their
+                    length. Isometries map Cauchy sequences to Cauchy sequences, and that single remark is the engine of
+                    the extension we now carry out.
+                </p>
+
+                <h3>Three Approximation Steps</h3>
+
+                <p>
+                    The plan is to show that every \(f \in \mathcal{V}(S, T)\) is a limit, in the norm
+                    \(\|\cdot\|_{\mathcal{V}}\), of bounded elementary processes. We descend in three steps, each
+                    relaxing one regularity assumption: from continuous-in-time integrands to merely bounded ones, and
+                    from bounded ones to the whole class.
+                </p>
+
+                <p>
+                    <strong>Step 1.</strong> <em>Let \(g \in \mathcal{V}(S, T)\) be bounded, with
+                    \(t \mapsto g(t, \omega)\) continuous for each \(\omega\). Then there exist bounded elementary
+                    \(\phi_n \in \mathcal{V}(S, T)\) with
+                    \(\mathbb{E}\bigl[ \int_S^T (g - \phi_n)^2\, dt \bigr] \to 0\).</em>
+                </p>
+                <p>
+                    Indeed, take the dyadic partitions \(t_j = S + j (T - S) 2^{-n}\), \(j = 0, \ldots, 2^n\), and
+                    sample at the left endpoints:
+                    \(\phi_n(t, \omega) = \sum_j g(t_j, \omega)\, \mathbf{1}_{[t_j, t_{j+1})}(t)\). Each level
+                    \(g(t_j, \cdot)\) is \(\mathcal{F}_{t_j}\)-measurable by (V2), each \(\phi_n\) is a finite sum of
+                    products of measurable factors and is bounded by the bound \(M\) of \(g\), so \(\phi_n\) is bounded
+                    elementary. For fixed \(\omega\), the path \(g(\cdot, \omega)\) is continuous on the compact
+                    \([S, T]\), hence uniformly continuous, so
+                    \(\sup_t |g(t, \omega) - \phi_n(t, \omega)| \to 0\) and therefore
+                    \(\int_S^T (g - \phi_n)^2\, dt \to 0\). Since these integrals are bounded by the constant
+                    \(4 M^2 (T - S)\), their expectations converge to zero by
+                    <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence</strong></a>.
+                </p>
+
+                <p>
+                    <strong>Step 2.</strong> <em>Let \(h \in \mathcal{V}(S, T)\) be bounded. Then there exist bounded
+                    \(g_n \in \mathcal{V}(S, T)\), with \(t \mapsto g_n(t, \omega)\) continuous for all \(\omega\) and
+                    \(n\), such that \(\mathbb{E}\bigl[ \int_S^T (h - g_n)^2\, dt \bigr] \to 0\).</em>
+                </p>
+                <p>
+                    This is the step that trades roughness in time for a smoothing average over the immediate past.
+                    Choose nonnegative continuous functions \(\psi_n\) on \(\mathbb{R}\) with \(\psi_n(x) = 0\) for
+                    \(x \leq -\tfrac{1}{n}\) and for \(x \geq 0\), and \(\int_{\mathbb{R}} \psi_n(x)\, dx = 1\), and set
+                </p>
+                <p>
+                    \[
+                    g_n(t, \omega) = \int_0^t \psi_n(s - t)\, h(s, \omega)\, ds .
+                    \]
+                    Since \(\psi_n(s - t)\) vanishes unless \(t - \tfrac{1}{n} < s < t\), the value \(g_n(t, \omega)\)
+                    is a weighted average of \(h(s, \omega)\) over a window just <em>before</em> time \(t\): the
+                    smoothing looks only backward, which is what keeps causality intact. With \(|h| \leq M\) we get
+                    \(|g_n| \leq M\), and \(t \mapsto g_n(t, \omega)\) is continuous by continuity of \(\psi_n\) and
+                    dominated convergence in the integral. Two facts we take on faith complete the step. First, \(g_n\) belongs to \(\mathcal{V}\): that \(\omega \mapsto g_n(t, \omega)\) is
+                    \(\mathcal{F}_t\)-measurable is plausible, since only values \(h(s, \cdot)\) with \(s \leq t\)
+                    enter, but a rigorous proof is delicate and belongs to a finer development of
+                    measurability for processes than our track carries. Second, for each \(\omega\),
+                    \(\int_S^T (h - g_n)^2\, ds \to 0\): the family \(\{\psi_n\}\) concentrates its unit mass in
+                    shrinking windows, and averaging a square-integrable function over shrinking windows converges to
+                    the function in \(L^2\) — the approximate-identity theorem of real analysis, which our track has
+                    likewise not built. Granting these, the expectations converge to zero by
+                    <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence</strong></a>,
+                    the integrals being bounded by \(4 M^2 (T - S)\) as before.
+                </p>
+
+                <p>
+                    <strong>Step 3.</strong> <em>Let \(f \in \mathcal{V}(S, T)\). Then there exist bounded
+                    \(h_n \in \mathcal{V}(S, T)\) with
+                    \(\mathbb{E}\bigl[ \int_S^T (f - h_n)^2\, dt \bigr] \to 0\).</em>
+                </p>
+                <p>
+                    Truncate: \(h_n(t, \omega) = \max\bigl( -n, \min(n, f(t, \omega)) \bigr)\). Composition with the
+                    continuous clamp preserves (V1) and (V2), and \(|h_n| \leq |f|\) preserves (V3), so
+                    \(h_n \in \mathcal{V}\) and is bounded. Pointwise, \((f - h_n)^2 \to 0\) everywhere on
+                    \([S, T] \times \Omega\), and \((f - h_n)^2 \leq f^2\), which is integrable with respect to the
+                    product of Lebesgue measure and \(\mathbb{P}\) by (V3). The
+                    <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                    on the product space finishes the step.
+                </p>
+
+                <p>
+                    Chaining the three steps with the triangle inequality in \(\|\cdot\|_{\mathcal{V}}\): given
+                    \(f \in \mathcal{V}\), Step 3 supplies a bounded \(h\) within \(\varepsilon\) of \(f\), Step 2 a
+                    bounded time-continuous \(g\) within \(\varepsilon\) of \(h\), and Step 1 a bounded elementary
+                    \(\phi\) within \(\varepsilon\) of \(g\). Every integrand in \(\mathcal{V}\) is therefore a
+                    \(\|\cdot\|_{\mathcal{V}}\)-limit of bounded elementary processes.
+                </p>
+
+                <h3>The Integral</h3>
+
+                <div class="theorem" id="D-ito_integral">
+                    <span class="theorem-title">Definition: The Itô Integral</span>
+                    <p>
+                        Let \(f \in \mathcal{V}(S, T)\). The <strong>Itô integral</strong> of \(f\) from \(S\) to \(T\)
+                        is
+                        \[
+                        \int_S^T f(t, \omega)\, dw_t
+                        = \lim_{n \to \infty} \int_S^T \phi_n(t, \omega)\, dw_t ,
+                        \]
+                        the limit taken in \(L^2(\mathbb{P})\), where \(\{\phi_n\}\) is any sequence of bounded
+                        elementary processes with
+                        \(\mathbb{E}\bigl[ \int_S^T (f - \phi_n)^2\, dt \bigr] \to 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof that the limit exists and does not depend on the sequence</span>
+                    <p>
+                        Approximating sequences exist by the three steps above. For two bounded elementary processes,
+                        pass to a common refinement of their partitions; the difference is again bounded elementary, and
+                        the elementary integral of the difference is the difference of the integrals, by inspection of
+                        the defining sums. The
+                        <a href="#T-ito_isometry_elementary" class="ref-link"><strong>elementary isometry</strong></a>
+                        then gives
+                        \[
+                        \begin{align*}
+                        \Bigl\| \int_S^T \phi_n\, dw_t - \int_S^T \phi_m\, dw_t \Bigr\|_{L^2(\mathbb{P})}
+                        = \| \phi_n - \phi_m \|_{\mathcal{V}}
+                        &\leq \| \phi_n - f \|_{\mathcal{V}} + \| f - \phi_m \|_{\mathcal{V}}
+                        \longrightarrow 0 ,
+                        \end{align*}
+                        \]
+                        so the elementary integrals form a Cauchy sequence in \(L^2(\mathbb{P})\). By the
+                        <a href="../Calculus/lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz–Fischer theorem</strong></a>,
+                        \(L^2(\mathbb{P})\) is complete, so the sequence converges; this is the moment the previous
+                        page's outlook promised, the completeness of \(L^2\) supplying the landing point for the
+                        approximation. If \(\{\phi_n\}\) and \(\{\phi_n'\}\) are two admissible sequences, the
+                        interleaved sequence \(\phi_1, \phi_1', \phi_2, \phi_2', \ldots\) is admissible as well, so its
+                        integrals converge in \(L^2(\mathbb{P})\); a convergent sequence drags all its subsequences to
+                        the same limit, which forces the two original limits to coincide.
+                    </p>
+                    <p>
+                        The same mechanism yields linearity. For \(f, g \in \mathcal{V}\) and \(a, b \in \mathbb{R}\),
+                        the combination \(a f + b g\) lies in \(\mathcal{V}\), since (V1) and (V2) survive linear
+                        combinations and \((af + bg)^2 \leq 2 a^2 f^2 + 2 b^2 g^2\) secures (V3); if \(\phi_n \to f\)
+                        and \(\phi_n' \to g\) in \(\|\cdot\|_{\mathcal{V}}\), then \(a \phi_n + b \phi_n'\) is
+                        admissible for \(a f + b g\), the elementary integral is linear by inspection, and \(L^2\)
+                        limits preserve linear combinations. Hence
+                        \(\int_S^T (a f + b g)\, dw_t = a \int_S^T f\, dw_t + b \int_S^T g\, dw_t\) almost surely.
+                    </p>
+                </div>
+
+                <p>
+                    The isometry now extends from elementary integrands to all of \(\mathcal{V}\), by continuity of
+                    norms.
+                </p>
+
+                <div class="theorem" id="T-ito_isometry">
+                    <span class="theorem-title">Theorem: The Itô Isometry</span>
+                    <p>
+                        For every \(f \in \mathcal{V}(S, T)\),
+                        \[
+                        \mathbb{E}\Bigl[ \Bigl( \int_S^T f(t, \omega)\, dw_t \Bigr)^{2} \Bigr]
+                        = \mathbb{E}\Bigl[ \int_S^T f(t, \omega)^2\, dt \Bigr] .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Let \(\{\phi_n\}\) be as in the definition. The reverse triangle inequality
+                        \(\bigl|\, \|a\| - \|b\| \,\bigr| \leq \|a - b\|\), valid in any normed space, applies twice:
+                        convergence \(\int \phi_n\, dw_t \to \int f\, dw_t\) in \(L^2(\mathbb{P})\) gives
+                        \(\|\int \phi_n\, dw_t\|_{L^2(\mathbb{P})} \to \|\int f\, dw_t\|_{L^2(\mathbb{P})}\), and
+                        convergence \(\phi_n \to f\) in \(\|\cdot\|_{\mathcal{V}}\) gives
+                        \(\|\phi_n\|_{\mathcal{V}} \to \|f\|_{\mathcal{V}}\). Passing to the limit in the
+                        <a href="#T-ito_isometry_elementary" class="ref-link"><strong>elementary isometry</strong></a>
+                        \(\|\int \phi_n\, dw_t\|_{L^2(\mathbb{P})} = \|\phi_n\|_{\mathcal{V}}\) yields
+                        \(\|\int f\, dw_t\|_{L^2(\mathbb{P})} = \|f\|_{\mathcal{V}}\), which is the claim with both
+                        sides squared.
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-ito_l2_continuity">
+                    <span class="theorem-title">Corollary: L² Continuity of the Integral</span>
+                    <p>
+                        If \(f, f_n \in \mathcal{V}(S, T)\) and
+                        \(\mathbb{E}\bigl[ \int_S^T (f_n - f)^2\, dt \bigr] \to 0\), then, in
+                        \(L^2(\mathbb{P})\),
+                        \[
+                        \int_S^T f_n(t, \omega)\, dw_t \longrightarrow \int_S^T f(t, \omega)\, dw_t .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        By linearity and the
+                        <a href="#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>,
+                        \[
+                        \Bigl\| \int_S^T f_n\, dw_t - \int_S^T f\, dw_t \Bigr\|_{L^2(\mathbb{P})}^2
+                        = \Bigl\| \int_S^T (f_n - f)\, dw_t \Bigr\|_{L^2(\mathbb{P})}^2
+                        = \mathbb{E}\Bigl[ \int_S^T (f_n - f)^2\, dt \Bigr]
+                        \longrightarrow 0 .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The construction is complete. The Itô integral of \(f \in \mathcal{V}(S, T)\) is a well-defined
+                    element of \(L^2(\mathbb{P})\), determined up to almost-sure equality, linear in the integrand, and
+                    isometric onto its image. What the definition does not reveal is the value of any particular integral. The next section
+                    computes one.
+                </p>
+            </section>
+
+            <section id="computation" class="section-content">
+                <h2>First Computation</h2>
+
+                <p>
+                    The integrand \(f(s, \omega) = w_s(\omega)\) is the one Section 2 could not handle, and it is the
+                    right first test: simple enough to compute by hand, rich enough to show the construction at
+                    work. Throughout this section fix \(t > 0\) and work on the interval
+                    \([0, t]\).
+                </p>
+
+                <div class="theorem" id="T-ito_bdb">
+                    <span class="theorem-title">Theorem: The Integral of Brownian Motion Against Itself</span>
+                    <p>
+                        For every \(t > 0\),
+                        \[
+                        \int_0^t w_s\, dw_s = \tfrac{1}{2} w_t^2 - \tfrac{1}{2} t
+                        \]
+                        almost surely.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <strong>The integrand belongs to \(\mathcal{V}(0, t)\).</strong> For (V1), the dyadic step
+                        processes \(\sum_j w_{t_j} \mathbf{1}_{[t_j, t_{j+1})}(s)\) are jointly measurable, being finite
+                        sums of products of measurable factors, and they converge pointwise
+                        to \((s, \omega) \mapsto w_s(\omega)\) as the mesh shrinks, provided every path is
+                        continuous — which we may assume, since redefining \(w\) to vanish on the null set of
+                        discontinuous paths changes no finite-dimensional law. A pointwise limit of jointly measurable
+                        functions is jointly measurable. (V2) holds by the very definition of the
+                        <a href="#D-brownian_filtration" class="ref-link"><strong>Brownian filtration</strong></a>:
+                        \(w_s\) is \(\mathcal{F}_s\)-measurable. For (V3),
+                        \(\mathbb{E}\bigl[ \int_0^t w_s^2\, ds \bigr] = \int_0^t \mathbb{E}[w_s^2]\, ds
+                        = \int_0^t s\, ds = \tfrac{1}{2} t^2 < \infty\), the exchange licensed by
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>.
+                    </p>
+                    <p>
+                        <strong>Left-endpoint approximants converge to the integrand.</strong> For a partition
+                        \(0 = t_0 < \cdots < t_N = t\) with mesh \(\|\pi\|\), let
+                        \(\phi_\pi(s, \omega) = \sum_j w_{t_j}(\omega)\, \mathbf{1}_{[t_j, t_{j+1})}(s)\); this lies in
+                        \(\mathcal{V}(0, t)\) by the same three checks. Using
+                        \(\mathbb{E}[(w_s - w_{t_j})^2] = s - t_j\) from (W1) and exchanging expectation and integral by
+                        Tonelli again,
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \int_0^t (w_s - \phi_\pi(s, \cdot))^2\, ds \Bigr]
+                        = \sum_j \int_{t_j}^{t_{j+1}} (s - t_j)\, ds
+                        &= \sum_j \tfrac{1}{2} (t_{j+1} - t_j)^2
+                        \leq \tfrac{1}{2} \|\pi\|\, t
+                        \longrightarrow 0 .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        <strong>The integral of \(\phi_\pi\) is the expected sum.</strong> The levels \(w_{t_j}\) are
+                        square integrable but not bounded, so \(\phi_\pi\) is elementary in the sense of our definition
+                        while falling outside the bounded case in which the defining formula was verified. The gap
+                        closes by truncation. Let \(\phi_\pi^{(K)}\) have the clamped levels
+                        \(\max(-K, \min(K, w_{t_j}))\); these are bounded elementary,
+                        \(\| \phi_\pi - \phi_\pi^{(K)} \|_{\mathcal{V}} \to 0\) as \(K \to \infty\) by
+                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence</strong></a>
+                        with dominator \(\phi_\pi^2\), and term by term, using the
+                        <a href="#T-increment_independence" class="ref-link"><strong>independence lemma</strong></a>
+                        to factor the expectations,
+                        \[
+                        \mathbb{E}\bigl[ \bigl( w_{t_j} - \max(-K, \min(K, w_{t_j})) \bigr)^2 (\Delta w_j)^2 \bigr]
+                        = \mathbb{E}\bigl[ \bigl( w_{t_j} - \max(-K, \min(K, w_{t_j})) \bigr)^2 \bigr]\,
+                        \Delta t_j \longrightarrow 0 ,
+                        \]
+                        the last convergence holding by dominated convergence with dominator \(w_{t_j}^2\). Hence
+                        \(\int_0^t \phi_\pi^{(K)}\, dw_s = \sum_j \max(-K, \min(K, w_{t_j}))\, \Delta w_j\) — the
+                        defining formula, obtained by taking the constant approximating sequence — converges
+                        in \(L^2(\mathbb{P})\) to \(\sum_j w_{t_j}\, \Delta w_j\). By the
+                        <a href="#T-ito_l2_continuity" class="ref-link"><strong>L² continuity of the integral</strong></a>
+                        the left side also converges to \(\int_0^t \phi_\pi\, dw_s\), and limits in
+                        \(L^2(\mathbb{P})\) are unique, so
+                        \(\int_0^t \phi_\pi\, dw_s = \sum_j w_{t_j}\, \Delta w_j\) almost surely. Combining with the
+                        previous step and the
+                        <a href="#T-ito_l2_continuity" class="ref-link"><strong>same continuity result</strong></a>,
+                        \[
+                        \sum_j w_{t_j}\, \Delta w_j \longrightarrow \int_0^t w_s\, dw_s
+                        \]
+                        in \(L^2(\mathbb{P})\) as \(\|\pi\| \to 0\).
+                    </p>
+                    <p>
+                        <strong>Telescoping.</strong> With \(t_0 = 0\) and \(w_0 = 0\), expand each difference of
+                        squares:
+                        \[
+                        w_{t_{j+1}}^2 - w_{t_j}^2
+                        = (w_{t_j} + \Delta w_j)^2 - w_{t_j}^2
+                        = (\Delta w_j)^2 + 2\, w_{t_j}\, \Delta w_j .
+                        \]
+                        Summing over \(j\), the left side telescopes to \(w_t^2\), so for almost every \(\omega\),
+                        \[
+                        \sum_j w_{t_j}\, \Delta w_j
+                        = \tfrac{1}{2} w_t^2 - \tfrac{1}{2} \sum_j (\Delta w_j)^2 .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Passing to the limit.</strong> As \(\|\pi\| \to 0\), the left side converges to
+                        \(\int_0^t w_s\, dw_s\) in \(L^2(\mathbb{P})\) by the third step, and
+                        \(\sum_j (\Delta w_j)^2 \to t\) in \(L^2(\mathbb{P})\) by the
+                        <a href="brownian_motion.html#T-bm_path_properties" class="ref-link"><strong>quadratic variation theorem</strong></a>
+                        of the previous page — the moment that result was proved for. The two sides of a pathwise
+                        identity can only converge to equal limits, and \(L^2\) limits are unique up to almost-sure
+                        equality, so
+                        \(\int_0^t w_s\, dw_s = \tfrac{1}{2} w_t^2 - \tfrac{1}{2} t\) almost surely.
+                    </p>
+                </div>
+
+                <p>
+                    For a smooth function \(x(s)\) with \(x(0) = 0\), the classical computation gives
+                    \(\int_0^t x\, dx = \tfrac{1}{2} x(t)^2\), with no correction. The Itô integral produces the same leading
+                    term and then subtracts half of \(t\) — half of the quadratic variation accumulated by the
+                    integrator. In the informal notation that closed the previous page, the correction is
+                    \(\tfrac{1}{2} \int_0^t (dw_s)^2 = \tfrac{1}{2} \int_0^t ds\): the squared increments that vanish
+                    for every smooth path survive here and are large enough to bend the answer.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Half a Quadratic Variation Below the Classical Answer</h3>
+                    <p>
+                        Section 2 showed that the right-endpoint sums exceed the left-endpoint sums by exactly
+                        \(\sum_j (\Delta w_j)^2\). Adding that identity to the theorem, the right-endpoint sums converge
+                        to \(\tfrac{1}{2} w_t^2 + \tfrac{1}{2} t\), and the average of the two conventions lands on
+                        \(\tfrac{1}{2} w_t^2\), the classical value. This is no coincidence: the Stratonovich integral,
+                        built on midpoints, recovers the classical chain rule, though we do not verify that here. The
+                        Itô convention pays for its causality — its refusal to look past the present — with a
+                        correction term, and the currency of the correction is quadratic variation.
+                    </p>
+                </div>
+
+                <p>
+                    One computation does not make a calculus, but this one contains the seed of it. The pattern
+                    \(d(w_t^2) = 2 w_t\, dw_t + dt\), read off from the theorem, is the first instance of the Itô
+                    formula, the chain rule of stochastic calculus, which the following pages develop and then apply to
+                    differential equations driven by noise. Before that, the integral itself has more to reveal: viewed
+                    as a process in its upper limit, it is a martingale and admits a continuous version, the properties
+                    that make the calculus usable path by path.
+                </p>
+            </section>
+
+        </div>
+
+</body>
+</html>
