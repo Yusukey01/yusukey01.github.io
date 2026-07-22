@@ -260,6 +260,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
+     * Normalize text for matching: lowercase, then strip diacritics via NFD
+     * decomposition, so that queries like "ito" or "holder" match "Itô" and
+     * "Hölder". Symbols outside the combining-mark range (σ, ℝ, ...) are
+     * unaffected.
+     */
+    function normalizeText(str) {
+        return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    /**
      * First pass: title + curriculum keywords. Synchronous, no network.
      * Within each class, results carry a rank (higher = better) used as a
      * tiebreaker: exact matches first, then number of matching keywords.
@@ -268,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const results = [];
 
         for (const page of pages) {
-            const titleLower = page.title.toLowerCase();
+            const titleLower = normalizeText(page.title);
 
             // Check title
             if (titleLower.includes(searchTerm)) {
@@ -286,11 +296,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check keywords from curriculum.json (searches ALL keywords, not just displayed ones)
             if (page.keywords && page.keywords.length > 0) {
                 const matchingKeywords = page.keywords.filter(kw =>
-                    kw.toLowerCase().includes(searchTerm)
+                    normalizeText(kw).includes(searchTerm)
                 );
 
                 if (matchingKeywords.length > 0) {
-                    const exact = matchingKeywords.some(kw => kw.toLowerCase() === searchTerm);
+                    const exact = matchingKeywords.some(kw => normalizeText(kw) === searchTerm);
 
                     // Show all matching keywords (up to 3)
                     const displayKeywords = matchingKeywords.slice(0, 3);
@@ -339,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (generation !== searchGeneration) return;
 
                 // Check description
-                if (content.description && content.description.toLowerCase().includes(searchTerm)) {
+                if (content.description && normalizeText(content.description).includes(searchTerm)) {
                     results.push({
                         ...page,
                         matchType: 'description',
@@ -352,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Check headings
                 const matchingHeading = content.headings.find(h =>
-                    h.toLowerCase().includes(searchTerm)
+                    normalizeText(h).includes(searchTerm)
                 );
 
                 if (matchingHeading) {
@@ -367,15 +377,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Check content
-                if (content.content && content.content.toLowerCase().includes(searchTerm)) {
+                if (content.content && normalizeText(content.content).includes(searchTerm)) {
+                    // Prefer an index into the original text so the snippet keeps
+                    // its diacritics; NFD stripping changes string length, so fall
+                    // back to the normalized text only when the match exists there
+                    // alone.
                     const contentLower = content.content.toLowerCase();
-                    const matchIndex = contentLower.indexOf(searchTerm);
+                    let matchIndex = contentLower.indexOf(searchTerm);
+                    const source = matchIndex >= 0 ? content.content : normalizeText(content.content);
+                    if (matchIndex < 0) matchIndex = source.indexOf(searchTerm);
                     const start = Math.max(0, matchIndex - 50);
-                    const end = Math.min(content.content.length, matchIndex + searchTerm.length + 50);
-                    let matchContext = content.content.substring(start, end);
+                    const end = Math.min(source.length, matchIndex + searchTerm.length + 50);
+                    let matchContext = source.substring(start, end);
 
                     if (start > 0) matchContext = '...' + matchContext;
-                    if (end < content.content.length) matchContext = matchContext + '...';
+                    if (end < source.length) matchContext = matchContext + '...';
 
                     results.push({
                         ...page,
@@ -402,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {boolean} deep - also run the content search (Enter / button).
      */
     async function performSearch(deep = true) {
-        const searchTerm = searchInput.value.toLowerCase().trim();
+        const searchTerm = normalizeText(searchInput.value).trim();
 
         if (searchTerm === '') {
             searchPopup.classList.remove('active');
