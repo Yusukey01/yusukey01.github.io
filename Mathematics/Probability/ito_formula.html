@@ -1,0 +1,1309 @@
+---
+layout: default
+title: "The Itô Formula"
+topic_id: prob-30
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Itô Formula</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#ito-process">The Itô Process</a>
+            <a href="#ito-formula">The Chain Rule Acquires a Correction</a>
+            <a href="#proof">Proof of the Itô Formula</a>
+        </div>
+
+        <div class="container">
+
+            <section id="ito-process" class="section-content">
+                <h2>The Itô Process</h2>
+
+                <p>
+                    Throughout this page, \(w_t\) is the standard one-dimensional Brownian motion of the last
+                    three pages, started at \(w_0 = 0\) and carried on \((\Omega, \mathcal{F}, \mathbb{P})\), and
+                    \(\{\mathcal{F}_t\}_{t \geq 0}\) is its
+                    <a href="ito_integral.html#D-brownian_filtration" class="ref-link"><strong>Brownian filtration</strong></a>,
+                    with the convention that every set of \(\mathbb{P}\)-measure zero belongs to each
+                    \(\mathcal{F}_t\).
+                </p>
+                <p>
+                    Two pages ago we computed
+                    <a href="ito_integral.html#T-ito_bdb" class="ref-link"><strong>the integral of Brownian motion against itself</strong></a>,
+                    \(\int_0^t w_s\, dw_s = \tfrac{1}{2} w_t^2 - \tfrac{1}{2} t\). Rearranged, the identity reads
+                </p>
+                <p>
+                    \[
+                    \tfrac{1}{2} w_t^2 = \tfrac{1}{2} t + \int_0^t w_s\, dw_s .
+                    \]
+                </p>
+                <p>
+                    We now read this as a statement about the map \(g(x) = \tfrac{1}{2} x^2\). The process
+                    \(w_t\) is itself an Itô integral, namely \(\int_0^t 1\, dw_s\), and the left side is its image
+                    under \(g\). That image is <em>not</em> an Itô integral. Every integral \(\int_0^t f\, dw_s\)
+                    with \(f \in \mathcal{V}(0, t)\) has
+                    <a href="ito_integral_properties.html#T-ito_integral_properties" class="ref-link"><strong>zero mean</strong></a>,
+                    while \(\mathbb{E}\bigl[\tfrac{1}{2} w_t^2\bigr] = \tfrac{1}{2} t \gt 0\) for \(t \gt 0\). So the
+                    class of Itô integrals is not closed under smooth maps. But the identity also shows exactly how
+                    the closure fails. The image escaped the class by acquiring an ordinary \(ds\)-integral, and
+                    nothing else. This suggests the repair. Enlarge the class to processes assembled from a
+                    \(dw\)-integral and a \(ds\)-integral together, and prove that the enlarged class is stable
+                    under smooth maps. Both steps are the business of this page. The stability statement is the
+                    Itô formula, the chain rule of stochastic calculus.
+                </p>
+
+                <h3>The Time Integral as a Process</h3>
+
+                <p>
+                    Before we can define the enlarged class we must make sense of its drift term. We want
+                </p>
+                <p>
+                    \[
+                    A_t(\omega) = \int_0^t u(s, \omega)\, ds
+                    \]
+                </p>
+                <p>
+                    as an ordinary Lebesgue integral in \(s\), computed path by path for each fixed \(\omega\). This
+                    is a new kind of object for our track. The Itô integral was built globally, as an \(L^2\) limit
+                    over \(\Omega\), and never asked whether any individual path could be integrated. Here the
+                    integral is pathwise, and three things need checking. The sliced function
+                    \(s \mapsto u(s, \omega)\) must be measurable, so that the integral of each path exists. The
+                    random variable \(A_t\) must be \(\mathcal{F}_t\)-measurable, so that the new process is adapted.
+                    And the paths \(t \mapsto A_t(\omega)\) should be continuous, so that the drift term matches the
+                    <a href="ito_integral_properties.html#T-ito_continuous_version" class="ref-link"><strong>continuous version</strong></a>
+                    we adopted for the \(dw\)-term.
+                </p>
+                <p>
+                    The subtlety sits in the second requirement. Membership in the class
+                    <a href="ito_integral.html#D-ito_class_v" class="ref-link"><strong>\(\mathcal{V}\)</strong></a>
+                    asks for measurability with respect to \(\mathcal{B}([0, \infty)) \otimes \mathcal{F}\) and for
+                    adaptedness one time at a time. Neither condition controls the product structure below a fixed
+                    level \(t\). The integral \(\int_0^t\) mixes all times \(s \leq t\) at once, so its
+                    measurability in \(\omega\) calls for a product \(\sigma\)-algebra whose \(\Omega\)-side is
+                    \(\mathcal{F}_t\) rather than all of \(\mathcal{F}\). For the Itô integral this issue never
+                    surfaced, because \(\mathcal{F}_t\)-measurability passed through the \(L^2\) limit of elementary
+                    integrals. The pathwise integral has no such limit to hide behind, and we record the condition
+                    tailored to what it needs.
+                </p>
+
+                <div class="theorem" id="D-progressively_measurable">
+                    <span class="theorem-title">Definition: Progressively Measurable Process</span>
+                    <p>
+                        Let \(\{\mathcal{F}_t\}_{t \geq 0}\) be a filtration on \((\Omega, \mathcal{F}, \mathbb{P})\).
+                        A function \(u : [0, \infty) \times \Omega \to \mathbb{R}\) is called
+                        <strong>progressively measurable</strong> with respect to \(\{\mathcal{F}_t\}\) if, for every
+                        \(t \geq 0\), the restriction of \(u\) to \([0, t] \times \Omega\) is measurable with respect
+                        to \(\mathcal{B}([0, t]) \otimes \mathcal{F}_t\).
+                    </p>
+                </div>
+
+                <p>
+                    Progressive measurability strengthens both conditions of the class \(\mathcal{V}\). For joint
+                    measurability, note that for any Borel set \(E \subseteq \mathbb{R}\) the preimage
+                    \(u^{-1}(E)\) is the union over \(n \in \mathbb{N}\) of its intersections with
+                    \([0, n] \times \Omega\), each of which lies in
+                    \(\mathcal{B}([0, n]) \otimes \mathcal{F}_n \subseteq \mathcal{B}([0, \infty)) \otimes \mathcal{F}\).
+                    For adaptedness, fix \(t\) and consider the insertion map
+                    \(\iota_t : \omega \mapsto (t, \omega)\) from \((\Omega, \mathcal{F}_t)\) to
+                    \(([0, t] \times \Omega,\ \mathcal{B}([0, t]) \otimes \mathcal{F}_t)\). The preimage of a
+                    rectangle \(I \times B\) under \(\iota_t\) is \(B\) when \(t \in I\) and is empty otherwise,
+                    and the rectangles generate the product \(\sigma\)-algebra, so \(\iota_t\) is measurable, and \(u(t, \cdot) = u \circ \iota_t\) is
+                    \(\mathcal{F}_t\)-measurable as a composition of measurable maps. The same insertion argument in
+                    the other variable shows that for each fixed \(\omega\) the path
+                    \(s \mapsto u(s, \omega)\) is Borel measurable on every \([0, t]\). We will use both slicing
+                    arguments repeatedly below.
+                </p>
+                <p>
+                    The condition would be useless if it were hard to verify. The two classes of integrands this
+                    track actually meets satisfy it automatically.
+                </p>
+
+                <div class="theorem" id="T-progressively_measurable_criteria">
+                    <span class="theorem-title">Theorem: Two Criteria for Progressive Measurability</span>
+                    <p>
+                        Let \(\{\mathcal{F}_t\}_{t \geq 0}\) be a filtration on \((\Omega, \mathcal{F}, \mathbb{P})\)
+                        and let \(u : [0, \infty) \times \Omega \to \mathbb{R}\) be \(\mathcal{F}_t\)-adapted. Then
+                        \(u\) is progressively measurable in each of the following cases.
+                    </p>
+                    <p>
+                        <strong>(i) Piecewise constancy.</strong><br>
+                        \(u(s, \omega) = \sum_{j} e_j(\omega)\, \mathbf{1}_{[t_j, t_{j+1})}(s)\) for a finite
+                        partition \(0 \leq t_0 \lt t_1 \lt \cdots \lt t_N\), where each \(e_j\) is
+                        \(\mathcal{F}_{t_j}\)-measurable. In particular every
+                        <a href="ito_integral.html#D-elementary_process" class="ref-link"><strong>elementary process</strong></a>
+                        is progressively measurable.
+                    </p>
+                    <p>
+                        <strong>(ii) Path continuity.</strong><br>
+                        \(s \mapsto u(s, \omega)\) is continuous for every \(\omega \in \Omega\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Case (i).</strong><br>
+                        Fix \(t \geq 0\). On \([0, t] \times \Omega\) the restriction of \(u\) is the finite sum of
+                        the maps \((s, \omega) \mapsto e_j(\omega)\, \mathbf{1}_{[t_j, t_{j+1}) \cap [0, t]}(s)\),
+                        and only the terms with \(t_j \leq t\) contribute. For such a term the indicator factor is a
+                        Borel function of \(s\) alone and the level \(e_j\) is
+                        \(\mathcal{F}_{t_j}\)-measurable with \(\mathcal{F}_{t_j} \subseteq \mathcal{F}_t\). Each
+                        factor is therefore measurable with respect to
+                        \(\mathcal{B}([0, t]) \otimes \mathcal{F}_t\) after composing with the coordinate
+                        projections, and products and finite sums of measurable functions are measurable.
+                    </p>
+                    <p>
+                        <strong>Case (ii).</strong><br>
+                        Fix \(t \gt 0\), the case \(t = 0\) being the adaptedness of \(u(0, \cdot)\) read through
+                        the insertion map. For \(n \in \mathbb{N}\) define on \([0, t] \times \Omega\) the
+                        right-endpoint discretization
+                    </p>
+                    <p>
+                        \[
+                        u_n(s, \omega)
+                        = u(0, \omega)\, \mathbf{1}_{\{0\}}(s)
+                        + \sum_{k=1}^{n} u\Bigl(\tfrac{k t}{n}, \omega\Bigr)\,
+                        \mathbf{1}_{\left(\frac{(k-1) t}{n},\, \frac{k t}{n}\right]}(s) .
+                        \]
+                    </p>
+                    <p>
+                        Each summand is a product of a Borel function of \(s\) and an
+                        \(\mathcal{F}_{k t / n}\)-measurable function of \(\omega\), and
+                        \(\mathcal{F}_{k t / n} \subseteq \mathcal{F}_t\), so each \(u_n\) is
+                        \(\mathcal{B}([0, t]) \otimes \mathcal{F}_t\)-measurable by the argument of case (i). For
+                        fixed \((s, \omega)\) with \(s \gt 0\), the evaluation point used by \(u_n\) is the smallest
+                        grid point \(s_n \geq s\), and \(s \leq s_n \leq s + \tfrac{t}{n}\), so \(s_n \to s\) and
+                        \(u_n(s, \omega) = u(s_n, \omega) \to u(s, \omega)\) by continuity of the path. At
+                        \(s = 0\) the sequence is constant. A pointwise limit of measurable functions is
+                        measurable, so the restriction of \(u\) is
+                        \(\mathcal{B}([0, t]) \otimes \mathcal{F}_t\)-measurable.
+                    </p>
+                </div>
+
+                <p>
+                    With the measurability language in place, the pathwise time integral can be built in one
+                    theorem. The only property of the filtration the proof consumes, beyond the product
+                    bookkeeping already in place, is the convention quoted at the top of the page, that every
+                    set of \(\mathbb{P}\)-measure zero belongs to each \(\mathcal{F}_t\), so we state the
+                    theorem for any filtration with that property.
+                </p>
+
+                <div class="theorem" id="T-pathwise_time_integral">
+                    <span class="theorem-title">Theorem: The Pathwise Time Integral</span>
+                    <p>
+                        Let \(\{\mathcal{F}_t\}_{t \geq 0}\) be a filtration on
+                        \((\Omega, \mathcal{F}, \mathbb{P})\) containing every set of
+                        \(\mathbb{P}\)-measure zero, let
+                        \(u : [0, \infty) \times \Omega \to \mathbb{R}\) be progressively measurable with
+                        respect to \(\{\mathcal{F}_t\}\), and suppose
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{P}\Bigl[ \int_0^t |u(s, \omega)|\, ds \lt \infty
+                        \quad \forall\, t \geq 0 \Bigr] = 1 ,
+                        \]
+                    </p>
+                    <p>
+                        the event being measurable by Step 1 of the proof. Then there exists a stochastic process
+                        \(\{A_t\}_{t \geq 0}\) on \((\Omega, \mathcal{F}, \mathbb{P})\) such that:
+                    </p>
+                    <p>
+                        <strong>(i) Pathwise identity.</strong><br>
+                        For almost every \(\omega\), \(A_t(\omega) = \int_0^t u(s, \omega)\, ds\) simultaneously
+                        for all \(t \geq 0\).
+                    </p>
+                    <p>
+                        <strong>(ii) Adaptedness.</strong><br>
+                        \(A_t\) is \(\mathcal{F}_t\)-measurable for every \(t \geq 0\).
+                    </p>
+                    <p>
+                        <strong>(iii) Continuity.</strong><br>
+                        \(t \mapsto A_t(\omega)\) is continuous for every \(\omega \in \Omega\).
+                    </p>
+                    <p>
+                        <strong>(iv) Progressive measurability.</strong><br>
+                        \(A\) is itself progressively measurable.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1 (Measurability of the absolute integrals).</strong><br>
+                        Fix \(n \in \mathbb{N}\). The restriction of \(|u|\) to \([0, n] \times \Omega\) is
+                        \(\mathcal{B}([0, n]) \otimes \mathcal{F}_n\)-measurable and nonnegative. By the slicing
+                        argument recorded after the definition, every path \(s \mapsto |u(s, \omega)|\) is Borel
+                        measurable, so \(\int_0^n |u(s, \omega)|\, ds\) is defined in \([0, \infty]\) for every
+                        \(\omega\). We claim the map
+                    </p>
+                    <p>
+                        \[
+                        \omega \mapsto \int_0^n |u(s, \omega)|\, ds
+                        \]
+                    </p>
+                    <p>
+                        is \(\mathcal{F}_n\)-measurable. This is the measurability half of
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        applied on the finite product
+                        \(([0, n] \times \Omega,\ \mathcal{B}([0, n]) \otimes \mathcal{F}_n,\ \lambda \otimes \mathbb{P})\).
+                        The iterated integrals in that statement are meaningful only because the partial integral
+                        is measurable in the outer variable, and the proof of this fact runs on the same
+                        monotone-class machinery that our track has already taken on faith. We extend that act of
+                        trust to cover this one clause, and nothing else new.
+                    </p>
+                    <p>
+                        <strong>Step 2 (The good set is harmless).</strong><br>
+                        Since \(t \mapsto \int_0^t |u(s, \omega)|\, ds\) is nondecreasing, finiteness for all
+                        \(t \geq 0\) is equivalent to finiteness at every integer time, so the event in the
+                        hypothesis is
+                    </p>
+                    <p>
+                        \[
+                        \Omega^* = \bigcap_{n \in \mathbb{N}}
+                        \Bigl\{ \omega : \int_0^n |u(s, \omega)|\, ds \lt \infty \Bigr\} ,
+                        \]
+                    </p>
+                    <p>
+                        an intersection of \(\mathcal{F}_n\)-measurable sets by Step 1, hence measurable, and of
+                        probability one by hypothesis. Its complement is a set of measure zero, and the
+                        filtration contains every such set by hypothesis. Therefore
+                        \(\Omega^* \in \mathcal{F}_t\) for every \(t \geq 0\). Once again the null-set convention converts an
+                        almost-sure statement into an adapted one, and it will not be the last time.
+                    </p>
+                    <p>
+                        <strong>Step 3 (Definition and adaptedness).</strong><br>
+                        Write \(u = u^+ - u^-\) with \(u^\pm = \max(\pm u, 0)\). Both parts are progressively
+                        measurable, being compositions of \(u\) with continuous functions. Fix \(t \geq 0\). By
+                        Step 1 run at level \(t\) in place of \(n\), the maps
+                        \(A_t^\pm(\omega) = \int_0^t u^\pm(s, \omega)\, ds\) are \(\mathcal{F}_t\)-measurable with
+                        values in \([0, \infty]\). On \(\Omega^*\) both are finite, being dominated by
+                        \(\int_0^t |u|\, ds\). Define
+                    </p>
+                    <p>
+                        \[
+                        A_t(\omega) =
+                        \begin{cases}
+                        A_t^+(\omega) - A_t^-(\omega) , & \omega \in \Omega^* , \\\\
+                        0 , & \omega \notin \Omega^* .
+                        \end{cases}
+                        \]
+                    </p>
+                    <p>
+                        On the \(\mathcal{F}_t\)-measurable set \(\Omega^*\) this is a difference of two finite
+                        \(\mathcal{F}_t\)-measurable functions, and off it a constant, so \(A_t\) is
+                        \(\mathcal{F}_t\)-measurable. For \(\omega \in \Omega^*\) it equals
+                        \(\int_0^t u(s, \omega)\, ds\) for every \(t\) at once, which proves (i) and (ii).
+                    </p>
+                    <p>
+                        <strong>Step 4 (Continuity of every path).</strong><br>
+                        Off \(\Omega^*\) the path is constant. Fix \(\omega \in \Omega^*\), a time
+                        \(t_0 \geq 0\), and an integer \(N \gt t_0 + 1\). For \(t \in [0, N]\),
+                    </p>
+                    <p>
+                        \[
+                        \bigl| A_t(\omega) - A_{t_0}(\omega) \bigr|
+                        \leq \int_0^N \mathbf{1}_{(\min(t, t_0),\, \max(t, t_0)]}(s)\, |u(s, \omega)|\, ds .
+                        \]
+                    </p>
+                    <p>
+                        As \(t \to t_0\), the integrand tends to zero at every \(s \neq t_0\), a set of full
+                        Lebesgue measure, and is dominated by \(|u(\cdot, \omega)|\), which is integrable on
+                        \([0, N]\) because \(\omega \in \Omega^*\). The
+                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        applied along an arbitrary sequence \(t_k \to t_0\) sends the bound to zero, which is the
+                        sequential criterion for continuity at \(t_0\).
+                    </p>
+                    <p>
+                        <strong>Step 5 (Progressive measurability).</strong><br>
+                        \(A\) is adapted by Step 3 and every path is continuous by Step 4, so \(A\) is
+                        progressively measurable by criterion (ii) of the preceding theorem.
+                    </p>
+                </div>
+
+                <p>
+                    The drift term is now a legitimate process, and the enlarged class can be defined.
+                </p>
+
+                <div class="theorem" id="D-ito_process">
+                    <span class="theorem-title">Definition: Itô Process</span>
+                    <p>
+                        Let \(w_t\) be a one-dimensional Brownian motion on \((\Omega, \mathcal{F}, \mathbb{P})\)
+                        with Brownian filtration \(\{\mathcal{F}_t\}_{t \geq 0}\). A (one-dimensional)
+                        <strong>Itô process</strong> is a stochastic process \(\{X_t\}_{t \geq 0}\) of the form
+                    </p>
+                    <p>
+                        \[
+                        X_t = X_0 + \int_0^t u(s, \omega)\, ds + \int_0^t v(s, \omega)\, dw_s ,
+                        \]
+                    </p>
+                    <p>
+                        where:
+                    </p>
+                    <p>
+                        <strong>(I1)</strong><br>
+                        \(X_0\) is an \(\mathcal{F}_0\)-measurable random variable;
+                    </p>
+                    <p>
+                        <strong>(I2)</strong><br>
+                        \(u\) is progressively measurable with
+                        \(\mathbb{P}\bigl[\int_0^t |u|\, ds \lt \infty \quad \forall\, t \geq 0\bigr] = 1\),
+                        and the \(ds\)-term denotes the pathwise time integral of the theorem above;
+                    </p>
+                    <p>
+                        <strong>(I3)</strong><br>
+                        \(v \in \mathcal{V}(0, T)\) for every \(T \gt 0\), and the \(dw\)-term denotes the
+                        continuous version of the Itô integral process.
+                    </p>
+                </div>
+
+                <p>
+                    Two remarks make the definition fully precise. First, the \(dw\)-term in (I3) is a single
+                    process on \([0, \infty)\). For each \(T\) the
+                    <a href="ito_integral_properties.html#T-ito_continuous_version" class="ref-link"><strong>continuous version theorem</strong></a>
+                    provides a continuous process on \([0, T]\) agreeing with \(\int_0^t v\, dw_s\) at each fixed
+                    time, and two such processes for \(T \lt T'\) agree at each fixed \(t \leq T\) almost surely,
+                    hence are
+                    <a href="ito_integral_properties.html#D-process_version" class="ref-link"><strong>indistinguishable</strong></a>
+                    on \([0, T]\) by continuity. The versions over all \(T \in \mathbb{N}\) therefore patch into
+                    one continuous adapted process on \([0, \infty)\) outside a single null set. Second, under the
+                    Brownian filtration the condition (I1) is less generous than it looks. The starting value
+                    \(w_0\) is zero, so \(\mathcal{F}_0\) consists of null sets and their complements, and
+                    \(X_0\) is almost surely a constant. We state (I1) in measurable form anyway,
+                    since the definition will later run unchanged over richer filtrations, where a genuinely random
+                    initial condition is the point.
+                </p>
+                <p>
+                    Assembling the three terms, every Itô process is adapted and has continuous paths outside a
+                    null set. Redefining the \(dw\)-term as zero on its exceptional null set makes every path
+                    continuous while the filtration convention preserves adaptedness, and after this harmless
+                    surgery the process is progressively measurable. From here on, the \(dw\)-term of every Itô
+                    process is taken in this everywhere-continuous realization. The constant-in-time term \(X_0\) contributes
+                    trivially, the drift term qualifies by the pathwise time integral theorem, and the
+                    \(dw\)-term by criterion (ii) applied to its continuous adapted realization.
+                </p>
+
+                <h3>Differential Notation</h3>
+
+                <p>
+                    Equations of the displayed shape are abbreviated in differential form,
+                </p>
+                <p>
+                    \[
+                    dX_t = u\, dt + v\, dw_t .
+                    \]
+                </p>
+                <p>
+                    The differentials carry no independent meaning. The line is defined to be a name for the
+                    integral identity in the definition, nothing more, and every computation with differentials on
+                    this page resolves into a statement about integrals. In this notation the opening identity of
+                    the page reads
+                </p>
+                <p>
+                    \[
+                    d\bigl(\tfrac{1}{2} w_t^2\bigr) = \tfrac{1}{2}\, dt + w_t\, dw_t ,
+                    \]
+                </p>
+                <p>
+                    exhibiting \(\tfrac{1}{2} w_t^2\) as an Itô process with drift \(u = \tfrac{1}{2}\) and
+                    diffusion coefficient \(v = w_s\).
+                </p>
+                <p>
+                    One more remark records what we deliberately give up. A broader definition of the Itô process
+                    asks of \(v\) only the pathwise condition
+                    \(\mathbb{P}\bigl[\int_0^t v^2\, ds \lt \infty \quad \forall\, t\bigr] = 1\), in exact analogy with
+                    (I2). Constructing \(\int_0^t v\, dw_s\) for such \(v\) requires localization by stopping
+                    times, a tool this track has not yet introduced, so we record the wider class as a signpost
+                    and work inside \(\mathcal{V}\). No example on this page is lost by the restriction.
+                </p>
+                <p>
+                    The question the opening paragraph raised can now be posed precisely. Is the class of Itô
+                    processes closed under smooth maps? For Itô integrals the answer was no, and the failure
+                    produced the definition. For Itô processes the answer is yes, and the exact bookkeeping of the
+                    closure is the content of the next section. The image \(g(t, X_t)\) is again an Itô process,
+                    and its drift picks up a term that classical calculus does not predict.
+                </p>
+
+            </section>
+
+            <section id="ito-formula" class="section-content">
+                <h2>The Chain Rule Acquires a Correction</h2>
+
+                <p>
+                    Classical calculus computes the image of a smooth motion under a smooth map by the chain rule.
+                    If \(x(t)\) is continuously differentiable and \(g(t, x)\) is smooth, then
+                </p>
+                <p>
+                    \[
+                    \frac{d}{dt}\, g(t, x(t))
+                    = \frac{\partial g}{\partial t}(t, x(t))
+                    + \frac{\partial g}{\partial x}(t, x(t))\, x'(t) ,
+                    \]
+                </p>
+                <p>
+                    and the same conclusion survives, in integrated form, as long as \(x(t)\) is continuous with
+                    bounded variation.
+                    Brownian paths refuse both hypotheses. They have
+                    <a href="brownian_motion.html#T-bm_path_properties" class="ref-link"><strong>infinite total variation on every interval</strong></a>,
+                    so no version of the classical argument applies to \(g(t, w_t)\), and the opening identity of
+                    the page already told us the conclusion itself is false. The term \(\tfrac{1}{2} t\) in
+                    \(\tfrac{1}{2} w_t^2 = \tfrac{1}{2} t + \int_0^t w_s\, dw_s\) is a correction that classical
+                    calculus does not predict.
+                </p>
+                <p>
+                    A second-order Taylor expansion locates the source of the correction before any proof. For a
+                    small time step, writing \(\Delta X = X_{t + \Delta t} - X_t\),
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    \Delta g
+                    &= \frac{\partial g}{\partial t}\, \Delta t
+                    + \frac{\partial g}{\partial x}\, \Delta X \\\\
+                    &\quad + \tfrac{1}{2} \frac{\partial^2 g}{\partial t^2} (\Delta t)^2
+                    + \frac{\partial^2 g}{\partial t\, \partial x}\, \Delta t\, \Delta X
+                    + \tfrac{1}{2} \frac{\partial^2 g}{\partial x^2} (\Delta X)^2
+                    + \cdots
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    For a differentiable motion, \(\Delta X\) is of order \(\Delta t\), every second-order term is
+                    of order \((\Delta t)^2\), and summing over a partition of \([0, t]\) kills them all in the
+                    limit. For an Itô process the increment is dominated by its noise part
+                    \(v\, \Delta w\), and a Brownian increment has size \(\sqrt{\Delta t}\), since
+                    \(\mathbb{E}[(\Delta w)^2] = \Delta t\). The square \((\Delta X)^2\) is therefore of order
+                    \(\Delta t\), first order rather than second, and its sum over a partition survives the limit.
+                    The
+                    <a href="brownian_motion.html#T-bm_path_properties" class="ref-link"><strong>quadratic variation</strong></a>
+                    of Brownian motion says exactly what it survives to. The sums
+                    \(\sum (\Delta w)^2\) converge to \(t\) in \(L^2\), so the term
+                    \(\tfrac{1}{2} g_{xx} (\Delta X)^2\) contributes \(\tfrac{1}{2} v^2 g_{xx}\, \Delta t\) worth
+                    of drift, while the cross term of size \(\Delta t \cdot \sqrt{\Delta t}\) and the pure
+                    \((\Delta t)^2\) term still vanish. One second-order term is promoted to first order, and it is
+                    the only one.
+                </p>
+                <p>
+                    This bookkeeping is compressed into a multiplication table for differentials,
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    dt \cdot dt &= dt \cdot dw_t = dw_t \cdot dt = 0 , \\\\
+                    dw_t \cdot dw_t &= dt ,
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    whose one nontrivial entry is the quadratic variation theorem wearing differential clothing.
+                    The table is a mnemonic, not a definition. Its precise content is the theorem below, stated in
+                    integral form, and every use of the table on this page resolves into that statement.
+                </p>
+
+                <div class="theorem" id="T-ito_formula_1d">
+                    <span class="theorem-title">Theorem: The One-Dimensional Itô Formula</span>
+                    <p>
+                        Let \(X_t = X_0 + \int_0^t u\, ds + \int_0^t v\, dw_s\) be an Itô process, and let
+                        \(g \in C^2([0, \infty) \times \mathbb{R})\), meaning that \(g\) and all its partial
+                        derivatives up to second order exist and are continuous on
+                        \([0, \infty) \times \mathbb{R}\). Assume the membership condition that for every
+                        \(T \gt 0\),
+                    </p>
+                    <p>
+                        \[
+                        \Bigl( (s, \omega) \mapsto v(s, \omega)\, \frac{\partial g}{\partial x}(s, X_s(\omega)) \Bigr)
+                        \in \mathcal{V}(0, T) .
+                        \]
+                    </p>
+                    <p>
+                        Then \(Y_t = g(t, X_t)\) is again an Itô process, and for every \(t \geq 0\), almost surely,
+                    </p>
+                    <p>
+                        \[
+                        g(t, X_t) = g(0, X_0)
+                        + \int_0^t \Bigl(
+                        \frac{\partial g}{\partial s}
+                        + u\, \frac{\partial g}{\partial x}
+                        + \tfrac{1}{2}\, v^2\, \frac{\partial^2 g}{\partial x^2}
+                        \Bigr)(s, X_s)\, ds
+                        + \int_0^t v\, \frac{\partial g}{\partial x}(s, X_s)\, dw_s ,
+                        \]
+                    </p>
+                    <p>
+                        where \(\frac{\partial g}{\partial s}\) denotes the derivative of \(g\) in its first
+                        argument, each partial derivative is evaluated at \((s, X_s)\), and \(u, v\) at
+                        \((s, \omega)\).
+                    </p>
+                </div>
+
+                <p>
+                    In differential shorthand the conclusion reads
+                </p>
+                <p>
+                    \[
+                    dY_t = \frac{\partial g}{\partial t}\, dt
+                    + \frac{\partial g}{\partial x}\, dX_t
+                    + \tfrac{1}{2}\, \frac{\partial^2 g}{\partial x^2}\, (dX_t)^2 ,
+                    \]
+                </p>
+                <p>
+                    where \((dX_t)^2 = (u\, dt + v\, dw_t)^2 = v^2\, dt\) after expanding by the table. The
+                    formula is the classical chain rule plus exactly one correction, the term
+                    \(\tfrac{1}{2} v^2 g_{xx}\, dt\), and the correction sits in the drift. As a first sanity
+                    check, take \(g(t, x) = \tfrac{1}{2} x^2\) and \(X_t = w_t\), so \(u = 0\) and \(v = 1\).
+                    The table gives
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    d\bigl(\tfrac{1}{2} w_t^2\bigr)
+                    &= w_t\, dw_t + \tfrac{1}{2}\, (dw_t)^2 \\\\
+                    &= w_t\, dw_t + \tfrac{1}{2}\, dt ,
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    which is the opening identity of the page. The formula we are about to prove reproduces the one
+                    integral this track has computed by hand.
+                </p>
+
+                <h3>The Statement Is Well Posed</h3>
+
+                <p>
+                    Before proving the identity we check that every object in it qualifies for the roles the
+                    definition of an Itô process assigns. Write \(\Phi(s, \omega) = \phi(s, X_s(\omega))\)
+                    generically for any of the coefficient processes appearing above, where
+                    \(\phi\) is one of the continuous functions
+                    \(\frac{\partial g}{\partial s}\), \(\frac{\partial g}{\partial x}\), or
+                    \(\frac{\partial^2 g}{\partial x^2}\).
+                </p>
+                <p>
+                    First, measurability. The map \((s, \omega) \mapsto (s, X_s(\omega))\), restricted to
+                    \([0, t] \times \Omega\), is measurable from \(\mathcal{B}([0, t]) \otimes \mathcal{F}_t\) to
+                    \(\mathcal{B}([0, t]) \otimes \mathcal{B}(\mathbb{R})\), the first coordinate being a
+                    projection and the second the progressively measurable process \(X\). Composing with the
+                    continuous, hence Borel, function \(\phi\) shows each \(\Phi\) is progressively measurable, and
+                    products and sums of progressively measurable processes remain so. Every integrand in the
+                    theorem is therefore progressively measurable.
+                </p>
+                <p>
+                    Second, the drift term satisfies condition (I2) automatically. Fix \(\omega\) in the full-measure
+                    set on which \(X\) has continuous paths and the pathwise conditions of (I2) and (I3) hold. On
+                    \([0, t]\) the path \(s \mapsto X_s(\omega)\) is continuous, so it stays in a compact interval,
+                    and each \(\phi(s, X_s(\omega))\) is bounded on \([0, t]\) by continuity of \(\phi\), say by
+                    \(C_t(\omega)\). Then
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    \int_0^t \Bigl| \frac{\partial g}{\partial s} + u\, \frac{\partial g}{\partial x}
+                    + \tfrac{1}{2} v^2 \frac{\partial^2 g}{\partial x^2} \Bigr|(s, X_s)\, ds
+                    &\leq C_t(\omega) \Bigl( t + \int_0^t |u|\, ds + \tfrac{1}{2} \int_0^t v^2\, ds \Bigr) \\\\
+                    &\lt \infty ,
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    where \(\int_0^t |u|\, ds\) is finite by (I2) and \(\int_0^t v^2\, ds\) is finite almost
+                    surely because its expectation is finite by (V3). So the new drift is a legitimate input to
+                    the pathwise time integral theorem.
+                </p>
+                <p>
+                    Third, the diffusion term. The same compactness argument shows
+                    \(\int_0^t (v\, \frac{\partial g}{\partial x}(s, X_s))^2\, ds \lt \infty\) almost surely, but
+                    membership in \(\mathcal{V}\) demands finiteness of the <em>expectation</em> of this integral,
+                    and continuity of paths bounds nothing uniformly over \(\Omega\). This is why the theorem
+                    carries the membership condition as a hypothesis. It holds whenever
+                    \(\frac{\partial g}{\partial x}\) is bounded, since then the integrand is dominated by a
+                    constant multiple of \(v \in \mathcal{V}\), and it is checked by direct inspection in every
+                    concrete case this track meets. For the sanity example the check is already on record, since
+                    \(v\, \frac{\partial g}{\partial x}(s, X_s) = w_s\) is the integrand of the opening identity.
+                    Dropping the condition entirely is possible, at the price of the same localization machinery
+                    that the wider integrand class of Section 1 signposted, and it waits with that class.
+                </p>
+                <p>
+                    One more degree of freedom costs nothing. The theorem is stated for \(g\) twice continuously
+                    differentiable on all of \([0, \infty) \times \mathbb{R}\), but the proof only ever evaluates
+                    \(g\) and its derivatives along the path \((s, X_s)\). If every path of \(X\) stays in an open
+                    set \(U \subseteq \mathbb{R}\), the same proof runs verbatim for
+                    \(g \in C^2([0, \infty) \times U)\). We record this without separate proof and will collect it
+                    when a process confined to a region first appears.
+                </p>
+                <p>
+                    The heuristic said one Taylor term is promoted and all others die. The proof's job is to make
+                    each of those deaths, and the one survival, an honest limit theorem. That is the next section.
+                </p>
+
+            </section>
+
+            <section id="proof" class="section-content">
+                <h2>Proof of the Itô Formula</h2>
+
+                <p>
+                    The proof follows the heuristic with the hand-waving removed. Fix \(t \gt 0\). We telescope
+                    \(g(t, X_t) - g(0, X_0)\) over a partition of \([0, t]\), expand each increment by Taylor's
+                    theorem with an exact remainder, and sort the resulting sums by order. Each sum then meets one
+                    of three fates as the mesh shrinks. The first-order sums converge to the two integrals of the
+                    formula. Every sum carrying a factor \((\Delta t)^2\) dies by a pathwise estimate, and every
+                    sum carrying \(\Delta t\, \Delta w\) dies by an \(L^2\) estimate. The \((\Delta X)^2\) sum
+                    splits into dying pieces and one
+                    survivor, and the survivor converges to the correction term by the quadratic variation
+                    mechanism, upgraded from the Brownian statement to weighted sums. All modes of convergence are
+                    stronger than
+                    <a href="convergence.html#D-convergence_in_probability" class="ref-link"><strong>convergence in probability</strong></a>,
+                    which is the common currency in which the pieces are finally added.
+                </p>
+                <p>
+                    Two of the deaths deserve to be stated on their own. The multiplication table's vanishing
+                    entries, \(dt \cdot dw_t = 0\) and the centered half of \(dw_t \cdot dw_t = dt\), have an
+                    honest form as sums of increments against adapted bounded weights, dying in \(L^2\) as the
+                    mesh shrinks. The mechanism recurs on this page and again beyond it, so we isolate
+                    it as a lemma with explicit constants.
+                </p>
+
+                <div class="theorem" id="T-weighted_qv_limit">
+                    <span class="theorem-title">Lemma: Weighted Increment Limits</span>
+                    <p>
+                        Let \(\{\mathcal{F}_t\}_{t \geq 0}\) be a filtration on
+                        \((\Omega, \mathcal{F}, \mathbb{P})\) and let \(w\) be a standard Brownian motion,
+                        adapted to \(\{\mathcal{F}_t\}\), whose increments \(w_b - w_a\) with
+                        \(0 \leq a \lt b\) are independent of \(\mathcal{F}_a\). Let \(t \gt 0\), let
+                        \(0 = t_0 \lt t_1 \lt \cdots \lt t_N = t\) be a partition with mesh
+                        \(|\pi| = \max_j \Delta t_j\), where \(\Delta t_j = t_{j+1} - t_j\), and write
+                        \(\Delta w_j = w_{t_{j+1}} - w_{t_j}\). For each \(j\) let \(b_j\) be an
+                        \(\mathcal{F}_{t_j}\)-measurable random variable with \(|b_j| \leq K\), for a constant
+                        \(K\) independent of \(j\). Then:
+                    </p>
+                    <p>
+                        <strong>(i)</strong><br>
+                        \[
+                        \mathbb{E}\Bigl[ \Bigl( \sum_j b_j\, \Delta t_j\, \Delta w_j \Bigr)^{2} \Bigr]
+                        \leq K^2\, t\, |\pi|^2 .
+                        \]
+                    </p>
+                    <p>
+                        <strong>(ii)</strong><br>
+                        \[
+                        \mathbb{E}\Bigl[ \Bigl( \sum_j b_j \bigl( (\Delta w_j)^2 - \Delta t_j \bigr) \Bigr)^{2} \Bigr]
+                        \leq 2 K^2\, t\, |\pi| .
+                        \]
+                    </p>
+                    <p>
+                        If moreover \(\tilde{w}\) is a second standard Brownian motion, independent of \(w\),
+                        such that the paired increments
+                        \((w_b - w_a,\ \tilde{w}_b - \tilde{w}_a)\) are independent of \(\mathcal{F}_a\),
+                        then, writing \(\Delta \tilde{w}_j = \tilde{w}_{t_{j+1}} - \tilde{w}_{t_j}\):
+                    </p>
+                    <p>
+                        <strong>(iii)</strong><br>
+                        \[
+                        \mathbb{E}\Bigl[ \Bigl( \sum_j b_j\, \Delta w_j\, \Delta \tilde{w}_j \Bigr)^{2} \Bigr]
+                        \leq K^2\, t\, |\pi| .
+                        \]
+                    </p>
+                    <p>
+                        In particular, along any sequence of partitions of \([0, t]\) with mesh tending to zero,
+                        all three sums tend to zero in \(L^2(\mathbb{P})\).
+                    </p>
+                </div>
+
+                <p>
+                    On this page the lemma is consumed with \(\{\mathcal{F}_t\}\) the Brownian filtration of
+                    \(w\) itself, where the increment hypothesis is exactly the
+                    <a href="ito_integral.html#T-increment_independence" class="ref-link"><strong>independence of increments from the past</strong></a>,
+                    and part (iii) sits idle, there being no second motion in sight. It is proved now because
+                    several independent motions arrive two pages ahead, the proof costs a few lines here, and it
+                    would cost a page of duplicated machinery there.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1 (The increment law).</strong><br>
+                        Throughout, the increment \(w_b - w_a\) with \(0 \leq a \lt b\) is a centered Gaussian
+                        variable with variance \(b - a\). Gaussianity and the mean are part of the
+                        <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>defining properties</strong></a>,
+                        an increment being a linear combination of the Gaussian process with
+                        \(\mathbb{E}[w_b - w_a] = \mathbb{E}[w_b] - \mathbb{E}[w_a] = 0\), and the variance is
+                        read off the defining covariance,
+                        \[
+                        \begin{align*}
+                        \operatorname{Var}(w_b - w_a)
+                        &= \operatorname{Cov}(w_b, w_b)
+                        - 2 \operatorname{Cov}(w_a, w_b) + \operatorname{Cov}(w_a, w_a) \\\\
+                        &= b - 2a + a = b - a .
+                        \end{align*}
+                        \]
+                        The same applies verbatim to any standard Brownian motion, in particular to
+                        \(\tilde{w}\) when part (iii) is in play.
+                    </p>
+                    <p>
+                        <strong>Step 2 (The factorization principle).</strong><br>
+                        The estimates repeatedly compute expectations of products in which one factor is
+                        measurable with respect to the past and the other is a function of a future increment. We
+                        isolate the mechanism once. Let \(0 \leq a \lt b\), let \(Y\) be an integrable
+                        \(\mathcal{F}_a\)-measurable random variable, and let \(h : \mathbb{R} \to \mathbb{R}\) be
+                        Borel with \(h(w_b - w_a)\) integrable. By hypothesis the increment is independent of
+                        \(\mathcal{F}_a\), meaning that the \(\sigma\)-algebras \(\sigma(w_b - w_a)\) and
+                        \(\mathcal{F}_a\) are
+                        <a href="limit_theorems_product_measures.html#D-sigma-independence" class="ref-link"><strong>independent</strong></a>.
+                        Since \(Y\) is measurable for the second and \(h(w_b - w_a)\) for the first, the pair is
+                        independent, and the
+                        <a href="limit_theorems_product_measures.html#T-expectation_product_independent" class="ref-link"><strong>product rule for expectations</strong></a>,
+                        which also delivers the integrability of the product, gives
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\bigl[ Y\, h(w_b - w_a) \bigr]
+                        = \mathbb{E}[Y]\ \mathbb{E}\bigl[ h(w_b - w_a) \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        In every application below \(h\) is a polynomial and \(Y\) is dominated by a constant
+                        multiple of a polynomial in earlier increments, so all integrability demands are met by
+                        the finiteness of Gaussian moments. In particular, taking
+                        \(h(z) = z\) or \(h(z) = z^2 - (b - a)\), whose expectations under the increment
+                        distribution are zero by the mean and variance of Step 1, the product expectation
+                        vanishes. For part (iii) the same argument runs with \(h\) a polynomial in the paired
+                        increment \((w_b - w_a,\ \tilde{w}_b - \tilde{w}_a)\), the pair being independent of
+                        \(\mathcal{F}_a\) by hypothesis.
+                    </p>
+                    <p>
+                        <strong>Step 3 (Second and fourth moments).</strong><br>
+                        For \(Z\) centered Gaussian with variance \(\sigma^2 \gt 0\) and density \(\varphi\), the
+                        identity \(z\, \varphi(z) = -\sigma^2\, \varphi'(z)\) and integration by parts give
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}[Z^2]
+                        &= \int_{-\infty}^{\infty} z \cdot z\, \varphi(z)\, dz
+                        = -\sigma^2 \Bigl[ z\, \varphi(z) \Bigr]_{-\infty}^{\infty}
+                        + \sigma^2 \int_{-\infty}^{\infty} \varphi(z)\, dz
+                        = \sigma^2 , \\\\
+                        \mathbb{E}[Z^4]
+                        &= \int_{-\infty}^{\infty} z^3 \cdot z\, \varphi(z)\, dz
+                        = -\sigma^2 \Bigl[ z^3 \varphi(z) \Bigr]_{-\infty}^{\infty}
+                        + 3 \sigma^2 \int_{-\infty}^{\infty} z^2\, \varphi(z)\, dz
+                        = 3 \sigma^4 ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        the boundary terms vanishing because the Gaussian density decays faster than any
+                        polynomial grows, and the total mass being one by the
+                        <a href="gaussian.html#T-gaussian_integral" class="ref-link"><strong>Gaussian integral</strong></a>
+                        after the change of variables that normalizes the density. Consequently
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \bigl( (\Delta w_j)^2 - \Delta t_j \bigr)^{2} \Bigr]
+                        &= 3 (\Delta t_j)^2 - 2 (\Delta t_j)^2 + (\Delta t_j)^2 \\\\
+                        &= 2 (\Delta t_j)^2 .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 4 (The two estimates).</strong><br>
+                        For (i), expand the square and apply the factorization principle to every term. The
+                        off-diagonal terms with \(i \lt j\) vanish, because
+                        \(Y = b_i b_j \Delta w_i\) is \(\mathcal{F}_{t_j}\)-measurable and bounded in absolute
+                        value by \(K^2 |\Delta w_i|\), hence integrable, while \(h(z) = z\) has
+                        \(\mathbb{E}[h(\Delta w_j)] = 0\). The diagonal factorizes with \(h(z) = z^2\), so
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \Bigl( \sum_j b_j\, \Delta t_j\, \Delta w_j \Bigr)^{2} \Bigr]
+                        &= \sum_j (\Delta t_j)^2\, \mathbb{E}\bigl[ b_j^2 \bigr]\,
+                        \mathbb{E}\bigl[ (\Delta w_j)^2 \bigr] \\\\
+                        &\leq K^2 \sum_j (\Delta t_j)^3 \\\\
+                        &\leq K^2\, t\, |\pi|^2 ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        using \(\mathbb{E}[(\Delta w_j)^2] = \Delta t_j\) from Step 1. For (ii), the
+                        off-diagonal terms with \(i \lt j\) vanish by the factorization principle, with
+                        \(Y = b_i b_j ((\Delta w_i)^2 - \Delta t_i)\), which is \(\mathcal{F}_{t_j}\)-measurable
+                        and integrable, being dominated by \(K^2 ((\Delta w_i)^2 + \Delta t_i)\), and
+                        \(h(z) = z^2 - \Delta t_j\), whose expectation is zero. The diagonal
+                        factorizes with \(Y = b_j^2\) and \(h(z) = (z^2 - \Delta t_j)^2\), so by Step 3,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \Bigl( \sum_j b_j \bigl( (\Delta w_j)^2 - \Delta t_j \bigr) \Bigr)^{2} \Bigr]
+                        &= \sum_j \mathbb{E}\bigl[ b_j^2 \bigr] \cdot 2 (\Delta t_j)^2 \\\\
+                        &\leq 2 K^2\, t\, |\pi| .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 5 (The cross estimate).</strong><br>
+                        For (iii), expand the square. The off-diagonal terms with \(i \lt j\) vanish by the
+                        paired factorization in two moves. First, with
+                        \(Y' = b_i b_j\, \Delta w_i\, \Delta \tilde{w}_i\), which is
+                        \(\mathcal{F}_{t_j}\)-measurable and integrable, and \(h\) the paired polynomial
+                        \(h(z, \tilde{z}) = z \tilde{z}\), the term factors into
+                        \(\mathbb{E}[Y']\, \mathbb{E}[\Delta w_j\, \Delta \tilde{w}_j]\). Second, the two
+                        motions are independent of each other, so
+                        \(\mathbb{E}[\Delta w_j\, \Delta \tilde{w}_j]
+                        = \mathbb{E}[\Delta w_j]\, \mathbb{E}[\Delta \tilde{w}_j] = 0\) by the
+                        <a href="limit_theorems_product_measures.html#T-expectation_product_independent" class="ref-link"><strong>product rule</strong></a>
+                        and Step 1. The diagonal factorizes the same way twice,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\bigl[ b_j^2\, (\Delta w_j)^2 (\Delta \tilde{w}_j)^2 \bigr]
+                        &= \mathbb{E}\bigl[ b_j^2 \bigr]\,
+                        \mathbb{E}\bigl[ (\Delta w_j)^2 \bigr]\,
+                        \mathbb{E}\bigl[ (\Delta \tilde{w}_j)^2 \bigr] \\\\
+                        &= \mathbb{E}\bigl[ b_j^2 \bigr]\, (\Delta t_j)^2 \\\\
+                        &\leq K^2 (\Delta t_j)^2 ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        summing to at most \(K^2\, t\, |\pi|\).
+                    </p>
+                </div>
+
+                <p>
+                    We prove the identity in full for a core case, bounded derivatives and bounded elementary
+                    integrands, and we are explicit below about the two approximation passages that carry the core
+                    case to the general statement. Everything else is proved.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of the Itô formula.</span>
+                    <p>
+                        Within this proof we abbreviate the partial derivatives of \(g\) as
+                        \(g_t, g_x, g_{tt}, g_{tx}, g_{xx}\), each evaluated at the point indicated.
+                    </p>
+                    <p>
+                        <strong>Step 1 (Reduction to a core case).</strong><br>
+                        We prove the identity under two additional assumptions.
+                    </p>
+                    <p>
+                        <strong>(R1)</strong><br>
+                        \(g\) and all its partial derivatives up to second order are bounded on
+                        \([0, \infty) \times \mathbb{R}\), by a common constant \(M\).
+                    </p>
+                    <p>
+                        <strong>(R2)</strong><br>
+                        On \([0, t]\), the coefficients \(u\) and \(v\) are
+                        <a href="ito_integral.html#D-elementary_process" class="ref-link"><strong>elementary processes</strong></a>
+                        over a common partition \(0 = r_0 \lt r_1 \lt \cdots \lt r_m = t\), with all levels bounded
+                        by a common constant \(C\).
+                    </p>
+                    <p>
+                        Two approximation passages carry the core case to the theorem as stated, and we record
+                        precisely what each one asserts. First, a function \(g \in C^2([0, \infty) \times \mathbb{R})\)
+                        admits approximants \(g_n\) satisfying (R1) such that \(g_n\) and its partial derivatives
+                        up to second order converge to those of \(g\) uniformly on compact sets. The construction
+                        is by smooth truncation and mollification and we take it on faith, this being a statement
+                        of classical analysis with no probabilistic content. Second, general coefficients
+                        satisfying (I2), (I3), and the membership condition admit approximating sequences as in
+                        (R2) for which every term of the identity converges to the corresponding term for
+                        \((u, v)\). For the \(dw\)-terms this is the three-step approximation scheme that built the
+                        Itô integral, and the uniform pathwise control needed for the \(ds\)-terms is exactly what
+                        the
+                        <a href="ito_integral_properties.html#T-ito_sup_bound" class="ref-link"><strong>maximal bound for the Itô integral</strong></a>
+                        was forged for. We nevertheless take the passage as a whole on faith here, since executing
+                        it doubles the length of the proof, and we flag it as the one debt of this page. In the
+                        core case the membership condition of the theorem holds automatically, because
+                        \(|v\, g_x(s, X_s)| \leq C M\) makes the diffusion integrand a bounded progressively
+                        measurable process, hence a member of every \(\mathcal{V}(0, T)\).
+                    </p>
+                    <p>
+                        <strong>Step 2 (Exact Taylor decomposition).</strong><br>
+                        Let \(\pi : 0 = t_0 \lt t_1 \lt \cdots \lt t_N = t\) be a partition refining
+                        \(\{r_0, \ldots, r_m\}\), with mesh \(|\pi| = \max_j \Delta t_j\), where
+                        \(\Delta t_j = t_{j+1} - t_j\). Write \(X_j = X_{t_j}\),
+                        \(\Delta X_j = X_{t_{j+1}} - X_j\), and \(\Delta w_j = w_{t_{j+1}} - w_{t_j}\). Because
+                        \(\pi\) refines the elementary partition, \(u\) and \(v\) are constant on each
+                        \([t_j, t_{j+1})\), with values \(u_j = u(t_j, \cdot)\) and \(v_j = v(t_j, \cdot)\) that
+                        are \(\mathcal{F}_{t_j}\)-measurable and bounded by \(C\). The drift piece of the
+                        increment is the pathwise integral of a constant, and the noise piece is the elementary
+                        integral of a constant level, which
+                        <a href="ito_integral_properties.html#T-ito_integral_properties" class="ref-link"><strong>additivity over intervals</strong></a>
+                        identifies with the increment of the integral process. Outside a single null set,
+                        simultaneously for every partition drawn from the countable family fixed below,
+                    </p>
+                    <p>
+                        \[
+                        \Delta X_j = u_j\, \Delta t_j + v_j\, \Delta w_j .
+                        \]
+                    </p>
+                    <p>
+                        Now telescope and expand. By
+                        <a href="../Calculus/mvt.html#T-taylor_multivariate" class="ref-link"><strong>Taylor's theorem with integral remainder</strong></a>,
+                        applied at order \(k = 1\) in the two variables \((s, x)\) at the base point
+                        \((t_j, X_j)\) with increment \((\Delta t_j, \Delta X_j)\),
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        g(t_{j+1}, X_{j+1}) - g(t_j, X_j)
+                        &= g_t(t_j, X_j)\, \Delta t_j + g_x(t_j, X_j)\, \Delta X_j \\\\
+                        &\quad + \tfrac{1}{2}\, \theta_j^{tt} (\Delta t_j)^2
+                        + \theta_j^{tx}\, \Delta t_j\, \Delta X_j
+                        + \tfrac{1}{2}\, \theta_j^{xx} (\Delta X_j)^2 ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where, for each second-order index \(I\), the coefficient is the weighted average of the
+                        corresponding derivative along the segment,
+                    </p>
+                    <p>
+                        \[
+                        \theta_j^{I}
+                        = 2 \int_0^1 (1 - \tau)\,
+                        \partial_I g\bigl( (t_j, X_j) + \tau\, (\Delta t_j, \Delta X_j) \bigr)\, d\tau .
+                        \]
+                    </p>
+                    <p>
+                        The cited theorem is stated on open sets, and the only boundary contact happens at
+                        \(t_0 = 0\). There the one-variable function
+                        \(\tau \mapsto g((t_j, X_j) + \tau (\Delta t_j, \Delta X_j))\) is still twice continuously
+                        differentiable on \([0, 1]\), with a one-sided derivative in time at \(\tau = 0\) supplied
+                        by the \(C^2\) hypothesis on \([0, \infty) \times \mathbb{R}\), and the one-dimensional
+                        integral-remainder expansion at the heart of the cited proof applies unchanged.
+                    </p>
+                    <p>
+                        Each \(\theta_j^I\) is bounded by \(M\), since \(2 \int_0^1 (1 - \tau)\, d\tau = 1\), and
+                        each is a genuine random variable, being the pointwise limit of Riemann sums in \(\tau\)
+                        of integrands that are continuous in \(\tau\) and measurable in \(\omega\). More
+                        is true. Fix \(\omega\) outside the null set assembled above, so that the increments are
+                        exact and the paths of \(X\) and of the pathwise integrals are continuous, and
+                        let \(K_\omega = [0, t] \times [-R_\omega, R_\omega]\) with
+                        \(R_\omega = \max_{0 \leq s \leq t} |X_s(\omega)|\). Every segment
+                        \((t_j, X_j) + \tau (\Delta t_j, \Delta X_j)\) lies in the convex set \(K_\omega\), so
+                        writing
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \varepsilon_j^{I} &= \theta_j^{I} - \partial_I g(t_j, X_j) , \\\\
+                        \eta(\pi, \omega) &= \max_{j, I}\, \bigl| \varepsilon_j^{I} \bigr| ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        the deviation \(\eta(\pi, \omega)\) is at most the modulus of continuity of the second
+                        derivatives of \(g\) on \(K_\omega\), evaluated at the largest displacement
+                        \(|\pi| + \max_j |\Delta X_j(\omega)|\). The path \(s \mapsto X_s(\omega)\) is uniformly
+                        continuous on \([0, t]\), so \(\max_j |\Delta X_j| \to 0\) as \(|\pi| \to 0\), the second
+                        derivatives of \(g\) are uniformly continuous on the compact \(K_\omega\), and therefore
+                        \(\eta(\pi, \omega) \to 0\) pathwise as \(|\pi| \to 0\), while the crude bound
+                        \(\eta(\pi, \omega) \leq 2 M\) holds for every partition.
+                    </p>
+                    <p>
+                        Summing the expansion over \(j\) and separating each \(\theta_j^I\) into
+                        \(\partial_I g(t_j, X_j) + \varepsilon_j^I\) yields the master decomposition
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        g(t, X_t) - g(0, X_0)
+                        &= \sum_j g_t\, \Delta t_j
+                        + \sum_j g_x\, \Delta X_j \\\\
+                        &\quad + \tfrac{1}{2} \sum_j g_{tt}\, (\Delta t_j)^2
+                        + \sum_j g_{tx}\, \Delta t_j\, \Delta X_j
+                        + \tfrac{1}{2} \sum_j g_{xx}\, (\Delta X_j)^2 \\\\
+                        &\quad + E(\pi) ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where every derivative is evaluated at \((t_j, X_j)\) and the error term collects the
+                        \(\varepsilon\)-contributions,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        E(\pi) &= \sum_j \Bigl(
+                        \tfrac{1}{2}\, \varepsilon_j^{tt} (\Delta t_j)^2
+                        + \varepsilon_j^{tx}\, \Delta t_j\, \Delta X_j
+                        + \tfrac{1}{2}\, \varepsilon_j^{xx} (\Delta X_j)^2
+                        \Bigr) , \\\\
+                        |E(\pi)| &\leq \eta(\pi) \sum_j \bigl( (\Delta t_j)^2 + |\Delta t_j \Delta X_j| + (\Delta X_j)^2 \bigr) .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        From here on, fix a sequence of partitions \(\pi_n\), each refining
+                        \(\{r_0, \ldots, r_m\}\), with \(|\pi_n| \to 0\). The left side of the master
+                        decomposition does not depend on \(n\). We show that each sum on the right converges in
+                        probability, identify the limits, and conclude that their sum, which is constant along the
+                        sequence, equals the limit almost surely. The error term \(E(\pi_n)\) is estimated in
+                        Step 4 together with its second-order companions.
+                    </p>
+                    <p>
+                        <strong>Step 3 (The first-order sums).</strong><br>
+                        The time sum converges pathwise. For \(\omega\) in the full-measure set of Step 2, the map
+                        \(s \mapsto g_t(s, X_s(\omega))\) is continuous on \([0, t]\), hence uniformly continuous,
+                        and a direct estimate against its
+                        <a href="../Calculus/lebesgue.html#T-riemann_implies_lebesgue" class="ref-link"><strong>Riemann, hence Lebesgue, integral</strong></a>
+                        gives
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \Bigl| \sum_j g_t(t_j, X_j)\, \Delta t_j - \int_0^t g_t(s, X_s)\, ds \Bigr|
+                        &\leq \sum_j \int_{t_j}^{t_{j+1}} \bigl| g_t(t_j, X_j) - g_t(s, X_s) \bigr|\, ds \\\\
+                        &\leq t\, \omega_\pi ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where \(\omega_\pi\) is the modulus of continuity of \(s \mapsto g_t(s, X_s(\omega))\)
+                        evaluated at \(|\pi|\), and \(\omega_\pi \to 0\) as \(|\pi| \to 0\). So
+                        \(\sum_j g_t\, \Delta t_j \to \int_0^t g_t(s, X_s)\, ds\) almost surely.
+                    </p>
+                    <p>
+                        The space sum splits along \(\Delta X_j = u_j \Delta t_j + v_j \Delta w_j\) into
+                    </p>
+                    <p>
+                        \[
+                        \sum_j g_x(t_j, X_j)\, \Delta X_j
+                        = \sum_j g_x(t_j, X_j)\, u_j\, \Delta t_j
+                        + \sum_j g_x(t_j, X_j)\, v_j\, \Delta w_j .
+                        \]
+                    </p>
+                    <p>
+                        The drift half converges pathwise to \(\int_0^t g_x(s, X_s)\, u(s)\, ds\) by the estimate
+                        just used, applied on each interval \([r_i, r_{i+1})\) of the common partition separately.
+                        On such an interval \(u\) is a constant random level, the integrand
+                        \(s \mapsto g_x(s, X_s)\, u(s)\) is continuous there, and \(\pi_n\) refines the
+                        \(r_i\), so the left-endpoint sums over each piece converge to the integral over that
+                        piece, and there are finitely many pieces.
+                    </p>
+                    <p>
+                        The noise half converges in \(L^2(\mathbb{P})\) to the stochastic integral of the theorem.
+                        Define elementary processes over \(\pi_n\) by
+                    </p>
+                    <p>
+                        \[
+                        \Phi_n(s, \omega)
+                        = \sum_j g_x(t_j, X_j)\, v_j\, \mathbf{1}_{[t_j, t_{j+1})}(s) ,
+                        \]
+                    </p>
+                    <p>
+                        whose levels are \(\mathcal{F}_{t_j}\)-measurable and bounded by \(C M\), so
+                        \(\Phi_n \in \mathcal{V}(0, t)\), and whose elementary Itô integral is precisely the noise
+                        half. Set \(\Phi(s, \omega) = g_x(s, X_s)\, v(s, \omega)\), the integrand of the theorem.
+                        At every point \((s, \omega)\) with \(s \in [0, t)\) and \(\omega\) in the full-measure
+                        set, refinement makes \(v(t_j(s)) = v(s)\) exactly, where \(t_j(s)\) is the left endpoint
+                        of the \(\pi_n\)-interval containing \(s\), while \(t_j(s) \to s\) and continuity of
+                        \(r \mapsto g_x(r, X_r)\) give \(g_x(t_j(s), X_{t_j(s)}) \to g_x(s, X_s)\). So
+                        \(\Phi_n \to \Phi\) pointwise \(\lambda \otimes \mathbb{P}\)-almost everywhere on
+                        \([0, t] \times \Omega\), with \(|\Phi_n - \Phi| \leq 2 C M\) throughout. The constant is
+                        integrable for the finite measure \(\lambda \otimes \mathbb{P}\), so the
+                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        gives \(\mathbb{E}\bigl[ \int_0^t (\Phi_n - \Phi)^2\, ds \bigr] \to 0\), and
+                        <a href="ito_integral.html#T-ito_l2_continuity" class="ref-link"><strong>L² continuity of the Itô integral</strong></a>
+                        concludes
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \sum_j g_x(t_j, X_j)\, v_j\, \Delta w_j
+                        &= \int_0^t \Phi_n\, dw_s \\\\
+                        &\ \xrightarrow{\ L^2\ }\
+                        \int_0^t g_x(s, X_s)\, v(s, \omega)\, dw_s .
+                        \end{align*}
+                        \]
+                    </p>
+
+                    <p>
+                        <strong>Step 4 (The second-order sums die, except one).</strong><br>
+                        The sums carrying a factor \((\Delta t_j)^2\) die pathwise, by deterministic bounds. With
+                        every derivative bounded by \(M\) and every level by \(C\),
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \Bigl| \tfrac{1}{2} \sum_j g_{tt}\, (\Delta t_j)^2 \Bigr|
+                        &\leq \tfrac{1}{2} M\, t\, |\pi| , \\\\
+                        \Bigl| \sum_j g_{tx}\, u_j\, (\Delta t_j)^2 \Bigr|
+                        &\leq M C\, t\, |\pi| , \\\\
+                        \Bigl| \tfrac{1}{2} \sum_j g_{xx}\, u_j^2\, (\Delta t_j)^2 \Bigr|
+                        &\leq \tfrac{1}{2} M C^2\, t\, |\pi| ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        each right side tending to zero with the mesh. Here the middle sum is the drift half of the
+                        cross sum \(\sum_j g_{tx} \Delta t_j \Delta X_j\) and the third is the pure drift piece of
+                        \(\tfrac{1}{2} \sum_j g_{xx} (\Delta X_j)^2\), after inserting
+                        \(\Delta X_j = u_j \Delta t_j + v_j \Delta w_j\) and expanding.
+                    </p>
+                    <p>
+                        The mixed pieces share one shape, a sum \(\sum_j b_j\, \Delta t_j\, \Delta w_j\) with
+                        \(b_j\) an \(\mathcal{F}_{t_j}\)-measurable variable bounded by a constant, which is
+                        exactly the shape part (i) of the weighted increment lemma kills. Applied with
+                        \(b_j = g_{tx}(t_j, X_j)\, v_j\) and \(K = M C\), it kills the noise half of the cross
+                        sum, and applied with \(b_j = g_{xx}(t_j, X_j)\, u_j v_j\) and \(K = M C^2\), it kills
+                        the mixed piece of the squared-increment sum, both in \(L^2(\mathbb{P})\).
+                    </p>
+                    <p>
+                        The Taylor error dies in \(L^1(\mathbb{P})\). From
+                        \(2 |\Delta t_j\, \Delta X_j| \leq (\Delta t_j)^2 + (\Delta X_j)^2\) and
+                        \((\Delta X_j)^2 \leq 2 u_j^2 (\Delta t_j)^2 + 2 v_j^2 (\Delta w_j)^2\),
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        |E(\pi)|
+                        &\leq \tfrac{3}{2}\, \eta(\pi) \Bigl( \sum_j (\Delta t_j)^2 + \sum_j (\Delta X_j)^2 \Bigr) \\\\
+                        &\leq \tfrac{3}{2}\, \eta(\pi) \Bigl( (1 + 2 C^2)\, t\, |\pi| + 2 C^2\, Q_\pi \Bigr) ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where \(Q_\pi = \sum_j (\Delta w_j)^2\). Take expectations along the sequence \(\pi_n\).
+                        The first contribution is at most a constant times \(|\pi_n|\, \mathbb{E}[\eta(\pi_n)]\)
+                        and tends to zero, since \(\eta \leq 2 M\). For the second, the
+                        <a href="../Calculus/intro_analysis.html#T-Cauchy-Schwarz_Inequality" class="ref-link"><strong>Cauchy-Schwarz inequality</strong></a>
+                        gives
+                        \(\mathbb{E}[\eta(\pi_n)\, Q_{\pi_n}]
+                        \leq \mathbb{E}[\eta(\pi_n)^2]^{1/2}\, \mathbb{E}[Q_{\pi_n}^2]^{1/2}\).
+                        The first factor tends to zero by the
+                        <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>,
+                        because \(\eta(\pi_n) \to 0\) almost surely with the constant bound \(2 M\). The second
+                        factor is bounded along the sequence, because
+                        <a href="brownian_motion.html#T-bm_path_properties" class="ref-link"><strong>quadratic variation</strong></a>
+                        gives \(Q_{\pi_n} \to t\) in \(L^2(\mathbb{P})\), so the \(L^2\) norms
+                        \(\mathbb{E}[Q_{\pi_n}^2]^{1/2}\) converge to \(t\) and in particular stay bounded.
+                        Therefore \(\mathbb{E}\bigl[ |E(\pi_n)| \bigr] \to 0\).
+                    </p>
+                    <p>
+                        <strong>Step 5 (The weighted quadratic variation limit).</strong><br>
+                        One sum survives. Set
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        a_j &= g_{xx}(t_j, X_j)\, v_j^2 ,
+                        \\\\
+                        a(s, \omega) &= g_{xx}(s, X_s)\, v(s, \omega)^2 ,
+                        \\\\
+                        |a_j| &\leq K = M C^2 ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        so that the survivor is \(\tfrac{1}{2} \sum_j a_j (\Delta w_j)^2\). We claim
+                        \(\sum_j a_j (\Delta w_j)^2 \to \int_0^t a(s, \omega)\, ds\) in probability. This is the
+                        multiplication rule \(dw_t \cdot dw_t = dt\) in its honest form, quadratic variation with
+                        adapted weights. Split
+                    </p>
+                    <p>
+                        \[
+                        \sum_j a_j (\Delta w_j)^2
+                        = \sum_j a_j \Delta t_j
+                        + \sum_j a_j \bigl( (\Delta w_j)^2 - \Delta t_j \bigr) .
+                        \]
+                    </p>
+                    <p>
+                        The first sum converges pathwise to \(\int_0^t a(s, \omega)\, ds\). On each interval
+                        \([r_i, r_{i+1})\) of the common partition, \(v\) is a constant level and
+                        \(s \mapsto g_{xx}(s, X_s)\) is continuous, so the left-endpoint sums over each piece
+                        converge to the integral over that piece by the modulus estimate of Step 3, and the pieces
+                        are finitely many.
+                    </p>
+                    <p>
+                        The second sum is exactly the shape part (ii) of the weighted increment lemma kills, its
+                        weights \(a_j\) being \(\mathcal{F}_{t_j}\)-measurable and bounded by \(K\), so it dies
+                        in \(L^2(\mathbb{P})\) with the explicit bound \(2 K^2\, t\, |\pi|\).
+                    </p>
+                    <p>
+                        The survivor therefore converges in probability,
+                    </p>
+                    <p>
+                        \[
+                        \tfrac{1}{2} \sum_j a_j (\Delta w_j)^2
+                        \longrightarrow
+                        \tfrac{1}{2} \int_0^t g_{xx}(s, X_s)\, v(s, \omega)^2\, ds .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 6 (Assembly).</strong><br>
+                        Along the sequence \(\pi_n\), the master decomposition, with the two increment splittings
+                        of Steps 3 and 4 inserted, expresses the fixed random variable
+                        \(g(t, X_t) - g(0, X_0)\) as a sum of ten terms, and Steps 3 through 5 assign each one a
+                        limit. Five converge almost surely, two to the integrals \(\int_0^t g_t\, ds\) and
+                        \(\int_0^t g_x\, u\, ds\) and three to zero, being the sums carrying \((\Delta t)^2\).
+                        Two die in \(L^2\), being the sums carrying \(\Delta t\, \Delta w\). One converges in
+                        \(L^2\) to the stochastic integral, one converges in probability to
+                        \(\tfrac{1}{2} \int_0^t g_{xx}\, v^2\, ds\), and the Taylor error dies in
+                        \(L^1\). Almost sure convergence implies
+                        <a href="convergence.html#T-hierarchy_convergence_modes" class="ref-link"><strong>convergence in probability</strong></a>,
+                        and so do the two integral modes by the elementary bound obtained from integrating the
+                        pointwise inequality \(\epsilon^2\, \mathbf{1}_{\{|Z| \geq \epsilon\}} \leq Z^2\), namely
+                        \(\mathbb{P}[|Z| \geq \epsilon] \leq \epsilon^{-2}\, \mathbb{E}[Z^2]\), together with its
+                        first-power analogue. Sums respect the mode, since for any two sequences
+                        \(\mathbb{P}[|A_n + B_n - A - B| \geq \epsilon]
+                        \leq \mathbb{P}[|A_n - A| \geq \epsilon / 2] + \mathbb{P}[|B_n - B| \geq \epsilon / 2]\).
+                        The right side of the master decomposition therefore converges in probability to
+                    </p>
+                    <p>
+                        \[
+                        \int_0^t \Bigl( g_t + u\, g_x + \tfrac{1}{2}\, v^2\, g_{xx} \Bigr)(s, X_s)\, ds
+                        + \int_0^t v\, g_x(s, X_s)\, dw_s ,
+                        \]
+                    </p>
+                    <p>
+                        while the left side is the same random variable for every \(n\). A constant sequence
+                        converging in probability identifies its limit, since
+                        \(\mathbb{P}[|c - L| \geq \epsilon] = \lim_n \mathbb{P}[|c_n - L| \geq \epsilon] = 0\)
+                        for every \(\epsilon \gt 0\) when \(c_n = c\). This proves the identity at the fixed time
+                        \(t \gt 0\), almost surely, and at \(t = 0\) both sides are \(g(0, X_0)\).
+                    </p>
+                    <p>
+                        Finally, the identity upgrades from each fixed time to all times at once. Both sides are
+                        continuous in \(t\) outside one null set, the left as a continuous function of the
+                        continuous \((t, X_t)\), the right as an Itô process in its everywhere-continuous
+                        realization, legitimately so by the well-posedness checks of the previous section. Two
+                        continuous processes agreeing at each fixed time agree at all rational times off one null
+                        set, hence everywhere by continuity, which is the uniqueness of
+                        <a href="ito_integral_properties.html#D-process_version" class="ref-link"><strong>versions</strong></a>
+                        with continuous paths. So \(Y_t = g(t, X_t)\) is the Itô process with initial value
+                        \(g(0, X_0)\), drift \(g_t + u\, g_x + \tfrac{1}{2} v^2 g_{xx}\), and diffusion
+                        coefficient \(v\, g_x\), and the proof of the core case is complete.
+                    </p>
+
+                </div>
+
+                <p>
+                    The theorem earns its keep the moment it stops being proved. The integral of Brownian motion
+                    against itself consumed two pages of bare-hands analysis, and it is the only Itô integral this
+                    track has ever evaluated from the definition. On this page it became a one-line remark, the
+                    case \(g(x) = \tfrac{1}{2} x^2\) read off the multiplication table. That is the trade the
+                    formula offers in general. Evaluation from the definition is replaced by calculus, the
+                    correction term doing silently what the quadratic variation argument did by hand. Practicing
+                    that calculus has its own page. There the formula evaluates integrals that no bare-hands
+                    argument would reach, produces the stochastic version of integration by parts, and pays out
+                    the correction \(\tfrac{1}{2} \sigma' \sigma\) that the previous page attached to the Itô and
+                    Stratonovich readings of a stochastic differential, settling the last account the construction
+                    story left open.
+                </p>
+
+            </section>
+
+        </div>
+    </body>
+</html>

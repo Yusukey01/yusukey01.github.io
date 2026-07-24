@@ -1,0 +1,613 @@
+---
+layout: default
+title: "Itô Calculus at Work"
+topic_id: prob-31
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Itô Calculus at Work</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#first-computations">First Computations</a>
+            <a href="#integration-by-parts">Integration by Parts</a>
+            <a href="#stratonovich">The Stratonovich Conversion</a>
+        </div>
+
+        <div class="container">
+
+            <section id="first-computations" class="section-content">
+                <h2>First Computations</h2>
+
+                <p>
+                    The previous page proved the
+                    <a href="ito_formula.html#T-ito_formula_1d" class="ref-link"><strong>Itô formula</strong></a>
+                    and promised that it turns the evaluation of stochastic integrals into calculus. This page
+                    collects the payoff. We evaluate integrals that the definition alone would never surrender,
+                    prove the stochastic version of integration by parts, and settle the account the construction
+                    story left open, the correction separating the Itô and Stratonovich readings of a stochastic
+                    differential. Throughout, \(w_t\) is the standard one-dimensional Brownian motion of the last
+                    four pages, started at \(w_0 = 0\), with its Brownian filtration
+                    \(\{\mathcal{F}_t\}_{t \geq 0}\) containing all null sets, and
+                    <a href="ito_formula.html#D-ito_process" class="ref-link"><strong>Itô process</strong></a>
+                    notation \(dX_t = u\, dt + v\, dw_t\) carries its meaning from the previous page.
+                </p>
+                <p>
+                    One discipline accompanies every application. The Itô formula carries a membership hypothesis,
+                    that the diffusion coefficient of the image, \(v\, \frac{\partial g}{\partial x}(s, X_s)\),
+                    lies in
+                    <a href="ito_integral.html#D-ito_class_v" class="ref-link"><strong>\(\mathcal{V}(0, T)\)</strong></a>
+                    for every \(T\). The check is one line in each case below, and we write the line each time,
+                    because a hypothesis that is never checked eventually gets forgotten.
+                </p>
+
+                <h3>The Integral That Started It</h3>
+
+                <p>
+                    First, the formula must reproduce the one integral this track ever computed from the
+                    definition. Take \(X_t = w_t\), an Itô process with \(u = 0\) and \(v = 1\), and
+                    \(g(t, x) = \tfrac{1}{2} x^2\), which is \(C^2\) with
+                    \(\frac{\partial g}{\partial t} = 0\), \(\frac{\partial g}{\partial x} = x\), and
+                    \(\frac{\partial^2 g}{\partial x^2} = 1\). Membership asks that
+                    \(v\, \frac{\partial g}{\partial x}(s, X_s) = w_s\) belong to \(\mathcal{V}(0, T)\), and it
+                    does, being adapted with continuous paths, hence jointly measurable, and satisfying
+                    \(\mathbb{E}\bigl[ \int_0^T w_s^2\, ds \bigr] = \int_0^T s\, ds \lt \infty\), the exchange of
+                    expectation and integral being the
+                    <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli</strong></a>
+                    exchange for a nonnegative integrand. The formula returns, its initial term
+                    \(g(0, w_0) = 0\) vanishing,
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    \tfrac{1}{2} w_t^2
+                    &= \int_0^t \tfrac{1}{2}\, ds + \int_0^t w_s\, dw_s \\\\
+                    &= \tfrac{1}{2} t + \int_0^t w_s\, dw_s ,
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    which is
+                    <a href="ito_integral.html#T-ito_bdb" class="ref-link"><strong>the integral of Brownian motion against itself</strong></a>
+                    read from the other side. What took a quadratic variation argument and a page of estimates is
+                    now the statement that the chain rule's correction term equals
+                    \(\tfrac{1}{2} \cdot 1^2 \cdot 1 = \tfrac{1}{2}\).
+                </p>
+
+                <h3>A First New Integral</h3>
+
+                <p>
+                    Now an integral the definition never touched. What is \(\int_0^t s\, dw_s\)? Classical
+                    calculus suggests that a term \(t\, w_t\) should appear, so we aim the formula at it. Take
+                    \(X_t = w_t\) again and \(g(t, x) = t x\), which is \(C^2\) on
+                    \([0, \infty) \times \mathbb{R}\) with
+                    \(\frac{\partial g}{\partial t} = x\), \(\frac{\partial g}{\partial x} = t\), and all second
+                    partial derivatives either \(1\) or \(0\). Membership asks that
+                    \(v\, \frac{\partial g}{\partial x}(s, X_s) = s\) belong to \(\mathcal{V}(0, T)\), and the
+                    deterministic integrand \(s\) is adapted, jointly measurable, and square integrable on
+                    \([0, T]\), so it does. Since \(\frac{\partial^2 g}{\partial x^2} = 0\), the correction term
+                    vanishes, the initial term \(g(0, w_0) = 0\) vanishes as well, and the formula gives
+                </p>
+                <p>
+                    \[
+                    t\, w_t = \int_0^t w_s\, ds + \int_0^t s\, dw_s ,
+                    \]
+                </p>
+                <p>
+                    that is,
+                </p>
+                <p>
+                    \[
+                    \int_0^t s\, dw_s = t\, w_t - \int_0^t w_s\, ds .
+                    \]
+                </p>
+                <p>
+                    The \(ds\)-term on the right is the
+                    <a href="ito_formula.html#T-pathwise_time_integral" class="ref-link"><strong>pathwise time integral</strong></a>
+                    of a continuous adapted process, well defined path by path. The identity has exactly the shape
+                    classical integration by parts predicts, and no correction appears. That is not an accident.
+                    The function \(g(t, x) = t x\) is linear in \(x\), its second \(x\)-derivative vanishes, and
+                    the Itô correction is proportional to precisely that derivative. Whenever the noise enters
+                    linearly, Itô calculus and classical calculus agree. The next section turns this observation
+                    into a theorem.
+                </p>
+
+            </section>
+
+            <section id="integration-by-parts" class="section-content">
+                <h2>Integration by Parts</h2>
+
+                <p>
+                    The second computation of the last section is begging to be generalized. Nothing about the
+                    argument used the specific function \(t\), only that the noise entered linearly through
+                    \(g(t, x) = f(t)\, x\). Running the same argument with a general deterministic \(f\) yields
+                    the stochastic version of integration by parts.
+                </p>
+
+                <div class="theorem" id="T-integration_by_parts">
+                    <span class="theorem-title">Theorem: Integration by Parts</span>
+                    <p>
+                        Let \(f \in C^2([0, \infty))\) be deterministic. Then, for every \(t \geq 0\), almost
+                        surely,
+                    </p>
+                    <p>
+                        \[
+                        \int_0^t f(s)\, dw_s
+                        = f(t)\, w_t - \int_0^t f'(s)\, w_s\, ds ,
+                        \]
+                    </p>
+                    <p>
+                        the \(ds\)-term being the pathwise time integral of the continuous adapted process
+                        \(f'(s)\, w_s\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Take \(X_t = w_t\), an Itô process with \(u = 0\) and \(v = 1\), and
+                        \(g(t, x) = f(t)\, x\). The partial derivatives are
+                        \(\frac{\partial g}{\partial t} = f'(t)\, x\),
+                        \(\frac{\partial g}{\partial x} = f(t)\),
+                        \(\frac{\partial^2 g}{\partial t^2} = f''(t)\, x\),
+                        \(\frac{\partial^2 g}{\partial t \partial x} = f'(t)\), and
+                        \(\frac{\partial^2 g}{\partial x^2} = 0\), all continuous on
+                        \([0, \infty) \times \mathbb{R}\) because \(f \in C^2\), so
+                        \(g \in C^2([0, \infty) \times \mathbb{R})\). Membership asks that
+                        \(v\, \frac{\partial g}{\partial x}(s, X_s) = f(s)\) belong to \(\mathcal{V}(0, T)\) for
+                        every \(T\), and the deterministic continuous integrand \(f\) is adapted, jointly
+                        measurable, and bounded on \([0, T]\), hence square integrable there. The
+                        <a href="ito_formula.html#T-ito_formula_1d" class="ref-link"><strong>Itô formula</strong></a>
+                        applies, the correction term vanishes with \(\frac{\partial^2 g}{\partial x^2}\), the
+                        initial term is \(g(0, w_0) = f(0) \cdot 0 = 0\), and
+                    </p>
+                    <p>
+                        \[
+                        f(t)\, w_t
+                        = \int_0^t f'(s)\, w_s\, ds + \int_0^t f(s)\, dw_s .
+                        \]
+                    </p>
+                    <p>
+                        Rearranging gives the claim.
+                    </p>
+                </div>
+
+                <p>
+                    Two extensions are worth recording, both beyond what the formula's hypotheses deliver
+                    directly. First, the identity holds already for \(f \in C^1([0, \infty))\), by smoothing
+                    \(f\) with mollifiers and passing to the limit, the
+                    <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>
+                    controlling the stochastic side and uniform convergence on \([0, t]\) the classical side. We
+                    record this without executing the limit passage. Second, in its strongest form the identity
+                    reads
+                </p>
+                <p>
+                    \[
+                    \int_0^t f(s, \omega)\, dw_s
+                    = f(t, \omega)\, w_t - \int_0^t w_s\, df_s
+                    \]
+                </p>
+                <p>
+                    for adapted processes \(f\) whose paths are continuous and of bounded variation, with the
+                    integrability the left side requires, the last term a pathwise Riemann-Stieltjes integral
+                    against the path of \(f\). Determinism is not required. Our track has not built
+                    Riemann-Stieltjes integration, so this version stays a recorded signpost, to be collected if
+                    and when that machinery arrives. What is required, and cannot be weakened away, is bounded
+                    variation. It is exactly what makes a pathwise integral against \(df_s\) exist, and it is the
+                    hypothesis Brownian motion itself fails, on
+                    <a href="brownian_motion.html#T-bm_path_properties" class="ref-link"><strong>every interval</strong></a>.
+                </p>
+
+                <h3>Where the Classical Rule Breaks</h3>
+
+                <p>
+                    The bounded variation hypothesis is doing real work, and the cleanest way to see it is to
+                    break the rule on purpose. Brownian motion has unbounded variation on every interval, so
+                    \(f = w\) sits outside every version of the identity above. Pretend otherwise. The symmetric
+                    product rule applied to \(f = w\) would predict
+                    \(w_t \cdot w_t = \int_0^t w_s\, dw_s + \int_0^t w_s\, dw_s\), that is,
+                </p>
+                <p>
+                    \[
+                    \int_0^t w_s\, dw_s = \tfrac{1}{2}\, w_t^2 ,
+                    \]
+                </p>
+                <p>
+                    while the true value carries the correction, \(\int_0^t w_s\, dw_s = \tfrac{1}{2} w_t^2 -
+                    \tfrac{1}{2} t\). The classical prediction is wrong by exactly \(\tfrac{1}{2} t\), half the
+                    quadratic variation of the path. This is the same half that the previous page located in the
+                    Taylor expansion, and the same half that the construction page located in the choice of the
+                    left endpoint. There is a third place to locate it, and it is the most illuminating one,
+                    because it explains what a calculus would have to give up to keep the classical rules. That is
+                    the business of the final section.
+                </p>
+
+            </section>
+
+            <section id="stratonovich" class="section-content">
+                <h2>The Stratonovich Conversion</h2>
+
+                <p>
+                    The half has now been found in two places, in the Taylor expansion behind the Itô formula and
+                    in the discrepancy of the broken product rule. The third place is the oldest. The construction
+                    of the integral committed to evaluating integrands at the left endpoint of each interval, the
+                    causal choice, and the previous page named the midpoint alternative the
+                    <strong>Stratonovich integral</strong>, computed its value for the test integrand at statement
+                    level, and displayed the drift correction \(\tfrac{1}{2} \sigma' \sigma\) that translates
+                    between the two calculi, with the derivation deferred. Everything needed to pay these debts is
+                    now on the table.
+                </p>
+
+                <div class="theorem" id="D-stratonovich_integral">
+                    <span class="theorem-title">Definition: The Stratonovich Integral</span>
+                    <p>
+                        Let \(\{Z_s\}_{s \geq 0}\) be an adapted process with continuous paths, and fix
+                        \(t \gt 0\). For a partition \(\pi : 0 = t_0 \lt \cdots \lt t_N = t\) write
+                        \(m_j = \tfrac{1}{2}(t_j + t_{j+1})\) for the midpoints and form the midpoint sums
+                    </p>
+                    <p>
+                        \[
+                        S_\pi(Z) = \sum_j Z_{m_j} \bigl( w_{t_{j+1}} - w_{t_j} \bigr) .
+                        \]
+                    </p>
+                    <p>
+                        If there is a random variable \(I\) such that \(S_{\pi_n}(Z) \to I\) in probability along
+                        every sequence of partitions of \([0, t]\) with mesh tending to zero, we call \(I\) the
+                        <strong>Stratonovich integral</strong> of \(Z\) and write
+                    </p>
+                    <p>
+                        \[
+                        \int_0^t Z_s \circ dw_s = I .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The definition is an obligation, not a gift. Nothing guarantees that the midpoint sums
+                    converge, and existence must be proved integrand by integrand, or theorem by theorem. Both
+                    proofs below run on the factorization mechanism of the previous page's lemma, which we
+                    reassemble in one line for use here. If \(Y\) is integrable and measurable with respect to
+                    \(\mathcal{F}_a\), and \(h\) is a polynomial, then \(Y\) and \(h(w_b - w_a)\) are
+                    <a href="limit_theorems_product_measures.html#D-sigma-independence" class="ref-link"><strong>independent</strong></a>
+                    because the increment is
+                    <a href="ito_integral.html#T-increment_independence" class="ref-link"><strong>independent of the past</strong></a>,
+                    and the
+                    <a href="limit_theorems_product_measures.html#T-expectation_product_independent" class="ref-link"><strong>product rule</strong></a>
+                    gives \(\mathbb{E}[Y\, h(w_b - w_a)] = \mathbb{E}[Y]\, \mathbb{E}[h(w_b - w_a)]\).
+                </p>
+
+                <h3>The Test Integrand, Settled</h3>
+
+                <div class="theorem" id="T-stratonovich_wdw">
+                    <span class="theorem-title">Proposition: The Stratonovich Integral of Brownian Motion</span>
+                    <p>
+                        The Stratonovich integral of \(Z = w\) exists on every \([0, t]\), and
+                    </p>
+                    <p>
+                        \[
+                        \int_0^t w_s \circ dw_s = \tfrac{1}{2}\, w_t^2 .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Fix a sequence of partitions with mesh tending to zero, and abbreviate
+                        \(\Delta w_j = w_{t_{j+1}} - w_{t_j}\), together with the half-increments
+                        \(\delta w_j = w_{m_j} - w_{t_j}\) and \(\delta w_j' = w_{t_{j+1}} - w_{m_j}\), so that
+                        \(\Delta w_j = \delta w_j + \delta w_j'\). Splitting the midpoint value against the left
+                        endpoint,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        S_\pi(w)
+                        &= \sum_j w_{t_j}\, \Delta w_j
+                        + \sum_j \delta w_j \bigl( \delta w_j + \delta w_j' \bigr) \\\\
+                        &= \sum_j w_{t_j}\, \Delta w_j
+                        + \sum_j (\delta w_j)^2
+                        + \sum_j \delta w_j\, \delta w_j' .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        The left-endpoint sums converge in \(L^2(\mathbb{P})\) to the Itô integral. They are the
+                        elementary integrals of \(\Phi_\pi = \sum_j w_{t_j} \mathbf{1}_{[t_j, t_{j+1})}\), and,
+                        exchanging expectation and integral by
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli</strong></a>
+                        for a nonnegative integrand and using the increment law
+                        \(\mathbb{E}[(w_{t_j(s)} - w_s)^2] = s - t_j(s)\),
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\bigl[ \int_0^t (\Phi_\pi - w)^2\, ds \bigr]
+                        &= \int_0^t (s - t_j(s))\, ds \\\\
+                        &\leq t\, |\pi| ,
+                        \end{align*}
+                        \]
+                        so
+                        <a href="ito_integral.html#T-ito_l2_continuity" class="ref-link"><strong>L² continuity</strong></a>
+                        gives \(\sum_j w_{t_j} \Delta w_j \to \int_0^t w_s\, dw_s\).
+                    </p>
+                    <p>
+                        The squared half-increments converge to \(\tfrac{1}{2} t\) in \(L^2(\mathbb{P})\). Consider
+                        the refined partition \(\pi'\) obtained by inserting every midpoint, and apply part (ii)
+                        of the
+                        <a href="ito_formula.html#T-weighted_qv_limit" class="ref-link"><strong>weighted increment lemma</strong></a>
+                        over \(\pi'\) with weights equal to one on the first-half intervals and zero on the
+                        second-half intervals, which are measurable at the left endpoints and bounded by one. This
+                        gives \(\sum_j \bigl( (\delta w_j)^2 - \tfrac{1}{2} \Delta t_j \bigr) \to 0\) in
+                        \(L^2(\mathbb{P})\), and \(\sum_j \tfrac{1}{2} \Delta t_j = \tfrac{1}{2} t\).
+                    </p>
+                    <p>
+                        The mixed sum dies. Expanding its square, the off-diagonal terms with \(i \lt j\) vanish
+                        by factorization, since \((\delta w_i\, \delta w_i')(\delta w_j)\) is
+                        \(\mathcal{F}_{m_j}\)-measurable and integrable while
+                        \(\mathbb{E}[\delta w_j'] = 0\), and the diagonal factorizes twice,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \Bigl( \sum_j \delta w_j\, \delta w_j' \Bigr)^{2} \Bigr]
+                        &= \sum_j \mathbb{E}\bigl[ (\delta w_j)^2 \bigr]\,
+                        \mathbb{E}\bigl[ (\delta w_j')^2 \bigr] \\\\
+                        &= \sum_j \tfrac{(\Delta t_j)^2}{4} \\\\
+                        &\leq \tfrac{1}{4}\, t\, |\pi| \\\\
+                        &\longrightarrow 0 .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Adding the three limits, \(S_\pi(w) \to \int_0^t w_s\, dw_s + \tfrac{1}{2} t\) in
+                        probability along every sequence with vanishing mesh, and
+                        <a href="ito_integral.html#T-ito_bdb" class="ref-link"><strong>the first computation</strong></a>
+                        identifies the limit as
+                        \(\tfrac{1}{2} w_t^2 - \tfrac{1}{2} t + \tfrac{1}{2} t = \tfrac{1}{2} w_t^2\).
+                    </p>
+                </div>
+
+                <p>
+                    The claim the previous page recorded at statement level is now a theorem. The midpoint
+                    calculus computes \(\int w \circ dw\) exactly as classical calculus would, and the entire
+                    Itô-Stratonovich discrepancy for this integrand is the half-quadratic-variation term made
+                    visible by the splitting above.
+                </p>
+
+                <h3>The Conversion Theorem</h3>
+
+                <div class="theorem" id="T-ito_stratonovich_conversion">
+                    <span class="theorem-title">Theorem: The Itô-Stratonovich Conversion</span>
+                    <p>
+                        Let \(X_t = X_0 + \int_0^t u\, ds + \int_0^t v\, dw_s\) be an Itô process whose
+                        coefficients \(u\) and \(v\) are, on \([0, t]\), elementary over a common partition
+                        \(R\) with all levels bounded by \(C\). Let \(\sigma : [0, \infty) \times \mathbb{R}
+                        \to \mathbb{R}\) have continuous partial derivatives
+                        \(\frac{\partial \sigma}{\partial t}\) and \(\frac{\partial \sigma}{\partial x}\), with
+                        \(\sigma\), \(\frac{\partial \sigma}{\partial t}\), and
+                        \(\frac{\partial \sigma}{\partial x}\) bounded by \(M\). Then, along every sequence of
+                        partitions of \([0, t]\) refining \(R\) with mesh tending to zero, the midpoint sums of
+                        \(Z_s = \sigma(s, X_s)\) converge in probability, and
+                    </p>
+                    <p>
+                        \[
+                        \int_0^t \sigma(s, X_s) \circ dw_s
+                        = \int_0^t \sigma(s, X_s)\, dw_s
+                        + \tfrac{1}{2} \int_0^t \frac{\partial \sigma}{\partial x}(s, X_s)\, v(s, \omega)\, ds ,
+                        \]
+                    </p>
+                    <p>
+                        the left side denoting the common limit along such sequences. That the restriction to
+                        refining sequences can be dropped, making the limit the Stratonovich integral in the
+                        unrestricted sense of the definition, travels with the approximation passage of the
+                        closing remark.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Fix a sequence of partitions refining \(R\) with mesh tending to zero, keep the notation
+                        of the previous proof, and write \(X_j = X_{t_j}\), \(Z_j = \sigma(t_j, X_j)\),
+                        \(\sigma_x = \frac{\partial \sigma}{\partial x}\), and
+                        \(\sigma_t = \frac{\partial \sigma}{\partial t}\). Because the partition refines \(R\)
+                        and midpoints stay inside their intervals, \(u\) and \(v\) are constant on
+                        \([t_j, t_{j+1})\) with \(\mathcal{F}_{t_j}\)-measurable values \(u_j, v_j\) bounded by
+                        \(C\). The drift piece of the half-increment is the pathwise integral of a constant level,
+                        and the noise piece is the elementary integral of a constant level, identified with the
+                        increment of the integral process by
+                        <a href="ito_integral_properties.html#T-ito_integral_properties" class="ref-link"><strong>additivity over intervals</strong></a>,
+                        so outside a single null set, for every partition of the sequence at once,
+                    </p>
+                    <p>
+                        \[
+                        X_{m_j} - X_j = u_j\, \tfrac{\Delta t_j}{2} + v_j\, \delta w_j .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 1 (Splitting at the left endpoint).</strong><br>
+                        Decompose the midpoint value as
+                        \(Z_{m_j} = Z_j + \sigma_x(t_j, X_j)\,(X_{m_j} - X_j) + \rho_j\), where the remainder
+                        collects the time increment and the mean value error,
+                    </p>
+                    <p>
+                        \[
+                        \rho_j
+                        = \bigl[ \sigma(m_j, X_{m_j}) - \sigma(t_j, X_{m_j}) \bigr]
+                        + \bigl[ \sigma(t_j, X_{m_j}) - \sigma(t_j, X_j)
+                        - \sigma_x(t_j, X_j)\, (X_{m_j} - X_j) \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        Multiplying by \(\Delta w_j\) and summing,
+                    </p>
+                    <p>
+                        \[
+                        S_\pi(Z)
+                        = \sum_j Z_j\, \Delta w_j
+                        + \sum_j \sigma_x(t_j, X_j)\, u_j\, \tfrac{\Delta t_j}{2}\, \Delta w_j
+                        + \sum_j \sigma_x(t_j, X_j)\, v_j\, \delta w_j\, \Delta w_j
+                        + \sum_j \rho_j\, \Delta w_j .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 2 (The left sums and the drift-noise sum).</strong><br>
+                        The left sums \(\sum_j Z_j \Delta w_j\) converge in \(L^2(\mathbb{P})\) to
+                        \(\int_0^t \sigma(s, X_s)\, dw_s\), by the argument of the previous page's proof run with
+                        \(\sigma\) in place of \(g_x v\). The approximants
+                        \(\Phi_\pi = \sum_j Z_j \mathbf{1}_{[t_j, t_{j+1})}\) are elementary with
+                        \(\mathcal{F}_{t_j}\)-measurable levels bounded by \(M\), they converge pointwise \(\lambda \otimes \mathbb{P}\)-almost everywhere to
+                        \(\sigma(s, X_s)\) by continuity of the paths, the constant \(2 M\) dominates, so the
+                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        on the finite product measure and
+                        <a href="ito_integral.html#T-ito_l2_continuity" class="ref-link"><strong>L² continuity</strong></a>
+                        conclude. In passing, the same boundedness shows \(\sigma(s, X_s) \in \mathcal{V}(0, t)\),
+                        so the Itô integral on the right of the theorem is legitimate. The drift-noise sum is part
+                        (i) of the
+                        <a href="ito_formula.html#T-weighted_qv_limit" class="ref-link"><strong>weighted increment lemma</strong></a>
+                        with weights \(\tfrac{1}{2} \sigma_x(t_j, X_j)\, u_j\) bounded by \(\tfrac{1}{2} M C\),
+                        and dies in \(L^2(\mathbb{P})\).
+                    </p>
+                    <p>
+                        <strong>Step 3 (The main sum).</strong><br>
+                        Write \(b_j = \sigma_x(t_j, X_j)\, v_j\), which is \(\mathcal{F}_{t_j}\)-measurable and
+                        bounded by \(M C\), and split \(\Delta w_j = \delta w_j + \delta w_j'\),
+                    </p>
+                    <p>
+                        \[
+                        \sum_j b_j\, \delta w_j\, \Delta w_j
+                        = \sum_j b_j\, (\delta w_j)^2
+                        + \sum_j b_j\, \delta w_j\, \delta w_j' .
+                        \]
+                    </p>
+                    <p>
+                        The first sum converges in probability to
+                        \(\tfrac{1}{2} \int_0^t \sigma_x(s, X_s)\, v(s, \omega)\, ds\). Centering it with part
+                        (ii) of the lemma over the midpoint-refined partition, with weights \(b_j\) on the
+                        first-half intervals and zero on the second-half intervals, leaves
+                        \(\sum_j b_j\, \tfrac{\Delta t_j}{2}\), a left-endpoint Riemann sum of the piecewise
+                        continuous path \(s \mapsto \tfrac{1}{2} \sigma_x(s, X_s)\, v(s)\), which converges
+                        pathwise interval by interval of \(R\) exactly as on the previous page. The second sum
+                        dies in \(L^2(\mathbb{P})\) by the computation of the proposition, decorated with the
+                        weights. Off-diagonal terms vanish by factorization, since
+                        \((b_i \delta w_i \delta w_i')(b_j \delta w_j)\) is \(\mathcal{F}_{m_j}\)-measurable and
+                        integrable while \(\mathbb{E}[\delta w_j'] = 0\), and the diagonal factorizes into
+                        \(\mathbb{E}[b_j^2 (\delta w_j)^2]\, \mathbb{E}[(\delta w_j')^2]
+                        \leq M^2 C^2 (\Delta t_j)^2 / 4\), summing to at most
+                        \(M^2 C^2\, t\, |\pi| / 4 \to 0\).
+                    </p>
+                    <p>
+                        <strong>Step 4 (The remainder dies).</strong><br>
+                        Write \(\rho_j^{\mathrm{time}}\) and \(\rho_j^{\mathrm{space}}\) for the two brackets
+                        of \(\rho_j\). Writing \(\rho_j^{\mathrm{time}}\) as the integral of \(\sigma_t\) over
+                        \([t_j, m_j]\) at frozen second argument, legitimate for a \(C^1\) time dependence with
+                        the one-sided derivative at the time origin, the bound on \(\sigma_t\) gives
+                        \(|\rho_j^{\mathrm{time}}| \leq M\, \tfrac{\Delta t_j}{2}\), and
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \sum_j \tfrac{M}{2}\, \Delta t_j\, |\Delta w_j| \Bigr]
+                        &\leq \tfrac{M}{2} \sum_j \Delta t_j\, (\Delta t_j)^{1/2} \\\\
+                        &\leq \tfrac{M}{2}\, t\, |\pi|^{1/2} \\\\
+                        &\longrightarrow 0 ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        using \(\mathbb{E}|\Delta w_j| \leq \mathbb{E}[(\Delta w_j)^2]^{1/2} = (\Delta t_j)^{1/2}\)
+                        by the
+                        <a href="../Calculus/intro_analysis.html#T-Cauchy-Schwarz_Inequality" class="ref-link"><strong>Cauchy-Schwarz inequality</strong></a>.
+                        For the space part, writing the increment of the \(C^1\) function
+                        \(\tau \mapsto \sigma(t_j, X_j + \tau (X_{m_j} - X_j))\) as the integral of its
+                        derivative over \([0, 1]\), the bracket equals
+                        \(\int_0^1 \bigl[ \sigma_x(t_j, X_j + \tau (X_{m_j} - X_j)) - \sigma_x(t_j, X_j) \bigr] d\tau
+                        \cdot (X_{m_j} - X_j)\). Fix \(\omega\) outside
+                        the null set of Step 1 and let \(\eta(\pi, \omega)\) be the modulus of continuity of
+                        \(\sigma_x\) on the compact \([0, t] \times [-R_\omega, R_\omega]\), with
+                        \(R_\omega = \max_{s \leq t} |X_s|\), evaluated at
+                        \(\max_j |X_{m_j} - X_j|\), which tends to zero by uniform continuity of the path on
+                        \([0, t]\). Then \(\eta \to 0\) pathwise, \(\eta \leq 2 M\), and
+                        with \(|X_{m_j} - X_j| \leq C \Delta t_j + C |\delta w_j|\) and
+                        \(2 |\delta w_j| |\Delta w_j| \leq 3 (\delta w_j)^2 + (\delta w_j')^2\),
+                    </p>
+                    <p>
+                        \[
+                        \sum_j \bigl| \rho_j^{\mathrm{space}} \bigr|\, |\Delta w_j|
+                        \leq \eta\, C \Bigl( \sum_j \Delta t_j |\Delta w_j|
+                        + \tfrac{3}{2}\, Q_{\pi'} \Bigr) ,
+                        \]
+                    </p>
+                    <p>
+                        where \(Q_{\pi'}\) is the quadratic sum over the midpoint-refined partition. The first
+                        term inside dies in \(L^1(\mathbb{P})\) by the display above, uniformly against
+                        \(\eta \leq 2 M\), and the second is handled exactly as on the previous page, by
+                        Cauchy-Schwarz, \(\mathbb{E}[\eta^2] \to 0\) from the
+                        <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>,
+                        and the
+                        \(L^2\)-boundedness of \(Q_{\pi'}\) from
+                        <a href="brownian_motion.html#T-bm_path_properties" class="ref-link"><strong>quadratic variation</strong></a>.
+                        So \(\sum_j \rho_j \Delta w_j \to 0\) in \(L^1(\mathbb{P})\).
+                    </p>
+                    <p>
+                        <strong>Step 5 (Assembly).</strong><br>
+                        Every piece of the splitting converges in probability, so the midpoint sums converge in
+                        probability to
+                        \(\int_0^t \sigma(s, X_s)\, dw_s + \tfrac{1}{2} \int_0^t \sigma_x(s, X_s)\, v\, ds\),
+                        and the limit does not depend on the chosen sequence, which is existence and the claimed
+                        identity at once.
+                    </p>
+                </div>
+
+                <p>
+                    Two remarks finish the account. First, the boundedness and elementary-coefficient hypotheses
+                    are the core-case regime of the Itô formula's proof, and the same trusted approximation
+                    passage recorded there carries the conversion to general coefficients. Second, granted that passage, take the
+                    equation-level case the previous page displayed, where the noise coefficient of \(X\) is
+                    itself \(v = \sigma(s, X_s)\). The correction becomes
+                    \(\tfrac{1}{2} \int_0^t \sigma_x\, \sigma\, ds\), which is exactly the drift correction
+                    \(\tfrac{1}{2} \sigma' \sigma\) of the promised display. Reading a stochastic differential in
+                    the Stratonovich sense and reading it in the Itô sense with that drift added are the same
+                    reading, and the derivation deferred there is the theorem above.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Two Calculi, One Division of Labor</h3>
+                    <p>
+                        The conversion identity means nothing is at stake mathematically in the choice of
+                        calculus, and everything is at stake ergonomically. The Itô integral evaluates at the
+                        left endpoint, never peeks ahead, and inherits the zero-mean and martingale structure
+                        that makes expectations computable, which is why probability, statistics, and finance
+                        live on the Itô side. The Stratonovich integral obeys the classical chain rule, which is
+                        why modeling limits of smooth physics and calculus on manifolds, where a chain rule that
+                        respects coordinate changes is not negotiable, live on the Stratonovich side. Machine
+                        learning uses both readings of the same equations. The forward noising process of a
+                        <a href="../Machine_learning/diffusion_models.html">diffusion model</a> is posed as an
+                        Itô equation because its analysis runs on expectations and martingales, while the
+                        conversion above is the dictionary that keeps the physics-flavored and
+                        probability-flavored formulations of the same model honest with each other.
+                    </p>
+                </div>
+
+                <p>
+                    The chapter of accounts is closed. The integral was built on the left endpoint, the formula
+                    priced the choice at half a quadratic variation, and the conversion theorem shows the price
+                    is a translation cost, not a loss. Either calculus reaches the other by a drift of size
+                    \(\tfrac{1}{2} \sigma' \sigma\), the discrepancy first seen in a single computation with
+                    \(\int w\, dw\) and now understood as the general exchange rate between causality and
+                    symmetry.
+                </p>
+
+            </section>
+
+        </div>
+    </body>
+</html>
