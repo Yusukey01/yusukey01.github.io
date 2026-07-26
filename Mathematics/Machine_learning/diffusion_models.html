@@ -55,9 +55,7 @@ uses_python: false
                     introduced the <em>denoising autoencoder</em> and stated, as a result taken on faith, that such a network implicitly
                     learns the <strong>score function</strong> \(\nabla_{\mathbf{x}} \log p(\mathbf{x})\), the gradient of the log-density
                     with respect to the data itself. The score-matching theory justifying this claim was deferred at the time. The diffusion
-                    model is where the deferred thread is recovered. Its denoising network turns out, viewed from the right angle, to be
-                    a score estimator, and the score function controls both the geometry of the reverse process and its connection
-                    to a broader family of generative models. We make this precise when we turn to the reverse process.
+                    model is where that deferred thread is recovered, once we reach the reverse process.
                 </p>
 
                 <p>
@@ -72,9 +70,10 @@ uses_python: false
                 </p>
 
                 <p>
-                    One scope note. A continuous-time formulation of diffusion exists and is mathematically rich. The discrete forward
-                    chain admits a stochastic-differential-equation limit, Anderson's 1982 reversal theorem yields a corresponding
-                    reverse SDE, and the deterministic DDIM sampler corresponds in this limit to a so-called probability-flow ODE.
+                    One scope note. A continuous-time formulation of diffusion exists and is mathematically rich. Taking the number of
+                    steps to infinity turns the discrete forward chain into a stochastic differential equation, the <strong>variance-preserving SDE</strong>,
+                    Anderson's 1982 reversal theorem yields a corresponding reverse SDE, and the deterministic DDIM sampler corresponds
+                    in this limit to a so-called probability-flow ODE.
                     A rigorous treatment requires Brownian motion and Itô calculus, which belong to a more advanced treatment of
                     stochastic processes than the curriculum currently covers. We mention the continuous-time picture in passing
                     where it illuminates the discrete-time mathematics, but the formal development is left for a later page.
@@ -106,7 +105,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    Three properties of this kernel deserve emphasis. First, the chain is
+                    Three properties of this kernel matter. First, the chain is
                     <a href="../Probability/markov.html#D-first_order_markov_property" class="ref-link"><strong>first-order Markov</strong></a>.
                     Each \(\mathbf{x}_t\) depends only on its immediate predecessor \(\mathbf{x}_{t-1}\). Consequently the joint conditional
                     distribution factorises as
@@ -170,7 +169,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    The identity displayed at the end of the proof is itself worth highlighting. Any noisy sample at time \(t\) can be written
+                    The identity at the end of the proof deserves its own line. Any noisy sample at time \(t\) can be written
                     in one shot from the clean data \(\mathbf{x}_0\) as
                     \[
                     \mathbf{x}_t \;=\; \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},
@@ -178,7 +177,7 @@ uses_python: false
                     \]
                     This one-shot reparametrisation is the central computational identity used in training. Rather than simulating the chain step by step,
                     the trainer samples a time \(t\) uniformly, samples \(\boldsymbol{\varepsilon}\) from a standard Gaussian, and produces
-                    a noisy sample directly. We will rely on this formula repeatedly when we develop the reverse process.
+                    a noisy sample directly.
                 </p>
 
                 <h3>The Endpoint and the Choice of Schedule</h3>
@@ -192,18 +191,6 @@ uses_python: false
                     and produces visibly better samples on image data (Nichol and Dhariwal, 2021). The choice of \(T\) is typically a few
                     hundred to a few thousand. The schedule and \(T\) are hyperparameters of the model, not learned quantities.
                 </p>
-
-                <div class="insight-box">
-                    <h3>Forward Pointer: The Continuous-Time Limit</h3>
-                    <p>
-                        Taking \(T \to \infty\) with \(\beta_t = \beta(t)\,\Delta t\) and \(\Delta t = 1/T\) yields a stochastic differential
-                        equation as the limit of the forward chain, in which the cumulative Gaussian increments become a Brownian-motion driver.
-                        This is the <strong>variance-preserving SDE</strong>, and the entire diffusion construction admits a parallel development
-                        in continuous time, with the reverse process governed by a corresponding reverse-time SDE (Anderson, 1982).
-                        A rigorous treatment requires Brownian motion and Itô calculus, which we set aside until those tools are introduced
-                        elsewhere in the curriculum. The discrete-time picture suffices for everything that follows on this page.
-                    </p>
-                </div>
             </section>
 
             <section id="reverse" class="section-content">
@@ -279,7 +266,6 @@ uses_python: false
                     With the reverse posterior in hand, we turn to the training objective. The
                     <a href="../Probability/variational_inference.html#D-elbo" class="ref-link"><strong>evidence lower bound</strong></a>
                     of the diffusion model takes a particularly clean form. It is a sum of Kullback-Leibler terms, one for each step of the chain.
-                    We derive it now.
                 </p>
 
                 <p>
@@ -303,7 +289,6 @@ uses_python: false
                     \[
                     \mathcal{L}(\mathbf{x}_0) \;=\; \mathbb{E}_q\!\left[ -\log p(\mathbf{x}_T) - \sum_{t=1}^{T} \log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)}{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})} \right].
                     \]
-                    The next step turns this intermediate form into a tractable decomposition in terms of the reverse posterior.
                 </p>
 
                 <p>
@@ -351,7 +336,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    Three observations make the decomposition pedagogically transparent. The <strong>prior term</strong> \(\mathcal{L}_T\)
+                    Three observations follow. The <strong>prior term</strong> \(\mathcal{L}_T\)
                     compares the forward terminal distribution to the fixed Gaussian prior of the reverse chain. Because the schedule is chosen
                     so that \(q(\mathbf{x}_T \mid \mathbf{x}_0) \approx \mathcal{N}(\mathbf{0}, \mathbf{I})\), this term is approximately zero
                     and contains no learnable parameters, so it is typically ignored during training. The <strong>diffusion terms</strong>
@@ -700,10 +685,8 @@ uses_python: false
 
                 <p>
                     A final pointer. In the continuous-time limit \(T \to \infty\), the deterministic DDIM update converges to a numerical integration
-                    step for the <strong>probability flow ODE</strong> of Song et al. (2021), a deterministic ordinary differential equation whose
-                    marginals match those of the reverse-time SDE. The two pictures developed on this page (discrete DDPM with stochastic ancestral
-                    sampling, and discrete DDIM with deterministic updates) correspond in the continuum to the reverse SDE and to the probability
-                    flow ODE respectively.
+                    step for the <strong>probability flow ODE</strong> of Song et al. (2021), the deterministic counterpart of the stochastic
+                    ancestral sampling that DDPM performs.
                 </p>
 
                 <h3>Conditional Generation</h3>
@@ -827,8 +810,8 @@ uses_python: false
 
         </div>
 
-        <script src="/js/data/compass_logo_points.js"></script>
-        <script src="/js/sec5_p14_diffusion_demo.js"></script>
+<script src="/js/data/compass_logo_points.js"></script>
+<script src="/js/sec5_p14_diffusion_demo.js"></script>
 
     </body>
 </html>
