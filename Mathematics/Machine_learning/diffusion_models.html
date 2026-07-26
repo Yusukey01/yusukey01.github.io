@@ -59,15 +59,26 @@ uses_python: false
                 </p>
 
                 <p>
-                    The development proceeds in three movements. We first define the <strong>forward diffusion process</strong> (the
-                    fixed Markov chain that maps data to noise) and derive its closed-form marginals. We then construct the
-                    <strong>reverse process and its loss</strong>, decomposing the negative ELBO into a sum of Kullback-Leibler terms,
-                    arriving at the simplified noise-prediction objective of Ho, Jain, and Abbeel's <em>denoising diffusion probabilistic
-                    models</em> (DDPM, 2020), and connecting this objective to the score function. We close with <strong>sampling</strong>.
-                    This covers the ancestral sampler of DDPM, the deterministic accelerated sampler of Song, Meng, and Ermon's <em>denoising diffusion
-                    implicit models</em> (DDIM, 2021), and the classifier-free guidance mechanism that powers conditional generation
-                    in modern text-to-image systems.
+                    The development proceeds in three movements.
                 </p>
+
+                <ol style="padding-left: 40px;">
+                    <li>
+                        We first define the <strong>forward diffusion process</strong> (the
+                        fixed Markov chain that maps data to noise) and derive its closed-form marginals.
+                    </li>
+                    <li>
+                        We then construct the
+                        <strong>reverse process and its loss</strong>, decomposing the negative ELBO into a sum of Kullback-Leibler terms,
+                        arriving at the simplified noise-prediction objective of Ho, Jain, and Abbeel's <em>denoising diffusion probabilistic
+                        models</em> (DDPM, 2020), and connecting this objective to the score function.
+                    </li>
+                    <li>
+                        We close with <strong>sampling</strong>, covering the ancestral sampler of DDPM, the deterministic accelerated sampler of Song, Meng, and Ermon's <em>denoising diffusion
+                        implicit models</em> (DDIM, 2021), and the classifier-free guidance mechanism that powers conditional generation
+                        in modern text-to-image systems.
+                    </li>
+                </ol>
 
                 <p>
                     One scope note. A continuous-time formulation of diffusion exists and is mathematically rich. Taking the number of
@@ -105,19 +116,34 @@ uses_python: false
                 </div>
 
                 <p>
-                    Three properties of this kernel matter. First, the chain is
-                    <a href="../Probability/markov.html#D-first_order_markov_property" class="ref-link"><strong>first-order Markov</strong></a>.
-                    Each \(\mathbf{x}_t\) depends only on its immediate predecessor \(\mathbf{x}_{t-1}\). Consequently the joint conditional
-                    distribution factorises as
-                    \[
-                    q(\mathbf{x}_{1:T} \mid \mathbf{x}_0) \;=\; \prod_{t=1}^{T} q(\mathbf{x}_t \mid \mathbf{x}_{t-1}).
-                    \]
-                    Second, the kernel contains no learned parameters. Here \(\beta_t\) is fixed by the schedule, and the mean and covariance are
-                    closed-form functions of \(\mathbf{x}_{t-1}\). Third, the scaling \(\sqrt{1 - \beta_t}\) on the mean is not arbitrary.
-                    It is chosen so that, if \(\mathbf{x}_{t-1}\) has identity covariance, then \(\mathbf{x}_t\) does too:
-                    \(\operatorname{Cov}(\mathbf{x}_t) = (1-\beta_t)\mathbf{I} + \beta_t \mathbf{I} = \mathbf{I}\).
-                    Consequently, if the data is preprocessed to have approximately identity covariance (a standard normalisation in practice), the
-                    marginal covariance of \(\mathbf{x}_t\) remains close to the identity throughout the chain.
+                    Three properties of this kernel matter.
+                </p>
+
+                <ol style="padding-left: 40px;">
+                    <li>
+                        <strong>The chain is
+                        <a href="../Probability/markov.html#D-first_order_markov_property" class="ref-link">first-order Markov</a>.</strong>
+                        Each \(\mathbf{x}_t\) depends only on its immediate predecessor \(\mathbf{x}_{t-1}\), so the joint conditional
+                        distribution factorises as
+                        \[
+                        q(\mathbf{x}_{1:T} \mid \mathbf{x}_0) \;=\; \prod_{t=1}^{T} q(\mathbf{x}_t \mid \mathbf{x}_{t-1}).
+                        \]
+                    </li>
+                    <li>
+                        <strong>The kernel contains no learned parameters.</strong>
+                        Here \(\beta_t\) is fixed by the schedule, and the mean and covariance are
+                        closed-form functions of \(\mathbf{x}_{t-1}\).
+                    </li>
+                    <li>
+                        <strong>The scaling \(\sqrt{1 - \beta_t}\) on the mean is not arbitrary.</strong>
+                        It is chosen so that, if \(\mathbf{x}_{t-1}\) has identity covariance, then \(\mathbf{x}_t\) does too:
+                        \(\operatorname{Cov}(\mathbf{x}_t) = (1-\beta_t)\mathbf{I} + \beta_t \mathbf{I} = \mathbf{I}\).
+                        If the data is preprocessed to have approximately identity covariance (a standard normalisation in practice), the
+                        marginal covariance of \(\mathbf{x}_t\) then remains close to the identity throughout the chain.
+                    </li>
+                </ol>
+
+                <p>
                     Schedules with this property are called <strong>variance-preserving</strong>, and the form above is the variance-preserving
                     construction of Ho, Jain, and Abbeel.
                 </p>
@@ -336,18 +362,29 @@ uses_python: false
                 </div>
 
                 <p>
-                    Three observations follow. The <strong>prior term</strong> \(\mathcal{L}_T\)
-                    compares the forward terminal distribution to the fixed Gaussian prior of the reverse chain. Because the schedule is chosen
-                    so that \(q(\mathbf{x}_T \mid \mathbf{x}_0) \approx \mathcal{N}(\mathbf{0}, \mathbf{I})\), this term is approximately zero
-                    and contains no learnable parameters, so it is typically ignored during training. The <strong>diffusion terms</strong>
-                    \(\mathcal{L}_{t-1}\) for \(t = 2, \ldots, T\) carry the entire training signal. Each one asks the learned reverse kernel
-                    \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) to match the reverse posterior
-                    \(q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)\) in
-                    <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler divergence</strong></a>.
-                    The <strong>reconstruction term</strong> \(\mathcal{L}_0\) handles the final step \(\mathbf{x}_1 \to \mathbf{x}_0\),
-                    which is treated separately because \(\mathbf{x}_0\) lies in the data space (typically discrete pixel values)
-                    while \(\mathbf{x}_1\) does not.
+                    Three observations follow, one for each kind of term.
                 </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>
+                        The <strong>prior term</strong> \(\mathcal{L}_T\)
+                        compares the forward terminal distribution to the fixed Gaussian prior of the reverse chain. Because the schedule is chosen
+                        so that \(q(\mathbf{x}_T \mid \mathbf{x}_0) \approx \mathcal{N}(\mathbf{0}, \mathbf{I})\), this term is approximately zero
+                        and contains no learnable parameters, so it is typically ignored during training.
+                    </li>
+                    <li>
+                        The <strong>diffusion terms</strong>
+                        \(\mathcal{L}_{t-1}\) for \(t = 2, \ldots, T\) carry the entire training signal. Each one asks the learned reverse kernel
+                        \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) to match the reverse posterior
+                        \(q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)\) in
+                        <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler divergence</strong></a>.
+                    </li>
+                    <li>
+                        The <strong>reconstruction term</strong> \(\mathcal{L}_0\) handles the final step \(\mathbf{x}_1 \to \mathbf{x}_0\),
+                        which is treated separately because \(\mathbf{x}_0\) lies in the data space (typically discrete pixel values)
+                        while \(\mathbf{x}_1\) does not.
+                    </li>
+                </ul>
 
                 <p>
                     The key conceptual point is that the variational problem has reduced to a sequence of <em>step-local</em> matching problems.
@@ -600,16 +637,24 @@ uses_python: false
                 </div>
 
                 <p>
-                    Two design choices remain. The first is the reverse-kernel variance \(\sigma_t^2\), which was fixed by hand during training
-                    rather than learned. Ho, Jain, and Abbeel observed that two natural choices give comparable sample quality.
-                    Setting \(\sigma_t^2 = \beta_t\) corresponds, in a sense made precise in their paper, to an upper bound on the optimal value.
-                    Setting \(\sigma_t^2 = \tilde{\beta}_t\), the reverse-posterior variance computed in our derivation of the reverse posterior,
-                    corresponds to the lower bound. In practice both work well, with the difference between them small compared with other sources
-                    of variation in the sampler.
-                    The second choice is the suppression of noise at the final step. When \(t = 1\), the algorithm sets \(\mathbf{z} = \mathbf{0}\)
-                    and returns the deterministic mean. This avoids injecting Gaussian noise into the final decoded output, which would otherwise
-                    visibly degrade samples in image domains.
+                    Two design choices remain.
                 </p>
+
+                <ol style="padding-left: 40px;">
+                    <li>
+                        <strong>The reverse-kernel variance \(\sigma_t^2\)</strong>, which was fixed by hand during training
+                        rather than learned. Ho, Jain, and Abbeel observed that two natural choices give comparable sample quality.
+                        Setting \(\sigma_t^2 = \beta_t\) corresponds, in a sense made precise in their paper, to an upper bound on the optimal value.
+                        Setting \(\sigma_t^2 = \tilde{\beta}_t\), the reverse-posterior variance computed earlier,
+                        corresponds to the lower bound. In practice both work well, with the difference between them small compared with other sources
+                        of variation in the sampler.
+                    </li>
+                    <li>
+                        <strong>The suppression of noise at the final step.</strong> When \(t = 1\), the algorithm sets \(\mathbf{z} = \mathbf{0}\)
+                        and returns the deterministic mean. This avoids injecting Gaussian noise into the final decoded output, which would otherwise
+                        visibly degrade samples in image domains.
+                    </li>
+                </ol>
 
                 <p>
                     The principal limitation of ancestral sampling is its cost. With \(T = 1000\) (the value used in the original DDPM experiments),
@@ -665,11 +710,22 @@ uses_python: false
                 </div>
 
                 <p>
-                    The step decomposes into two interpretable operations. First, the current noisy sample \(\mathbf{x}_t\) is mapped to a prediction
-                    of the clean data \(\hat{\mathbf{x}}_0\) by undoing the forward reparametrisation with the network's noise estimate. Second, this
-                    predicted clean sample is re-corrupted to the target time \(s\), using the <em>same</em> noise estimate
-                    \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)\) rather than a fresh Gaussian draw. The two squared scalings
-                    \(\sqrt{\bar{\alpha}_s}\) and \(\sqrt{1 - \bar{\alpha}_s}\) place the result on the forward marginal at time \(s\) by construction.
+                    The step decomposes into two interpretable operations.
+                </p>
+
+                <ol style="padding-left: 40px;">
+                    <li>
+                        The current noisy sample \(\mathbf{x}_t\) is mapped to a prediction
+                        of the clean data \(\hat{\mathbf{x}}_0\) by undoing the forward reparametrisation with the network's noise estimate.
+                    </li>
+                    <li>
+                        This predicted clean sample is re-corrupted to the target time \(s\), using the <em>same</em> noise estimate
+                        \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)\) rather than a fresh Gaussian draw. The two squared scalings
+                        \(\sqrt{\bar{\alpha}_s}\) and \(\sqrt{1 - \bar{\alpha}_s}\) place the result on the forward marginal at time \(s\) by construction.
+                    </li>
+                </ol>
+
+                <p>
                     Because no fresh randomness enters once \(\mathbf{x}_T\) has been drawn, the entire trajectory from \(\mathbf{x}_T\) to \(\mathbf{x}_0\)
                     is a deterministic function of the initial noise, and seeds can be replayed exactly.
                 </p>
@@ -751,13 +807,29 @@ uses_python: false
                 <p>
                     Try the forward direction first to watch the logo dissolve, then switch to reverse and observe the same construction running
                     backwards. The time slider lets you scrub through any intermediate state. Three overlays expose the machinery rather than
-                    just the result. <strong>Trails</strong> follow twelve tracked points through recent steps. Under DDPM they wander in a
-                    Brownian zigzag, while under DDIM the same points move along a few straight, deterministic jumps, the structural difference
-                    between the two samplers, visible per particle. <strong>Score field</strong> draws the \((x, y)\) components of the exact
-                    score \(\nabla_{\mathbf{x}_t} \log q_t\) as arrows at a subsample of the points (arrow length saturates with magnitude so
-                    the near-data regime, where the score blows up, stays readable). <strong>x&#770;<sub>0</sub> ghost</strong> shows, during the
-                    reverse process, the model's current prediction \(\hat{\mathbf{x}}_0\) of where each point will land, the quantity the DDIM
-                    update is built around. Finally, when the reverse process reaches \(t = 0\), a readout reports the mean distance from the
+                    just the result.
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li>
+                        <strong>Trails</strong> follow twelve tracked points through recent steps. Under DDPM they wander in a
+                        Brownian zigzag, while under DDIM the same points move along a few straight, deterministic jumps, the structural difference
+                        between the two samplers, visible per particle.
+                    </li>
+                    <li>
+                        <strong>Score field</strong> draws the \((x, y)\) components of the exact
+                        score \(\nabla_{\mathbf{x}_t} \log q_t\) as arrows at a subsample of the points (arrow length saturates with magnitude so
+                        the near-data regime, where the score blows up, stays readable).
+                    </li>
+                    <li>
+                        <strong>x&#770;<sub>0</sub> ghost</strong> shows, during the
+                        reverse process, the model's current prediction \(\hat{\mathbf{x}}_0\) of where each point will land, the quantity the DDIM
+                        update is built around.
+                    </li>
+                </ul>
+
+                <p>
+                    Finally, when the reverse process reaches \(t = 0\), a readout reports the mean distance from the
                     generated points to the data manifold, turning the visual comparison between samplers into a number.
                 </p>
 
@@ -810,8 +882,8 @@ uses_python: false
 
         </div>
 
-<script src="/js/data/compass_logo_points.js"></script>
-<script src="/js/sec5_p14_diffusion_demo.js"></script>
+        <script src="/js/data/compass_logo_points.js"></script>
+        <script src="/js/sec5_p14_diffusion_demo.js"></script>
 
     </body>
 </html>
