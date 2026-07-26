@@ -30,7 +30,7 @@ uses_python: false
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
                 <p>
-                    By the mid-2020s, the most striking generative models (Stable Diffusion for images, DALL-E from version 2 onward,
+                    By the mid-2020s, the most prominent generative models (Stable Diffusion for images, DALL-E from version 2 onward,
                     Sora and Veo for video) share a common mathematical framework known as <strong>diffusion</strong>.
                     The idea is unusual at first glance. To generate, one starts from pure noise and gradually <em>denoises</em>
                     it into a sample, reversing a process that incrementally adds Gaussian noise to data. This page develops the
@@ -195,15 +195,15 @@ uses_python: false
                 </div>
 
                 <p>
-                    The identity at the end of the proof deserves its own line. Any noisy sample at time \(t\) can be written
-                    in one shot from the clean data \(\mathbf{x}_0\) as
+                    The identity at the end of the proof deserves its own line: any noisy sample at time \(t\) is produced in one shot
+                    from the clean data as
                     \[
                     \mathbf{x}_t \;=\; \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},
                     \qquad \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}).
                     \]
-                    This one-shot reparametrisation is the central computational identity used in training. Rather than simulating the chain step by step,
-                    the trainer samples a time \(t\) uniformly, samples \(\boldsymbol{\varepsilon}\) from a standard Gaussian, and produces
-                    a noisy sample directly.
+                    This one-shot reparametrisation is the central computational identity of training: rather than simulating the chain
+                    step by step, the trainer samples \(t\) uniformly and \(\boldsymbol{\varepsilon}\) from a standard Gaussian, and
+                    produces a noisy sample directly.
                 </p>
 
                 <h3>The Endpoint and the Choice of Schedule</h3>
@@ -280,10 +280,9 @@ uses_python: false
                     Two remarks. First, the mean \(\tilde{\boldsymbol{\mu}}_t\) is a convex combination of \(\mathbf{x}_0\) and \(\mathbf{x}_t\).
                     Both contributions are necessary because \(\mathbf{x}_{t-1}\) lies between them along the chain. Second, the variance
                     \(\tilde{\beta}_t\) depends only on the schedule, not on \(\mathbf{x}_0\) or \(\mathbf{x}_t\), a consequence of the linear-Gaussian
-                    structure that we will exploit when matching this distribution against a learned reverse kernel. The reverse posterior is
-                    the target that the learned model \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) is asked to approximate
-                    for each \(\mathbf{x}_0\) drawn during training. The marginalisation over \(\mathbf{x}_0\) is what produces the loss we
-                    develop in the next subsection.
+                    structure that we will exploit when matching this distribution against a learned reverse kernel. This distribution is the
+                    per-step target that the learned model \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) is asked to
+                    approximate, as the next subsection makes precise.
                 </p>
 
                 <h3>The Evidence Lower Bound</h3>
@@ -337,7 +336,11 @@ uses_python: false
                     \]
                     The first term has the structure of a Kullback-Leibler integrand. It compares the learned reverse kernel to the reverse
                     posterior derived above. The second term telescopes when summed over \(t = 2, \ldots, T\), collapsing to
-                    \(\log q(\mathbf{x}_1 \mid \mathbf{x}_0) - \log q(\mathbf{x}_T \mid \mathbf{x}_0)\). The first part of this residue
+                    \(\log q(\mathbf{x}_1 \mid \mathbf{x}_0) - \log q(\mathbf{x}_T \mid \mathbf{x}_0)\).
+                </p>
+
+                <p>
+                    The first part of this residue
                     cancels against the \(t = 1\) term that was left untouched, and the second part combines with \(-\log p(\mathbf{x}_T)\)
                     to form a Kullback-Leibler divergence comparing the forward terminal to the reverse prior. After collecting terms,
                     the negative ELBO admits the following decomposition.
@@ -404,9 +407,13 @@ uses_python: false
 
                 <p>
                     We take \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) = \mathcal{N}(\mathbf{x}_{t-1};\, \boldsymbol{\mu}_{\boldsymbol{\theta}}(\mathbf{x}_t, t),\, \sigma_t^2 \mathbf{I})\),
-                    with the variance fixed by hand to a schedule-dependent constant \(\sigma_t^2\) (typically \(\beta_t\) or the reverse-posterior
-                    variance \(\tilde{\beta}_t\), with both choices used in the literature, and we revisit the question when we discuss sampling).
-                    Only the mean \(\boldsymbol{\mu}_{\boldsymbol{\theta}}\) is learned. With this choice, both kernels in the KL are Gaussians
+                    with the variance fixed by hand to a schedule-dependent constant \(\sigma_t^2\); only the mean
+                    \(\boldsymbol{\mu}_{\boldsymbol{\theta}}\) is learned. Typical choices are \(\sigma_t^2 = \beta_t\) or the
+                    reverse-posterior variance \(\tilde{\beta}_t\), both used in the literature; we revisit the question when we discuss sampling.
+                </p>
+
+                <p>
+                    With this choice, both kernels in the KL are Gaussians
                     with the same covariance, and the divergence reduces to a squared distance between means:
                     \[
                     D_{\mathbb{KL}}\!\left( q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0) \,\|\, p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) \right)
@@ -425,6 +432,9 @@ uses_python: false
                     \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0)
                     \;=\; \frac{1}{\sqrt{\alpha_t}} \left( \mathbf{x}_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,\boldsymbol{\varepsilon} \right).
                     \]
+                </p>
+
+                <p>
                     The reverse posterior mean, viewed at the noisy sample \(\mathbf{x}_t\), is a deterministic function of the
                     <em>noise</em> \(\boldsymbol{\varepsilon}\) that was used to produce \(\mathbf{x}_t\) from \(\mathbf{x}_0\). This suggests
                     parametrising \(\boldsymbol{\mu}_{\boldsymbol{\theta}}\) in the same form, with a learned noise predictor
@@ -446,10 +456,9 @@ uses_python: false
                 </p>
 
                 <p>
-                    The time-dependent weight in front of the squared error, call it \(\lambda_t\), is what one obtains from a faithful derivation
-                    of the variational bound. Ho, Jain, and Abbeel observed empirically that <em>dropping it</em> (setting \(\lambda_t = 1\))
-                    produces visibly better samples than the principled weighting. The resulting objective, additionally averaged over a
-                    uniformly sampled time index, is what is actually used in practice.
+                    The time-dependent weight in front of the squared error, call it \(\lambda_t\), is what a faithful derivation of the
+                    variational bound produces; the objective actually used in practice discards it, for reasons recorded in modification
+                    (iii) below.
                 </p>
 
                 <div class="theorem" id="T-ddpm_simple_loss">
@@ -555,12 +564,15 @@ uses_python: false
                     \]
                     Substituting the reparametrisation
                     \(\mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon}\) gives the
-                    striking identity
+                    key identity
                     \[
                     \nabla_{\mathbf{x}_t} \log q(\mathbf{x}_t \mid \mathbf{x}_0)
                     \;=\; -\,\frac{\boldsymbol{\varepsilon}}{\sqrt{1 - \bar{\alpha}_t}}.
                     \]
                     The conditional score is, up to a negative scaling, exactly the Gaussian noise that produced \(\mathbf{x}_t\) from \(\mathbf{x}_0\).
+                </p>
+
+                <p>
                     A theorem due to Vincent (2011), known as <strong>denoising score matching</strong>, extends this from the conditional to the
                     marginal. A network trained to predict the noise on samples drawn from the forward chain learns, in expectation over \(\mathbf{x}_0\),
                     the score of the marginal \(q_t\). Writing \(\sigma_t := \sqrt{1 - \bar{\alpha}_t}\), the noise-prediction network
@@ -602,13 +614,10 @@ uses_python: false
                 </p>
 
                 <p>
-                    A final pointer. In a continuous-time formulation, the score function controls both the dynamics of the reverse SDE
-                    (Anderson's 1982 reversal theorem expresses the reverse drift in terms of \(\nabla \log p_t\)) and the deterministic
-                    probability-flow ODE that drives DDIM-style samplers. The score-based generative modelling framework of Song and Ermon (2019)
-                    and Song et al. (2021) takes this viewpoint as primary, with score matching as the training criterion and stochastic
-                    differential equations as the underlying language. The discrete DDPM picture developed on this page and the continuous
-                    score-based picture are closely related (DDPM corresponds to a particular time-discretisation of the variance-preserving SDE),
-                    but they are not identical, and each has its own natural setting and tools.
+                    In the continuous-time formulation previewed in the introduction, the score function is the central object: Anderson's
+                    1982 reversal theorem expresses the reverse drift in terms of \(\nabla \log p_t\), and the score-based generative
+                    modelling framework of Song and Ermon (2019) and Song et al. (2021) takes this viewpoint as primary. The discrete DDPM
+                    picture developed on this page corresponds to a particular time-discretisation of the variance-preserving SDE.
                 </p>
             </section>
 
@@ -665,7 +674,7 @@ uses_python: false
                 <h3>Deterministic Sampling with DDIM</h3>
 
                 <p>
-                    Song, Meng, and Ermon's <strong>denoising diffusion implicit models</strong> (DDIM, 2021) deliver a striking observation.
+                    Song, Meng, and Ermon's <strong>denoising diffusion implicit models</strong> (DDIM, 2021) rest on one observation.
                     One can sample from a DDPM in far fewer steps, and with a fully deterministic reverse process if desired,
                     <em>without retraining the network</em>. The same \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) that was trained against
                     the DDPM objective is reused, and only the sampling procedure changes.
@@ -734,9 +743,7 @@ uses_python: false
                     A second feature of the DDIM construction is that the step indices need not visit every \(t\) in \(\{1, \ldots, T\}\). Any subsequence
                     \(\tau_1 \lt \cdots \lt \tau_S = T\) of the training schedule is valid for sampling, and choosing \(S\) much smaller than \(T\)
                     yields a substantial speedup. Typical practice uses \(S\) on the order of 50 with \(T = 1000\) during training, a twenty-fold
-                    reduction in network evaluations per sample, with image quality that approximates the full-chain DDPM sampler. The closeness
-                    depends on the data dimension and the number of steps retained, and the gap is visible on small low-dimensional examples
-                    even when it is imperceptible on natural images.
+                    reduction in network evaluations per sample, with image quality that approximates the full-chain DDPM sampler.
                 </p>
 
                 <p>
@@ -766,7 +773,11 @@ uses_python: false
                     Salimans (2021), is <strong>classifier-free guidance</strong>. During training, the conditioning input is replaced by
                     a null token \(\varnothing\) with some fixed probability (typically 10 to 20 percent), so that the same network learns
                     both the conditional predictor \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c})\) and the
-                    unconditional predictor \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \varnothing)\). At sampling time,
+                    unconditional predictor \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \varnothing)\).
+                </p>
+
+                <p>
+                    At sampling time,
                     the two predictions are combined into a guided estimate
                     \[
                     \tilde{\boldsymbol{\varepsilon}}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c})
