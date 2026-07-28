@@ -51,6 +51,9 @@ uses_python: false
                     group give different geometries — a grid under translation, a set under permutation, a
                     graph under node relabelling, a smooth manifold under rotation. Each is a kind of geometry,
                     and an architecture is "geometric" when it respects the symmetries of its domain.
+                </p>
+
+                <p>
                     The present page introduces this framework, then
                     develops its most directly accessible instance, the <strong>graph neural network (GNN)</strong>,
                     which generalizes message passing from regular grids and complete graphs to arbitrary
@@ -79,7 +82,7 @@ uses_python: false
                     with symmetry group \(G\) acting on it, a layer
                     \(f : \mathcal{X} \to \mathcal{Y}\) is said to be <strong>\(G\)-equivariant</strong> if
                     \[
-                    f(g \cdot x) = g \cdot f(x) \qquad \text{for every } g \in G,\ x \in \mathcal{X},
+                    f(g \cdot x) = g \cdot f(x) \quad \text{for every } g \in G,\ x \in \mathcal{X},
                     \]
                     and <strong>\(G\)-invariant</strong> if the right-hand side is replaced by \(f(x)\) itself.
                     Equivariance preserves symmetry information through the network; invariance discards it.
@@ -138,10 +141,7 @@ uses_python: false
                     CNNs, Transformers, GNNs, and SE(3)-equivariant networks all share the same template:
                     identify the symmetry group of the data domain, and constrain each layer to commute
                     with its action. The differences between them are <em>which</em> group, and <em>how</em>
-                    the group acts. The discrete symmetry of node relabelling that defines GNNs, the
-                    continuous symmetry of 3D rotation that defines SE(3)-equivariant networks, and the
-                    translational symmetry that defines CNNs are all instances of the same architectural
-                    principle, applied to different domains.
+                    the group acts.
                 </p>
 
                 <p>
@@ -150,7 +150,7 @@ uses_python: false
                     <a href="deep_nn.html#D-scaled_dot_product_attention" class="ref-link"><strong>Self-attention</strong></a>
                     computes
                     \[
-                    \mathrm{Attn}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \mathrm{softmax}\!\left(
+                    \mathrm{Attn}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \operatorname{softmax}\!\left(
                     \tfrac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\right)\mathbf{V},
                     \]
                     and one can verify directly that permuting the rows of input tokens permutes the rows
@@ -176,8 +176,11 @@ uses_python: false
                     joint action of \(S_n\) on both:
                     \[
                     f(P\mathbf{X},\, P\mathbf{A}P^\top) \;=\; P\,f(\mathbf{X}, \mathbf{A})
-                    \qquad \text{for every } P \in S_n.
+                    \quad \text{for every } P \in S_n.
                     \]
+                </p>
+
+                <p>
                     Both the Transformer (without positional encoding) and the GNN are \(S_n\)-equivariant;
                     the difference is what \(P\) acts on. The Transformer permutes a feature matrix; the
                     GNN permutes a feature-adjacency pair, with the adjacency matrix conjugated so that
@@ -192,20 +195,11 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Where the GDL Framework Points Next</h3>
                     <p>
-                        Three threads in the table above run forward into the rest of this curriculum.
-                        The continuous symmetry groups \(SO(3)\) and \(SE(3)\) are the
+                        The last row of the table runs forward into the rest of this curriculum: the
+                        continuous symmetry groups \(SO(3)\) and \(SE(3)\) are the
                         <a href="../Linear_algebra/lie_groups.html"><strong>matrix Lie groups</strong></a>
-                        we have already begun developing in Section I; equivariant architectures based
-                        on them require the <strong>representation theory</strong> of Lie groups, which
-                        is the subject of forthcoming pages. The natural setting for "data on a curved
-                        domain" — point clouds, surfaces, shapes — is a <strong>smooth manifold</strong>,
-                        and the analogue of the graph Laplacian on such domains is the <strong>Laplace-Beltrami
-                        operator</strong>, both treated in the forthcoming 
-                        <a href="../Calculus/topological_manifolds.html"><strong>manifold series</strong></a>. 
-                        The GDL framework is the application-side viewpoint that motivates these mathematical
-                        developments; the resulting <em>equivariant neural networks</em> for continuous
-                        symmetry groups are the natural application of those foundations once they are
-                        in place.
+                        developed in Section I, and the architectures built on them are taken up later
+                        on this page, where the full map of the required mathematics is drawn.
                     </p>
                 </div>
             </section>
@@ -335,9 +329,8 @@ uses_python: false
                     </li>
                     <li>
                         A <strong>GNN</strong> performs message passing on an input graph supplied as
-                        part of the data rather than fixed by the architecture. Like the Transformer it
-                        is \(S_n\)-equivariant, but where the Transformer permutes only token features,
-                        the GNN permutes a feature-adjacency pair \((\mathbf{X}, \mathbf{A})\) jointly.
+                        part of the data rather than fixed by the architecture, with \(S_n\) acting
+                        jointly on the feature-adjacency pair as formalized above.
                     </li>
                 </ul>
 
@@ -397,8 +390,11 @@ uses_python: false
                     Both \(SO(3)\) and \(SE(3)\) are continuous groups, and concretely they are the
                     <a href="../Linear_algebra/lie_groups.html"><strong>matrix Lie groups</strong></a>
                     we developed in Section I. Building neural network layers that commute with their
-                    action requires more than the multiset symmetrization that powers GNNs. The standard
-                    approach decomposes vertex features into <strong>irreducible representations</strong>
+                    action requires more than the multiset symmetrization that powers GNNs.
+                </p>
+
+                <p>
+                    The standard approach decomposes vertex features into <strong>irreducible representations</strong>
                     of the rotation group (scalars, vectors, higher-order tensors corresponding to the
                     spherical harmonics), constrains messages to transform appropriately under rotation,
                     and combines them via Clebsch-Gordan products — the tensor product decompositions
@@ -416,8 +412,11 @@ uses_python: false
                     decompositions — is the subject of the forthcoming pages on representation theory
                     and on Fourier analysis on Hilbert spaces. The systematic construction of equivariant
                     neural networks built on this machinery belongs to a later stage of the curriculum;
-                    here we record only the application-side outcome:
-                    encoding continuous symmetry into the architecture has produced concrete advances
+                    here we record only the application-side outcome.
+                </p>
+
+                <p>
+                    Encoding continuous symmetry into the architecture has produced concrete advances
                     in structural biology, where <strong>AlphaFold</strong>'s prediction of
                     three-dimensional protein structure from amino-acid sequence — recognized by the 2024
                     Nobel Prize in Chemistry — relies on attention mechanisms designed to respect the
@@ -436,7 +435,8 @@ uses_python: false
                         decomposes feature spaces into irreducible building blocks compatible with the
                         symmetry; <em>differential geometry of smooth manifolds</em> supplies the
                         natural setting for "data on a curved domain" and the analogue of the graph
-                        Laplacian (the Laplace-Beltrami operator) on such domains. The forthcoming manifold series 
+                        Laplacian (the Laplace-Beltrami operator) on such domains. The forthcoming 
+                        <a href="../Calculus/topological_manifolds.html"><strong>manifold series</strong></a> 
                         and representation theory pages develop these threads; the
                         <a href="../Linear_algebra/peter_weyl.html#l2-decomposition"><strong>Peter-Weyl theorem</strong></a>
                         connects them back to the harmonic analysis on Hilbert spaces of Section II.
@@ -465,7 +465,11 @@ uses_python: false
                     from the current features, on the complete graph over the vertices. The
                     <strong>MLP</strong> replaces \(w_k \hat{\mathbf{A}}\) with a learned dense matrix
                     \(\mathbf{W}_k\) that mixes node coordinates by their index — no structure matrix at
-                    all, which is why its panel draws no edges. The GNN and Transformer panels share the
+                    all, which is why its panel draws no edges.
+                </p>
+
+                <p>
+                    The GNN and Transformer panels share the
                     <em>same</em> scalar weights \((w_k, b_k)\), so whatever differs between those two
                     panels is attributable to the structure matrix alone. Node colors show the scalar
                     feature at each vertex (blue negative, red positive); all weights are untrained and
@@ -509,18 +513,11 @@ uses_python: false
                     refinement, namely that attention weights computed from the features themselves
                     transform covariantly under \(S_n\).
                 </p>
-
-                <p>
-                    The same construction, extended from discrete graphs to data with continuous
-                    geometric symmetry, motivates equivariant neural networks built on
-                    <a href="../Linear_algebra/lie_groups.html"><strong>matrix Lie group theory</strong></a>
-                    and the representation theory developed in the forthcoming pages.
-                </p>
             </section>
 
         </div>
 
-<script src="/js/sec5_p13_gdl_demo.js"></script>
+        <script src="/js/sec5_p13_gdl_demo.js"></script>
 
     </body>
 </html>
