@@ -41,7 +41,7 @@ uses_python: false
                 <p>
                     The <strong>Variational Autoencoder (VAE)</strong> is one such approach. It synthesizes 
                     ideas from information theory and Bayesian inference into a model that learns a continuous 
-                    latent distribution characterized by a mean (\(\mu\)) and a variance (\(\sigma\)), providing 
+                    latent distribution characterized by a mean (\(\mu\)) and a variance (\(\sigma^2\)), providing 
                     a quantitative handle on what a learned system knows and what it does not.
                 </p>
             </section>
@@ -70,22 +70,14 @@ uses_python: false
                 </p>
 
                 <p>
-                    For a robot, this approximation is one ingredient in uncertainty-aware control. The
-                    posterior variance — the "spread" of the distribution — provides one quantitative
+                    For a robot, this approximation is one ingredient in uncertainty-aware control: the
+                    posterior variance — the "spread" of the distribution — provides a quantitative
                     signal that can inform decisions such as whether to proceed with an action or trigger
-                    a fallback. We note, however, that the relation between the VAE's posterior spread
-                    and the conceptual notion of <strong>epistemic uncertainty</strong> (uncertainty due
-                    to limited model knowledge, as distinct from <strong>aleatoric uncertainty</strong>
-                    inherent in the observation noise) is not automatic; the VAE's encoder learns a single
-                    distribution per input and does not by construction separate these two sources.
-                    Established methods for principled epistemic-uncertainty estimation — Monte Carlo
-                    dropout, deep ensembles, Bayesian neural networks — operate on different principles,
-                    and the literature on the reliability of generative-model latent variances as
-                    uncertainty proxies is active and unsettled (e.g., Kendall &amp; Gal, 2017). The
-                    posterior-spread signal complements rather than replaces classical safety mechanisms
-                    (limit switches, mechanical fail-safes, model-based control bounds), and the demo
-                    below should be read as a pedagogical illustration of one such complement, not a
-                    deployment-ready uncertainty-quantification scheme.
+                    a fallback. The relation between this spread and <strong>epistemic uncertainty</strong>
+                    (uncertainty due to limited model knowledge, as distinct from <strong>aleatoric
+                    uncertainty</strong> inherent in the observation noise) is not automatic, and such a
+                    signal complements rather than replaces classical safety mechanisms. We return to the
+                    reliability of this reading, and its limits, in the demo section below.
                 </p>
 
                 <p>
@@ -94,13 +86,11 @@ uses_python: false
                     \(p(\boldsymbol{z} \mid \boldsymbol{x})\) with respect to a common dominating measure is
                     licensed by the <a href="../Probability/radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>,
                     and conditional expectation — defined rigorously as a Radon-Nikodym derivative — provides
-                    the idealised abstract framework that the densities and ELBO decomposition implemented
-                    here approximate. The implementation works directly with explicit Gaussian densities,
-                    Monte Carlo samples, and reparameterized gradients; the measure-theoretic construction
-                    is what licenses these computations as approximations to a well-defined object, not a
-                    layer that the code instantiates directly. The full VI framework derives the ELBO using 
-                    these tools and situates the VAE's amortized inference as a special case of the broader 
-                    variational principle.
+                    the abstract object that the densities and ELBO decomposition below approximate. In practice
+                    we work directly with explicit Gaussian densities, Monte Carlo samples, and reparameterized
+                    gradients; the measure-theoretic construction is not a layer that the code instantiates,
+                    but the guarantee that these computations approximate a well-defined object, with the
+                    VAE's amortized inference a special case of the broader variational principle.
                 </p>
 
             </section>
@@ -127,7 +117,9 @@ uses_python: false
                     \[
                     p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z}) = \mathcal{N}(\boldsymbol{x} \mid f_d (\boldsymbol{z}; \boldsymbol{\theta}), \, \sigma^2 \boldsymbol{I})
                     \]
-                    where \(f_d(\cdot\,; \boldsymbol{\theta})\) is a <strong>decoder network</strong> with parameters \(\boldsymbol{\theta}\). 
+                    where \(f_d(\cdot\,; \boldsymbol{\theta})\) is a <strong>decoder network</strong> with parameters \(\boldsymbol{\theta}\).
+                </p>
+                <p>
                     This nonlinear generative model can represent far richer data distributions, but it comes at a cost: 
                     the posterior \(p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x})\) is no longer analytically tractable, 
                     because computing it requires the marginal likelihood
@@ -147,7 +139,7 @@ uses_python: false
                     a Gaussian with diagonal covariance, yielding
                     \[
                     q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x}) 
-                    = \mathcal{N}\!\left(\boldsymbol{z} \;\middle|\; f_{e,\mu} (\boldsymbol{x} ; \boldsymbol{\phi}), \, \text{diag}\!\left(f_{e,\sigma}(\boldsymbol{x};\boldsymbol{\phi})\right)\right)
+                    = \mathcal{N}\!\left(\boldsymbol{z} \;\middle|\; f_{e,\mu} (\boldsymbol{x} ; \boldsymbol{\phi}), \, \operatorname{diag}\!\left(f_{e,\sigma}(\boldsymbol{x};\boldsymbol{\phi})\right)\right)
                     \]
                     where \(f_{e,\mu}\) and \(f_{e,\sigma}\) are the encoder's output heads that produce the mean vector and the 
                     diagonal covariance respectively, and \(\boldsymbol{\phi}\) denotes all encoder parameters.
@@ -162,13 +154,13 @@ uses_python: false
 
                 <h3>The Evidence Lower Bound (ELBO)</h3>
                 <p>
-                    Since the marginal likelihood \(p_{\boldsymbol{\theta}}(\boldsymbol{x})\) is intractable, we cannot maximize it directly. 
-                    Instead, we derive a tractable lower bound. For a single observation \(\boldsymbol{x}\), define the 
+                    We cannot maximize the intractable marginal likelihood \(p_{\boldsymbol{\theta}}(\boldsymbol{x})\) directly, 
+                    so we derive a tractable lower bound. For a single observation \(\boldsymbol{x}\), define the 
                     <strong>evidence lower bound (ELBO)</strong> as follows.
                 </p>
 
                 <div class="theorem" id="D-elbo_amortized">
-                    <span class="theorem-title">Definition: Evidence Lower Bound(ELBO)</span>
+                    <span class="theorem-title">Definition: Evidence Lower Bound (ELBO)</span>
                     <p>
                         For a generative model \(p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\) and 
                         approximate posterior \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\), the ELBO is
@@ -279,6 +271,8 @@ uses_python: false
                       \!\left[\log p_{\boldsymbol{\theta}}\!\left(\boldsymbol{x} \mid \boldsymbol{z} = \mu_{\boldsymbol{\phi}}(\boldsymbol{x}) + \sigma_{\boldsymbol{\phi}}(\boldsymbol{x})\odot \boldsymbol{\epsilon}\right)\right]
                       - D_{\mathbb{KL}}\!\left(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \,\|\, p(\boldsymbol{z})\right).
                     \]
+                </p>
+                <p>
                     The key observation is that the expectation is now taken with respect to the fixed distribution 
                     \(\mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\), which does not depend on \(\boldsymbol{\phi}\). This means we 
                     can interchange the gradient and the expectation: 
@@ -291,7 +285,7 @@ uses_python: false
                     \[
                     \min_{\boldsymbol{\theta}, \, \boldsymbol{\phi}} \;-\, \mathbb{E}_{\boldsymbol{x} \sim \mathcal{D}} \left[ L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) \right]
                     \]
-                    which is optimized end-to-end using standard backpropagation through the reparameterized sampling step.
+                    which is optimized end-to-end by stochastic gradient descent.
                 </p>
 
                 <h3>Putting It All Together</h3>
@@ -308,7 +302,7 @@ uses_python: false
                     <ol style="padding-left: 40px;">
                         <li>A <strong>prior</strong> over the latent space: \(p(\boldsymbol{z}) = \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\)</li>
                         <li>A <strong>decoder</strong> (generative model): \(p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z}) = \mathcal{N}(\boldsymbol{x} \mid f_d(\boldsymbol{z}; \boldsymbol{\theta}), \, \sigma^2 \boldsymbol{I})\)</li>
-                        <li>An <strong>encoder</strong> (inference network): \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) = \mathcal{N}\!\left(\boldsymbol{z} \mid f_{e,\mu}(\boldsymbol{x}; \boldsymbol{\phi}), \, \text{diag}(f_{e,\sigma}(\boldsymbol{x}; \boldsymbol{\phi}))\right)\)</li>
+                        <li>An <strong>encoder</strong> (inference network): \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) = \mathcal{N}\!\left(\boldsymbol{z} \mid f_{e,\mu}(\boldsymbol{x}; \boldsymbol{\phi}), \, \operatorname{diag}(f_{e,\sigma}(\boldsymbol{x}; \boldsymbol{\phi}))\right)\)</li>
                     </ol>
                     <p>
                         The parameters \(\boldsymbol{\theta}\) and \(\boldsymbol{\phi}\) are trained jointly by maximizing the ELBO
@@ -453,11 +447,11 @@ uses_python: false
                     In this specific simulation, where our latent space is 2-dimensional (\(K=2\)) and uses isotropic variance (\(\sigma_1^2 = \sigma_2^2 = \sigma^2\)), 
                     this simplifies to the formula used in our telemetry engine:
                     \[
-                    \begin{aligned}
-                    D_{\mathbb{KL}} &= \frac{1}{2} \left[ (\mu_1^2 + \sigma^2 - \ln \sigma^2 - 1) + (\mu_2^2 + \sigma^2 - \ln \sigma^2 - 1) \right] \\
-                    &= \frac{1}{2} \left[ (\mu_1^2 + \mu_2^2) + 2\sigma^2 - 2\ln \sigma^2 - 2 \right] \\
+                    \begin{align*}
+                    D_{\mathbb{KL}} &= \frac{1}{2} \left[ (\mu_1^2 + \sigma^2 - \ln \sigma^2 - 1) + (\mu_2^2 + \sigma^2 - \ln \sigma^2 - 1) \right] \\\\
+                    &= \frac{1}{2} \left[ (\mu_1^2 + \mu_2^2) + 2\sigma^2 - 2\ln \sigma^2 - 2 \right] \\\\
                     &= \frac{1}{2} \left( \|\boldsymbol{\mu}\|^2 + 2\sigma^2 - 2\ln \sigma^2 - 2 \right)
-                    \end{aligned}
+                    \end{align*}
                     \]
                 </p>
 
@@ -505,7 +499,10 @@ uses_python: false
                     The critical decision in this demo is the comparison \(\sigma \lessgtr \sigma_{\text{thr}}\). This
                     is a pedagogical analogy to a class of <strong>out-of-distribution (OOD) detection</strong>
                     heuristics in which a learned uncertainty score gates further action — if the score
-                    exceeds a threshold, the system flags the observation as untrusted. We caution that
+                    exceeds a threshold, the system flags the observation as untrusted.
+                </p>
+                <p>
+                    We caution that
                     the actual reliability of generative-model latent variances or likelihoods as OOD
                     detectors is an active research debate, and not a settled solved problem: deep
                     generative models (including VAEs and normalizing flows) have been shown to assign
@@ -544,19 +541,19 @@ uses_python: false
                 <p>
                     <strong>1. Uncertainty quantification through latent representations:</strong><br>
                     The VAE does not output a single point estimate of the physical state - it outputs a <em>distribution</em>. 
-                    The spread of this distribution (\(\sigma\)) is a principled measure of epistemic uncertainty derived from sensory feedback.
+                    The spread of this distribution (\(\sigma\)) serves as a quantitative uncertainty signal derived from sensory feedback.
                 </p>
                 <p>
                     <strong>2. Safety-critical decision-making under uncertainty:</strong><br>
                     Rather than blindly executing a motion plan, the robot uses its uncertainty estimate as a gating signal. When \(\sigma\) exceeds 
-                    the threshold, the system recognizes that it is operating outside its confident regime and aborts. This pattern — using a learned 
-                    uncertainty estimate as a gating signal — appears throughout uncertainty-aware reinforcement learning and Bayesian safe control.
+                    the threshold, the system recognizes that it is operating outside its confident regime and aborts. The same pattern appears 
+                    throughout uncertainty-aware reinforcement learning and Bayesian safe control.
                 </p>
                 <p>
                     <strong>3. The connection between physics and information:</strong><br>
                     The torque - a purely physical quantity governed by Newton's laws - becomes the input to a probabilistic inference engine. 
                     The KL divergence between posterior and prior quantifies how much information the robot has gained (or how surprised it is) 
-                    from the physical interaction. Large KL divergence means the physical situation deviates significantly from the robot's expectations.
+                    from the physical interaction.
                 </p>
 
             </section>
