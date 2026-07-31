@@ -1,0 +1,1097 @@
+---
+layout: default
+title: "Existence by Picard Iteration"
+topic_id: prob-37
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Existence by Picard Iteration</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#toolkit">The Toolkit</a>
+            <a href="#picard">The Iteration</a>
+            <a href="#pathwise-existence">Pathwise Existence</a>
+            <a href="#beyond-lipschitz">Beyond Lipschitz</a>
+        </div>
+
+        <div class="container">
+
+            <section id="toolkit" class="section-content">
+                <h2>The Toolkit</h2>
+
+                <p>
+                    The previous page stated the
+                    <a href="sde_existence_uniqueness.html#main-theorem">existence and uniqueness theorem</a>
+                    and proved its uniqueness half. Under the linear growth condition (H1) and the
+                    Lipschitz condition (H2), two solutions with the same initial value are
+                    indistinguishable. This page proves the other half. A solution must now be
+                    manufactured from the coefficients, the noise, and the initial value alone, and
+                    the whole of it is a construction.
+                </p>
+                <p>
+                    The setting carries over unchanged. Throughout, \(w_t\) is the standard
+                    one-dimensional Brownian motion, \(Z\) is a square-integrable initial value
+                    independent of the entire motion, \(\{\mathcal{H}_t\}\) is the enlarged filtration
+                    built from \(Z\), the motion, and the null sets, and \(\mathcal{V}(0, T)\) is the
+                    integrand class over this filtration, with every quoted result taken in its
+                    enlarged version, as the previous page declared once and for all. The
+                    coefficients \(b\) and \(\sigma\) satisfy (H1) and (H2) with the constants \(C\)
+                    and \(D\) fixed there, and the target is a process satisfying clauses (S1)
+                    through (S4) of the
+                    <a href="sde_existence_uniqueness.html#solution-concept">solution definition</a>.
+                    The horizon \(T \gt 0\) stays fixed, and \(\lambda\) denotes Lebesgue measure on
+                    \([0, T]\), so that \(L^2(\lambda \otimes \mathbb{P})\) is the space in which
+                    integrands and processes are measured over the whole strip
+                    \([0, T] \times \Omega\).
+                </p>
+                <p>
+                    The construction runs in two stages, and each stage runs on inequalities. The
+                    first stage iterates the equation and shows that successive iterates contract in
+                    mean square at factorial speed, by the same isometry-plus-Gronwall mechanism that
+                    drove the uniqueness proof. The second stage upgrades this mean-square
+                    convergence to convergence of the paths themselves, uniformly in time, and here
+                    a new kind of statement is needed. A mean square is an average over \(\Omega\),
+                    while a statement about paths concerns the probability of an event. The bridge
+                    between the two is one inequality, used everywhere in probability, that this
+                    track has never owned. We make it ours first.
+                </p>
+
+                <h3>Tail Bounds from Moments</h3>
+
+                <p>
+                    The observation is that a nonnegative random variable cannot be large with large
+                    probability without its expectation noticing. Cutting the variable down at a
+                    threshold can only shrink it, and what remains still dominates
+                    the threshold times the indicator of the exceedance.
+                </p>
+
+                <div class="theorem" id="T-markov_chebyshev">
+                    <span class="theorem-title">Theorem: The Markov and Chebyshev Inequalities</span>
+                    <p>
+                        <strong>(i)</strong><br>
+                        (Markov) Let \(Y\) be a nonnegative random variable and \(a \gt 0\). Then
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{P}\bigl[ Y \geq a \bigr] \leq \frac{1}{a}\, \mathbb{E}[Y] .
+                        \]
+                    </p>
+                    <p>
+                        <strong>(ii)</strong><br>
+                        (Chebyshev) Let \(X\) be any random variable and \(a \gt 0\). Then
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{P}\bigl[ |X| \geq a \bigr] \leq \frac{1}{a^2}\, \mathbb{E}\bigl[ X^2 \bigr] .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>(i).</strong><br>
+                        The pointwise inequality
+                    </p>
+                    <p>
+                        \[
+                        a\, \mathbf{1}_{\{ Y \geq a \}}(\omega) \leq Y(\omega)
+                        \]
+                    </p>
+                    <p>
+                        holds for every \(\omega\). On the event \(\{Y \geq a\}\) it reads
+                        \(a \leq Y(\omega)\), which is the membership condition itself, and off the
+                        event it reads \(0 \leq Y(\omega)\), which is nonnegativity. The event is
+                        measurable because \(Y\) is, expectation is monotone, and the expectation of
+                        \(a\) times an indicator is \(a\) times the probability of its event, so
+                        \(a\, \mathbb{P}[Y \geq a] \leq \mathbb{E}[Y]\). Dividing by \(a \gt 0\)
+                        finishes. No integrability is assumed. When \(\mathbb{E}[Y]\) is infinite
+                        the bound holds and says nothing.
+                    </p>
+                    <p>
+                        <strong>(ii).</strong><br>
+                        Squaring is strictly increasing on \([0, \infty)\), so the events
+                        \(\{ |X| \geq a \}\) and \(\{ X^2 \geq a^2 \}\) are equal. Applying (i) to
+                        the nonnegative variable \(X^2\) at the threshold \(a^2\) gives
+                        \(\mathbb{P}[X^2 \geq a^2] \leq a^{-2}\, \mathbb{E}[X^2]\).
+                    </p>
+                </div>
+
+                <p>
+                    Two remarks position the theorem for use. Since \(\{Y \gt a\}\) is contained in
+                    \(\{Y \geq a\}\), the same bounds hold for strict exceedances, and it is the
+                    strict form that the arguments ahead consume. And applying (ii) to
+                    \(X - \mathbb{E}[X]\), when the mean exists, bounds the probability of a
+                    deviation from the mean by the variance over the threshold squared, which is the
+                    statement the name Chebyshev most often attaches to. This page needs the
+                    uncentered form.
+                </p>
+
+                <h3>What Is Already in Hand</h3>
+
+                <p>
+                    The rest of the kit exists, and it is worth laying out on the bench in the order
+                    of use. The mean-square stage runs on three estimates and one completeness
+                    theorem. The Cauchy-Schwarz case of
+                    <a href="../Calculus/lp_spaces.html#T-holder" class="ref-link"><strong>Hölder's inequality</strong></a>
+                    controls the drift, the
+                    <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>
+                    converts the mean square of the noise term into a time integral, and
+                    <a href="sde_existence_uniqueness.html#gronwall">Gronwall's inequality</a>
+                    from the previous page turns the resulting self-referential estimates into
+                    explicit bounds. The division of labor is exactly that of the uniqueness proof,
+                    and the membership checks that license the isometry will be repeated, not
+                    inherited, since the iterates are new processes. When the mean-square estimates
+                    are in place, the iterates form a Cauchy sequence in
+                    \(L^2(\lambda \otimes \mathbb{P})\), and the
+                    <a href="../Calculus/lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz-Fischer theorem</strong></a>
+                    supplies a limit in that space, since the product measure is a measure like any
+                    other.
+                </p>
+                <p>
+                    The pathwise stage runs on three more tools. The Chebyshev inequality just proved
+                    converts the factorial-speed mean-square estimates into summable bounds on tail
+                    probabilities of the drift differences. The
+                    <a href="ito_integral_properties.html#T-ito_sup_bound" class="ref-link"><strong>maximal bound for the Itô integral</strong></a>
+                    does the same for the noise differences, and does something Chebyshev alone
+                    cannot. For an integrand in \(\mathcal{V}(0, T)\) and a continuous version of
+                    its integral process, it bounds the tail of the <em>running supremum</em> over
+                    the whole horizon by the mean energy of the integrand over the threshold
+                    squared, which is exactly the uniform-in-time control that path convergence
+                    requires. Finally, the
+                    <a href="ito_integral_properties.html#T-borel_cantelli" class="ref-link"><strong>Borel-Cantelli lemma</strong></a>
+                    converts summable tail probabilities into an almost sure statement, that only
+                    finitely many of the exceedances ever happen. Chained together, these three turn
+                    factorial decay of mean squares into uniform convergence of almost every path.
+                </p>
+                <p>
+                    The kit is complete. The scheme that consumes it comes next.
+                </p>
+
+            </section>
+
+            <section id="picard" class="section-content">
+                <h2>The Iteration</h2>
+
+                <p>
+                    The scheme is the stochastic version of a classical idea. Feed a guess for the
+                    solution through the right side of the integral equation, and the output is a
+                    new process, hopefully a better guess. If the coefficients do not amplify
+                    differences too violently, which is exactly what (H2) forbids, successive
+                    outputs should huddle together, and their limit should pass through the
+                    equation unchanged. The deterministic ancestor of this scheme built the
+                    solutions of ordinary differential equations, and the noise term will turn out
+                    to be no obstacle, because the isometry prices it in mean square exactly as
+                    Cauchy-Schwarz prices the drift.
+                </p>
+                <p>
+                    We prove the existence half of the
+                    <a href="sde_existence_uniqueness.html#main-theorem">main theorem</a>. Under
+                    (H1) and (H2), with \(Z\) square integrable and independent of the motion,
+                    there is a process satisfying clauses (S1) through (S4). The proof occupies
+                    this section and the next. This section builds the iterates and proves that
+                    they contract in mean square at factorial speed, ending with a limit in
+                    \(L^2(\lambda \otimes \mathbb{P})\). The next section upgrades the convergence
+                    to almost sure uniform convergence of paths and verifies that the limit
+                    solves.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of the existence half, part 1: mean-square convergence.</span>
+                    <p>
+                        <strong>Step 1 (The scheme, and that it is well defined).</strong><br>
+                        Define \(Y^{(0)}_t = Z\) for all \(t \in [0, T]\), and inductively
+                    </p>
+                    <p>
+                        \[
+                        Y^{(k+1)}_t
+                        = Z
+                        + \int_0^t b\bigl( s, Y^{(k)}_s \bigr)\, ds
+                        + \int_0^t \sigma\bigl( s, Y^{(k)}_s \bigr)\, dw_s ,
+                        \quad 0 \leq t \leq T ,
+                        \]
+                    </p>
+                    <p>
+                        with the \(dw\)-term taken, here and throughout, in its
+                        everywhere-continuous realization. For the induction to make sense, each
+                        iterate must qualify as raw material for the next, and we carry the
+                        invariant through the induction: \(Y^{(k)}\) is
+                        \(\{\mathcal{H}_t\}\)-adapted with continuous paths, and
+                        \(m_k = \sup_{0 \leq t \leq T} \mathbb{E}\bigl[ |Y^{(k)}_t|^2 \bigr]\) is
+                        finite. The start \(Y^{(0)} = Z\) is \(\mathcal{H}_0\)-measurable with
+                        constant paths and \(m_0 = \mathbb{E}[Z^2] \lt \infty\).
+                    </p>
+                    <p>
+                        Assume the invariant for \(Y^{(k)}\). Adaptedness with continuous paths
+                        makes \(Y^{(k)}\) progressively measurable by the
+                        <a href="ito_formula.html#T-progressively_measurable_criteria" class="ref-link"><strong>continuity criterion</strong></a>,
+                        and composing \((s, \omega) \mapsto (s, Y^{(k)}_s(\omega))\) with the Borel
+                        functions \(b\) and \(\sigma\) keeps progressive measurability. The drift
+                        entry is pathwise integrable, since (H1) bounds
+                        \(|b(s, Y^{(k)}_s)| \leq C(1 + |Y^{(k)}_s|)\) and each continuous path of
+                        \(Y^{(k)}\) is bounded on \([0, T]\), so the
+                        <a href="ito_formula.html#T-pathwise_time_integral" class="ref-link"><strong>pathwise time integral</strong></a>
+                        applies over \(\{\mathcal{H}_t\}\), with the integrand extended by zero
+                        beyond the horizon, and returns a process that is adapted,
+                        continuous for every \(\omega\), and progressively measurable. The noise
+                        entry lies in \(\mathcal{V}(0, T)\). It is progressively measurable as just
+                        noted, and by (H1), \((1 + x)^2 \leq 2 (1 + x^2)\), and
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        on the product space, whose joint-measurability hypothesis progressive
+                        measurability supplies,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \int_0^T \sigma\bigl( s, Y^{(k)}_s \bigr)^2\, ds \Bigr]
+                        &\leq 2 C^2 \int_0^T \Bigl( 1 + \mathbb{E}\bigl[ |Y^{(k)}_s|^2 \bigr] \Bigr) ds \\\\
+                        &\leq 2 C^2 T ( 1 + m_k )
+                        \lt \infty .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        So \(Y^{(k+1)}\) is defined. It is adapted, the constant \(Z\) by
+                        \(\mathcal{H}_0\)-measurability, the time integral by the pathwise theorem,
+                        and the stochastic integral because adaptedness in the
+                        <a href="ito_integral_properties.html#T-ito_integral_properties" class="ref-link"><strong>properties theorem</strong></a>
+                        holds for every representative, the continuous realization included, and
+                        its paths are sums of three continuous functions. For the moment bound, split by
+                        \((x + y + z)^2 \leq 3 (x^2 + y^2 + z^2)\), control the drift term
+                        pathwise by the Cauchy-Schwarz case of
+                        <a href="../Calculus/lp_spaces.html#T-holder" class="ref-link"><strong>Hölder's inequality</strong></a>
+                        and then in the mean by Tonelli, and compute the noise term by the
+                        <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>,
+                        whose membership hypothesis was verified above. With the display just
+                        proved,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\bigl[ |Y^{(k+1)}_t|^2 \bigr]
+                        &\leq 3\, \mathbb{E}[Z^2]
+                        + 3 t\, \mathbb{E}\Bigl[ \int_0^t b\bigl( s, Y^{(k)}_s \bigr)^2 ds \Bigr]
+                        + 3\, \mathbb{E}\Bigl[ \int_0^t \sigma\bigl( s, Y^{(k)}_s \bigr)^2 ds \Bigr] \\\\
+                        &\leq 3\, \mathbb{E}[Z^2]
+                        + 3\, ( T + 1 ) \cdot 2 C^2 T ( 1 + m_k ) ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        uniformly in \(t\), so \(m_{k+1}\) is finite and the invariant survives.
+                    </p>
+                    <p>
+                        <strong>Step 2 (The first gap).</strong><br>
+                        Write \(d_k(t) = \mathbb{E}\bigl[ |Y^{(k+1)}_t - Y^{(k)}_t|^2 \bigr]\) for
+                        the mean-square gap between consecutive iterates, a measurable function of
+                        \(t\), as Tonelli certifies from joint measurability. The first gap is
+                    </p>
+                    <p>
+                        \[
+                        Y^{(1)}_t - Y^{(0)}_t
+                        = \int_0^t b(s, Z)\, ds + \int_0^t \sigma(s, Z)\, dw_s ,
+                        \]
+                    </p>
+                    <p>
+                        and splitting by \((x + y)^2 \leq 2 (x^2 + y^2)\), then treating drift and
+                        noise exactly as in Step 1, with (H1) applied at the constant argument
+                        \(Z\),
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        d_0(t)
+                        &\leq 2 t\, \mathbb{E}\Bigl[ \int_0^t b(s, Z)^2\, ds \Bigr]
+                        + 2\, \mathbb{E}\Bigl[ \int_0^t \sigma(s, Z)^2\, ds \Bigr] \\\\
+                        &\leq 2\, ( T + 1 )\, C^2\, \mathbb{E}\bigl[ ( 1 + |Z| )^2 \bigr]\, t \\\\
+                        &= A_1\, t ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where \(A_1 = 2 ( T + 1 )\, C^2\, \mathbb{E}[ ( 1 + |Z| )^2 ]\) is finite
+                        because \(Z\) is square integrable.
+                    </p>
+                    <p>
+                        <strong>Step 3 (One turn of the crank).</strong><br>
+                        Fix \(k \geq 1\) and \(t \in [0, T]\). Each iterate satisfies its defining
+                        identity, so subtracting, and using linearity of both integrals, the
+                        stochastic one by part (i) of the
+                        <a href="ito_integral_properties.html#T-ito_integral_properties" class="ref-link"><strong>properties theorem</strong></a>,
+                        gives, almost surely, with
+                        \(\beta^{(k)}_s = b(s, Y^{(k)}_s) - b(s, Y^{(k-1)}_s)\) and
+                        \(\gamma^{(k)}_s = \sigma(s, Y^{(k)}_s) - \sigma(s, Y^{(k-1)}_s)\),
+                    </p>
+                    <p>
+                        \[
+                        Y^{(k+1)}_t - Y^{(k)}_t
+                        = \int_0^t \beta^{(k)}_s\, ds + \int_0^t \gamma^{(k)}_s\, dw_s .
+                        \]
+                    </p>
+                    <p>
+                        The initial slot is empty, since every iterate shares the start \(Z\). Both
+                        differences are progressively measurable, (H2) gives
+                        \(|\beta^{(k)}_s| \leq D\, |Y^{(k)}_s - Y^{(k-1)}_s|\), bounded along each
+                        pair of continuous paths, and
+                        \(\mathbb{E}\bigl[ \int_0^T (\gamma^{(k)}_s)^2\, ds \bigr]
+                        \leq 2 D^2 T ( m_k + m_{k-1} ) \lt \infty\)
+                        by (H2), \((x - y)^2 \leq 2 x^2 + 2 y^2\), and Tonelli, so
+                        \(\gamma^{(k)} \in \mathcal{V}(0, T)\). Splitting as in the uniqueness
+                        proof, with the empty slot retained so that the same constant serves both
+                        pages, and running Cauchy-Schwarz, Tonelli, the isometry, and (H2) exactly
+                        as there,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        d_k(t)
+                        &\leq 3 t\, \mathbb{E}\Bigl[ \int_0^t \bigl( \beta^{(k)}_s \bigr)^2 ds \Bigr]
+                        + 3\, \mathbb{E}\Bigl[ \int_0^t \bigl( \gamma^{(k)}_s \bigr)^2 ds \Bigr] \\\\
+                        &\leq 3\, ( 1 + t )\, D^2 \int_0^t d_{k-1}(s)\, ds \\\\
+                        &\leq A \int_0^t d_{k-1}(s)\, ds ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where the last line absorbs \(t \leq T\) into
+                        \(A = 3\, ( 1 + T )\, D^2\), the constant of the uniqueness proof.
+                    </p>
+                    <p>
+                        <strong>Step 4 (Factorial decay).</strong><br>
+                        We claim
+                    </p>
+                    <p>
+                        \[
+                        d_k(t) \leq A_1\, A^k\, \frac{t^{k+1}}{(k+1)!} ,
+                        \quad 0 \leq t \leq T ,\ k \geq 0 .
+                        \]
+                    </p>
+                    <p>
+                        Step 2 is the case \(k = 0\). If the bound holds for \(k - 1\), Step 3
+                        gives
+                    </p>
+                    <p>
+                        \[
+                        d_k(t)
+                        \leq A \int_0^t A_1\, A^{k-1}\, \frac{s^{k}}{k!}\, ds
+                        = A_1\, A^{k}\, \frac{t^{k+1}}{(k+1)!} .
+                        \]
+                    </p>
+                    <p>
+                        The factorial is the entire story. Each turn of the crank costs one factor
+                        of \(A\) and buys one more integration of a power, and the powers'
+                        denominators grow faster than any geometric factor can spend.
+                    </p>
+                    <p>
+                        <strong>Step 5 (Two Cauchy conclusions).</strong><br>
+                        Integrating the claim over the horizon, by Tonelli once more,
+                    </p>
+                    <p>
+                        \[
+                        \bigl\| Y^{(k+1)} - Y^{(k)} \bigr\|_{L^2(\lambda \otimes \mathbb{P})}^2
+                        = \int_0^T d_k(t)\, dt
+                        \leq A_1\, A^{k}\, \frac{T^{k+2}}{(k+2)!} .
+                        \]
+                    </p>
+                    <p>
+                        The square roots of these bounds form a convergent series. The ratio of
+                        consecutive terms is \(( A T / (k + 3) )^{1/2}\), which falls below
+                        \(\tfrac{1}{2}\) once \(k \geq 4 A T\), so the tail is dominated by a
+                        halving geometric series. For \(m \gt n\), the triangle inequality in
+                        \(L^2(\lambda \otimes \mathbb{P})\) gives
+                    </p>
+                    <p>
+                        \[
+                        \bigl\| Y^{(m)} - Y^{(n)} \bigr\|_{L^2(\lambda \otimes \mathbb{P})}
+                        \leq \sum_{k=n}^{m-1}
+                        \Bigl( A_1\, A^{k}\, \frac{T^{k+2}}{(k+2)!} \Bigr)^{1/2}
+                        \longrightarrow 0
+                        \quad \text{as } n \to \infty ,
+                        \]
+                    </p>
+                    <p>
+                        a tail of a convergent series. The iterates are Cauchy in
+                        \(L^2(\lambda \otimes \mathbb{P})\), the product measure is a measure like
+                        any other, and the
+                        <a href="../Calculus/lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz-Fischer theorem</strong></a>
+                        supplies a limit: a jointly measurable process \(X\) on
+                        \([0, T] \times \Omega\) with
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\Bigl[ \int_0^T X_t^2\, dt \Bigr] \lt \infty
+                        \quad \text{and} \quad
+                        \bigl\| Y^{(n)} - X \bigr\|_{L^2(\lambda \otimes \mathbb{P})}
+                        \longrightarrow 0 ,
+                        \]
+                    </p>
+                    <p>
+                        determined up to a \(\lambda \otimes \mathbb{P}\)-null set. The same
+                        comparison also holds at each fixed time. From Step 4,
+                        \(\sum_k d_k(t)^{1/2}
+                        \leq \sum_k ( A_1 A^k T^{k+1} / (k+1)! )^{1/2} \lt \infty\), so
+                        \(\{ Y^{(n)}_t \}_n\) is Cauchy in \(L^2(\mathbb{P})\) for every single
+                        \(t \in [0, T]\). We record both conclusions and pause part 1 here.
+                    </p>
+                </div>
+
+                <p>
+                    What the mean-square stage delivers is deliberately less than a solution. The
+                    limit \(X\) is so far an equivalence class on the strip, defined up to a joint
+                    null set, with no distinguished paths, no continuity, and no verified relation
+                    to the equation. Candidates for all three exist, because the iterates
+                    themselves are continuous and adapted, and the factorial decay is strong
+                    enough to make them converge not just on average but uniformly along almost
+                    every path. Extracting that convergence is the business of the next section,
+                    and it is where the tail bounds of the toolkit earn their place.
+                </p>
+
+            </section>
+
+            <section id="pathwise-existence" class="section-content">
+                <h2>Pathwise Existence</h2>
+
+                <p>
+                    The factorial decay of the mean-square gaps is far stronger than the Cauchy
+                    property alone required, and the surplus is now spent on the paths. The plan
+                    compares each uniform gap
+                    \(\sup_{0 \leq t \leq T} |Y^{(k+1)}_t - Y^{(k)}_t|\) against the threshold
+                    \(2^{-k}\). The probability of exceeding the threshold will be summable in
+                    \(k\), because the mean squares shrink factorially while the thresholds shrink
+                    only geometrically, and the Borel-Cantelli lemma then confines almost every
+                    \(\omega\) to finitely many exceedances. Beyond them, the path gaps are
+                    dominated by a convergent geometric series, and the iterates converge
+                    uniformly. This is the argument for which the toolkit was assembled, and every
+                    tool is consumed exactly once per gap: Chebyshev on the drift, the maximal
+                    bound on the noise, Borel-Cantelli on the sum.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of the existence half, part 2: pathwise convergence and verification.</span>
+                    <p>
+                        We keep the notation of part 1, including the gaps \(d_k\), the constants
+                        \(A_1\) and \(A\), and, for \(k \geq 1\), the coefficient differences
+                        \(\beta^{(k)}\) and \(\gamma^{(k)}\) of Step 3 there.
+                    </p>
+                    <p>
+                        <strong>Step 1 (Tail bounds for the uniform gaps).</strong><br>
+                        Fix \(k \geq 1\). The two iteration identities subtract as processes. For
+                        every \(\omega\), the gap \(Y^{(k+1)}_t - Y^{(k)}_t\) is the sum of the
+                        difference of the two time integrals and the difference \(U_t\) of the two
+                        continuous realizations of the stochastic integrals. On a single
+                        full-measure event, the time integrals obey their pathwise identities
+                        simultaneously for all \(t\), so there
+                    </p>
+                    <p>
+                        \[
+                        \sup_{0 \leq t \leq T} \bigl| Y^{(k+1)}_t - Y^{(k)}_t \bigr|
+                        \leq \int_0^T \bigl| \beta^{(k)}_s \bigr|\, ds
+                        + \sup_{0 \leq t \leq T} \bigl| U_t \bigr| .
+                        \]
+                    </p>
+                    <p>
+                        The process \(U\) is continuous, and at each \(t\) it is almost surely a
+                        representative of \(\int_0^t \gamma^{(k)}_s\, dw_s\), by linearity from the
+                        <a href="ito_integral_properties.html#T-ito_integral_properties" class="ref-link"><strong>properties theorem</strong></a>,
+                        so \(U\) is a continuous version of that integral process, which is
+                        precisely what the maximal bound asks for. If the right side above stays at
+                        or below \(2^{-k-1}\) in each of its two terms, the left side stays at or
+                        below \(2^{-k}\), so, up to a null set,
+                    </p>
+                    <p>
+                        \[
+                        \Bigl\{ \sup_{t \leq T} \bigl| Y^{(k+1)}_t - Y^{(k)}_t \bigr| \gt 2^{-k} \Bigr\}
+                        \subseteq
+                        \Bigl\{ \int_0^T \bigl| \beta^{(k)}_s \bigr| ds \gt 2^{-k-1} \Bigr\}
+                        \cup
+                        \Bigl\{ \sup_{t \leq T} | U_t | \gt 2^{-k-1} \Bigr\} ,
+                        \]
+                    </p>
+                    <p>
+                        and all three events are measurable, the suprema as countable suprema over
+                        rational times of continuous paths. Subadditivity bounds the left
+                        probability by the sum of the right two. For the drift, the strict form of
+                        the Chebyshev inequality, then Cauchy-Schwarz pathwise and
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli</strong></a>
+                        in the mean, then (H2) and the factorial bound of part 1,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{P}\Bigl[ \int_0^T \bigl| \beta^{(k)}_s \bigr| ds \gt 2^{-k-1} \Bigr]
+                        &\leq 2^{2(k+1)}\, T\, \mathbb{E}\Bigl[ \int_0^T \bigl( \beta^{(k)}_s \bigr)^2 ds \Bigr] \\\\
+                        &\leq 2^{2(k+1)}\, T\, D^2 \int_0^T d_{k-1}(s)\, ds \\\\
+                        &\leq 4^{k+1}\, T\, D^2\, A_1 A^{k-1}\, \frac{T^{k+1}}{(k+1)!} .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        For the noise, the
+                        <a href="ito_integral_properties.html#T-ito_sup_bound" class="ref-link"><strong>maximal bound</strong></a>
+                        applied to the integrand \(\gamma^{(k)} \in \mathcal{V}(0, T)\), whose
+                        membership part 1 verified, at the strict threshold, harmless because the
+                        strict event is the smaller one, gives, with (H2), Tonelli, and the
+                        factorial bound folding the energy exactly as for the drift,
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{P}\Bigl[ \sup_{t \leq T} | U_t | \gt 2^{-k-1} \Bigr]
+                        \leq 2^{2(k+1)}\, \mathbb{E}\Bigl[ \int_0^T \bigl( \gamma^{(k)}_s \bigr)^2 ds \Bigr]
+                        \leq 4^{k+1}\, D^2\, A_1 A^{k-1}\, \frac{T^{k+1}}{(k+1)!} .
+                        \]
+                    </p>
+                    <p>
+                        Writing \(p_k\) for the sum of the two right sides,
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{P}\Bigl[ \sup_{t \leq T} \bigl| Y^{(k+1)}_t - Y^{(k)}_t \bigr| \gt 2^{-k} \Bigr]
+                        \leq p_k
+                        = 4^{k+1}\, ( 1 + T )\, D^2\, A_1 A^{k-1}\, \frac{T^{k+1}}{(k+1)!} ,
+                        \]
+                    </p>
+                    <p>
+                        and the ratio \(p_{k+1} / p_k = 4 A T / (k + 2)\) falls below
+                        \(\tfrac{1}{2}\) for all large \(k\), so \(\sum_k p_k \lt \infty\) by
+                        comparison with a geometric series. Factorial beats geometric, once again.
+                    </p>
+                    <p>
+                        <strong>Step 2 (Borel-Cantelli, and the limit acquires paths).</strong><br>
+                        By the
+                        <a href="ito_integral_properties.html#T-borel_cantelli" class="ref-link"><strong>Borel-Cantelli lemma</strong></a>,
+                        almost every \(\omega\) exceeds its threshold for only finitely many
+                        \(k\). For such \(\omega\) the series
+                        \(\sum_k \sup_{t \leq T} |Y^{(k+1)}_t(\omega) - Y^{(k)}_t(\omega)|\)
+                        converges. Its early terms are finite, because continuous paths are
+                        bounded on \([0, T]\), and its tail is dominated by
+                        \(\sum_k 2^{-k}\). For \(m \gt n\),
+                        the triangle inequality bounds
+                        \(\sup_{t} |Y^{(m)}_t(\omega) - Y^{(n)}_t(\omega)|\) by the tail of this
+                        series from \(n\), so the paths \(Y^{(n)}(\omega)\) form a uniformly Cauchy
+                        sequence of functions on \([0, T]\). Pointwise limits exist by completeness
+                        of the reals, and the uniform Cauchy bounds transfer to the limit, so the
+                        convergence is uniform. Let \(G \in \mathcal{F}\) be the event on which this happens,
+                        \(\mathbb{P}[G] = 1\), and define
+                    </p>
+                    <p>
+                        \[
+                        \tilde{X}_t(\omega)
+                        = \lim_{n \to \infty} Y^{(n)}_t(\omega)\, \mathbf{1}_{G}(\omega) ,
+                        \quad 0 \leq t \leq T .
+                        \]
+                    </p>
+                    <p>
+                        Every path of \(\tilde{X}\) is continuous. Off \(G\) the path is the zero
+                        function, and on \(G\), for \(s\) near \(t\), the gap
+                        \(|\tilde{X}_s - \tilde{X}_t|\) is at most twice the uniform distance from
+                        \(\tilde{X}\) to \(Y^{(n)}\) plus \(|Y^{(n)}_s - Y^{(n)}_t|\), and choosing
+                        \(n\) large and then \(s\) close makes all three terms small. Adaptedness
+                        is the delicate point, and it is exactly where the enlarged filtration
+                        pays. The complement of \(G\) is a null set, so \(\mathbf{1}_{G}\) is
+                        \(\mathcal{H}_0\)-measurable, because \(\mathcal{H}_0\) contains
+                        \(\mathcal{N}\) by construction. Each \(Y^{(n)}_t\) is
+                        \(\mathcal{H}_t\)-measurable, hence so is the limit of the products, and
+                        \(\tilde{X}\) is adapted with continuous paths. Clause (S1) holds.
+                    </p>
+                    <p>
+                        <strong>Step 3 (One limit in two modes).</strong><br>
+                        Set
+                        \(\varepsilon_n = \sum_{k \geq n} \bigl( A_1 A^k T^{k+1} / (k+1)! \bigr)^{1/2}\),
+                        the tail of the convergent series of part 1, so
+                        \(\varepsilon_n \to 0\). At each fixed \(t\), for \(m \gt n\), the triangle
+                        inequality in \(L^2(\mathbb{P})\) gives
+                        \(\mathbb{E}[ |Y^{(m)}_t - Y^{(n)}_t|^2 ] \leq \varepsilon_n^2\). Letting
+                        \(m \to \infty\), the integrands converge to
+                        \(|\tilde{X}_t - Y^{(n)}_t|^2\) almost surely on \(G\), and
+                        <a href="limit_theorems_product_measures.html#T-prob-fatou" class="ref-link"><strong>Fatou's lemma</strong></a>
+                        preserves the bound:
+                    </p>
+                    <p>
+                        \[
+                        \sup_{0 \leq t \leq T}\,
+                        \mathbb{E}\bigl[ | \tilde{X}_t - Y^{(n)}_t |^2 \bigr]
+                        \leq \varepsilon_n^2
+                        \longrightarrow 0 .
+                        \]
+                    </p>
+                    <p>
+                        Two consequences follow at once. First, by the triangle inequality,
+                        \(\mathbb{E}[ \tilde{X}_t^2 ]^{1/2}
+                        \leq \mathbb{E}[ Z^2 ]^{1/2} + \varepsilon_0 = M\)
+                        uniformly in \(t\), so integrating over the horizon, with Tonelli and the
+                        progressive measurability that (S1) supplies,
+                        \(\mathbb{E}\bigl[ \int_0^T \tilde{X}_t^2\, dt \bigr] \leq M^2 T \lt \infty\),
+                        which is clause (S2). Second, integrating the display over \([0, T]\)
+                        shows \(Y^{(n)} \to \tilde{X}\) in \(L^2(\lambda \otimes \mathbb{P})\), so
+                        \(\tilde{X}\) is a representative of the Riesz-Fischer limit \(X\) of
+                        part 1. The equivalence class has acquired a distinguished member, adapted
+                        and continuous along every path.
+                    </p>
+                    <p>
+                        <strong>Step 4 (The limit solves).</strong><br>
+                        The substituted coefficients of \(\tilde{X}\) qualify exactly as in
+                        Step 1 of part 1. Progressive measurability passes through composition,
+                        (H1) and continuity of paths make \(s \mapsto b(s, \tilde{X}_s)\) pathwise
+                        integrable, and
+                        \(\mathbb{E}[ \int_0^T \sigma(s, \tilde{X}_s)^2 ds ]
+                        \leq 2 C^2 T ( 1 + M^2 ) \lt \infty\),
+                        so \(\sigma(\cdot, \tilde{X}) \in \mathcal{V}(0, T)\). Clause (S3) holds,
+                        and the process
+                    </p>
+                    <p>
+                        \[
+                        R_t = Z + \int_0^t b\bigl( s, \tilde{X}_s \bigr)\, ds
+                        + \int_0^t \sigma\bigl( s, \tilde{X}_s \bigr)\, dw_s ,
+                        \]
+                    </p>
+                    <p>
+                        with the \(dw\)-term in its everywhere-continuous realization, is defined,
+                        adapted, and continuous along every path, for the same reasons as every
+                        iterate. Fix \(t\). By Cauchy-Schwarz, Tonelli, and (H2), then the display
+                        of Step 3,
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\Bigl[ \Bigl( \int_0^t \bigl( b( s, Y^{(n)}_s ) - b( s, \tilde{X}_s ) \bigr) ds \Bigr)^{\!2} \Bigr]
+                        \leq T D^2 \int_0^t \mathbb{E}\bigl[ | Y^{(n)}_s - \tilde{X}_s |^2 \bigr] ds
+                        \leq T^2 D^2 \varepsilon_n^2 ,
+                        \]
+                    </p>
+                    <p>
+                        and by the
+                        <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>,
+                        whose membership hypothesis holds for the progressively measurable
+                        difference with
+                        \(\mathbb{E} \int_0^T ( \sigma( s, Y^{(n)}_s ) - \sigma( s, \tilde{X}_s ) )^2 ds
+                        \leq T D^2 \varepsilon_n^2 \lt \infty\),
+                        the noise terms are bounded by \(T D^2 \varepsilon_n^2\) and vanish in the
+                        same way. So the right side of the iteration
+                        identity converges to \(R_t\) in \(L^2(\mathbb{P})\). Its left side
+                        \(Y^{(n+1)}_t\) converges to \(\tilde{X}_t\) almost surely on \(G\). A
+                        sequence with an almost sure limit and an \(L^2\) limit has only one
+                        limit, by the same Fatou argument as in Step 3 applied to
+                        \(| Y^{(n+1)}_t - R_t |^2\), so \(\tilde{X}_t = R_t\) almost surely.
+                    </p>
+                    <p>
+                        This holds at each fixed \(t\). A countable union of null sets is null, so
+                        almost surely \(\tilde{X}_t = R_t\) simultaneously for every rational
+                        \(t \in [0, T]\), and both processes are continuous along every path, so
+                        two paths agreeing on a dense set agree everywhere. Clause (S4) holds
+                        with the integral equation read simultaneously for all \(t\), and
+                        \(\tilde{X}\) is a solution. Together with the uniqueness half proved on
+                        the previous page, the theorem is proved in full.
+                    </p>
+                </div>
+
+                <p>
+                    One design decision has now paid its bill. The solution was manufactured as a
+                    limit, and limits are blind to individual points of \(\Omega\): the
+                    convergence event \(G\) is beyond the reach of any raw filtration at time
+                    zero, and a limit taken along it can fail to be measurable for filtrations
+                    that ignore null sets. The enlargement of the first page of this pair
+                    included \(\mathcal{N}\) in \(\mathcal{H}_0\) before any limit was in sight,
+                    and Step 2 above is the moment that choice was for. The event \(G\) slid into
+                    \(\mathcal{H}_0\) through its null complement, and adaptedness of the
+                    solution came out a one-line argument instead of an obstruction.
+                </p>
+                <p>
+                    The theorem is now a closed account. Coefficients with linear growth and a
+                    Lipschitz modulus admit exactly one solution from each square-integrable
+                    independent start. The final section asks what lies beyond the account: what
+                    the iteration says about the deterministic theory it generalizes, how far the
+                    solution's moments can be pushed, and what solving even means when the
+                    Lipschitz hypothesis is dropped.
+                </p>
+
+            </section>
+
+            <section id="beyond-lipschitz" class="section-content">
+                <h2>Beyond Lipschitz</h2>
+
+                <p>
+                    The theorem is closed, and this section walks its perimeter. Three questions
+                    remain worth asking. What was the proof, secretly, in the language of fixed
+                    points. What does the theorem pay back to the deterministic theory it
+                    generalizes, and what does it say about the size of its own solutions. And
+                    what does solving even mean when the Lipschitz hypothesis, which powered both
+                    halves, is taken away.
+                </p>
+
+                <h3>The Fixed Point Behind the Iteration</h3>
+
+                <p>
+                    The scheme was a fixed-point iteration in disguise. The map that sends a
+                    process \(X\) to \(Z + \int_0^t b(s, X_s)\, ds + \int_0^t \sigma(s, X_s)\, dw_s\)
+                    has the solutions of the equation as its fixed points, and part 1's
+                    contraction estimate says that one application of the map trades the
+                    mean-square distance for its own running time integral, the germ of a
+                    contraction. Two standard devices make it a literal one, either shrinking the horizon until \(A T \lt 1\) and
+                    patching intervals together, or weighting the mean-square norm by
+                    \(e^{-\kappa t}\) with \(\kappa\) large. The
+                    <a href="../Calculus/completeness.html#T-banach_fixed_point" class="ref-link"><strong>Banach fixed-point theorem</strong></a>
+                    then hands over existence, uniqueness, and, through its
+                    <a href="../Calculus/completeness.html#T-banach_convergence_rate" class="ref-link"><strong>convergence rate</strong></a>,
+                    a geometric error bound. The route taken on this page skipped the packaging
+                    and ran the induction by hand, because the integral structure gives away more
+                    than any contraction constant records. The gaps decay factorially, not
+                    geometrically, and that surplus is what made every summability check of
+                    part 2 a one-line comparison. The fixed-point frame explains why the scheme
+                    had to work. The factorial explains why it worked so comfortably.
+                </p>
+
+                <h3>The Deterministic Dividend</h3>
+
+                <p>
+                    Setting \(\sigma = 0\) makes the noise term vanish and the theorem collapse
+                    onto ordinary differential equations, and the collapse is worth recording,
+                    because it repays a debt.
+                </p>
+
+                <div class="theorem" id="T-ode_existence_uniqueness">
+                    <span class="theorem-title">Corollary: Global Existence and Uniqueness for ODEs</span>
+                    <p>
+                        Let \(b : [0, T] \times \mathbb{R} \to \mathbb{R}\) be jointly Borel
+                        measurable and satisfy (H1) and (H2). Then for every \(x_0 \in \mathbb{R}\)
+                        there is exactly one continuous function \(x : [0, T] \to \mathbb{R}\)
+                        with
+                    </p>
+                    <p>
+                        \[
+                        x(t) = x_0 + \int_0^t b\bigl( s, x(s) \bigr)\, ds ,
+                        \quad 0 \leq t \leq T .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Apply the theorem with \(\sigma \equiv 0\) and \(Z \equiv x_0\), a
+                        square-integrable start independent of everything. The noise term is the
+                        integral of the zero integrand and vanishes by linearity. For uniqueness,
+                        any continuous candidate \(x\) defines a deterministic process, adapted to
+                        any filtration, whose clauses (S1) through (S4) are immediate, the
+                        integrand \(s \mapsto b(s, x(s))\) being Borel by composition and bounded
+                        by (H1) on the bounded range of \(x\). Two such candidates are solutions
+                        with the same start, agree almost surely by the uniqueness half, and,
+                        being deterministic, agree outright. For existence, the iterates of
+                        part 1 are deterministic by induction, since each is built from \(x_0\)
+                        and a time integral of a deterministic path, so their almost sure uniform
+                        convergence is plain uniform convergence, and the limit is a
+                        deterministic continuous function satisfying the equation at every
+                        \(t\), both sides of the almost sure identity of part 2 being
+                        deterministic.
+                    </p>
+                </div>
+
+                <p>
+                    The debt this repays was recorded on the manifold track. The
+                    <a href="../Calculus/integral_curves.html#T-local_existence_integral_curve" class="ref-link"><strong>local existence theorem for integral curves</strong></a>
+                    was stated there on trust, as classical ODE theory, and a smooth vector field
+                    read in a chart is locally Lipschitz, so the engine behind that classical
+                    theory is exactly the iteration of this page, run locally. The corollary
+                    proves the globally Lipschitz instance from scratch. What remains on trust is
+                    only the localization, the passage from a Lipschitz bound on a neighborhood
+                    to a solution on a short interval, and not the engine itself.
+                </p>
+
+                <h3>How Big Can a Solution Grow</h3>
+
+                <p>
+                    The theory downstream of existence integrates functions of \(X_t\) against
+                    its law, and every such computation begins by asking whether the integrals
+                    are finite. The construction already contains the answer. Running the
+                    self-bound of the solution itself, rather than of a gap, through Gronwall's
+                    inequality gives a moment estimate that is uniform over the horizon.
+                </p>
+
+                <div class="theorem" id="T-sde_moment_bound">
+                    <span class="theorem-title">Theorem: Second-Moment Bound for Solutions</span>
+                    <p>
+                        Let \(b\) and \(\sigma\) satisfy (H1), and let \(X\) be any solution, in
+                        the sense of the definition, with initial value \(Z\). Then
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\bigl[ X_t^2 \bigr]
+                        \leq K_1\, e^{K_2 t} ,
+                        \quad 0 \leq t \leq T ,
+                        \]
+                    </p>
+                    <p>
+                        where \(K_1 = 3\, \mathbb{E}[Z^2] + 6 C^2 T ( T + 1 )\) and
+                        \(K_2 = 6\, ( 1 + T )\, C^2\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Write \(v(t) = \mathbb{E}[X_t^2]\), measurable in \(t\) with values in
+                        \([0, \infty]\) for now, as Tonelli certifies from the progressive
+                        measurability that (S1) supplies. Split the integral equation of (S4) by
+                        \((x + y + z)^2 \leq 3 (x^2 + y^2 + z^2)\), control the drift pathwise by
+                        Cauchy-Schwarz and in the mean by Tonelli, and compute the noise term by
+                        the Itô isometry, whose membership hypothesis is clause (S3). With (H1)
+                        and \((1 + x)^2 \leq 2 ( 1 + x^2 )\),
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        v(t)
+                        &\leq 3\, \mathbb{E}[Z^2]
+                        + 3 t\, \mathbb{E}\Bigl[ \int_0^t b( s, X_s )^2\, ds \Bigr]
+                        + 3\, \mathbb{E}\Bigl[ \int_0^t \sigma( s, X_s )^2\, ds \Bigr] \\\\
+                        &\leq 3\, \mathbb{E}[Z^2]
+                        + 6 C^2\, ( T + 1 ) \int_0^t \bigl( 1 + v(s) \bigr)\, ds \\\\
+                        &\leq K_1 + K_2 \int_0^t v(s)\, ds .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        The middle line absorbs \(t \leq T\), and the last line spends
+                        \(6 C^2 ( T + 1 ) \int_0^t 1\, ds \leq 6 C^2 T ( T + 1 )\) into \(K_1\).
+                        Clause (S2) makes \(\int_0^T v\) finite, so the right side of the display
+                        is finite and every value \(v(t)\) is finite with it. The hypotheses of
+                        <a href="sde_existence_uniqueness.html#gronwall">Gronwall's inequality</a>
+                        are met, with \(K_1\) as the additive constant and \(K_2\) as the
+                        multiplier, and the conclusion follows.
+                    </p>
+                </div>
+
+                <p>
+                    The Lipschitz hypothesis plays no role. Growth alone controls growth, and the
+                    bound holds for every solution of every equation with linearly growing
+                    coefficients, unique or not. When later pages differentiate expectations of
+                    functions of \(X_t\) in time, this bound is what makes the integrals finite
+                    before any computation starts.
+                </p>
+
+                <h3>Solving Without Lipschitz: Strong and Weak</h3>
+
+                <p>
+                    Both halves of the theorem ran on (H2), the uniqueness proof through the
+                    self-bound of the gap and the existence proof through the contraction of the
+                    scheme. Removing it does not merely break the proofs. It splits the notion of
+                    solving into two, according to what is given in advance and what is allowed
+                    to be built.
+                </p>
+
+                <div class="theorem" id="D-strong_solution">
+                    <span class="theorem-title">Definition: Strong Solution</span>
+                    <p>
+                        Let the probability space, the Brownian motion \(w\), and the initial
+                        value \(Z\) be given in advance, with \(\{\mathcal{H}_t\}\) the enlarged
+                        filtration they generate. A <strong>strong solution</strong> of the
+                        equation with coefficients \(b\) and \(\sigma\) is a process satisfying
+                        clauses (S1) through (S4) of the
+                        <a href="sde_existence_uniqueness.html#solution-concept">solution definition</a>
+                        with respect to \(\{\mathcal{H}_t\}\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="D-weak_solution">
+                    <span class="theorem-title">Definition: Weak Solution</span>
+                    <p>
+                        Let coefficients \(b\) and \(\sigma\) and a Borel probability measure
+                        \(\mu\) on \(\mathbb{R}\) be given. A <strong>weak solution</strong> is a
+                        filtered probability space carrying a filtration
+                        \(\{\hat{\mathcal{H}}_t\}\), a standard Brownian motion \(\hat{w}\) that
+                        is adapted and whose increments are independent of the running past, the
+                        two properties of the enlargement lemma, and a
+                        continuous adapted process \(\hat{X}\) with \(\hat{X}_0\) distributed
+                        according to \(\mu\), such that clauses (S2) and (S3) of the solution
+                        definition hold, their wording unchanged over any filtration, and
+                    </p>
+                    <p>
+                        \[
+                        \hat{X}_t
+                        = \hat{X}_0
+                        + \int_0^t b\bigl( s, \hat{X}_s \bigr)\, ds
+                        + \int_0^t \sigma\bigl( s, \hat{X}_s \bigr)\, d\hat{w}_s
+                        \]
+                    </p>
+                    <p>
+                        holds almost surely, simultaneously for every \(t \in [0, T]\).
+                    </p>
+                </div>
+
+                <p>
+                    A strong solution is asked to be a functional of prescribed randomness. A
+                    weak solution is allowed to bring its own space and its own noise, and only
+                    the law of the start and the shape of the equation are prescribed. Every
+                    strong solution is a weak solution, its given setting serving as the
+                    setting. The uniqueness notions split along the same seam.
+                    <strong>Pathwise uniqueness</strong> asks that two solutions on the same
+                    setting with the same start be indistinguishable, and it is what the
+                    uniqueness half proved under (H2). <strong>Uniqueness in law</strong> asks
+                    only that any two weak solutions share their finite-dimensional
+                    distributions. One statement bridges the two notions under the hypotheses of
+                    this pair of pages, and the construction just completed is most of its
+                    proof.
+                </p>
+
+                <div class="theorem" id="T-weak_uniqueness">
+                    <span class="theorem-title">Lemma: Uniqueness in Law under the Standard Hypotheses</span>
+                    <p>
+                        Let \(b\) and \(\sigma\) satisfy (H1) and (H2) on \([0, T]\), and let
+                        \(\mu\) be a Borel probability measure on \(\mathbb{R}\) with
+                        \(\int_{\mathbb{R}} x^2 \, d\mu \lt \infty\). Then any two solutions of
+                    </p>
+                    <p>
+                        \[
+                        d X_t = b(t, X_t)\, dt + \sigma(t, X_t)\, d w_t ,
+                        \quad X_0 \sim \mu ,
+                        \]
+                    </p>
+                    <p>
+                        weak or strong, and living on possibly different spaces, share their
+                        finite-dimensional distributions.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof Sketch.</span>
+                    <p>
+                        <strong>The construction travels.</strong><br>
+                        The two existence parts above and the uniqueness half of the
+                        <a href="sde_existence_uniqueness.html#main-theorem">main theorem</a>
+                        consumed exactly two properties of the ambient filtration, adaptedness
+                        of the driving motion and independence of its increments from the
+                        running past, together with the membership clauses of the
+                        <a href="sde_existence_uniqueness.html#solution-concept">solution definition</a>.
+                        The definition of a weak solution demands these same properties, and
+                        the finite second moment of \(\mu\) supplies what the constant
+                        \(A_1\) asked of the initial value. Both arguments therefore run
+                        verbatim on the space of any weak solution. Given a weak solution
+                        \(\bigl( \tilde{X}, \tilde{w} \bigr)\) over a filtration
+                        \(\{\tilde{\mathcal{H}}_t\}\), run the Picard iteration on that space,
+                        driven by \(\tilde{w}\) and started from \(\tilde{X}_0\). It produces
+                        a solution there, and pathwise uniqueness on that same space
+                        identifies the product with \(\tilde{X}\) up to indistinguishability.
+                        Every weak solution is thus the Picard limit over its own noise.
+                    </p>
+                    <p>
+                        <strong>The inputs agree in law.</strong><br>
+                        Let \(\bigl( \hat{X}, \hat{w} \bigr)\) over
+                        \(\{\hat{\mathcal{H}}_t\}\) be a second weak solution with the same
+                        initial law. On each space, independence of the increments from the
+                        running past telescopes into independence of the whole driving path
+                        from the time-zero \(\sigma\)-algebra, by the factorization argument
+                        that proved the enlargement lemma. The pair of initial value and
+                        driving path therefore carries the same law on both spaces, the
+                        product of \(\mu\) with the law of the Brownian path.
+                    </p>
+                    <p>
+                        <strong>The law rides the iteration.</strong><br>
+                        Write \(Y^{(k)}\) and \(\hat{Y}^{(k)}\) for the iterates on the two
+                        spaces. By induction, the pairs
+                        \(\bigl( Y^{(k)}, \tilde{w} \bigr)\) and
+                        \(\bigl( \hat{Y}^{(k)}, \hat{w} \bigr)\) have the same law for every
+                        \(k\). The inductive step is the one assertion this sketch takes on
+                        trust. Passing from \(k\) to \(k + 1\) applies a time integral and an
+                        Itô integral to the current iterate, the same limiting recipe on both
+                        spaces, and the law of the output of that recipe depends only on the
+                        joint law of its inputs. The machinery for pushing laws through the
+                        Itô construction has not been built on this track, and we do not
+                        build it here.
+                    </p>
+                    <p>
+                        <strong>Pass to the limit.</strong><br>
+                        On each space the iterates converge almost surely uniformly to the
+                        solution, by part 2 of the existence proof run on that space.
+                        Finite-dimensional distributions survive almost sure limits, so
+                        \(\bigl( \tilde{X}, \tilde{w} \bigr)\) and
+                        \(\bigl( \hat{X}, \hat{w} \bigr)\) agree in law, and in particular
+                        \(\tilde{X}\) and \(\hat{X}\) do.
+                    </p>
+                </div>
+                <p>
+                    The split is not decorative, and one equation shows it. Consider
+                </p>
+                <p>
+                    \[
+                    d X_t = \operatorname{sign}( X_t )\, d w_t ,
+                    \quad X_0 = 0 ,
+                    \quad
+                    \operatorname{sign}(x) =
+                    \begin{cases}
+                    +1 , & x \geq 0 , \\
+                    -1 , & x \lt 0 ,
+                    \end{cases}
+                    \]
+                </p>
+                <p>
+                    whose diffusion coefficient jumps at the origin and satisfies no Lipschitz
+                    bound there, so the theorem is silent. Three statements describe it, and this
+                    track records them without proof, since their verification runs through the
+                    machinery of local time, which has not been built here. The equation has no
+                    strong solution at all. It has weak solutions, and in fact any Brownian
+                    motion serves as one once the driving noise is rebuilt from the solution
+                    itself. And it is weakly unique, every weak solution being a Brownian motion
+                    in law. Prescribed noise admits nothing. Self-built noise admits exactly one
+                    law. The weak concept is also the natural one for modelling, where an
+                    equation asserts how a system responds to white noise without asserting which
+                    white noise the world will supply.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Neural SDEs and Generative Diffusion</h3>
+                    <p>
+                        The hypotheses of the theorem are load-bearing in modern machine
+                        learning. A neural SDE takes the coefficients \(b\) and \(\sigma\) to be
+                        neural networks, and a network built from Lipschitz activations with
+                        norm-controlled weight matrices satisfies (H2) with a constant \(D\) read
+                        off from the product of the layer norms, while (H1) follows as soon as
+                        the coefficients at the origin stay bounded in time, which fixed network
+                        weights guarantee.
+                        The theorem is then the well-posedness certificate for the entire model
+                        class. It guarantees that the network-defined equation has exactly one
+                        solution per realization of the noise, so that the model is a genuine
+                        map from randomness to trajectories, which is what training and sampling
+                        implicitly assume. Generative
+                        <a href="../Machine_learning/diffusion_models.html">diffusion models</a>
+                        lean on the same foundation from the analytic side. Their samplers
+                        integrate a reverse-time equation whose drift contains a learned score,
+                        and existence and uniqueness are what make the generator a well-defined
+                        function of its noise seed, while a-priori estimates in the style of the
+                        second-moment bound are the standard opening move of their stability
+                        analyses. The theorem does not train anything. It is the reason the
+                        objects being trained exist.
+                    </p>
+                </div>
+
+                <p>
+                    One last account closes the pair. Everything on these two pages was
+                    one-dimensional, and the systems version, promised at the start of the
+                    previous page, is recorded here at statement level in this track's
+                    conventions: the state \(X_t\) takes values in \(\mathbb{R}^m\), the driving
+                    motion is \(n\)-dimensional with independent components, the coefficients are
+                    \(b : [0, T] \times \mathbb{R}^m \to \mathbb{R}^m\) and
+                    \(\sigma : [0, T] \times \mathbb{R}^m \to \mathbb{R}^{m \times n}\), and the
+                    hypotheses (H1) and (H2) read verbatim with Euclidean norms on vectors and
+                    \(|\sigma|^2 = \sum_{i,j} \sigma_{ij}^2\) on matrices. The theorem holds as
+                    stated. Each coordinate of the integral equation is a scalar identity of
+                    exactly the kind treated here, the mean-square estimates add across
+                    coordinates with constants that grow only by dimension-dependent factors, and
+                    Gronwall's inequality and the whole toolkit act on scalar functions of time
+                    and never notice the dimension. The account opened by the example pages, a
+                    formula here and a verification there, each with a reservation attached, is
+                    closed.
+                </p>
+
+            </section>
+
+        </div>
+    </body>
+</html>

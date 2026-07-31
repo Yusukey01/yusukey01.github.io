@@ -1,0 +1,459 @@
+---
+layout: default
+title: "The Ornstein-Uhlenbeck Process"
+topic_id: prob-35
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Ornstein-Uhlenbeck Process</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#ou-equation">The Equation and Its Solution</a>
+            <a href="#mean-reversion">Mean Reversion and Diffusion Models</a>
+            <a href="#gp-reading">The Gaussian Process Reading</a>
+            <a href="#beyond-closed-forms">Beyond Closed Forms</a>
+        </div>
+
+        <div class="container">
+
+            <section id="ou-equation" class="section-content">
+                <h2>The Equation and Its Solution</h2>
+
+                <p>
+                    This page is devoted to a single stochastic differential equation, the one among the
+                    solvable examples with the deepest reach into statistics and machine learning. The
+                    concept of an SDE, the conventions, and the working notion of solution are all inherited
+                    unchanged from the
+                    <a href="stochastic_differential_equations.html#sde-concept">previous page</a>:
+                    \(w_t\) is standard one-dimensional Brownian motion with Brownian filtration
+                    \(\{\mathcal{F}_t\}_{t \geq 0}\) containing all null sets, integrals denote continuous
+                    versions, every equation is read in the Itô sense, and a solution means an explicitly
+                    exhibited Itô process verified against the integral equation, with uniqueness deferred to
+                    the general theory. Two placements of the unknown are already solved there, both with the
+                    noise proportional to the state. The remaining basic configuration places the unknown in
+                    the drift and leaves the noise additive,
+                </p>
+                <p>
+                    \[
+                    dX_t = \mu X_t\, dt + \sigma\, dw_t ,
+                    \quad X_0 \in \mathbb{R} \text{ a given constant} ,
+                    \]
+                </p>
+                <p>
+                    with \(\mu, \sigma \in \mathbb{R}\). This is the <strong>Ornstein-Uhlenbeck
+                    equation</strong>, also called the <strong>Langevin equation</strong>, and its original
+                    physical content makes the parameters concrete. Take \(X_t\) to be the velocity of a heavy particle
+                    suspended in a fluid. The drift \(\mu X_t\) with \(\mu \lt 0\) is friction, always
+                    opposing the current velocity in proportion to it, while \(\sigma\, dw_t\) is the
+                    relentless bombardment by fluid molecules, whose strength does not depend on how fast the
+                    particle moves.
+                </p>
+                <p>
+                    Because the noise term no longer involves the unknown, the integrating
+                    factor sheds its randomness. Multiply by \(e^{-\mu t}\) and run the now familiar
+                    informal product rule. The cross term vanishes outright, since \(d(e^{-\mu t})\) carries
+                    only \(dt\), and
+                </p>
+                <p>
+                    \[
+                    d \bigl( e^{-\mu t} X_t \bigr)
+                    = e^{-\mu t}\, \sigma\, dw_t ,
+                    \]
+                </p>
+                <p>
+                    so that integrating and multiplying back by \(e^{\mu t}\) produces the candidate
+                    \(X_t = e^{\mu t} X_0 + \sigma \int_0^t e^{\mu (t - s)}\, dw_s\). The stochastic term is
+                    now an integral of a <em>deterministic</em> integrand, exactly the kind of Wiener integral
+                    whose Gaussian law was established for the representation theorem, and this is what gives the
+                    Ornstein-Uhlenbeck family its complete statistical transparency.
+                </p>
+
+                <div class="theorem" id="T-ou_solution">
+                    <span class="theorem-title">Theorem: The Ornstein-Uhlenbeck Process</span>
+                    <p>
+                        Let \(\mu, \sigma \in \mathbb{R}\) and let \(X_0 \in \mathbb{R}\) be a constant.
+                        Define
+                    </p>
+                    <p>
+                        \[
+                        X_t = e^{\mu t} \Bigl( X_0 + \sigma \int_0^t e^{-\mu s}\, dw_s \Bigr) ,
+                        \quad t \geq 0 ,
+                        \]
+                    </p>
+                    <p>
+                        so that, for each fixed \(t\),
+                        \(X_t = e^{\mu t} X_0 + \sigma \int_0^t e^{\mu (t - s)}\, dw_s\) almost surely. Then
+                        the following hold.
+                    </p>
+                    <p>
+                        <strong>(i)</strong><br>
+                        \(X\) is an Itô process, and for every \(t \geq 0\), almost surely,
+                    </p>
+                    <p>
+                        \[
+                        X_t = X_0 + \int_0^t \mu X_s\, ds + \sigma\, w_t ,
+                        \]
+                    </p>
+                    <p>
+                        so \(X\) solves \(dX_t = \mu X_t\, dt + \sigma\, dw_t\).
+                    </p>
+                    <p>
+                        <strong>(ii)</strong><br>
+                        For each \(t \gt 0\), the random variable \(X_t\) is Gaussian with
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}[X_t] &= e^{\mu t} X_0 , \\\\
+                        \operatorname{Var}[X_t]
+                        &=
+                        \begin{cases}
+                        \dfrac{\sigma^2}{2 \mu} \bigl( e^{2 \mu t} - 1 \bigr) , & \mu \neq 0 , \\
+                        \sigma^2 t , & \mu = 0 .
+                        \end{cases}
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>The two factors as Itô processes.</strong><br>
+                        The integrand \(e^{-\mu s}\) is deterministic and continuous, hence progressively
+                        measurable by the
+                        <a href="ito_formula.html#T-progressively_measurable_criteria" class="ref-link"><strong>continuity criterion</strong></a>,
+                        and \(\mathbb{E} \int_0^T e^{-2 \mu s}\, ds \lt \infty\) for every \(T \gt 0\), so
+                        \(e^{-\mu s} \in \mathcal{V}(0, T)\) and
+                        \(M_t = \int_0^t e^{-\mu s}\, dw_s\) is an Itô process with \(u^M = 0\) and
+                        \(v^M = e^{-\mu s}\), taken in its continuous version. Consequently
+                        \(B_t = X_0 + \sigma M_t\) is an Itô process with \(u^B = 0\) and
+                        \(v^B = \sigma e^{-\mu s}\). The factor \(D_t = e^{\mu t}\) is deterministic and
+                        continuously differentiable, so
+                        \(D_t = 1 + \int_0^t \mu e^{\mu s}\, ds\) pathwise, with an integrand that is continuous
+                        and deterministic, hence progressively measurable by the same criterion, so \(D\) is
+                        an Itô process with \(u^D = \mu e^{\mu s}\) and \(v^D = 0\). By construction \(X = D B\).
+                    </p>
+                    <p>
+                        <strong>The product rule.</strong><br>
+                        The membership hypothesis of the
+                        <a href="multidim_ito_formula.html#T-stochastic_product_rule" class="ref-link"><strong>stochastic product rule</strong></a>
+                        concerns the process
+                        \(D_s\, v^B + B_s\, v^D = e^{\mu s} \cdot \sigma e^{-\mu s} = \sigma\), a
+                        deterministic constant, which lies in \(\mathcal{V}(0, T)\) for every \(T \gt 0\)
+                        trivially. The rule then gives, for every \(t \geq 0\), almost surely,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        X_t
+                        &= D_0 B_0
+                        + \int_0^t \bigl( D_s\, u^B + B_s\, u^D + v^D v^B \bigr)\, ds
+                        + \int_0^t \bigl( D_s\, v^B + B_s\, v^D \bigr)\, dw_s \\\\
+                        &= X_0 + \int_0^t \mu\, e^{\mu s} B_s\, ds + \int_0^t \sigma\, dw_s \\\\
+                        &= X_0 + \int_0^t \mu X_s\, ds + \sigma\, w_t .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        The drift coefficient \(\mu X_s\) has continuous paths, hence is pathwise integrable
+                        on bounded intervals, and the diffusion coefficient is the constant \(\sigma\), so
+                        \(X\) is an Itô process of exactly the equation's form, which is claim (i). The
+                        identification of the two displayed forms of \(X_t\) at fixed \(t\) is the
+                        <a href="ito_integral_properties.html#T-ito_integral_properties" class="ref-link"><strong>linearity</strong></a>
+                        of the integral applied to the constant \(e^{\mu t}\).
+                    </p>
+                    <p>
+                        <strong>The law at a fixed time.</strong><br>
+                        Fix \(t \gt 0\). By the expanded form,
+                        \(X_t - e^{\mu t} X_0 = \int_0^t h(s)\, dw_s\) with
+                        \(h(s) = \sigma e^{\mu (t - s)}\), a deterministic member of \(L^2([0, t])\). The
+                        <a href="martingale_representation.html#T-wiener_integral_gaussian" class="ref-link"><strong>Gaussian law of Wiener integrals</strong></a>
+                        makes this centered Gaussian with variance
+                    </p>
+                    <p>
+                        \[
+                        \int_0^t \sigma^2 e^{2 \mu (t - s)}\, ds
+                        =
+                        \begin{cases}
+                        \dfrac{\sigma^2}{2 \mu} \bigl( e^{2 \mu t} - 1 \bigr) , & \mu \neq 0 , \\
+                        \sigma^2 t , & \mu = 0 ,
+                        \end{cases}
+                        \]
+                    </p>
+                    <p>
+                        and adding the constant \(e^{\mu t} X_0\) shifts the mean without disturbing
+                        Gaussianity or variance, which is claim (ii).
+                    </p>
+                </div>
+
+                <p>
+                    The friction regime \(\mu \lt 0\) is where the family does its real work. The mean
+                    \(e^{\mu t} X_0\) forgets the initial condition exponentially fast, while the variance
+                    rises from zero and saturates at \(\sigma^2 / (2 |\mu|)\), the level at which dissipation
+                    and noise injection balance. The process neither settles nor explodes. It equilibrates,
+                    and this makes it the basic model of a quantity that fluctuates persistently around a
+                    rest state. For \(\mu \gt 0\) the same formula describes exponential instability seeded
+                    by noise, and for \(\mu = 0\) the equation degenerates to \(dX_t = \sigma\, dw_t\),
+                    whose solution is scaled Brownian motion itself.
+                </p>
+
+            </section>
+
+            <section id="mean-reversion" class="section-content">
+                <h2>Mean Reversion and Diffusion Models</h2>
+
+                <p>
+                    Applications rarely relax toward zero. The <strong>mean-reverting</strong> form of the
+                    equation pulls the state toward a level \(m \in \mathbb{R}\) at rate \(\theta \gt 0\),
+                </p>
+                <p>
+                    \[
+                    dX_t = \theta \bigl( m - X_t \bigr)\, dt + \sigma\, dw_t ,
+                    \quad X_0 \in \mathbb{R} \text{ a given constant} ,
+                    \]
+                </p>
+                <p>
+                    and reduces to the theorem by recentering. If \(\widetilde{X}\) denotes the solution of
+                    the theorem with \(\mu = - \theta\) and initial value \(X_0 - m\), then
+                    \(X_t = m + \widetilde{X}_t\) differs from \(\widetilde{X}_t\) by a constant, so it is an
+                    Itô process with the same coefficients, and
+                    \(dX_t = - \theta \widetilde{X}_t\, dt + \sigma\, dw_t
+                    = \theta ( m - X_t )\, dt + \sigma\, dw_t\). Explicitly,
+                </p>
+                <p>
+                    \[
+                    X_t = m + e^{- \theta t} \bigl( X_0 - m \bigr)
+                    + \sigma \int_0^t e^{- \theta (t - s)}\, dw_s ,
+                    \]
+                </p>
+                <p>
+                    Gaussian at each time with
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    \mathbb{E}[X_t] &= m + e^{- \theta t} \bigl( X_0 - m \bigr) , \\\\
+                    \operatorname{Var}[X_t] &= \frac{\sigma^2}{2 \theta} \bigl( 1 - e^{- 2 \theta t} \bigr) .
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    The mean glides from \(X_0\) to \(m\) and the variance saturates at
+                    \(\sigma^2 / (2 \theta)\), so the process forgets where it started and fluctuates around
+                    the level it is pulled toward. The unit-rate case \(\theta = 1\) is the form in which the
+                    equation is most often written; carrying \(\theta\) explicitly costs nothing and is repaid
+                    immediately below by machine learning, and again by the covariance of the next section.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Insight: The SDE Inside Diffusion Models</h3>
+                    <p>
+                        The mean-reverting equation is the continuous-time object behind the forward
+                        corruption process of diffusion models. The
+                        <a href="../Machine_learning/diffusion_models.html#D-forward_diffusion_kernel" class="ref-link"><strong>forward diffusion kernel</strong></a>
+                        perturbs data by
+                        \(q ( \mathbf{x}_t \mid \mathbf{x}_{t-1} )
+                        = \mathcal{N} \bigl( \sqrt{ 1 - \beta_t }\, \mathbf{x}_{t-1},\ \beta_t \mathbf{I} \bigr)\).
+                        Consider the Ornstein-Uhlenbeck type equation with level \(m = 0\), time-dependent
+                        rate \(\tfrac{1}{2} \beta(t)\), and noise strength \(\sqrt{\beta(t)}\), run
+                        componentwise. Its unit-step Euler discretization updates
+                        \(\mathbf{x}_{t-1}\) to \(( 1 - \tfrac{1}{2} \beta_t ) \mathbf{x}_{t-1}\) plus
+                        Gaussian noise of covariance \(\beta_t \mathbf{I}\), and since
+                        \(\sqrt{ 1 - \beta_t } = 1 - \tfrac{1}{2} \beta_t + O ( \beta_t^2 )\), the kernel's
+                        mean factor agrees with the Euler factor to second order in the small step sizes
+                        used in practice.
+                    </p>
+                    <p>
+                        The
+                        <a href="../Machine_learning/diffusion_models.html#T-diffusion_kernel_closed_form" class="ref-link"><strong>closed-form kernel</strong></a>
+                        \(q ( \mathbf{x}_t \mid \mathbf{x}_0 )
+                        = \mathcal{N} \bigl( \sqrt{ \bar{\alpha}_t }\, \mathbf{x}_0,\ ( 1 - \bar{\alpha}_t ) \mathbf{I} \bigr)\)
+                        is the discrete shadow of the same integrating-factor computation as this page.
+                        Run with rate \(\tfrac{1}{2} \beta(t)\), the method gives the conditional law at time
+                        \(t\) as Gaussian with mean \(e^{- \frac{1}{2} \int_0^t \beta }\, \mathbf{x}_0\) and
+                        variance \(1 - e^{- \int_0^t \beta }\) per component, so that \(\bar{\alpha}_t\)
+                        plays the role of \(e^{- \int_0^t \beta ( s )\, ds }\), the mean factor
+                        \(\sqrt{\bar{\alpha}_t}\) the role of the decayed initial condition, and
+                        \(1 - \bar{\alpha}_t\) the saturating variance of the theorem. The noise schedule of
+                        a diffusion model is nothing but a reparametrized reversion rate.
+                    </p>
+                    <p>
+                        The Langevin name carries a second connection, this one about sampling rather
+                        than corruption. Given a differentiable density \(p\) with
+                        <a href="../Machine_learning/diffusion_models.html#D-score_function_data_gradient" class="ref-link"><strong>score function</strong></a>
+                        \(\mathbf{s} = \nabla \log p\), the <strong>Langevin dynamics</strong>
+                        \(d \mathbf{x}_t = \tfrac{1}{2}\, \mathbf{s} ( \mathbf{x}_t )\, dt + d \mathbf{w}_t\)
+                        is engineered so that \(p\) is its invariant density, and, under regularity conditions
+                        we do not state, long runs of the dynamics produce samples from \(p\). Knowing a
+                        density only through its score therefore suffices to sample from it, which is the
+                        continuous-time template behind score-based generative sampling.
+                    </p>
+                    <p>
+                        The Ornstein-Uhlenbeck equation is the special case in which \(p\) is the Gaussian
+                        \(\mathcal{N} \bigl( m, \sigma^2 / ( 2 \theta ) \bigr)\) scaled to unit noise, and
+                        it is the only case this page can verify in closed form. The invariance claim in
+                        general belongs to the Fokker-Planck circle of ideas, a forthcoming destination of
+                        this track. There the equation governing the evolving density of an SDE is derived,
+                        and the reverse-time machinery of diffusion models is built on top of it.
+                    </p>
+                </div>
+            </section>
+
+            <section id="gp-reading" class="section-content">
+                <h2>The Gaussian Process Reading</h2>
+
+                <p>
+                    Statement (ii) of the theorem describes one time point in isolation. In fact the whole
+                    process is Gaussian in the sense of the
+                    <a href="gaussian_process.html#D-gaussian_process" class="ref-link"><strong>Gaussian process</strong></a>
+                    definition, meaning that every finite collection \((X_{t_1}, \ldots, X_{t_k})\) is
+                    jointly Gaussian. The reduction is short. For constants \(c_1, \ldots, c_k\) and times
+                    \(t_1 \lt \cdots \lt t_k\), the
+                    <a href="ito_integral_properties.html#T-ito_integral_properties" class="ref-link"><strong>additivity and linearity</strong></a>
+                    of the integral assemble the combination \(\sum_i c_i X_{t_i}\) into a constant plus a
+                    single Wiener integral \(\int_0^{t_k} h\, dw_s\), where \(h\) is deterministic and
+                    piecewise continuous, equal on each interval \([t_{j-1}, t_j)\) to the sum
+                    \(\sum_{i \geq j} c_i \sigma e^{\mu ( t_i - s )}\) of the integrands still active
+                    there.
+                </p>
+                <p>
+                    Every affine combination of the family is therefore Gaussian, and we take on faith
+                    the standard characterization
+                    that a family with this property has jointly Gaussian finite-dimensional laws; its
+                    verification is a characteristic-function argument belonging to the multivariate Gaussian
+                    toolkit rather than to this track.
+                </p>
+                <p>
+                    A Gaussian process is determined by its mean and covariance functions, and the mean is
+                    already known, so only the covariance remains. Two earlier results assemble it. For
+                    deterministic \(f, g \in L^2([0, T])\), linearity and the
+                    <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>
+                    combine into a polarization identity,
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    \mathbb{E} \Bigl[ \int_0^T f\, dw \int_0^T g\, dw \Bigr]
+                    &= \tfrac{1}{4}\, \mathbb{E} \Bigl[ \Bigl( \int_0^T ( f + g )\, dw \Bigr)^2 \Bigr]
+                    - \tfrac{1}{4}\, \mathbb{E} \Bigl[ \Bigl( \int_0^T ( f - g )\, dw \Bigr)^2 \Bigr] \\\\
+                    &= \tfrac{1}{4} \int_0^T ( f + g )^2\, ds - \tfrac{1}{4} \int_0^T ( f - g )^2\, ds \\\\
+                    &= \int_0^T f g\, ds .
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    Apply this to the mean-reverting solution with rate \(\theta \gt 0\), whose fluctuation
+                    at time \(t\) is the Wiener integral of
+                    \(\sigma e^{- \theta ( t - s )}\, \mathbf{1}_{[0, t]}(s)\). For \(s \leq t\),
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    \operatorname{Cov} ( X_s, X_t )
+                    &= \sigma^2 \int_0^s e^{- \theta ( s - u )}\, e^{- \theta ( t - u )}\, du \\\\
+                    &= \sigma^2 e^{- \theta ( s + t )} \, \frac{ e^{2 \theta s} - 1 }{ 2 \theta } \\\\
+                    &= \frac{ \sigma^2 }{ 2 \theta }
+                    \Bigl( e^{- \theta ( t - s )} - e^{- \theta ( t + s )} \Bigr) .
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    For times far from the start, with the lag \(t - s\) held fixed, the second term dies and
+                    the covariance approaches the <strong>stationary covariance</strong>
+                </p>
+                <p>
+                    \[
+                    \operatorname{Cov} ( X_s, X_t )
+                    \longrightarrow
+                    \frac{ \sigma^2 }{ 2 \theta }\, e^{- \theta \lvert t - s \rvert } ,
+                    \]
+                </p>
+                <p>
+                    a function of the lag alone. Up to the variance scale \(\sigma^2 / ( 2 \theta )\), this
+                    is the exponential kernel \(\exp ( - \lvert t - s \rvert / \ell )\) with length-scale
+                    \(\ell = 1 / \theta\), the roughest member of the Matérn family surveyed on the Gaussian
+                    process page. The equilibrated Ornstein-Uhlenbeck process is thus a dynamical
+                    construction of a kernel that regression practice usually postulates directly. The
+                    reversion rate is the reciprocal length-scale, and the exponential decay of memory in the
+                    kernel is the exponential forgetting of the friction term.
+                </p>
+            </section>
+
+            <section id="beyond-closed-forms" class="section-content">
+                <h2>Beyond Closed Forms</h2>
+
+                <p>
+                    Three equations across two pages, three placements of the unknown, three closed forms.
+                    What the family shares is linearity. In every case the coefficients were affine in the
+                    state, an integrating factor built from the homogeneous part absorbed the difficult term,
+                    and the solution emerged as an explicit functional of the driving path. This closing
+                    section asks how far that reach extends, and what must replace it where it ends.
+                </p>
+                <p>
+                    One further solved equation has already appeared on this track, and no integrating factor produced
+                    it. The <a href="multidim_ito_formula.html#bessel">radial part of Brownian motion</a> in
+                    dimension \(n \geq 2\), started away from the origin, was shown by the multidimensional
+                    Itô formula to satisfy
+                </p>
+                <p>
+                    \[
+                    dR_t
+                    = \sum_{i=1}^{n} \frac{w_t^{(i)}}{R_t}\, dw_t^{(i)}
+                    + \frac{n - 1}{2 R_t}\, dt ,
+                    \]
+                </p>
+                <p>
+                    an equation whose drift is genuinely nonlinear in the state and singular at the edge of
+                    its domain. Read from the present perspective, the logic ran backwards. None of the
+                    methods of these two pages could have produced \(R_t\) from its equation. The process
+                    came first, as a transformation of one already understood, and the Itô formula then
+                    disclosed which equation it solves. That reversed route is a solution method in its own
+                    right, and our heuristics were miniature instances of it, each guessing a transformation,
+                    a logarithm here, an integrating factor there, under which the unknown becomes a process
+                    already in hand.
+                </p>
+                <p>
+                    When neither route applies, one needs theorems, and the deterministic special case
+                    \(\sigma = 0\) already shows what any general theory must rule out. The innocent-looking
+                    quadratic equation \(dX_t / dt = X_t^2\) with \(X_0 = 1\) is solved on \([0, 1)\) by
+                    \(X_t = 1 / (1 - t)\), as differentiation checks, and this solution escapes to infinity
+                    as \(t\) approaches \(1\). Growth faster than linear can drive a solution to infinity
+                    in finite time, so global existence is not free.
+                </p>
+                <p>
+                    The equation
+                    \(dX_t / dt = 3 X_t^{2/3}\) with \(X_0 = 0\) is solved by the zero function, and
+                    equally, for every \(a \gt 0\), by the function that stays at zero up to time \(a\)
+                    and continues as \((t - a)^3\) afterwards; the check, including the smooth fit at
+                    \(t = a\), is again one line. Infinitely many solutions sprout from a single initial value. A drift
+                    that is continuous but not Lipschitz at one point can fail to pin the solution down, so
+                    uniqueness is not free either.
+                </p>
+                <p>
+                    The general theory answers both threats at once, and it is the destination of the next
+                    stretch of this track. For coefficients Lipschitz in the state and growing at most
+                    linearly, an iteration of Picard type produces a solution for every square-integrable
+                    initial condition independent of the driving noise, and a comparison inequality of
+                    Gronwall type shows there is only one. The two counterexamples
+                    above mark exactly where those hypotheses bite. Linear growth forbids finite-time
+                    escape, and the Lipschitz condition forbids branching. Once existence and uniqueness are
+                    in hand, the closed forms of these two pages stop being isolated trophies and become
+                    what they were always meant to be, the exactly solvable landmarks of a theory that
+                    covers the terrain between them.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>

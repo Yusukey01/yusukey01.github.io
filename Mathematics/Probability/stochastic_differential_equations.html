@@ -1,0 +1,647 @@
+---
+layout: default
+title: "Stochastic Differential Equations"
+topic_id: prob-34
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Stochastic Differential Equations</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#sde-concept">What Is an SDE?</a>
+            <a href="#geometric-bm">Geometric Brownian Motion</a>
+            <a href="#linear-sde">A Stochastic Integrating Factor</a>
+        </div>
+
+        <div class="container">
+
+            <section id="sde-concept" class="section-content">
+                <h2>What Is a Stochastic Differential Equation?</h2>
+
+                <p>
+                    The machinery is now complete. The Itô integral, its process version, the Itô formula, and
+                    the product rule were all built for one purpose, and this page begins to use them for it.
+                    We return to the model that opened the
+                    <a href="ito_integral.html#noise">construction of the integral</a>, an ordinary
+                    differential equation perturbed by rapidly fluctuating noise,
+                </p>
+                <p>
+                    \[
+                    \frac{dX_t}{dt} = b(t, X_t) + \sigma(t, X_t)\, W_t ,
+                    \]
+                </p>
+                <p>
+                    where \(b\) is a systematic drift, \(\sigma\) modulates the strength of the noise, and
+                    \(W_t\) is the hoped-for noise at time \(t\). We saw there that no genuine stochastic
+                    process satisfies the axioms such a noise should obey, and that the equation survives only
+                    after being reshaped, with the noise entering through Brownian increments rather than
+                    pointwise values. The reshaped object is the integral equation
+                </p>
+                <p>
+                    \[
+                    X_t = X_0 + \int_0^t b(s, X_s)\, ds + \int_0^t \sigma(s, X_s)\, dw_s .
+                    \]
+                </p>
+                <p>
+                    This page studies such equations. Following custom, we write them in differential
+                    shorthand as
+                </p>
+                <p>
+                    \[
+                    dX_t = b(t, X_t)\, dt + \sigma(t, X_t)\, dw_t ,
+                    \]
+                </p>
+                <p>
+                    a <strong>stochastic differential equation</strong>, and we emphasize once more that the
+                    shorthand means the integral equation and nothing else. Differentials of Brownian paths do
+                    not exist. Integrals against them do.
+                </p>
+
+                <h3>What It Means to Solve One</h3>
+
+                <p>
+                    The shape of the integral equation is familiar. Its right-hand side is exactly the form of
+                    an <a href="ito_formula.html#D-ito_process" class="ref-link"><strong>Itô process</strong></a>
+                    with coefficients \(u(s, \omega) = b(s, X_s(\omega))\) and
+                    \(v(s, \omega) = \sigma(s, X_s(\omega))\). The new feature is self-reference. In the
+                    preceding pages the coefficients \(u\) and \(v\) were given data. Here they are built from
+                    the unknown process itself, which is what makes the identity an <em>equation</em>. For this
+                    page, a <strong>solution</strong> means an explicitly exhibited Itô process \(X_t\) for which
+                    the integral equation holds for every \(t \geq 0\), almost surely. Part of the
+                    requirement is that the substituted coefficients \(b(s, X_s)\) and \(\sigma(s, X_s)\)
+                    satisfy the membership conditions of that definition, so that both integrals exist.
+                    Verifying a proposed solution is therefore a computation
+                    with the
+                    <a href="ito_formula.html#T-ito_formula_1d" class="ref-link"><strong>Itô formula</strong></a>.
+                    We differentiate the candidate and check that its differential reproduces the equation.
+                </p>
+                <p>
+                    Two questions now separate. First, how does one find solutions, and what do they look like
+                    for the equations that arise in practice? Second, do solutions exist for a general pair
+                    \((b, \sigma)\), in what sense are they unique, and what data pins the solution down?
+                </p>
+                <p>
+                    This page takes up the first question through a family of worked equations, each chosen because
+                    its closed-form solution repays a promise made earlier in the track. The second question
+                    has a substantial general answer, resting on a fixed-point iteration and a comparison
+                    inequality, and it is the business of a dedicated page further along the track. Until
+                    then we solve honestly but locally, verifying each candidate against the integral
+                    equation while uniqueness, and with it the right to say <em>the</em> solution, waits.
+                </p>
+
+                <h3>The Reading Is Part of the Equation</h3>
+
+                <p>
+                    One subtlety deserves its own paragraph before any equation is solved. The symbol string
+                    \(dX_t = b\, dt + \sigma\, dw_t\) does not yet determine a mathematical object, because the
+                    stochastic term admits more than one interpretation. Reading the integral as the Itô
+                    integral, with left endpoint evaluation, gives one equation. Reading it as the
+                    <a href="ito_calculus.html#D-stratonovich_integral" class="ref-link"><strong>Stratonovich integral</strong></a>,
+                    with midpoint evaluation, gives a genuinely different one, and the
+                    <a href="ito_calculus.html#T-ito_stratonovich_conversion" class="ref-link"><strong>conversion theorem</strong></a>
+                    measures the gap between the two readings as a drift correction of size
+                    \(\tfrac{1}{2}\, \frac{\partial \sigma}{\partial x}\, \sigma\). The choice of reading is
+                    therefore part of the modeling decision, not a notational afterthought.
+                </p>
+                <p>
+                    Our track is committed to the Itô reading, and every equation on this page is an Itô equation unless
+                    stated otherwise. The commitment costs nothing, since the conversion dictionary transports
+                    statements between the two calculi. It is not vacuous either. The first equation we solve
+                    will make the difference concrete, producing two distinct closed-form solutions of the same
+                    symbol string, one per reading, whose long-run mean behavior can differ dramatically.
+                </p>
+
+                <p>
+                    Throughout, \(w_t\) is the standard one-dimensional Brownian motion of the preceding
+                    pages, with Brownian filtration \(\{\mathcal{F}_t\}_{t \geq 0}\) containing all null sets,
+                    and every Itô integral denotes its continuous version. The coefficients \(b\) and
+                    \(\sigma\) are measurable functions on \([0, \infty) \times \mathbb{R}\), specified
+                    concretely in each example. The initial value \(X_0\) is
+                    \(\mathcal{F}_0\)-measurable, and in the examples of this page and the next it will be a constant;
+                    genuinely random initial values return with the general theory. Everything on this page
+                    is one-dimensional. The
+                    systems version of the theory, with vector states and several driving motions, reuses the
+                    multidimensional toolkit already established and is not needed for the equations below.
+                </p>
+            </section>
+
+            <section id="geometric-bm" class="section-content">
+                <h2>Geometric Brownian Motion</h2>
+
+                <p>
+                    The first equation models growth whose <em>rate</em> is noisy. A population of size
+                    \(N_t\) grows at a relative rate that fluctuates around a constant \(r\), so the growth
+                    rate itself is \(r + \alpha W_t\) with \(\alpha\) a constant measuring the size of the
+                    fluctuation. Under the Itô reading, to which the previous section committed us, the model becomes
+                </p>
+                <p>
+                    \[
+                    dN_t = r N_t\, dt + \alpha N_t\, dw_t ,
+                    \quad N_0 \gt 0 \text{ a given constant} .
+                    \]
+                </p>
+                <p>
+                    Both coefficients are proportional to the unknown. The noise does not push the population
+                    around by fixed amounts; it perturbs the population <em>proportionally</em>, which is the
+                    natural regime for growth, for chemical concentrations, and for prices; in finance this
+                    equation is a standard model of a risky asset.
+                </p>
+
+                <h3>Finding the Candidate</h3>
+
+                <p>
+                    The following calculation is a heuristic whose only job is to produce a candidate
+                    solution. Divide the equation by \(N_t\), so that the left side becomes the relative
+                    increment \(dN_t / N_t\). For a positive process, ordinary calculus would read
+                    \(dN_t / N_t = d(\ln N_t)\) and integrate at once. Itô calculus charges a correction. The
+                    second-order term of the Itô formula, applied informally to the logarithm with the
+                    bookkeeping rule \((dw_t)^2 = dt\), gives
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    d(\ln N_t)
+                    &= \frac{dN_t}{N_t} - \frac{1}{2\, N_t^2}\, (dN_t)^2 \\\\
+                    &= r\, dt + \alpha\, dw_t - \tfrac{1}{2} \alpha^2\, dt .
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    Integrating from \(0\) to \(t\) suggests
+                    \(\ln N_t - \ln N_0 = \bigl( r - \tfrac{1}{2} \alpha^2 \bigr) t + \alpha w_t\), an
+                    explicit candidate that the theorem below states and verifies.
+                </p>
+                <p>
+                    Every step so far presumed things we have not justified, positivity of \(N\) above all.
+                    None of that matters now, because the candidate is explicit and can be verified directly
+                    against the integral equation, and the heuristic can be discarded. One preliminary identity
+                    makes both the verification and the moment computation short. For a constant
+                    \(c \in \mathbb{R}\), the function \(h \equiv c\) is a deterministic step function, so
+                    its
+                    <a href="martingale_representation.html#D-exponential_martingale" class="ref-link"><strong>exponential martingale</strong></a>
+                    \(Z^{(c)}_t = \exp \bigl( c\, w_t - \tfrac{1}{2} c^2 t \bigr)\) falls under the
+                    <a href="martingale_representation.html#T-exponential_martingale" class="ref-link"><strong>exponential martingale identity</strong></a>,
+                    which yields \(\mathbb{E}\bigl[ Z^{(c)}_t \bigr] = 1\), that is,
+                </p>
+                <p>
+                    \[
+                    \mathbb{E}\bigl[ e^{c\, w_t} \bigr] = e^{\frac{1}{2} c^2 t}
+                    \quad \text{for every } c \in \mathbb{R},\ t \geq 0 .
+                    \]
+                </p>
+
+                <div class="theorem" id="T-gbm_solution">
+                    <span class="theorem-title">Theorem: Geometric Brownian Motion</span>
+                    <p>
+                        Let \(r, \alpha \in \mathbb{R}\) and let \(N_0 \gt 0\) be a constant. The process
+                    </p>
+                    <p>
+                        \[
+                        N_t = N_0 \exp \Bigl( \bigl( r - \tfrac{1}{2} \alpha^2 \bigr) t + \alpha w_t \Bigr) ,
+                        \quad t \geq 0 ,
+                        \]
+                    </p>
+                    <p>
+                        called <strong>geometric Brownian motion</strong>, has the following properties.
+                    </p>
+                    <p>
+                        <strong>(i)</strong><br>
+                        \(N\) is an Itô process with strictly positive paths, and for every \(t \geq 0\),
+                        almost surely,
+                    </p>
+                    <p>
+                        \[
+                        N_t = N_0 + \int_0^t r N_s\, ds + \int_0^t \alpha N_s\, dw_s ,
+                        \]
+                    </p>
+                    <p>
+                        so \(N\) solves \(dN_t = r N_t\, dt + \alpha N_t\, dw_t\).
+                    </p>
+                    <p>
+                        <strong>(ii)</strong><br>
+                        \(\mathbb{E}[N_t] = N_0\, e^{r t}\) for every \(t \geq 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Membership.</strong><br>
+                        Write \(g(t, x) = N_0 \exp \bigl( (r - \tfrac{1}{2} \alpha^2) t + \alpha x \bigr)\),
+                        so that \(N_t = g(t, w_t)\) and \(g \in C^2([0, \infty) \times \mathbb{R})\). Brownian
+                        motion itself is an Itô process with coefficients \(u = 0\) and \(v = 1\), so the
+                        <a href="ito_formula.html#T-ito_formula_1d" class="ref-link"><strong>Itô formula</strong></a>
+                        applies once we check its membership condition for the integrand
+                        \(v \cdot \frac{\partial g}{\partial x}(s, w_s) = \alpha\, g(s, w_s) = \alpha N_s\).
+                        The process \(\alpha N_s\) is adapted, being a continuous function of
+                        \(w_s\), and has continuous paths, so it is progressively measurable by the
+                        <a href="ito_formula.html#T-progressively_measurable_criteria" class="ref-link"><strong>continuity criterion</strong></a>.
+                        For square integrability, fix \(T \gt 0\). The integrand below is nonnegative and
+                        jointly measurable, so
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        exchanges expectation and time integral, and the exponential moment identity with
+                        \(c = 2\alpha\) gives
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E} \int_0^T \alpha^2 N_s^2\, ds
+                        &= \alpha^2 N_0^2 \int_0^T e^{(2r - \alpha^2) s}\,
+                        \mathbb{E}\bigl[ e^{2 \alpha w_s} \bigr]\, ds \\\\
+                        &= \alpha^2 N_0^2 \int_0^T e^{(2r - \alpha^2) s}\, e^{2 \alpha^2 s}\, ds \\\\
+                        &= \alpha^2 N_0^2 \int_0^T e^{(2r + \alpha^2) s}\, ds
+                        \lt \infty .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Hence \(\alpha N \in \mathcal{V}(0, T)\) for every \(T \gt 0\).
+                    </p>
+                    <p>
+                        <strong>The differential.</strong><br>
+                        The partial derivatives of \(g\) are proportional to \(g\) itself,
+                    </p>
+                    <p>
+                        \[
+                        \frac{\partial g}{\partial t} = \bigl( r - \tfrac{1}{2} \alpha^2 \bigr)\, g ,
+                        \quad
+                        \frac{\partial g}{\partial x} = \alpha\, g ,
+                        \quad
+                        \frac{\partial^2 g}{\partial x^2} = \alpha^2\, g .
+                        \]
+                    </p>
+                    <p>
+                        With \(u = 0\) and \(v = 1\), the Itô formula gives, for every \(t \geq 0\), almost
+                        surely,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        N_t
+                        &= g(0, 0) + \int_0^t \Bigl(
+                        \bigl( r - \tfrac{1}{2} \alpha^2 \bigr)
+                        + \tfrac{1}{2} \alpha^2
+                        \Bigr)\, g(s, w_s)\, ds
+                        + \int_0^t \alpha\, g(s, w_s)\, dw_s \\\\
+                        &= N_0 + \int_0^t r N_s\, ds + \int_0^t \alpha N_s\, dw_s .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        The drift coefficient \(r N_s\) has continuous paths, so it is pathwise integrable on
+                        bounded intervals and progressively measurable by the same continuity criterion, and
+                        the diffusion coefficient \(\alpha N_s\) lies in \(\mathcal{V}(0, T)\) by the
+                        membership step. The right-hand side therefore exhibits \(N\) as an Itô process whose
+                        coefficients are exactly \(b(t, x) = r x\) and \(\sigma(t, x) = \alpha x\) evaluated
+                        along the solution, which is claim (i). Positivity of every path is immediate from the
+                        exponential form.
+                    </p>
+                    <p>
+                        <strong>The mean.</strong><br>
+                        The solution factorizes through the exponential martingale with \(c = \alpha\),
+                    </p>
+                    <p>
+                        \[
+                        N_t
+                        = N_0\, e^{r t} \exp \bigl( \alpha w_t - \tfrac{1}{2} \alpha^2 t \bigr)
+                        = N_0\, e^{r t}\, Z^{(\alpha)}_t ,
+                        \]
+                    </p>
+                    <p>
+                        and taking expectations, \(\mathbb{E}\bigl[ Z^{(\alpha)}_t \bigr] = 1\) gives
+                        \(\mathbb{E}[N_t] = N_0\, e^{r t}\), which is claim (ii).
+                    </p>
+                </div>
+
+                <p>
+                    The factorization in the last step is worth keeping in view. Geometric Brownian motion is
+                    the deterministic growth curve \(N_0 e^{rt}\) multiplied by a mean-one martingale. The
+                    exponential martingale of the previous page is thereby promoted from a technical density
+                    tool to the fluctuation factor of a population. The mean of the solution is exactly the solution of
+                    the noiseless equation \(dN/dt = rN\). Under the Itô reading, mean-zero noise in the
+                    growth rate leaves the mean population untouched, and all the influence of \(\alpha\) is
+                    pushed into the fluctuations around that mean. The strict positivity in (i) also settles a
+                    debt. The heuristic divided by \(N_t\) and took its logarithm, and the verified solution
+                    shows that for this equation those operations were legitimate after all.
+                </p>
+
+                <h3>The Stratonovich Reading of the Same String</h3>
+
+                <p>
+                    Now read the same symbol string \(dN_t = r N_t\, dt + \alpha N_t\, dw_t\) in the
+                    Stratonovich sense. The
+                    <a href="ito_calculus.html#T-ito_stratonovich_conversion" class="ref-link"><strong>conversion theorem</strong></a>
+                    expresses the midpoint integral as the Itô integral plus half the integral of
+                    \(\frac{\partial \sigma}{\partial x} \cdot v\). For \(\sigma(t, x) = \alpha x\), a solution has
+                    diffusion coefficient \(v = \alpha N\), so the correction integrand is
+                    \(\tfrac{1}{2} \alpha \cdot \alpha N_s = \tfrac{1}{2} \alpha^2 N_s\). The theorem was
+                    proved under simplifying hypotheses on the coefficients, and we use it here as the
+                    transport principle it expresses. At the level of equations it converts the Stratonovich
+                    string into the Itô equation
+                </p>
+                <p>
+                    \[
+                    d\bar{N}_t = \bigl( r + \tfrac{1}{2} \alpha^2 \bigr) \bar{N}_t\, dt
+                    + \alpha \bar{N}_t\, dw_t ,
+                    \]
+                </p>
+                <p>
+                    the same equation with the drift shifted upward by half the squared noise strength. No new
+                    verification is needed. The theorem above with \(r\) replaced by
+                    \(r + \tfrac{1}{2} \alpha^2\) solves this equation in closed form, and the shift cancels
+                    the Itô correction in the exponent,
+                </p>
+                <p>
+                    \[
+                    \bar{N}_t = N_0 \exp \bigl( r t + \alpha w_t \bigr) ,
+                    \quad
+                    \mathbb{E}\bigl[ \bar{N}_t \bigr] = N_0\, e^{ ( r + \frac{1}{2} \alpha^2 ) t } .
+                    \]
+                </p>
+                <p>
+                    The Stratonovich reading thus produces exactly what ordinary calculus would have guessed
+                    at the pathwise level, the exponential of the integrated growth rate, and this is no
+                    accident. Midpoint evaluation is the choice that preserves the classical chain rule, so
+                    the classical formula survives.
+                </p>
+                <p>
+                    The price appears in the statistics. The two solutions
+                    differ in the exponent by precisely the correction term \(\tfrac{1}{2} \alpha^2 t\), and
+                    their means separate exponentially fast, \(N_0 e^{rt}\) against
+                    \(N_0 e^{(r + \frac{1}{2}\alpha^2) t}\). For any \(r\) with
+                    \(-\tfrac{1}{2} \alpha^2 \lt r \lt 0\), the mean of the Itô solution decays to zero while
+                    the mean of the Stratonovich solution grows without bound. One symbol string, two
+                    readings, opposite long-run fates for the mean population. Which reading is the right
+                    model depends on the physical origin of the noise, not on mathematics, and the
+                    mathematics has now made the stakes of that choice exact.
+                </p>
+                <p>
+                    The exponential martingale did double duty in this section, organizing both the
+                    verification and the mean. In the next equation it is promoted again. There it will not
+                    merely describe the solution but produce it, acting as an integrating factor that
+                    absorbs the stochastic term entirely.
+                </p>
+            </section>
+
+            <section id="linear-sde" class="section-content">
+                <h2>A Stochastic Integrating Factor</h2>
+
+                <p>
+                    The second equation keeps the multiplicative noise of geometric Brownian motion but
+                    decouples the drift from the unknown,
+                </p>
+                <p>
+                    \[
+                    dY_t = r\, dt + \alpha Y_t\, dw_t ,
+                    \quad Y_0 \in \mathbb{R} \text{ a given constant} ,
+                    \]
+                </p>
+                <p>
+                    with \(r, \alpha \in \mathbb{R}\). The model describes a quantity that receives a steady
+                    deterministic inflow at rate \(r\) while its current level is shaken proportionally by
+                    noise. The trick of the previous section fails immediately. Dividing by \(Y_t\) no longer
+                    closes the equation, because the drift term becomes \(r\, dt / Y_t\) and the unknown
+                    survives on the right-hand side.
+                </p>
+                <p>
+                    A different classical idea transfers instead. For the
+                    ordinary equation \(dy/dt = r + a y\), one multiplies by the integrating factor
+                    \(e^{-at}\), chosen so that the factor's own derivative cancels the term proportional to
+                    the unknown. Here the term proportional to the unknown is the <em>noise</em> term, so the
+                    integrating factor must itself be random, and the natural candidate is the reciprocal of
+                    the solution of the homogeneous equation \(dZ_t = \alpha Z_t\, dw_t\). That homogeneous
+                    solution is already on the table. It is geometric Brownian motion with \(r = 0\), which is
+                    precisely the exponential martingale \(Z_t = Z^{(\alpha)}_t\) of the previous section. We
+                    therefore set
+                </p>
+                <p>
+                    \[
+                    F_t = \frac{1}{Z_t} = \exp \Bigl( - \alpha w_t + \tfrac{1}{2} \alpha^2 t \Bigr) .
+                    \]
+                </p>
+
+                <h3>Finding the Candidate</h3>
+
+                <p>
+                    As before, a heuristic produces the candidate and is then discarded. Compute
+                    \(d(F_t Y_t)\) informally by the product rule
+                    \(d(FY) = F\, dY + Y\, dF + dF \cdot dY\), with the bookkeeping rules
+                    \((dw_t)^2 = dt\) and \(dt \cdot dw_t = 0\). The Itô formula applied to \(F\) gives
+                    \(dF_t = \alpha^2 F_t\, dt - \alpha F_t\, dw_t\), and substituting the equation for
+                    \(dY_t\),
+                </p>
+                <p>
+                    \[
+                    \begin{align*}
+                    d(F_t Y_t)
+                    &= F_t \bigl( r\, dt + \alpha Y_t\, dw_t \bigr)
+                    + Y_t \bigl( \alpha^2 F_t\, dt - \alpha F_t\, dw_t \bigr)
+                    + \bigl( - \alpha F_t \bigr) \bigl( \alpha Y_t \bigr)\, dt \\\\
+                    &= r F_t\, dt .
+                    \end{align*}
+                    \]
+                </p>
+                <p>
+                    Every stochastic term cancels. The factor was built for exactly this purpose, and what
+                    remains integrates pathwise, \(F_t Y_t = Y_0 + r \int_0^t F_s\, ds\). Multiplying back by
+                    \(Z_t = F_t^{-1}\) yields the candidate, which the theorem below states in both compact
+                    and expanded form.
+                </p>
+
+                <div class="theorem" id="T-linear_sde_solution">
+                    <span class="theorem-title">Theorem: The Linear Equation with Multiplicative Noise</span>
+                    <p>
+                        Let \(r, \alpha \in \mathbb{R}\), let \(Y_0 \in \mathbb{R}\) be a constant, and let
+                        \(Z_t = \exp \bigl( \alpha w_t - \tfrac{1}{2} \alpha^2 t \bigr)\) and
+                        \(F_t = Z_t^{-1}\). The process
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        Y_t
+                        &= Z_t \Bigl( Y_0 + r \int_0^t F_s\, ds \Bigr) \\\\
+                        &= Y_0\, e^{\alpha w_t - \frac{1}{2} \alpha^2 t}
+                        + r \int_0^t e^{\alpha ( w_t - w_s ) - \frac{1}{2} \alpha^2 ( t - s )}\, ds
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        has the following properties.
+                    </p>
+                    <p>
+                        <strong>(i)</strong><br>
+                        \(Y\) is an Itô process, and for every \(t \geq 0\), almost surely,
+                    </p>
+                    <p>
+                        \[
+                        Y_t = Y_0 + r t + \int_0^t \alpha Y_s\, dw_s ,
+                        \]
+                    </p>
+                    <p>
+                        so \(Y\) solves \(dY_t = r\, dt + \alpha Y_t\, dw_t\).
+                    </p>
+                    <p>
+                        <strong>(ii)</strong><br>
+                        \(\mathbb{E}[Y_t] = Y_0 + r t\) for every \(t \geq 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>The two factors as Itô processes.</strong><br>
+                        Fix \(T \gt 0\) and take the constant step function \(h \equiv \alpha\) on
+                        \([0, T]\). The
+                        <a href="martingale_representation.html#T-exponential_martingale" class="ref-link"><strong>exponential martingale identity</strong></a>
+                        states that \(\alpha Z_s \in \mathcal{V}(0, T)\) and that, for every
+                        \(t \in [0, T]\), almost surely,
+                        \(Z_t = 1 + \int_0^t \alpha Z_s\, dw_s\). Since \(T\) was arbitrary, \(Z\) is an Itô
+                        process with coefficients \(u^Z = 0\) and \(v^Z = \alpha Z\). Next, the process
+                        \(A_t = Y_0 + r \int_0^t F_s\, ds\) has continuous paths, and \(F\) is adapted with
+                        continuous paths, so the integrand \(r F_s\) is pathwise integrable on bounded
+                        intervals and progressively measurable by the
+                        <a href="ito_formula.html#T-progressively_measurable_criteria" class="ref-link"><strong>continuity criterion</strong></a>.
+                        Hence \(A\) is an Itô process with \(u^A = r F\) and \(v^A = 0\), and \(Y = Z A\).
+                    </p>
+                    <p>
+                        <strong>Membership.</strong><br>
+                        The
+                        <a href="multidim_ito_formula.html#T-stochastic_product_rule" class="ref-link"><strong>stochastic product rule</strong></a>
+                        requires \(A_s\, v^Z + Z_s\, v^A = \alpha Z_s A_s = \alpha Y_s\) to lie in
+                        \(\mathcal{V}(0, T)\) for every \(T \gt 0\), which is exactly the membership our
+                        working notion of solution demands of the diffusion coefficient \(\alpha Y_s\).
+                        Adaptedness and path continuity of \(Y = Z A\) give progressive measurability by the
+                        continuity criterion, so square integrability is the only open point. By (W1) of the
+                        <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>definition of Brownian motion</strong></a>,
+                        the increment \(w_s - w_u\) for \(u \leq s\) is centered Gaussian with variance
+                        \(s - u\), hence has the law of \(w_{s - u}\), and the exponential moment identity of
+                        the previous section applies to it. In particular, writing
+                        \(Z_s F_u = e^{\alpha ( w_s - w_u ) - \frac{1}{2} \alpha^2 ( s - u )}\),
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\bigl[ Z_s^2 \bigr]
+                        &= \mathbb{E}\bigl[ e^{2 \alpha w_s} \bigr]\, e^{- \alpha^2 s}
+                        = e^{\alpha^2 s} , \\\\
+                        \mathbb{E}\bigl[ ( Z_s F_u )^2 \bigr]
+                        &= \mathbb{E}\bigl[ e^{2 \alpha ( w_s - w_u )} \bigr]\, e^{- \alpha^2 ( s - u )}
+                        = e^{\alpha^2 ( s - u )}
+                        \leq e^{\alpha^2 s} .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        For the integral term, expanding the square of a nonnegative integral as a double
+                        integral and applying \(2ab \leq a^2 + b^2\) gives the elementary bound
+                        \(\bigl( \int_0^s g\, du \bigr)^2 \leq s \int_0^s g^2\, du\), and
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        moves the expectation inside the time integrals. Combining with
+                        \((a + b)^2 \leq 2 a^2 + 2 b^2\),
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\bigl[ Y_s^2 \bigr]
+                        &\leq 2 Y_0^2\, \mathbb{E}\bigl[ Z_s^2 \bigr]
+                        + 2 r^2\, \mathbb{E} \Bigl[ \Bigl( \int_0^s Z_s F_u\, du \Bigr)^2 \Bigr] \\\\
+                        &\leq 2 Y_0^2\, e^{\alpha^2 s}
+                        + 2 r^2 s \int_0^s \mathbb{E}\bigl[ ( Z_s F_u )^2 \bigr]\, du \\\\
+                        &\leq \bigl( 2 Y_0^2 + 2 r^2 s^2 \bigr)\, e^{\alpha^2 s} ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        which is bounded on \([0, T]\), so
+                        \(\mathbb{E} \int_0^T \alpha^2 Y_s^2\, ds \lt \infty\) and
+                        \(\alpha Y \in \mathcal{V}(0, T)\) for every \(T \gt 0\).
+                    </p>
+                    <p>
+                        <strong>The product rule.</strong><br>
+                        All hypotheses of the product rule are now verified: \(Z\) and \(A\) are Itô
+                        processes, and the combined coefficient \(\alpha Y\) lies in \(\mathcal{V}(0, T)\)
+                        for every \(T\). Since \(Z_s F_s = 1\), the rule gives, for every \(t \geq 0\),
+                        almost surely,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        Y_t
+                        &= Z_0 A_0
+                        + \int_0^t \bigl( Z_s\, u^A + A_s\, u^Z + v^Z v^A \bigr)\, ds
+                        + \int_0^t \bigl( Z_s\, v^A + A_s\, v^Z \bigr)\, dw_s \\\\
+                        &= Y_0 + \int_0^t r\, Z_s F_s\, ds + \int_0^t \alpha\, Z_s A_s\, dw_s \\\\
+                        &= Y_0 + r t + \int_0^t \alpha Y_s\, dw_s .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        The drift coefficient of the equation is the constant \(r\), trivially pathwise
+                        integrable, and the diffusion coefficient \(\alpha Y_s\) has just been placed in
+                        \(\mathcal{V}(0, T)\), so \(Y\) is an Itô process of exactly the equation's form,
+                        which is claim (i).
+                    </p>
+                    <p>
+                        <strong>The mean.</strong><br>
+                        The second moment bound makes \(Y_t\) integrable, and the summands of the expanded
+                        form are handled separately. The first has mean
+                        \(Y_0\, \mathbb{E}\bigl[ Z_t \bigr] = Y_0\), by the exponential martingale
+                        identity invoked above. For the second, the integrand
+                        \(Z_t F_s\) is positive, so Tonelli exchanges expectation and integral, and the
+                        increment identity with \(c = \alpha\) gives
+                        \(\mathbb{E}\bigl[ Z_t F_s \bigr]
+                        = e^{\frac{1}{2} \alpha^2 ( t - s )} e^{- \frac{1}{2} \alpha^2 ( t - s )} = 1\).
+                        Hence
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}[Y_t]
+                        = Y_0 + r \int_0^t \mathbb{E}\bigl[ Z_t F_s \bigr]\, ds
+                        = Y_0 + r t ,
+                        \]
+                    </p>
+                    <p>
+                        which is claim (ii).
+                    </p>
+                </div>
+
+                <p>
+                    The expanded form of the solution reads like a ledger. The initial capital \(Y_0\) is
+                    carried from time \(0\) to time \(t\) by the homogeneous growth factor
+                    \(Z_t\), and each infinitesimal deposit \(r\, ds\) made at time \(s\) is carried from
+                    \(s\) to \(t\) by the ratio \(Z_t / Z_s = e^{\alpha ( w_t - w_s ) - \frac{1}{2} \alpha^2 ( t - s )}\),
+                    which depends only on the noise accumulated <em>after</em> the deposit. The solution is a
+                    superposition of contributions, each propagated forward by the noise it actually
+                    experienced. The mean in (ii) repeats the lesson of the previous section. The noiseless
+                    skeleton \(dy/dt = r\) has solution \(Y_0 + rt\), and under the Itô reading the
+                    proportional noise leaves this mean exactly in place. The same computation with a
+                    time-dependent noise coefficient \(c(t)\) in place of \(\alpha\) works verbatim, with the
+                    integrating factor \(\exp \bigl( - \int_0^t c\, dw_s + \tfrac{1}{2} \int_0^t c^2\, ds \bigr)\),
+                    and we record the method without pursuing the general statement.
+                </p>
+                <p>
+                    Between this section and the last, two placements of the unknown have been solved.
+                    Noise proportional to the state with drift proportional to the state gave geometric
+                    growth, and noise proportional to the state with constant drift gave the ledger above. The
+                    remaining basic configuration reverses the roles. When the <em>drift</em> is proportional
+                    to the state while the noise enters additively, with constant strength, the integrating
+                    factor loses its randomness and the classical \(e^{-\mu t}\) returns intact. That
+                    configuration is the Ornstein-Uhlenbeck family, and it has earned
+                    <a href="ornstein_uhlenbeck.html">a page of its own</a>, where the closed form opens into
+                    Gaussian process structure and the stochastic engine of diffusion models.
+                </p>
+            </section>
+
+        </div>
+    </body>
+</html>

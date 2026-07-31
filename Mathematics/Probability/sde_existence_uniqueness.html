@@ -1,0 +1,751 @@
+---
+layout: default
+title: "Existence and Uniqueness for SDEs"
+topic_id: prob-36
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Existence and Uniqueness for SDEs</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#solution-concept">The Solution Concept</a>
+            <a href="#gronwall">Gronwall's Inequality</a>
+            <a href="#main-theorem">The Main Theorem</a>
+            <a href="#uniqueness">Uniqueness</a>
+        </div>
+
+        <div class="container">
+
+            <section id="solution-concept" class="section-content">
+                <h2>The Solution Concept, Completed</h2>
+
+                <p>
+                    The example pages solved three equations by producing formulas and verifying them
+                    against the integral equation, and every verification ended with the same reservation.
+                    The candidate was a solution; whether it was <em>the</em> solution stayed open. A
+                    second reservation traveled alongside it. Every initial value was a constant, because
+                    the machinery for genuinely random initial data was not yet on the table. This page
+                    and the next retire both reservations. This page completes the solution concept,
+                    builds the one inequality the whole theory runs on, states the main theorem, and
+                    proves uniqueness. The next page constructs the solution.
+                </p>
+                <p>
+                    Throughout, \(w_t\) is the standard one-dimensional Brownian motion of the preceding
+                    pages, started at \(w_0 = 0\) and carried on \((\Omega, \mathcal{F}, \mathbb{P})\),
+                    and \(T \gt 0\) is a fixed horizon. Everything on this page is one-dimensional. The
+                    systems version repeats the arguments coordinatewise and is recorded at statement
+                    level at the end of the next page.
+                </p>
+
+                <h3>Room for a Random Start</h3>
+
+                <p>
+                    The obstruction to random initial values is informational, not computational. Under
+                    the Brownian filtration, \(\mathcal{F}_0\) consists of null sets and their
+                    complements, so condition (I1) of the
+                    <a href="ito_formula.html#D-ito_process" class="ref-link"><strong>Itô process</strong></a>
+                    definition admits only almost-surely-constant starts. The definition page
+                    recorded that richer filtrations, where a genuinely random initial condition is the
+                    point, were the intended destination. This is that destination. Let \(Z\) be a random
+                    variable independent of the entire motion, that is, independent of
+                    \(\sigma(w_s : s \geq 0)\), and enlarge the information flow to
+                </p>
+                <p>
+                    \[
+                    \mathcal{H}_t
+                    = \sigma\bigl( \sigma(Z) \cup \sigma(w_s : s \leq t) \cup \mathcal{N} \bigr) ,
+                    \quad t \geq 0 ,
+                    \]
+                </p>
+                <p>
+                    where \(\mathcal{N}\) is the family of \(\mathbb{P}\)-null sets. The starting
+                    \(\sigma\)-algebra \(\mathcal{H}_0\) now contains \(\sigma(Z)\), so a start
+                    distributed like \(Z\) is measurable at time zero. What must be checked is that the
+                    enlargement does not damage the noise.
+                </p>
+
+                <div class="theorem" id="T-enlarged_brownian_filtration">
+                    <span class="theorem-title">Lemma: The Enlarged Brownian Filtration</span>
+                    <p>
+                        Let \(Z\) be a random variable independent of \(\sigma(w_s : s \geq 0)\), and let
+                        \(\{\mathcal{H}_t\}_{t \geq 0}\) be as above. Then:
+                    </p>
+                    <p>
+                        <strong>(i)</strong><br>
+                        \(\{\mathcal{H}_t\}\) is a filtration containing every \(\mathbb{P}\)-null set,
+                        and \(w\) is adapted to it.
+                    </p>
+                    <p>
+                        <strong>(ii)</strong><br>
+                        For all \(0 \leq a \lt b\), the increment \(w_b - w_a\) is independent of
+                        \(\mathcal{H}_a\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Part (i) is bookkeeping. Each \(\mathcal{H}_t\) is a \(\sigma\)-algebra by
+                        construction, the family increases in \(t\) because the generating families do,
+                        every null set is a generator, and \(w_s\) is \(\mathcal{H}_t\)-measurable for
+                        \(s \leq t\) because it is a generator.
+                    </p>
+                    <p>
+                        For (ii), write \(\mathcal{F}_a^0 = \sigma(w_s : s \leq a)\) for the raw past of
+                        the motion and fix events \(A \in \sigma(Z)\), \(B \in \mathcal{F}_a^0\), and
+                        \(C \in \sigma(w_b - w_a)\). Both \(B\) and \(C\) belong to
+                        \(\sigma(w_s : s \geq 0)\), so the independence of \(Z\) from the entire motion
+                        gives \(\mathbb{P}[A \cap B \cap C] = \mathbb{P}[A]\, \mathbb{P}[B \cap C]\). The
+                        increment is
+                        <a href="ito_integral.html#T-increment_independence" class="ref-link"><strong>independent of the past</strong></a>
+                        of the motion, and \(\mathcal{F}_a^0\) is contained in that past, so
+                        \(\mathbb{P}[B \cap C] = \mathbb{P}[B]\, \mathbb{P}[C]\). Multiplying,
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{P}[ A \cap B \cap C ]
+                        = \mathbb{P}[A]\, \mathbb{P}[B]\, \mathbb{P}[C]
+                        = \mathbb{P}[ A \cap B ]\, \mathbb{P}[C] .
+                        \]
+                    </p>
+                    <p>
+                        The events \(A \cap B\) form a family closed under intersection that generates
+                        \(\sigma\bigl( \sigma(Z) \cup \mathcal{F}_a^0 \bigr)\), and the extension of
+                        independence from such a family to the \(\sigma\)-algebra it generates is the
+                        monotone-class step this track has taken on faith since the construction of the
+                        integral. We extend the same trust to this one application. Finally, every event
+                        of \(\mathcal{H}_a\) differs from an event of
+                        \(\sigma\bigl( \sigma(Z) \cup \mathcal{F}_a^0 \bigr)\) by a null set, by the same
+                        symmetric-difference argument that the representation page ran for its augmented
+                        \(\sigma\)-algebra, and altering an event by a null set changes no probability.
+                        Independence therefore passes to \(\mathcal{H}_a\).
+                    </p>
+                </div>
+
+                <p>
+                    The lemma is exactly the entry ticket that the earlier pages priced. The
+                    <a href="ito_formula.html#T-pathwise_time_integral" class="ref-link"><strong>pathwise time integral</strong></a>
+                    is stated for any filtration containing the null sets, which (i) supplies. The
+                    <a href="ito_formula.html#T-weighted_qv_limit" class="ref-link"><strong>weighted increment lemma</strong></a>
+                    asks that the motion be adapted and its increments be independent of the filtration,
+                    which (i) and (ii) supply. The construction of the Itô integral and its four
+                    properties consume, as the extension survey of the properties page recorded,
+                    adaptedness and the independence of increments from the enlarged past, and nothing
+                    else. Every hypothesis is met. From here on, \(\mathcal{V}(0, T)\) denotes the
+                    integrand class of the construction taken over \(\{\mathcal{H}_t\}\), and every
+                    result quoted from the integral pages is quoted in this enlarged version. When \(Z\)
+                    is a constant the enlargement collapses to the Brownian filtration, and nothing on
+                    the earlier pages changes.
+                </p>
+
+                <h3>What It Means to Solve, in Full</h3>
+
+                <p>
+                    With the information flow settled, the working notion of the example pages can be
+                    upgraded to a definition that carries uniqueness questions. Fix measurable
+                    coefficients and a square-integrable start.
+                </p>
+
+                <div class="theorem" id="D-sde_solution">
+                    <span class="theorem-title">Definition: Solution of a Stochastic Differential Equation</span>
+                    <p>
+                        Let \(T \gt 0\), let \(b, \sigma : [0, T] \times \mathbb{R} \to \mathbb{R}\) be
+                        jointly Borel measurable, and let \(Z\) be a random variable independent of
+                        \(\sigma(w_s : s \geq 0)\) with \(\mathbb{E}[Z^2] \lt \infty\). A
+                        <strong>solution</strong> of
+                    </p>
+                    <p>
+                        \[
+                        dX_t = b(t, X_t)\, dt + \sigma(t, X_t)\, dw_t ,
+                        \quad 0 \leq t \leq T ,
+                        \quad X_0 = Z ,
+                        \]
+                    </p>
+                    <p>
+                        is a stochastic process \(\{X_t\}_{0 \leq t \leq T}\) such that:
+                    </p>
+                    <p>
+                        <strong>(S1)</strong><br>
+                        \(X\) is adapted to \(\{\mathcal{H}_t\}\) with continuous paths, hence
+                        progressively measurable by the
+                        <a href="ito_formula.html#T-progressively_measurable_criteria" class="ref-link"><strong>continuity criterion</strong></a>;
+                    </p>
+                    <p>
+                        <strong>(S2)</strong><br>
+                        \(X\) is square integrable in the mean over the horizon,
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\Bigl[ \int_0^T X_t^2\, dt \Bigr] \lt \infty ;
+                        \]
+                    </p>
+                    <p>
+                        <strong>(S3)</strong><br>
+                        the substituted coefficients qualify as integrands:
+                        \(\mathbb{P}\bigl[ \int_0^T |b(s, X_s)|\, ds \lt \infty \bigr] = 1\) and
+                        \(\bigl( (s, \omega) \mapsto \sigma(s, X_s(\omega)) \bigr) \in \mathcal{V}(0, T)\);
+                    </p>
+                    <p>
+                        <strong>(S4)</strong><br>
+                        almost surely, simultaneously for every \(t \in [0, T]\),
+                    </p>
+                    <p>
+                        \[
+                        X_t = Z + \int_0^t b(s, X_s)\, ds + \int_0^t \sigma(s, X_s)\, dw_s ,
+                        \]
+                    </p>
+                    <p>
+                        the \(dw\)-term taken in its everywhere-continuous realization.
+                    </p>
+                </div>
+
+                <p>
+                    Conditions (S2) and (S3) are meaningful because of (S1). Progressive measurability
+                    makes \((t, \omega) \mapsto X_t^2\) jointly measurable, so the double integral of
+                    (S2) is a legitimate expectation, and the map
+                    \((s, \omega) \mapsto (s, X_s(\omega))\) composed
+                    with the Borel functions \(b\) and \(\sigma\) keeps progressive measurability, so
+                    the two integrals of (S4) are the pathwise time integral and the Itô integral
+                    of the enlarged construction. Condition (S2) does different work. It names the
+                    class inside which uniqueness will be asserted, and the main theorem produces its
+                    solution inside this class, so the two halves of the theory meet on common ground.
+                    When \(Z\) is a constant, the definition reduces to the working notion of the
+                    example pages together with (S2), and each of the three equations verified there
+                    already met (S2), since their membership computations bounded exactly these mean
+                    squares. Everything solved so far remains a solution in the present sense.
+                </p>
+
+                <h3>Constants Come Out of the Integral</h3>
+
+                <p>
+                    One lemma completes the upgrade of the example pages themselves. Their closed forms
+                    multiply the noise by the initial value, and for a random start this requires pulling
+                    an \(\mathcal{H}_0\)-measurable factor out of a stochastic integral. The operation is
+                    plausible, because the factor is known before the integration begins, and it is not a
+                    triviality, because the integral is an \(L^2\) limit rather than a pathwise sum.
+                </p>
+
+                <div class="theorem" id="T-f0_factor_takeout">
+                    <span class="theorem-title">Lemma: Taking Out an Initially Known Factor</span>
+                    <p>
+                        Let \(Y\) be \(\mathcal{H}_0\)-measurable and \(f \in \mathcal{V}(0, T)\), and
+                        suppose the product satisfies \(Y f \in \mathcal{V}(0, T)\). Then, almost surely,
+                    </p>
+                    <p>
+                        \[
+                        \int_0^T Y f(s, \omega)\, dw_s = Y \int_0^T f(s, \omega)\, dw_s ,
+                        \]
+                    </p>
+                    <p>
+                        and the same identity holds over every subinterval \([0, t]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1 (Bounded factor, elementary integrand).</strong><br>
+                        Let \(|Y| \leq K\) and let \(\phi = \sum_j e_j \mathbf{1}_{[t_j, t_{j+1})}\) be a
+                        bounded elementary process in \(\mathcal{V}(0, T)\). Then \(Y \phi\) is again a
+                        bounded elementary process. Its levels \(Y e_j\) are
+                        \(\mathcal{H}_{t_j}\)-measurable, since \(Y\) is \(\mathcal{H}_0\)-measurable and
+                        \(\mathcal{H}_0 \subseteq \mathcal{H}_{t_j}\), and they are bounded, by
+                        \(K\) times any common bound for the levels of \(\phi\). The elementary integral is a finite sum, and the
+                        factor \(Y\) distributes over it,
+                    </p>
+                    <p>
+                        \[
+                        \int_0^T Y \phi\, dw_s
+                        = \sum_j Y e_j\, \bigl( w_{t_{j+1}} - w_{t_j} \bigr)
+                        = Y \sum_j e_j\, \bigl( w_{t_{j+1}} - w_{t_j} \bigr)
+                        = Y \int_0^T \phi\, dw_s .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 2 (Bounded factor, general integrand).</strong><br>
+                        Keep \(|Y| \leq K\) and let \(f \in \mathcal{V}(0, T)\). The construction of the
+                        integral supplies bounded elementary \(\phi_n \to f\) in
+                        \(L^2(\lambda \otimes \mathbb{P})\). Then \(Y \phi_n \to Y f\) in the same space,
+                        since \(\mathbb{E}\bigl[ \int_0^T Y^2 (\phi_n - f)^2\, ds \bigr]
+                        \leq K^2\, \mathbb{E}\bigl[ \int_0^T (\phi_n - f)^2\, ds \bigr] \to 0\). By
+                        <a href="ito_integral.html#T-ito_l2_continuity" class="ref-link"><strong>L² continuity of the integral</strong></a>,
+                        both \(\int_0^T Y \phi_n\, dw_s \to \int_0^T Y f\, dw_s\) and
+                        \(\int_0^T \phi_n\, dw_s \to \int_0^T f\, dw_s\) in \(L^2(\mathbb{P})\), and
+                        multiplying the second convergence by the bounded \(Y\) preserves it. Step 1
+                        makes the two sequences equal term by term, and two \(L^2\) limits of the same
+                        sequence agree almost surely.
+                    </p>
+                    <p>
+                        <strong>Step 3 (General factor by truncation).</strong><br>
+                        For general \(Y\) with \(Y f \in \mathcal{V}(0, T)\), set
+                        \(Y_K = Y\, \mathbf{1}_{\{|Y| \leq K\}}\), which is bounded and
+                        \(\mathcal{H}_0\)-measurable, with \(|Y_K f| \leq |Y f|\), so
+                        \(Y_K f \in \mathcal{V}(0, T)\) and Step 2 applies to \(Y_K\). As
+                        \(K \to \infty\), the
+                        <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>
+                        gives
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\Bigl[ \Bigl( \int_0^T ( Y_K - Y ) f\, dw_s \Bigr)^{2} \Bigr]
+                        = \mathbb{E}\Bigl[ \int_0^T Y^2\, \mathbf{1}_{\{|Y| \gt K\}}\, f^2\, ds \Bigr]
+                        \longrightarrow 0
+                        \]
+                    </p>
+                    <p>
+                        by the
+                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        on the product space, with dominator the integrable \(Y^2 f^2\). So
+                        \(\int_0^T Y_K f\, dw_s \to \int_0^T Y f\, dw_s\) in \(L^2(\mathbb{P})\), while
+                        \(Y_K \int_0^T f\, dw_s \to Y \int_0^T f\, dw_s\) pointwise almost surely.
+                    </p>
+                    <p>
+                        To marry the two modes, pick \(K_1 \lt K_2 \lt \cdots\) along which the displayed
+                        expectation is at most \(4^{-j}\). By the
+                        <a href="limit_theorems_product_measures.html#T-prob-mct" class="ref-link"><strong>monotone convergence theorem</strong></a>
+                        applied to the partial sums, the sum
+                        \(\sum_j \bigl( \int_0^T ( Y_{K_j} - Y ) f\, dw_s \bigr)^{2}\) has finite
+                        expectation, so it is finite almost surely, its infinity set otherwise forcing
+                        the expectation to be infinite. Terms of an almost surely convergent series
+                        tend to zero, so \(\int_0^T Y_{K_j} f\, dw_s \to \int_0^T Y f\, dw_s\) almost
+                        surely as well. Each term of this sequence equals the corresponding
+                        \(Y_{K_j} \int_0^T f\, dw_s\) almost surely by Step 2, and the two almost sure
+                        limits agree. The
+                        subinterval version replaces \(T\) by \(t\) throughout, or multiplies \(f\) by
+                        \(\mathbf{1}_{[0, t]}\).
+                    </p>
+                </div>
+
+                <p>
+                    The lemma and the independence of \(Z\) from the noise retire the constant-start
+                    restriction of the example pages at one stroke. Geometric Brownian motion with start
+                    \(Z\) is \(Z \exp\bigl( (r - \tfrac{1}{2} \alpha^2) t + \alpha w_t \bigr)\), the
+                    linear equation and the Ornstein-Uhlenbeck family carry \(Z\) through their ledgers
+                    unchanged, and the three verifications survive line by line with two upgrades.
+                    Membership computations factor through independence, as in
+                    \(\mathbb{E}\bigl[ Z^2 e^{2 \alpha w_s} \bigr]
+                    = \mathbb{E}[Z^2]\, \mathbb{E}\bigl[ e^{2 \alpha w_s} \bigr]\) by the
+                    <a href="limit_theorems_product_measures.html#T-expectation_product_independent" class="ref-link"><strong>product rule for expectations</strong></a>,
+                    and initially known factors pulled out of stochastic integrals are licensed by the lemma. Mean
+                    formulas gain an expectation, \(\mathbb{E}[Z] e^{r t}\) in place of
+                    \(N_0 e^{r t}\). We record the upgrade without repeating the verifications.
+                </p>
+
+                <p>
+                    The solution concept is complete. What the theory needs next is not stochastic at
+                    all. Both proofs on these two pages run on a single deterministic inequality, and
+                    we build it first.
+                </p>
+
+            </section>
+
+            <section id="gronwall" class="section-content">
+                <h2>Gronwall's Inequality</h2>
+
+                <p>
+                    Both proofs ahead produce estimates of the same shape. A quantity built from a
+                    solution turns out to be bounded by a constant plus a multiple of its own running
+                    integral, because the isometry and the Lipschitz hypothesis convert the integral
+                    equation into exactly such a self-bound. A self-referential estimate is not yet a
+                    bound, and the lemma that converts one into the other is deterministic. Nothing in
+                    this section mentions probability.
+                </p>
+
+                <div class="theorem" id="T-gronwall">
+                    <span class="theorem-title">Lemma: Gronwall's Inequality</span>
+                    <p>
+                        Let \(v : [0, T] \to [0, \infty)\) be measurable with
+                        \(\int_0^T v(s)\, ds \lt \infty\), and let \(C \geq 0\) and \(A \geq 0\) be
+                        constants such that
+                    </p>
+                    <p>
+                        \[
+                        v(t) \leq C + A \int_0^t v(s)\, ds
+                        \quad \text{for every } t \in [0, T] .
+                        \]
+                    </p>
+                    <p>
+                        Then \(v(t) \leq C e^{A t}\) for every \(t \in [0, T]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        For \(A = 0\) the hypothesis is the conclusion, so let \(A \gt 0\). Write
+                        \(m(r) = \int_0^r v(s)\, ds\) for \(r \in [0, T]\), a finite quantity by
+                        assumption, and fix \(t \in [0, T]\). The letter \(w\) stays reserved for the
+                        Brownian motion, which this proof never touches.
+                    </p>
+                    <p>
+                        The classical argument
+                        multiplies \(m\) by the integrating factor
+                        \(e^{-A t}\) and differentiates. We reach the same identity by an interchange of
+                        integration order instead, which asks nothing of \(v\) beyond integrability. The
+                        integrand \((s, u) \mapsto A e^{-A s}\, v(u)\, \mathbf{1}_{\{u \lt s\}}\) is
+                        nonnegative and jointly measurable on \([0, t] \times [0, t]\), so
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        permits either order of integration,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \int_0^t A e^{-A s}\, m(s)\, ds
+                        &= \int_0^t \int_0^t A e^{-A s}\, v(u)\, \mathbf{1}_{\{u \lt s\}}\, du\, ds \\\\
+                        &= \int_0^t v(u) \int_u^t A e^{-A s}\, ds\, du \\\\
+                        &= \int_0^t v(u) \bigl( e^{-A u} - e^{-A t} \bigr)\, du \\\\
+                        &= \int_0^t e^{-A s}\, v(s)\, ds - e^{-A t}\, m(t) .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Rearranging,
+                    </p>
+                    <p>
+                        \[
+                        e^{-A t}\, m(t)
+                        = \int_0^t e^{-A s}\, \bigl( v(s) - A m(s) \bigr)\, ds ,
+                        \]
+                    </p>
+                    <p>
+                        and both terms under the last integral are integrable over \([0, t]\), since
+                        \(e^{-A s} v(s) \leq v(s)\) and \(m\) is nondecreasing, hence bounded by \(m(T)\). The hypothesis
+                        reads \(v(s) - A m(s) \leq C\) for every \(s\), and multiplying by
+                        \(e^{-A s} \gt 0\) and integrating preserves the inequality,
+                    </p>
+                    <p>
+                        \[
+                        e^{-A t}\, m(t)
+                        \leq C \int_0^t e^{-A s}\, ds
+                        = \frac{C}{A} \bigl( 1 - e^{-A t} \bigr) .
+                        \]
+                    </p>
+                    <p>
+                        So \(A m(t) \leq C ( e^{A t} - 1 )\), and one more use of the hypothesis
+                        finishes,
+                    </p>
+                    <p>
+                        \[
+                        v(t)
+                        \leq C + A m(t)
+                        \leq C + C \bigl( e^{A t} - 1 \bigr)
+                        = C e^{A t} .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The weak hypotheses are the point. The functions these two pages feed to the lemma
+                    are mean squares of stochastic processes, measurable and integrable in time by
+                    construction, and nothing forces them to be continuous. A version of the lemma that
+                    differentiates would demand regularity we would then have to manufacture. The
+                    version above consumes precisely what condition (S2) of the solution concept
+                    supplies. With the engine built, we can state what the theory delivers.
+                </p>
+
+            </section>
+
+            <section id="main-theorem" class="section-content">
+                <h2>The Existence and Uniqueness Theorem</h2>
+
+                <p>
+                    The pieces are assembled. The definition fixes what it means to solve, the lemma
+                    converts self-referential estimates into bounds, and the main theorem can now be
+                    stated in the generality this track will use. Its hypotheses are two inequalities
+                    on the coefficients, holding uniformly over the whole strip
+                    \([0, T] \times \mathbb{R}\).
+                </p>
+
+                <div class="theorem" id="T-sde_existence_uniqueness">
+                    <span class="theorem-title">Theorem: Existence and Uniqueness for SDEs</span>
+                    <p>
+                        Let \(T \gt 0\), and let \(b, \sigma : [0, T] \times \mathbb{R} \to \mathbb{R}\)
+                        be jointly Borel measurable functions for which there exist constants \(C\) and
+                        \(D\) such that, for all \(t \in [0, T]\) and all \(x, y \in \mathbb{R}\):
+                    </p>
+                    <p>
+                        <strong>(H1)</strong><br>
+                        linear growth,
+                    </p>
+                    <p>
+                        \[
+                        |b(t, x)| + |\sigma(t, x)| \leq C \bigl( 1 + |x| \bigr) ;
+                        \]
+                    </p>
+                    <p>
+                        <strong>(H2)</strong><br>
+                        a Lipschitz bound in the state variable,
+                    </p>
+                    <p>
+                        \[
+                        |b(t, x) - b(t, y)| + |\sigma(t, x) - \sigma(t, y)| \leq D\, |x - y| .
+                        \]
+                    </p>
+                    <p>
+                        Let \(Z\) be a random variable independent of \(\sigma(w_s : s \geq 0)\) with
+                        \(\mathbb{E}[Z^2] \lt \infty\). Then the stochastic differential equation
+                    </p>
+                    <p>
+                        \[
+                        dX_t = b(t, X_t)\, dt + \sigma(t, X_t)\, dw_t ,
+                        \quad 0 \leq t \leq T ,
+                        \quad X_0 = Z ,
+                        \]
+                    </p>
+                    <p>
+                        has a solution in the sense of the definition above, and the solution is
+                        unique: any two solutions \(X\) and \(\hat{X}\) of the same equation with the
+                        same initial value satisfy
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{P}\bigl[ X_t = \hat{X}_t \ \text{for every } t \in [0, T] \bigr] = 1 .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The theorem is proved in full across two pages. Uniqueness closes this page, in the
+                    next section. Existence is the business of the next page, which builds the solution
+                    by an iteration of Picard type and extracts a pathwise limit. The constants \(C\)
+                    and \(D\) are fixed from here on, since the uniqueness proof consumes \(D\) by
+                    name.
+                </p>
+
+                <h3>What Each Hypothesis Buys</h3>
+
+                <p>
+                    Condition (H2) says that \(x \mapsto b(t, x)\) and \(x \mapsto \sigma(t, x)\) are
+                    <a href="../Calculus/continuity.html#D-Lipschitz_Continuous_Function" class="ref-link"><strong>Lipschitz continuous</strong></a>,
+                    with one constant serving every time \(t\) at once. It is the uniqueness
+                    hypothesis. Two solutions driven by the same noise can separate only through the
+                    coefficients, and (H2) makes the separation feed back proportionally to itself, so
+                    the mean-square gap obeys precisely the self-bound that Gronwall's inequality
+                    collapses to zero. Without a Lipschitz bound, uniqueness genuinely fails, and the
+                    failure needs no randomness. An equation with \(\sigma = 0\) and infinitely many
+                    solutions sprouting from a single start is exhibited, with one-line verifications,
+                    in the
+                    <a href="ornstein_uhlenbeck.html#beyond-closed-forms">closing section of the previous page</a>.
+                </p>
+                <p>
+                    Condition (H1) is the globality hypothesis. It caps how strongly the state can
+                    amplify itself, and this is what keeps solutions alive on all of \([0, T]\). The
+                    phenomenon it excludes is again already deterministic. A
+                    <a href="../Calculus/flow_theorem.html#D-complete_vector_field" class="ref-link"><strong>complete vector field</strong></a>
+                    is one whose flow exists for all time, and the manifold track's example of
+                    finite-time blow-up shows what happens when growth is superlinear. Linear growth
+                    is the probabilistic relative of the conditions that force completeness, and the
+                    same closing section of the previous page runs the blow-up computation for the
+                    equation read as an SDE with vanishing noise.
+                </p>
+                <p>
+                    The two conditions carry independent information. A Lipschitz bound controls
+                    differences and says nothing about size at a single point, since \(|b(t, 0)|\) may
+                    still be unbounded in \(t\), so (H1) is not a consequence of (H2). Measurability
+                    is the third, silent hypothesis. It is what lets the substituted coefficients
+                    inherit progressive measurability, as recorded after the definition, and it costs
+                    nothing in practice.
+                </p>
+
+                <p>
+                    Uniqueness goes first. The proof is where the enlarged filtration, the isometry,
+                    and the new inequality meet.
+                </p>
+
+            </section>
+
+            <section id="uniqueness" class="section-content">
+                <h2>Uniqueness</h2>
+
+                <p>
+                    Fix coefficients satisfying (H1) and (H2). The theorem's uniqueness half concerns
+                    two solutions of the same equation with the same initial value, but the estimate
+                    at the heart of the proof costs nothing extra in a slightly wider setting, and the
+                    extra generality pays a dividend at the end. Throughout this section, let
+                    \(\{\mathcal{H}_t\}\) be a filtration with the two properties of the enlargement
+                    lemma, containing the null sets and leaving the increments of \(w\) independent of
+                    the past. Let \(Z\) and \(\hat{Z}\) be \(\mathcal{H}_0\)-measurable and square
+                    integrable, and let \(X\) and \(\hat{X}\) solve the equation over
+                    \(\{\mathcal{H}_t\}\) in the sense of the definition, with \(X_0 = Z\) and
+                    \(\hat{X}_0 = \hat{Z}\). The definition's four clauses read verbatim over any such
+                    filtration. The theorem's setting is the case \(\hat{Z} = Z\) with
+                    \(\{\mathcal{H}_t\}\) the enlarged Brownian filtration of the first section.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof of the uniqueness half.</span>
+                    <p>
+                        <strong>Step 1 (The gap is an Itô process).</strong><br>
+                        Both solutions satisfy their integral equations almost surely, simultaneously
+                        for every \(t\), so on the intersection of the two full-measure events,
+                        writing \(\beta_s = b(s, X_s) - b(s, \hat{X}_s)\) and
+                        \(\gamma_s = \sigma(s, X_s) - \sigma(s, \hat{X}_s)\),
+                    </p>
+                    <p>
+                        \[
+                        X_t - \hat{X}_t
+                        = ( Z - \hat{Z} )
+                        + \int_0^t \beta_s\, ds
+                        + \int_0^t \gamma_s\, dw_s ,
+                        \quad 0 \leq t \leq T .
+                        \]
+                    </p>
+                    <p>
+                        The two integrals are well posed. Both \(\beta\) and \(\gamma\) are
+                        progressively measurable as differences of progressively measurable processes.
+                        The Lipschitz bound (H2) gives \(|\beta_s| \leq D\, |X_s - \hat{X}_s|\), which
+                        is bounded on \([0, T]\) along each pair of continuous paths, and
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \int_0^T \gamma_s^2\, ds \Bigr]
+                        &\leq D^2\, \mathbb{E}\Bigl[ \int_0^T | X_s - \hat{X}_s |^2\, ds \Bigr] \\\\
+                        &\leq 2 D^2\, \mathbb{E}\Bigl[ \int_0^T \bigl( X_s^2 + \hat{X}_s^2 \bigr) ds \Bigr] \\\\
+                        &\lt \infty
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        by \((x - y)^2 \leq 2 x^2 + 2 y^2\) and condition (S2) of both solutions, so
+                        \(\gamma \in \mathcal{V}(0, T)\). This is the moment where the
+                        square-integrability clause of the definition earns its place.
+                    </p>
+                    <p>
+                        <strong>Step 2 (Squaring and splitting).</strong><br>
+                        Set \(v(t) = \mathbb{E}\bigl[ | X_t - \hat{X}_t |^2 \bigr]\), a measurable
+                        function of \(t\) with values in \([0, \infty]\) for now. From
+                        \((x + y + z)^2 \leq 3 ( x^2 + y^2 + z^2 )\), a consequence of
+                        \(2 x y \leq x^2 + y^2\) applied to each cross term,
+                    </p>
+                    <p>
+                        \[
+                        v(t)
+                        \leq 3\, \mathbb{E}\bigl[ | Z - \hat{Z} |^2 \bigr]
+                        + 3\, \mathbb{E}\Bigl[ \Bigl( \int_0^t \beta_s\, ds \Bigr)^{2} \Bigr]
+                        + 3\, \mathbb{E}\Bigl[ \Bigl( \int_0^t \gamma_s\, dw_s \Bigr)^{2} \Bigr] .
+                        \]
+                    </p>
+                    <p>
+                        The drift term is controlled pathwise by the Cauchy-Schwarz case of
+                        <a href="../Calculus/lp_spaces.html#T-holder" class="ref-link"><strong>Hölder's inequality</strong></a>
+                        on \([0, t]\), then in the mean by
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        and (H2),
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \Bigl( \int_0^t \beta_s\, ds \Bigr)^{2} \Bigr]
+                        &\leq t\, \mathbb{E}\Bigl[ \int_0^t \beta_s^2\, ds \Bigr] \\\\
+                        &\leq t\, D^2 \int_0^t v(s)\, ds ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where Tonelli also certifies that \(s \mapsto v(s)\) is measurable, since
+                        \((s, \omega) \mapsto | X_s - \hat{X}_s |^2\) is jointly measurable by
+                        progressive measurability. The noise term is exactly what the
+                        <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>
+                        computes. We quote the isometry in its enlarged-filtration version, using the
+                        membership from Step 1, then apply the same Tonelli interchange and (H2),
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E}\Bigl[ \Bigl( \int_0^t \gamma_s\, dw_s \Bigr)^{2} \Bigr]
+                        &= \mathbb{E}\Bigl[ \int_0^t \gamma_s^2\, ds \Bigr] \\\\
+                        &\leq D^2 \int_0^t v(s)\, ds .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Assembled,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        v(t)
+                        &\leq 3\, \mathbb{E}\bigl[ | Z - \hat{Z} |^2 \bigr]
+                        + 3 ( 1 + t )\, D^2 \int_0^t v(s)\, ds \\\\
+                        &\leq 3\, \mathbb{E}\bigl[ | Z - \hat{Z} |^2 \bigr]
+                        + A \int_0^t v(s)\, ds ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where the second line uses \(t \leq T\) and sets \(A = 3 ( 1 + T )\, D^2\).
+                    </p>
+                    <p>
+                        <strong>Step 3 (Gronwall).</strong><br>
+                        The hypotheses of Gronwall's inequality are met. The function \(v\) is
+                        measurable and nonnegative, its integral over \([0, T]\) is finite by the same
+                        (S2) computation as in Step 1, and the display above then makes every value
+                        \(v(t)\) finite, since its right side is. The lemma applies with
+                        \(3\, \mathbb{E}[ | Z - \hat{Z} |^2 ]\) as its additive constant and \(A\) as
+                        its multiplier, and yields
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\bigl[ | X_t - \hat{X}_t |^2 \bigr]
+                        \leq 3\, \mathbb{E}\bigl[ | Z - \hat{Z} |^2 \bigr]\, e^{A t} ,
+                        \quad 0 \leq t \leq T .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 4 (Same start, same path).</strong><br>
+                        Now let \(\hat{Z} = Z\). The estimate collapses to
+                        \(\mathbb{E}[ | X_t - \hat{X}_t |^2 ] = 0\) for every \(t\), so
+                        \(X_t = \hat{X}_t\) almost surely at each fixed time, because a
+                        <a href="../Calculus/lebesgue.html#T-zero_integral_ae_zero" class="ref-link"><strong>nonnegative function with zero integral vanishes almost everywhere</strong></a>.
+                        A countable union of null sets is null, so
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{P}\bigl[ X_t = \hat{X}_t \ \text{for every }
+                        t \in \mathbb{Q} \cap [0, T] \bigr] = 1 .
+                        \]
+                    </p>
+                    <p>
+                        On this event the two paths are continuous functions agreeing on a dense
+                        subset of \([0, T]\), and two continuous functions that agree on a dense set
+                        agree everywhere, each point being a limit of points of agreement. The
+                        exceptional set has not grown, and
+                        \(\mathbb{P}[ X_t = \hat{X}_t \ \text{for every } t \in [0, T] ] = 1\). This is
+                        the uniqueness half of the theorem.
+                    </p>
+                </div>
+
+                <p>
+                    The wider setting now pays. For genuinely different starts, the Step 3 estimate
+                    says that solutions depend continuously on their initial data in mean square, with
+                    the explicit modulus \(3 e^{A T}\) over the whole horizon. The common filtration
+                    such a pair needs is built exactly as in the first section, enlarging by
+                    \(\sigma(Z, \hat{Z})\) instead of \(\sigma(Z)\), and the enlargement lemma's proof
+                    reads verbatim once the pair, rather than the single variable, is independent of
+                    the entire motion.
+                </p>
+
+                <p>
+                    One half of the theorem is now a theorem. The other half is a construction. A
+                    solution must be produced from the coefficients and the noise alone, and the
+                    machine that produces it is an iteration of Picard type whose convergence runs
+                    through the toolkit of inequalities assembled so far. The construction is the
+                    subject of <a href="picard_iteration.html">the next page</a>.
+                </p>
+
+            </section>
+
+        </div>
+    </body>
+</html>
