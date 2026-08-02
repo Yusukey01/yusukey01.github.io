@@ -1,0 +1,991 @@
+---
+layout: default
+title: "The Strong Markov Property of Itô Diffusions"
+topic_id: prob-40
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Strong Markov Property of Itô Diffusions</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#stopped-integral">Stopping the Integral</a>
+            <a href="#discrete-restart">Restarting the Diffusion</a>
+            <a href="#strong-markov">The Strong Markov Property</a>
+        </div>
+
+        <div class="container">
+
+            <section id="stopped-integral" class="section-content">
+                <h2>Stopping the Integral</h2>
+
+                <p>
+                    The previous page assembled the probabilistic half of the
+                    strong Markov property: after a
+                    <a href="stopping_times.html#D-stopping_time" class="ref-link"><strong>stopping time</strong></a>
+                    \(\tau\), the driving noise
+                    <a href="stopping_times.html#T-bm_strong_markov" class="ref-link"><strong>restarts</strong></a>
+                    as a fresh standard Brownian motion
+                    \(\tilde{B}_v = w_{\tau+v} - w_\tau\), independent of the past
+                    \(\mathcal{F}_\tau\) and carrying the two properties of the
+                    enlargement lemma over the shifted filtration
+                    \(\mathcal{G}_v = \mathcal{F}_{\tau+v}\). The half that remains
+                    is analytic. The diffusion after time \(\tau\) is built from
+                    integrals against \(w\) with random limits, and these must be
+                    rewritten as integrals against the restarted motion with
+                    deterministic limits before the solution theory can recognize
+                    them. This page proves the two rewriting tools and then
+                    harvests the strong Markov property itself. The first tool
+                    stops an Itô integral at a stopping time and is the
+                    identity that later powers the expectation computations of the
+                    generator theory. The second restarts the diffusion at a
+                    stopping time with finitely many values. Both proofs run on
+                    the same engine: freeze the value of the stopping time, apply
+                    the deterministic
+                    <a href="ito_diffusions.html#T-ito_shift" class="ref-link"><strong>clock-shift lemma</strong></a>
+                    on the frozen event, and paste the events back together with
+                    the
+                    <a href="sde_existence_uniqueness.html#T-f0_factor_takeout" class="ref-link"><strong>take-out lemma</strong></a>.
+                    General stopping times are then reached by the dyadic squeeze,
+                    carried out for the integral here and for the diffusion in the
+                    final section.
+                </p>
+
+                <p>
+                    Fix a horizon \(T \gt 0\) and an integrand
+                    \(f \in \mathcal{V}(0, T)\), and let \(J_t\) for
+                    \(t \in [0, T]\) be the continuous version of the integral
+                    process \(t \mapsto \int_0^t f\, dw\), secured on the
+                    <a href="ito_integral_properties.html">properties page</a>. The
+                    value \(J_{\tau \wedge T}\) reads the integral at the moment the
+                    clock is stopped. The theorem identifies it as an ordinary
+                    Itô integral whose integrand is switched off at
+                    \(\tau\).
+                </p>
+
+                <div class="theorem" id="T-stopped_ito_integral">
+                    <span class="theorem-title">Theorem: The Stopped Itô Integral</span>
+                    <p>
+                        Let \(f \in \mathcal{V}(0, T)\), the
+                        <a href="ito_integral.html#D-ito_class_v" class="ref-link"><strong>class of admissible integrands</strong></a>,
+                        and let \(\tau\) be a stopping time with respect to
+                        \(\{\mathcal{F}_t\}\). Then
+                        \(\mathbf{1}_{[0, \tau)} f \in \mathcal{V}(0, T)\), and
+                    </p>
+                    <p>
+                        \[
+                        J_{\tau \wedge T}
+                        = \int_0^T \mathbf{1}_{[0, \tau)}(s)\, f(s, \omega)\, d w_s
+                        \quad \text{almost surely.}
+                        \]
+                    </p>
+                    <p>
+                        Consequently,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E} \bigl[ J_{\tau \wedge T} \bigr] &= 0 , \\\\
+                        \mathbb{E} \bigl[ J_{\tau \wedge T}^2 \bigr]
+                        &= \mathbb{E} \Bigl[ \int_0^{\tau \wedge T}
+                        f(s, \omega)^2 \, ds \Bigr] .
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>The switched-off integrand is admissible.</strong><br>
+                        The set \(\{ (s, \omega) : s \lt \tau(\omega) \}\),
+                        intersected with \([0, t] \times \Omega\), can be written as
+                    </p>
+                    <p>
+                        \[
+                        \Bigl(
+                        \bigcup_{q \in \mathbb{Q},\, q \leq t}
+                        \bigl( [0, q) \cap [0, t] \bigr) \times \{ \tau \geq q \}
+                        \Bigr)
+                        \cup
+                        \bigl( [0, t] \times \{ \tau \gt t \} \bigr) ,
+                        \]
+                    </p>
+                    <p>
+                        because \(s \lt \tau\) holds exactly when some rational
+                        \(q\) satisfies \(s \lt q \leq \tau\), and any such \(q\)
+                        exceeding \(t\) forces \(\tau \gt t\) while \(s \leq t\)
+                        already gives \(s \lt q\). Each set
+                        \(\{ \tau \geq q \} = \Omega \setminus \{\tau \lt q\}\)
+                        lies in \(\mathcal{F}_q \subseteq \mathcal{F}_t\), and
+                        \(\{\tau \gt t\} \in \mathcal{F}_t\), so the displayed set
+                        lies in
+                        \(\mathcal{B}([0, t]) \otimes \mathcal{F}_t\): the
+                        indicator \(\mathbf{1}_{[0, \tau)}\) is
+                        <a href="ito_formula.html#D-progressively_measurable" class="ref-link"><strong>progressively measurable</strong></a>.
+                        The product \(\mathbf{1}_{[0, \tau)} f\) therefore
+                        satisfies (V1) and (V2), and (V3) holds because the product
+                        is dominated by \(|f|\). So
+                        \(\mathbf{1}_{[0, \tau)} f \in \mathcal{V}(0, T)\), and the
+                        right-hand integral is defined.
+                    </p>
+                    <p>
+                        <strong>A stopping time with finitely many values.</strong><br>
+                        Let \(\rho\) be a stopping time taking finitely many values
+                        \(0 \leq a_1 \lt \cdots \lt a_N \leq T\). Pointwise on
+                        \([0, T] \times \Omega\),
+                    </p>
+                    <p>
+                        \[
+                        \mathbf{1}_{[0, \rho)}(s)
+                        = 1 - \sum_{i=1}^{N}
+                        \mathbf{1}_{\{\rho = a_i\}}\,
+                        \mathbf{1}_{[a_i, T]}(s)
+                        \quad \text{for } s \in [0, T) ,
+                        \]
+                    </p>
+                    <p>
+                        since exactly one of the events \(\{\rho = a_i\}\) occurs
+                        and, on it, \(s \geq \rho\) reads \(s \geq a_i\). Each
+                        summand lies in \(\mathcal{V}(0, T)\) when multiplied by
+                        \(f\): the level \(\mathbf{1}_{\{\rho = a_i\}}\) is
+                        \(\mathcal{F}_{a_i}\)-measurable, the factor vanishes
+                        before \(a_i\), and the product is dominated by \(|f|\). By
+                        <a href="ito_integral_properties.html#T-ito_integral_properties" class="ref-link"><strong>linearity</strong></a>,
+                    </p>
+                    <p>
+                        \[
+                        \int_0^T \mathbf{1}_{[0, \rho)} f \, d w
+                        = J_T - \sum_{i=1}^{N}
+                        \int_0^T \mathbf{1}_{\{\rho = a_i\}}\,
+                        \mathbf{1}_{[a_i, T]}\, f \, d w .
+                        \]
+                    </p>
+                    <p>
+                        Fix \(i\) with \(a_i \lt T\). The integrand of the
+                        \(i\)-th term vanishes on \([0, a_i)\), so additivity over
+                        intervals reduces its integral to \([a_i, T]\), where the
+                        clock-shift lemma converts it to an integral from \(0\) to
+                        \(T - a_i\) against the shifted motion
+                        \(w_{a_i + v} - w_{a_i}\). Over the shifted filtration
+                        \(\{\mathcal{F}_{a_i + v}\}\) the factor
+                        \(\mathbf{1}_{\{\rho = a_i\}}\) is measurable at time
+                        zero, so the take-out lemma extracts it, and shifting the
+                        clock back,
+                    </p>
+                    <p>
+                        \[
+                        \int_0^T \mathbf{1}_{\{\rho = a_i\}}\,
+                        \mathbf{1}_{[a_i, T]}\, f \, d w
+                        = \mathbf{1}_{\{\rho = a_i\}}
+                        \int_{a_i}^T f \, d w
+                        = \mathbf{1}_{\{\rho = a_i\}}
+                        \bigl( J_T - J_{a_i} \bigr) ,
+                        \]
+                    </p>
+                    <p>
+                        the last step by additivity again. If \(a_i = T\), the
+                        integrand is null for the time integral and both sides
+                        vanish, so the display holds for every \(i\). Summing and
+                        using \(\sum_i \mathbf{1}_{\{\rho = a_i\}} = 1\),
+                    </p>
+                    <p>
+                        \[
+                        \int_0^T \mathbf{1}_{[0, \rho)} f \, d w
+                        = J_T - J_T + \sum_{i=1}^{N}
+                        \mathbf{1}_{\{\rho = a_i\}}\, J_{a_i}
+                        = J_\rho
+                        \quad \text{almost surely.}
+                        \]
+                    </p>
+                    <p>
+                        <strong>The dyadic squeeze.</strong><br>
+                        For a general stopping time \(\tau\), the time
+                        \(\rho_n = \tau_n \wedge T\) is a stopping time with
+                        finitely many values in \([0, T]\): the dyadic
+                        discretization \(\tau_n\) of the
+                        <a href="stopping_times.html#T-stopping_time_calculus" class="ref-link"><strong>calculus of stopping times</strong></a>
+                        takes grid values, the minimum with the constant \(T\) is
+                        a stopping time by the same calculus, and only the grid
+                        values below \(T\), together
+                        with \(T\) itself, survive. The previous step gives
+                        \(J_{\rho_n} = \int_0^T \mathbf{1}_{[0, \rho_n)} f\, dw\)
+                        for every \(n\). On the left,
+                        \(\rho_n \downarrow \tau \wedge T\) and \(J\) has
+                        continuous paths, so
+                        \(J_{\rho_n} \to J_{\tau \wedge T}\) almost surely. On the
+                        right, the
+                        <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>Itô isometry</strong></a>
+                        gives
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E} \Bigl[ \Bigl(
+                        \int_0^T \bigl( \mathbf{1}_{[0, \rho_n)}
+                        - \mathbf{1}_{[0, \tau \wedge T)} \bigr) f \, d w
+                        \Bigr)^2 \Bigr]
+                        = \mathbb{E} \Bigl[
+                        \int_{\tau \wedge T}^{\rho_n}
+                        f(s, \omega)^2 \, ds \Bigr] ,
+                        \]
+                    </p>
+                    <p>
+                        the two indicators differing only for
+                        \(s \in [\tau \wedge T, \rho_n)\). For each \(\omega\) the
+                        window shrinks to a point while
+                        \(\int_0^T f^2\, ds \lt \infty\) almost surely, so the
+                        inner integral tends to zero pathwise by absolute
+                        continuity of the time integral, and it is dominated by
+                        \(\int_0^T f^2\, ds\), which is integrable by (V3);
+                        <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence</strong></a>
+                        sends the right side to zero. The integrals on the right of
+                        the discrete identity therefore converge in
+                        \(L^2(\mathbb{P})\) to
+                        \(\int_0^T \mathbf{1}_{[0, \tau \wedge T)} f\, dw\), and
+                        along a subsequence almost surely; since
+                        \(\mathbf{1}_{[0, \tau \wedge T)}\) and
+                        \(\mathbf{1}_{[0, \tau)}\) agree at every \(s \lt T\), the
+                        two integrands define the same integral, and the limit
+                        identity is the theorem's display.
+                    </p>
+                    <p>
+                        <strong>Mean and variance.</strong><br>
+                        The display represents \(J_{\tau \wedge T}\) as an
+                        Itô integral of a member of \(\mathcal{V}(0, T)\), so
+                        the zero-mean property applies, and the isometry gives
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E} \bigl[ J_{\tau \wedge T}^2 \bigr]
+                        = \mathbb{E} \Bigl[ \int_0^T
+                        \mathbf{1}_{[0, \tau)}(s)\, f(s, \omega)^2 \, ds \Bigr]
+                        = \mathbb{E} \Bigl[ \int_0^{\tau \wedge T}
+                        f(s, \omega)^2 \, ds \Bigr] .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The theorem says that stopping the clock cannot manufacture
+                    drift: however elaborate the stopping rule, the stopped integral
+                    still averages to zero, and its size is still measured by the
+                    time actually elapsed. Both halves return in force when
+                    <a href="integral_at_stopping_time.html">the integral is read at a
+                    stopping time</a> that no horizon dominates, the zero mean carrying
+                    the identity and the isometry carrying the passage to the limit.
+                </p>
+
+            </section>
+
+            <section id="discrete-restart" class="section-content">
+                <h2>Restarting the Diffusion at a Discrete Stopping Time</h2>
+
+                <p>
+                    The second tool restarts the diffusion itself. Here the
+                    stopping time is assumed to take finitely many values; the
+                    passage to general stopping times is the business of the final
+                    section, where it is carried out at the level of expectations
+                    rather than of integrals. Throughout, \(X^x\) is the Itô
+                    diffusion, its defining identity
+                </p>
+                <p>
+                    \[
+                    X^x_t = x + \int_0^t b( X^x_s )\, ds
+                    + \int_0^t \sigma( X^x_s )\, d w_s
+                    \]
+                </p>
+                <p>
+                    holding almost surely, simultaneously for every \(t \geq 0\),
+                    with both integral processes continuous in their upper limit.
+                </p>
+
+                <div class="theorem" id="T-discrete_restart">
+                    <span class="theorem-title">Theorem: The Diffusion Restarted at a Discrete Stopping Time</span>
+                    <p>
+                        Let \(\rho\) be a stopping time with respect to
+                        \(\{\mathcal{F}_t\}\) taking finitely many values
+                        \(0 \leq a_1 \lt \cdots \lt a_N\), and let
+                        \(\tilde{B}_v = w_{\rho + v} - w_\rho\) and
+                        \(\mathcal{G}_v = \mathcal{F}_{\rho + v}\) be the restarted
+                        data of the
+                        <a href="stopping_times.html#T-bm_strong_markov" class="ref-link"><strong>strong Markov theorem</strong></a>.
+                        Set
+                        \(Z_v = X^x_{\rho + v}\). Then:
+                    </p>
+                    <p>
+                        <strong>(i)</strong><br>
+                        \(Z\) is \(\{\mathcal{G}_v\}\)-adapted with continuous
+                        paths, \(\mathbb{E}[ Z_0^2 ] \lt \infty\), and
+                        \(\sigma( Z_\cdot ) \in \mathcal{V}(0, h)\) over
+                        \(\{\mathcal{G}_v\}\) for every \(h \gt 0\).
+                    </p>
+                    <p>
+                        <strong>(ii)</strong><br>
+                        Almost surely, simultaneously for every \(v \geq 0\),
+                    </p>
+                    <p>
+                        \[
+                        Z_v = X^x_\rho + \int_0^v b( Z_u )\, du
+                        + \int_0^v \sigma( Z_u )\, d \tilde{B}_u ,
+                        \]
+                    </p>
+                    <p>
+                        the stochastic integral being the Itô integral over
+                        the filtration \(\{\mathcal{G}_v\}\) with respect to the
+                        standard motion \(\tilde{B}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Write \(C_i = \{\rho = a_i\}\), a finite partition of
+                        \(\Omega\), with \(C_i \in \mathcal{F}_{a_i}\) and
+                        \(C_i \in \mathcal{F}_\rho\), the latter because \(\rho\)
+                        is \(\mathcal{F}_\rho\)-measurable. Write
+                        \(\tilde{w}^{(i)}_u = w_{a_i + u} - w_{a_i}\) for the
+                        motion restarted at the deterministic time \(a_i\); on
+                        \(C_i\) the processes \(\tilde{B}\) and
+                        \(\tilde{w}^{(i)}\) coincide. All integrals against
+                        \(\tilde{B}\) below are Itô integrals over
+                        \(( \tilde{B}, \{\mathcal{G}_v\} )\), legitimate because
+                        the
+                        <a href="stopping_times.html#T-bm_strong_markov" class="ref-link"><strong>strong Markov theorem</strong></a>,
+                        applied to the stopping time
+                        \(\rho\), delivers the two properties of the enlargement
+                        lemma for this pair, and the integral theory runs verbatim
+                        over any data with these properties; the same applies to
+                        \(( \tilde{w}^{(i)}, \{\mathcal{F}_{a_i + u}\} )\), the
+                        case the previous page already used.
+                    </p>
+                    <p>
+                        <strong>Admissibility.</strong><br>
+                        \(Z\) has continuous paths because \(X^x\) does. The
+                        diffusion is progressively measurable, being continuous and
+                        adapted, so item (v) of the
+                        <a href="stopping_times.html#T-stopping_time_calculus" class="ref-link"><strong>calculus of stopping times</strong></a>,
+                        applied at the stopping time
+                        \(\rho + v\), makes \(Z_v\) measurable with respect to
+                        \(\mathcal{G}_v\). For the moments,
+                        \(\mathbb{E}[ Z_0^2 ] = \sum_i
+                        \mathbb{E}[ \mathbf{1}_{C_i} ( X^x_{a_i} )^2 ]
+                        \leq \sum_i \mathbb{E}[ ( X^x_{a_i} )^2 ] \lt \infty\)
+                        by the
+                        <a href="picard_iteration.html#T-sde_moment_bound" class="ref-link"><strong>second-moment bound</strong></a>,
+                        and for \(u \leq h\) the same decomposition gives
+                        \(\mathbb{E}[ Z_u^2 ] \leq \sum_i
+                        \mathbb{E}[ ( X^x_{a_i + u} )^2 ]\), bounded uniformly
+                        over \(u \in [0, h]\) by the moment bound on the horizon
+                        \(a_N + h\). Since \(\sigma\) is Lipschitz, it grows at
+                        most linearly, so
+                        \(\mathbb{E} \int_0^h \sigma( Z_u )^2\, du \lt \infty\),
+                        and \(\sigma( Z_\cdot )\) is continuous and adapted, hence
+                        progressively measurable. This proves (i), and the
+                        stochastic integral in (ii) is defined.
+                    </p>
+                    <p>
+                        <strong>A trace of measurability.</strong><br>
+                        One bookkeeping fact is used twice below: if
+                        \(A \in \mathcal{F}_{a_i + u}\), then
+                        \(A \cap C_i \in \mathcal{G}_u = \mathcal{F}_{\rho + u}\).
+                        Indeed, for \(t \geq 0\),
+                    </p>
+                    <p>
+                        \[
+                        ( A \cap C_i ) \cap \{ \rho + u \leq t \}
+                        = \begin{cases}
+                        A \cap C_i , & a_i + u \leq t , \\\\
+                        \emptyset , & a_i + u \gt t ,
+                        \end{cases}
+                        \]
+                    </p>
+                    <p>
+                        because \(\rho = a_i\) on \(C_i\); and in the first case
+                        \(A \cap C_i \in \mathcal{F}_{a_i + u} \subseteq
+                        \mathcal{F}_t\), the factor \(C_i\) lying already in
+                        \(\mathcal{F}_{a_i}\). In particular, a process of the
+                        form \(\mathbf{1}_{C_i} p\) with \(p\) adapted to
+                        \(\{\mathcal{F}_{a_i + u}\}\) is adapted to
+                        \(\{\mathcal{G}_u\}\) as well.
+                    </p>
+                    <p>
+                        <strong>Two integrators, one integral.</strong><br>
+                        Fix \(v \gt 0\) and \(i\), and abbreviate
+                        \(q_u = \mathbf{1}_{C_i}\, \sigma( X^x_{a_i + u} )\), a
+                        member of \(\mathcal{V}(0, v)\) over
+                        \(\{\mathcal{F}_{a_i + u}\}\) by the argument of the
+                        previous step, and over \(\{\mathcal{G}_u\}\) by the trace
+                        fact, the two readings being the same function of
+                        \((u, \omega)\). We claim
+                    </p>
+                    <p>
+                        \[
+                        \int_0^v q_u \, d \tilde{B}_u
+                        = \int_0^v q_u \, d \tilde{w}^{(i)}_u
+                        \quad \text{almost surely.}
+                        \]
+                    </p>
+                    <p>
+                        By the definition of the
+                        <a href="ito_integral.html#D-ito_integral" class="ref-link"><strong>Itô integral</strong></a>,
+                        the left side is the \(L^2\) limit of the elementary
+                        integrals of any sequence of bounded elementary processes
+                        converging to \(q\) in the mean-square sense, and likewise
+                        the right side over its own filtration. Choose bounded
+                        elementary \(p_j\) over \(\{\mathcal{F}_{a_i + u}\}\) with
+                        \(p_j \to q\), and set \(q_j = \mathbf{1}_{C_i} p_j\).
+                        Then \(q_j \to \mathbf{1}_{C_i} q = q\) in the same sense,
+                        each \(q_j\) is bounded and elementary over
+                        \(\{\mathcal{F}_{a_i + u}\}\), and by the trace fact its
+                        levels are \(\mathcal{G}_{u_j}\)-measurable as well, so
+                        \(q_j\) is elementary over \(\{\mathcal{G}_u\}\) with the
+                        same partition and levels. The elementary integral of
+                        \(q_j\) against \(\tilde{B}\) and against
+                        \(\tilde{w}^{(i)}\) is the <em>same random variable</em>:
+                        off \(C_i\) every level vanishes and both sums are zero,
+                        while on \(C_i\) the increments of the two integrators
+                        coincide. The two sides of the claim are therefore
+                        \(L^2\) limits of one and the same sequence, and they agree
+                        almost surely.
+                    </p>
+                    <p>
+                        <strong>Splicing on one cell.</strong><br>
+                        Fix \(v \gt 0\) and \(i\). Taking out the initially known
+                        factor \(\mathbf{1}_{C_i}\), first over
+                        \(( \tilde{B}, \{\mathcal{G}_u\} )\) where it is
+                        measurable at time zero because
+                        \(C_i \in \mathcal{F}_\rho = \mathcal{G}_0\), then over
+                        \(( \tilde{w}^{(i)}, \{\mathcal{F}_{a_i+u}\} )\) where
+                        \(C_i \in \mathcal{F}_{a_i}\), and using the claim in
+                        between:
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbf{1}_{C_i} \int_0^v \sigma( Z_u )\, d \tilde{B}_u
+                        &= \int_0^v \mathbf{1}_{C_i}\, \sigma( Z_u )\,
+                        d \tilde{B}_u \\\\
+                        &= \int_0^v \mathbf{1}_{C_i}\,
+                        \sigma( X^x_{a_i + u} )\, d \tilde{w}^{(i)}_u \\\\
+                        &= \mathbf{1}_{C_i} \int_0^v
+                        \sigma( X^x_{a_i + u} )\, d \tilde{w}^{(i)}_u ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where the middle equality also used
+                        \(\mathbf{1}_{C_i} \sigma( Z_u )
+                        = \mathbf{1}_{C_i} \sigma( X^x_{a_i + u} )\), the two
+                        processes agreeing on \(C_i\). The clock-shift lemma,
+                        read from the shifted side back to the original clock,
+                        turns the last integral into
+                        \(\int_{a_i}^{a_i + v} \sigma( X^x_s )\, d w_s\), and the
+                        defining identity of the diffusion, evaluated at
+                        \(a_i + v\) and at \(a_i\) and subtracted, computes it
+                        pathwise:
+                    </p>
+                    <p>
+                        \[
+                        \int_{a_i}^{a_i + v} \sigma( X^x_s )\, d w_s
+                        = X^x_{a_i + v} - X^x_{a_i}
+                        - \int_{a_i}^{a_i + v} b( X^x_s )\, ds .
+                        \]
+                    </p>
+                    <p>
+                        On \(C_i\) the right side reads
+                        \(Z_v - Z_0 - \int_0^v b( Z_u )\, du\), the time integral
+                        rewritten by the deterministic substitution
+                        \(s = a_i + u\), path by path. Combining,
+                    </p>
+                    <p>
+                        \[
+                        \mathbf{1}_{C_i} \int_0^v \sigma( Z_u )\, d \tilde{B}_u
+                        = \mathbf{1}_{C_i}
+                        \Bigl( Z_v - Z_0 - \int_0^v b( Z_u )\, du \Bigr) .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Pasting the cells.</strong><br>
+                        Summing the last display over the finitely many \(i\) and
+                        using \(\sum_i \mathbf{1}_{C_i} = 1\) gives, for each
+                        fixed \(v\),
+                    </p>
+                    <p>
+                        \[
+                        Z_v = Z_0 + \int_0^v b( Z_u )\, du
+                        + \int_0^v \sigma( Z_u )\, d \tilde{B}_u
+                        \quad \text{almost surely,}
+                        \]
+                    </p>
+                    <p>
+                        and \(Z_0 = X^x_\rho\). Every term is continuous in
+                        \(v\): the left side and the time integral pathwise, the
+                        stochastic integral by taking its continuous version,
+                        which the theory over \(( \tilde{B}, \{\mathcal{G}_v\} )\)
+                        provides. Agreement at every rational \(v\) on a common
+                        full-probability event therefore upgrades to agreement
+                        simultaneously for every \(v \geq 0\). This proves (ii).
+                    </p>
+                </div>
+
+                <p>
+                    The theorem has the exact shape of the input that the solution
+                    theory requires: a continuous adapted process with a
+                    square-integrable start, satisfying the equation over driving
+                    data with the two properties of the enlargement lemma. The
+                    final section feeds it to the uniqueness theory, replaces the
+                    discrete stopping time by a general one, and harvests the
+                    strong Markov property.
+                </p>
+            </section>
+
+            <section id="strong-markov" class="section-content">
+                <h2>The Strong Markov Property</h2>
+
+                <p>
+                    Everything is now in place. The discrete restart theorem hands
+                    the solution theory a diffusion relaunched at a stopping time
+                    with finitely many values; the machinery of the
+                    <a href="ito_diffusions.html">Markov property page</a> converts
+                    such a relaunch into a conditional expectation identity; and two
+                    squeezes, one dyadic and one by bounded truncation, carry the
+                    identity from discrete stopping times to arbitrary almost surely
+                    finite ones. Throughout, \(u( y ) = E^y[ f( X_h ) ]\) is the
+                    function of the
+                    <a href="ito_diffusions.html#T-markov_property_diffusion" class="ref-link"><strong>Markov property</strong></a>,
+                    bounded and Borel whenever \(f\) is.
+                </p>
+
+                <div class="theorem" id="T-strong_markov_property">
+                    <span class="theorem-title">Theorem: The Strong Markov Property of Itô Diffusions</span>
+                    <p>
+                        Let \(f : \mathbb{R} \to \mathbb{R}\) be bounded and Borel,
+                        let \(x \in \mathbb{R}\) and \(h \geq 0\), and let
+                        \(\tau\) be a stopping time with respect to
+                        \(\{\mathcal{F}_t\}\) with \(\tau \lt \infty\) almost
+                        surely. Then
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E} \bigl[ f( X^x_{\tau + h} )
+                        \bigm| \mathcal{F}_\tau \bigr]
+                        = u( X^x_\tau )
+                        \quad \text{almost surely.}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>The discrete case.</strong><br>
+                        Let \(\rho\) be a stopping time with finitely many values,
+                        and let \(\tilde{B}\), \(\{\mathcal{G}_v\}\), and
+                        \(Z_v = X^x_{\rho+v}\) be as in the restart theorem, which
+                        exhibits \(Z\) as a solution over
+                        \(( \tilde{B}, \{\mathcal{G}_v\} )\) with the
+                        \(\mathcal{G}_0\)-measurable, square-integrable initial
+                        value \(X^x_\rho\). The assembly that the Markov property
+                        page ran at a deterministic time now runs verbatim at
+                        \(\rho\), because each of its three inputs is available.
+                        First, every \(\mathcal{F}_\rho\)-measurable start is
+                        independent of the entire restarted motion, by clause (ii)
+                        of the strong Markov theorem for the noise, so the
+                        existence and uniqueness theory over
+                        \(( \tilde{B}, \{\mathcal{G}_v\} )\) applies in its
+                        literal reading. Second, running the dyadic-snapping
+                        construction of the
+                        <a href="ito_diffusions.html#T-measurable_start_map" class="ref-link"><strong>measurable version</strong></a>
+                        over the restarted noise, on solutions built over the
+                        smaller filtration generated by \(\tilde{B}\) and the null
+                        sets, produces a map \(\tilde{\Phi}_h\) measurable with
+                        respect to \(\mathcal{B}(\mathbb{R}) \otimes \mathcal{H}\),
+                        where
+                        \(\mathcal{H} = \sigma( \tilde{B}_v : v \geq 0 ) \vee
+                        \mathcal{N}\) is the restarted noise augmented by the null
+                        sets, with \(\tilde{\Phi}_h( y, \cdot )\) a version of the
+                        solution from the constant start \(y\) at time \(h\); and
+                        \(\mathcal{H}\) is independent of
+                        \(\mathcal{F}_\rho\): clause (ii) gives independence of
+                        the restarted noise itself, and adjoining the null sets
+                        changes no probabilities, by the same symmetric-difference
+                        argument the earlier track pages ran for their augmented
+                        \(\sigma\)-algebras. Third, with independence and the measurable version
+                        in hand, the
+                        <a href="ito_diffusions.html#T-random_start_substitution" class="ref-link"><strong>substitution lemma</strong></a>
+                        applies verbatim over the restarted data and identifies
+                        \(Z_h = \tilde{\Phi}_h( X^x_\rho, \cdot )\) almost surely.
+                    </p>
+                    <p>
+                        The
+                        <a href="ito_diffusions.html#T-ce_freezing" class="ref-link"><strong>freezing lemma</strong></a>,
+                        applied with \(\mathcal{G} = \mathcal{F}_\rho\), the
+                        independent \(\mathcal{H}\) above, the
+                        \(\mathcal{F}_\rho\)-measurable variable \(X^x_\rho\), and
+                        the bounded
+                        \(\mathcal{B}(\mathbb{R}) \otimes \mathcal{H}\)-measurable
+                        function \(\varphi( y, \omega )
+                        = f( \tilde{\Phi}_h( y, \omega ) )\), gives
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E} \bigl[ f( X^x_{\rho + h} )
+                        \bigm| \mathcal{F}_\rho \bigr]
+                        = g( X^x_\rho ) ,
+                        \quad
+                        g( y ) = \mathbb{E} \bigl[
+                        f( \tilde{\Phi}_h( y, \cdot ) ) \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        It remains to identify \(g\) with \(u\). For fixed \(y\),
+                        the variable \(\tilde{\Phi}_h( y, \cdot )\) is almost
+                        surely the time-\(h\) value of the solution from the
+                        constant start \(y\) over
+                        \(( \tilde{B}, \{\mathcal{G}_v\} )\). That solution and
+                        the diffusion \(X^y\) are both solutions of the same
+                        equation from the same deterministic start, each over
+                        driving data with the two properties of the enlargement
+                        lemma, so each qualifies under the weak-solution
+                        checklist, and
+                        <a href="picard_iteration.html#T-weak_uniqueness" class="ref-link"><strong>uniqueness in law</strong></a>
+                        makes their time-\(h\) values equal in distribution. Hence
+                        \(g( y ) = \mathbb{E}[ f( X^y_h ) ] = u( y )\), and the
+                        discrete case is proved.
+                    </p>
+                    <p>
+                        <strong>Continuity of \(u\) for continuous \(f\).</strong><br>
+                        Let \(f\) be bounded and continuous and let
+                        \(y_j \to y\). The mean-square stability bound of the
+                        Markov property page gives
+                        \(\mathbb{E}[ | X^{y_j}_h - X^y_h |^2 ]
+                        \leq 3\, | y_j - y |^2\, e^{A h} \to 0\). From any
+                        subsequence, select a further subsequence along which the
+                        bound is summable. Then
+                        <a href="picard_iteration.html#T-markov_chebyshev" class="ref-link"><strong>Chebyshev's inequality</strong></a>
+                        makes the probability of a deviation beyond any fixed
+                        tolerance summable along it, and
+                        <a href="ito_integral_properties.html#T-borel_cantelli" class="ref-link"><strong>Borel&ndash;Cantelli</strong></a>,
+                        applied at a countable family of tolerances shrinking to
+                        zero, gives
+                        \(X^{y_j}_h \to X^y_h\) almost surely along it, so
+                        continuity of \(f\), boundedness, and
+                        <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence</strong></a>
+                        give \(u( y_j ) \to u( y )\) along it. Every subsequence
+                        of the bounded real sequence \(u( y_j )\) therefore has a
+                        further subsequence converging to \(u( y )\), which forces
+                        convergence of the full sequence: \(u\) is continuous.
+                    </p>
+                    <p>
+                        <strong>The dyadic squeeze, for bounded \(\tau\) and
+                        continuous \(f\).</strong><br>
+                        Suppose \(\tau \leq m\) for a constant \(m\), and let
+                        \(\tau_n\) be its dyadic discretization, a stopping time
+                        with finitely many values below \(m + 1\). Fix
+                        \(A \in \mathcal{F}_\tau\); since \(\tau \leq \tau_n\),
+                        the monotonicity clause of the
+                        <a href="stopping_times.html#T-stopping_time_calculus" class="ref-link"><strong>calculus</strong></a>
+                        places \(A\) in \(\mathcal{F}_{\tau_n}\).
+                        Integrating the discrete case at \(\tau_n\) over \(A\),
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E} \bigl[ \mathbf{1}_A\,
+                        f( X^x_{\tau_n + h} ) \bigr]
+                        = \mathbb{E} \bigl[ \mathbf{1}_A\,
+                        u( X^x_{\tau_n} ) \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        As \(n \to \infty\), \(\tau_n \downarrow \tau\) and the
+                        paths of the diffusion are continuous, so
+                        \(X^x_{\tau_n + h} \to X^x_{\tau + h}\) and
+                        \(X^x_{\tau_n} \to X^x_\tau\) almost surely. Both \(f\)
+                        and \(u\) are bounded and continuous, so dominated
+                        convergence passes the display to the limit:
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E} \bigl[ \mathbf{1}_A\,
+                        f( X^x_{\tau + h} ) \bigr]
+                        = \mathbb{E} \bigl[ \mathbf{1}_A\,
+                        u( X^x_\tau ) \bigr]
+                        \quad \text{for every } A \in \mathcal{F}_\tau .
+                        \]
+                    </p>
+                    <p>
+                        <strong>The truncation squeeze, for general \(\tau\) and
+                        continuous \(f\).</strong><br>
+                        For general \(\tau \lt \infty\) almost surely, the
+                        truncation \(\tau \wedge m\) is a bounded stopping time.
+                        If \(A \in \mathcal{F}_\tau\), then
+                        \(A \cap \{ \tau \leq m \} \in \mathcal{F}_{\tau \wedge m}\):
+                        for \(t \lt m\) the intersection with
+                        \(\{ \tau \wedge m \leq t \}\) is
+                        \(A \cap \{ \tau \leq t \} \in \mathcal{F}_t\), and for
+                        \(t \geq m\) it is \(A \cap \{ \tau \leq m \}\) itself,
+                        which lies in \(\mathcal{F}_m \subseteq \mathcal{F}_t\)
+                        by the definition of \(\mathcal{F}_\tau\). On
+                        \(\{ \tau \leq m \}\) the times \(\tau\) and
+                        \(\tau \wedge m\) coincide, so the previous step, applied
+                        at \(\tau \wedge m\) with the event
+                        \(A \cap \{ \tau \leq m \}\), reads
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E} \bigl[ \mathbf{1}_{A \cap \{\tau \leq m\}}\,
+                        f( X^x_{\tau + h} ) \bigr]
+                        = \mathbb{E} \bigl[ \mathbf{1}_{A \cap \{\tau \leq m\}}\,
+                        u( X^x_\tau ) \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        Since \(\tau \lt \infty\) almost surely, the indicators
+                        increase to \(\mathbf{1}_A\) as \(m \to \infty\), and both
+                        integrands are bounded, so dominated convergence removes
+                        the truncation: the display of the previous step holds for
+                        every almost surely finite stopping time and every bounded
+                        continuous \(f\).
+                    </p>
+                    <p>
+                        <strong>From continuous to Borel \(f\).</strong><br>
+                        Fix \(A \in \mathcal{F}_\tau\) and consider the two set
+                        functions
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mu_1( B )
+                        &= \mathbb{E} \bigl[ \mathbf{1}_A\,
+                        \mathbf{1}_{\{ X^x_{\tau + h} \in B \}} \bigr] , \\\\
+                        \mu_2( B )
+                        &= \mathbb{E} \bigl[ \mathbf{1}_A\,
+                        u_{\mathbf{1}_B}( X^x_\tau ) \bigr] ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        for Borel \(B \subseteq \mathbb{R}\), where
+                        \(u_{\mathbf{1}_B}( y ) = \mathbb{P}[ X^y_h \in B ]\).
+                        Both are finite measures: \(\mu_1\) visibly, and
+                        \(\mu_2\) because each \(u_{\mathbf{1}_B}\) is bounded
+                        Borel, countable additivity holding pointwise in \(y\) and
+                        passing through the outer expectation by
+                        <a href="limit_theorems_product_measures.html#T-prob-mct" class="ref-link"><strong>monotone convergence</strong></a>. For a closed set \(F\) with distance function
+                        \(d_F\), the continuous approximants
+                        \(\varphi_j( z ) = \max( 0,\; 1 - j\, d_F( z ) )\)
+                        decrease to \(\mathbf{1}_F\), the device the previous page
+                        used for its own extension; dominated convergence on both
+                        sides of the display, and inside \(u\), shows
+                        \(\mu_1( F ) = \mu_2( F )\). Closed sets are stable under
+                        intersection and generate the Borel \(\sigma\)-algebra,
+                        so the two measures coincide, by the monotone-class step
+                        this track takes on faith. The display therefore holds for
+                        \(f = \mathbf{1}_B\), hence for simple \(f\) by
+                        linearity, hence for every bounded Borel \(f\) by uniform
+                        approximation with simple functions, the error on both
+                        sides being at most \(\| f - s \|_\infty\).
+                    </p>
+                    <p>
+                        <strong>The conditional form.</strong><br>
+                        For bounded Borel \(f\), the function \(u\) is bounded and
+                        Borel, and \(X^x_\tau\) is
+                        \(\mathcal{F}_\tau\)-measurable by the calculus, the
+                        diffusion being progressively measurable. The variable
+                        \(u( X^x_\tau )\) is therefore
+                        \(\mathcal{F}_\tau\)-measurable, bounded, and satisfies
+                        the defining integral identity of the
+                        <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>conditional expectation</strong></a>
+                        of \(f( X^x_{\tau + h} )\) given \(\mathcal{F}_\tau\)
+                        against every \(A \in \mathcal{F}_\tau\). This is the
+                        theorem.
+                    </p>
+                </div>
+
+                <p>
+                    Following the convention of the Markov property page, the
+                    conclusion is written downstream in the compact form
+                </p>
+                <p>
+                    \[
+                    E^x \bigl[ f( X_{\tau + h} ) \bigm| \mathcal{F}_\tau \bigr]
+                    = E^{X_\tau} \bigl[ f( X_h ) \bigr] ,
+                    \]
+                </p>
+                <p>
+                    the right side being the function
+                    \(y \mapsto E^y[ f( X_h ) ]\) evaluated at the random position
+                    \(X^x_\tau\). The deterministic-time Markov property is the
+                    special case \(\tau \equiv t\), so the strong form genuinely
+                    subsumes the one proved on the Markov property page, and the
+                    observer's summary survives the upgrade: what the diffusion
+                    does after a stopping time depends on the past only through
+                    where the diffusion stands when the clock stops.
+                </p>
+
+                <h3>Finitely Many Times After the Stop</h3>
+
+                <p>
+                    The single-time identity extends to any finite collection of
+                    times after the stop, and the extension costs only the tower
+                    property and the theorem itself, applied at the later stopping
+                    times \(\tau + h_i\).
+                </p>
+
+                <div class="theorem" id="T-strong_markov_finite_products">
+                    <span class="theorem-title">Theorem: The Strong Markov Property at Finitely Many Times</span>
+                    <p>
+                        Let \(f_1, \ldots, f_k : \mathbb{R} \to \mathbb{R}\) be
+                        bounded Borel functions, let
+                        \(0 \leq h_1 \leq \cdots \leq h_k\), and let \(\tau\) be a
+                        stopping time with \(\tau \lt \infty\) almost surely.
+                        Then
+                    </p>
+                    <p>
+                        \[
+                        E^x \Bigl[ \prod_{i=1}^{k} f_i( X_{\tau + h_i} )
+                        \Bigm| \mathcal{F}_\tau \Bigr]
+                        = E^{X_\tau} \Bigl[ \prod_{i=1}^{k} f_i( X_{h_i} )
+                        \Bigr]
+                        \quad \text{almost surely,}
+                        \]
+                    </p>
+                    <p>
+                        the right side being the function
+                        \(y \mapsto \mathbb{E} \bigl[ \prod_i f_i( X^y_{h_i} )
+                        \bigr]\), bounded and Borel, evaluated at
+                        \(X^x_\tau\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Induction on \(k\), the case \(k = 1\) being the theorem
+                        above. Let \(k \geq 2\), abbreviate
+                        \(P = \prod_{i=1}^{k-1} f_i( X^x_{\tau + h_i} )\), and set
+                        \(u_k( y ) = E^y[ f_k( X_{h_k - h_{k-1}} ) ]\), bounded
+                        and Borel. Each \(X^x_{\tau + h_i}\) is measurable with
+                        respect to
+                        \(\mathcal{F}_{\tau + h_i} \subseteq
+                        \mathcal{F}_{\tau + h_{k-1}}\), so \(P\) is
+                        \(\mathcal{F}_{\tau + h_{k-1}}\)-measurable and bounded.
+                        The
+                        <a href="conditional_expectation.html#T-ce_tower" class="ref-link"><strong>tower property</strong></a>
+                        over
+                        \(\mathcal{F}_\tau \subseteq \mathcal{F}_{\tau + h_{k-1}}\),
+                        then
+                        <a href="conditional_expectation.html#T-ce_take_out" class="ref-link"><strong>taking out what is known</strong></a>,
+                        then the single-time theorem at the almost surely finite
+                        stopping time \(\tau + h_{k-1}\) with the function
+                        \(f_k\) and the gap \(h_k - h_{k-1}\), give
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \mathbb{E} \Bigl[ P\, f_k( X^x_{\tau + h_k} )
+                        \Bigm| \mathcal{F}_\tau \Bigr]
+                        &= \mathbb{E} \Bigl[ P\;
+                        \mathbb{E} \bigl[ f_k( X^x_{\tau + h_k} )
+                        \bigm| \mathcal{F}_{\tau + h_{k-1}} \bigr]
+                        \Bigm| \mathcal{F}_\tau \Bigr] \\\\
+                        &= \mathbb{E} \Bigl[ P\;
+                        u_k( X^x_{\tau + h_{k-1}} )
+                        \Bigm| \mathcal{F}_\tau \Bigr] .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        The last conditional expectation involves \(k - 1\)
+                        bounded Borel functions of the positions at
+                        \(\tau + h_1, \ldots, \tau + h_{k-1}\), the final one
+                        being the product \(f_{k-1}\, u_k\). The induction
+                        hypothesis evaluates it as \(w( X^x_\tau )\), where
+                    </p>
+                    <p>
+                        \[
+                        w( y ) = \mathbb{E} \Bigl[
+                        \prod_{i=1}^{k-2} f_i( X^y_{h_i} ) \cdot
+                        ( f_{k-1}\, u_k )( X^y_{h_{k-1}} ) \Bigr] .
+                        \]
+                    </p>
+                    <p>
+                        Finally, the same two moves at the deterministic clock
+                        identify \(w\) with the right side of the theorem: for
+                        each \(y\), the
+                        <a href="ito_diffusions.html#T-markov_property_diffusion" class="ref-link"><strong>Markov property</strong></a>
+                        at time \(h_{k-1}\) with gap \(h_k - h_{k-1}\) gives
+                        \(\mathbb{E}[ f_k( X^y_{h_k} ) \mid
+                        \mathcal{F}_{h_{k-1}} ]
+                        = u_k( X^y_{h_{k-1}} )\), and the tower property together
+                        with taking out the
+                        \(\mathcal{F}_{h_{k-1}}\)-measurable factor
+                        \(\prod_{i \leq k-1} f_i( X^y_{h_i} )\) turn \(w( y )\)
+                        into
+                        \(\mathbb{E} \bigl[ \prod_{i=1}^{k} f_i( X^y_{h_i} )
+                        \bigr]\). Measurability of the right side in \(y\) comes
+                        from the same reduction, which exhibits the product
+                        expectation as finitely many nested applications of maps
+                        of the form \(f \mapsto u\), each preserving bounded
+                        Borel functions.
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Episodes, Exit Times, and Optimal Stopping</h3>
+                    <p>
+                        An episode in
+                        <a href="../Machine_learning/intro_RL.html"><strong>reinforcement learning</strong></a>
+                        ends at a random time: the agent reaches a terminal state
+                        and the trajectory stops. That time is computed from the
+                        trajectory alone, never from its future &mdash; the
+                        discrete-time counterpart of a stopping time, and
+                        typically a first exit time from the set of non-terminal
+                        states. Episodic algorithms treat what happens after
+                        termination as a fresh start from the stopped position,
+                        and the
+                        <a href="../Machine_learning/intro_RL.html#D-markov_decision_process" class="ref-link"><strong>Markov decision process</strong></a>
+                        builds that restart into its definition in discrete time.
+                        When the model is a diffusion, the restart is no longer
+                        definitional: it is exactly the strong Markov property,
+                        and this page is what it costs to prove. A second family
+                        of problems inverts the perspective and treats the
+                        stopping time itself as the decision variable &mdash;
+                        when to sell an asset, exercise an option, or halt an
+                        experiment so as to maximize an expected reward. Such
+                        optimal stopping problems are posed in precisely the
+                        vocabulary built here: a class of admissible stopping
+                        times, the information \(\mathcal{F}_\tau\) each one
+                        commands, and the restart identity that lets the value of
+                        continuing be read from the current state alone.
+                    </p>
+                </div>
+
+                <p>
+                    The strong Markov property completes the probabilistic core of
+                    the diffusion theory on this track, and what follows it turns
+                    analytic. The integral built here is first
+                    <a href="integral_at_stopping_time.html">read at a stopping time</a>,
+                    which converts It&ocirc;'s formula into a statement about averages.
+                    That statement then attaches to each diffusion
+                    <a href="diffusion_generator.html">a second-order differential
+                    operator, its generator</a>, computed from the coefficients
+                    \(b\) and \(\sigma\). The two combine into
+                    <a href="dynkin_formula.html">a formula evaluating expectations at
+                    first exit times</a> &mdash; the point where the stopped integral of
+                    this page, the exit times of the previous one, and the strong
+                    Markov property all meet.
+                </p>
+            </section>
+        </div>
+    </body>
+</html>
