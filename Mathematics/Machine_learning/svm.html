@@ -30,18 +30,18 @@ uses_python: false
 
                 <p>
                     So far in both regression and classification, we have used <strong>probabilistic predictors</strong> that model \(p(y \mid \mathbf{x})\) 
-                    and optimize via maximum likelihood. Here, we take a fundamentally different, geometric approach: rather than modeling probabilities, 
-                    we seek the hyperplane that separates the classes with the <strong>largest possible margin</strong>. This formulation leads 
+                    and optimize via maximum likelihood. Here, we take a fundamentally different, geometric approach. Rather than modeling
+                    probabilities, we seek the hyperplane that separates the classes with the <strong>largest possible margin</strong>. This formulation leads 
                     naturally to a <a href="../Calculus/constrained_opt.html#D-constrained_opt_problem" class="ref-link"><strong>constrained optimization problem</strong></a> whose 
                     <a href="../Calculus/duality.html#D-dual_problem" class="ref-link"><strong>dual formulation</strong></a> enables the kernel trick.
                 </p>
 
                 <p>
-                    This margin-based approach often leads to strong generalization, especially in high dimensional spaces with limited 
-                    samples. By employing the <strong>kernel trick</strong> (e.g., RBF kernel), SVMs can implicitly map inputs 
-                    into higher dimensional feature spaces, enabling the classification of nonlinearly separable data without explicitly 
-                    computing those transformations. Despite the rise of deep learning, SVMs remain valuable for small- to medium-sized 
-                    datasets, offering robustness and interpretability through a sparse set of support vectors.
+                    This margin-based approach often generalizes well, especially in high-dimensional spaces with limited
+                    samples. By employing the <strong>kernel trick</strong> (for example, the RBF kernel), SVMs can implicitly map
+                    inputs into higher-dimensional feature spaces. This enables the classification of nonlinearly separable data
+                    without explicitly computing those transformations. Despite the rise of deep learning, SVMs remain valuable for
+                    small- to medium-sized datasets. They offer robustness and interpretability through a sparse set of support vectors.
                 </p>
 
                 <p>
@@ -81,7 +81,7 @@ uses_python: false
                     \]
                     and each correctly classified point satisfies
                     \[
-                    \tilde{y}_n f(\mathbf{x}_n) > 0.
+                    \tilde{y}_n f(\mathbf{x}_n) \gt 0.
                     \]
                     Therefore, our objective is
                     \[
@@ -100,7 +100,7 @@ uses_python: false
                     <span class="theorem-title">Hard-Margin SVM (Primal)</span>
                     <p>
                         \[
-                        \min_{\mathbf{w},\, b} \;\frac{1}{2}\|\mathbf{w}\|^2 
+                        \min_{\mathbf{w},\, b} \frac{1}{2}\|\mathbf{w}\|^2 
                         \]
                         subject to
                         \[
@@ -112,10 +112,10 @@ uses_python: false
                     
                 <p>
                     This constrained optimization problem, known as the <strong>primal problem</strong>, is difficult to solve directly. Since the 
-                    objective is convex and the inequality constraints are linear, Slater's condition is automatically satisfied, so 
-                    <a href="../Calculus/duality.html#T-strong_duality_slater" class="ref-link"><strong>strong duality</strong></a> holds and the problem 
-                    can equivalently be solved via its <a href="../Calculus/duality.html#D-dual_problem" class="ref-link"><strong>dual</strong></a>, 
-                    which often has computational advantages and enables the kernel trick.
+                    objective is convex and the inequality constraints are linear, Slater's condition is automatically satisfied, so
+                    <a href="../Calculus/duality.html#T-strong_duality_slater" class="ref-link"><strong>strong duality</strong></a> holds and the problem
+                    can equivalently be solved via its <a href="../Calculus/duality.html#D-dual_problem" class="ref-link"><strong>dual</strong></a>.
+                    The dual is often computationally more convenient, and it is the form in which the kernel trick applies.
                 </p>
 
                 <p>
@@ -157,11 +157,11 @@ uses_python: false
                     <span class="theorem-title">Hard-Margin SVM (Dual)</span>
                     <p>
                         \[
-                        \max_{\boldsymbol{\alpha}} \;\sum_{n=1}^N \alpha_n - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathbf{x}_i^\top \mathbf{x}_j
+                        \max_{\boldsymbol{\alpha}} \sum_{n=1}^N \alpha_n - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathbf{x}_i^\top \mathbf{x}_j
                         \]
                         subject to 
                         \[
-                        \sum_{n=1}^N \alpha_n \tilde{y}_n = 0, \qquad \alpha_n \geq 0, \quad n = 1, \ldots, N.
+                        \sum_{n=1}^N \alpha_n \tilde{y}_n = 0, \quad \alpha_n \geq 0, \quad n = 1, \ldots, N.
                         \]
                         The primal-dual solution must satisfy the <a href="../Calculus/constrained_opt.html#T-kkt_conditions" class="ref-link"><strong>KKT conditions</strong></a>:
                         \[
@@ -176,11 +176,13 @@ uses_python: false
                 </div>
 
                 <p>
-                    Complementary slackness implies that, for each data point, either 
+                    Complementary slackness implies that, for each data point, either
                     \[
-                    \alpha_n = 0 \quad \text{or} \quad \tilde{y}_n (\hat{\mathbf{w}}^\top \mathbf{x}_n + \hat{b}) = 1.
+                    \hat{\alpha}_n = 0 \quad \text{or} \quad \tilde{y}_n (\hat{\mathbf{w}}^\top \mathbf{x}_n + \hat{b}) = 1.
                     \]
-                    The points satisfying the second condition are called <strong>support vectors</strong>.
+                    The points with \(\hat{\alpha}_n \gt 0\) are called <strong>support vectors</strong>. For such a point the
+                    first alternative fails, so the second one must hold and the point lies exactly on the margin. Every
+                    remaining point has \(\hat{\alpha}_n = 0\) and therefore contributes nothing to \(\hat{\mathbf{w}}\).
                 </p>
 
                 <p>
@@ -195,8 +197,8 @@ uses_python: false
                     \]
                     By the <a href="intro_classification.html#kernel"><strong>kernel trick</strong></a>, the inner product can be replaced with a 
                     <a href="../Calculus/rkhs.html#D-positive_definite_kernel" class="ref-link"><strong>positive definite kernel</strong></a> 
-                    \(\mathcal{K}(\mathbf{x}, \mathbf{x}') = \langle \phi(\mathbf{x}), \phi(\mathbf{x}') \rangle\), implicitly mapping inputs to a 
-                    higher- (or infinite-) dimensional feature space without ever computing \(\phi\) explicitly.
+                    \(\mathcal{K}(\mathbf{x}, \mathbf{x}') = \langle \phi(\mathbf{x}), \phi(\mathbf{x}') \rangle\). The kernel implicitly maps
+                    inputs to a higher- (or infinite-) dimensional feature space without ever computing \(\phi\) explicitly.
                 </p>
 
                 <div class="theorem" id="T-svm_kernel_prediction">
@@ -221,30 +223,30 @@ uses_python: false
 
             </section>
             
-             <section id="smc" class="section-content">
+            <section id="smc" class="section-content">
                 <h2>Soft Margin Constraints</h2>
 
                 <p>
-                    Consider the case where the data is NOT linearly separable. In this case there is no feasible solution in which 
+                    Consider the case where the data are not linearly separable. In this case there is no feasible solution in which 
                     \(\tilde{y}_n f(\mathbf{x}_n) \geq 1\) for all \(n\). By introducing slack variables \(\xi_n \geq 0\), we relax the constraint 
                     \(\tilde{y}_n f(\mathbf{x}_n) \geq 1\) to the <strong>soft margin constraint</strong>:
                     \[
                     \tilde{y}_n f(\mathbf{x}_n) \geq 1 - \xi_n.
                     \]
-                    Thus, our objective becomes: 
+                    Thus our objective becomes: 
                 </p>
 
                 <div class="theorem" id="T-svm_primal_soft">
                     <span class="theorem-title">Soft-Margin SVM (Primal)</span>
                     <p>
                         \[
-                        \min_{\mathbf{w},\, b,\, \boldsymbol{\xi}} \;\frac{1}{2}\|\mathbf{w}\|^2 + C\sum_{n=1}^N \xi_n
+                        \min_{\mathbf{w},\, b,\, \boldsymbol{\xi}} \frac{1}{2}\|\mathbf{w}\|^2 + C\sum_{n=1}^N \xi_n
                         \]
                         subject to
                         \[
                         \xi_n \geq 0, \quad \tilde{y}_n(\mathbf{w}^\top \mathbf{x}_n + b) \geq 1 - \xi_n,
                         \]
-                        where \(C \geq 0\) is a hyperparameter that controls how many data points are allowed to violate the margin.
+                        where \(C \gt 0\) is a hyperparameter that controls how many data points are allowed to violate the margin.
                     </p>
                 </div>
 
@@ -275,26 +277,35 @@ uses_python: false
                     we obtain the <strong>box constraint</strong> \(0 \leq \alpha_n \leq C\). 
                 </p>
                 <p>
-                    Substituting the first two conditions back into the Lagrangian eliminates the primal variables, yielding the same dual objective 
+                    Substituting the first two conditions back into the Lagrangian eliminates the primal variables and yields the same dual objective 
                     as the hard-margin case:
                     \[
                     \mathcal{L}(\boldsymbol{\alpha}) = \sum_{i=1}^N \alpha_i - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathbf{x}_i^\top \mathbf{x}_j,
                     \]
                     but now subject to the constraints
                     \[
-                    0 \leq \alpha_n \leq C, \qquad 
+                    0 \leq \alpha_n \leq C, \quad
                     \sum_{n=1}^N \alpha_n \tilde{y}_n = 0.
                     \]
-                    These constraints partition the training points into three cases: 
+                    These constraints partition the training points into three cases. Complementary slackness for \(\alpha_n\) and
+                    \(\mu_n\), combined with \(C - \alpha_n - \mu_n = 0\), pins down both the slack and the position of each
+                    point: 
                 </p>
 
                 <ul style="padding-left: 60px;">
-                    <li>If \(\alpha_n = 0\): the point lies outside the margin and is correctly classified (ignored by the model).</li>
-                    <li>If \(0 < \alpha_n < C\): the point is exactly on the margin boundary (\(\xi_n = 0\)). These are the <strong>support vectors</strong>.</li>
-                    <li>If \(\alpha_n = C\): the point is inside or beyond the margin.
+                    <li>If \(\alpha_n = 0\): then \(\mu_n = C \gt 0\), which forces \(\xi_n = 0\) and leaves
+                        \(\tilde{y}_n f(\mathbf{x}_n) \geq 1\). The point lies on or outside the margin and is correctly
+                        classified (ignored by the model).</li>
+                    <li>If \(0 \lt \alpha_n \lt C\): then \(\mu_n \gt 0\) forces \(\xi_n = 0\), and \(\alpha_n \gt 0\) forces
+                        \(\tilde{y}_n f(\mathbf{x}_n) = 1\). The point lies exactly on the margin boundary. These are the
+                        <strong>free support vectors</strong>.</li>
+                    <li>If \(\alpha_n = C\): then \(\mu_n = 0\) leaves \(\xi_n\) free, while \(\alpha_n \gt 0\) forces
+                        \(\tilde{y}_n f(\mathbf{x}_n) = 1 - \xi_n\). These are the <strong>bound support vectors</strong>, and
+                        the slack alone decides where the point sits.
                         <ul style="padding-left: 40px;">
-                            <li>If \(\xi_n \leq 1\): correctly classified but inside the margin.</li>
-                            <li>If \(\xi_n > 1\): misclassified.</li>
+                            <li>If \(\xi_n \lt 1\): correctly classified, on or inside the margin.</li>
+                            <li>If \(\xi_n = 1\): exactly on the decision boundary.</li>
+                            <li>If \(\xi_n \gt 1\): misclassified.</li>
                         </ul>
                     </li>
                 </ul>
@@ -302,36 +313,35 @@ uses_python: false
 
             <section id="demo" class="section-content section-wide">
                 <h2>SVM Demo: Solving the Dual QP</h2>
-                 <div id="svm_visualizer"></div>
-                 <p>
-                    This demo solves the soft-margin dual problem derived above &mdash; exactly, not approximately. Pressing
-                    <strong>Solve</strong> starts from \(\boldsymbol{\alpha} = \mathbf{0}\) and maximizes
-                </p>
+                <div id="svm_visualizer"></div>
                 <p>
+                    This demo solves the soft-margin dual problem derived above. The solution is exact, not approximate. Pressing
+                    <strong>Solve</strong> starts from \(\boldsymbol{\alpha} = \mathbf{0}\) and maximizes
                     \[
                     \sum_{n=1}^N \alpha_n - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathcal{K}(\mathbf{x}_i, \mathbf{x}_j)
                     \]
                     subject to
                     \[
-                    0 \leq \alpha_n \leq C, \qquad \sum_{n=1}^N \alpha_n \tilde{y}_n = 0,
+                    0 \leq \alpha_n \leq C, \quad \sum_{n=1}^N \alpha_n \tilde{y}_n = 0.
                     \]
+                    Prediction then uses the kernel form \(f(\mathbf{x}) = \sum_{n} \hat{\alpha}_n \tilde{y}_n \mathcal{K}(\mathbf{x}_n, \mathbf{x}) + \hat{b}\)
+                    with the solved multipliers.
                 </p>
                 <p>
-                    and prediction uses the kernel form \(f(\mathbf{x}) = \sum_{n} \hat{\alpha}_n \tilde{y}_n \mathcal{K}(\mathbf{x}_n, \mathbf{x}) + \hat{b}\)
-                    with the solved multipliers. Every quantity on display &mdash; the support-vector rings, the three-case counts,
-                    the duality gap, the KKT violation &mdash; is computed from \(\hat{\boldsymbol{\alpha}}\) itself. Nothing is inferred
-                    from geometric proximity to the boundary.
+                    Every quantity on display is computed from \(\hat{\boldsymbol{\alpha}}\) itself. That includes the support-vector
+                    rings, the three-case counts, the duality gap, and the KKT violation. Nothing is inferred from geometric
+                    proximity to the boundary.
                 </p>
 
                 <h3>How the Solver Works</h3>
                 <p>
                     The dual is a quadratic program in \(N\) variables, coupled by the box constraints and one linear equality.
-                    The equality constraint means a single \(\alpha_n\) can never move alone: the smallest working set that
+                    The equality constraint means a single \(\alpha_n\) can never move alone. The smallest working set that
                     preserves \(\sum_n \alpha_n \tilde{y}_n = 0\) is a <em>pair</em>. Sequential Minimal Optimization (SMO)
-                    exploits this: at each step it selects the pair of multipliers that violates the KKT conditions most, and
-                    solves the resulting two-variable subproblem <em>in closed form</em> &mdash; a one-dimensional quadratic
-                    maximization over an interval. Because every step is an exact maximization, the dual objective
-                    \(D(\boldsymbol{\alpha})\) never decreases; the left-hand curve makes this monotonicity visible.
+                    exploits that fact. At each step it selects the pair of multipliers that violates the KKT conditions most, and
+                    solves the resulting two-variable subproblem <em>in closed form</em>. The subproblem is a one-dimensional
+                    quadratic maximization over an interval. Because every step is an exact maximization, the dual objective
+                    \(D(\boldsymbol{\alpha})\) never decreases. The left-hand curve makes this monotonicity visible.
                 </p>
                 <p>
                     The right-hand curve tracks the <strong>duality gap</strong>. At each stage the demo reconstructs the primal
@@ -339,59 +349,75 @@ uses_python: false
                     \(P(\mathbf{w}, b, \boldsymbol{\xi}) = \frac{1}{2}\|\mathbf{w}\|^2 + C \sum_n \xi_n\), and plots
                     \(P - D\) on a log scale. Weak duality guarantees \(P \geq D\) at every feasible point, so watching the gap
                     collapse toward zero is a <em>certificate of optimality</em> that requires no knowledge of the true solution.
-                    Convergence is declared only when the maximal KKT violation falls below \(10^{-3}\); if the step cap is
+                    Convergence is declared only when the maximal KKT violation falls below \(10^{-3}\). If the step cap is
                     reached first, the demo reports the failure explicitly rather than presenting the result as optimal.
                     Stopping a run midway discards the partial solution entirely.
                 </p>
 
                 <h3>Reading the Visualization</h3>
                 <ul style="padding-left: 40px;">
-                    <li><strong>Training points</strong>: solid circles with labels \(\tilde{y} \in \{-1, +1\}\); <strong>test points</strong>: semi-transparent squares, never seen by the solver</li>
-                    <li><strong>Decision boundary</strong>: the solid contour \(f(\mathbf{x}) = 0\) &mdash; an analytic line for the linear kernel, a numerically traced contour for the RBF kernel</li>
-                    <li><strong>Margin boundaries</strong>: dashed contours where \(f(\mathbf{x}) = \pm 1\); the shading encodes the sign and magnitude of \(f\)</li>
-                    <li><strong>True boundary</strong>: the dashed curve from which the data were generated &mdash; the target the learned boundary should recover</li>
-                    <li><strong>Free support vectors</strong> (\(0 < \alpha_n < C\)): gold rings &mdash; these sit exactly on the margin</li>
-                    <li><strong>Bound support vectors</strong> (\(\alpha_n = C\)): orange rings &mdash; inside the margin or misclassified</li>
-                    <li>Points without rings have \(\alpha_n = 0\): deleting them would leave the solution unchanged</li>
+                    <li><strong>Training points.</strong> Solid circles with labels \(\tilde{y} \in \{-1, +1\}\).</li>
+                    <li><strong>Test points.</strong> Semi-transparent squares, never seen by the solver.</li>
+                    <li><strong>Decision boundary.</strong> The solid contour \(f(\mathbf{x}) = 0\). It is an analytic line for the
+                        linear kernel and a numerically traced contour for the RBF kernel.</li>
+                    <li><strong>Margin boundaries.</strong> Dashed contours where \(f(\mathbf{x}) = \pm 1\). The shading encodes the
+                        sign and magnitude of \(f\).</li>
+                    <li><strong>True boundary.</strong> The dashed curve from which the data were generated. It is the target the
+                        learned boundary should recover.</li>
+                    <li><strong>Free support vectors</strong> (\(0 \lt \alpha_n \lt C\)). These carry gold rings and sit exactly on
+                        the margin.</li>
+                    <li><strong>Bound support vectors</strong> (\(\alpha_n = C\)). These carry orange rings and lie on or inside the margin, possibly misclassified.</li>
+                    <li>Points without rings have \(\alpha_n = 0\). Deleting them would leave the solution unchanged.</li>
                 </ul>
 
                 <h3>The Three Cases and the Bias</h3>
                 <p>
                     The KKT panel counts the partition established for the soft-margin problem: \(\alpha_n = 0\) (outside the
-                    margin), \(0 < \alpha_n < C\) (on the margin), and \(\alpha_n = C\), split by whether \(\xi_n \leq 1\)
-                    (inside the margin but correct) or \(\xi_n > 1\) (misclassified). It also reports the largest KKT violation
+                    margin), \(0 \lt \alpha_n \lt C\) (on the margin), and \(\alpha_n = C\), split by whether \(\xi_n \leq 1\)
+                    (not misclassified) or \(\xi_n \gt 1\) (misclassified). It also reports the largest KKT violation
                     over all training points and the residual of \(\sum_n \alpha_n \tilde{y}_n\), so the optimality claim can be
                     checked against the numbers rather than taken on faith.
                 </p>
                 <p>
                     One practical subtlety concerns the bias. The kernel prediction formula above averages
                     \(\tilde{y}_n - \sum_m \hat{\alpha}_m \tilde{y}_m \mathcal{K}(\mathbf{x}_m, \mathbf{x}_n)\) over support
-                    vectors, using the fact that they satisfy \(\tilde{y}_n f(\mathbf{x}_n) = 1\). In the soft-margin problem
-                    this equality is guaranteed only for the <em>free</em> support vectors &mdash; a bound point
-                    (\(\alpha_n = C\)) may violate its margin. The demo therefore averages over exactly the free set, falling
-                    back to the midpoint of the KKT-feasible interval for \(\hat{b}\) in the rare case that no free support
-                    vector exists.
+                    vectors. That step uses the fact that they satisfy \(\tilde{y}_n f(\mathbf{x}_n) = 1\). In the soft-margin
+                    problem this equality is guaranteed only for the <em>free</em> support vectors. A bound point
+                    (\(\alpha_n = C\)) may violate its margin. The demo therefore averages over exactly the free set. In the rare
+                    case that no free support vector exists, it falls back to the midpoint of the KKT-feasible interval for
+                    \(\hat{b}\).
                 </p>
 
                 <h3>Experiment Suggestions</h3>
                 <ol style="padding-left: 40px;">
-                    <li><strong>Sweep \(C\) on the linear pattern</strong> (with some label noise): the margin \(2/\|\mathbf{w}\|\) shrinks monotonically as \(C\) grows, and the bound support vectors thin out. Small \(C\) buys a wide margin at the price of many margin violations &mdash; the trade-off written directly into the primal objective.</li>
-                    <li><strong>Give the linear kernel circular data</strong>: test accuracy collapses to chance or below &mdash; no half-plane separates an annulus from a disk. Switch to the RBF kernel and the same solver, on the same data, recovers the circle.</li>
-                    <li><strong>Sweep \(\gamma\) at fixed \(C\)</strong> on circular data: small \(\gamma\) underfits (the boundary is too smooth to close around the inner disk), moderate \(\gamma\) generalizes best, and large \(\gamma\) overfits. The support-vector count traces a U-shape across the sweep.</li>
-                    <li><strong>Force overfitting</strong> with large \(\gamma\), large \(C\), and heavy noise: training accuracy reaches 100% while test accuracy drops &mdash; the boundary contorts around individual mislabeled points, each held by its own support vectors.</li>
-                    <li><strong>Approach the hard margin</strong>: at zero noise and large \(C\), the bound set empties out and only a handful of free support vectors remain, sitting exactly on the dashed margin lines &mdash; the hard-margin picture recovered as a limit.</li>
+                    <li><strong>Sweep \(C\) on the linear pattern</strong> (with some label noise). The margin \(2/\|\mathbf{w}\|\) shrinks
+                        monotonically as \(C\) grows, and the bound support vectors thin out. Small \(C\) buys a wide margin at the
+                        price of many margin violations. That trade-off is written directly into the primal objective.</li>
+                    <li><strong>Give the linear kernel circular data.</strong> Test accuracy collapses to chance or below. No half-plane
+                        separates an annulus from a disk. Switch to the RBF kernel and the same solver, on the same data, recovers
+                        the circle.</li>
+                    <li><strong>Sweep \(\gamma\) at fixed \(C\)</strong> on circular data. Small \(\gamma\) underfits (the boundary is too
+                        smooth to close around the inner disk), moderate \(\gamma\) generalizes best, and large \(\gamma\) overfits.
+                        The support-vector count traces a U-shape across the sweep.</li>
+                    <li><strong>Force overfitting</strong> with large \(\gamma\), large \(C\), and heavy noise. Training accuracy reaches
+                        100% while test accuracy drops. The boundary contorts around individual mislabeled points, and each such
+                        point is held by its own support vectors.</li>
+                    <li><strong>Approach the hard margin.</strong> At zero noise and large \(C\), the bound set empties out and only a
+                        handful of free support vectors remain. They sit exactly on the dashed margin lines. The hard-margin
+                        picture is recovered as a limit.</li>
                 </ol>
 
                 <p>
-                    SVMs demonstrate how geometric intuition - maximizing the margin - leads to strong generalization guarantees, particularly in 
-                    high-dimensional spaces with limited data. In <a href="pca.html"><strong>the PCA &amp; Autoencoders page that follows</strong></a>, we shift from 
-                    supervised to <strong>unsupervised learning</strong>, asking how to discover low-dimensional structure in data without any labels 
-                    - connecting <a href="../Linear_algebra/eigenvectors.html"><strong>eigenvalue decomposition</strong></a> to neural network-based 
-                    representation learning.
+                    SVMs demonstrate how maximizing the margin, a purely geometric intuition, leads to strong generalization guarantees,
+                    particularly in high-dimensional spaces with limited data. In <a href="pca.html"><strong>PCA &amp; Autoencoders</strong></a>,
+                    we shift from supervised to <strong>unsupervised learning</strong> and ask how to discover low-dimensional
+                    structure in data without any labels. That question connects
+                    <a href="../Linear_algebra/eigenvectors.html"><strong>eigenvalue decomposition</strong></a> to neural
+                    network-based representation learning.
                 </p>
             </section>
 
         </div>
-<script src="/js/sec5_p6_svm_visualizer.js"></script> 
+    <script src="/js/sec5_p6_svm_visualizer.js"></script> 
     </body>
 </html>
