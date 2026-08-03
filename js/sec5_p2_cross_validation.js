@@ -482,7 +482,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = RegCore;
             '      <div class="cv-folds" id="cv-folds"></div>' +
             '    </div>' +
             '    <div class="cv-card">' +
-            '      <h3>Cross-Validation Error vs &lambda; (log&ndash;log)</h3>' +
+            '      <h3>Cross-Validation Error vs &lambda; (log-log)</h3>' +
             '      <canvas id="cv-curve"></canvas>' +
             '      <div class="cv-legend">' +
             '        <span><span class="sw" style="background:' + C.foldLine + '"></span>Per-fold validation MSE</span>' +
@@ -812,7 +812,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = RegCore;
                     '<div class="row"><span>Training points</span><span>' + train.length + '</span></div>' +
                     '<div class="row"><span>Held-out test points</span><span>' + test.length + '</span></div>' +
                     '<div class="row"><span>Folds</span><span>' + params.K + '</span></div>' +
-                    '<div class="row"><span>&lambda; grid</span><span>' + LAMBDAS.length + ' values, 1e-4&ndash;1e2</span></div>';
+                    '<div class="row"><span>&lambda; grid</span><span>' + LAMBDAS.length + ' values, 1e-4-1e2</span></div>';
                 statusEl.textContent = isRunning ? 'Running\u2026' :
                     'No results yet \u2014 changing any setting resets them. Stopped runs are discarded rather than shown as complete.';
             }

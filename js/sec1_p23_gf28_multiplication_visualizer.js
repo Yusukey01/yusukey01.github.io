@@ -407,14 +407,14 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GfCore; 
         'The isomorphism is the statement that the two final bytes always agree.</div>' +
       '<div class="gfv-inputrow">' +
         '<div class="gfv-inputgroup">' +
-          '<label for="gfv-a">Element a (hex 00&ndash;FF)</label>' +
+          '<label for="gfv-a">Element a (hex 00-FF)</label>' +
           '<div class="gfv-inputwrap"><span class="gfv-prefix">0x</span><input type="text" id="gfv-a" maxlength="2" value="53" autocomplete="off"></div>' +
           '<div class="gfv-mono" id="gfv-a-bin"></div>' +
           '<div class="gfv-poly" id="gfv-a-poly"></div>' +
         '</div>' +
         '<div class="gfv-times">&times;</div>' +
         '<div class="gfv-inputgroup">' +
-          '<label for="gfv-b">Element b (hex 00&ndash;FF)</label>' +
+          '<label for="gfv-b">Element b (hex 00-FF)</label>' +
           '<div class="gfv-inputwrap"><span class="gfv-prefix">0x</span><input type="text" id="gfv-b" maxlength="2" value="CA" autocomplete="off"></div>' +
           '<div class="gfv-mono" id="gfv-b-bin"></div>' +
           '<div class="gfv-poly" id="gfv-b-poly"></div>' +

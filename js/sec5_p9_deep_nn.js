@@ -797,7 +797,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = TfCore; 
                 boxes: [], lines: [],
                 desc: function () {
                     return 'The predicted token is appended to the sequence and the <b>entire forward pass reruns</b> on the ' +
-                        'longer sequence (steps 2&ndash;8 update accordingly). The weights are untrained, so the continuation ' +
+                        'longer sequence (steps 2-8 update accordingly). The weights are untrained, so the continuation ' +
                         'is whatever this particular random parameter draw produces &mdash; displayed honestly, not scripted.';
                 },
                 viz: function () {
