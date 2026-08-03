@@ -85,7 +85,7 @@ uses_python: false
                     steps to infinity turns the discrete forward chain into a stochastic differential equation, the <strong>variance-preserving SDE</strong>,
                     Anderson's 1982 reversal theorem yields a corresponding reverse SDE, and the deterministic DDIM sampler corresponds
                     in this limit to a so-called probability-flow ODE.
-                    A rigorous treatment requires Brownian motion and Itô calculus, which belong to a more advanced treatment of
+                    A rigorous treatment requires Brownian motion and It&ocirc; calculus, which belong to a more advanced treatment of
                     stochastic processes than the curriculum currently covers. We mention the continuous-time picture in passing
                     where it illuminates the discrete-time mathematics, but the formal development is left for a later page.
                 </p>
@@ -109,8 +109,8 @@ uses_python: false
                         Given a noise schedule \(\{\beta_t\}_{t=1}^T \subset (0, 1)\), the <strong>forward diffusion kernel</strong>
                         is the Gaussian transition
                         \[
-                        q(\mathbf{x}_t \mid \mathbf{x}_{t-1}) \;=\; \mathcal{N}\!\left(\mathbf{x}_t;\; \sqrt{1 - \beta_t}\,\mathbf{x}_{t-1},\; \beta_t \mathbf{I}\right),
-                        \qquad t = 1, \ldots, T.
+                        q(\mathbf{x}_t \mid \mathbf{x}_{t-1}) = \mathcal{N}\!\left(\mathbf{x}_t; \sqrt{1 - \beta_t}\,\mathbf{x}_{t-1}, \beta_t \mathbf{I}\right),
+                        \quad t = 1, \ldots, T.
                         \]
                     </p>
                 </div>
@@ -126,7 +126,7 @@ uses_python: false
                         Each \(\mathbf{x}_t\) depends only on its immediate predecessor \(\mathbf{x}_{t-1}\), so the joint conditional
                         distribution factorises as
                         \[
-                        q(\mathbf{x}_{1:T} \mid \mathbf{x}_0) \;=\; \prod_{t=1}^{T} q(\mathbf{x}_t \mid \mathbf{x}_{t-1}).
+                        q(\mathbf{x}_{1:T} \mid \mathbf{x}_0) = \prod_{t=1}^{T} q(\mathbf{x}_t \mid \mathbf{x}_{t-1}).
                         \]
                     </li>
                     <li>
@@ -154,7 +154,7 @@ uses_python: false
                     Because the forward chain is a linear Gaussian Markov chain, the marginal distribution
                     \(q(\mathbf{x}_t \mid \mathbf{x}_0)\) at any time \(t\) can be computed in closed form. We introduce the abbreviations
                     \[
-                    \alpha_t \;:=\; 1 - \beta_t, \qquad \bar{\alpha}_t \;:=\; \prod_{s=1}^{t} \alpha_s,
+                    \alpha_t := 1 - \beta_t, \quad \bar{\alpha}_t := \prod_{s=1}^{t} \alpha_s,
                     \]
                     so that \(\bar{\alpha}_t\) is the cumulative product of the per-step retention factors.
                 </p>
@@ -164,7 +164,7 @@ uses_python: false
                     <p>
                         For every \(t = 1, \ldots, T\) and every \(\mathbf{x}_0\),
                         \[
-                        q(\mathbf{x}_t \mid \mathbf{x}_0) \;=\; \mathcal{N}\!\left(\mathbf{x}_t;\; \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0,\; (1 - \bar{\alpha}_t)\mathbf{I}\right).
+                        q(\mathbf{x}_t \mid \mathbf{x}_0) = \mathcal{N}\!\left(\mathbf{x}_t; \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0, (1 - \bar{\alpha}_t)\mathbf{I}\right).
                         \]
                     </p>
                 </div>
@@ -177,18 +177,18 @@ uses_python: false
                         Sample using the
                         <a href="vae.html#D-reparameterization_trick" class="ref-link"><strong>reparametrisation trick</strong></a>:
                         \[
-                        \mathbf{x}_{t-1} \;=\; \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_{t-1}}\,\boldsymbol{\varepsilon}_{t-1}, \qquad \boldsymbol{\varepsilon}_{t-1} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}),
+                        \mathbf{x}_{t-1} = \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_{t-1}}\,\boldsymbol{\varepsilon}_{t-1}, \quad \boldsymbol{\varepsilon}_{t-1} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}),
                         \]
                         and similarly \(\mathbf{x}_t = \sqrt{\alpha_t}\,\mathbf{x}_{t-1} + \sqrt{\beta_t}\,\boldsymbol{\varepsilon}_t\) with \(\boldsymbol{\varepsilon}_t \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\) independent of \(\boldsymbol{\varepsilon}_{t-1}\).
                         Substituting,
                         \[
-                        \mathbf{x}_t \;=\; \sqrt{\alpha_t \bar{\alpha}_{t-1}}\,\mathbf{x}_0 + \sqrt{\alpha_t (1 - \bar{\alpha}_{t-1})}\,\boldsymbol{\varepsilon}_{t-1} + \sqrt{\beta_t}\,\boldsymbol{\varepsilon}_t.
+                        \mathbf{x}_t = \sqrt{\alpha_t \bar{\alpha}_{t-1}}\,\mathbf{x}_0 + \sqrt{\alpha_t (1 - \bar{\alpha}_{t-1})}\,\boldsymbol{\varepsilon}_{t-1} + \sqrt{\beta_t}\,\boldsymbol{\varepsilon}_t.
                         \]
                         The last two terms are independent zero-mean Gaussians, so their sum is Gaussian with variance
                         \(\alpha_t(1 - \bar{\alpha}_{t-1}) + \beta_t = \alpha_t - \alpha_t \bar{\alpha}_{t-1} + (1 - \alpha_t) = 1 - \bar{\alpha}_t\).
                         Since \(\alpha_t \bar{\alpha}_{t-1} = \bar{\alpha}_t\) by definition, we obtain
                         \[
-                        \mathbf{x}_t \;=\; \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon}, \qquad \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}),
+                        \mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon}, \quad \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}),
                         \]
                         which is the reparametrisation of the claimed Gaussian.
                     </p>
@@ -198,8 +198,8 @@ uses_python: false
                     The identity at the end of the proof deserves its own line: any noisy sample at time \(t\) is produced in one shot
                     from the clean data as
                     \[
-                    \mathbf{x}_t \;=\; \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},
-                    \qquad \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}).
+                    \mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},
+                    \quad \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}).
                     \]
                     This one-shot reparametrisation is the central computational identity of training: rather than simulating the chain
                     step by step, the trainer samples \(t\) uniformly and \(\boldsymbol{\varepsilon}\) from a standard Gaussian, and
@@ -229,7 +229,7 @@ uses_python: false
                     and successively sampling from \(q(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) until we recover \(\mathbf{x}_0\). The obstruction is that
                     this reverse transition is not directly computable. Writing it as
                     \[
-                    q(\mathbf{x}_{t-1} \mid \mathbf{x}_t) \;=\; \frac{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\, q(\mathbf{x}_{t-1})}{q(\mathbf{x}_t)},
+                    q(\mathbf{x}_{t-1} \mid \mathbf{x}_t) = \frac{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\, q(\mathbf{x}_{t-1})}{q(\mathbf{x}_t)},
                     \]
                     we see that both \(q(\mathbf{x}_{t-1})\) and \(q(\mathbf{x}_t)\) require integrating the forward chain against the unknown data
                     distribution \(q(\mathbf{x}_0)\), and so are inaccessible.
@@ -248,7 +248,7 @@ uses_python: false
                     we have \(q(\mathbf{x}_t \mid \mathbf{x}_{t-1}, \mathbf{x}_0) = q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\). Bayes' rule then gives
                     \[
                     q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)
-                    \;=\; \frac{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\, q(\mathbf{x}_{t-1} \mid \mathbf{x}_0)}{q(\mathbf{x}_t \mid \mathbf{x}_0)}.
+                    = \frac{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\, q(\mathbf{x}_{t-1} \mid \mathbf{x}_0)}{q(\mathbf{x}_t \mid \mathbf{x}_0)}.
                     \]
                     Every quantity on the right is a Gaussian whose mean and variance we already know. The numerator is a product of two
                     Gaussians in \(\mathbf{x}_{t-1}\). The denominator is independent of \(\mathbf{x}_{t-1}\) and serves only as a normalising
@@ -263,15 +263,15 @@ uses_python: false
                         For \(t \geq 2\), the <strong>reverse posterior</strong> conditioned on \(\mathbf{x}_0\) is the Gaussian
                         \[
                         q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)
-                        \;=\; \mathcal{N}\!\left(\mathbf{x}_{t-1};\; \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0),\; \tilde{\beta}_t \mathbf{I}\right),
+                        = \mathcal{N}\!\left(\mathbf{x}_{t-1}; \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0), \tilde{\beta}_t \mathbf{I}\right),
                         \]
                         with mean and variance
                         \[
                         \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0)
-                        \;=\; \frac{\sqrt{\bar{\alpha}_{t-1}}\,\beta_t}{1 - \bar{\alpha}_t}\,\mathbf{x}_0
+                        = \frac{\sqrt{\bar{\alpha}_{t-1}}\,\beta_t}{1 - \bar{\alpha}_t}\,\mathbf{x}_0
                             + \frac{\sqrt{\alpha_t}\,(1 - \bar{\alpha}_{t-1})}{1 - \bar{\alpha}_t}\,\mathbf{x}_t,
-                        \qquad
-                        \tilde{\beta}_t \;=\; \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t}\,\beta_t.
+                        \quad
+                        \tilde{\beta}_t = \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t}\,\beta_t.
                         \]
                     </p>
                 </div>
@@ -297,7 +297,7 @@ uses_python: false
                     Following the convention of the diffusion literature, we work with the negative ELBO, written as a variational
                     upper bound on the negative log-likelihood:
                     \[
-                    -\log p_{\boldsymbol{\theta}}(\mathbf{x}_0) \;\leq\; \mathbb{E}_{q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)}\!\left[ -\log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T})}{q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)} \right] \;=:\; \mathcal{L}(\mathbf{x}_0).
+                    -\log p_{\boldsymbol{\theta}}(\mathbf{x}_0) \leq \mathbb{E}_{q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)}\!\left[ -\log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T})}{q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)} \right] =: \mathcal{L}(\mathbf{x}_0).
                     \]
                     The inequality is the standard Jensen bound applied with the latent sequence
                     \((\mathbf{x}_1, \ldots, \mathbf{x}_T)\) playing the role of the latents and \(q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)\)
@@ -312,7 +312,7 @@ uses_python: false
                     factorises as \(q(\mathbf{x}_{1:T} \mid \mathbf{x}_0) = \prod_{t=1}^T q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\).
                     Substituting,
                     \[
-                    \mathcal{L}(\mathbf{x}_0) \;=\; \mathbb{E}_q\!\left[ -\log p(\mathbf{x}_T) - \sum_{t=1}^{T} \log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)}{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})} \right].
+                    \mathcal{L}(\mathbf{x}_0) = \mathbb{E}_q\!\left[ -\log p(\mathbf{x}_T) - \sum_{t=1}^{T} \log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)}{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})} \right].
                     \]
                 </p>
 
@@ -321,8 +321,8 @@ uses_python: false
                     the previous subsection awkward. The crucial step is to rewrite each forward transition using Bayes' rule together with
                     the Markov property, exactly as in the reverse-posterior derivation. For \(t \geq 2\),
                     \[
-                    q(\mathbf{x}_t \mid \mathbf{x}_{t-1}) \;=\; q(\mathbf{x}_t \mid \mathbf{x}_{t-1}, \mathbf{x}_0)
-                    \;=\; \frac{q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)\, q(\mathbf{x}_t \mid \mathbf{x}_0)}{q(\mathbf{x}_{t-1} \mid \mathbf{x}_0)}.
+                    q(\mathbf{x}_t \mid \mathbf{x}_{t-1}) = q(\mathbf{x}_t \mid \mathbf{x}_{t-1}, \mathbf{x}_0)
+                    = \frac{q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)\, q(\mathbf{x}_t \mid \mathbf{x}_0)}{q(\mathbf{x}_{t-1} \mid \mathbf{x}_0)}.
                     \]
                     The first equality is the Markov property. The second is Bayes' rule. The case \(t = 1\) is left untouched, since
                     \(q(\mathbf{x}_1 \mid \mathbf{x}_0)\) already conditions on \(\mathbf{x}_0\) and no rewriting is needed.
@@ -332,7 +332,7 @@ uses_python: false
                     Substituting this identity for every \(t \geq 2\) and separating the \(t = 1\) term, the ratio inside the sum becomes
                     \[
                     \log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)}{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})}
-                    \;=\; \log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)}{q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)} + \log \frac{q(\mathbf{x}_{t-1} \mid \mathbf{x}_0)}{q(\mathbf{x}_t \mid \mathbf{x}_0)}.
+                    = \log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)}{q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)} + \log \frac{q(\mathbf{x}_{t-1} \mid \mathbf{x}_0)}{q(\mathbf{x}_t \mid \mathbf{x}_0)}.
                     \]
                     The first term has the structure of a Kullback-Leibler integrand. It compares the learned reverse kernel to the reverse
                     posterior derived above. The second term telescopes when summed over \(t = 2, \ldots, T\), collapsing to
@@ -351,15 +351,15 @@ uses_python: false
                     <p>
                         The negative ELBO of the diffusion model decomposes as
                         \[
-                        \mathcal{L}(\mathbf{x}_0) \;=\; \mathcal{L}_T \;+\; \sum_{t=2}^{T} \mathcal{L}_{t-1} \;+\; \mathcal{L}_0,
+                        \mathcal{L}(\mathbf{x}_0) = \mathcal{L}_T + \sum_{t=2}^{T} \mathcal{L}_{t-1} + \mathcal{L}_0,
                         \]
                         with
                         \[
-                        \begin{aligned}
-                        \mathcal{L}_T &\;=\; D_{\mathbb{KL}}\!\left( q(\mathbf{x}_T \mid \mathbf{x}_0) \,\|\, p(\mathbf{x}_T) \right), \\[4pt]
-                        \mathcal{L}_{t-1} &\;=\; \mathbb{E}_{q(\mathbf{x}_t \mid \mathbf{x}_0)}\!\left[ D_{\mathbb{KL}}\!\left( q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0) \,\|\, p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) \right) \right], \\[4pt]
-                        \mathcal{L}_0 &\;=\; -\,\mathbb{E}_{q(\mathbf{x}_1 \mid \mathbf{x}_0)}\!\left[ \log p_{\boldsymbol{\theta}}(\mathbf{x}_0 \mid \mathbf{x}_1) \right].
-                        \end{aligned}
+                        \begin{align*}
+                        \mathcal{L}_T &= D_{\mathbb{KL}}\!\left( q(\mathbf{x}_T \mid \mathbf{x}_0) \,\|\, p(\mathbf{x}_T) \right), \\\\[4pt]
+                        \mathcal{L}_{t-1} &= \mathbb{E}_{q(\mathbf{x}_t \mid \mathbf{x}_0)}\!\left[ D_{\mathbb{KL}}\!\left( q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0) \,\|\, p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) \right) \right], \\\\[4pt]
+                        \mathcal{L}_0 &= -\,\mathbb{E}_{q(\mathbf{x}_1 \mid \mathbf{x}_0)}\!\left[ \log p_{\boldsymbol{\theta}}(\mathbf{x}_0 \mid \mathbf{x}_1) \right].
+                        \end{align*}
                         \]
                     </p>
                 </div>
@@ -417,7 +417,7 @@ uses_python: false
                     with the same covariance, and the divergence reduces to a squared distance between means:
                     \[
                     D_{\mathbb{KL}}\!\left( q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0) \,\|\, p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) \right)
-                    \;=\; \frac{1}{2 \sigma_t^2} \left\| \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0) - \boldsymbol{\mu}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) \right\|^2.
+                    = \frac{1}{2 \sigma_t^2} \left\| \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0) - \boldsymbol{\mu}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) \right\|^2.
                     \]
                 </p>
 
@@ -430,7 +430,7 @@ uses_python: false
                     \(\beta_t + \alpha_t (1 - \bar{\alpha}_{t-1}) = 1 - \bar{\alpha}_t\)) yields
                     \[
                     \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0)
-                    \;=\; \frac{1}{\sqrt{\alpha_t}} \left( \mathbf{x}_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,\boldsymbol{\varepsilon} \right).
+                    = \frac{1}{\sqrt{\alpha_t}} \left( \mathbf{x}_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,\boldsymbol{\varepsilon} \right).
                     \]
                 </p>
 
@@ -441,7 +441,7 @@ uses_python: false
                     \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)\) replacing the true noise:
                     \[
                     \boldsymbol{\mu}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)
-                    \;=\; \frac{1}{\sqrt{\alpha_t}} \left( \mathbf{x}_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) \right).
+                    = \frac{1}{\sqrt{\alpha_t}} \left( \mathbf{x}_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) \right).
                     \]
                 </p>
 
@@ -449,7 +449,7 @@ uses_python: false
                     The two means differ only through \(\boldsymbol{\varepsilon} - \boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\), and substituting
                     into the squared-distance form of the KL gives the diffusion term
                     \[
-                    \mathcal{L}_{t-1} \;=\; \mathbb{E}_{\mathbf{x}_0,\,\boldsymbol{\varepsilon}}\!\left[ \frac{\beta_t^2}{2 \sigma_t^2 \alpha_t (1 - \bar{\alpha}_t)} \,\left\| \boldsymbol{\varepsilon} - \boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\!\left(\sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},\, t \right) \right\|^2 \right],
+                    \mathcal{L}_{t-1} = \mathbb{E}_{\mathbf{x}_0,\,\boldsymbol{\varepsilon}}\!\left[ \frac{\beta_t^2}{2 \sigma_t^2 \alpha_t (1 - \bar{\alpha}_t)} \,\left\| \boldsymbol{\varepsilon} - \boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\!\left(\sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},\, t \right) \right\|^2 \right],
                     \]
                     with the expectation over \(\mathbf{x}_0 \sim q_0\) and \(\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\).
                     Training the diffusion model has reduced to a regression problem. Given a noisy sample and a time index, predict the noise.
@@ -467,7 +467,7 @@ uses_python: false
                         The <strong>simplified DDPM loss</strong> is
                         \[
                         \mathcal{L}_{\text{simple}}(\boldsymbol{\theta})
-                        \;=\; \mathbb{E}_{t,\,\mathbf{x}_0,\,\boldsymbol{\varepsilon}}\!\left[ \left\| \boldsymbol{\varepsilon} - \boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\!\left( \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},\, t \right) \right\|^2 \right],
+                        = \mathbb{E}_{t,\,\mathbf{x}_0,\,\boldsymbol{\varepsilon}}\!\left[ \left\| \boldsymbol{\varepsilon} - \boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\!\left( \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},\, t \right) \right\|^2 \right],
                         \]
                         where \(t \sim \mathrm{Unif}\{1, \ldots, T\}\), \(\mathbf{x}_0 \sim q_0\), and \(\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\).
                         This objective is obtained from the full negative ELBO by three modifications.
@@ -527,7 +527,7 @@ uses_python: false
                     \(s(\boldsymbol{\theta}) = \nabla_{\boldsymbol{\theta}} \log p(\mathbf{x} \mid \boldsymbol{\theta})\).
                     This is the quantity that underlies the Fisher information matrix and
                     <a href="natural_gd.html"><strong>natural gradient descent</strong></a>.
-                    The diffusion-model literature, following the score-matching framework of Hyvärinen (2005), uses the same term for a
+                    The diffusion-model literature, following the score-matching framework of Hyv&auml;rinen (2005), uses the same term for a
                     formally different quantity, the gradient of the log-density with respect to the <em>data</em> itself.
                     Both are gradients of log-densities, but they live in different spaces and serve different purposes. The parameter gradient
                     is for inference and optimisation, while the data gradient describes the geometry of the distribution at a point in sample space.
@@ -540,7 +540,7 @@ uses_python: false
                         Let \(p\) be a differentiable probability density on \(\mathbb{R}^d\). The <strong>score function</strong> of \(p\) is the
                         gradient of the log-density with respect to the data argument,
                         \[
-                        \mathbf{s}(\mathbf{x}) \;:=\; \nabla_{\mathbf{x}} \log p(\mathbf{x}).
+                        \mathbf{s}(\mathbf{x}) := \nabla_{\mathbf{x}} \log p(\mathbf{x}).
                         \]
                         Geometrically, \(\mathbf{s}(\mathbf{x})\) is a vector field on \(\mathbb{R}^d\) that points, at every \(\mathbf{x}\),
                         in the direction of steepest ascent of the probability density.
@@ -560,14 +560,14 @@ uses_python: false
                     has, as a Gaussian in \(\mathbf{x}_t\), the score
                     \[
                     \nabla_{\mathbf{x}_t} \log q(\mathbf{x}_t \mid \mathbf{x}_0)
-                    \;=\; -\,\frac{\mathbf{x}_t - \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0}{1 - \bar{\alpha}_t}.
+                    = -\,\frac{\mathbf{x}_t - \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0}{1 - \bar{\alpha}_t}.
                     \]
                     Substituting the reparametrisation
                     \(\mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon}\) gives the
                     key identity
                     \[
                     \nabla_{\mathbf{x}_t} \log q(\mathbf{x}_t \mid \mathbf{x}_0)
-                    \;=\; -\,\frac{\boldsymbol{\varepsilon}}{\sqrt{1 - \bar{\alpha}_t}}.
+                    = -\,\frac{\boldsymbol{\varepsilon}}{\sqrt{1 - \bar{\alpha}_t}}.
                     \]
                     The conditional score is, up to a negative scaling, exactly the Gaussian noise that produced \(\mathbf{x}_t\) from \(\mathbf{x}_0\).
                 </p>
@@ -579,7 +579,7 @@ uses_python: false
                     \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) and the score network \(\mathbf{s}_{\boldsymbol{\theta}}\) are linked by the
                     parametrisation
                     \[
-                    \mathbf{s}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) \;=\; -\,\frac{\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)}{\sigma_t}.
+                    \mathbf{s}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) = -\,\frac{\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)}{\sigma_t}.
                     \]
                 </p>
 
@@ -605,7 +605,7 @@ uses_python: false
                     Our <a href="pca.html#T-denoising_score_estimation" class="ref-link"><strong>page on PCA and autoencoders</strong></a>
                     stated, as a result taken on faith, that a denoising autoencoder trained at noise level \(\sigma\) implicitly learns the score
                     \(\nabla_{\mathbf{x}} \log p(\mathbf{x})\) of the data distribution, via the asymptotic identity
-                    \(\mathbf{r}(\tilde{\mathbf{x}}) - \mathbf{x} \approx \sigma^2 \nabla_{\mathbf{x}} \log p(\mathbf{x})\) of Vincent (2011)
+                    \(\mathbf{r}^*(\mathbf{x}) - \mathbf{x} = \sigma^2 \nabla_{\mathbf{x}} \log p(\mathbf{x}) + o(\sigma^2)\) of Vincent (2011)
                     and Alain and Bengio (2014). What we have just developed is the multi-scale version of that statement. Rather than fixing
                     one noise level, the diffusion model trains a single network across the full schedule of noise levels
                     \(\{\sigma_t\}_{t=1}^T\), and the resulting noise predictor doubles as a score estimator for the entire family of marginals
@@ -640,7 +640,7 @@ uses_python: false
                     <strong>Input:</strong> Trained network \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\), schedule \(\{\beta_t\}_{t=1}^T\), reverse-kernel variances \(\{\sigma_t^2\}_{t=1}^T\)
                     \(\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\);
                     <strong>for</strong> \(t = T, T-1, \ldots, 1\) <strong>do</strong>
-                    &emsp;&emsp;&emsp;<strong>if</strong> \(t > 1\): \(\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\); <strong>else</strong>: \(\mathbf{z} = \mathbf{0}\);
+                    &emsp;&emsp;&emsp;<strong>if</strong> \(t \gt 1\): \(\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\); <strong>else</strong>: \(\mathbf{z} = \mathbf{0}\);
                     &emsp;&emsp;&emsp;\(\mathbf{x}_{t-1} \leftarrow \dfrac{1}{\sqrt{\alpha_t}} \left( \mathbf{x}_t - \dfrac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) \right) + \sigma_t \mathbf{z}\);
                     <strong>Output:</strong> \(\mathbf{x}_0\)
                 </div>
@@ -685,7 +685,7 @@ uses_python: false
                     For each choice of \(\tilde{\sigma}_t\), Song, Meng, and Ermon construct a reverse distribution
                     \[
                     q_{\tilde{\sigma}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)
-                    \;=\; \mathcal{N}\!\left( \mathbf{x}_{t-1};\; \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_{t-1} - \tilde{\sigma}_t^2}\, \cdot \frac{\mathbf{x}_t - \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0}{\sqrt{1 - \bar{\alpha}_t}},\; \tilde{\sigma}_t^2 \mathbf{I} \right)
+                    = \mathcal{N}\!\left( \mathbf{x}_{t-1}; \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_{t-1} - \tilde{\sigma}_t^2}\, \cdot \frac{\mathbf{x}_t - \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0}{\sqrt{1 - \bar{\alpha}_t}}, \tilde{\sigma}_t^2 \mathbf{I} \right)
                     \]
                     that is consistent with the forward marginals \(q(\mathbf{x}_t \mid \mathbf{x}_0)\) used during training, but is not in general
                     Markovian as a process. Two endpoints of this family are noteworthy. Setting
@@ -712,7 +712,7 @@ uses_python: false
                     <strong>Input:</strong> Trained network \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\), schedule \(\{\beta_t\}_{t=1}^T\), step subsequence \(\tau_1 \lt \tau_2 \lt \cdots \lt \tau_S\) with \(\tau_S = T\)
                     \(\mathbf{x}_{\tau_S} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\);
                     <strong>for</strong> \(i = S, S-1, \ldots, 1\) <strong>do</strong>
-                    &emsp;&emsp;&emsp;\(t \leftarrow \tau_i\); \(\; s \leftarrow \tau_{i-1}\) (with \(\tau_0 := 0\), \(\bar{\alpha}_{\tau_0} := 1\));
+                    &emsp;&emsp;&emsp;\(t \leftarrow \tau_i\); \( s \leftarrow \tau_{i-1}\) (with \(\tau_0 := 0\), \(\bar{\alpha}_{\tau_0} := 1\));
                     &emsp;&emsp;&emsp;\(\hat{\mathbf{x}}_0 \leftarrow \dfrac{\mathbf{x}_t - \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)}{\sqrt{\bar{\alpha}_t}}\);
                     &emsp;&emsp;&emsp;\(\mathbf{x}_s \leftarrow \sqrt{\bar{\alpha}_s}\,\hat{\mathbf{x}}_0 + \sqrt{1 - \bar{\alpha}_s}\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)\);
                     <strong>Output:</strong> \(\mathbf{x}_0\)
@@ -781,8 +781,8 @@ uses_python: false
                     the two predictions are combined into a guided estimate
                     \[
                     \tilde{\boldsymbol{\varepsilon}}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c})
-                    \;=\; (1 + w)\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c})
-                    \;-\; w\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \varnothing),
+                    = (1 + w)\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c})
+                    - w\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \varnothing),
                     \]
                     which is then substituted for \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) inside any of the sampling algorithms above.
                     The <strong>guidance weight</strong> \(w \geq 0\) governs the trade-off. Setting \(w = 0\) recovers the unguided conditional sampler,
