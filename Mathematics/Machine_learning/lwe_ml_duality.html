@@ -44,23 +44,23 @@ uses_python: false
                     under which least squares is the maximum-likelihood estimator, taking the residual
                     \(\boldsymbol{\epsilon}\) to be Gaussian:
                     \[
-                    \mathbf{Y} = X\boldsymbol{\beta} + \boldsymbol{\epsilon}, \qquad
+                    \mathbf{Y} = X\boldsymbol{\beta} + \boldsymbol{\epsilon}, \quad
                     \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \sigma^2 I).
                     \]
-                    A design matrix \(X\) acts on an unknown parameter vector \(\boldsymbol{\beta}\); we observe the
+                    A design matrix \(X\) acts on an unknown parameter vector \(\boldsymbol{\beta}\). We observe the
                     product corrupted by a small amount of Gaussian noise, and the entire enterprise of regression is to
                     recover \(\boldsymbol{\beta}\) despite that corruption.
                 </p>
 
                 <p>
                     Now recall the <a href="../Discrete/learning_with_errors.html#D-lwe" class="ref-link"><strong>Learning With Errors distribution</strong></a>.
-                    A public matrix \(\mathbf{A}\) acts on a secret vector \(\mathbf{s}\); we observe the product,
+                    A public matrix \(\mathbf{A}\) acts on a secret vector \(\mathbf{s}\). We observe the product,
                     corrupted by a small error, and reduced modulo \(q\):
                     \[
-                    \mathbf{b} = \mathbf{A}\mathbf{s} + \mathbf{e} \pmod{q}, \qquad
+                    \mathbf{b} = \mathbf{A}\mathbf{s} + \mathbf{e} \pmod{q}, \quad
                     \mathbf{e} \sim \chi.
                     \]
-                    The error distribution \(\chi\) is, as on the source page, a discrete Gaussian of small width. The
+                    The error distribution \(\chi\) is, in that formulation, a discrete Gaussian of small width. The
                     standardized schemes do not use one. They draw each coefficient from a centered binomial
                     distribution on \(\mathbb{Z}_q\), governed by a small integer parameter, so that every error is
                     bounded rather than merely unlikely to be large
@@ -114,8 +114,8 @@ uses_python: false
 
                <p>
                     The two partings are of different kinds. The second, purpose, is a
-                    reversal of intent, not of structure &mdash; \(\boldsymbol{\beta}\) and \(\mathbf{s}\) occupy the
-                    same slot, and only our attitude toward them differs. The first, arithmetic, is structural, and it
+                    reversal of intent, not of structure. The vectors \(\boldsymbol{\beta}\) and \(\mathbf{s}\) occupy
+                    the same slot, and only our attitude toward them differs. The first, arithmetic, is structural, and it
                     is the one that will do the work.
                 </p>
 
@@ -130,17 +130,16 @@ uses_python: false
                     <h3>Why this bridge is worth crossing</h3>
                     <p>
                         The connection is not a loose analogy. What a regression-style attack confronts directly is the
-                        average-case recovery problem: pull the secret out of many noisy linear samples. The
+                        average-case recovery problem, which is to pull the secret out of many noisy linear samples. The
                         <a href="../Discrete/learning_with_errors.html#T-lwe_worst_case_hardness" class="ref-link"><strong>worst-case hardness</strong></a>
-                        that anchors lattice cryptography does not describe that recovery problem directly &mdash; it is
-                        stated for the decision problem, which at these parameters is equivalent to recovery up to a
-                        polynomial loss &mdash; but links it, through a reduction, to the difficulty of hard lattice
+                        that anchors lattice cryptography does not describe that recovery problem directly. It is stated
+                        for the decision problem, which at these parameters is equivalent to recovery up to a polynomial
+                        loss. It does link the recovery problem, through a reduction, to the difficulty of hard lattice
                         problems in the worst case, the
                         <a href="../Discrete/lattice_problems.html#D-gapsvp" class="ref-link"><strong>gap shortest vector problem</strong></a>
                         and the <a href="../Discrete/lattice_problems.html#D-sivp" class="ref-link"><strong>shortest independent vectors problem</strong></a>.
-                        Reading LWE as
-                        regression tells us <em>where an attacker would push</em>; reading it as a homomorphism, which we
-                        do next, tells us <em>what the same structure protects</em>. The seam between attack and defense
+                        Reading LWE as regression tells us <em>where an attacker would push</em>. Reading it as a
+                        homomorphism, which we do next, tells us <em>what the same structure protects</em>. The seam between attack and defense
                         runs straight through the noise term \(\mathbf{e}\).
                     </p>
                 </div>
@@ -154,32 +153,35 @@ uses_python: false
                     \(b_i = (\langle \mathbf{s}, \mathbf{a}_i\rangle + e_i) \bmod q\), and we want the coefficient vector
                     \(\mathbf{s}\). Over the reals, this is the problem <a href="../Linear_algebra/leastsquares.html#D-least_squares_solution" class="ref-link"><strong>least squares</strong></a>
                     was invented to solve, and if the modulus were not there, an attacker would simply solve it. Without
-                    noise, enough independent rows determine \(\mathbf{s}\) exactly; with noise, they determine it only
+                    noise, enough independent rows determine \(\mathbf{s}\) exactly. With noise, they determine it only
                     up to estimation error.
                 </p>
 
                 <p>
                     Penalized least squares supplies the vocabulary in which this reading becomes precise, and the
                     vocabulary sorts the secrets into two regimes. A standard LWE secret is <strong>small but
-                    dense</strong>: its coordinates are drawn from a narrow distribution centered at zero, and none of
+                    dense</strong>. Its coordinates are drawn from a narrow distribution centered at zero, and none of
                     them is expected to vanish. Shrinking a dense coefficient vector toward the origin while keeping a
                     noisy, ill-conditioned system solvable is what the \(\ell_2\) penalty does, and the closed form of
                     the <a href="regression.html#T-ridge_regression_solution" class="ref-link"><strong>Ridge Regression
-                    Solution</strong></a> exhibits the mechanism directly: the added \(\lambda I\) restores invertibility
+                    Solution</strong></a> exhibits the mechanism directly. The added \(\lambda I\) restores invertibility
                     without ever forcing a coordinate to zero.
                 </p>
 
                 <p>
-                    Some deployments instead choose secrets that are <strong>small and sparse</strong> &mdash; most of
-                    their coordinates are exactly zero &mdash; because sparsity buys efficiency in homomorphic
+                    Some deployments instead choose secrets that are <strong>small and sparse</strong>, with most of
+                    their coordinates exactly zero, because sparsity buys efficiency in homomorphic
                     encryption. Over the reals, recovering such a vector is the regime the \(\ell_1\)-penalized
                     <a href="regression.html#D-lasso_regression" class="ref-link"><strong>Lasso Regression</strong></a>
                     is built for, since its penalty pressures coordinates to zero rather than merely shrinking them. No
-                    one runs Lasso against a lattice scheme, and the next subsection explains why: modular reduction
-                    destroys the convex geometry on which the \(\ell_1\) ball's sharp corners do their work. What
-                    survives the crossing is not the algorithm but the accounting. Sparsity is extra structure, and an
-                    adversary able to exploit structure has strictly more to work with than one facing a dense unknown
-                    &mdash; a fact the lattice attacks exploit by their own means, in their own geometry. A secret
+                    one runs Lasso against a lattice scheme, and the next subsection explains why. Modular reduction
+                    destroys the convex geometry on which the \(\ell_1\) ball's sharp corners do their work.
+                </p>
+
+                <p>
+                    What survives the crossing is not the algorithm but the accounting. Sparsity is extra structure, and
+                    an adversary able to exploit structure has strictly more to work with than one facing a dense
+                    unknown. The lattice attacks exploit that fact by their own means, in their own geometry. A secret
                     chosen sparse for the sake of efficiency has, in the language of estimation, handed something away.
                     That is a caution worth recording about a parameter choice, not a claim about the standardized
                     schemes, whose secrets are dense.
@@ -193,9 +195,9 @@ uses_python: false
                         difficulty is measured through the block size a basis-reduction algorithm needs
                         (<a href="https://doi.org/10.1515/jmc-2015-0016">[2]</a>). Two distinct uncertainties sit
                         underneath that estimate, and conflating them is a common error. The first is
-                        that the cost model itself remains contested &mdash; translating a block size into a concrete
+                        that the cost model itself remains contested. Translating a block size into a concrete
                         operation count is an active research question, and the margins carry deliberate slack to absorb
-                        it. The second is deeper: no efficient algorithm for LWE is <em>known</em>, and the security
+                        it. The second is deeper. No efficient algorithm for LWE is <em>known</em>, and the security
                         rests on a <em>conjectured</em> hardness, not on a proof that any single method must fail. The
                         regression view is a way of seeing what kind of object the recovery problem is. It is not the
                         frontier of cryptanalysis, and it was never going to supply a hardness proof.
@@ -209,8 +211,8 @@ uses_python: false
                     ingredient that the real-valued model lacks: reduction modulo \(q\). Over \(\mathbb{R}\), the
                     least-squares objective \(\|\mathbf{Y} - X\boldsymbol{\beta}\|_2^2\) is a convex bowl, and every
                     local step of an optimizer carries information about the global minimum. That is the mechanism by
-                    which regression works at all: local gradient information is globally trustworthy. (The regression
-                    pages write this response vector as \(\boldsymbol{y}\); we keep \(\mathbf{Y}\) throughout, so that
+                    which regression works at all. Local gradient information is globally trustworthy. (The regression
+                    pages write this response vector as \(\boldsymbol{y}\). We keep \(\mathbf{Y}\) throughout, so that
                     the estimation reading and the lattice reading of the same object share one symbol.)
                 </p>
 
@@ -218,27 +220,30 @@ uses_python: false
                     Reduction modulo \(q\) destroys this. The map \(t \mapsto t \bmod q\) wraps the real line onto a
                     circle, and a coefficient vector that is slightly wrong no longer produces a slightly wrong
                     prediction. It produces a residual that has wrapped around, spread across \(\mathbb{Z}_q\) with no
-                    proximity to zero and no gradient pointing home. It would be misleading to say that the resulting
-                    landscape is flat. Between wrap boundaries the objective is still a quadratic, still differentiable,
-                    still equipped with a perfectly well-defined gradient; the wrapping merely chops the single convex
-                    bowl into an enormous number of separate quadratic pieces and shuffles them. Each piece has a
-                    minimum, and none of those minima knows anything about the others. An optimizer standing at a
-                    near-miss sits in a bowl, descends confidently, and arrives somewhere with no relation to
-                    \(\mathbf{s}\). The gradient is not absent. It is uninformative, because the arithmetic has severed
-                    the link between "close to \(\mathbf{s}\)" and
-                    "small residual." This is the mechanism, stated without proof, by which a problem that <em>looks</em>
-                    like regression resists being solved like regression. The noise \(\mathbf{e}\) then does the
-                    finishing work: the exact secret produces a nonzero residual, so an attacker cannot verify a
-                    candidate by exact fit.
+                    proximity to zero and no gradient pointing home.
+                </p>
+
+                <p>
+                    It would be misleading to say that the resulting landscape is flat. Between wrap boundaries the
+                    objective is still a quadratic, still differentiable, still equipped with a perfectly well-defined
+                    gradient. The wrapping merely chops the single convex bowl into an enormous number of separate
+                    quadratic pieces and shuffles them. Each piece has a minimum, and none of those minima knows
+                    anything about the others. An optimizer standing at a near-miss sits in a bowl, descends
+                    confidently, and arrives somewhere with no relation to \(\mathbf{s}\). The gradient is not absent.
+                    It is uninformative, because the arithmetic has severed the link between "close to
+                    \(\mathbf{s}\)" and "small residual." This is the mechanism, stated without proof, by which a
+                    problem that <em>looks</em> like regression resists being solved like regression. The noise
+                    \(\mathbf{e}\) then does the finishing work. The exact secret produces a nonzero residual, so an
+                    attacker cannot verify a candidate by exact fit.
                 </p>
 
                 <p>
                     It would be a mistake, though, to conclude that a broken gradient is what keeps LWE safe, or that
                     less noise is always better for the defender. Push the width toward zero and the samples stop being
-                    a hostile optimization landscape and start being a system of polynomial equations &mdash; one that
-                    algebraic techniques solve outright, in subexponential and sometimes polynomial time, once the error
-                    is small relative to the dimension. Those techniques demand a great many samples, which is one
-                    reason schemes are careful about how much they publish. But the lesson stands: the noise must be
+                    a hostile optimization landscape and start being a system of polynomial equations. Algebraic
+                    techniques solve such a system outright, in subexponential and sometimes polynomial time, once the
+                    error is small relative to the dimension. Those techniques demand a great many samples, which is one
+                    reason schemes are careful about how much they publish. But the lesson stands. The noise must be
                     wide enough to destroy the algebraic structure, and narrow enough that honest ciphertexts still
                     decode. The regression view sees only one of those two constraints.
                 </p>
@@ -268,21 +273,25 @@ uses_python: false
                     The homomorphism runs the other way. It is \(\mathrm{Dec}\), carrying ciphertexts to plaintexts,
                     that preserves the two operations exactly:
                     \[
-                    \mathrm{Dec}\big(\mathrm{Enc}(m_1) \oplus \mathrm{Enc}(m_2)\big) = m_1 + m_2, \qquad
+                    \mathrm{Dec}\big(\mathrm{Enc}(m_1) \oplus \mathrm{Enc}(m_2)\big) = m_1 + m_2, \quad
                     \mathrm{Dec}\big(\mathrm{Enc}(m_1) \otimes \mathrm{Enc}(m_2)\big) = m_1 \cdot m_2,
                     \]
                     so \(\oplus\) and \(\otimes\) on ciphertexts descend to \(+\) and \(\cdot\) on plaintexts. Encryption
                     is merely a randomized right inverse of \(\mathrm{Dec}\), which is precisely why the equalities fail
-                    upward and hold downward. Two qualifications are essential. This \(\mathrm{Dec}\) is a
-                    <em>partial</em> map: it is a homomorphism only on the ciphertexts whose accumulated noise still
-                    lies below the decryption threshold, and outside that region it is not a homomorphism at all, it is
-                    simply wrong. And the failure of \(\mathrm{Enc}\) to be a homomorphism is not a defect to be
-                    repaired; a deterministic encryption satisfying both identities would leak equality of plaintexts.
-                    The randomness that breaks the upward identity is the same randomness that secures the scheme.
+                    upward and hold downward.
                 </p>
 
                 <p>
-                    The practical consequence is the point: a server that never sees a plaintext can still add and
+                    Two qualifications are essential. This \(\mathrm{Dec}\) is a <em>partial</em> map. It is a
+                    homomorphism only on the ciphertexts whose accumulated noise still lies below the decryption
+                    threshold, and outside that region it is not a homomorphism at all, it is simply wrong. The failure
+                    of \(\mathrm{Enc}\) to be a homomorphism is likewise not a defect to be repaired. A deterministic
+                    encryption satisfying both identities would leak equality of plaintexts. The randomness that breaks
+                    the upward identity is the same randomness that secures the scheme.
+                </p>
+
+                <p>
+                    The practical consequence is the point. A server that never sees a plaintext can still add and
                     multiply the hidden values, returning an encrypted result only its owner can open.
                 </p>
 
@@ -296,52 +305,52 @@ uses_python: false
                 </p>
 
                 <p>
-                    That multiplication is not free. The product of two ciphertexts is <em>quadratic</em> in the secret:
-                    where a fresh ciphertext is decrypted by a linear expression in \(s\), the product requires the
+                    That multiplication is not free. The product of two ciphertexts is <em>quadratic</em> in the secret.
+                    Where a fresh ciphertext is decrypted by a linear expression in \(s\), the product requires the
                     powers \(1, s, s^2\), and so carries one more component than it began with. A further step, called
                     relinearization, uses an auxiliary key to bring the result back to a standard ciphertext under the
-                    original key, and this step, together with the noise growth it must control, is the dominant cost of
+                    original key. That step, together with the noise growth it must control, is the dominant cost of
                     homomorphic multiplication.
                 </p>
 
                 <p>
                     It would be tidy to say that the hardness assumption an attacker confronts in the estimation view is
                     the very one that powers computation in the defense view. It is not quite. The estimation view
-                    attacked LWE over \(\mathbb{Z}_q^n\); the ring supplies its multiplication only because we have moved
-                    to Ring-LWE over \(R_q\). That is the trade, and it is a real one. The
+                    attacked LWE over \(\mathbb{Z}_q^n\). The ring supplies its multiplication only because we have
+                    moved to Ring-LWE over \(R_q\). That is the trade, and it is a real one. The
                     <a href="../Discrete/ring_lattice_cryptography.html#T-ring_lwe_hardness" class="ref-link"><strong>Worst-Case
                     Hardness of Ring-LWE</strong></a> buys its guarantee from \(\mathrm{SVP}_\gamma\) on <em>ideal</em>
-                    lattices &mdash; a proper subclass of lattices, carrying extra algebraic structure that a general
-                    lattice does not have. The ring gives us ciphertext multiplication and charges us a stronger
+                    lattices. These form a proper subclass of lattices, carrying extra algebraic structure that a
+                    general lattice does not have. The ring gives us ciphertext multiplication and charges us a stronger
                     assumption for it. Same family, not the same problem.
                 </p>
 
                 <p>
                     That price is felt keenly enough that the standardized schemes decline to pay it in full. Rather than
                     a single ring element, their secret is a short vector <em>of</em> ring elements, multiplied against a
-                    small matrix of them &mdash; a middle setting that keeps most of the ring's efficiency while resting
+                    small matrix of them. That middle setting keeps most of the ring's efficiency while resting
                     on a lattice problem less special than the ideal case
                     (<a href="https://doi.org/10.6028/NIST.FIPS.203">[1]</a>). We will not develop that variant here. It
                     is enough to notice that the axis running from raw vectors to full rings is a dial, not a switch, and
-                    that where a scheme sits on it is a deliberate choice between structure and the assumption structure
+                    that a scheme's position on it is a deliberate choice between structure and the assumption structure
                     costs.
                 </p>
 
                 <div class="insight-box">
                     <h3>What the noise costs on this side</h3>
                     <p>
-                        The error \(\mathbf{e}\) does not vanish when we switch readings; it accumulates, and the two
-                        operations accumulate it in different <em>kinds</em>. Adding ciphertexts adds their noises: the
-                        result carries roughly \(v + v'\). Multiplying them multiplies their noises: the result carries
+                        The error \(\mathbf{e}\) does not vanish when we switch readings. It accumulates, and the two
+                        operations accumulate it in different <em>kinds</em>. Adding ciphertexts adds their noises, so the
+                        result carries roughly \(v + v'\). Multiplying them multiplies their noises, so the result carries
                         roughly a product of \(v\) and \(v'\). Addition is therefore nearly free, while multiplication
                         is not merely more expensive but expensive in a different currency. This is why the quantity
                         that governs feasibility is the <em>multiplicative depth</em> of a circuit rather than its total
-                        operation count: a long chain of additions costs little, whereas each nested multiplication
+                        operation count. A long chain of additions costs little, whereas each nested multiplication
                         compounds what came before. Once the accumulated error grows comparable to the modulus,
-                        decryption fails. The apparatus that refreshes noise to lift this cap &mdash; bootstrapping, and
-                        the modulus-switching machinery around it &mdash; is a rich subject in its own right; here it is
-                        enough to see <em>why</em> a cap exists at all, and that its location is set by the same width
-                        parameter that governs hardness. The details of noise management belong to the fast-moving
+                        decryption fails. The apparatus that refreshes noise to lift this cap is a rich subject in its own
+                        right, and it comprises bootstrapping together with the modulus-switching machinery around it.
+                        Here it is enough to see <em>why</em> a cap exists at all, and that its location is set by the same
+                        width parameter that governs hardness. The details of noise management belong to the fast-moving
                         implementation layer and are deliberately left outside our scope.
                     </p>
                 </div>
@@ -352,7 +361,7 @@ uses_python: false
 
                 <p>
                     The hinge between the two views is a single quantity: the width of the error distribution \(\chi\).
-                    At a fixed dimension it is the only knob there is, and it does not turn cleanly &mdash; the two
+                    At a fixed dimension it is the only knob there is, and it does not turn cleanly. The two
                     readings pull it in opposite directions.
                 </p>
 
@@ -368,36 +377,39 @@ uses_python: false
                     <tbody>
                         <tr>
                             <td style="padding: 6px 18px;">wider (up)</td>
-                            <td style="padding: 6px 18px;">with the toy's few equations, the true secret stops being the unique best fit &mdash; <strong>identifiability lost</strong></td>
-                            <td style="padding: 6px 18px;">the accumulated error crosses the decoding threshold &mdash; <strong>decryption fails</strong></td>
+                            <td style="padding: 6px 18px;"><strong>Identifiability lost.</strong> With the toy's few equations, the true secret stops being the unique best fit</td>
+                            <td style="padding: 6px 18px;"><strong>Decryption fails.</strong> The accumulated error crosses the decoding threshold</td>
                         </tr>
                         <tr>
                             <td style="padding: 6px 18px;">narrower (down)</td>
-                            <td style="padding: 6px 18px;">the secret is pinned down as the unique minimizer &mdash; <strong>identifiability restored</strong></td>
-                            <td style="padding: 6px 18px;">the honest computation round-trips &mdash; <strong>correctness restored</strong></td>
+                            <td style="padding: 6px 18px;"><strong>Identifiability restored.</strong> The secret is pinned down as the unique minimizer</td>
+                            <td style="padding: 6px 18px;"><strong>Correctness restored.</strong> The honest computation round-trips</td>
                         </tr>
                     </tbody>
                 </table>
 
                 <p>
                     The attack column deserves care, and the toy below will mislead anyone who reads it too literally.
-                    With only a handful of equations, widening \(\chi\) really does
-                    destroy the attacker's <em>target</em>: the true secret stops being the unique minimizer of the
-                    residual, and no algorithm can single out what is no longer singular. But that is a symptom of
-                    having too few samples, not a property of LWE. An attacker may harvest as many samples as it likes,
-                    and for any noise short of the modulus scale, enough of them restore the secret to being the unique
-                    solution &mdash; though the number required climbs steeply as \(\chi\) widens. Only when the error
-                    distribution approaches the uniform one on \(\mathbb{Z}_q\) &mdash;
-                    when a sample carries essentially no information about \(\mathbf{s}\) &mdash; does the answer truly
-                    cease to exist. Cryptographic parameters live nowhere near that regime.
+                    With only a handful of equations, widening \(\chi\) really does destroy the attacker's
+                    <em>target</em>. The true secret stops being the unique minimizer of the residual, and no algorithm
+                    can single out what is no longer singular.
+                </p>
+
+                <p>
+                    But that is a symptom of having too few samples, not a property of LWE. An attacker may harvest as
+                    many samples as it likes, and for any noise short of the modulus scale, enough of them restore the
+                    secret to being the unique solution, though the number required climbs steeply as \(\chi\) widens. Only when the error
+                    distribution approaches the uniform one on \(\mathbb{Z}_q\) does the answer truly cease to exist.
+                    At that point a sample carries essentially no information about \(\mathbf{s}\). Cryptographic
+                    parameters live nowhere near that regime.
                 </p>
 
                 <p>
                     So the estimation reading, pressed to its conclusion, reaches a verdict that sounds like a
-                    contradiction: as an inference problem, LWE is <em>solvable</em>. Gather sufficiently many equations
+                    contradiction. As an inference problem, LWE is <em>solvable</em>. Gather sufficiently many equations
                     and the secret is determined, uniquely and in principle. What defeats the adversary is not that the
-                    answer is missing but that it is unreachable &mdash; in the dimensions real schemes use, no known
-                    procedure locates it before the universe ends. Statistics tells us the answer exists; complexity
+                    answer is missing but that it is unreachable. In the dimensions real schemes use, no known
+                    procedure locates it before the universe ends. Statistics tells us the answer exists. Complexity
                     tells us we cannot have it.
                 </p>
 
@@ -408,25 +420,25 @@ uses_python: false
                     answer that no efficient algorithm can produce
                     (<a href="https://arxiv.org/abs/1806.07508">[3]</a>). Such a gap is usually an obstacle, the reason a
                     method that should work does not. Lattice cryptography is what happens when someone builds on the
-                    obstacle deliberately: the entire construction is an engineered instance of a problem whose solution
+                    obstacle deliberately. The entire construction is an engineered instance of a problem whose solution
                     is guaranteed to exist and believed to be out of reach.
                 </p>
 
                 <p>
                     Attack and defense spend the same noise, but not at the same rate, and this is what the
-                    demonstration below is built
-                    to show. On the compute side the ruler is a plaintext <em>slot</em>, \(\Delta = q/P\): a wobble of
-                    half a slot already corrupts the answer. On the attack side, in this toy, the ruler is the
+                    demonstration below is built to show. On the compute side the ruler is a plaintext
+                    <em>slot</em>, \(\Delta = q/P\). A wobble of half a slot already corrupts the answer. On the
+                    attack side, in this toy, the ruler is the
                     <em>modulus</em> \(q\) itself. The consequence is a corridor spanning only a factor of about four,
-                    and one that never opens: at no width is the secret unidentifiable while the computation still
+                    and one that never opens. At no width is the secret unidentifiable while the computation still
                     reliably decodes.
                 </p>
 
                 <p>
                     But that corridor is an artifact of a four-dimensional secret with eight equations, and reading it
                     as the shape of the real trade-off would invert the subject. Real schemes do not escape the corridor
-                    by tuning \(\chi\); they escape it by raising the dimension \(n\). Doing so leaves the secret
-                    perfectly well determined &mdash; and puts it beyond reach anyway, since the cost of finding it grows
+                    by tuning \(\chi\). They escape it by raising the dimension \(n\). Doing so leaves the secret
+                    perfectly well determined, and puts it beyond reach anyway, since the cost of finding it grows
                     faster than any adversary can pay. The noise need only be wide enough to defeat the algebraic
                     shortcuts that a nearly noiseless system would admit, and narrow enough that the ciphertexts still
                     decode. Everything else is bought with dimension, which is why the hardness of the underlying
@@ -441,17 +453,17 @@ uses_python: false
 
                <p>
                     The toy's corridor can be walked by hand. The two panels below draw from one and the same noise
-                    \(\chi\), read in opposite directions. On the left, the noise is an ally: turn it down and the
+                    \(\chi\), read in opposite directions. On the left, the noise is an ally. Turn it down and the
                     secret is pinned as the unique best fit among the candidates. On the right, the same noise is an
-                    adversary: turn it up and the honest computation no longer decodes to the value it should. Move the
+                    adversary. Turn it up and the honest computation no longer decodes to the value it should. Move the
                     two sliders and watch where each wall stands. They are not the same distance away.
                 </p>
 
                 <p>
                     Keep in mind what the left panel is and is not showing. With four unknowns and eight equations, a
-                    wide \(\chi\) genuinely erases the answer. Real parameters do not work this way: the answer
+                    wide \(\chi\) genuinely erases the answer. Real parameters do not work this way. The answer
                     survives, and it is the cost of finding it that grows out of reach. A laptop can demonstrate the
-                    first effect. It cannot demonstrate the second &mdash; which is precisely why the second is the one
+                    first effect. It cannot demonstrate the second. That is precisely why the second is the one
                     that secures the scheme.
                 </p>
                
