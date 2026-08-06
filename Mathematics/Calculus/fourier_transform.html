@@ -138,11 +138,46 @@ uses_python: true
                         \]
                     </p>
                     <p>
-                        This shows that the Gaussian is essentially an eigenfunction of the Fourier transform. Its transform is also
-                        Gaussian, with inverse width (narrow in space \(\leftrightarrow\) wide in frequency). This property makes
-                        Gaussians fundamental in uncertainty principles, quantum mechanics, and signal processing.
+                        The transform of a Gaussian is again a Gaussian, with the width inverted. A function narrow in
+                        space has a wide transform, and conversely. The whole family is therefore preserved by the
+                        Fourier transform, and the single choice \(\sigma = 1\) gives a genuine eigenfunction, since
+                        \(e^{-x^2/2}\) transforms to \(\sqrt{2\pi}\, e^{-\xi^2/2}\). Normalizing by \(\sqrt{2\pi}\)
+                        therefore fixes \(e^{-x^2/2}\) outright, and the same unitary rescaling reappears in the discrete
+                        setting, where dividing the Fourier matrix by the square root of its size puts its eigenvalues
+                        on the unit circle. This behavior makes Gaussians fundamental in uncertainty principles, quantum mechanics,
+                        and signal processing.
                     </p>
                 </div>
+
+                <div class="theorem" id="D-schwartz_class">
+                    <span class="theorem-title">Definition: The Schwartz Class</span>
+                    <p>
+                        The <strong>Schwartz class</strong> \(\mathcal{S}(\mathbb{R})\) is the set of infinitely
+                        differentiable functions \(f : \mathbb{R} \to \mathbb{C}\) satisfying
+                        \[
+                        \sup_{x \in \mathbb{R}} \bigl| x^m f^{(n)}(x) \bigr| \lt \infty
+                        \quad \text{for all integers } m, n \geq 0.
+                        \]
+                        Its members are the <strong>rapidly decreasing functions</strong>, so named because every
+                        derivative decays faster than any power of \(1/|x|\).
+                    </p>
+                </div>
+
+                <p>
+                    Two consequences of the definition are used repeatedly below. Let \(f \in \mathcal{S}(\mathbb{R})\).
+                    The case \(m = 0\) says that \(f\) and every one of its derivatives are bounded. Taking
+                    \((m, n) = (0, 0)\) and \((m, n) = (2, 0)\) together bounds \((1 + x^2)|f(x)|\), so \(|f(x)|\) is
+                    dominated by a constant multiple of \((1 + x^2)^{-1}\), and therefore
+                    \(\mathcal{S}(\mathbb{R}) \subset L^1(\mathbb{R}) \cap L^2(\mathbb{R})\).
+                </p>
+
+                <p>
+                    The Gaussian of the example above is the canonical member of \(\mathcal{S}(\mathbb{R})\), and every
+                    smooth function with compact support belongs to it as well. Membership is preserved by
+                    differentiation, by multiplication by polynomials, and by the reflection \(f(x) \mapsto f(-x)\).
+                    The first and third of these are immediate from the defining bounds, and the second follows from
+                    them by the Leibniz rule.
+                </p>
             </section>
 
             <section id="properties" class="section-content">
@@ -153,6 +188,14 @@ uses_python: true
                     convert difficult operations (differentiation, convolution) into simple ones (multiplication, pointwise products). 
                     These properties, stated below using the mathematical convention \(\hat{f}(\xi) = \int_{-\infty}^{\infty} f(x)e^{ix\xi} \, dx\), 
                     form the foundation of spectral methods in both analysis and computation.
+                </p>
+
+                <p>
+                    Unless indicated otherwise, the algebraic properties below are stated for \(f\) and \(g\) in the
+                    <a href="#D-schwartz_class" class="ref-link"><strong>Schwartz class</strong></a>, where every
+                    integral converges absolutely and differentiation under the integral sign is legitimate. Each
+                    property extends to larger classes under its own hypotheses. The theorems of this section, by
+                    contrast, carry the hypotheses given with them.
                 </p>
 
                 <div class="theorem" id="T-ft_linearity">
@@ -202,6 +245,69 @@ uses_python: true
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Proof (the four properties):</span>
+                    <p>
+                        Linearity is the linearity of the integral. The translation property follows from the
+                        substitution \(u = x - a\):
+                        \[
+                        \int_{-\infty}^{\infty} f(x - a)\, e^{ix\xi}\, dx
+                        = \int_{-\infty}^{\infty} f(u)\, e^{i(u + a)\xi}\, du
+                        = e^{ia\xi} \hat{f}(\xi).
+                        \]
+                        Scaling follows from the substitution \(u = ax\). When \(a \lt 0\) this reverses the orientation
+                        of the line, and the reversal combines with the Jacobian into the single factor \(1/|a|\):
+                        \[
+                        \int_{-\infty}^{\infty} f(ax)\, e^{ix\xi}\, dx
+                        = \frac{1}{|a|} \int_{-\infty}^{\infty} f(u)\, e^{iu\xi/a}\, du
+                        = \frac{1}{|a|} \hat{f}\left(\frac{\xi}{a}\right).
+                        \]
+                        Differentiation follows from integration by parts. The boundary term vanishes because
+                        \(f(x) \to 0\) as \(|x| \to \infty\), which leaves
+                        \[
+                        \int_{-\infty}^{\infty} f'(x)\, e^{ix\xi}\, dx
+                        = -\int_{-\infty}^{\infty} f(x)\, i\xi\, e^{ix\xi}\, dx
+                        = -i\xi\, \hat{f}(\xi).
+                        \]
+                        Every derivative of a Schwartz function is again a Schwartz function, so the same step applies
+                        with \(f'\) in place of \(f\), and induction on \(n\) gives
+                        \(\mathcal{F}\{f^{(n)}\}(\xi) = (-i\xi)^n \hat{f}(\xi)\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-schwartz_invariance">
+                    <span class="theorem-title">Theorem: Invariance of the Schwartz Class</span>
+                    <p>
+                        If \(f \in \mathcal{S}(\mathbb{R})\), then \(\hat{f} \in \mathcal{S}(\mathbb{R})\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Fix integers \(m, n \geq 0\). Because \(x \mapsto x^k f(x)\) lies in \(\mathcal{S}(\mathbb{R})\)
+                        and hence in \(L^1(\mathbb{R})\) for every integer \(k \geq 0\), the integral defining
+                        \(\hat{f}\) may be differentiated under the integral sign any number of times. This makes
+                        \(\hat{f}\) smooth and gives
+                        \[
+                        \frac{d^n}{d\xi^n} \hat{f}(\xi) = \widehat{(ix)^n f}(\xi).
+                        \]
+                        Write \(h(x) = (ix)^n f(x)\), so that \(h \in \mathcal{S}(\mathbb{R})\) and
+                        \(\frac{d^n}{d\xi^n} \hat{f} = \hat{h}\). Applying the
+                        <a href="#T-ft_differentiation" class="ref-link"><strong>differentiation property</strong></a>
+                        to \(h\) gives \(\widehat{h^{(m)}}(\xi) = (-i\xi)^m \hat{h}(\xi)\), and therefore
+                        \[
+                        \left| \xi^m \frac{d^n}{d\xi^n} \hat{f}(\xi) \right|
+                        = \bigl| \xi^m \hat{h}(\xi) \bigr|
+                        = \bigl| \widehat{h^{(m)}}(\xi) \bigr|
+                        \leq \| h^{(m)} \|_{L^1}.
+                        \]
+                        The right-hand side is finite and independent of \(\xi\), because \(h^{(m)}\) again lies in
+                        \(\mathcal{S}(\mathbb{R}) \subset L^1(\mathbb{R})\). Since \(m\) and \(n\) were arbitrary,
+                        \(\hat{f}\) satisfies every bound in the definition of the Schwartz class.
+                    </p>
+                </div>
+
                 <div class="theorem" id="T-fourier_inversion">
                     <span class="theorem-title">Theorem: Fourier Inversion</span>
                     <p>
@@ -231,8 +337,10 @@ uses_python: true
                         \[
                         I_\epsilon(x) = \frac{1}{2\pi} \int_{-\infty}^{\infty} \hat{f}(\xi)\, e^{-\epsilon \xi^2/2}\, e^{-ix\xi}\, d\xi.
                         \]
-                        Since \(\hat f \in \mathcal{S}(\mathbb{R})\) (the Fourier transform preserves Schwartz), the integrand is absolutely integrable 
-                        for every \(\epsilon \geq 0\). In particular the integral converges and \(I_\epsilon(x)\) is well-defined.
+                        Since \(\hat f \in \mathcal{S}(\mathbb{R})\) by the
+                        <a href="#T-schwartz_invariance" class="ref-link"><strong>invariance of the Schwartz class</strong></a>,
+                        the integrand is absolutely integrable for every \(\epsilon \geq 0\). In particular the
+                        integral converges and \(I_\epsilon(x)\) is well-defined.
                     </p>
                     <p>
                         <strong>Step 2: Fubini interchange.</strong><br> 
@@ -241,8 +349,8 @@ uses_python: true
                         \bigl|f(y)\, e^{iy\xi}\, e^{-\epsilon\xi^2/2}\, e^{-ix\xi}\bigr| = |f(y)|\, e^{-\epsilon\xi^2/2} \in L^1(\mathbb{R} \times \mathbb{R}),
                         \]
                         the product of an \(L^1\) function in \(y\) with an \(L^1\) function in \(\xi\). Therefore
-                        <a href="../Probability/limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>
-                        permits the order swap:
+                        <a href="../Probability/limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>,
+                        applied to the real and imaginary parts of the integrand separately, permits the order swap:
                         \[
                         \begin{align*}
                         I_\epsilon(x) &= \int_{-\infty}^{\infty} f(y)\, K_\epsilon(y - x)\, dy, \\\\
@@ -272,8 +380,9 @@ uses_python: true
                         \[
                         I_\epsilon(x) - f(x) = \int_{-\infty}^{\infty} \bigl[ f(x + z) - f(x) \bigr]\, K_\epsilon(z)\, dz.
                         \]
-                        Fix \(\eta \gt 0\). Schwartz functions are uniformly continuous on \(\mathbb{R}\) 
-                        (a consequence of bounded derivative and rapid decay), so there exists \(\delta \gt 0\) such that \(|f(x + z) - f(x)| \lt \eta\) 
+                        Fix \(\eta \gt 0\). Every derivative of a Schwartz function is bounded, so
+                        \(|f(x + z) - f(x)| \leq \|f'\|_\infty\, |z|\) for all \(x\) and \(z\). Taking
+                        \(\delta = \eta / (1 + \|f'\|_\infty)\) therefore gives \(|f(x + z) - f(x)| \lt \eta\)
                         whenever \(|z| \leq \delta\), uniformly in \(x\). Split the integral accordingly. 
                         On the inner region \(|z| \leq \delta\), positivity of \(K_\epsilon\) and unit mass give
                         \[
@@ -298,8 +407,10 @@ uses_python: true
                         \hat f(\xi)\, e^{-\epsilon \xi^2/2}\, e^{-ix\xi}
                         \]
                         is dominated by \(|\hat f(\xi)| \in L^1(\mathbb{R})\) uniformly 
-                        in \(\epsilon\) and converges pointwise to \(\hat f(\xi)\, e^{-ix\xi}\) as \(\epsilon \to 0\). By the
-                        <a href="lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>,
+                        in \(\epsilon\) and converges pointwise to \(\hat f(\xi)\, e^{-ix\xi}\) as \(\epsilon \to 0\). The
+                        <a href="lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        applies along any sequence \(\epsilon_j \to 0\), and the resulting value does not depend on the
+                        sequence chosen, so
                         \[
                         \lim_{\epsilon \to 0} I_\epsilon(x) = \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat f(\xi)\, e^{-ix\xi}\, d\xi.
                         \]
@@ -359,7 +470,8 @@ uses_python: true
                     </p>
                     <p>
                         <strong>Stage 1: identity on the Schwartz class.</strong><br>
-                        Fix \(f, g \in \mathcal{S}(\mathbb{R})\). Since \(\mathcal{S}(\mathbb{R})\) is closed under the Fourier transform, 
+                        Fix \(f, g \in \mathcal{S}(\mathbb{R})\). By the
+                        <a href="#T-schwartz_invariance" class="ref-link"><strong>invariance of the Schwartz class</strong></a>,
                         \(\hat f, \hat g \in \mathcal{S}(\mathbb{R})\) as well. Apply the Fourier inversion theorem (proved above) to \(g\):
                         \[
                         g(x) = \frac{1}{2\pi}\int \hat g(\xi)\, e^{-ix\xi}\, d\xi.
@@ -373,15 +485,16 @@ uses_python: true
                         \int f(x)\overline{g(x)}\, dx = \frac{1}{2\pi}\iint f(x)\, e^{ix\xi}\, \overline{\hat g(\xi)}\, dx\, d\xi.
                         \]
                         To justify the order swap in the double integral, we check the integrability hypothesis of Fubini's theorem. 
-                        The absolute value of the integrand is \(|f(x)| \cdot |\hat g(\xi)|\), and Tonelli's theorem applied to 
-                        this non-negative measurable function gives
+                        The absolute value of the integrand is \(|f(x)| \cdot |\hat g(\xi)|\), and
+                        <a href="../Probability/limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        applied to this non-negative measurable function gives
                         \[
                         \iint |f(x)| \cdot |\hat g(\xi)|\, dx\, d\xi = \|f\|_1 \cdot \|\hat g\|_1 \lt \infty,
                         \]
                         since both \(f\) and \(\hat g\) are Schwartz, hence in \(L^1(\mathbb{R})\). 
                         Therefore the integrand is in \(L^1(\mathbb{R} \times \mathbb{R})\), and
-                        <a href="../Probability/limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>
-                        permits the order swap:
+                        <a href="../Probability/limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>,
+                        again applied to the real and imaginary parts separately, permits the order swap:
                         \[
                         \begin{align*}
                         \frac{1}{2\pi}\iint f(x)\, e^{ix\xi}\, \overline{\hat g(\xi)}\, dx\, d\xi
@@ -565,7 +678,10 @@ uses_python: true
                         &= \hat{f}(\xi) \cdot \hat{g}(\xi).
                         \end{align*}
                         \]
-                        The interchange of integration order is justified by Fubini's theorem when \(f, g \in L^1(\mathbb{R})\).
+                        The interchange of integration order is justified by
+                        <a href="../Probability/limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>
+                        when \(f, g \in L^1(\mathbb{R})\), applied to the real and imaginary parts of the integrand
+                        separately.
                     </p>
                 </div>
 
@@ -576,7 +692,9 @@ uses_python: true
                         \[
                         f(x) = \frac{1}{2\pi}\int \hat f(\eta) e^{-ix\eta}\, d\eta.
                         \] 
-                        Substituting into the Fourier transform of \(fg\) and applying Fubini:
+                        Substituting into the Fourier transform of \(fg\) and applying
+                        <a href="../Probability/limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>
+                        to the real and imaginary parts separately:
                         \[
                         \begin{align*}
                         \mathcal{F}\{f \cdot g\}(\xi) 
@@ -647,10 +765,10 @@ uses_python: true
                     (so \(\omega^N = 1\)). The DFT matrix is:
                     \[
                     W = \begin{bmatrix}
-                    1 & 1 & 1 & \cdots & 1 \\
-                    1 & \omega & \omega^2 & \cdots & \omega^{N-1} \\
-                    1 & \omega^2 & \omega^4 & \cdots & \omega^{2(N-1)} \\
-                    \vdots & \vdots & \vdots & \ddots & \vdots \\
+                    1 & 1 & 1 & \cdots & 1 \\\\
+                    1 & \omega & \omega^2 & \cdots & \omega^{N-1} \\\\
+                    1 & \omega^2 & \omega^4 & \cdots & \omega^{2(N-1)} \\\\
+                    \vdots & \vdots & \vdots & \ddots & \vdots \\\\
                     1 & \omega^{N-1} & \omega^{2(N-1)} & \cdots & \omega^{(N-1)^2}
                     \end{bmatrix}
                     \]
@@ -672,8 +790,8 @@ uses_python: true
                     shows \(W^2 = N \cdot P\), where \(P\) is the permutation matrix implementing \(n \mapsto -n \bmod N\).
                     Since \(P^2 = I\), we get \(W^4 = N^2 I\). Equivalently, the <em>normalized</em> DFT matrix
                     \(F = \tfrac{1}{\sqrt{N}}\, W\) satisfies \(F^4 = I\). The eigenvalues of \(F\) therefore lie in
-                    \(\{+1, -1, +i, -i\}\), while the eigenvalues of the unnormalized \(W\) are the scaled quartet
-                    \(\{\pm\sqrt{N}, \pm i\sqrt{N}\}\).</li>
+                    \(\{+1, -1, +i, -i\}\), while the eigenvalues of the unnormalized \(W\) are confined to the
+                    scaled quartet \(\{\pm\sqrt{N}, \pm i\sqrt{N}\}\).</li>
                     <li><strong>Circulant diagonalization.</strong> The DFT matrix diagonalizes all circulant matrices</li>
                 </ul>
 
