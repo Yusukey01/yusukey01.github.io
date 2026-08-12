@@ -56,8 +56,8 @@ uses_python: false
                     <a href="compactness.html#T-heine_borel" class="ref-link"><strong>Heine-Borel Theorem</strong></a> tells
                     us that every closed and bounded set is compact. Combined with the
                     <a href="compactness.html#T-extreme_value_theorem" class="ref-link"><strong>Extreme Value Theorem</strong></a>,
-                    this guarantees that any continuous function on such a set attains its minimum. This is the theoretical
-                    bedrock of finite-dimensional optimization.
+                    this guarantees that any continuous function on such a set attains its minimum, provided the set is
+                    nonempty. This is the theoretical bedrock of finite-dimensional optimization.
                 </p>
 
                 <p>
@@ -74,7 +74,7 @@ uses_python: false
                     Let us make this concrete. Suppose we are searching for the best function \(f^*\) in an
                     infinite-dimensional Hilbert space \(\mathcal{H}\) (for example, an RKHS) that minimizes a loss
                     functional \(\mathcal{L} : \mathcal{H} \to \mathbb{R}\). Our training algorithm generates a sequence of
-                    candidate models \(\{f_n\}_{n=1}^\infty\) with decreasing losses:
+                    candidate models \(\{f_n\}_{n=1}^\infty\) with non-increasing losses:
                     \[
                     \mathcal{L}(f_1) \geq \mathcal{L}(f_2) \geq \mathcal{L}(f_3) \geq \cdots \to \inf_{f \in \mathcal{H}} \mathcal{L}(f).
                     \]
@@ -178,7 +178,8 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Example: Weak Convergence to Zero in a Hilbert Space</span>
                     <p>
-                        Let \(\{e_n\}_{n=1}^\infty\) be an orthonormal basis for a Hilbert space \(\mathcal{H}\). 
+                        Let \(\{e_n\}_{n=1}^\infty\) be an orthonormal basis for a separable Hilbert space
+                        \(\mathcal{H}\). 
                         We claim that \(e_n \rightharpoonup 0\) (weakly), even though \(\|e_n\| = 1\) for all \(n\) 
                         (so \(e_n \not\to 0\) strongly).
                     </p>
@@ -282,12 +283,16 @@ uses_python: false
                     </p>
                     <p>
                         The argument proceeds by contradiction. Suppose \(x\) lay outside the closed convex hull
-                        \(C := \overline{\mathrm{co}}\{x_n\}\). Since \(C\) is closed and convex and \(x \notin C\), the
+                        \(C := \overline{\operatorname{co}}\{x_n\}\). Since \(C\) is closed and convex and \(x \notin C\),
+                        the
                         <a href="separation_hahn_banach.html#T-separation_closed_convex" class="ref-link"><strong>strict separation of a point from a closed convex set</strong></a>
                         produces a functional \(\varphi \in \mathcal{X}^*\) and \(\gamma \in \mathbb{R}\) with
-                        \(\mathrm{Re}\,\varphi(y) \leq \gamma \lt \mathrm{Re}\,\varphi(x)\) for all \(y \in C\). In
-                        particular \(\mathrm{Re}\,\varphi(x_n) \leq \gamma\) for every \(n\), which contradicts
-                        \(\varphi(x_n) \to \varphi(x)\) (weak convergence). Hence \(x \in C\).
+                        \(\operatorname{Re}\,\varphi(y) \leq \gamma \lt \operatorname{Re}\,\varphi(x)\) for all
+                        \(y \in C\). In particular \(\operatorname{Re}\,\varphi(x_n) \leq \gamma\) for every \(n\), which
+                        contradicts \(\varphi(x_n) \to \varphi(x)\) (weak convergence). Hence \(x \in C\). When
+                        \(\mathbb{F} = \mathbb{C}\), the separation result is applied to \(\mathcal{X}\) regarded as a real
+                        locally convex space, and the resulting real-linear functional \(f\) is turned into a member of
+                        \(\mathcal{X}^*\) by \(\varphi(z) = f(z) - i f(iz)\), which leaves the argument unchanged.
                     </p>
                 </div>
 
@@ -500,8 +505,8 @@ uses_python: false
                     \(\mathcal{X}\). On \(\mathcal{X}^*\), norm convergence implies weak convergence, which in turn implies
                     weak* convergence. The inclusion \(\text{Norm} \supseteq \text{Weak}\) on \(\mathcal{X}\) is strict in
                     every infinite-dimensional normed space, and the orthonormal basis example in \(\ell^2\) above exhibits
-                    the gap at the level of sequences as well. The same gap between norm and weak convergence occurs on
-                    \(\mathcal{X}^*\) whenever \(\mathcal{X}^*\) is itself infinite-dimensional.
+                    the gap at the level of sequences as well. The same strictness holds for the norm and weak topologies
+                    on \(\mathcal{X}^*\) whenever \(\mathcal{X}^*\) is itself infinite-dimensional.
                 </p>
 
                 <p>
@@ -610,7 +615,7 @@ uses_python: false
                         <strong>Step 1: Embed into a product space.</strong><br> For each \(x \in \mathcal{X}\), a functional
                         \(\varphi \in \overline{B}_{\mathcal{X}^*}\) satisfies \(|\varphi(x)| \leq \|x\|\). Let
                         \[
-                        D_x = \{z \in \mathbb{F} : |z| \leq \|x\|\}
+                        D_x = \{z \in \mathbb{F} : |z| \leq \|x\|\}.
                         \]
                         This set is a compact interval \([-\|x\|, \|x\|] \subseteq \mathbb{R}\) when
                         \(\mathbb{F} = \mathbb{R}\), or a compact closed disk in \(\mathbb{C}\) when
@@ -703,8 +708,8 @@ uses_python: false
                     if and only if \(\mathcal{X}\) is <strong>separable</strong> (has a countable dense subset). When
                     \(\mathcal{X}\) is separable, compactness and sequential compactness coincide, so we can extract
                     weak*-convergent <em>subsequences</em>, which is the form most useful in applications. The spaces
-                    \(L^p(\Omega)\) and \(\ell^p\) are separable for \(1 \leq p \lt \infty\), so this condition is satisfied
-                    in most ML-relevant settings.
+                    \(L^p\) over a domain in \(\mathbb{R}^d\) with Lebesgue measure, and the sequence spaces \(\ell^p\),
+                    are separable for \(1 \leq p \lt \infty\), so this condition is satisfied in most ML-relevant settings.
                 </p>
 
                 <div class="insight-box">
@@ -753,7 +758,7 @@ uses_python: false
 
                 <p>
                     Under \(J\), the closed unit ball \(\overline{B}_{\mathcal{X}}\) corresponds to
-                    \(\overline{B}_{\mathcal{X}^{**}}\) (since \(J\) is an isometry), and the weak topology on
+                    \(\overline{B}_{\mathcal{X}^{**}}\) (since \(J\) is a surjective isometry), and the weak topology on
                     \(\mathcal{X}\) corresponds to the weak* topology on \(\mathcal{X}^{**}\) (since the test functionals in
                     \(\mathcal{X}^*\) act on \(\mathcal{X}\) and on \(\mathcal{X}^{**}\) by the same formula
                     \(\varphi(x) = J(x)(\varphi)\)). Transferring the conclusion through this isomorphism gives weak
@@ -857,7 +862,9 @@ uses_python: false
                 </div>
 
                 <p>
-                    This is a consequence of <a href="#weak-convergence">Mazur's Theorem</a>, or more precisely of its
+                    This is a consequence of
+                    <a href="#T-properties_weak_convergence" class="ref-link"><strong>Mazur's Theorem</strong></a>,
+                    or more precisely of its
                     standard equivalent formulation: <em>a convex norm-closed set is also weakly closed</em>, which follows
                     from the
                     <a href="separation_hahn_banach.html#T-closed_convex_hull_halfspaces" class="ref-link"><strong>representation of closed convex sets as intersections of half-spaces</strong></a>.
@@ -900,12 +907,14 @@ uses_python: false
                     </p>
 
                     <p>
-                        Since \(\mathcal{H}\) is reflexive, the closed unit ball is weakly compact (by the theorem above). By
-                        a linear rescaling \(f \mapsto f/R\), the closed ball \(\Omega\) of any radius \(R \gt 0\) is weakly
-                        compact as well. By the
-                        <a href="#T-eberlein_smulian" class="ref-link"><strong>Eberlein-&Scaron;mulian theorem</strong></a>,
-                        weak compactness of \(\Omega\) coincides with weak sequential compactness, so the minimizing sequence
-                        \(\{f_n\} \subseteq \Omega\) has a weakly convergent subsequence
+                        Since \(\mathcal{H}\) is reflexive, we may invoke the
+                        <a href="#T-weak_compactness_unit_ball_reflexive" class="ref-link"><strong>weak compactness of the unit ball</strong></a>
+                        established above.
+                        By a linear rescaling \(f \mapsto f/R\), the closed ball \(\Omega\) of any radius \(R \gt 0\) is weakly
+                        compact as well. Being convex and norm-closed, \(\Omega\) is also weakly closed, and the
+                        <a href="#T-eberlein_smulian" class="ref-link"><strong>Eberlein-&Scaron;mulian theorem</strong></a>
+                        then identifies weak compactness of \(\Omega\) with weak sequential compactness, so the minimizing
+                        sequence \(\{f_n\} \subseteq \Omega\) has a weakly convergent subsequence
                         \(f_{n_k} \rightharpoonup f^* \in \Omega\).
                     </p>
                     <p>
@@ -948,11 +957,15 @@ uses_python: false
                         semicontinuous. If \(\mathcal{L}_{\text{data}}\) is also convex and continuous (as in linear/kernel
                         regression, SVMs, and logistic regression), then the total loss \(\mathcal{L}_\lambda\) is weakly
                         lsc. Moreover, the penalty \(\lambda \|f\|^2\) is <strong>coercive</strong> (it grows to \(\infty\)
-                        as \(\|f\| \to \infty\)), so we can restrict attention to a bounded sublevel set \(\Omega\), which is
-                        weakly compact by Banach-Alaoglu.
+                        as \(\|f\| \to \infty\)), so any minimizer must lie in a bounded sublevel set, which is contained
+                        in a closed ball \(\Omega\). Reflexivity of \(\mathcal{H}\) then gives the
+                        <a href="#T-weak_compactness_unit_ball_reflexive" class="ref-link"><strong>weak compactness of the unit ball</strong></a>,
+                        and hence of \(\Omega\) after rescaling.
                     </p>
                     <p>
-                        The existence theorem above then tells us that <strong>the optimal model exists</strong>. This is a
+                        The
+                        <a href="#T-existence_of_minimizers" class="ref-link"><strong>existence theorem</strong></a>
+                        above then tells us that <strong>the optimal model exists</strong>. This is a
                         rigorous mathematical theorem, not merely an engineering heuristic.
                     </p>
                 </div>
