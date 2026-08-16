@@ -29,29 +29,32 @@ uses_python: false
 
                 <p>
                     So far we have discussed
-                    <a href="linear_approximation.html#D-differential"><strong>differentials of scalar functions</strong></a>
-                    and <a href="jacobian.html#D-jacobian"><strong>Jacobians of vector-valued functions</strong></a>.
-                    We now extend the same differential calculus to
-                    <strong>matrix-valued functions of a matrix argument</strong>,
-                    \(F : \mathbb{R}^{n \times n} \to \mathbb{R}^{n \times n}\). Our running examples will be
-                    \(F(X) = X^k\) and \(F(X) = X^{-1}\); at the end of the page we use the same framework to
-                    differentiate an LU decomposition.
+                    <a href="linear_approximation.html#D-differential" class="ref-link"><strong>differentials of scalar functions</strong></a>
+                    and <a href="jacobian.html#D-jacobian" class="ref-link"><strong>Jacobians of vector-valued functions</strong></a>.
+                    We now extend the same differential calculus to <strong>matrix-valued functions of a matrix
+                    argument</strong>, \(F : \mathbb{R}^{n \times n} \to \mathbb{R}^{n \times n}\). Our running
+                    examples will be \(F(X) = X^3\) and \(F(X) = X^{-1}\). At the end of the page we use the same
+                    framework to differentiate an LU decomposition.
                 </p>
 
                 <p>
-                    <strong>Operator form is essential here.</strong> For scalar-in / scalar-out and
-                    vector-in / vector-out cases, the differential admits the compact matrix-product form
-                    \(df = f'(x)\,dx\). For <em>matrix</em>-in / matrix-out functions this compact form breaks down:
-                    the "Jacobian" is naturally a \(4\)-index tensor, or equivalently an \(n^2 \times n^2\) matrix
-                    acting on \(\mathrm{vec}(dX)\). In day-to-day calculation, the
+                    <strong>Operator form is essential here.</strong> For scalar-in / scalar-out and vector-in /
+                    vector-out cases, the differential admits the compact matrix-product form \(df = f'(x)\,dx\). For
+                    <em>matrix</em>-in / matrix-out functions this compact form breaks down. The "Jacobian" is
+                    naturally a \(4\)-index tensor, or equivalently an \(n^2 \times n^2\) matrix acting on
+                    \(\operatorname{vec}(dX)\).
+                </p>
+
+                <p>
+                    In day-to-day calculation, the
                     <a href="jacobian.html#jacobian"><strong>operator notation</strong></a>
                     \[
-                    dF \;=\; F'(X)[\,dX\,]
+                    dF = F'(X)[\,dX\,]
                     \]
-                    is both cleaner and more honest: the differential \(F'(X)\) is a <em>linear map</em>
-                    \(\mathbb{R}^{n \times n} \to \mathbb{R}^{n \times n}\), applied to the input perturbation \(dX\),
-                    and its action may involve \(dX\) in multiple positions. We will read off \(F'(X)[\,\cdot\,]\)
-                    directly from the expansion of \(F(X + dX) - F(X)\).
+                    is both cleaner and more honest. The differential \(F'(X)\) is a <em>linear map</em>
+                    \(\mathbb{R}^{n \times n} \to \mathbb{R}^{n \times n}\), applied to the input perturbation
+                    \(dX\), and its action may involve \(dX\) in multiple positions. We will read off
+                    \(F'(X)[\,\cdot\,]\) directly from the expansion of \(F(X + dX) - F(X)\).
                 </p>
 
                 <p>
@@ -60,10 +63,10 @@ uses_python: false
                     <a href="linear_approximation.html#T-differential_product_rule" class="ref-link"><strong>differential product rule</strong></a>
                     must preserve the relative positions of the factors:
                     \[
-                    d(AB) \;=\; (dA)\,B + A\,(dB).
+                    d(AB) = (dA)\,B + A\,(dB).
                     \]
-                    Moving a \(dX\) past a constant matrix changes the value; this is the single most common source
-                    of error in matrix calculus.
+                    Moving a \(dX\) past a constant matrix changes the value. That move is the single most common
+                    source of error in matrix calculus.
                 </p>
 
                 <h3>Warm-up: affine matrix functions</h3>
@@ -71,14 +74,17 @@ uses_python: false
                 <p>
                     For an affine map \(F(X) = AXB + C\) with \(A, B, C\) constant, the increment is exact:
                     \[
-                    \Delta F \;=\; A(X + dX)B + C - (AXB + C) \;=\; A\,(dX)\,B.
+                    \Delta F = A(X + dX)B + C - (AXB + C) = A\,(dX)\,B.
                     \]
                     There is no \(o(\|dX\|)\) remainder, so the differential is simply
                     \[
-                    dF \;=\; F'(X)[\,dX\,] \;=\; A\,(dX)\,B.
+                    dF = F'(X)[\,dX\,] = A\,(dX)\,B.
                     \]
+                </p>
+
+                <p>
                     The linear map \(F'(X)\) is the "sandwich operator" \(Z \mapsto AZB\), independent of \(X\). Two
-                    special cases: \(F(X) = AX\) gives \(dF = A\,dX\); \(F(X) = X\) gives \(dF = dX\). The full
+                    special cases: \(F(X) = AX\) gives \(dF = A\,dX\), and \(F(X) = X\) gives \(dF = dX\). The full
                     sandwich form \(A(\cdot)B\) is a pattern we will see repeatedly, notably in the inverse and LU
                     examples below.
                 </p>
@@ -88,8 +94,7 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Example 1.</span>
                     <p>
-                        Let \(F(X) = X^3\) with \(X \in \mathbb{R}^{n \times n}\). Expanding the increment and keeping
-                        only linear-in-\(dX\) terms:
+                        Let \(F(X) = X^3\) with \(X \in \mathbb{R}^{n \times n}\). Expanding the increment, we obtain
                         \[
                         \begin{align*}
                         (X+dX)^3 - X^3
@@ -97,16 +102,18 @@ uses_python: false
                            &\quad + X(dX)^2 + (dX)X(dX) + (dX)^2 X + (dX)^3.
                         \end{align*}
                         \]
-                        The four nonlinear terms (three quadratic and one cubic in \(dX\)) are \(o(\|dX\|)\): each is
+                        The four nonlinear terms (three quadratic and one cubic in \(dX\)) are \(o(\|dX\|)\). Each is
                         bounded by a constant multiple of \(\|dX\|^2\) via submultiplicativity of the operator norm
-                        (e.g. \(\|X(dX)^2\| \leq \|X\|_{\mathrm{op}}\|dX\|^2\)). The three linear terms give the
-                        differential:
+                        (for example, \(\|X(dX)^2\| \leq \|X\|_{\mathrm{op}}\|dX\|^2\)). The three linear terms give
+                        the differential:
                         \[
-                        dF \;=\; F'(X)[\,dX\,] \;=\; (dX)X^2 + X(dX)X + X^2(dX).
+                        dF = F'(X)[\,dX\,] = (dX)X^2 + X(dX)X + X^2(dX).
                         \]
+                    </p>
+                    <p>
                         Note how each of the three factors of \(X\) in \(X^3\) contributes one term, with \(dX\)
-                        inserted at that factor's position; the non-commutativity of multiplication forbids
-                        collecting them into a single "coefficient".
+                        inserted at that factor's position. The non-commutativity of multiplication forbids
+                        collecting the three terms into a single "coefficient".
                     </p>
                 </div>
 
@@ -114,11 +121,12 @@ uses_python: false
                     <h3>Why there is no single "\(\partial F / \partial X\)" matrix</h3>
                     <p>
                         One might hope to write \(dF = (\partial F / \partial X)\, dX\) in analogy with the scalar
-                        case, but Example 1 shows this is impossible: \(dX\) appears in three different positions,
-                        and no single constant matrix \(M\) satisfies \(M\,dX = (dX)X^2 + X(dX)X + X^2(dX)\) for all
-                        \(dX\). The correct object — the linear map \(F'(X)\) — is described by how it <em>acts</em>
-                        on \(dX\), not by a single multiplicand. This is why the operator notation
-                        \(F'(X)[\,dX\,]\) is the right one for matrix-in / matrix-out calculus.
+                        case, but Example 1 shows this is impossible. In that example \(dX\) appears in three
+                        different positions, and no single constant matrix \(M\) satisfies
+                        \(M\,dX = (dX)X^2 + X(dX)X + X^2(dX)\) for all \(dX\). The correct object is the linear map
+                        \(F'(X)\), described by how it <em>acts</em> on \(dX\) rather than by a single multiplicand.
+                        This is why the operator notation \(F'(X)[\,dX\,]\) is the right one for matrix-in /
+                        matrix-out calculus.
                     </p>
                 </div>
 
@@ -131,22 +139,28 @@ uses_python: false
                         <a href="../Linear_algebra/matrix_algebra.html#inv"><strong>invertible</strong></a>, and set
                         \(F(X) = X^{-1}\). The set of invertible matrices is open in \(\mathbb{R}^{n \times n}\), and
                         the entries of \(X^{-1}\) are rational functions of the entries of \(X\) (via the cofactor
-                        formula \(X^{-1} = (\det X)^{-1}\mathrm{adj}(X)\)) with nonvanishing denominator, so
-                        \(F\) is \(C^\infty\) — in particular differentiable — at every such \(X\). We may therefore
-                        compute \(dF\) as follows. From the identity \(X^{-1} X = I\) we take the differential of both
-                        sides; since \(I\) is constant, \(d(I) = 0 \in \mathbb{R}^{n \times n}\). Applying the product
-                        rule to the left side:
+                        formula \(X^{-1} = (\det X)^{-1}\operatorname{adj}(X)\)) with nonvanishing denominator, so
+                        \(F\) is \(C^\infty\), and in particular differentiable, at every such \(X\).
+                    </p>
+                    <p>
+                        We may therefore compute \(dF\) as follows. From the identity \(X^{-1} X = I\) we take the
+                        differential of both sides. Since \(I\) is constant,
+                        \(d(I) = 0 \in \mathbb{R}^{n \times n}\). Applying the product rule to the left side, we
+                        obtain
                         \[
-                        d(X^{-1})\,X + X^{-1}(dX) \;=\; 0
-                        \qquad \Longrightarrow \qquad
-                        d(X^{-1})\,X \;=\; -X^{-1}(dX).
+                        \begin{align*}
+                        d(X^{-1})\,X + X^{-1}(dX) &= 0 \\\\
+                        \Longrightarrow \quad d(X^{-1})\,X &= -X^{-1}(dX).
+                        \end{align*}
                         \]
-                        Right-multiplying by \(X^{-1}\):
+                        Right-multiplying by \(X^{-1}\) gives
                         \[
-                        dF \;=\; d(X^{-1}) \;=\; -X^{-1}(dX)\,X^{-1}.
+                        dF = d(X^{-1}) = -X^{-1}(dX)\,X^{-1}.
                         \]
-                        In operator form: \(F'(X)[\,dX\,] = -X^{-1}(dX)X^{-1}\) — again a sandwich operator, now with
-                        \(A = B = -X^{-1}\) (and with a single sign).
+                    </p>
+                    <p>
+                        In operator form, \(F'(X)[\,dX\,] = -X^{-1}(dX)X^{-1}\). This is again a sandwich operator
+                        \(Z \mapsto AZB\), now with \(A = -X^{-1}\) and \(B = X^{-1}\).
                     </p>
                 </div>
 
@@ -155,11 +169,11 @@ uses_python: false
                     <p>
                         The formula \(d(X^{-1}) = -X^{-1}(dX)X^{-1}\) is the backbone of
                         <a href="../Machine_learning/autodiff.html"><strong>automatic differentiation</strong></a>
-                        through linear-algebra primitives such as matrix solves. When an ML loss depends on
-                        \(X^{-1} b\) — for instance in <strong>Gaussian process</strong> marginal likelihoods or in
-                        <strong>second-order optimization</strong> with a Hessian solve — the gradient with respect
-                        to \(X\) is obtained by contracting the upstream gradient against
-                        \(-X^{-1}(\cdot)X^{-1}\), never by materializing an inverse and differentiating elementwise.
+                        through linear-algebra primitives such as matrix solves. Suppose an ML loss depends on
+                        \(X^{-1} b\), for instance in <strong>Gaussian process</strong> marginal likelihoods or in
+                        <strong>second-order optimization</strong> with a Hessian solve. The gradient with respect to
+                        \(X\) is then obtained by contracting the upstream gradient against \(-X^{-1}(\cdot)X^{-1}\),
+                        never by materializing an inverse and differentiating elementwise.
                     </p>
                 </div>
 
@@ -177,18 +191,22 @@ uses_python: false
                 </p>
 
                 <p>
-                    Applying the product rule to \(X = LU\):
+                    Differentiating \(X = LU\) with the product rule, we obtain
                     \[
-                    dX \;=\; (dL)\,U + L\,(dU).
+                    dX = (dL)\,U + L\,(dU).
                     \]
-                    The structural constraints on \(L\) and \(U\) carry over to their differentials: \(dL\) is
+                    The structural constraints on \(L\) and \(U\) carry over to their differentials. Here \(dL\) is
                     strictly lower triangular (the unit-diagonal constraint freezes the diagonal of \(L\), so
-                    \((dL)_{ii} = 0\)), and \(dU\) is upper triangular. Between the two of them \(dL\) and \(dU\)
-                    have exactly \(n^2\) independent entries — the same as \(dX\). Under the standard condition
-                    that guarantees the existence and uniqueness of an LU decomposition — namely, all leading
-                    principal minors of \(X\) are nonzero, equivalently all diagonal entries \(U_{ii}\) are nonzero —
-                    the linear map \((dL, dU) \mapsto dX\) defined by \(dX = (dL)U + L(dU)\) is invertible, which is
-                    what allows us to solve for \(dL, dU\) given \(dX\).
+                    \((dL)_{ii} = 0\)), and \(dU\) is upper triangular. Between them, \(dL\) and \(dU\) have exactly
+                    \(n^2\) independent entries, the same count as \(dX\).
+                </p>
+
+                <p>
+                    The standard condition that guarantees the existence and uniqueness of an LU decomposition is
+                    that all leading principal minors of \(X\) be nonzero, equivalently that all diagonal entries
+                    \(U_{ii}\) be nonzero. Under that condition the linear map \((dL, dU) \mapsto dX\) defined by
+                    \(dX = (dL)U + L(dU)\) is invertible, and this is what allows us to solve for \(dL\) and \(dU\)
+                    given \(dX\).
                 </p>
 
                 <h3>A \(2 \times 2\) worked example</h3>
@@ -196,66 +214,78 @@ uses_python: false
                 <p>
                     Take
                     \[
-                    L \;=\; \begin{bmatrix} 1 & 0 \\ L_{21} & 1 \end{bmatrix},
-                    \qquad
-                    U \;=\; \begin{bmatrix} U_{11} & U_{12} \\ 0 & U_{22} \end{bmatrix},
+                    \begin{align*}
+                    L &= \begin{bmatrix} 1 & 0 \\\\ L_{21} & 1 \end{bmatrix}, \\\\
+                    U &= \begin{bmatrix} U_{11} & U_{12} \\\\ 0 & U_{22} \end{bmatrix},
+                    \end{align*}
                     \]
                     with differentials constrained by the triangular shapes:
                     \[
-                    dL \;=\; \begin{bmatrix} 0 & 0 \\ dL_{21} & 0 \end{bmatrix},
-                    \qquad
-                    dU \;=\; \begin{bmatrix} dU_{11} & dU_{12} \\ 0 & dU_{22} \end{bmatrix}.
+                    \begin{align*}
+                    dL &= \begin{bmatrix} 0 & 0 \\\\ dL_{21} & 0 \end{bmatrix}, \\\\
+                    dU &= \begin{bmatrix} dU_{11} & dU_{12} \\\\ 0 & dU_{22} \end{bmatrix}.
+                    \end{align*}
                     \]
-                    Computing \(dX = (dL)U + L(dU)\) term by term:
+                </p>
+
+                <p>
+                    Computing \(dX = (dL)U + L(dU)\) term by term gives
                     \[
-                    (dL)\,U \;=\; \begin{bmatrix} 0 & 0 \\ dL_{21}\, U_{11} & dL_{21}\, U_{12} \end{bmatrix},
-                    \qquad
-                    L\,(dU) \;=\; \begin{bmatrix} dU_{11} & dU_{12} \\ L_{21}\, dU_{11} & L_{21}\, dU_{12} + dU_{22} \end{bmatrix}.
+                    \begin{align*}
+                    (dL)\,U &= \begin{bmatrix} 0 & 0 \\\\ dL_{21}\, U_{11} & dL_{21}\, U_{12} \end{bmatrix}, \\\\
+                    L\,(dU) &= \begin{bmatrix} dU_{11} & dU_{12} \\\\ L_{21}\, dU_{11} & L_{21}\, dU_{12} + dU_{22} \end{bmatrix}.
+                    \end{align*}
                     \]
                     Adding these,
                     \[
-                    dX \;=\;
+                    dX =
                     \begin{bmatrix}
-                        dU_{11} & dU_{12} \\
+                        dU_{11} & dU_{12} \\\\
                         L_{21}\, dU_{11} + U_{11}\, dL_{21} & L_{21}\, dU_{12} + U_{12}\, dL_{21} + dU_{22}
                     \end{bmatrix}.
                     \]
                 </p>
 
                 <p>
-                    Reading this system in reverse — solving for \((dU_{11}, dU_{12}, dL_{21}, dU_{22})\) given the
-                    entries of \(dX\) — yields the <strong>forward-mode sensitivity</strong> of each LU factor
-                    entry. The upper row of \(dX\) determines the top row of \(dU\) immediately
-                    (\(dU_{11} = dX_{11}\), \(dU_{12} = dX_{12}\)); assuming \(U_{11} \neq 0\), the bottom row then
-                    gives
+                    Solving this system for \((dU_{11}, dU_{12}, dL_{21}, dU_{22})\) in terms of the entries of
+                    \(dX\) yields the <strong>forward-mode sensitivity</strong> of each LU factor entry. The top row
+                    of \(dX\) determines the top row of \(dU\) immediately (\(dU_{11} = dX_{11}\),
+                    \(dU_{12} = dX_{12}\)). Assuming \(U_{11} \neq 0\), the bottom row then gives
                     \[
-                    dL_{21} \;=\; \frac{dX_{21} - L_{21}\,dU_{11}}{U_{11}},
-                    \qquad
-                    dU_{22} \;=\; dX_{22} - L_{21}\,dU_{12} - U_{12}\,dL_{21},
+                    \begin{align*}
+                    dL_{21} &= \frac{dX_{21} - L_{21}\,dU_{11}}{U_{11}}, \\\\
+                    dU_{22} &= dX_{22} - L_{21}\,dU_{12} - U_{12}\,dL_{21},
+                    \end{align*}
                     \]
-                    by back-substitution. This triangular-then-triangular solve pattern — and the role of the
-                    diagonal entries \(U_{ii}\) as the divisors that must be nonzero — is exactly how the general
-                    LU-differentiation algorithm works at scale.
+                    by back-substitution.
+                </p>
+
+                <p>
+                    This triangular-then-triangular solve pattern is exactly how the general LU-differentiation
+                    algorithm works at scale. The diagonal entries \(U_{ii}\) play the same role there, as the
+                    divisors that must be nonzero.
                 </p>
 
                 <div class="insight-box">
                     <h3>Application: differentiable linear algebra in modern ML</h3>
                     <p>
-                        The identity \(dX = (dL)U + L(dU)\) is the starting point for
-                        <strong>reverse-mode autodiff through matrix factorizations</strong> — a key ingredient in
-                        frameworks that differentiate through linear solves, determinant computations, and Cholesky
-                        factorizations. Given an upstream gradient \(\bar X\) (the sensitivity of a downstream loss
-                        with respect to \(X\)), one recovers \(\bar L\) and \(\bar U\) by solving the adjoint
-                        equations derived from the identity above. This is what allows end-to-end training of models
-                        that embed linear solves — from <strong>Gaussian processes</strong> and
-                        <strong>differentiable physics simulators</strong> to
-                        <strong>structured-prediction layers</strong> — without ever writing hand-tuned backward
-                        passes.
+                        The identity \(dX = (dL)U + L(dU)\) is the starting point for <strong>reverse-mode autodiff
+                        through matrix factorizations</strong>. That capability is a key ingredient in frameworks
+                        that differentiate through linear solves, determinant computations, and Cholesky
+                        factorizations.
+                    </p>
+                    <p>
+                        Given an upstream gradient \(\bar X\) (the sensitivity of a downstream loss with respect to
+                        \(X\)), one recovers \(\bar L\) and \(\bar U\) by solving the adjoint equations derived from
+                        the identity above. This is what allows end-to-end training of models that embed linear
+                        solves, without ever writing hand-tuned backward passes. Such models range from
+                        <strong>Gaussian processes</strong> and <strong>differentiable physics simulators</strong> to
+                        <strong>structured-prediction layers</strong>.
                     </p>
                 </div>
 
             </section>
         </div>
         
-</body>
+    </body>
 </html>
