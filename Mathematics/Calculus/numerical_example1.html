@@ -27,18 +27,27 @@ uses_python: true
 
                 <p>
                     In the previous page we derived the differential of
-                    <a href="matrix_cal.html#square"><strong>matrix-valued matrix functions</strong></a> symbolically,
-                    producing formulas such as
+                    <a href="matrix_cal.html#square"><strong>matrix-valued matrix functions</strong></a>
+                    symbolically. That derivation produced formulas such as
                     \[
-                    d(X^3) \;=\; (dX)X^2 + X(dX)X + X^2(dX), \qquad
-                    d(X^{-1}) \;=\; -X^{-1}(dX)X^{-1}.
+                    \begin{align*}
+                    d(X^3) &= (dX)X^2 + X(dX)X + X^2(dX), \\\\
+                    d(X^{-1}) &= -X^{-1}(dX)X^{-1}.
+                    \end{align*}
                     \]
-                    Symbolic derivations like these are short but error-prone — miss a term, flip a factor, and the
+                </p>
+
+                <p>
+                    Symbolic derivations like these are short but error-prone. Miss a term or flip a factor, and the
                     whole downstream optimization is silently wrong. A basic hygiene step of computational
                     mathematics is therefore to <strong>validate each derivation numerically</strong> before trusting
-                    it. In this page we work through the simpler case \(f(X) = X^2\), for which the differential is
+                    it.
+                </p>
+
+                <p>
+                    In this page we work through the simpler case \(f(X) = X^2\), for which the differential is
                     \[
-                    df \;=\; f'(X)[dX] \;=\; X(dX) + (dX)X,
+                    df = f'(X)[dX] = X(dX) + (dX)X,
                     \]
                     and we verify it against finite differences.
                 </p>
@@ -47,15 +56,20 @@ uses_python: true
 
                 <p>
                     For a differentiable function \(f\), the
-                    <a href="linear_approximation.html#D-differential"><strong>differential</strong></a> \(df\) at
-                    \(X\) is the linear part of the increment — equivalently, the quantity that satisfies
+                    <a href="linear_approximation.html#D-differential" class="ref-link"><strong>differential</strong></a>
+                    \(df\) at \(X\) is the linear part of the increment, equivalently the quantity that satisfies
                     \[
-                    f(X + dX) - f(X) \;=\; df + o(\|dX\|).
+                    f(X + dX) - f(X) = df + o(\|dX\|).
                     \]
+                </p>
+
+                <p>
                     Two standard <strong>finite-difference approximations</strong> of \(df\) are
                     \[
-                    \text{Forward difference:} \quad f(X + dX) - f(X), \qquad
-                    \text{Backward difference:} \quad f(X) - f(X - dX).
+                    \begin{align*}
+                    \text{Forward difference:} &\quad f(X + dX) - f(X), \\\\
+                    \text{Backward difference:} &\quad f(X) - f(X - dX).
+                    \end{align*}
                     \]
                     Each equals \(df\) up to an \(o(\|dX\|)\) term, so in the limit \(dX \to 0\) both agree with the
                     analytical formula.
@@ -65,10 +79,10 @@ uses_python: true
                     When comparing a computed approximation against a reference value, we measure quality by
                     <strong>relative error</strong> in a norm (we use the Frobenius norm throughout):
                     \[
-                    \text{relative error} \;=\; \frac{\|\,\text{true} - \text{approx}\,\|_F}{\|\,\text{true}\,\|_F}.
+                    \text{relative error} = \frac{\|\,\text{true} - \text{approx}\,\|_F}{\|\,\text{true}\,\|_F}.
                     \]
-                    A small absolute difference does not necessarily mean a small error — scale matters. Relative
-                    error normalizes by the size of the quantity being approximated.
+                    A small absolute difference does not necessarily mean a small error, since scale matters.
+                    Relative error normalizes by the size of the quantity being approximated.
                 </p>
 
                 <div class="insight-box">
@@ -79,12 +93,12 @@ uses_python: true
                     </p>
                     <ul style="padding-left: 40px;">
                         <li><strong>Truncation error</strong> from the \(o(\|dX\|)\) remainder. For \(C^2\) functions
-                            — which is the regime where finite-difference validation is used in practice, and which
-                            covers \(f(X) = X^2\) here (the remainder is exactly \((dX)^2\)) — the remainder is
-                            \(O(\|dX\|^2)\), and its <em>relative</em> size (against \(\|df\| = \Theta(\|dX\|)\),
-                            assuming \(df \neq 0\)) is \(O(\|dX\|)\).</li>
+                            the remainder is \(O(\|dX\|^2)\), and its <em>relative</em> size (against
+                            \(\|df\| = \Theta(\|dX\|)\), assuming \(df \neq 0\)) is \(O(\|dX\|)\). The \(C^2\) case
+                            is the regime where finite-difference validation is used in practice, and it covers
+                            \(f(X) = X^2\) here, whose remainder is exactly \((dX)^2\).</li>
                         <li><strong>Rounding error</strong> from subtracting two nearly equal floating-point numbers
-                            in \(f(X + dX) - f(X)\); its <em>relative</em> size is
+                            in \(f(X + dX) - f(X)\). Its <em>relative</em> size is
                             \(O(\varepsilon_{\text{mach}} / \|dX\|)\), where
                             \(\varepsilon_{\text{mach}} \approx 2.2\times 10^{-16}\) for IEEE 754 double precision.</li>
                     </ul>
@@ -93,7 +107,7 @@ uses_python: true
                         \(\|dX\| \approx \sqrt{\varepsilon_{\text{mach}}} \approx 1.5 \times 10^{-8}\) for one-sided
                         differences, with corresponding best achievable relative error
                         \(\approx \sqrt{\varepsilon_{\text{mach}}}\). This is why we set the perturbation scale to
-                        \(10^{-8}\) in the code below: any smaller and rounding dominates; any larger and the
+                        \(10^{-8}\) in the code below. Any smaller and rounding dominates. Any larger and the
                         quadratic truncation term does.
                     </p>
                 </div>
@@ -153,9 +167,9 @@ print(f"Relative error (backward): {b_rel_err:.2e}")
                 </div>
 
                 <p>
-                    Typical output shows relative errors around \(10^{-8}\) — consistent with the optimal accuracy
-                    predicted by the balance of truncation and rounding errors discussed above. If one of these
-                    errors suddenly spiked to \(10^{-2}\) or larger, that would indicate either a bug in the
+                    Typical output shows relative errors around \(10^{-8}\). That size is consistent with the optimal
+                    accuracy predicted by the balance of truncation and rounding errors discussed above. If one of
+                    these errors suddenly spiked to \(10^{-2}\) or larger, that would indicate either a bug in the
                     analytical formula or an inappropriate perturbation scale, and the validation would have caught
                     it.
                 </p>
@@ -165,14 +179,17 @@ print(f"Relative error (backward): {b_rel_err:.2e}")
                     <p>
                         Modern machine-learning frameworks compute gradients with
                         <a href="../Machine_learning/autodiff.html"><strong>automatic differentiation</strong></a>,
-                        not by hand. But whenever one writes a <em>custom</em> operator — a new layer type, an
-                        exotic loss function, a physics-informed constraint — the framework's autodiff only works
-                        for the parts built from its registered primitives. Anything custom needs a hand-written
-                        derivative, and a hand-written derivative needs finite-difference validation before it goes
-                        into training. The same logic applies to gradient checks in scientific-computing libraries
-                        and to the testing of custom CUDA kernels. The technique on this page — pick a perturbation
-                        at the \(\sqrt{\varepsilon_{\text{mach}}}\) scale, compare against a forward or backward
-                        difference, measure relative error — is the workhorse behind all of these checks.
+                        not by hand. But whenever one writes a <em>custom</em> operator, the framework's autodiff
+                        only works for the parts built from its registered primitives. Such operators include a new
+                        layer type, an exotic loss function, or a physics-informed constraint. Anything custom needs
+                        a hand-written derivative, and a hand-written derivative needs finite-difference validation
+                        before it goes into training.
+                    </p>
+                    <p>
+                        The same logic applies to gradient checks in scientific-computing libraries and to the
+                        testing of custom CUDA kernels. The technique on this page is to pick a perturbation at the
+                        \(\sqrt{\varepsilon_{\text{mach}}}\) scale, compare against a forward or backward difference,
+                        and measure the relative error. That recipe is the workhorse behind all of these checks.
                     </p>
                 </div>
 
@@ -180,7 +197,7 @@ print(f"Relative error (backward): {b_rel_err:.2e}")
 
         </div>
 
-<script src="/js/runPythonCode.js"></script>
+        <script src="/js/runPythonCode.js"></script>
         <script src="/js/collapsible.js"></script>
 
     </body>
