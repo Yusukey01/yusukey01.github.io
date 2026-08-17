@@ -1,0 +1,606 @@
+---
+layout: default
+title: "The Generator of an Itô Diffusion"
+topic_id: prob-42
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Generator of an It&ocirc; Diffusion</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#generator">The Generator</a>
+            <a href="#computing">Computing the Generator</a>
+            <a href="#two-examples">Two Diffusions and Their Operators</a>
+        </div>
+
+        <div class="container">
+
+            <section id="generator" class="section-content">
+                <h2>The Generator</h2>
+
+                <p>
+                    Four pages have gone into turning the solution of a stochastic
+                    differential equation into an object worth naming. The
+                    <a href="ito_diffusions.html#D-ito_diffusion" class="ref-link"><strong>Itô diffusion</strong></a>
+                    is not one process but a family indexed by the starting point; the
+                    family forgets the clock, and by the
+                    <a href="ito_diffusions.html#T-markov_property_diffusion" class="ref-link"><strong>Markov property</strong></a>
+                    it restarts from its own present position carrying no memory of the
+                    route. The
+                    <a href="strong_markov_property.html#T-strong_markov_property" class="ref-link"><strong>strong Markov property</strong></a>
+                    extended the restart to times read off the path itself, and the
+                    <a href="integral_at_stopping_time.html#T-stopped_expectation_lemma" class="ref-link"><strong>stopped expectation identity</strong></a>
+                    turned It&ocirc;'s formula into a statement about averages at such times.
+                    The first three of these are bookkeeping about the law of the process,
+                    and none of them computes anything. Ask for the expected value of a
+                    function of the diffusion at a fixed time, or for the mean time the
+                    diffusion takes to leave a region, and the theory offers no procedure,
+                    only the assurance that such quantities are well posed. The fourth is
+                    the instrument that will change this, and it is already sharp; what is
+                    missing is the object it should be aimed at.
+                </p>
+
+                <p>
+                    The procedure comes from differentiating at time zero. Fix a function
+                    \(f\) on the state space and watch the average
+                    \(E^x[ f( X_t ) ]\) as \(t\) decreases to zero. At \(t = 0\) the
+                    average is \(f(x)\), since the diffusion starts at \(x\); for small
+                    positive \(t\) it has moved off that value by an amount which, if the
+                    process is not too wild, should be proportional to \(t\). The
+                    proportionality constant is a number attached to the point \(x\), so it
+                    is again a function on the state space, and the assignment sending
+                    \(f\) to that function is an operator. It is the derivative of the
+                    process at the instant of its start, felt through the test function
+                    \(f\). Everything the diffusion does in its first instant is recorded
+                    there. That this should be a complete description of the process, and
+                    not merely its leading term, is what the two properties already in
+                    hand make plausible. Time homogeneity makes the first instant of the restarted
+                    diffusion the same object as the first instant of the original, and the
+                    Markov property makes the restarted diffusion the entire future. What
+                    the process does at any later instant is therefore what it does at the
+                    first, read from wherever it then happens to be.
+                </p>
+
+                <p>
+                    That is the object this page defines and computes. The definition
+                    is immediate. The computation is the substance: the operator turns out
+                    to be a second-order partial differential operator whose coefficients
+                    are the drift and the noise coefficient of the equation. From that
+                    point on, a question about averages of a diffusion is a question about
+                    a differential operator, and the two subjects that the track has been
+                    developing in parallel become one subject.
+                </p>
+
+                <h3>The Working Setting Is Several-Component</h3>
+
+                <p>
+                    From here the state carries several coordinates. The state space is
+                    \(\mathbb{R}^m\), the driving motion \(w\) is an \(n\)-dimensional
+                    Brownian motion with independent components, the drift is a vector
+                    field \(\mathbf{b} : \mathbb{R}^m \to \mathbb{R}^m\), and the noise
+                    coefficient is a matrix field
+                    \(\sigma : \mathbb{R}^m \to \mathbb{R}^{m \times n}\), both Lipschitz.
+                    The equation
+                </p>
+
+                <p>
+                    \[
+                    d X_t = \mathbf{b}( X_t )\, dt + \sigma( X_t )\, d w_t ,
+                    \quad X_0 = x \in \mathbb{R}^m ,
+                    \]
+                </p>
+
+                <p>
+                    is read row by row, the \(i\)-th coordinate of the state being driven
+                    by the \(i\)-th row of \(\sigma\) against all \(n\) components of the
+                    noise. This is the
+                    <a href="ito_diffusions.html#space-time">several-component reading</a>
+                    recorded earlier in the track. Existence and uniqueness, the clock
+                    shift, time homogeneity, and the Markov property were declared to hold
+                    in this generality with the same statements and the same proofs; they
+                    were held as declared rather than proved, the one-dimensional versions
+                    remaining the proved objects. Nothing on this page repairs that
+                    declaration. What this page does instead is keep the debt visible: each
+                    time a proof leans on the declared reading rather than on a theorem
+                    proved in several components, the step says so. The distinction is not
+                    pedantry, and the two ingredients of the computation below fall on
+                    opposite sides of it. The
+                    <a href="integral_at_stopping_time.html#T-stopped_expectation_lemma" class="ref-link"><strong>stopped expectation identity</strong></a>
+                    concerns an arbitrary It&ocirc; process and rests on theorems proved in
+                    several components, so it owes nothing. What is owed lies entirely on
+                    the other side: that the solution exists and is unique, that it forgets
+                    the clock, that it restarts from its present position. Everything said
+                    here about the diffusion as a family is said on the strength of the
+                    declaration.
+                </p>
+
+                <p>
+                    The notation for averages is the
+                    <a href="ito_diffusions.html#markov-property">start-indexed convention
+                    already in force</a>. For a starting
+                    point \(x \in \mathbb{R}^m\) and a Borel function
+                    \(f : \mathbb{R}^m \to \mathbb{R}\) we write
+                    \(E^x[ f( X_t ) ] := \mathbb{E}[ f( X^x_t ) ]\), the superscript naming
+                    the start and the expectation being the ordinary one on the underlying
+                    probability space.
+                </p>
+
+                <div class="theorem" id="D-sde_generator">
+                    <span class="theorem-title">Definition: The Generator of an Itô Diffusion</span>
+                    <p>
+                        Let \(X\) be a time-homogeneous Itô diffusion in \(\mathbb{R}^m\).
+                        The <strong>generator</strong>, or <strong>infinitesimal
+                        generator</strong>, \(A\) of \(X\) is defined at a point
+                        \(x \in \mathbb{R}^m\) by
+                    </p>
+                    <p>
+                        \[
+                        A f( x )
+                        = \lim_{t \downarrow 0}
+                        \frac{ E^x[ f( X_t ) ] - f( x ) }{ t } ,
+                        \]
+                    </p>
+                    <p>
+                        the function \(f : \mathbb{R}^m \to \mathbb{R}\) being Borel and
+                        such that \(E^x[ | f( X_t ) | ] \lt \infty\) for all sufficiently
+                        small \(t \gt 0\), so that the difference quotient is defined. We
+                        write \(\mathcal{D}_A( x )\) for the set of such \(f\) for which
+                        the limit exists at \(x\), and \(\mathcal{D}_A\) for the set of
+                        those for which it exists at every \(x \in \mathbb{R}^m\). The
+                        name is shared with the
+                        <a href="../Calculus/integral_curves.html#D-infinitesimal_generator" class="ref-link"><strong>infinitesimal generator of a flow</strong></a>;
+                        the relation between the two constructions is taken up below.
+                    </p>
+                </div>
+
+                <p>
+                    Two features of the definition are worth pausing over before anything
+                    is computed. The limit is one-sided, and it has to be: the diffusion is
+                    started at \(x\) at time zero and has no past, so the quotient exists
+                    only for \(t \gt 0\) and the limit can only be taken from above. And
+                    the integrability clause is our reading of the definition rather than a
+                    separate hypothesis. Without it the quotient whose limit is being taken
+                    need not exist at all. The condition is automatically satisfied for
+                    every function actually used below, since a bounded Borel \(f\)
+                    satisfies it at every
+                    starting point; it is stated because the definition is otherwise silent
+                    about which functions may be fed to \(A\), and a silent domain is where
+                    unstated assumptions accumulate.
+                </p>
+
+                <p>
+                    Three observations fix the shape of the object. First, \(A\) is not an
+                    operator on a space of functions but a partially defined one, and the
+                    domain is part of the data. The two domains recorded above need not
+                    coincide, a limit being able to exist at one point and fail at
+                    another, and
+                    it is the global domain \(\mathcal{D}_A\) that will serve as the natural
+                    class. Second, on its domain \(A\) is linear: if \(f\) and \(g\) lie in
+                    \(\mathcal{D}_A( x )\) and \(\alpha, \beta\) are real, then linearity of
+                    the expectation makes the difference quotient of
+                    \(\alpha f + \beta g\) the corresponding combination of the two
+                    quotients, so \(\alpha f + \beta g \in \mathcal{D}_A( x )\) and
+                    \(A( \alpha f + \beta g )( x ) = \alpha A f( x ) + \beta A g( x )\). In
+                    particular a constant function lies in \(\mathcal{D}_A\) and is
+                    annihilated by \(A\), the diffusion having nothing to report about a
+                    function that does not vary. Third, and least comfortably, the
+                    definition as it stands exhibits no function in the domain beyond the
+                    constants. That the domain contains a rich supply, and that on that
+                    supply the operator has a closed form, is exactly what has to be earned.
+                </p>
+
+                <p>
+                    The manoeuvre of differentiating a family at time zero has appeared on
+                    this curriculum before. A smooth flow on a manifold has an
+                    <a href="../Calculus/integral_curves.html#D-infinitesimal_generator" class="ref-link"><strong>infinitesimal generator</strong></a>,
+                    obtained by taking the velocity at time zero of the trajectory through
+                    each point, and the result is a vector field. Here the same manoeuvre is
+                    applied to a family of random trajectories, and it is applied to the
+                    average of a test function rather than to the trajectory itself, since
+                    a Brownian path has no velocity to take. The two constructions agree in
+                    spirit and differ in output: a flow returns a tangent vector at each
+                    point, which acts on functions as a first-order derivative along the
+                    flow, whereas the diffusion returns an operator on functions directly.
+                    Whether the noise leaves a trace on that operator beyond the
+                    first-order term the flow would contribute, and what that trace is, is
+                    settled by the computation below.
+                </p>
+
+                <p>
+                    The route to it is short, because the hard work was done before the
+                    generator was named. The identity already in hand expresses the average
+                    of a function of an It&ocirc; process at a stopping time as its initial
+                    value plus the average of a second-order expression accumulated along
+                    the path. Specializing the stopping time to a fixed deterministic time
+                    and dividing by it produces the difference quotient of the definition,
+                    and the limit can then be taken.
+                </p>
+
+            </section>
+
+            <section id="computing" class="section-content">
+                <h2>Computing the Generator</h2>
+
+                <p>
+                    The diffusion is an It&ocirc; process with a particular pair of
+                    coefficients: it satisfies
+                </p>
+
+                <p>
+                    \[
+                    X_t = x + \int_0^t \mathbf{b}( X_s )\, ds
+                    + \int_0^t \sigma( X_s )\, d w_s ,
+                    \]
+                </p>
+
+                <p>
+                    so the general coefficients \(\mathbf{u}\) and \(\mathbf{v}\) of the
+                    identity become \(\mathbf{b}( X_s )\) and \(\sigma( X_s )\), evaluated
+                    along the path rather than prescribed independently of it. Substituting
+                    them into the identity and taking the stopping time to be a fixed time
+                    is the entire computation. What has to be checked is that the
+                    hypotheses survive the substitution, and what has to be supplied is the
+                    limit that the definition of the generator asks for and the identity
+                    does not perform.
+                </p>
+
+                <div class="theorem" id="T-generator_of_ito_diffusion">
+                    <span class="theorem-title">Theorem: The Generator Is a Second-Order Operator</span>
+                    <p>
+                        Let \(X\) be the It&ocirc; diffusion with drift \(\mathbf{b}\) and
+                        noise coefficient \(\sigma\), and let
+                        \(f \in C_0^2( \mathbb{R}^m )\). Then \(f \in \mathcal{D}_A\), and
+                        for every \(x \in \mathbb{R}^m\),
+                    </p>
+                    <p>
+                        \[
+                        A f( x )
+                        = \sum_{i = 1}^{m} b_i( x )\, \partial_i f( x )
+                        + \tfrac{1}{2} \sum_{i, l = 1}^{m}
+                        \bigl( \sigma \sigma^\top \bigr)_{il}( x )\,
+                        \partial_{il} f( x ) .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>The identity applies.</strong><br>
+                        Fix \(x\) and write \(K\) for the support of \(f\). The process
+                        \(X = X^x\) is an It&ocirc; process with
+                        \(\mathbf{u}( s, \omega ) = \mathbf{b}( X_s )\) and
+                        \(\mathbf{v}( s, \omega ) = \sigma( X_s )\): the coefficients
+                        grow at most linearly, being Lipschitz, so the
+                        <a href="picard_iteration.html#T-sde_moment_bound" class="ref-link"><strong>second-moment bound</strong></a>
+                        places \(\sigma( X_\cdot )\) in the admissible class on every
+                        horizon. That bound is one of the results held as declared in
+                        several components. The drift side of the membership costs
+                        nothing: each \(b_i( X_\cdot )\) is continuous in time and
+                        adapted, hence progressively measurable by
+                        <a href="ito_formula.html#T-progressively_measurable_criteria" class="ref-link"><strong>the criteria for progressive measurability</strong></a>,
+                        and its pathwise integrals are finite by continuity. A fixed time \(t\) is
+                        a stopping time with \(E^x[ t ] = t \lt \infty\). The coefficients
+                        are Lipschitz, hence continuous, hence bounded on the compact set
+                        \(K\); since \(\mathbf{u}( s, \omega )\) and
+                        \(\mathbf{v}( s, \omega )\) are the values of \(\mathbf{b}\) and
+                        \(\sigma\) at \(X_s( \omega )\), they are bounded on the set of
+                        pairs for which \(X_s( \omega )\) lies in \(K\). Every hypothesis of
+                        the
+                        <a href="integral_at_stopping_time.html#T-stopped_expectation_lemma" class="ref-link"><strong>stopped expectation identity</strong></a>
+                        is met, and it gives
+                    </p>
+                    <p>
+                        \[
+                        E^x \bigl[ f( X_t ) \bigr]
+                        = f( x ) + E^x \Bigl[ \int_0^t g( X_s )\, ds \Bigr] ,
+                        \quad
+                        g( y ) = \sum_{i} b_i( y )\, \partial_i f( y )
+                        + \tfrac{1}{2} \sum_{i, l}
+                        \bigl( \sigma \sigma^\top \bigr)_{il}( y )\, \partial_{il} f( y ) .
+                        \]
+                    </p>
+                    <p>
+                        <strong>The function \(g\) is continuous with compact support.</strong><br>
+                        Its ingredients are the entries of \(\mathbf{b}\) and of
+                        \(\sigma \sigma^\top\), continuous because \(\mathbf{b}\) and
+                        \(\sigma\) are, and the first and second derivatives of \(f\),
+                        continuous by assumption. All derivatives of \(f\) vanish off
+                        \(K\), so \(g\) does too. A continuous function vanishing off a
+                        compact set is bounded; write \(C = \sup | g |\).
+                    </p>
+                    <p>
+                        <strong>The difference quotient.</strong><br>
+                        Divide the identity by \(t \gt 0\) and subtract \(g(x)\), which
+                        integrates to \(t\, g(x)\) over \([0, t]\). This gives
+                    </p>
+                    <p>
+                        \[
+                        \frac{ E^x[ f( X_t ) ] - f( x ) }{ t } - g( x )
+                        = \frac{1}{t} E^x \Bigl[
+                        \int_0^t \bigl( g( X_s ) - g( x ) \bigr)\, ds \Bigr] .
+                        \]
+                    </p>
+                    <p>
+                        The integrand is jointly measurable and bounded by
+                        \(2C\), so
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        applied to its absolute value exchanges the two integrations and
+                        bounds the right side in absolute value by
+                    </p>
+                    <p>
+                        \[
+                        \frac{1}{t} \int_0^t
+                        E^x \bigl[\, \bigl| g( X_s ) - g( x ) \bigr| \,\bigr]\, ds
+                        =: \frac{1}{t} \int_0^t \varphi( s )\, ds .
+                        \]
+                    </p>
+                    <p>
+                        <strong>The average of \(\varphi\) vanishes with \(t\).</strong><br>
+                        The paths of \(X\) are continuous and start at \(x\), so
+                        \(X_s \to x\) almost surely as \(s \downarrow 0\), and continuity of
+                        \(g\) gives \(g( X_s ) \to g( x )\) almost surely. The differences
+                        are bounded by the constant \(2C\), so
+                        <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence</strong></a>
+                        gives \(\varphi( s ) \to 0\) as \(s \downarrow 0\). Given
+                        \(\varepsilon \gt 0\), choose \(\delta\) with
+                        \(\varphi( s ) \lt \varepsilon\) for \(0 \lt s \lt \delta\); for
+                        \(0 \lt t \lt \delta\) the average of \(\varphi\) over \([0, t]\)
+                        is then smaller than \(\varepsilon\) as well. Hence the difference
+                        quotient converges to \(g(x)\) as \(t \downarrow 0\). The limit
+                        exists at every \(x\), so \(f \in \mathcal{D}_A\) and
+                        \(A f = g\), which is the display of the theorem.
+                    </p>
+                </div>
+
+                <h3>Two Operators and What the Theorem Does Not Say</h3>
+
+                <p>
+                    The right-hand side of the theorem is a differential operator in its own
+                    right, defined by the same formula on any function that is twice
+                    differentiable, with no probability in sight. It deserves a name of its
+                    own, because from here on the two operators must be kept apart.
+                </p>
+
+                <div class="theorem" id="D-diffusion_operator">
+                    <span class="theorem-title">Definition: The Differential Operator of a Diffusion</span>
+                    <p>
+                        Let \(\mathbf{b}\) and \(\sigma\) be the coefficients of an
+                        It&ocirc; diffusion in \(\mathbb{R}^m\). The associated
+                        <strong>differential operator</strong> \(L\) acts on
+                        \(f \in C^2( \mathbb{R}^m )\) by
+                    </p>
+                    <p>
+                        \[
+                        L f
+                        = \sum_{i = 1}^{m} b_i\, \partial_i f
+                        + \tfrac{1}{2} \sum_{i, l = 1}^{m}
+                        \bigl( \sigma \sigma^\top \bigr)_{il}\, \partial_{il} f .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    In this notation the theorem reads:
+                    \(C_0^2( \mathbb{R}^m ) \subseteq \mathcal{D}_A\),
+                    and \(A\) and \(L\) agree there. Both halves are informative and neither
+                    is more than it says. The theorem does not assert that
+                    \(\mathcal{D}_A\) equals \(C_0^2\); the domain is larger, the nonzero
+                    constants already lying in it, and how much
+                    larger is a question the definition of \(A\) does not settle. Nor does
+                    it assert that \(A\) and \(L\) agree wherever both make sense. What it
+                    provides is a supply of functions on which the probabilistic operator is
+                    computable, and that supply is rich enough to determine everything the
+                    track will ask of \(A\).
+                </p>
+
+                <p>
+                    The second-order coefficients deserve a look. They form the matrix
+                    \(a = \sigma \sigma^\top\), which is symmetric, and for any vector
+                    \(\xi\) satisfies
+                    \(\xi^\top a\, \xi = | \sigma^\top \xi |^2 \geq 0\), so \(a\) is
+                    positive semidefinite at every point. The operator \(L\) is therefore
+                    elliptic in the weak sense, and non-degenerate exactly where
+                    \(\sigma\) has full row rank. Degeneracy is not pathology here but the
+                    normal state of affairs: whenever the noise has fewer components than
+                    the state, \(a\) is singular everywhere. Along the degenerate
+                    directions the noise injects no randomness directly, which is not to
+                    say the state stays deterministic along them: the drift can couple
+                    them to coordinates the noise does reach, and carry randomness in.
+                </p>
+
+                <p>
+                    One feature of the formula should be stated plainly, because it is the
+                    shape of everything that follows. The noise enters only through \(a\), never
+                    through \(\sigma\) itself. Two diffusions built with
+                    different noise coefficients but the same \(a\) have the same
+                    generator: the direction each component of the driving motion pushed
+                    in is information the operator has thrown away. Whether two such
+                    diffusions must in fact have the same law is a sharper question, and
+                    nothing on this page decides it; what is decided is that the
+                    operator, and everything built from the operator alone, carries no
+                    trace of how the noise was wired.
+                </p>
+
+            </section>
+
+            <section id="two-examples" class="section-content">
+                <h2>Two Diffusions and Their Operators</h2>
+
+                <p>
+                    Two instances show what the formula delivers. Both have coefficients simple
+                    enough that the computation is a matter of reading entries off a
+                    matrix, and both produce operators that were on this curriculum long
+                    before any stochastic process was.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: Brownian motion.</span>
+                    <p>
+                        Take the state and the noise to have the same number of components
+                        and let the equation be \(d X_t = d w_t\), so that
+                        \(\mathbf{b} = 0\) and \(\sigma = I_n\). The coefficients are
+                        Lipschitz, and the solution started at \(x\) is
+                        \(X_t = x + w_t\): Brownian motion begun at \(x\). Here
+                        \(\sigma \sigma^\top = I_n\), so the first-order sum is absent and
+                        the second-order sum keeps only its diagonal,
+                    </p>
+                    <p>
+                        \[
+                        A f
+                        = \tfrac{1}{2} \sum_{i = 1}^{n} \partial_{ii} f
+                        = \tfrac{1}{2} \Delta f ,
+                        \quad f \in C_0^2( \mathbb{R}^n ) ,
+                        \]
+                    </p>
+                    <p>
+                        with \(\Delta\) the Laplace operator. The generator of Brownian
+                        motion is half the Laplacian.
+                    </p>
+                </div>
+
+                <p>
+                    The factor of one half is not a blemish but the record of a convention
+                    made much earlier. Brownian motion was normalized so that \(w_t\) has
+                    variance \(t\) in each component, and the second-order coefficient of
+                    the generator is half that variance rate. Had the motion been scaled
+                    differently the constant would move with it. The
+                    <a href="../Calculus/fourier_pde_heat.html#D-heat_kernel" class="ref-link"><strong>heat kernel</strong></a>
+                    on the line makes the agreement visible: at diffusivity
+                    \(k = \tfrac{1}{2}\) its formula collapses to
+                    \(( 2 \pi t )^{-1/2} \exp( - x^2 / 2 t )\), which is precisely the
+                    density of \(w_t\). The operator computed here and the equation that
+                    kernel solves carry the same constant because they describe the same
+                    process.
+                </p>
+
+                <div class="proof">
+                    <span class="proof-title">Example: the graph of Brownian motion.</span>
+                    <p>
+                        Let \(w\) be one-dimensional and consider the pair consisting of a
+                        running clock and the motion itself,
+                        \(\widehat{S}_t = ( \tau_0 + \varepsilon t, x_0 + w_t )\) with
+                        \(\varepsilon \in \{ +1, -1 \}\). The
+                        <a href="ito_diffusions.html#T-space_time_extension" class="ref-link"><strong>space-time extension</strong></a>
+                        identifies this as an It&ocirc; diffusion of state dimension two and
+                        driving dimension one, with
+                    </p>
+                    <p>
+                        \[
+                        \widehat{\mathbf{b}}( \tau, x )
+                        = \begin{pmatrix} \varepsilon \\\\ 0 \end{pmatrix} ,
+                        \quad
+                        \widehat{\sigma}( \tau, x )
+                        = \begin{pmatrix} 0 \\\\ 1 \end{pmatrix} ,
+                        \quad
+                        \widehat{\sigma} \widehat{\sigma}^\top
+                        = \begin{pmatrix} 0 & 0 \\\\ 0 & 1 \end{pmatrix} ,
+                        \]
+                    </p>
+                    <p>
+                        the coefficients of the base diffusion being \(b = 0\) and
+                        \(\sigma = 1\). Only one entry of the second-order matrix survives,
+                        and only the first entry of the drift is nonzero, so for
+                        \(f = f( \tau, x ) \in C_0^2( \mathbb{R}^2 )\),
+                    </p>
+                    <p>
+                        \[
+                        A f
+                        = \varepsilon\, \partial_\tau f
+                        + \tfrac{1}{2}\, \partial_{xx} f .
+                        \]
+                    </p>
+                    <p>
+                        With \(\varepsilon = +1\) this is the backward heat operator;
+                        passing to \(L\), which extends the same formula to all of
+                        \(C^2\), the functions it annihilates are those
+                        satisfying
+                        \(\partial_\tau f = - \tfrac{1}{2} \partial_{xx} f\). With
+                        \(\varepsilon = -1\) the operator is the negative of the heat
+                        operator, and the functions annihilated are the solutions
+                        of the heat equation itself,
+                        \(\partial_\tau f = \tfrac{1}{2} \partial_{xx} f\).
+                    </p>
+                </div>
+
+                <p>
+                    This example is where the declared several-component reading is most
+                    heavily spent, the first having needed it only for the definition of
+                    the object, its solution being explicit.
+                    The space-time extension was proved to be a diffusion only in that
+                    reading, and the theorem of this page was applied to it as such. The
+                    computation itself is a matrix multiplication and owes nothing.
+                </p>
+
+                <p>
+                    The example also repays the trouble of having introduced the enlarged
+                    state at all. A derivative in the clock direction has appeared in the
+                    generator, yet nothing about the construction has become
+                    time-dependent. The first coordinate is a coordinate of the state like
+                    any other, the process moving along it at unit speed, and
+                    \(\partial_\tau\) is a spatial derivative of the enlarged problem.
+                    That is the mechanism by which a question with time in it becomes a
+                    question about a time-homogeneous object. The sign \(\varepsilon\)
+                    decides whether the clock of the enlarged state runs with the equation
+                    or against it, so the two operators above are two operators and not one
+                    written twice.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Operator Behind a Noise Schedule</h3>
+                    <p>
+                        <a href="ito_diffusions.html">The study of diffusions as a
+                        family</a> divided the sampling methods of machine learning by
+                        whether their dynamics watch the clock, and promised that a
+                        prescribed noise schedule could ride into the homogeneous framework
+                        as a clock coordinate. The second example above is that promise
+                        being kept in the smallest case, and it shows what the enlarged
+                        state buys. Provided the enlarged coefficient fields are
+                        Lipschitz in the enlarged variables jointly, a scheduled
+                        noising process is a diffusion in the sense of this page once
+                        time is made a coordinate, and the theorem above applies to
+                        it. That proviso is a genuine requirement and is stronger
+                        than what the solution theory alone asks: a drift that couples
+                        the schedule to the state, as the variance-preserving family
+                        does, fails it however smooth the schedule, while a schedule
+                        entering the noise coefficient alone can meet it. Where it
+                        holds, the generator carries a clock derivative alongside the
+                        second-order term, exactly as the example computed.
+                    </p>
+                    <p>
+                        The operator is not yet the thing such a model needs. What is
+                        wanted is the evolution of the density of the noised data, and the
+                        density is governed by the adjoint of the operator rather than by
+                        the operator itself. Nothing on this page identifies that adjoint or
+                        the equation it produces. What this page supplies is the object to
+                        take the adjoint of, which until now did not exist.
+                    </p>
+                </div>
+
+                <p>
+                    With the generator attached and computed, the identity behind it can be
+                    used at full strength. Its stopping time was specialized to a constant
+                    here, and that single choice was enough to produce the operator.
+                    Restoring the generality changes what the identity is for. Asked what
+                    it says when the clock is stopped at a moment read off the path, it
+                    converts the operator into a tool for computing quantities the theory
+                    could previously only declare well posed:
+                    <a href="dynkin_formula.html">the average of a function at an exit
+                    time, and the expected duration of the exit itself</a>.
+                </p>
+
+            </section>
+
+        </div>
+    </body>
+</html>
