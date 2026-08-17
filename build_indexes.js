@@ -136,8 +136,34 @@ function main() {
     }
 
     /* ---- Write -------------------------------------------------- */
-    fs.writeFileSync(OUT_INDEX,  JSON.stringify(index),     'utf-8');
-    fs.writeFileSync(OUT_ANCHOR, JSON.stringify(anchorMap), 'utf-8');
+    // Entry-per-line serialization: valid JSON, but each page/anchor
+    // occupies exactly one line so git diffs stay readable. Size cost
+    // vs fully minified output is the newlines only (~1%).
+    const indexText =
+        '{"meta":' + JSON.stringify(index.meta) + ',\n'
+        + '"pages":[\n'
+        + index.pages.map(e => JSON.stringify(e)).join(',\n')
+        + '\n],\n'
+        + '"nodes":[\n'
+        + index.nodes.map(n => JSON.stringify(n)).join(',\n')
+        + '\n]}\n';
+
+    const anchorText =
+        '{\n'
+        + Object.entries(anchorMap)
+            .map(([k, v]) => JSON.stringify(k) + ':' + JSON.stringify(v))
+            .join(',\n')
+        + '\n}\n';
+
+    fs.writeFileSync(OUT_INDEX,  indexText,  'utf-8');
+    fs.writeFileSync(OUT_ANCHOR, anchorText, 'utf-8');
+
+    // Round-trip guard: the hand-assembled text must parse back to
+    // the exact same objects we built.
+    if (JSON.stringify(JSON.parse(indexText)) !== JSON.stringify(index)
+        || JSON.stringify(JSON.parse(anchorText)) !== JSON.stringify(anchorMap)) {
+        fail('serialization round-trip mismatch');
+    }
 
     /* ---- Report (§8 item 8: sizes) ------------------------------ */
     const szC = fs.readFileSync(CURRICULUM, 'utf-8').length;
