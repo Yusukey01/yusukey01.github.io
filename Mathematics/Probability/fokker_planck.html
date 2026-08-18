@@ -1,0 +1,1376 @@
+---
+layout: default
+title: "The Fokker-Planck Equation"
+topic_id: prob-46
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Fokker-Planck Equation</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#backward">The Kolmogorov Backward Equation</a>
+            <a href="#forward">The Adjoint and the Forward Equation</a>
+            <a href="#stein">Stein's Identity</a>
+            <a href="#one-path-many-equations">One Path, Many Equations</a>
+        </div>
+
+        <div class="container">
+
+            <section id="backward" class="section-content">
+                <h2>The Kolmogorov Backward Equation</h2>
+
+                <p>
+                    An operator has been built and a debt recorded against it. The
+                    <a href="diffusion_generator.html#D-sde_generator" class="ref-link"><strong>generator</strong></a>
+                    of an It&ocirc; diffusion acts on functions of the state, and the study
+                    that produced it closed by conceding that a generative model needs a
+                    different object: not the moving average but the moving density, and the density
+                    answers to the adjoint of the operator rather than to the operator itself. This page identifies that adjoint and the equation it
+                    produces.
+                </p>
+
+                <p>
+                    The route has four stations. This section stays on the side of averages
+                    and proves the backward equation. The function
+                    \(( t, x ) \mapsto E^x[ f( X_t ) ]\) solves a partial differential
+                    equation driven by the generator, and it is the only bounded solution.
+                    The next section transposes the generator against an integral pairing,
+                    and the density of the diffusion inherits the transposed equation. That
+                    equation is the Fokker-Planck equation. A short third section isolates
+                    an integration-by-parts identity that the transposition leaves behind.
+                    The final section proves that an
+                    entire family of dynamics, deterministic at one end and noisy everywhere else,
+                    moves densities by one and the same equation.
+                </p>
+
+                <h3>The Setting</h3>
+
+                <p>
+                    Throughout the page \(X\) is a time-homogeneous
+                    <a href="ito_diffusions.html#D-ito_diffusion" class="ref-link"><strong>It&ocirc; diffusion</strong></a>
+                    with state space \(\mathbb{R}^m\), driven by an \(n\)-dimensional
+                    Brownian motion, with drift \(\mathbf{b}\) and noise coefficient
+                    \(\sigma\) Lipschitz on \(\mathbb{R}^m\). The expectation \(E^x\)
+                    carries the starting point in the superscript, in the
+                    <a href="ito_diffusions.html#markov-property">notation recorded with the Markov property</a>,
+                    and \(A\) denotes the generator with domain \(\mathcal{D}_A\), while
+                    \(L\) denotes the
+                    <a href="diffusion_generator.html#D-diffusion_operator" class="ref-link"><strong>differential operator</strong></a>
+                    built from the same coefficients. On compactly supported \(C^2\)
+                    functions the two agree, by the
+                    <a href="diffusion_generator.html#T-generator_of_ito_diffusion" class="ref-link"><strong>generator theorem</strong></a>.
+                    Off that class they must be kept apart, and this section is a place
+                    where the distinction earns its keep.
+                </p>
+
+                <p>
+                    The one-dimensional statements of the diffusion pages are read in
+                    several components throughout, under the
+                    <a href="ito_diffusions.html#space-time">several-component reading</a>
+                    recorded in the track. As on the generator and Dynkin pages, the debt is
+                    kept visible. Whenever a step leans on the declared reading rather than
+                    on a theorem proved in several components, the step says so.
+                </p>
+
+                <h3>The Theorem</h3>
+
+                <p>
+                    Fix \(f \in C_0^2( \mathbb{R}^m )\) and write
+                </p>
+
+                <p>
+                    \[
+                    u( t, x ) = E^x \bigl[ f( X_t ) \bigr] ,
+                    \quad t \geq 0 ,\ x \in \mathbb{R}^m .
+                    \]
+                </p>
+
+                <p>
+                    Two claims are made about \(u\). It solves an evolution equation in
+                    which the generator differentiates the starting point, and among bounded
+                    solutions it is the only one. The first claim uses \(A\) in its native
+                    form, as a limit of difference quotients, because \(u( t, \cdot )\) has
+                    no reason to be compactly supported and the second-order formula is not
+                    available for it. The second claim is stated with \(L\), because a
+                    competitor \(w\) is handed to us as a smooth function and the only sense
+                    in which it can be asked to solve the equation is the pointwise
+                    differential one.
+                </p>
+
+                <div class="theorem" id="T-kolmogorov_backward">
+                    <span class="theorem-title">Theorem: The Kolmogorov Backward Equation</span>
+                    <p>
+                        Let \(X\) be an It&ocirc; diffusion in \(\mathbb{R}^m\) with
+                        generator \(A\) and differential operator \(L\), let
+                        \(f \in C_0^2( \mathbb{R}^m )\), and let
+                        \(u( t, x ) = E^x[ f( X_t ) ]\).
+                    </p>
+                    <p>
+                        <strong>(a)</strong> For every \(t \geq 0\) the function
+                        \(u( t, \cdot )\) belongs to \(\mathcal{D}_A\), the function
+                        \(t \mapsto u( t, x )\) is continuously differentiable for every
+                        \(x\), and
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \frac{ \partial u }{ \partial t }( t, x )
+                        &= A \bigl( u( t, \cdot ) \bigr)( x ) , \\\\
+                        u( 0, x )
+                        &= f( x ) .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        <strong>(b)</strong> Let
+                        \(w : [ 0, \infty ) \times \mathbb{R}^m \to \mathbb{R}\) be bounded
+                        and twice continuously differentiable in the pair \(( t, x )\), and
+                        suppose
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \frac{ \partial w }{ \partial t }( t, x )
+                        &= L \bigl( w( t, \cdot ) \bigr)( x )
+                        \quad \text{on } ( 0, \infty ) \times \mathbb{R}^m , \\\\
+                        w( 0, x )
+                        &= f( x ) .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Then \(w = u\) on \([ 0, \infty ) \times \mathbb{R}^m\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1: an integral identity for the average.</strong><br>
+                        Fix \(x\) and \(t \gt 0\). The deterministic time \(t\) is a
+                        <a href="stopping_times.html#D-stopping_time" class="ref-link"><strong>stopping time</strong></a>
+                        for \(\{ \mathcal{F}^{(n)}_t \}\) with \(E^x[ t ] = t \lt \infty\), so
+                        <a href="dynkin_formula.html#T-dynkin_formula" class="ref-link"><strong>Dynkin's formula</strong></a>
+                        applies to \(f\) and gives
+                    </p>
+                    <p>
+                        \[
+                        u( t, x )
+                        = f( x )
+                        + E^x \Bigl[ \int_0^t A f( X_s )\, ds \Bigr] .
+                        \]
+                    </p>
+                    <p>
+                        The integrand is jointly measurable in \(( s, \omega )\). Each
+                        component of \(X\) is a continuous adapted real process, hence progressively
+                        measurable by the
+                        <a href="ito_formula.html#T-progressively_measurable_criteria" class="ref-link"><strong>progressive measurability criterion</strong></a>,
+                        the components assemble into a measurable \(\mathbb{R}^m\)-valued map by
+                        <a href="measure_probability.html#T-componentwise_measurability" class="ref-link"><strong>component-wise measurability</strong></a>,
+                        and \(A f\) is continuous, so the composition
+                        \(( s, \omega ) \mapsto A f( X_s( \omega ) )\) is jointly
+                        measurable. It is also bounded. The function \(A f\) is continuous
+                        with support inside the support of \(f\), by the second-order
+                        formula of the generator theorem, so
+                        \(\| A f \|_\infty \lt \infty\). The product measure of Lebesgue
+                        measure on \([ 0, t ]\) with \(\mathbb{P}\) is finite, so the
+                        bounded integrand is integrable against it, and
+                        <a href="limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>
+                        exchanges the expectation with the time integral:
+                    </p>
+                    <p>
+                        \[
+                        u( t, x )
+                        = f( x )
+                        + \int_0^t E^x \bigl[ A f( X_s ) \bigr]\, ds .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 2: the integrand is continuous in time.</strong><br>
+                        Write \(g( s ) = E^x[ A f( X_s ) ]\). For almost every path the map
+                        \(s \mapsto A f( X_s )\) is continuous, because the path is
+                        continuous and \(A f\) is. The absolute value is dominated by the
+                        constant \(\| A f \|_\infty\), which is integrable with respect to
+                        \(\mathbb{P}\), so the
+                        <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        applies along any sequence \(s_k \to s\) and shows that \(g\) is
+                        continuous on \([ 0, \infty )\). The fundamental theorem of calculus
+                        then upgrades the integral identity of Step 1. The map
+                        \(t \mapsto u( t, x )\) is continuously differentiable, with
+                    </p>
+                    <p>
+                        \[
+                        \frac{ \partial u }{ \partial t }( t, x )
+                        = E^x \bigl[ A f( X_t ) \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        Setting \(t = 0\) in the definition of \(u\) gives
+                        \(u( 0, x ) = E^x[ f( X_0 ) ] = f( x )\), since the diffusion starts
+                        at \(x\).
+                    </p>
+                    <p>
+                        <strong>Step 3: membership in the domain.</strong><br> Fix
+                        \(t \geq 0\). The
+                        <a href="ito_diffusions.html#T-markov_property_diffusion" class="ref-link"><strong>Markov property</strong></a>,
+                        read in several components as declared, asserts two things about the
+                        average of the bounded Borel function \(f\): the map
+                        \(y \mapsto E^y[ f( X_t ) ] = u( t, y )\) is itself bounded and
+                        Borel, and for every \(r \geq 0\),
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E} \bigl[ f( X^x_{t+r} ) \bigm| \mathcal{F}_r \bigr]
+                        = u( t, X^x_r )
+                        \quad \text{almost surely.}
+                        \]
+                    </p>
+                    <p>
+                        Taking expectations on both sides and applying the
+                        <a href="conditional_expectation.html#T-ce_tower" class="ref-link"><strong>tower property</strong></a>
+                        to the left side collapses the conditioning:
+                    </p>
+                    <p>
+                        \[
+                        E^x \bigl[ u( t, X_r ) \bigr]
+                        = E^x \bigl[ f( X_{t+r} ) \bigr]
+                        = u( t + r, x ) .
+                        \]
+                    </p>
+                    <p>
+                        The difference quotient that defines the generator of
+                        \(u( t, \cdot )\) at \(x\) is therefore a difference quotient of
+                        \(u\) in its time slot:
+                    </p>
+                    <p>
+                        \[
+                        \frac{ E^x[ u( t, X_r ) ] - u( t, x ) }{ r }
+                        = \frac{ u( t + r, x ) - u( t, x ) }{ r } .
+                        \]
+                    </p>
+                    <p>
+                        As \(r \downarrow 0\) the right side converges to the time
+                        derivative established in Step 2. The function \(u( t, \cdot )\) is
+                        bounded and Borel, so the integrability demanded by the
+                        <a href="diffusion_generator.html#D-sde_generator" class="ref-link"><strong>definition of the generator</strong></a>
+                        holds, the limit of the difference quotient exists at every \(x\),
+                        and
+                    </p>
+                    <p>
+                        \[
+                        A \bigl( u( t, \cdot ) \bigr)( x )
+                        = \frac{ \partial u }{ \partial t }( t, x ) .
+                        \]
+                    </p>
+                    <p>
+                        This proves part (a).
+                    </p>
+                    <p>
+                        <strong>Step 4: the space-time bridge.</strong><br> For part (b),
+                        fix \(s \gt 0\) and \(x \in \mathbb{R}^m\). The case \(s = 0\) is
+                        the shared initial condition. The
+                        <a href="ito_diffusions.html#T-space_time_extension" class="ref-link"><strong>space-time extension</strong></a>
+                        with sign \(\varepsilon = -1\) and offset \(\tau_0 = s\), read in
+                        several components as declared, makes
+                    </p>
+                    <p>
+                        \[
+                        \widehat{S}_t = \bigl( s - t , X^x_t \bigr) ,
+                        \quad t \geq 0 ,
+                        \]
+                    </p>
+                    <p>
+                        an It&ocirc; diffusion in \(\mathbb{R}^{1+m}\) with drift
+                        \(( -1, \mathbf{b} )\), noise coefficient the \(( 1 + m ) \times n\)
+                        matrix whose first row vanishes and whose remaining rows are
+                        \(\sigma\), and starting point \(( s, x )\). Writing \(\tau\) for
+                        the first coordinate of the enlarged state, the differential
+                        operator of \(\widehat{S}\) has drift part
+                        \(- \partial_\tau + \sum_i b_i \partial_i\) and second-order part
+                        governed by the enlarged squared coefficient, whose first row and
+                        first column vanish because the first row of the noise coefficient
+                        does. Hence for \(v \in C^2( \mathbb{R}^{1+m} )\),
+                    </p>
+                    <p>
+                        \[
+                        \widehat{L} v( \tau, x )
+                        = - \frac{ \partial v }{ \partial \tau }( \tau, x )
+                        + L \bigl( v( \tau, \cdot ) \bigr)( x ) .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 5: a bounded region the clock must leave.</strong><br>
+                        Fix \(\delta \in ( 0, s )\) and \(R \gt | x |\), and set
+                    </p>
+                    <p>
+                        \[
+                        U = ( \delta, s + 1 ) \times B_R
+                        \subseteq \mathbb{R}^{1+m} ,
+                        \]
+                    </p>
+                    <p>
+                        an open bounded set containing the starting point \(( s, x )\). Let
+                        \(\tau_U\) be the
+                        <a href="stopping_times.html#T-first_exit_stopping_time" class="ref-link"><strong>first exit time</strong></a>
+                        of \(\widehat{S}\) from \(U\). The first coordinate of
+                        \(\widehat{S}_t\) is \(s - t\), which equals \(\delta\) at time
+                        \(t = s - \delta\), and a point whose first coordinate is \(\delta\)
+                        lies outside \(U\). Hence \(\tau_U \leq s - \delta\) on every path,
+                        and in particular
+                        \(E^{( s, x )}[ \tau_U ] \leq s - \delta \lt \infty\). The clock
+                        coordinate, moving at unit speed, guarantees for free the finite
+                        mean that a state coordinate alone could not.
+                    </p>
+                    <p>
+                        <strong>Step 6: a compactly supported twin of the competitor.</strong><br>
+                        The competitor \(w\) lives on \([ 0, \infty ) \times \mathbb{R}^m\)
+                        and cannot be handed directly to a formula that expects a function
+                        on all of \(\mathbb{R}^{1+m}\). The
+                        <a href="../Calculus/partitions_of_unity.html#T-smooth_bump_function_Rn" class="ref-link"><strong>smooth bump function</strong></a>
+                        repairs this. In one dimension, with radii
+                        \(r_1 = \tfrac{1}{2}( s + 1 - \delta )\) and
+                        \(r_2 = r_1 + \tfrac{\delta}{2}\), translation of the bump by
+                        \(c = \tfrac{1}{2}( \delta + s + 1 )\) produces a smooth
+                        \(\chi : \mathbb{R} \to \mathbb{R}\) equal to \(1\) on
+                        \([ \delta, s + 1 ]\) and vanishing outside
+                        \(( \tfrac{\delta}{2}, s + 1 + \tfrac{\delta}{2} )\), and
+                        translation preserves smoothness. In \(m\) dimensions, radii \(R\)
+                        and \(R + 1\) produce a smooth \(\varphi\) equal to \(1\) on
+                        \(\overline{B_R}\) and vanishing outside \(B_{R+1}\). The product
+                        \(\psi( \tau, x ) = \chi( \tau )\, \varphi( x )\) is smooth, equals
+                        \(1\) on \([ \delta, s + 1 ] \times \overline{B_R}\), and is
+                        supported inside the compact set
+                        \([ \tfrac{\delta}{2},\, s + 1 + \tfrac{\delta}{2} ] \times \overline{B_{R+1}}\). Define
+                    </p>
+                    <p>
+                        \[
+                        \widetilde{w}( \tau, x )
+                        = \begin{cases}
+                        \psi( \tau, x )\, w( \tau, x ) , & \tau \gt 0 , \\
+                        0 & \tau \leq 0 .
+                        \end{cases}
+                        \]
+                    </p>
+                    <p>
+                        On the open set \(\{ \tau \gt \tfrac{\delta}{2} \}\) both factors
+                        are twice continuously differentiable, and on the open set
+                        \(\{ \tau \lt \tfrac{\delta}{2} \} \cup \{ | x | \gt R + 1 \}\) the
+                        function vanishes identically because \(\psi\) does. These two open
+                        sets cover \(\mathbb{R}^{1+m}\), so
+                        \(\widetilde{w} \in C^2( \mathbb{R}^{1+m} )\), and it is bounded by
+                        \(\| w \|_\infty\).
+                    </p>
+                    <p>
+                        <strong>Step 7: Dynkin on the bounded region.</strong><br> The set
+                        \(U\) is open and bounded, the exit time has finite mean by Step 5,
+                        and \(\widetilde{w}\) is \(C^2\) on \(\mathbb{R}^{1+m}\), so
+                        <a href="dynkin_formula.html#T-dynkin_c2" class="ref-link"><strong>Dynkin's formula on a bounded region</strong></a>
+                        applies to \(\widehat{S}\), \(U\), and \(\widetilde{w}\):
+                    </p>
+                    <p>
+                        \[
+                        E^{( s, x )} \bigl[ \widetilde{w}( \widehat{S}_{\tau_U} ) \bigr]
+                        = \widetilde{w}( s, x )
+                        + E^{( s, x )} \Bigl[ \int_0^{\tau_U}
+                        \widehat{L} \widetilde{w}( \widehat{S}_r )\, dr \Bigr] .
+                        \]
+                    </p>
+                    <p>
+                        Each ingredient now simplifies. The set \(U\) is open and
+                        \(\psi \equiv 1\) on the larger set
+                        \([ \delta, s + 1 ] \times \overline{B_R}\), so on \(U\) the
+                        functions \(\widetilde{w}\) and \(w\) agree on an open neighborhood
+                        of every point, and their derivatives agree there too. For
+                        \(r \lt \tau_U\) the point \(\widehat{S}_r\) lies in \(U\), where
+                        the first coordinate lies in
+                        \(( \delta, s + 1 ) \subseteq ( 0, \infty )\), so the equation
+                        satisfied by \(w\) applies and
+                    </p>
+                    <p>
+                        \[
+                        \widehat{L} \widetilde{w}( \widehat{S}_r )
+                        = \widehat{L} w( \widehat{S}_r )
+                        = 0 .
+                        \]
+                    </p>
+                    <p>
+                        The integral term vanishes. At the starting point,
+                        \(( s, x ) \in U\) gives \(\psi( s, x ) = 1\) and
+                        \(\widetilde{w}( s, x ) = w( s, x )\). At the exit, path continuity
+                        places \(\widehat{S}_{\tau_U}\) in
+                        \(\overline{U} \subseteq [ \delta, s + 1 ] \times \overline{B_R}\),
+                        where \(\psi \equiv 1\), so
+                        \(\widetilde{w}( \widehat{S}_{\tau_U} ) = w( \widehat{S}_{\tau_U} )\).
+                        The formula collapses to
+                    </p>
+                    <p>
+                        \[
+                        w( s, x )
+                        = E^{( s, x )} \bigl[ w( \widehat{S}_{\tau_U} ) \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 8: send the ball to infinity, then the floor to zero.</strong><br>
+                        Hold \(\delta\) and let \(R \to \infty\) through integers. For
+                        almost every path the supremum \(\sup_{ 0 \leq r \leq s } | X_r |\)
+                        is finite, because the path is continuous on a compact interval.
+                        Once \(R\) exceeds that supremum the state coordinate cannot exit
+                        \(B_R\) before time \(s - \delta\), so the exit is through the clock
+                        face: \(\tau_U = s - \delta\) and
+                        \(\widehat{S}_{\tau_U} = ( \delta, X_{s-\delta} )\). The integrand
+                        \(w( \widehat{S}_{\tau_U} )\) is dominated by the constant
+                        \(\| w \|_\infty\), so the
+                        <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        gives, the expectation now written under \(E^x\) because the enlarged
+                        process is built pathwise from \(X^x\) on one probability space,
+                    </p>
+                    <p>
+                        \[
+                        w( s, x )
+                        = E^x \bigl[ w( \delta, X_{s-\delta} ) \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        Now let \(\delta \downarrow 0\). Path continuity gives
+                        \(X_{s-\delta} \to X_s\) almost surely, continuity of \(w\) on
+                        \([ 0, \infty ) \times \mathbb{R}^m\) gives
+                        \(w( \delta, X_{s-\delta} ) \to w( 0, X_s ) = f( X_s )\) almost
+                        surely, and the same domination by \(\| w \|_\infty\) lets dominated
+                        convergence pass the limit through the expectation:
+                    </p>
+                    <p>
+                        \[
+                        w( s, x )
+                        = E^x \bigl[ f( X_s ) \bigr]
+                        = u( s, x ) .
+                        \]
+                    </p>
+                    <p>
+                        This proves part (b).
+                    </p>
+                </div>
+
+                <p>
+                    Two remarks on the hypotheses. First, the operators. Part (a) speaks of
+                    \(A\) and part (b) of \(L\), and the split is forced. The function
+                    \(u( t, \cdot )\) is bounded and Borel but carries no smoothness from
+                    the construction, so the only meaning available for applying an operator
+                    to it is the difference quotient that defines \(A\), and part (a)
+                    delivers exactly that. The competitor \(w\) is smooth by hypothesis but
+                    need not lie in \(\mathcal{D}_A\), so the only equation it can be asked
+                    to satisfy is the pointwise differential one, and that is the equation
+                    written with \(L\). On \(C_0^2\) the two operators coincide, but neither
+                    function in the theorem is known to be in \(C_0^2\), and the theorem is
+                    honest about which operator acts where.
+                </p>
+
+                <p>
+                    Second, the smoothness demanded of the competitor. Classical
+                    formulations of the uniqueness half ask for one time derivative and two
+                    space derivatives. The statement above asks for two continuous
+                    derivatives in the pair, a deliberately stronger hypothesis, because
+                    every tool in the track that expands a function of the enlarged state,
+                    from the general It&ocirc; formula through both Dynkin formulas, is
+                    calibrated to \(C^2\) of all its arguments jointly. Weakening the time
+                    regularity would require a smoothing argument
+                    in the clock variable that has not been developed here, and the statement is issued
+                    at the strength the proof actually establishes.
+                </p>
+
+                <h3>A Remark on the Operator Picture</h3>
+
+                <p>
+                    The backward equation invites an operator reading. Write
+                    \(( T_t f )( x ) = E^x[ f( X_t ) ]\), so that \(T_0\) is the identity
+                    and the theorem says \(\partial_t T_t f = A\, T_t f\) with \(T_t f\) in
+                    the domain of \(A\) for every \(t\). Solving the equation formally
+                    suggests \(T_t = e^{ t A }\), an exponential of the generator, and the
+                    suggestion is genuinely formal. The operator \(A\) is unbounded, and no
+                    convergent power series is being claimed. The bounded-operator theory
+                    where the corresponding object is rigorous is the
+                    <a href="../Calculus/spectral_theory.html#D-resolvent_spectrum" class="ref-link"><strong>resolvent</strong></a>
+                    \(( \alpha - A )^{-1}\) of spectral theory, and the probabilistic
+                    counterpart is the Laplace transform of the trajectory,
+                    \(R_\alpha g( x ) = E^x \bigl[ \int_0^\infty e^{ - \alpha t } g( X_t )\, dt \bigr]\),
+                    which inverts \(\alpha - A\) on suitable functions. Developing that
+                    inversion is analysis we do not need for the equation this page is
+                    after, and we leave the resolvent as a signpost. One ingredient of that
+                    theory is worth naming because the track already owns it. The continuity
+                    of \(x \mapsto E^x[ f( X_t ) ]\) for Lipschitz \(f\) follows from the
+                    <a href="ito_diffusions.html#T-start_stability_bound" class="ref-link"><strong>start stability bound</strong></a>,
+                    read on the horizon \(T = t\), which controls the mean-square distance
+                    between two solutions through the distance between their starting
+                    points.
+                </p>
+
+            </section>
+
+            <section id="forward" class="section-content">
+                <h2>The Adjoint and the Forward Equation</h2>
+
+                <p>
+                    The backward equation moves a test function and holds the law still. A
+                    generative model wants the opposite motion. It fixes the questions once
+                    and for all and moves the density of the answers, and the two motions
+                    are paired by an integral. For a bounded Borel \(\varphi\) and a law
+                    with a density \(p\), the average \(E^x[ \varphi( X_t ) ]\) is the
+                    integral of \(\varphi\) against \(p\), and an operator acting on the
+                    \(\varphi\) slot can be traded for an operator acting on the \(p\) slot
+                    by moving derivatives across the integral sign. The operator that
+                    appears on the other side is the adjoint, and the equation the density
+                    inherits is the Fokker-Planck equation. This section carries out the
+                    trade in full.
+                </p>
+
+                <p>
+                    From here to the end of the page the coefficients carry more smoothness
+                    than the Lipschitz bound of the setting. Each component \(b_i\) is
+                    continuously differentiable, and each entry of the matrix
+                    \(\sigma \sigma^\top\) is twice continuously differentiable. We
+                    abbreviate \(a_{il} = ( \sigma \sigma^\top )_{il}\), and we write
+                </p>
+
+                <p>
+                    \[
+                    \langle \varphi, \psi \rangle
+                    = \int_{\mathbb{R}^m} \varphi( y )\, \psi( y )\, dy
+                    \]
+                </p>
+
+                <p>
+                    for the integral pairing of two real functions on \(\mathbb{R}^m\),
+                    whenever the product is integrable.
+                </p>
+
+                <h3>The Formal Adjoint</h3>
+
+                <p>
+                    On a Hilbert space, a bounded operator has an
+                    <a href="../Calculus/spectral_theory.html#T-existence_of_adjoint" class="ref-link"><strong>adjoint</strong></a>,
+                    unique and itself bounded, characterized by moving the operator across
+                    the inner product. The differential operator \(L\) is not a bounded
+                    operator on any \(L^2\) space, and no operator-theoretic domain is
+                    claimed for what follows. The definition below is formal in a precise
+                    and limited sense. It names the differential expression that the duality
+                    theorem will pair with \(L\), and everything asserted about it is the
+                    pointwise identity that the theorem proves.
+                </p>
+
+                <div class="theorem" id="D-formal_adjoint_generator">
+                    <span class="theorem-title">Definition: The Formal Adjoint of the Diffusion Operator</span>
+                    <p>
+                        Let \(\mathbf{b} = ( b_1, \ldots, b_m )\) be a vector field on
+                        \(\mathbb{R}^m\) with continuously differentiable components, and let
+                        \(a = ( a_{il} )\) be a matrix of twice continuously differentiable
+                        functions on \(\mathbb{R}^m\). The formal adjoint associated with the pair
+                        \(( \mathbf{b}, a )\) is the operator \(L^*\) acting on
+                        \(\psi \in C^2( \mathbb{R}^m )\) by the formula below. When \(\mathbf{b}\)
+                        and \(\sigma\) are the coefficients of an It&ocirc; diffusion meeting this
+                        regularity and \(a = \sigma \sigma^\top\), we call \(L^*\) the formal
+                        adjoint of the
+                        <a href="diffusion_generator.html#D-diffusion_operator" class="ref-link"><strong>differential operator</strong></a>
+                        \(L\).
+                    </p>
+                    <p>
+                        \[
+                        L^* \psi
+                        = \tfrac{1}{2} \sum_{i, l = 1}^{m}
+                        \partial_{il} \bigl( a_{il}\, \psi \bigr)
+                        - \sum_{i = 1}^{m}
+                        \partial_i \bigl( b_i\, \psi \bigr) .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    The derivatives now fall on the product of the coefficient with the
+                    function, not on the function alone, and the drift term has changed
+                    sign. Both features are what two rounds of integration by parts leave
+                    behind, as the proof below makes exact. The regularity demanded of the
+                    coefficients is exactly what makes every derivative in the formula exist
+                    and be continuous. The product \(a_{il} \psi\) is twice continuously
+                    differentiable and \(b_i \psi\) once.
+                </p>
+
+                <div class="theorem" id="T-generator_adjoint_duality">
+                    <span class="theorem-title">Theorem: Duality of the Diffusion Operator and Its Adjoint</span>
+                    <p>
+                        Under the standing regularity, for every
+                        \(\varphi \in C_0^2( \mathbb{R}^m )\) and every
+                        \(\psi \in C^2( \mathbb{R}^m )\),
+                    </p>
+                    <p>
+                        \[
+                        \langle L \varphi, \psi \rangle
+                        = \langle \varphi, L^* \psi \rangle ,
+                        \]
+                    </p>
+                    <p>
+                        both pairings being integrals of continuous functions supported
+                        inside the support of \(\varphi\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1: complete derivatives integrate to zero.</strong><br>
+                        Let \(h \in C^1( \mathbb{R}^m )\) have compact support, and fix a
+                        coordinate \(i\). The function \(\partial_i h\) is continuous with
+                        compact support, hence bounded and integrable, so
+                        <a href="limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>
+                        writes its integral as an iterated one, integrating first along the
+                        \(i\)-th coordinate line. Reading Lebesgue measure on \(\mathbb{R}^m\) as the
+                        product of the \(i\)-th line factor with the remaining coordinates rests on
+                        the same monotone-class machinery that the track has already taken on faith
+                        for product measures, and we extend that act of trust to this one
+                        identification. On each such line the map
+                        \(y_i \mapsto h( y )\) is continuously differentiable and vanishes
+                        outside a compact interval, so the fundamental theorem of calculus
+                        gives
+                    </p>
+                    <p>
+                        \[
+                        \int_{\mathbb{R}} \partial_i h( y )\, dy_i = 0 ,
+                        \]
+                    </p>
+                    <p>
+                        and integrating this zero over the remaining coordinates gives
+                        \(\int_{\mathbb{R}^m} \partial_i h( y )\, dy = 0\).
+                    </p>
+                    <p>
+                        <strong>Step 2: the first-order term moves with one sign change.</strong><br>
+                        Fix \(i\) and apply Step 1 to \(h = b_i\, \varphi\, \psi\), which is
+                        continuously differentiable because each factor is, and compactly
+                        supported because \(\varphi\) is. The product rule expands
+                        \(\partial_i h\) into three terms, and the vanishing of the total
+                        integral rearranges into
+                    </p>
+                    <p>
+                        \[
+                        \int_{\mathbb{R}^m} b_i\, ( \partial_i \varphi )\, \psi\, dy
+                        = - \int_{\mathbb{R}^m} \varphi\,
+                        \partial_i \bigl( b_i\, \psi \bigr)\, dy .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 3: the second-order term moves with two.</strong><br>
+                        Fix \(i\) and \(l\). First apply Step 1 to
+                        \(h = ( a_{il}\, \psi )\, \partial_l \varphi\), which is \(C^1\)
+                        with compact support because \(a_{il} \psi\) is \(C^2\) and
+                        \(\partial_l \varphi\) is \(C^1\) with compact support. Expanding
+                        \(\partial_i h\) by the product rule and rearranging,
+                    </p>
+                    <p>
+                        \[
+                        \int_{\mathbb{R}^m} a_{il}\, \psi\,
+                        ( \partial_{il} \varphi )\, dy
+                        = - \int_{\mathbb{R}^m}
+                        \partial_i \bigl( a_{il}\, \psi \bigr)\,
+                        ( \partial_l \varphi )\, dy .
+                        \]
+                    </p>
+                    <p>
+                        Then apply Step 1 in the coordinate \(l\) to
+                        \(h = \varphi\, \partial_i ( a_{il} \psi )\), again \(C^1\) with
+                        compact support, and rearrange once more:
+                    </p>
+                    <p>
+                        \[
+                        - \int_{\mathbb{R}^m}
+                        \partial_i \bigl( a_{il}\, \psi \bigr)\,
+                        ( \partial_l \varphi )\, dy
+                        = \int_{\mathbb{R}^m} \varphi\,
+                        \partial_{li} \bigl( a_{il}\, \psi \bigr)\, dy .
+                        \]
+                    </p>
+                    <p>
+                        The function \(a_{il} \psi\) is twice continuously differentiable,
+                        so its mixed partial derivatives in the coordinates \(i\) and \(l\)
+                        are equal, and the right side equals
+                        \(\int \varphi\, \partial_{il}( a_{il} \psi )\, dy\).
+                    </p>
+                    <p>
+                        <strong>Step 4: assemble.</strong><br> Multiply the conclusion of
+                        Step 3 by \(\tfrac{1}{2}\), sum over \(i\) and \(l\), sum the
+                        conclusion of Step 2 over \(i\), and add. The left sides assemble to
+                        \(\langle L \varphi, \psi \rangle\) by the formula for \(L\), and
+                        the right sides assemble to \(\langle \varphi, L^* \psi \rangle\) by
+                        the formula for \(L^*\). Every integrand along the way is continuous
+                        and vanishes off the support of \(\varphi\), so every integral
+                        converges absolutely.
+                    </p>
+                </div>
+
+                <h3>The Fokker-Planck Equation</h3>
+
+                <p>
+                    The duality is the entire mechanism. What remains is to feed it the
+                    density of the diffusion and read off the equation. The existence of a
+                    density, and its smoothness, are genuine analytic facts about the
+                    transition law that this track has not built, and the theorem below
+                    assumes them outright, in the same spirit in which the uniqueness half
+                    of the backward theorem was handed its competitor. What the theorem
+                    proves is that any density smooth enough to be differentiated has no
+                    choice about which equation to satisfy.
+                </p>
+
+                <div class="theorem" id="T-fokker_planck">
+                    <span class="theorem-title">Theorem: The Fokker-Planck Equation</span>
+                    <p>
+                        Let \(X\) be an It&ocirc; diffusion in \(\mathbb{R}^m\) whose
+                        coefficients satisfy the standing regularity, and fix
+                        \(x \in \mathbb{R}^m\). Assume that there is a non-negative function
+                        \(p\) such that \(( t, y ) \mapsto p_t( x, y )\) is continuous on
+                        \(( 0, \infty ) \times \mathbb{R}^m\) together with its first time
+                        derivative and its first and second space derivatives, and such that
+                    </p>
+                    <p>
+                        \[
+                        P^x \bigl( X_t \in B \bigr)
+                        = \int_B p_t( x, y )\, dy
+                        \]
+                    </p>
+                    <p>
+                        for every \(t \gt 0\) and every Borel set
+                        \(B \subseteq \mathbb{R}^m\). Then
+                    </p>
+                    <p>
+                        \[
+                        \frac{ \partial }{ \partial t }\, p_t( x, y )
+                        = L^* \bigl( p_t( x, \cdot ) \bigr)( y )
+                        \quad \text{on } ( 0, \infty ) \times \mathbb{R}^m .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1: integrals against the density.</strong><br> For
+                        \(t \gt 0\) and a non-negative Borel
+                        \(g : \mathbb{R}^m \to \mathbb{R}\), the identity
+                        \(E^x[ g( X_t ) ] = \int g( y )\, p_t( x, y )\, dy\) holds. It is
+                        the hypothesis when \(g\) is an indicator, extends to simple
+                        functions by linearity, and passes to arbitrary non-negative \(g\)
+                        by monotone limits of simple functions on both sides. Splitting a
+                        bounded Borel \(g\) into positive and negative parts extends it to
+                        all bounded Borel functions, both sides being finite because the
+                        density integrates to one.
+                    </p>
+                    <p>
+                        <strong>Step 2: the average evolves.</strong><br> Fix
+                        \(\varphi \in C_0^2( \mathbb{R}^m )\). Steps 1 and 2
+                        of the proof of the backward theorem, which used only Dynkin's formula, the
+                        joint measurability of the integrand, Fubini, and dominated convergence,
+                        established that
+                        \(t \mapsto E^x[ \varphi( X_t ) ]\) is continuously differentiable
+                        with
+                    </p>
+                    <p>
+                        \[
+                        \frac{ d }{ dt }\, E^x \bigl[ \varphi( X_t ) \bigr]
+                        = E^x \bigl[ A \varphi( X_t ) \bigr] ,
+                        \]
+                    </p>
+                    <p>
+                        and we take that conclusion verbatim. On \(C_0^2\) the
+                        <a href="diffusion_generator.html#T-generator_of_ito_diffusion" class="ref-link"><strong>generator theorem</strong></a>
+                        identifies \(A \varphi\) with \(L \varphi\), a continuous function
+                        supported inside the support of \(\varphi\).
+                    </p>
+                    <p>
+                        <strong>Step 3: transpose.</strong><br> Fix \(t \gt 0\). Both
+                        \(\varphi\) and \(L \varphi\) are bounded and Borel, so Step 1
+                        rewrites both sides of Step 2 as integrals against the density, and
+                        the
+                        <a href="#T-generator_adjoint_duality" class="ref-link"><strong>duality theorem</strong></a>
+                        with \(\psi = p_t( x, \cdot ) \in C^2( \mathbb{R}^m )\) moves the
+                        operator across the pairing:
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        E^x \bigl[ L \varphi( X_t ) \bigr]
+                        &= \bigl\langle L \varphi,\, p_t( x, \cdot ) \bigr\rangle \\\\
+                        &= \bigl\langle \varphi,\, L^* \bigl( p_t( x, \cdot ) \bigr) \bigr\rangle .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 4: differentiate under the integral.</strong><br> Fix
+                        \(t \gt 0\) and choose \(0 \lt t_0 \lt t \lt t_1\). On the compact
+                        set \([ t_0, t_1 ] \times \operatorname{supp} \varphi\) the
+                        derivative \(\partial_t p\) is continuous, hence bounded by some
+                        \(M\). For \(0 \lt | h |\) small enough that
+                        \(t + h \in [ t_0, t_1 ]\), the mean value theorem bounds the
+                        difference quotient of \(p\) in its time slot by \(M\) at every
+                        \(y \in \operatorname{supp} \varphi\). The quotient converges
+                        pointwise to \(\partial_t p_t( x, y )\), the product with
+                        \(\varphi\) is dominated by \(M \| \varphi \|_\infty\) times the
+                        indicator of the compact support, which is Lebesgue integrable, so
+                        the
+                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        passes the time derivative through the pairing:
+                    </p>
+                    <p>
+                        \[
+                        \frac{ d }{ dt }
+                        \bigl\langle \varphi,\, p_t( x, \cdot ) \bigr\rangle
+                        = \bigl\langle \varphi,\,
+                        \partial_t\, p_t( x, \cdot ) \bigr\rangle .
+                        \]
+                    </p>
+                    <p>
+                        The left side is \(\tfrac{d}{dt} E^x[ \varphi( X_t ) ]\) by Step 1,
+                        which Steps 2 and 3 computed. Combining,
+                    </p>
+                    <p>
+                        \[
+                        \bigl\langle \varphi,\,
+                        \partial_t\, p_t( x, \cdot )
+                        - L^* \bigl( p_t( x, \cdot ) \bigr) \bigr\rangle
+                        = 0
+                        \quad \text{for every }
+                        \varphi \in C_0^2( \mathbb{R}^m ) .
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 5: localize.</strong><br> Fix \(t \gt 0\) and write
+                        \(g( y ) = \partial_t\, p_t( x, y ) - L^* ( p_t( x, \cdot ) )( y )\),
+                        a continuous function because \(p\) is \(C^2\) in the pair and the
+                        coefficients carry the standing regularity. Suppose
+                        \(g( y_0 ) \neq 0\) for some \(y_0\), without loss of generality
+                        \(g( y_0 ) \gt 0\). Continuity provides \(r \gt 0\) with
+                        \(g \gt \tfrac{1}{2}\, g( y_0 )\) on the closed ball
+                        \(\overline{ B_r( y_0 ) }\). The
+                        <a href="../Calculus/partitions_of_unity.html#T-smooth_bump_function_Rn" class="ref-link"><strong>smooth bump function</strong></a>
+                        with radii \(\tfrac{r}{2}\) and \(r\), translated to be centered at
+                        \(y_0\) as in Step 6 of the uniqueness proof, is a smooth
+                        \(\varphi\) with \(0 \leq \varphi \leq 1\), equal to \(1\) on
+                        \(\overline{ B_{r/2}( y_0 ) }\), and supported in \(\overline{ B_r( y_0 ) }\). Then \(\varphi \in C_0^2\) and
+                    </p>
+                    <p>
+                        \[
+                        \langle \varphi, g \rangle
+                        \geq \tfrac{1}{2}\, g( y_0 )\,
+                        \bigl| B_{r/2}( y_0 ) \bigr|
+                        \gt 0 ,
+                        \]
+                    </p>
+                    <p>
+                        where \(| B_{r/2}( y_0 ) |\) is the Lebesgue measure of the smaller
+                        ball, positive because the ball contains a cube of positive side.
+                        This contradicts Step 4, so \(g \equiv 0\) on
+                        \(\mathbb{R}^m\), for every \(t \gt 0\), and the asserted equation holds.
+                    </p>
+                </div>
+
+                <p>
+                    The equation deserves its two names. Read through the pairing it is the
+                    transpose of the backward equation, and the pair of them is one fact
+                    seen from two sides: averages of test functions ride the generator
+                    forward in the \(x\) slot, and densities ride the adjoint forward in the
+                    \(y\) slot. Read on its own it is a conservation law with a diffusion
+                    term, and the next two sections take it in that second reading.
+                </p>
+
+                <h3>The Heat Equation as the Zero-Drift Case</h3>
+
+                <p>
+                    One choice of coefficients turns the formula into an old acquaintance.
+                    Take \(\mathbf{b} = 0\) and \(\sigma\) the identity matrix, so that the
+                    diffusion is Brownian motion started at \(x\) and
+                    \(a_{il} = \delta_{il}\). The coefficients are constant, so all
+                    derivatives fall on the density alone, the first-order term vanishes,
+                    and
+                </p>
+
+                <p>
+                    \[
+                    L^* \psi
+                    = \tfrac{1}{2} \sum_{i = 1}^{m} \partial_{ii}\, \psi
+                    = \tfrac{1}{2}\, \Delta \psi
+                    = L \psi .
+                    \]
+                </p>
+
+                <p>
+                    The Fokker-Planck equation for Brownian motion is the heat equation with
+                    diffusivity \(\tfrac{1}{2}\), and the adjoint coincides with the
+                    operator itself, the analytic reflection of the symmetry of the
+                    Gaussian. In one dimension the density in question is explicit. The
+                    increment \(w_t\) is a centered
+                    <a href="gaussian.html#D-normal_distribution" class="ref-link"><strong>normal random variable</strong></a>
+                    with variance \(t\), so the started motion \(x + w_t\) has density
+                    \(p_t( x, y ) = ( 2 \pi t )^{-1/2} e^{ - ( y - x )^2 / 2 t }\), which is
+                    exactly the
+                    <a href="../Calculus/fourier_pde_heat.html#D-heat_kernel" class="ref-link"><strong>heat kernel</strong></a>
+                    \(K_t( y - x )\) with diffusivity \(k = \tfrac{1}{2}\), the kernel whose
+                    convolutions were proved to solve the heat equation in the
+                    <a href="../Calculus/fourier_pde_heat.html#T-heat_kernel_solution" class="ref-link"><strong>heat kernel solution theorem</strong></a>.
+                    The Gaussian is jointly smooth in \(( t, y )\) on
+                    \(( 0, \infty ) \times \mathbb{R}\), so the hypotheses of the
+                    Fokker-Planck theorem are genuinely met in this case, and the theorem,
+                    the kernel computation, and the direct differentiation of the Gaussian
+                    all report the same equation. A fact first extracted from the Fourier
+                    transform reappears as the zero-drift shadow of a theorem about
+                    diffusions.
+                </p>
+
+            </section>
+
+
+            <section id="stein" class="section-content">
+                <h2>Stein's Identity</h2>
+
+                <p>
+                    The duality theorem moved two derivatives at once, because the diffusion
+                    operator is second-order. Its first-order shadow is worth isolating,
+                    because it holds for an arbitrary density, with no diffusion in sight,
+                    and because the object it brings on stage is the
+                    <a href="../Machine_learning/diffusion_models.html#D-score_function_data_gradient" class="ref-link"><strong>score function</strong></a>
+                    \(\mathbf{s} = \nabla \log p\), the gradient of the log-density that the
+                    machine learning pages introduced as the learned object of a generative
+                    model. The identity trades an average involving the score, which depends
+                    on the unknown density, for an average involving only derivatives of the
+                    test function, which does not. Score-matching methods are built on that
+                    trade, and the final section of this page will feed the score into the
+                    drift of a stochastic equation.
+                </p>
+
+                <div class="theorem" id="T-stein_identity">
+                    <span class="theorem-title">Theorem: Stein's Identity</span>
+                    <p>
+                        Let \(p\) be a probability density on \(\mathbb{R}^m\), continuously
+                        differentiable, with
+                        \(\int_{\mathbb{R}^m} | \partial_i p( y ) |\, dy \lt \infty\) for
+                        each \(i\). Let \(f \in C^1( \mathbb{R}^m )\) be bounded with
+                        bounded partial derivatives. Then for each \(i\),
+                    </p>
+                    <p>
+                        \[
+                        \int_{\mathbb{R}^m} \partial_i f( y )\, p( y )\, dy
+                        = - \int_{\mathbb{R}^m} f( y )\, \partial_i p( y )\, dy ,
+                        \]
+                    </p>
+                    <p>
+                        both integrals converging absolutely. If moreover \(p \gt 0\) everywhere and \(Y\) is a random
+                        variable with density \(p\), meaning that
+                        \(\mathbb{P}( Y \in B ) = \int_B p( y )\, dy\) for every Borel set
+                        \(B \subseteq \mathbb{R}^m\), then with \(s_i = \partial_i \log p\),
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E} \bigl[ \partial_i f( Y )
+                        + f( Y )\, s_i( Y ) \bigr] = 0 .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1: absolute convergence.</strong><br> The integrand
+                        \(( \partial_i f )\, p\) is bounded in absolute value by
+                        \(\| \partial_i f \|_\infty\, p\), whose integral is
+                        \(\| \partial_i f \|_\infty\), and \(f\, \partial_i p\) is bounded
+                        in absolute value by \(\| f \|_\infty\, | \partial_i p |\), whose
+                        integral is finite by hypothesis. Both integrals converge
+                        absolutely.
+                    </p>
+                    <p>
+                        <strong>Step 2: a cutoff whose gradient dies.</strong><br> Let \(H\)
+                        be the
+                        <a href="../Calculus/partitions_of_unity.html#T-smooth_bump_function_Rn" class="ref-link"><strong>smooth bump function</strong></a>
+                        with radii \(1\) and \(2\), and for \(R \geq 1\) set
+                        \(\chi_R( y ) = H( y / R )\). Then \(\chi_R\) is smooth, equals
+                        \(1\) on \(\overline{B_R}\), vanishes outside \(B_{2R}\), and takes
+                        values in \([ 0, 1 ]\). Its gradient contracts with the scaling. The
+                        chain rule gives
+                        \(\partial_i \chi_R( y ) = \tfrac{1}{R}\, ( \partial_i H )( y / R )\),
+                        and
+                        \(\partial_i H\), being continuous with compact support, is bounded, so
+                        \(\| \partial_i \chi_R \|_\infty \leq \tfrac{1}{R}\, \| \partial_i H \|_\infty\).
+                    </p>
+                    <p>
+                        <strong>Step 3: the identity with the cutoff in place.</strong><br>
+                        The function \(h = f\, \chi_R\, p\) is continuously differentiable
+                        with compact support, so Step 1 of the duality proof applies to it,
+                        and the product rule expands the vanishing integral of
+                        \(\partial_i h\) into three pieces:
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \int_{\mathbb{R}^m} ( \partial_i f )\, \chi_R\, p\, dy
+                        &= - \int_{\mathbb{R}^m} f\, \chi_R\, ( \partial_i p )\, dy \\\\
+                        &\quad - \int_{\mathbb{R}^m} f\, ( \partial_i \chi_R )\, p\, dy .
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        <strong>Step 4: remove the cutoff.</strong><br> As \(R \to \infty\)
+                        through integers, \(\chi_R \to 1\) pointwise, and the first two
+                        integrals converge to their cutoff-free versions by the
+                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>,
+                        with the dominating functions of Step 1. The third integral dies
+                        outright:
+                    </p>
+                    <p>
+                        \[
+                        \Bigl| \int_{\mathbb{R}^m}
+                        f\, ( \partial_i \chi_R )\, p\, dy \Bigr|
+                        \leq \frac{ \| f \|_\infty\,
+                        \| \partial_i H \|_\infty }{ R }
+                        \int_{\mathbb{R}^m} p\, dy
+                        \to 0 ,
+                        \]
+                    </p>
+                    <p>
+                        since \(p\) integrates to one. The limit is the first asserted
+                        identity.
+                    </p>
+                    <p>
+                        <strong>Step 5: the probabilistic form.</strong><br> Suppose
+                        \(p \gt 0\) and \(Y\) has density \(p\). Then
+                        \(\partial_i p = s_i\, p\) by the chain rule, so the right side of
+                        the identity is \(- \int f\, s_i\, p\, dy\). Integrals of functions
+                        against the density convert to expectations of the same functions of
+                        \(Y\) exactly as in Step 1 of the Fokker-Planck proof, applied
+                        separately to positive and negative parts, the requisite finiteness
+                        being Step 1 here. The converted identity is the displayed
+                        expectation.
+                    </p>
+                </div>
+
+                <p>
+                    Two structural remarks. First, the score does not see normalization.
+                    Multiplying \(p\) by a positive constant shifts \(\log p\) by a constant
+                    and leaves the gradient unchanged, so \(\mathbf{s}\) is computable from
+                    an unnormalized density, and the identity holds verbatim with the
+                    normalized one. Second, the identity is a statement about one fixed
+                    density. Applied to the time slices \(p_t\) of a diffusion, one identity
+                    holds for each \(t\) separately, provided each slice meets the
+                    hypotheses. Nothing yet couples the slices across time. The coupling is
+                    the Fokker-Planck equation, and the next section runs the two mechanisms
+                    together.
+                </p>
+
+            </section>
+
+            <section id="one-path-many-equations" class="section-content">
+                <h2>One Path, Many Equations</h2>
+
+                <p>
+                    The machine learning pages tell a story about trajectories.
+                    <a href="../Machine_learning/flow_matching.html"><strong>The flow-matching account of generative modelling</strong></a>
+                    fixes a family of densities, a probability path, and asks for dynamics
+                    that carry samples along it. It asserts that the choice of dynamics is
+                    radically non-unique: one deterministic flow, driven by a velocity
+                    field, and a continuum of stochastic equations, indexed by a noise
+                    scale, all carry the same path, because a score-dependent correction in
+                    the drift cancels, identically, the spreading that the noise injects.
+                    That cancellation was presented there as a computation to be trusted. On
+                    this page the adjoint machinery is in place, and the cancellation is a
+                    three-line theorem.
+                </p>
+
+                <p>
+                    Everything in this section is analytic. Densities, velocity fields, and
+                    equations appear, and no stochastic process does. The section proves
+                    that one path satisfies many equations, slice by slice and point by
+                    point. What would remain, to speak of trajectories, is the passage from
+                    a shared equation to a shared law, and the closing remarks state exactly
+                    where that passage runs and what it needs. In this section \(\sigma_t\)
+                    denotes a scalar function of time alone, the noise scale of the family.
+                    The matrix noise coefficient of the earlier sections does not appear.
+                </p>
+
+                <div class="theorem" id="T-fp_invariant_family">
+                    <span class="theorem-title">Theorem: The Fokker-Planck Invariant Family</span>
+                    <p>
+                        Let \(T \gt 0\), and on \(( 0, T ) \times \mathbb{R}^m\) let a
+                        function \(p\) and a vector field
+                        \(\mathbf{u} = ( u_1, \ldots, u_m )\) be given, subject to three
+                        conditions.
+                    </p>
+                    <p>
+                        <strong>(P1)</strong> \(p \gt 0\) everywhere, and \(\partial_t p\),
+                        \(\partial_i p\), and \(\partial_{il} p\) exist and are continuous
+                        on \(( 0, T ) \times \mathbb{R}^m\).
+                    </p>
+                    <p>
+                        <strong>(P2)</strong> Each \(u_i\) and each spatial derivative
+                        \(\partial_l u_i\) is continuous on
+                        \(( 0, T ) \times \mathbb{R}^m\).
+                    </p>
+                    <p>
+                        <strong>(P3)</strong> Writing \(p_t = p( t, \cdot )\) and
+                        \(\operatorname{div} \mathbf{v} = \sum_i \partial_i v_i\), the pair
+                        satisfies the continuity equation
+                    </p>
+                    <p>
+                        \[
+                        \frac{ \partial p_t }{ \partial t }
+                        + \operatorname{div} \bigl( p_t\, \mathbf{u}_t \bigr)
+                        = 0
+                        \quad \text{on } ( 0, T ) \times \mathbb{R}^m .
+                        \]
+                    </p>
+                    <p>
+                        Write \(\mathbf{s}_t = \nabla \log p_t\) for the
+                        <a href="../Machine_learning/diffusion_models.html#D-score_function_data_gradient" class="ref-link"><strong>score</strong></a>
+                        of the slice. Then for every function
+                        \(\sigma : ( 0, T ) \to [ 0, \infty )\) and every point of
+                        \(( 0, T ) \times \mathbb{R}^m\),
+                    </p>
+                    <p>
+                        \[
+                        \frac{ \partial p_t }{ \partial t }
+                        = \tfrac{1}{2}\, \sigma_t^2\, \Delta p_t
+                        - \operatorname{div} \Bigl( p_t
+                        \Bigl( \mathbf{u}_t
+                        + \tfrac{ \sigma_t^2 }{ 2 }\, \mathbf{s}_t \Bigr)
+                        \Bigr) .
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1: the score carries the gradient.</strong><br> Fix
+                        \(t\) and \(i\). Since \(p_t \gt 0\), the chain rule gives
+                        \(s_{t, i} = \partial_i \log p_t = ( \partial_i p_t ) / p_t\), so
+                    </p>
+                    <p>
+                        \[
+                        p_t\, \mathbf{s}_t = \nabla p_t
+                        \]
+                    </p>
+                    <p>
+                        as vector fields on \(\mathbb{R}^m\). This is the single exchange on
+                        which the whole section turns. Multiplied by the density, the score
+                        forgets the logarithm.
+                    </p>
+                    <p>
+                        <strong>Step 2: the correction is half a Laplacian.</strong><br> The
+                        factor \(\sigma_t^2\) is constant in \(y\), so it passes through
+                        spatial derivatives, and by Step 1,
+                    </p>
+                    <p>
+                        \[
+                        \operatorname{div} \Bigl( p_t\,
+                        \tfrac{ \sigma_t^2 }{ 2 }\, \mathbf{s}_t \Bigr)
+                        = \tfrac{ \sigma_t^2 }{ 2 }\,
+                        \operatorname{div} \bigl( \nabla p_t \bigr)
+                        = \tfrac{ \sigma_t^2 }{ 2 }\, \Delta p_t ,
+                        \]
+                    </p>
+                    <p>
+                        the second derivatives existing and being continuous by (P1).
+                    </p>
+                    <p>
+                        <strong>Step 3: cancel and conclude.</strong><br> The divergence is
+                        additive over the two summands of the drift, so the right side of
+                        the asserted equation is
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \tfrac{1}{2}\, \sigma_t^2\, \Delta p_t
+                        - \operatorname{div} \bigl( p_t\, \mathbf{u}_t \bigr)
+                        - \operatorname{div} \Bigl( p_t\,
+                        \tfrac{ \sigma_t^2 }{ 2 }\, \mathbf{s}_t \Bigr) \\\\
+                        &= \tfrac{1}{2}\, \sigma_t^2\, \Delta p_t
+                        - \operatorname{div} \bigl( p_t\, \mathbf{u}_t \bigr)
+                        - \tfrac{1}{2}\, \sigma_t^2\, \Delta p_t \\\\
+                        &= - \operatorname{div} \bigl( p_t\, \mathbf{u}_t \bigr) ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        and the continuity equation (P3) identifies the last line with
+                        \(\partial_t p_t\). The noise scale entered twice, once in the
+                        Laplacian and once in the drift correction, and the two entrances
+                        cancel exactly, for every choice of \(\sigma\), with no regularity
+                        demanded of \(\sigma\) at all.
+                    </p>
+                </div>
+
+                <p>
+                    The right side of the theorem is a Fokker-Planck operator. Freeze a time
+                    \(t\), and take as coefficients the drift
+                    \(\mathbf{u}_t + \tfrac{ \sigma_t^2 }{ 2 } \mathbf{s}_t\) and the
+                    constant matrix \(\sigma_t I\). The frozen drift is continuously
+                    differentiable in \(y\) by (P1) and (P2), the frozen squared coefficient
+                    \(\sigma_t^2 \delta_{il}\) is constant, and the
+                    <a href="#D-formal_adjoint_generator" class="ref-link"><strong>formal adjoint</strong></a>
+                    associated with these frozen coefficients, applied to \(p_t\), is exactly the
+                    displayed right side. The theorem therefore says that the one path \(p\)
+                    satisfies, slice by slice, the forward equation of every member of a
+                    one-parameter family of dynamics. At \(\sigma_t = 0\) the member is the
+                    continuity equation itself, the deterministic transport of the
+                    flow-matching account, and the machine learning pages read that member
+                    as a probability-flow ordinary differential equation. At
+                    \(\sigma_t \gt 0\) the member is the forward equation of a noisy dynamic
+                    whose drift has been corrected by the score. One path, many equations.
+                </p>
+
+                <h3>The Reverse-Time Reading</h3>
+
+                <p>
+                    Generative modelling runs its noising process forward and its sampler
+                    backward, so the family is most often run with the clock reversed.
+                    Reversal costs one sign. Let \(p\) and \(\mathbf{u}\) satisfy (P1)
+                    through (P3) on \(( 0, T ) \times \mathbb{R}^m\), and define the
+                    reversed pair
+                </p>
+
+                <p>
+                    \[
+                    q_\tau( y ) = p_{ T - \tau }( y ) ,
+                    \quad
+                    \mathbf{v}_\tau( y ) = - \mathbf{u}_{ T - \tau }( y ) ,
+                    \quad \tau \in ( 0, T ) .
+                    \]
+                </p>
+
+                <p>
+                    The chain rule in the time slot gives
+                    \(\partial_\tau q_\tau = - ( \partial_t p )_{ T - \tau }\), the
+                    continuity equation for \(( p, \mathbf{u} )\) evaluates the right side
+                    as
+                    \(\operatorname{div}( p\, \mathbf{u} )_{ T - \tau } = - \operatorname{div}( q_\tau \mathbf{v}_\tau )\),
+                    and so the reversed pair satisfies (P1) through (P3) in the reversed
+                    clock. The invariant-family theorem applies verbatim to
+                    \(( q, \mathbf{v} )\).
+                </p>
+
+                <p>
+                    Now give the forward path the shape a noising process supplies. Suppose
+                    that, in addition to the standing conditions, the path satisfies a
+                    forward Fokker-Planck equation with drift field \(\boldsymbol{\beta}\),
+                    whose components and first spatial derivatives are continuous, and
+                    constant scalar noise scale \(\widehat{\sigma} \geq 0\):
+                </p>
+
+                <p>
+                    \[
+                    \frac{ \partial p_t }{ \partial t }
+                    = \tfrac{1}{2}\, \widehat{\sigma}^2\, \Delta p_t
+                    - \operatorname{div} \bigl( p_t\,
+                    \boldsymbol{\beta}_t \bigr) .
+                    \]
+                </p>
+
+                <p>
+                    Then the velocity field
+                    \(\mathbf{u}_t = \boldsymbol{\beta}_t - \tfrac{1}{2} \widehat{\sigma}^2\, \mathbf{s}_t\)
+                    transports the path. Indeed, by Steps 1 and 2 of the proof above, taken
+                    verbatim,
+                    \(\operatorname{div}( p_t \mathbf{u}_t ) = \operatorname{div}( p_t \boldsymbol{\beta}_t ) - \tfrac{1}{2} \widehat{\sigma}^2 \Delta p_t\),
+                    and the forward equation identifies the negative of this with
+                    \(\partial_t p_t\), which is the continuity equation (P3). The constructed
+                    velocity also meets (P2), its score part being continuously differentiable in
+                    the space variable by (P1). Feeding this
+                    velocity into the reversed family at the same noise scale
+                    \(\widehat{\sigma}\), the reverse drift telescopes. The half score from
+                    unwinding the velocity and the half score from the family correction
+                    add, and
+                </p>
+
+                <p>
+                    \[
+                    \frac{ \partial q_\tau }{ \partial \tau }
+                    = \tfrac{1}{2}\, \widehat{\sigma}^2\, \Delta q_\tau
+                    - \operatorname{div} \Bigl( q_\tau
+                    \bigl( - \boldsymbol{\beta}
+                    + \widehat{\sigma}^2\, \mathbf{s} \bigr)_{ T - \tau }
+                    \Bigr) .
+                    \]
+                </p>
+
+                <p>
+                    The reversed density satisfies the forward equation of a dynamic whose
+                    drift is the negated original drift plus the full squared noise scale
+                    times the score. That drift is precisely the one that the literature on
+                    time reversal of diffusions attaches to the reversed process itself, and
+                    the machine learning development names it as the drift of the
+                    reverse-time sampler. What this page delivers is the statement at the
+                    level of densities and equations. Two passages would be needed to lift
+                    it to processes, and both are named here so that the trust, if ever
+                    spent, is spent knowingly. First, attaching the forward equation above
+                    to the marginals of a time-inhomogeneous stochastic equation asks for a
+                    time-dependent version of the Fokker-Planck theorem of this page, whose
+                    statement is time-homogeneous, together with the same density
+                    hypotheses. Second, and deeper, concluding that two processes whose
+                    densities satisfy one equation share one law is a uniqueness assertion
+                    about the Fokker-Planck equation, and no uniqueness theorem for it has
+                    been proved in this track. Nothing on this page, and nothing built so
+                    far on this site, spends either passage.
+                </p>
+
+                <div class="insight-box">
+                    <h3>The Debt Repaid</h3>
+                    <p>
+                        Three promissory notes are settled by this page. The
+                        <a href="diffusion_generator.html"><strong>study of the generator</strong></a>
+                        closed by observing that a generative model needs the evolution of a
+                        density, governed by the adjoint of the operator it had just built,
+                        and that nothing on that page identified the adjoint or its
+                        equation. The adjoint is now a definition, the equation is now a
+                        theorem, and the heat equation drops out as its zero-drift shadow.
+                        The
+                        <a href="../Machine_learning/diffusion_models.html"><strong>discrete-time development of diffusion models</strong></a>
+                        set aside its continuous-time picture, a noising stochastic
+                        equation, a reversal, and a deterministic probability-flow limit, as
+                        belonging to a later page. This is that page. The forward equation
+                        is the Fokker-Planck theorem, the reversal is the computation above,
+                        and the probability-flow member is the family at noise scale zero.
+                    </p>
+                    <p>
+                        The third note is the sharpest. The
+                        <a href="../Machine_learning/flow_matching.html"><strong>flow-matching account</strong></a>
+                        asserted that an entire family of samplers, one flow and a continuum
+                        of noisy dynamics, carries a single probability path, the score
+                        correction absorbing the noise for every setting of the scale. The
+                        analytic half of that assertion is the invariant-family theorem, and
+                        the identity
+                        \(\mathbf{u} = \boldsymbol{\beta}
+                        - \tfrac{1}{2} \widehat{\sigma}^2 \mathbf{s}\) of the reverse-time reading
+                        is one face of the score-velocity translation described there. The probabilistic half, that a shared
+                        equation forces a shared law, is the uniqueness question flagged
+                        above, and it is left standing, visibly, rather than crossed in
+                        silence.
+                    </p>
+                    <p>
+                        One obstruction was dodged rather than met, and the dodge is worth
+                        recording. The generator page noted that a variance-preserving
+                        noising drift couples the schedule to the state and thereby fails
+                        the joint Lipschitz condition under which a scheduled process
+                        becomes a time-homogeneous diffusion in the enlarged state. This
+                        section never needed that framework. Its statements are about
+                        densities and differential operators, not about processes, and they
+                        hold for any path meeting the stated regularity, whatever dynamics
+                        produced it. Where the process-level theory narrows, the
+                        density-level theory passes through.
+                    </p>
+                </div>
+
+            </section>
+
+        </div>
+    </body>
+</html>
