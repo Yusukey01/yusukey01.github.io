@@ -1,0 +1,515 @@
+---
+layout: default
+title: "Girsanov for SDEs"
+topic_id: prob-45
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Girsanov for SDEs</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#girsanov-sde">Girsanov for SDEs</a>
+            <a href="#weak-solutions">Weak Solutions</a>
+            <a href="#path-likelihoods">Path Likelihoods</a>
+        </div>
+
+        <div class="container">
+
+            <section id="girsanov-sde" class="section-content">
+                <h2>Girsanov for Stochastic Differential Equations</h2>
+
+                <p>
+                    The
+                    <a href="girsanov_theorem.html#T-girsanov" class="ref-link"><strong>Girsanov theorem</strong></a>
+                    turns a drifted Brownian motion into a Brownian motion by tilting the
+                    probabilities, not the paths. This page runs the same tilt through
+                    equations: it turns solutions of one stochastic differential equation into
+                    solutions of another that differs by a drift, and then lets the mechanism
+                    loose on equations too rough for the existence theory to reach. One scope
+                    decision should be stated plainly. The exchange below keeps the noise
+                    additive: the coefficient in front of \(d\mathbf{w}\) is the identity, and
+                    the state and the noise share the dimension \(n\). A version with a
+                    state-dependent coefficient matrix exists, but transporting the stochastic
+                    integral itself across a change of measure requires knowing that the
+                    integral's construction is unchanged by an equivalent reweighting of
+                    probabilities, a fact that has not been built on this track. The
+                    additive-noise exchange closes by pathwise algebra alone, and it is exactly
+                    the form the weak-solution construction ahead puts to work.
+                </p>
+
+                <div class="theorem" id="T-girsanov_sde">
+                    <span class="theorem-title">Theorem: Girsanov for Stochastic Differential Equations</span>
+                    <p>
+                        Fix \(T \gt 0\), a point \(x \in \mathbb{R}^n\), and constants \(C\) and
+                        \(D\). Let \(b : \mathbb{R}^n \to \mathbb{R}^n\) be Lipschitz continuous
+                        with constant \(D\), and let \(X = X^x\) be the solution of
+                    </p>
+                    <p>
+                        \[
+                        dX_t = b(X_t)\, dt + d\mathbf{w}_t ,
+                        \quad 0 \leq t \leq T ,
+                        \quad X_0 = x ,
+                        \]
+                    </p>
+                    <p>
+                        provided by the
+                        <a href="sde_existence_uniqueness.html#T-sde_existence_uniqueness" class="ref-link"><strong>existence and uniqueness theorem</strong></a>
+                        read in the systems convention recorded at the
+                        <a href="picard_iteration.html#beyond-lipschitz">close of the existence pages</a>.
+                        Let \(\boldsymbol{\gamma}(s, \omega)\) be progressively measurable with
+                        \(|\boldsymbol{\gamma}| \leq C\), and let \(\mathbf{Y}\) be a continuous
+                        adapted process satisfying, almost surely, simultaneously for every
+                        \(t \in [0, T]\),
+                    </p>
+                    <p>
+                        \[
+                        \mathbf{Y}_t = x
+                        + \int_0^t \bigl( \boldsymbol{\gamma}(s, \omega) + b(\mathbf{Y}_s) \bigr)\, ds
+                        + \mathbf{w}_t .
+                        \]
+                    </p>
+                    <p>
+                        Let \(M\) be the
+                        <a href="girsanov_theorem.html#T-exponential_martingale_bounded" class="ref-link"><strong>exponential martingale</strong></a>
+                        of \(\boldsymbol{\gamma}\), let
+                        \(\mathbb{Q}\) be the measure of the
+                        <a href="girsanov_theorem.html#T-girsanov" class="ref-link"><strong>Girsanov theorem</strong></a>
+                        applied to \(\boldsymbol{\gamma}\), and set
+                        \(\hat{\mathbf{w}}_t = \int_0^t \boldsymbol{\gamma}\, ds + \mathbf{w}_t\).
+                        Then:
+                    </p>
+                    <p>
+                        (1) At every \(\omega\) where the displayed identity holds, and for every
+                        \(t \in [0, T]\),
+                        \(\mathbf{Y}_t = x + \int_0^t b(\mathbf{Y}_s)\, ds + \hat{\mathbf{w}}_t\).
+                    </p>
+                    <p>
+                        (2) On the space \(\bigl( \Omega, \mathcal{F}_T^{(n)}, \mathbb{Q} \bigr)\)
+                        with the filtration \(\{\mathcal{F}_t^{(n)}\}\), the pair
+                        \((\mathbf{Y}, \hat{\mathbf{w}})\) is a
+                        <a href="picard_iteration.html#D-weak_solution" class="ref-link"><strong>weak solution</strong></a>
+                        of \(dX_t = b(X_t)\, dt + d\hat{\mathbf{w}}_t\) with initial law
+                        \(\delta_x\).
+                    </p>
+                    <p>
+                        (3) The law of \(\mathbf{Y}\) under \(\mathbb{Q}\) coincides with the law
+                        of \(X^x\) under \(\mathbb{P}\): their finite-dimensional distributions
+                        on \([0, T]\) agree.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1 (Pathwise rearrangement).</strong><br>
+                        Wherever the hypothesis identity holds,
+                    </p>
+                    <p>
+                        \[
+                        \mathbf{Y}_t - \int_0^t b(\mathbf{Y}_s)\, ds
+                        = x + \int_0^t \boldsymbol{\gamma}\, ds + \mathbf{w}_t
+                        = x + \hat{\mathbf{w}}_t ,
+                        \]
+                    </p>
+                    <p>
+                        which is (1). No measure has been mentioned yet: this is algebra of
+                        paths.
+                    </p>
+                    <p>
+                        <strong>Step 2 (The new noise and its filtration).</strong><br>
+                        The Girsanov theorem applied to \(\boldsymbol{\gamma}\) makes
+                        \(\mathbb{Q}\) a probability measure with the same null sets as
+                        \(\mathbb{P}\), and makes \(\hat{\mathbf{w}}\) an \(n\)-dimensional
+                        Brownian motion relative to \(\{\mathcal{F}_t^{(n)}\}\) under
+                        \(\mathbb{Q}\), with each increment
+                        \(\hat{\mathbf{w}}_t - \hat{\mathbf{w}}_s\) independent of
+                        \(\mathcal{F}_s^{(n)}\). The filtration contains every
+                        \(\mathbb{P}\)-null set by construction, and every \(\mathbb{Q}\)-null
+                        set is \(\mathbb{P}\)-null by the equivalence, so it contains every
+                        \(\mathbb{Q}\)-null set. These are the two properties that the
+                        <a href="sde_existence_uniqueness.html#T-enlarged_brownian_filtration" class="ref-link"><strong>enlargement lemma</strong></a>
+                        supplies in the strong-solution setting, adaptedness over a filtration
+                        holding all null sets and independence of increments from the running
+                        past, now holding for \(\hat{\mathbf{w}}\) under \(\mathbb{Q}\).
+                    </p>
+                    <p>
+                        <strong>Step 3 (The solution clauses under \(\mathbb{Q}\)).</strong><br>
+                        We verify clauses (S1) through (S4) of the
+                        <a href="sde_existence_uniqueness.html#D-sde_solution" class="ref-link"><strong>solution definition</strong></a>
+                        for \(\mathbf{Y}\), coordinate by coordinate in the systems convention,
+                        for the equation with drift \(b\) and unit noise coefficient, on the
+                        space \(\bigl( \Omega, \mathcal{F}_T^{(n)}, \mathbb{Q} \bigr)\), with
+                        initial value the constant \(x\), which is square integrable and
+                        independent of everything.
+                    </p>
+                    <p>
+                        (S1) Adaptedness and path continuity are properties of the maps
+                        \(\omega \mapsto \mathbf{Y}_\cdot(\omega)\) alone and do not see the
+                        change of measure.
+                    </p>
+                    <p>
+                        (S3) For every \(\omega\), the map \(s \mapsto b(\mathbf{Y}_s)\) is
+                        continuous, being a composition of continuous maps, hence integrable on
+                        the compact \([0, T]\). The constant integrand \(1\) is measurable and
+                        adapted with
+                        \(\mathbb{E}_{\mathbb{Q}}\bigl[ \int_0^T 1\, ds \bigr] = T \lt \infty\),
+                        so it lies in \(\mathcal{V}(0, T)\) read over the \(\mathbb{Q}\)-space.
+                    </p>
+                    <p>
+                        (S4) The constant integrand is an
+                        <a href="ito_integral.html#D-elementary_process" class="ref-link"><strong>elementary process</strong></a>,
+                        and on elementary processes the
+                        <a href="ito_integral.html#D-ito_integral" class="ref-link"><strong>integral</strong></a>
+                        is defined as the telescoping sum of increments, so
+                        \(\int_0^t d\hat{w}^{(i)}_s = \hat{w}^{(i)}_t\) for each coordinate.
+                        Clause (S4) is then Step 1's identity, which holds almost surely
+                        simultaneously for every \(t\).
+                    </p>
+                    <p>
+                        (S2) Lipschitz continuity gives linear growth,
+                        \(|b(\mathbf{y})| \leq |b(\mathbf{0})| + D\, |\mathbf{y}|\). Fix
+                        \(\omega\) on the full event of Step 1 and write
+                        \(\hat{W}^* = \sum_{i=1}^{n} \sup_{s \leq T} |\hat{w}^{(i)}_s|\), so
+                        that \(|\hat{\mathbf{w}}_t| \leq \hat{W}^*\) for all \(t\). From (1),
+                    </p>
+                    <p>
+                        \[
+                        |\mathbf{Y}_t|
+                        \leq \bigl( |x| + |b(\mathbf{0})|\, T + \hat{W}^* \bigr)
+                        + D \int_0^t |\mathbf{Y}_s|\, ds ,
+                        \]
+                    </p>
+                    <p>
+                        and \(t \mapsto |\mathbf{Y}_t(\omega)|\) is continuous, hence measurable
+                        with finite integral over \([0, T]\), so
+                        <a href="sde_existence_uniqueness.html#T-gronwall" class="ref-link"><strong>Gronwall's inequality</strong></a>,
+                        applied path by path with the additive constant in parentheses and the
+                        multiplier \(D\), gives
+                        \(|\mathbf{Y}_t| \leq \bigl( |x| + |b(\mathbf{0})|\, T
+                        + \hat{W}^* \bigr)\, e^{D T}\). Squaring, integrating in time, and
+                        using \((u + v + z)^2 \leq 3 (u^2 + v^2 + z^2)\),
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}_{\mathbb{Q}}\Bigl[ \int_0^T |\mathbf{Y}_t|^2\, dt \Bigr]
+                        \leq 3\, T\, e^{2 D T} \Bigl( |x|^2 + |b(\mathbf{0})|^2 T^2
+                        + \mathbb{E}_{\mathbb{Q}}\bigl[ (\hat{W}^*)^2 \bigr] \Bigr) ,
+                        \]
+                    </p>
+                    <p>
+                        and it remains to bound the last expectation. Each coordinate
+                        \(\hat{w}^{(i)}\) is a \(\mathbb{Q}\)-martingale with respect to
+                        \(\{\mathcal{F}_t^{(n)}\}\): it is adapted, each
+                        \(\hat{w}^{(i)}_t\) is integrable because its \(\mathbb{Q}\)-law is that
+                        of a Brownian coordinate, and for \(s \leq t\) the increment is
+                        independent of \(\mathcal{F}_s^{(n)}\) by Step 2, so the
+                        <a href="conditional_expectation.html#T-ce_independence" class="ref-link"><strong>independence collapse</strong></a>
+                        gives
+                        \(\mathbb{E}_{\mathbb{Q}}\bigl[ \hat{w}^{(i)}_t - \hat{w}^{(i)}_s
+                        \mid \mathcal{F}_s^{(n)} \bigr]
+                        = \mathbb{E}_{\mathbb{Q}}\bigl[ \hat{w}^{(i)}_t
+                        - \hat{w}^{(i)}_s \bigr] = 0\), the mean vanishing because the law of
+                        the increment is centered Gaussian. Paths are continuous, so
+                        <a href="ito_integral_properties.html#T-doob_martingale_inequality" class="ref-link"><strong>Doob's martingale inequality</strong></a>
+                        with \(p = 4\), read on the space
+                        \(\bigl( \Omega, \mathcal{F}_T^{(n)}, \mathbb{Q} \bigr)\) and with the
+                        dyadic supremum agreeing with the full supremum along continuous paths,
+                        gives
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{Q}\Bigl[ \sup_{s \leq T} |\hat{w}^{(i)}_s| \geq \lambda \Bigr]
+                        \leq \frac{1}{\lambda^4}\,
+                        \mathbb{E}_{\mathbb{Q}}\bigl[ (\hat{w}^{(i)}_T)^4 \bigr]
+                        = \frac{3 T^2}{\lambda^4} ,
+                        \]
+                    </p>
+                    <p>
+                        the fourth moment being that of a centered Gaussian with variance
+                        \(T\) by the law identification: writing \(\varphi_T\) for its density,
+                        the relation \(z\, \varphi_T(z) = -T\, \varphi_T'(z)\) and one
+                        integration by parts give
+                        \(\mathbb{E}_{\mathbb{Q}}[(\hat{w}^{(i)}_T)^4]
+                        = 3\, T\, \mathbb{E}_{\mathbb{Q}}[(\hat{w}^{(i)}_T)^2] = 3\, T^2\). The
+                        layer-cake identity
+                        \(S^2 = \int_0^\infty 2 \lambda\, \mathbf{1}_{\{\lambda \lt S\}}\, d\lambda\)
+                        and
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        convert the tail bound into a moment bound: splitting the integral at
+                        \(\lambda = (3 T^2)^{1/4}\), where the two estimates
+                        \(\mathbb{Q}[\cdot] \leq 1\) and the display cross,
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}_{\mathbb{Q}}\Bigl[ \sup_{s \leq T} |\hat{w}^{(i)}_s|^2 \Bigr]
+                        = \int_0^\infty 2 \lambda\,
+                        \mathbb{Q}\Bigl[ \sup_{s \leq T} |\hat{w}^{(i)}_s| \gt \lambda \Bigr]\,
+                        d\lambda
+                        \leq \sqrt{3}\, T + \sqrt{3}\, T
+                        = 2 \sqrt{3}\, T .
+                        \]
+                    </p>
+                    <p>
+                        Then \((\hat{W}^*)^2 \leq n \sum_i \sup_{s \leq T} |\hat{w}^{(i)}_s|^2\)
+                        by the Cauchy-Schwarz inequality on the defining sum, so
+                        \(\mathbb{E}_{\mathbb{Q}}[(\hat{W}^*)^2] \leq 2 \sqrt{3}\, n^2 T
+                        \lt \infty\), and (S2) holds. Together with Step 2, all clauses of the
+                        weak solution definition are met, with initial law \(\delta_x\). This
+                        proves (2).
+                    </p>
+                    <p>
+                        <strong>Step 4 (Uniqueness in law).</strong><br>
+                        The strong solution \(X^x\) on the original space, driven by
+                        \(\mathbf{w}\) under \(\mathbb{P}\) over the enlarged filtration of a
+                        constant start, is a solution of the same equation with the same initial
+                        law \(\delta_x\). The coefficients satisfy (H1) and (H2): the constant
+                        noise coefficient trivially, and the drift because Lipschitz continuity
+                        supplies both the Lipschitz clause and, through
+                        \(|b(\mathbf{y})| \leq |b(\mathbf{0})| + D |\mathbf{y}|\), linear
+                        growth. The initial law \(\delta_x\) has finite second moment. The
+                        <a href="picard_iteration.html#T-weak_uniqueness" class="ref-link"><strong>uniqueness in law lemma</strong></a>,
+                        read in the same systems convention, therefore applies to the pair of
+                        solutions \((X^x, \mathbf{w})\) under \(\mathbb{P}\) and
+                        \((\mathbf{Y}, \hat{\mathbf{w}})\) under \(\mathbb{Q}\). That lemma's
+                        proof is a sketch whose single unproved step is the induction carrying
+                        laws through the Picard iterates, and this page's reliance on it
+                        inherits exactly that one point of trust and no other. The conclusion
+                        is that the two solutions share their finite-dimensional distributions,
+                        which is (3).
+                    </p>
+                </div>
+
+                <p>
+                    The theorem inverts the usual order of solving. Ordinarily an equation is
+                    given and a solution must be manufactured. Here a process is given, its
+                    equation is off by a drift, and a change of measure repairs the equation
+                    without touching the process. The construction that follows runs this
+                    inversion at full
+                    strength: it starts from a process so simple that it solves almost nothing,
+                    Brownian motion itself, and tilts the measure until it solves an equation
+                    whose coefficients are too rough for the existence theorem to reach.
+                </p>
+            </section>
+
+            <section id="weak-solutions" class="section-content">
+                <h2>Weak Solutions from Nothing but Boundedness</h2>
+
+                <p>
+                    The existence pages split the notion of solving into strong and weak, and
+                    they closed on an exhibit they could not analyze: the
+                    <a href="picard_iteration.html#beyond-lipschitz">sign equation</a>, recorded
+                    on trust as having no strong solution and yet possessing weak ones, with any
+                    Brownian motion serving once the driving noise is rebuilt from the solution
+                    itself. This section proves that mechanism in action. Not for the sign
+                    equation itself, whose roughness sits in the diffusion coefficient and whose
+                    analysis needs machinery of a different kind, but for the companion class
+                    where the roughness sits entirely in the drift: coefficients that are merely
+                    bounded and measurable.
+                </p>
+
+                <p>
+                    For such a drift the
+                    <a href="sde_existence_uniqueness.html#T-sde_existence_uniqueness" class="ref-link"><strong>existence and uniqueness theorem</strong></a>
+                    is silent. Its linear growth clause (H1) holds, boundedness being more than
+                    enough, but the Lipschitz clause (H2) fails outright, and without it the
+                    Picard iteration has nothing to contract against. The Girsanov machinery
+                    does not iterate at all. It starts from the solution, fully formed, and
+                    manufactures the equation around it.
+                </p>
+
+                <div class="theorem" id="T-weak_solution_bounded_drift">
+                    <span class="theorem-title">Theorem: Weak Solutions for Bounded Measurable Drift</span>
+                    <p>
+                        Fix \(T \gt 0\), a point \(x \in \mathbb{R}^n\), and a constant \(C\).
+                        Let \(a : \mathbb{R}^n \to \mathbb{R}^n\) be Borel measurable with
+                        \(|a(\mathbf{y})| \leq C\) for every \(\mathbf{y}\). Then the equation
+                    </p>
+                    <p>
+                        \[
+                        dX_t = a(X_t)\, dt + d\mathbf{w}_t ,
+                        \quad 0 \leq t \leq T ,
+                        \quad X_0 = x ,
+                        \]
+                    </p>
+                    <p>
+                        admits a
+                        <a href="picard_iteration.html#D-weak_solution" class="ref-link"><strong>weak solution</strong></a>
+                        with initial law \(\delta_x\). One is carried by Brownian motion itself:
+                        the process \(\mathbf{Y}_t = x + \mathbf{w}_t\), paired with a noise
+                        rebuilt from it, solves the equation under a tilted measure.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1 (The tilt).</strong><br>
+                        Set \(\mathbf{Y}_t = x + \mathbf{w}_t\) and
+                        \(\boldsymbol{\gamma}(s, \omega) = - a\bigl( \mathbf{Y}_s(\omega) \bigr)\).
+                        Each coordinate of \(\mathbf{Y}\) is adapted with continuous paths,
+                        hence progressively measurable by the
+                        <a href="ito_formula.html#T-progressively_measurable_criteria" class="ref-link"><strong>continuity criterion</strong></a>,
+                        so the vector map \((s, \omega) \mapsto \mathbf{Y}_s(\omega)\) is
+                        jointly measurable on each strip \([0, t] \times \Omega\), and composing
+                        with the Borel map \(a\) preserves that measurability. Each coordinate
+                        of \(\boldsymbol{\gamma}\) is therefore progressively measurable, and
+                        \(|\boldsymbol{\gamma}| \leq C\). Let \(M\) be the exponential
+                        martingale of \(\boldsymbol{\gamma}\), let \(\mathbb{Q}\) be its measure
+                        from the
+                        <a href="girsanov_theorem.html#T-girsanov" class="ref-link"><strong>Girsanov theorem</strong></a>,
+                        and set
+                    </p>
+                    <p>
+                        \[
+                        \hat{\mathbf{w}}_t
+                        = \int_0^t \boldsymbol{\gamma}(s, \omega)\, ds + \mathbf{w}_t
+                        = \mathbf{w}_t - \int_0^t a( x + \mathbf{w}_s )\, ds .
+                        \]
+                    </p>
+                    <p>
+                        The theorem makes \(\mathbb{Q}\) a probability measure with the same
+                        null sets as \(\mathbb{P}\), and makes \(\hat{\mathbf{w}}\) an
+                        \(n\)-dimensional Brownian motion relative to
+                        \(\{\mathcal{F}_t^{(n)}\}\) under \(\mathbb{Q}\), its increments
+                        independent of the running past. As in Step 2 of the preceding proof,
+                        the filtration holds every \(\mathbb{Q}\)-null set, so the two
+                        properties of the
+                        <a href="sde_existence_uniqueness.html#T-enlarged_brownian_filtration" class="ref-link"><strong>enlargement lemma</strong></a>
+                        are in place.
+                    </p>
+                    <p>
+                        <strong>Step 2 (The equation holds pathwise).</strong><br>
+                        For every \(\omega\) and every \(t \in [0, T]\),
+                    </p>
+                    <p>
+                        \[
+                        x + \int_0^t a( \mathbf{Y}_s )\, ds + \hat{\mathbf{w}}_t
+                        = x + \int_0^t a( \mathbf{Y}_s )\, ds
+                        - \int_0^t a( \mathbf{Y}_s )\, ds + \mathbf{w}_t
+                        = \mathbf{Y}_t ,
+                        \]
+                    </p>
+                    <p>
+                        an identity of paths, holding surely.
+                    </p>
+                    <p>
+                        <strong>Step 3 (The solution clauses under \(\mathbb{Q}\)).</strong><br>
+                        The clauses of the
+                        <a href="sde_existence_uniqueness.html#D-sde_solution" class="ref-link"><strong>solution definition</strong></a>
+                        are read coordinate by coordinate in the systems convention, as before.
+                        (S1) holds because adaptedness and continuity do not see the measure.
+                        For (S3), the path \(s \mapsto a(\mathbf{Y}_s(\omega))\) is Borel
+                        measurable for each \(\omega\), a Borel map composed with a continuous
+                        one, and is bounded by \(C\), so its time integral is finite surely,
+                        while the constant noise integrand lies in \(\mathcal{V}(0, T)\) over
+                        the \(\mathbb{Q}\)-space exactly as before. For (S4), the integral of
+                        the constant integrand against \(\hat{\mathbf{w}}\) telescopes to
+                        \(\hat{\mathbf{w}}_t\), and the clause is Step 2's identity. For (S2),
+                        Step 2 gives
+                        \(|\mathbf{Y}_t| \leq |x| + C T + \hat{W}^*\) with
+                        \(\hat{W}^* = \sum_i \sup_{s \leq T} |\hat{w}^{(i)}_s|\), and the bound
+                        \(\mathbb{E}_{\mathbb{Q}}\bigl[ (\hat{W}^*)^2 \bigr]
+                        \leq 2 \sqrt{3}\, n^2 T\) established in clause (S2) of the preceding
+                        proof applies verbatim, its only inputs being the Brownian clauses of
+                        Step 1. Hence
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}_{\mathbb{Q}}\Bigl[ \int_0^T |\mathbf{Y}_t|^2\, dt \Bigr]
+                        \leq 3\, T \Bigl( |x|^2 + C^2 T^2 + 2 \sqrt{3}\, n^2 T \Bigr)
+                        \lt \infty .
+                        \]
+                    </p>
+                    <p>
+                        The initial value is the constant \(x\), square integrable, independent
+                        of everything, with law \(\delta_x\). All clauses of the weak solution
+                        definition are met by the pair \((\mathbf{Y}, \hat{\mathbf{w}})\) on
+                        \(\bigl( \Omega, \mathcal{F}_T^{(n)}, \mathbb{Q} \bigr)\).
+                    </p>
+                </div>
+
+                <p>
+                    No uniqueness is asserted. The
+                    <a href="picard_iteration.html#T-weak_uniqueness" class="ref-link"><strong>uniqueness in law lemma</strong></a>
+                    demands the Lipschitz clause that a merely measurable drift denies, and we
+                    claim exactly what the construction delivers: existence, which is precisely
+                    the half the Picard machinery could not reach. The shape of the answer is
+                    the one the sign equation's story promised. The solution is a Brownian
+                    motion, untouched. What bends is everything around it: the noise, rebuilt
+                    from the solution, and the probabilities, tilted until the equation holds.
+                </p>
+            </section>
+
+            <section id="path-likelihoods" class="section-content">
+                <h2>Likelihoods on Path Space</h2>
+
+                <p>
+                    Everything above changed measures in order to solve equations. Machine
+                    learning runs the same machinery in the opposite direction: it compares
+                    equations by the distance between the path measures they induce, and the
+                    exponential density behind the tilt is exactly the object that computes
+                    that distance.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Girsanov in Machine Learning</h3>
+                    <p>
+                        The density \(M_T\) is a likelihood ratio between two stories told about
+                        the same trajectory: one in which it diffuses freely, one in which it
+                        obeys a drift. A two-line formal computation, made rigorous by the
+                        substitutions of this page, rewrites its logarithm in the new world's
+                        terms, \(\log M_T = - \int_0^T \boldsymbol{\gamma} \cdot d\hat{\mathbf{w}}
+                        + \tfrac{1}{2} \int_0^T |\boldsymbol{\gamma}|^2\, ds\), and the
+                        stochastic term averages to zero under \(\mathbb{Q}\). The
+                        <a href="entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler divergence</strong></a>
+                        between the two path measures is therefore half the expected accumulated
+                        squared drift mismatch,
+                        \(\operatorname{KL}( \mathbb{Q} \,\|\, \mathbb{P} )
+                        = \tfrac{1}{2}\, \mathbb{E}_{\mathbb{Q}} \int_0^T
+                        |\boldsymbol{\gamma}(s, \omega)|^2\, ds\).
+                        Distances between laws of whole trajectories collapse to time integrals
+                        of drift errors.
+                    </p>
+                    <p>
+                        Score-based generative models live on this collapse. Their samplers
+                        integrate a reverse-time equation whose drift contains a learned score,
+                        and the likelihood bounds that train them, in the mold of the
+                        <a href="variational_inference.html#T-elbo_kl_decomposition" class="ref-link"><strong>ELBO decomposition</strong></a>,
+                        are KL divergences between the model's path measure and the data's. By
+                        the identity above, controlling that divergence means controlling an
+                        integrated squared difference of drifts, which is why score matching, an
+                        \(L^2\) regression on drifts, trains a likelihood model at all. And the
+                        weight \(M_T\) itself is an
+                        <a href="importance_sampling.html#D-importance_weights" class="ref-link"><strong>importance weight</strong></a>
+                        in the literal Monte Carlo sense: simulate trajectories from one
+                        equation, reweight by the exponential, and estimate expectations under
+                        another, with the KL identity governing the variance of the exchange.
+                    </p>
+                </div>
+
+                <p>
+                    The arc that opened with the change of measure closes where the probability
+                    track began. The
+                    <a href="radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>
+                    promised a density whenever two measures agree on
+                    what is impossible, an abstract pledge redeemed on the space of
+                    trajectories, in closed form, with the drift as its exponent. A measure is
+                    not scenery after all. It is a lever, and half of modern generative
+                    modelling consists of pulling it.
+                </p>
+            </section>
+
+        </div>
+
+    </body>
+</html>

@@ -1,0 +1,1075 @@
+---
+layout: default
+title: "The Girsanov Theorem"
+topic_id: prob-44
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Girsanov Theorem</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#measure-change">Changing the Measure</a>
+            <a href="#density-process">The Density Process</a>
+            <a href="#girsanov-theorem">The Girsanov Theorem</a>
+        </div>
+
+        <div class="container">
+
+            <section id="measure-change" class="section-content">
+                <h2>Changing the Measure, Not the Path</h2>
+
+                <p>
+                    Every object this track has built lives on a fixed probability space. The
+                    <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>Brownian motion</strong></a>
+                    was constructed on one, the stochastic integrals and diffusions were built over it,
+                    and every law, every expectation, every almost-sure statement so far has been read
+                    against a single measure \(\mathbb{P}\), fixed at the start and never questioned.
+                    This page makes the measure itself the variable.
+                </p>
+
+                <p>
+                    Here is the motivating computation. Let \(\mathbf{w}_t\) be an \(n\)-dimensional
+                    Brownian motion under \(\mathbb{P}\), let \(\mathbf{a}(t, \omega)\) be an adapted
+                    process, and consider
+                </p>
+
+                <p>
+                    \[
+                    \mathbf{Y}_t = \int_0^t \mathbf{a}(s, \omega)\, ds + \mathbf{w}_t .
+                    \]
+                </p>
+
+                <p>
+                    Under \(\mathbb{P}\), the process \(\mathbf{Y}\) is not a Brownian motion. Its
+                    increments carry the drift. The question of this page is whether some other
+                    probability measure \(\mathbb{Q}\), defined on the same space and the same
+                    \(\sigma\)-algebra, sees \(\mathbf{Y}\) as a Brownian motion. Nothing happens to
+                    the paths. Each outcome \(\omega\) traces exactly the curve it always did. What
+                    changes is the weight each bundle of curves receives, and the claim will be that
+                    a suitable reweighting makes the drift statistically invisible.
+                </p>
+
+                <p>
+                    Half of this story was settled long ago. The
+                    <a href="radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>
+                    guarantees that whenever one measure is
+                    <a href="radon_nikodym.html#D-absolute_continuity" class="ref-link"><strong>absolutely continuous</strong></a>
+                    with respect to another, a density connecting them exists. That was an abstract
+                    existence theorem, and it was proved with no hint of which measures would one day
+                    matter. Girsanov's theorem is the payoff: for the change of measure that removes
+                    a drift, the density is not merely shown to exist but written down in closed
+                    form, as an explicit exponential functional of the drift itself.
+                </p>
+
+                <p>
+                    Before any of that, there is a certification problem. Suppose a candidate
+                    \(\mathbb{Q}\) is placed on the table. To declare \(\mathbf{Y}\) a Brownian
+                    motion under \(\mathbb{Q}\), we must verify the defining properties against a
+                    measure given only through a density, where Gaussianity of increments is nothing
+                    like immediate. What saves the day is a characterization of Brownian motion that
+                    replaces distributional demands with martingale demands. We state it without
+                    proof.
+                </p>
+
+                <div class="theorem" id="T-levy_characterization">
+                    <span class="theorem-title">Theorem: The L&eacute;vy Characterization of Brownian Motion</span>
+                    <p>
+                        Fix \(T \in (0, \infty]\), let \(\{\mathcal{N}_t\}_{0 \leq t \leq T}\) be
+                        a filtration on a probability space carrying a measure \(\mathbb{Q}\),
+                        and let \(\mathbf{X}_t = (X_t^{(1)}, \ldots, X_t^{(n)})\), for
+                        \(0 \leq t \leq T\), be a continuous \(\{\mathcal{N}_t\}\)-adapted
+                        process with values in \(\mathbb{R}^n\) and
+                        \(\mathbf{X}_0 = \mathbf{0}\). Suppose that, with respect to
+                        \(\{\mathcal{N}_t\}\) and \(\mathbb{Q}\),
+                    </p>
+                    <p>
+                        (i) each component \(X_t^{(i)}\) is a
+                        <a href="ito_integral_properties.html#D-martingale" class="ref-link"><strong>martingale</strong></a>,
+                        and
+                    </p>
+                    <p>
+                        (ii) each product process \(X_t^{(i)} X_t^{(j)} - \delta_{ij}\, t\) is a
+                        martingale, for all \(i, j \in \{1, \ldots, n\}\).
+                    </p>
+                    <p>
+                        Then \(\mathbf{X}\) is an \(n\)-dimensional Brownian motion relative to
+                        \(\{\mathcal{N}_t\}\) under \(\mathbb{Q}\): its law is the law of an
+                        \(n\)-dimensional standard
+                        <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>Brownian motion</strong></a>
+                        started at the origin, restricted to the time interval \([0, T]\), and
+                        for all \(0 \leq s \leq t \leq T\) the increment
+                        \(\mathbf{X}_t - \mathbf{X}_s\) is independent of \(\mathcal{N}_s\).
+                    </p>
+                </div>
+
+                <p>
+                    We take this theorem on faith. Its proof belongs to the general theory of
+                    continuous martingales, which builds a stochastic calculus for martingales at
+                    large rather than for Brownian motion alone, and that machinery lies outside
+                    what this track has constructed.
+                </p>
+
+                <p>
+                    Still, the statement rewards a careful reading. Condition (i) says each
+                    coordinate plays a fair game. Condition (ii) says the products
+                    \(X^{(i)} X^{(j)}\), once corrected by \(\delta_{ij}\, t\), play fair games
+                    too, which is exactly the mean structure Brownian coordinates display: distinct
+                    coordinates are uncorrelated at the level of conditional increments, and each
+                    coordinate accumulates variance at unit rate. The force of the theorem is that
+                    these two statements about conditional means already pin down the entire law of
+                    the process, Gaussianity included, and even force each increment to forget the
+                    whole of \(\mathcal{N}_s\), not merely the past of \(\mathbf{X}\) itself. That
+                    last clause is the one the
+                    <a href="girsanov_sde.html">weak solutions built from this theorem</a>
+                    will rely on, and it is why the theorem is stated relative to an arbitrary ambient
+                    filtration.
+                </p>
+
+           </section>
+
+            <section id="density-process" class="section-content">
+                <h2>The Density Process</h2>
+
+                <p>
+                    The proof of Girsanov's theorem juggles two measures at once. Martingale
+                    properties must be verified under \(\mathbb{Q}\), but every computational tool
+                    we own, the It&ocirc; calculus above all, speaks the language of \(\mathbb{P}\).
+                    Two pieces of pure measure theory bridge the gap. The first converts
+                    conditional expectations under one measure into conditional expectations under
+                    the other. The second shows that a density prescribed at a terminal time
+                    interacts coherently with all earlier times, and that the family of restricted
+                    densities is itself a martingale.
+                </p>
+
+                <div class="theorem" id="T-bayes_rule_measure_change">
+                    <span class="theorem-title">Lemma: Bayes' Rule for a Change of Measure</span>
+                    <p>
+                        Let \((\Omega, \mathcal{G})\) be a measurable space and let \(\mu\) and
+                        \(\nu\) be probability measures on it with \(d\nu = f\, d\mu\), meaning
+                    </p>
+                    <p>
+                        \[
+                        \nu(A) = \int_A f\, d\mu
+                        \quad \text{for every } A \in \mathcal{G},
+                        \]
+                    </p>
+                    <p>
+                        for some non-negative \(f \in L^1(\mu)\). Let
+                        \(\mathcal{H} \subseteq \mathcal{G}\) be a sub-\(\sigma\)-algebra and let
+                        \(X\) be a random variable with \(\mathbb{E}_\nu[|X|] \lt \infty\). Then
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}_\nu[X \mid \mathcal{H}] \cdot \mathbb{E}_\mu[f \mid \mathcal{H}]
+                        = \mathbb{E}_\mu[f X \mid \mathcal{H}]
+                        \quad \mu\text{-a.s.},
+                        \]
+                    </p>
+                    <p>
+                        and the identity holds for every choice of versions of the conditional
+                        expectations involved.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 0 (Integrals against \(\nu\) and against \(f\, d\mu\)
+                        agree).</strong><br>
+                        For a non-negative measurable \(g\), the identity
+                        \(\int g\, d\nu = \int g f\, d\mu\) holds: it is the hypothesis when \(g\)
+                        is an indicator, extends to simple functions by linearity, and passes to
+                        arbitrary non-negative \(g\) by taking monotone limits of simple functions
+                        on both sides. Splitting an integrable \(g\) into positive and negative
+                        parts extends it to all of \(L^1(\nu)\). In particular
+                        \(\mathbb{E}_\mu[f |X|] = \mathbb{E}_\nu[|X|] \lt \infty\), so
+                        \(\mathbb{E}_\mu[f X \mid \mathcal{H}]\) is defined.
+                    </p>
+                    <p>
+                        <strong>Step 1 (The left side satisfies the defining property of the right
+                        side).</strong><br>
+                        Write \(W = \mathbb{E}_\nu[X \mid \mathcal{H}] \cdot
+                        \mathbb{E}_\mu[f \mid \mathcal{H}]\), a product of
+                        \(\mathcal{H}\)-measurable random variables and hence
+                        \(\mathcal{H}\)-measurable. Fix \(H \in \mathcal{H}\). The random variable
+                        \(Z = \mathbf{1}_H\, \mathbb{E}_\nu[X \mid \mathcal{H}]\) is
+                        \(\mathcal{H}\)-measurable, and \(Z f \in L^1(\mu)\), because
+                        <a href="conditional_expectation.html#T-ce_jensen" class="ref-link"><strong>conditional Jensen</strong></a>
+                        applied under \(\nu\) with the convex function \(|\cdot|\), followed by the
+                        <a href="conditional_expectation.html#T-ce_tower" class="ref-link"><strong>tower property</strong></a>
+                        under \(\nu\), gives
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}_\mu\bigl[ |Z| f \bigr]
+                        \leq \mathbb{E}_\nu\bigl[ \bigl| \mathbb{E}_\nu[X \mid \mathcal{H}] \bigr| \bigr]
+                        \leq \mathbb{E}_\nu\bigl[ \mathbb{E}_\nu[\, |X| \mid \mathcal{H}] \bigr]
+                        = \mathbb{E}_\nu[|X|] \lt \infty ,
+                        \]
+                    </p>
+                    <p>
+                        where the first inequality is Step 0 applied to
+                        \(|Z| = |Z| \cdot 1\). By
+                        <a href="conditional_expectation.html#T-ce_take_out" class="ref-link"><strong>take-out</strong></a>
+                        under \(\mu\), \(\mathbb{E}_\mu[Z f \mid \mathcal{H}] = Z\,
+                        \mathbb{E}_\mu[f \mid \mathcal{H}] = \mathbf{1}_H W\), and taking total
+                        expectations,
+                    </p>
+                    <p>
+                        \[
+                        \begin{align*}
+                        \int_H W\, d\mu
+                        &= \mathbb{E}_\mu\bigl[ \mathbb{E}_\mu[ Z f \mid \mathcal{H}] \bigr]
+                        = \mathbb{E}_\mu[ Z f ]
+                        = \int_H \mathbb{E}_\nu[X \mid \mathcal{H}]\, f\, d\mu \\\\
+                        &= \int_H \mathbb{E}_\nu[X \mid \mathcal{H}]\, d\nu
+                        = \int_H X\, d\nu
+                        = \int_H X f\, d\mu
+                        = \int_H f X\, d\mu ,
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        where the second line uses Step 0 twice and, in its middle equality, the
+                        <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>defining property</strong></a>
+                        of \(\mathbb{E}_\nu[X \mid \mathcal{H}]\) with the set
+                        \(H \in \mathcal{H}\). Running the same chain with \(|X|\) in place of
+                        \(X\) shows that the \(\mathcal{H}\)-measurable random variable
+                        \(\mathbb{E}_\nu[\,|X| \mid \mathcal{H}] \cdot \mathbb{E}_\mu[f \mid \mathcal{H}]\)
+                        has \(\mu\)-integral \(\mathbb{E}_\nu[|X|] \lt \infty\), and it dominates
+                        \(|W|\) \(\mu\)-almost everywhere: conditional Jensen under \(\nu\)
+                        gives the domination off a \(\nu\)-null exceptional set, which may be
+                        taken in \(\mathcal{H}\) since both sides are
+                        \(\mathcal{H}\)-measurable, and on that set the factor
+                        \(\mathbb{E}_\mu[f \mid \mathcal{H}]\), non-negative by
+                        <a href="conditional_expectation.html#T-ce_monotonicity" class="ref-link"><strong>monotonicity</strong></a>,
+                        integrates to the \(\nu\)-measure zero of the set and so vanishes
+                        \(\mu\)-a.e. there, making both sides zero.
+                        So \(W\) is \(\mu\)-integrable, \(\mathcal{H}\)-measurable, and integrates
+                        to \(\int_H f X\, d\mu\) over every \(H \in \mathcal{H}\). These are
+                        exactly the properties that characterize
+                        \(\mathbb{E}_\mu[f X \mid \mathcal{H}]\) up to \(\mu\)-null modification,
+                        and the identity follows.
+                    </p>
+                    <p>
+                        <strong>Step 2 (The version does not matter).</strong><br>
+                        Two versions of \(\mathbb{E}_\nu[X \mid \mathcal{H}]\) differ only on a
+                        \(\nu\)-null set \(H_0 \in \mathcal{H}\). On such a set,
+                        \(\int_{H_0} \mathbb{E}_\mu[f \mid \mathcal{H}]\, d\mu = \nu(H_0) = 0\)
+                        by the defining property, and since the integrand is non-negative it
+                        vanishes \(\mu\)-a.e. on \(H_0\). The product \(W\) is therefore unchanged
+                        \(\mu\)-a.s. when the version changes, and the same argument applies to
+                        versions of the two remaining conditional expectations, whose exceptional
+                        sets are already \(\mu\)-null.
+                    </p>
+                </div>
+
+                <p>
+                    The lemma has a plain reading. To condition under the new measure, condition
+                    under the old measure after weighting by the density, then normalize by the
+                    conditioned density. The structure is that of a Bayes update, with \(f\) in the
+                    role of a likelihood, and this is no coincidence: the same algebra runs the
+                    posterior computations of earlier probability pages, here transplanted from
+                    distributions on \(\mathbb{R}^n\) to measures on an abstract space.
+                </p>
+
+                <p>
+                    The second preparation concerns time. Girsanov's change of measure will be
+                    prescribed by a density at a fixed horizon \(T\). Yet martingale statements
+                    involve every intermediate time, so we must understand how a horizon-\(T\)
+                    density restricts to the information available at earlier times.
+                </p>
+
+                <div class="theorem" id="T-density_process_martingale">
+                    <span class="theorem-title">Lemma: The Density Process</span>
+                    <p>
+                        Fix \(T \gt 0\). Let \(\{\mathcal{M}_t\}_{t \in [0, T]}\) be a filtration
+                        on a measurable space \((\Omega, \mathcal{G})\) with
+                        \(\mathcal{M}_T \subseteq \mathcal{G}\), and let \(\mathbb{P}\) and
+                        \(\mathbb{Q}\) be probability measures on \(\mathcal{G}\) whose
+                        restrictions to \(\mathcal{M}_T\) satisfy
+                        \(\mathbb{Q} \ll \mathbb{P}\) on \(\mathcal{M}_T\). Then for every
+                        \(t \in [0, T]\), the restriction of \(\mathbb{Q}\) to \(\mathcal{M}_t\) is
+                        absolutely continuous with respect to that of \(\mathbb{P}\), the density
+                    </p>
+                    <p>
+                        \[
+                        Z_t := \frac{d\bigl( \mathbb{Q}\big|_{\mathcal{M}_t} \bigr)}
+                                     {d\bigl( \mathbb{P}\big|_{\mathcal{M}_t} \bigr)}
+                        \]
+                    </p>
+                    <p>
+                        exists, and the process \(\{Z_t\}_{t \in [0, T]}\) is a
+                        <a href="ito_integral_properties.html#D-martingale" class="ref-link"><strong>martingale</strong></a>
+                        with respect to \(\{\mathcal{M}_t\}\) and \(\mathbb{P}\), with
+                        \(Z_t = \mathbb{E}_{\mathbb{P}}[ Z_T \mid \mathcal{M}_t ]\) and
+                        \(\mathbb{E}_{\mathbb{P}}[Z_t] = 1\) for every \(t\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1 (Restriction preserves absolute continuity).</strong><br>
+                        Let \(H \in \mathcal{M}_t\) with \(\mathbb{P}(H) = 0\). Since
+                        \(\mathcal{M}_t \subseteq \mathcal{M}_T\), the set \(H\) lies in
+                        \(\mathcal{M}_T\), where
+                        <a href="radon_nikodym.html#D-absolute_continuity" class="ref-link"><strong>absolute continuity</strong></a>
+                        holds, so \(\mathbb{Q}(H) = 0\). Probability measures are finite, hence
+                        \(\sigma\)-finite, so the
+                        <a href="radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>
+                        applies on \((\Omega, \mathcal{M}_t)\) and delivers a non-negative
+                        \(\mathcal{M}_t\)-measurable density \(Z_t\), unique up to
+                        \(\mathbb{P}\)-null modification.
+                    </p>
+                    <p>
+                        <strong>Step 2 (The martingale identity).</strong><br>
+                        Fix \(0 \leq s \leq t \leq T\) and \(H \in \mathcal{M}_s\). Then \(H\)
+                        belongs to both \(\mathcal{M}_s\) and \(\mathcal{M}_t\), and each density
+                        computes the same number:
+                    </p>
+                    <p>
+                        \[
+                        \int_H Z_t\, d\mathbb{P}
+                        = \mathbb{Q}(H)
+                        = \int_H Z_s\, d\mathbb{P} .
+                        \]
+                    </p>
+                    <p>
+                        The random variable \(Z_s\) is \(\mathcal{M}_s\)-measurable, integrable
+                        with \(\mathbb{E}_{\mathbb{P}}[Z_s] = \mathbb{Q}(\Omega) = 1\), and by the
+                        display it integrates like \(Z_t\) over every set in \(\mathcal{M}_s\).
+                        By the
+                        <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>defining property</strong></a>
+                        of conditional expectation,
+                        \(Z_s = \mathbb{E}_{\mathbb{P}}[ Z_t \mid \mathcal{M}_s ]\)
+                        \(\mathbb{P}\)-a.s. This is condition (M3) of the martingale definition,
+                        adaptedness (M1) holds because each \(Z_t\) is
+                        \(\mathcal{M}_t\)-measurable by construction, and integrability (M2) was
+                        just computed. Taking \(t = T\) in the identity gives
+                        \(Z_s = \mathbb{E}_{\mathbb{P}}[ Z_T \mid \mathcal{M}_s ]\).
+                    </p>
+                </div>
+
+                <p>
+                    Read together, the two lemmas say that a change of measure at the horizon
+                    ripples backward through time in a controlled way: the density seen at time
+                    \(t\) is the best time-\(t\) prediction of the terminal density, and
+                    conditioning under the new measure costs one multiplication and one division by
+                    these densities. With the bridge in place, we can build the measure that
+                    absorbs a drift.
+                </p>
+            </section>
+
+            <section id="girsanov-theorem" class="section-content">
+                <h2>The Girsanov Theorem</h2>
+
+                <p>
+                    Which density removes a drift? Finite dimensions supply the guess. Under
+                    \(\mathbb{P}\), the increment of a Brownian coordinate over a short window
+                    \([t, t + \Delta t]\) is centered Gaussian with variance \(\Delta t\), while
+                    the corresponding increment of \(Y\) is \(a\, \Delta t + \Delta w\). For the
+                    increment of \(Y\) to look centered, outcomes must be reweighted so that
+                    \(\Delta w\) behaves as though its mean were \(-a\, \Delta t\). The ratio of
+                    the two Gaussian densities, evaluated at the observed increment
+                    \(x = \Delta w\), is
+                </p>
+
+                <p>
+                    \[
+                    \frac{\exp\bigl( -(x + a\, \Delta t)^2 / (2\, \Delta t) \bigr)}
+                         {\exp\bigl( -x^2 / (2\, \Delta t) \bigr)}
+                    = \exp\Bigl( -a\, x - \tfrac{1}{2}\, a^2\, \Delta t \Bigr) .
+                    \]
+                </p>
+
+                <p>
+                    Independent windows contribute independent ratios, and products of
+                    exponentials add their exponents. As the windows shrink, the sums become
+                    integrals, and the candidate density over the horizon \([0, T]\) emerges as
+                </p>
+
+                <p>
+                    \[
+                    M_T = \exp\Bigl(
+                    - \int_0^T \mathbf{a}(s, \omega) \cdot d\mathbf{w}_s
+                    - \frac{1}{2} \int_0^T | \mathbf{a}(s, \omega) |^2\, ds
+                    \Bigr) .
+                    \]
+                </p>
+
+                <p>
+                    This is a likelihood ratio between two descriptions of the same outcome, the
+                    very object that appears as an
+                    <a href="importance_sampling.html#D-importance_weights" class="ref-link"><strong>importance weight</strong></a>
+                    in Monte Carlo estimation, except that the weight is now attached to an entire
+                    path rather than to a single draw. Before it can define a measure, two
+                    analytic facts must be earned: the weight must integrate to one, and the
+                    family \(M_t\) obtained by shrinking the horizon must be a martingale, so that
+                    the change of measure restricts coherently through time in the sense of the
+                    density process lemma. For deterministic step integrands both facts are
+                    already on record in the
+                    <a href="martingale_representation.html#T-exponential_martingale" class="ref-link"><strong>exponential martingale identity</strong></a>.
+                    The drift we must absorb is a genuinely random process, so we extend the
+                    result, trading determinism for boundedness.
+                </p>
+
+                <div class="theorem" id="T-exponential_martingale_bounded">
+                    <span class="theorem-title">Lemma: The Exponential Martingale for Bounded Integrands</span>
+                    <p>
+                        Fix \(T \gt 0\) and a constant \(C\). Let
+                        \(\mathbf{a}(s, \omega) = (a_1, \ldots, a_n)\) be progressively
+                        measurable with respect to \(\{\mathcal{F}_s^{(n)}\}\) with
+                        \(|\mathbf{a}(s, \omega)| \leq C\) for all \((s, \omega)\), extended by
+                        zero after time \(T\). Define, for \(t \in [0, T]\),
+                    </p>
+                    <p>
+                        \[
+                        V_t = - \sum_{j=1}^{n} \int_0^t a_j(s, \omega)\, dw_s^{(j)}
+                        - \frac{1}{2} \int_0^t |\mathbf{a}(s, \omega)|^2\, ds ,
+                        \qquad
+                        M_t = e^{V_t} ,
+                        \]
+                    </p>
+                    <p>
+                        the stochastic integrals taken in their everywhere-continuous
+                        realizations. Then:
+                    </p>
+                    <p>
+                        (1) \(M\) is a
+                        <a href="ito_integral_properties.html#D-martingale" class="ref-link"><strong>martingale</strong></a>
+                        with respect to \(\{\mathcal{F}_t^{(n)}\}\) and \(\mathbb{P}\), read on
+                        the index set \([0, T]\), with \(\mathbb{E}[M_t] = 1\) for every \(t\).
+                    </p>
+                    <p>
+                        (2) For every real \(p \geq 1\) and every \(t \in [0, T]\),
+                        \(\mathbb{E}\bigl[ M_t^p \bigr]
+                        \leq \exp\bigl( \tfrac{1}{2}\, p\, (p - 1)\, C^2\, T \bigr)\).
+                    </p>
+                    <p>
+                        (3) Each \(M a_j\) belongs to \(\mathcal{V}(0, T)\), and for every
+                        \(t \in [0, T]\), almost surely,
+                    </p>
+                    <p>
+                        \[
+                        M_t = 1 - \sum_{j=1}^{n} \int_0^t M_s\, a_j(s, \omega)\, dw_s^{(j)} ,
+                        \]
+                    </p>
+                    <p>
+                        in differential shorthand
+                        \(dM_t = -M_t\, \mathbf{a} \cdot d\mathbf{w}_t\). In particular \(M\) is
+                        an It&ocirc; process with zero \(ds\)-coefficient.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1 (Localization).</strong><br>
+                        Boundedness and progressive measurability place each \(a_j\) and
+                        \(\tfrac{1}{2}|\mathbf{a}|^2\) in the coefficient classes of the
+                        <a href="multidim_ito_formula.html#D-multidim_ito_process" class="ref-link"><strong>vector It&ocirc; process</strong></a>
+                        definition with \(m = 1\), so \(V\) is a one-dimensional It&ocirc;
+                        process with everywhere-continuous paths. For \(R \gt 0\) let
+                        \(\tau_R\) be the first exit time of \(V\) from the open interval
+                        \((-R, R)\), a stopping time by the
+                        <a href="stopping_times.html#T-first_exit_stopping_time" class="ref-link"><strong>first exit theorem</strong></a>.
+                        On the compact interval \([0, T]\) every continuous path of \(V\) is
+                        bounded, so for each \(\omega\) there is a threshold beyond which
+                        \(\tau_R \geq T\): the stopped variable \(M_{t \wedge \tau_R}\) is
+                        eventually equal to \(M_t\) as \(R \to \infty\), for every \(\omega\)
+                        and every \(t \in [0, T]\). Note also that
+                        \(V_{s \wedge \tau_R} \in [-R, R]\) for all \(s\): before the exit this
+                        holds by definition, and at the exit it holds because continuity forces
+                        the exit position onto the boundary of the interval.
+                    </p>
+                    <p>
+                        <strong>Step 2 (The stopped process has truncated coefficients).</strong><br>
+                        By the
+                        <a href="strong_markov_property.html#T-stopped_ito_integral" class="ref-link"><strong>stopped It&ocirc; integral theorem</strong></a>,
+                        applied on each horizon \(t \leq T\) and read component by component
+                        against each driving coordinate \(w^{(j)}\) with the filtration
+                        \(\{\mathcal{F}_s^{(n)}\}\), as the
+                        <a href="ito_integral_properties.html#D-multidim_ito_integral" class="ref-link"><strong>multi-dimensional integral</strong></a>
+                        prescribes, each \(\mathbf{1}_{[0, \tau_R)}\, a_j\) lies in
+                        \(\mathcal{V}(0, T)\) and
+                    </p>
+                    <p>
+                        \[
+                        V_{t \wedge \tau_R}
+                        = - \sum_{j=1}^{n} \int_0^t \mathbf{1}_{[0, \tau_R)}(s)\, a_j\, dw_s^{(j)}
+                        - \int_0^t \mathbf{1}_{[0, \tau_R)}(s)\, \tfrac{1}{2} |\mathbf{a}|^2\, ds ,
+                        \]
+                    </p>
+                    <p>
+                        the \(ds\)-term because stopping an ordinary time integral at
+                        \(t \wedge \tau_R\) is the same as integrating the truncated integrand,
+                        an identity verified path by path. So \(V^R := V_{\cdot \wedge \tau_R}\)
+                        is again an It&ocirc; process, with coefficients cut off at \(\tau_R\).
+                    </p>
+                    <p>
+                        <strong>Step 3 (It&ocirc;'s formula below the stop).</strong><br>
+                        Apply the
+                        <a href="multidim_ito_formula.html#T-ito_formula_multidim" class="ref-link"><strong>general It&ocirc; formula</strong></a>
+                        to \(V^R\) with \(g(t, x) = e^x\), which is smooth on
+                        \([0, \infty) \times \mathbb{R}\). The membership condition asks that
+                        \(e^{V^R_s} \bigl( -a_j\, \mathbf{1}_{[0, \tau_R)}(s) \bigr)\) lie in
+                        \(\mathcal{V}(0, T)\) for each \(j\), and it does: the process is
+                        progressively measurable, and Step 1 bounds it by \(C e^{R}\). The
+                        \(ds\)-integrand produced by the formula vanishes identically,
+                    </p>
+                    <p>
+                        \[
+                        e^{V^R_s} \Bigl(
+                        - \tfrac{1}{2} |\mathbf{a}|^2\, \mathbf{1}_{[0, \tau_R)}
+                        + \tfrac{1}{2} |\mathbf{a}|^2\, \mathbf{1}_{[0, \tau_R)}
+                        \Bigr) = 0 ,
+                        \]
+                    </p>
+                    <p>
+                        the first term from the drift of \(V^R\) and the second from half the
+                        squared row of its \(d\mathbf{w}\)-coefficients. Since
+                        \(e^{V^R_s}\, \mathbf{1}_{[0, \tau_R)}(s) = M_s\, \mathbf{1}_{[0, \tau_R)}(s)\),
+                        the formula collapses to
+                    </p>
+                    <p>
+                        \[
+                        M_{t \wedge \tau_R}
+                        = 1 - \sum_{j=1}^{n} \int_0^t
+                        \mathbf{1}_{[0, \tau_R)}(s)\, M_s\, a_j\, dw_s^{(j)} .
+                        \]
+                    </p>
+                    <p>
+                        Each integrand is bounded, hence in \(\mathcal{V}(0, T)\), so each
+                        integral is a martingale by the
+                        <a href="ito_integral_properties.html#T-ito_martingale" class="ref-link"><strong>martingale property of It&ocirc; integrals</strong></a>,
+                        and a finite sum of martingales is a martingale. Therefore
+                        \(M_{\cdot \wedge \tau_R}\) is a martingale with
+                        \(\mathbb{E}[M_{t \wedge \tau_R}] = 1\).
+                    </p>
+                    <p>
+                        <strong>Step 4 (A second-moment bound, uniform in \(R\)).</strong><br>
+                        Let \(N\) denote the exponential process built from the integrand
+                        \(2\mathbf{a}\) in place of \(\mathbf{a}\). Expanding the exponents,
+                    </p>
+                    <p>
+                        \[
+                        M_t^2 = e^{2 V_t}
+                        = N_t \cdot \exp\Bigl( \int_0^t |\mathbf{a}|^2\, ds \Bigr)
+                        \leq e^{C^2 T}\, N_t ,
+                        \]
+                    </p>
+                    <p>
+                        and, for \(s \leq \tau_R\), the same expansion gives
+                        \(N_s = \exp\bigl( 2 V_s - \int_0^s |\mathbf{a}|^2\, ds \bigr)
+                        \leq e^{2R}\). Steps 2 and 3 therefore apply verbatim to \(N\) with the
+                        same stopping time \(\tau_R\): the only property of \(\tau_R\) those
+                        steps used is that the resulting integrands are bounded on
+                        \([0, \tau_R)\), which the display just secured. Hence
+                        \(\mathbb{E}[N_{t \wedge \tau_R}] = 1\), and
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\bigl[ M_{t \wedge \tau_R}^2 \bigr]
+                        \leq e^{C^2 T}\, \mathbb{E}\bigl[ N_{t \wedge \tau_R} \bigr]
+                        = e^{C^2 T}
+                        \quad \text{for every } R .
+                        \]
+                    </p>
+                    <p>
+                        Letting \(R \to \infty\) along the pointwise convergence of Step 1,
+                        <a href="limit_theorems_product_measures.html#T-prob-fatou" class="ref-link"><strong>Fatou's lemma</strong></a>
+                        yields \(\mathbb{E}[M_t^2] \leq e^{C^2 T}\) for every \(t \in [0, T]\).
+                    </p>
+                    <p>
+                        <strong>Step 5 (From stopped to global martingale).</strong><br>
+                        Write \(\Delta_R = M_{t \wedge \tau_R} - M_t\), so \(\Delta_R \to 0\)
+                        pointwise. For every threshold \(K \gt 0\), the pointwise inequality
+                        \(|\Delta_R| \leq \min(|\Delta_R|, K) + \Delta_R^2 / K\) holds, because
+                        on \(\{|\Delta_R| \gt K\}\) the second summand alone dominates. Taking
+                        expectations,
+                        \(\mathbb{E}[\min(|\Delta_R|, K)] \to 0\) by the
+                        <a href="limit_theorems_product_measures.html#T-prob-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        with the constant dominator \(K\), while
+                        \(\mathbb{E}[\Delta_R^2] \leq 2\, \mathbb{E}[M_{t \wedge \tau_R}^2]
+                        + 2\, \mathbb{E}[M_t^2] \leq 4 e^{C^2 T}\) by Step 4. Hence
+                        \(\limsup_R \mathbb{E}|\Delta_R| \leq 4 e^{C^2 T} / K\) for every
+                        \(K\), and \(\mathbb{E}|\Delta_R| \to 0\).
+                    </p>
+                    <p>
+                        Now fix \(0 \leq s \leq t \leq T\) and \(A \in \mathcal{F}_s^{(n)}\).
+                        Integrating the stopped martingale identity of Step 3 over \(A\) gives
+                        \(\mathbb{E}[\mathbf{1}_A\, M_{t \wedge \tau_R}]
+                        = \mathbb{E}[\mathbf{1}_A\, M_{s \wedge \tau_R}]\), and since
+                        \(|\mathbb{E}[\mathbf{1}_A\, M_{t \wedge \tau_R}]
+                        - \mathbb{E}[\mathbf{1}_A\, M_t]| \leq \mathbb{E}|\Delta_R| \to 0\),
+                        with the same estimate at time \(s\), the limits agree:
+                        \(\mathbb{E}[\mathbf{1}_A\, M_t] = \mathbb{E}[\mathbf{1}_A\, M_s]\) for
+                        every \(A \in \mathcal{F}_s^{(n)}\). The variable \(M_s\) is
+                        \(\mathcal{F}_s^{(n)}\)-measurable, being a continuous function of
+                        adapted integrals, and integrable, so the
+                        <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>defining property</strong></a>
+                        identifies \(M_s = \mathbb{E}[M_t \mid \mathcal{F}_s^{(n)}]\) a.s. The
+                        three conditions of the martingale definition hold on \([0, T]\), and
+                        taking \(s = 0\) gives \(\mathbb{E}[M_t] = M_0 = 1\). This proves (1).
+                    </p>
+                    <p>
+                        <strong>Step 6 (Moments).</strong><br>
+                        For real \(p \geq 1\), the process \(p\, \mathbf{a}\) is progressively
+                        measurable and bounded by \(p\, C\), so part (1) applies to its
+                        exponential process \(N^{(p)}\), giving
+                        \(\mathbb{E}[N^{(p)}_t] = 1\). The exponents rearrange as
+                    </p>
+                    <p>
+                        \[
+                        M_t^p
+                        = \exp\Bigl( - \int_0^t p\, \mathbf{a} \cdot d\mathbf{w}
+                        - \frac{p}{2} \int_0^t |\mathbf{a}|^2\, ds \Bigr)
+                        = N^{(p)}_t \cdot
+                        \exp\Bigl( \frac{p^2 - p}{2} \int_0^t |\mathbf{a}|^2\, ds \Bigr)
+                        \leq e^{\frac{1}{2} p (p-1) C^2 T}\, N^{(p)}_t ,
+                        \]
+                    </p>
+                    <p>
+                        and taking expectations proves (2).
+                    </p>
+                    <p>
+                        <strong>Step 7 (The unstopped identity).</strong><br>
+                        First the membership claim. Each \(M a_j\) is a product of progressively
+                        measurable processes, and by
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        together with the bound of Step 4,
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\Bigl[ \int_0^T M_s^2\, a_j^2\, ds \Bigr]
+                        \leq C^2 \int_0^T \mathbb{E}\bigl[ M_s^2 \bigr]\, ds
+                        \leq C^2\, T\, e^{C^2 T} \lt \infty ,
+                        \]
+                    </p>
+                    <p>
+                        so \(M a_j \in \mathcal{V}(0, T)\). Next, the truncated integrands of
+                        Step 3 converge to \(M a_j\) in the \(\mathcal{V}\)-norm: the random
+                        variable \(\int_0^t \mathbf{1}_{[\tau_R, \infty)}(s)\, M_s^2\, a_j^2\, ds\)
+                        vanishes for \(R\) large by Step 1, is dominated by the integrable
+                        variable \(\int_0^T M_s^2\, a_j^2\, ds\), and so has expectation tending
+                        to zero by dominated convergence. By the
+                        <a href="ito_integral.html#T-ito_isometry" class="ref-link"><strong>It&ocirc; isometry</strong></a>,
+                        applied per component on the horizon \(t\), each truncated integral
+                        converges in \(L^2(\mathbb{P})\) to
+                        \(\int_0^t M_s\, a_j\, dw_s^{(j)}\), and the finite sum over \(j\)
+                        converges as well. The left side of Step 3's identity converges to
+                        \(M_t\) pointwise. An \(L^2\)-convergent sequence has an almost surely
+                        convergent
+                        <a href="../Calculus/lp_completeness.html#T-lp_subsequence_ae" class="ref-link"><strong>subsequence</strong></a>,
+                        and along it both limits must agree, so for each \(t\), almost surely,
+                    </p>
+                    <p>
+                        \[
+                        M_t = 1 - \sum_{j=1}^{n} \int_0^t M_s\, a_j\, dw_s^{(j)} .
+                        \]
+                    </p>
+                    <p>
+                        Both sides are continuous in \(t\) in their chosen realizations, so the
+                        identity extends from a countable dense set of times to all of
+                        \([0, T]\) simultaneously, off a single null set. This proves (3).
+                    </p>
+                </div>
+
+                <p>
+                    The lemma quietly upgrades the site's exponential-martingale toolkit: where
+                    the deterministic step case rested on a Gaussian computation, boundedness
+                    alone now suffices, at the price of the localization argument above. Both
+                    results are instances of a single sufficient condition, and we will return
+                    to that condition, and to what remains unproved about it, once the main
+                    theorem is on the table.
+                </p>
+
+                <p>
+                    One more preparation. The proof ahead multiplies \(M\) against processes that
+                    grow, and each product must be certified as an admissible integrand before
+                    the product rule or the martingale property of It&ocirc; integrals may touch
+                    it. The moment bound of the lemma turns all of these checks into one.
+                </p>
+
+                <div class="theorem" id="T-weighted_integrand_membership">
+                    <span class="theorem-title">Lemma: Membership of Exponentially Weighted Integrands</span>
+                    <p>
+                        In the setting of the exponential martingale lemma, let \(h(s, \omega)\)
+                        be progressively measurable with \(|h| \leq C'\) for a constant \(C'\),
+                        and let \(\Phi\) be a continuous adapted process with
+                        \(\sup_{s \in [0, T]} \mathbb{E}\bigl[ \Phi_s^4 \bigr] \lt \infty\).
+                        Then \(h\, M\, \Phi \in \mathcal{V}(0, T)\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        The product is progressively measurable, hence measurable and adapted.
+                        For the integrability condition, the pointwise inequality
+                        \(M_s^2 \Phi_s^2 \leq \tfrac{1}{2} M_s^4 + \tfrac{1}{2} \Phi_s^4\)
+                        together with
+                        <a href="limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        and the moment bound of the exponential martingale lemma with \(p = 4\)
+                        gives
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\Bigl[ \int_0^T h^2 M_s^2 \Phi_s^2\, ds \Bigr]
+                        \leq \frac{(C')^2\, T}{2}
+                        \Bigl( e^{6 C^2 T} + \sup_{s \in [0, T]} \mathbb{E}\bigl[ \Phi_s^4 \bigr] \Bigr)
+                        \lt \infty .
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    Everything is now in place: a candidate density, its martingale property, and
+                    a supply of admissible integrands. Here is the theorem.
+                </p>
+
+                <div class="theorem" id="T-girsanov">
+                    <span class="theorem-title">Theorem: The Girsanov Theorem</span>
+                    <p>
+                        Fix \(T \gt 0\) and a constant \(C\). Let
+                        \(\mathbf{a}(s, \omega)\) be progressively measurable with respect to
+                        \(\{\mathcal{F}_s^{(n)}\}\) with \(|\mathbf{a}(s, \omega)| \leq C\), let
+                        \(M\) be its exponential martingale, and define
+                    </p>
+                    <p>
+                        \[
+                        \mathbf{Y}_t = \int_0^t \mathbf{a}(s, \omega)\, ds + \mathbf{w}_t ,
+                        \quad 0 \leq t \leq T ,
+                        \]
+                    </p>
+                    <p>
+                        together with the measure \(\mathbb{Q}\) on
+                        \(\bigl( \Omega, \mathcal{F}_T^{(n)} \bigr)\) given by
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{Q}(A) = \mathbb{E}_{\mathbb{P}}\bigl[ \mathbf{1}_A\, M_T \bigr] ,
+                        \quad A \in \mathcal{F}_T^{(n)} .
+                        \]
+                    </p>
+                    <p>
+                        Then:
+                    </p>
+                    <p>
+                        (1) \(\mathbb{Q}\) is a probability measure, and \(\mathbb{Q}\) and
+                        \(\mathbb{P}\) are equivalent on \(\mathcal{F}_T^{(n)}\): each is
+                        absolutely continuous with respect to the other.
+                    </p>
+                    <p>
+                        (2) For every \(t \in [0, T]\), the density of the restriction of
+                        \(\mathbb{Q}\) to \(\mathcal{F}_t^{(n)}\) with respect to that of
+                        \(\mathbb{P}\) is \(M_t\).
+                    </p>
+                    <p>
+                        (3) Under \(\mathbb{Q}\), the process
+                        \(( \mathbf{Y}_t )_{t \in [0, T]}\) is an \(n\)-dimensional
+                        <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>Brownian motion</strong></a>
+                        relative to \(\{\mathcal{F}_t^{(n)}\}\), started at the origin: its law
+                        under \(\mathbb{Q}\) coincides with the law of standard Brownian motion
+                        restricted to \([0, T]\), and each increment
+                        \(\mathbf{Y}_t - \mathbf{Y}_s\) is independent of
+                        \(\mathcal{F}_s^{(n)}\) under \(\mathbb{Q}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        <strong>Step 1 (A probability measure equivalent to
+                        \(\mathbb{P}\)).</strong><br>
+                        The It&ocirc; integrals defining \(V_T\) are finite real numbers for
+                        every \(\omega\) in their continuous realizations, so
+                        \(M_T(\omega) = e^{V_T(\omega)} \gt 0\) everywhere. Non-negativity gives
+                        \(\mathbb{Q} \geq 0\), the exponential martingale lemma gives
+                        \(\mathbb{Q}(\Omega) = \mathbb{E}_{\mathbb{P}}[M_T] = 1\), and for disjoint sets
+                        \(A_1, A_2, \ldots\) the partial sums of
+                        \(\sum_k \mathbf{1}_{A_k} M_T\) increase to
+                        \(\mathbf{1}_{\cup_k A_k} M_T\), so countable additivity follows from the
+                        <a href="limit_theorems_product_measures.html#T-prob-mct" class="ref-link"><strong>monotone convergence theorem</strong></a>.
+                        Absolute continuity \(\mathbb{Q} \ll \mathbb{P}\) is built into the
+                        definition. Conversely, if \(\mathbb{Q}(A) = 0\) then the non-negative
+                        variable \(\mathbf{1}_A M_T\) has zero expectation, hence vanishes
+                        \(\mathbb{P}\)-a.s., and since \(M_T \gt 0\) everywhere this forces
+                        \(\mathbb{P}(A) = 0\). This proves (1).
+                    </p>
+                    <p>
+                        <strong>Step 2 (The density process is \(M\) itself).</strong><br>
+                        Fix \(t \in [0, T]\) and \(A \in \mathcal{F}_t^{(n)}\). By the
+                        <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>defining property</strong></a>
+                        of conditional expectation and the martingale property of \(M\),
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{Q}(A)
+                        = \mathbb{E}_{\mathbb{P}}\bigl[ \mathbf{1}_A\, M_T \bigr]
+                        = \mathbb{E}_{\mathbb{P}}\bigl[ \mathbf{1}_A\,
+                        \mathbb{E}_{\mathbb{P}}[ M_T \mid \mathcal{F}_t^{(n)} ] \bigr]
+                        = \mathbb{E}_{\mathbb{P}}\bigl[ \mathbf{1}_A\, M_t \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        The variable \(M_t\) is non-negative and
+                        \(\mathcal{F}_t^{(n)}\)-measurable, so it is a density of the restricted
+                        \(\mathbb{Q}\) with respect to the restricted \(\mathbb{P}\), and by the
+                        uniqueness half of the
+                        <a href="radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>
+                        it is the density, up to \(\mathbb{P}\)-null modification. This proves
+                        (2), and it identifies the abstract density process of the pair
+                        \((\mathbb{P}, \mathbb{Q})\), whose martingale property the density
+                        process lemma establishes in general, with the concrete exponential
+                        \(M\).
+                    </p>
+                    <p>
+                        <strong>Step 3 (Moments of the shifted motion).</strong><br>
+                        Each coordinate \(w^{(i)}_s\) is a centered Gaussian variable with
+                        variance \(s\), by property (W1) of the
+                        <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>Brownian motion definition</strong></a>.
+                        Writing \(\varphi_s\) for its density, the relation
+                        \(z\, \varphi_s(z) = -s\, \varphi_s'(z)\) and one integration by parts
+                        give the recursion
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}\bigl[ (w^{(i)}_s)^{2k} \bigr]
+                        = \int_{\mathbb{R}} z^{2k}\, \varphi_s(z)\, dz
+                        = (2k - 1)\, s \int_{\mathbb{R}} z^{2k - 2}\, \varphi_s(z)\, dz
+                        = (2k - 1)\, s\, \mathbb{E}\bigl[ (w^{(i)}_s)^{2k - 2} \bigr] ,
+                        \]
+                    </p>
+                    <p>
+                        so by induction every even moment is finite and bounded uniformly for
+                        \(s \in [0, T]\). Since
+                        \(|Y^{(i)}_s| \leq C T + |w^{(i)}_s|\) and
+                        \((x + y)^{2k} \leq 2^{2k - 1} ( x^{2k} + y^{2k} )\) by convexity, every
+                        even moment of \(Y^{(i)}_s\) up to order eight is bounded uniformly on
+                        \([0, T]\). Two consequences will be needed below. First, for each
+                        \(i, j\),
+                    </p>
+                    <p>
+                        \[
+                        \sup_{s \in [0, T]} \mathbb{E}\Bigl[ \bigl( Y^{(i)}_s \bigr)^4 \Bigr]
+                        \lt \infty ,
+                        \qquad
+                        \sup_{s \in [0, T]} \mathbb{E}\Bigl[
+                        \bigl( Y^{(i)}_s Y^{(j)}_s - \delta_{ij}\, s \bigr)^4 \Bigr]
+                        \lt \infty ,
+                        \]
+                    </p>
+                    <p>
+                        the second because
+                        \((x y - c)^4 \leq 8\, ( x^4 y^4 + c^4 )
+                        \leq 8 \bigl( \tfrac{1}{2} x^8 + \tfrac{1}{2} y^8 + c^4 \bigr)\)
+                        with \(|c| \leq T\). Second, for \(X\) standing for either
+                        \(Y^{(i)}_t\) or \(Y^{(i)}_t Y^{(j)}_t - \delta_{ij}\, t\), the second
+                        moment \(\mathbb{E}[X^2]\) is finite by the even-moment bounds just
+                        recorded, so
+                        \(\mathbb{E}_{\mathbb{Q}}[|X|] = \mathbb{E}_{\mathbb{P}}[M_T |X|]
+                        \leq \tfrac{1}{2} \mathbb{E}[M_T^2]
+                        + \tfrac{1}{2} \mathbb{E}[X^2] \lt \infty\): both variables are
+                        \(\mathbb{Q}\)-integrable.
+                    </p>
+                    <p>
+                        <strong>Step 4 (The compensated products are
+                        \(\mathbb{P}\)-martingales).</strong><br>
+                        The process \(\mathbf{Y}\) is an \(n\)-dimensional
+                        <a href="multidim_ito_formula.html#D-multidim_ito_process" class="ref-link"><strong>It&ocirc; process</strong></a>
+                        with drift \(\mathbf{a}\), coefficient matrix the identity, and
+                        \(\mathbf{Y}_0 = \mathbf{0}\), while the exponential martingale lemma
+                        exhibits \(M\) as an It&ocirc; process with zero drift and
+                        \(d\mathbf{w}\)-row \(-M \mathbf{a}^\top\). Fix \(i\) and set
+                        \(K_t = M_t\, Y^{(i)}_t\). The
+                        <a href="multidim_ito_formula.html#T-stochastic_product_rule" class="ref-link"><strong>stochastic product rule</strong></a>
+                        asks that, for each \(j\), the process
+                        \(Y^{(i)} \cdot ( -M a_j ) + M\, \delta_{ij}\) lie in
+                        \(\mathcal{V}(0, T)\), which the membership lemma grants: take
+                        \(h = -a_j\), \(\Phi = Y^{(i)}\) for the first summand and \(h = 1\),
+                        \(\Phi = \delta_{ij}\) for the second, and note that \(\mathcal{V}(0, T)\)
+                        is closed under sums since
+                        \((f + g)^2 \leq 2 f^2 + 2 g^2\). The product rule then yields
+                    </p>
+                    <p>
+                        \[
+                        dK_t
+                        = M_t \bigl( a_i\, dt + dw^{(i)}_t \bigr)
+                        + Y^{(i)}_t \bigl( - M_t\, \mathbf{a} \cdot d\mathbf{w}_t \bigr)
+                        + \sum_{j=1}^{n} ( - M_t\, a_j )\, \delta_{ij}\, dt
+                        = M_t\, dw^{(i)}_t
+                        - Y^{(i)}_t M_t\, \mathbf{a} \cdot d\mathbf{w}_t ,
+                        \]
+                    </p>
+                    <p>
+                        the two \(dt\)-terms cancelling exactly. Since \(K_0 = 0\), the process
+                        \(K\) is a sum of It&ocirc; integrals of \(\mathcal{V}(0, T)\)-integrands
+                        and hence a martingale under \(\mathbb{P}\), by the
+                        <a href="ito_integral_properties.html#T-ito_martingale" class="ref-link"><strong>martingale property of It&ocirc; integrals</strong></a>.
+                    </p>
+                    <p>
+                        Now fix \(i, j\) and treat the product \(Y^{(i)} Y^{(j)}\). The product
+                        rule applies with membership condition
+                        \(Y^{(i)} \delta_{jk} + Y^{(j)} \delta_{ik} \in \mathcal{V}(0, T)\) for
+                        each \(k\), granted directly by
+                        \(\mathbb{E}\bigl[ (Y^{(i)}_s)^2 \bigr] \leq 2 C^2 T^2 + 2 s\) and
+                        Tonelli, and produces the bracket
+                        \(\sum_k \delta_{ik} \delta_{jk}\, dt = \delta_{ij}\, dt\):
+                    </p>
+                    <p>
+                        \[
+                        d\bigl( Y^{(i)} Y^{(j)} \bigr)
+                        = Y^{(i)}\, dY^{(j)} + Y^{(j)}\, dY^{(i)} + \delta_{ij}\, dt .
+                        \]
+                    </p>
+                    <p>
+                        Absorbing the constant \(-\delta_{ij}\) into the drift coefficient, the
+                        process \(G_t = Y^{(i)}_t Y^{(j)}_t - \delta_{ij}\, t\) is an It&ocirc;
+                        process with drift \(Y^{(i)} a_j + Y^{(j)} a_i\) and
+                        \(d\mathbf{w}\)-row \(Y^{(i)} \mathbf{e}_j^\top +
+                        Y^{(j)} \mathbf{e}_i^\top\), where \(\mathbf{e}_i\) denotes the
+                        \(i\)-th standard basis vector. Set
+                        \(\widetilde{K}_t = M_t\, G_t\). The product rule's membership
+                        condition reads, for each \(k\),
+                        \(G \cdot ( - M a_k )
+                        + M \bigl( Y^{(i)} \delta_{jk} + Y^{(j)} \delta_{ik} \bigr)
+                        \in \mathcal{V}(0, T)\), and the membership lemma grants every summand
+                        through Step 3's fourth-moment bounds, with
+                        \(\Phi = G\) and \(\Phi = Y^{(i)}, Y^{(j)}\) respectively. The bracket
+                        is \(\sum_k ( - M a_k ) \bigl( Y^{(i)} \delta_{jk}
+                        + Y^{(j)} \delta_{ik} \bigr)\, dt
+                        = - M \bigl( Y^{(i)} a_j + Y^{(j)} a_i \bigr)\, dt\), which cancels
+                        \(M\) times the drift of \(G\), so
+                    </p>
+                    <p>
+                        \[
+                        d\widetilde{K}_t
+                        = M_t \Bigl( Y^{(i)}_t\, dw^{(j)}_t + Y^{(j)}_t\, dw^{(i)}_t \Bigr)
+                        - G_t\, M_t\, \mathbf{a} \cdot d\mathbf{w}_t .
+                        \]
+                    </p>
+                    <p>
+                        Again \(\widetilde{K}_0 = 0\), the integrands lie in
+                        \(\mathcal{V}(0, T)\), and \(\widetilde{K}\) is a martingale under
+                        \(\mathbb{P}\).
+                    </p>
+                    <p>
+                        <strong>Step 5 (Transfer to \(\mathbb{Q}\) by Bayes' rule).</strong><br>
+                        Fix \(0 \leq s \leq t \leq T\) and let \(X\) stand for either
+                        \(Y^{(i)}_t\) or \(Y^{(i)}_t Y^{(j)}_t - \delta_{ij}\, t\). Apply
+                        <a href="#T-bayes_rule_measure_change" class="ref-link"><strong>Bayes' rule</strong></a>
+                        on \(\bigl( \Omega, \mathcal{F}_T^{(n)} \bigr)\) with \(\mu\) the
+                        restriction of \(\mathbb{P}\), \(\nu = \mathbb{Q}\), density
+                        \(f = M_T\), and \(\mathcal{H} = \mathcal{F}_s^{(n)}\). The
+                        \(\mathbb{Q}\)-integrability of \(X\) is Step 3, so
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}_{\mathbb{Q}}\bigl[ X \mid \mathcal{F}_s^{(n)} \bigr]
+                        \cdot \mathbb{E}_{\mathbb{P}}\bigl[ M_T \mid \mathcal{F}_s^{(n)} \bigr]
+                        = \mathbb{E}_{\mathbb{P}}\bigl[ M_T\, X \mid \mathcal{F}_s^{(n)} \bigr] .
+                        \]
+                    </p>
+                    <p>
+                        The second factor on the left is \(M_s\), by the martingale property of
+                        \(M\). For the right side, the
+                        <a href="conditional_expectation.html#T-ce_tower" class="ref-link"><strong>tower property</strong></a>
+                        through \(\mathcal{F}_t^{(n)}\) and
+                        <a href="conditional_expectation.html#T-ce_take_out" class="ref-link"><strong>take-out</strong></a>
+                        of the \(\mathcal{F}_t^{(n)}\)-measurable factor \(X\), whose product
+                        with \(M_T\) is integrable by
+                        \(|M_T X| \leq \tfrac{1}{2} M_T^2 + \tfrac{1}{2} X^2\) and Step 3, give
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}_{\mathbb{P}}\bigl[ M_T X \mid \mathcal{F}_s^{(n)} \bigr]
+                        = \mathbb{E}_{\mathbb{P}}\Bigl[ X\,
+                        \mathbb{E}_{\mathbb{P}}\bigl[ M_T \mid \mathcal{F}_t^{(n)} \bigr]
+                        \Bigm| \mathcal{F}_s^{(n)} \Bigr]
+                        = \mathbb{E}_{\mathbb{P}}\bigl[ X M_t \mid \mathcal{F}_s^{(n)} \bigr] ,
+                        \]
+                    </p>
+                    <p>
+                        and \(X M_t\) is exactly \(K_t\), respectively \(\widetilde{K}_t\), so
+                        by Step 4 its conditional expectation at time \(s\) is \(K_s\),
+                        respectively \(\widetilde{K}_s\), that is, \(M_s\, Y^{(i)}_s\),
+                        respectively \(M_s \bigl( Y^{(i)}_s Y^{(j)}_s - \delta_{ij}\, s \bigr)\).
+                        Combining the displays and dividing by \(M_s\), which is strictly
+                        positive at every \(\omega\),
+                    </p>
+                    <p>
+                        \[
+                        \mathbb{E}_{\mathbb{Q}}\bigl[ Y^{(i)}_t \mid \mathcal{F}_s^{(n)} \bigr]
+                        = Y^{(i)}_s ,
+                        \qquad
+                        \mathbb{E}_{\mathbb{Q}}\bigl[ Y^{(i)}_t Y^{(j)}_t - \delta_{ij}\, t
+                        \Bigm| \mathcal{F}_s^{(n)} \bigr]
+                        = Y^{(i)}_s Y^{(j)}_s - \delta_{ij}\, s ,
+                        \]
+                    </p>
+                    <p>
+                        first \(\mathbb{P}\)-a.s. and then \(\mathbb{Q}\)-a.s., since every
+                        \(\mathbb{P}\)-null set is \(\mathbb{Q}\)-null by (1). Each process is
+                        adapted and \(\mathbb{Q}\)-integrable, so under \(\mathbb{Q}\) the
+                        coordinates \(Y^{(i)}\) and the compensated products
+                        \(Y^{(i)} Y^{(j)} - \delta_{ij}\, t\) are martingales with respect to
+                        \(\{\mathcal{F}_t^{(n)}\}\) on \([0, T]\).
+                    </p>
+                    <p>
+                        <strong>Step 6 (Conclusion by the L&eacute;vy characterization).</strong><br>
+                        The process \(\mathbf{Y}\) is continuous, starts at the origin, and is
+                        adapted to \(\{\mathcal{F}_t^{(n)}\}\). Step 5 verifies conditions (i)
+                        and (ii) of the
+                        <a href="#T-levy_characterization" class="ref-link"><strong>L&eacute;vy characterization</strong></a>
+                        with respect to \(\{\mathcal{F}_t^{(n)}\}\) and \(\mathbb{Q}\), and the
+                        characterization delivers exactly the conclusion of (3): the law of
+                        \(\mathbf{Y}\) under \(\mathbb{Q}\) is that of an \(n\)-dimensional
+                        standard Brownian motion on \([0, T]\), with each increment independent
+                        of \(\mathcal{F}_s^{(n)}\).
+                    </p>
+                </div>
+
+                <p>
+                    Boundedness of the drift is the one hypothesis a reader may wish to relax,
+                    and the honest accounting is this. The theorem's proof used boundedness only
+                    to secure the martingale property of \(M\) and the membership bounds, and
+                    the classical sufficient condition covering unbounded drifts is the Novikov
+                    condition,
+                </p>
+
+                <p>
+                    \[
+                    \mathbb{E}\Bigl[ \exp\Bigl( \frac{1}{2} \int_0^T
+                    |\mathbf{a}(s, \omega)|^2\, ds \Bigr) \Bigr] \lt \infty ,
+                    \]
+                </p>
+
+                <p>
+                    under which \(M\) is again a martingale and the conclusions above persist.
+                    This page has proved two instances of that principle from scratch: the
+                    <a href="martingale_representation.html#T-exponential_martingale" class="ref-link"><strong>deterministic step case</strong></a>,
+                    where the condition holds because the exponent is a constant, and the bounded
+                    case, where it holds because the exponent is at most
+                    \(\tfrac{1}{2} C^2 T\). The general implication we do not prove: like the
+                    L&eacute;vy characterization, it belongs to the theory of continuous
+                    martingales, and every use of Girsanov's theorem on this site runs through
+                    the bounded case.
+                </p>
+            </section>
+
+        </div>
+
+    </body>
+</html>
