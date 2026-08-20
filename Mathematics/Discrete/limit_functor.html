@@ -1,0 +1,510 @@
+---
+layout: default
+title: "The Limit Functor"
+topic_id: disc-41
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">The Limit Functor</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#diagonal-functor-and-cones">The Diagonal Functor and Cones</a>
+            <a href="#limits-as-representations">Limits as Representations</a>
+            <a href="#maps-between-diagrams">Maps between Diagrams</a>
+            <a href="#limit-functor-right-adjoint">The Limit Functor as a Right Adjoint</a>
+        </div>
+
+        <div class="container">
+
+            <section id="diagonal-functor-and-cones" class="section-content">
+                <h2>The Diagonal Functor and Cones as Natural Transformations</h2>
+
+                <p>
+                    Across this series we have described universal properties in three different languages. An
+                    <a href="adjoint_functors.html#D-adjunction" class="ref-link"><strong>adjunction</strong></a>
+                    expresses a universal property as an isomorphism of hom-sets between two functors. A
+                    <a href="representable_functors.html#D-representable_functor" class="ref-link"><strong>representable functor</strong></a>
+                    expresses it as an isomorphism between an abstract functor and a hom-functor. A
+                    <a href="categorical_limits.html#D-limit_categorical" class="ref-link"><strong>limit</strong></a>
+                    expresses it as a universal cone. Each language can in principle say what the others say, but
+                    each says certain things more gracefully.
+                </p>
+
+                <p>
+                    This page carries out the translation for limits. We rephrase the definition of
+                    limit first in terms of representability, then in terms of adjointness. Both rephrasings will
+                    pay off immediately in the pages that follow, where they drive the main theorems about how
+                    limits interact with functors and with adjunctions.
+                </p>
+
+                <p>
+                    The key to both rephrasings is the observation that a cone is itself a natural transformation
+                    of a special kind. Making this precise requires one new functor. Throughout, \(\mathbf{I}\) is
+                    a small category and \(\mathscr{A}\) a category, and we write
+                    <a href="categories_functors_naturality.html#D-functor_category" class="ref-link"><strong>\([\mathbf{I}, \mathscr{A}]\)</strong></a>
+                    for the category of functors \(\mathbf{I} \to \mathscr{A}\) and natural transformations
+                    between them, so that a diagram \(D : \mathbf{I} \to \mathscr{A}\) of shape \(\mathbf{I}\) is
+                    exactly an object of \([\mathbf{I}, \mathscr{A}]\).
+                </p>
+
+                <div class="theorem" id="D-diagonal_functor">
+                    <span class="theorem-title">Definition: Diagonal Functor</span>
+                    <p>
+                        Let \(\mathbf{I}\) be a small category and \(\mathscr{A}\) a category. The
+                        <strong>diagonal functor</strong>
+                        \[
+                        \Delta : \mathscr{A} \to [\mathbf{I}, \mathscr{A}]
+                        \]
+                        sends an object \(A \in \mathscr{A}\) to the constant functor \(\Delta A\), which takes
+                        the value \(A\) on every object of \(\mathbf{I}\) and the value \(1_A\) on every map of
+                        \(\mathbf{I}\). It sends a map \(f : A \to A'\) in \(\mathscr{A}\) to the natural
+                        transformation \(\Delta f : \Delta A \to \Delta A'\) whose every component is \(f\).
+                    </p>
+                </div>
+
+                <p>
+                    Two small verifications keep the definition honest. First, \(\Delta A\) is a functor. It
+                    preserves identities by construction, and for composable maps \(u, v\) in \(\mathbf{I}\) it
+                    sends \(v \circ u\) to \(1_A = 1_A \circ 1_A\). Second, \(\Delta f\) is natural. For any map
+                    \(u : I \to J\) in \(\mathbf{I}\), the
+                    <a href="categories_functors_naturality.html#D-natural_transformation" class="ref-link"><strong>naturality square</strong></a>
+                    demands \(f \circ (\Delta A)(u) = (\Delta A')(u) \circ f\), which reads
+                    \(f \circ 1_A = 1_{A'} \circ f\) and holds trivially. Functoriality of \(\Delta\) itself is
+                    equally direct, since components compose pointwise.
+                </p>
+
+                <p>
+                    The name is explained by the smallest interesting case. Let \(\mathbf{I}\) be the discrete
+                    category with two objects and only identity maps. A functor \(\mathbf{I} \to \mathscr{A}\) is
+                    then just a pair of objects, a natural transformation is just a pair of maps, and so
+                    \([\mathbf{I}, \mathscr{A}]\) is the
+                    <a href="categories_functors_naturality.html#D-product_category" class="ref-link"><strong>product category</strong></a>
+                    \(\mathscr{A} \times \mathscr{A}\). Under this identification,
+                    \[
+                    \Delta A = (A, A),
+                    \]
+                    the diagonal embedding of \(\mathscr{A}\) into \(\mathscr{A} \times \mathscr{A}\).
+                </p>
+
+                <h3>Cones as Natural Transformations</h3>
+
+                <p>
+                    Now let \(D : \mathbf{I} \to \mathscr{A}\) be a diagram and \(A \in \mathscr{A}\) an object.
+                    A natural transformation \(\alpha : \Delta A \to D\) assigns to each object
+                    \(I \in \mathbf{I}\) a component \(\alpha_I : A \to D(I)\), one map out of \(A\) for each
+                    vertex of the diagram. Its naturality square at a map \(u : I \to J\) of \(\mathbf{I}\)
+                    demands
+                    \[
+                    Du \circ \alpha_I = \alpha_J \circ (\Delta A)(u) = \alpha_J \circ 1_A = \alpha_J .
+                    \]
+                    The condition \(Du \circ \alpha_I = \alpha_J\) is word for word the compatibility condition
+                    defining a
+                    <a href="categorical_limits.html#D-cone" class="ref-link"><strong>cone</strong></a>
+                    on \(D\) with vertex \(A\). A cone, then, is not merely analogous to a natural
+                    transformation. It <em>is</em> one, with the constant functor as its domain. Writing
+                    \(\operatorname{Cone}(A, D)\) for the set of cones on \(D\) with vertex \(A\), we have
+                    established the identification
+                    \[
+                    \operatorname{Cone}(A, D) = [\mathbf{I}, \mathscr{A}](\Delta A, D),
+                    \]
+                    an equality of sets. The cones on \(D\) with vertex \(A\) are exactly the maps
+                    \(\Delta A \to D\) in the functor category.
+                </p>
+
+                <p>
+                    The right-hand side is a hom-set, and hom-sets are functorial in each variable. The set
+                    \(\operatorname{Cone}(A, D)\) therefore varies contravariantly in \(A\). A map
+                    \(s : A' \to A\) in \(\mathscr{A}\) induces \(\Delta s : \Delta A' \to \Delta A\), and
+                    precomposition with \(\Delta s\) carries a cone with vertex \(A\) to a cone with vertex
+                    \(A'\). Concretely, it composes every leg of the cone with \(s\). The set likewise varies
+                    covariantly in \(D\), by postcomposition. The contravariant dependence on the vertex is the
+                    one we exploit next. Fixing \(D\) and letting the vertex vary produces a functor
+                    \[
+                    \operatorname{Cone}(-, D) : \mathscr{A}^{\mathrm{op}} \to \mathbf{Set},
+                    \]
+                    a presheaf on \(\mathscr{A}\), and asking whether this presheaf is representable will turn
+                    out to be asking whether \(D\) has a limit.
+                </p>
+
+                <p>
+                    The two-object discrete case again makes everything concrete. There a diagram \(D\) is a pair
+                    of objects \((X, Y)\), and a natural transformation \(\Delta A \to D\) is a pair of maps
+                    \((A \to X, A \to Y)\): precisely the data of a cone on the pair, whose universal instance
+                    is the
+                    <a href="categorical_products.html#D-product_categorical" class="ref-link"><strong>product</strong></a>
+                    \(X \times Y\) with its two projections. Every statement of this page can profitably be read
+                    twice, first in general and then specialized to this case. Here the limit is a binary
+                    product and \(\operatorname{Cone}(A, D) = \mathscr{A}(A, X) \times \mathscr{A}(A, Y)\).
+                </p>
+
+            </section>
+
+            <section id="limits-as-representations" class="section-content">
+                <h2>Limits as Representations</h2>
+
+                <p>
+                    The functor \(\operatorname{Cone}(-, D)\) is a presheaf, and the fundamental question one asks
+                    of a presheaf is whether it is
+                    <a href="representable_functors.html#D-representable_functor" class="ref-link"><strong>representable</strong></a>.
+                    The first rephrasing of the definition of limit is that this question has the answer we would
+                    hope for. Representing \(\operatorname{Cone}(-, D)\) is the same thing as finding a limit of
+                    \(D\). Here the work invested in the Yoneda lemma and its consequences is repaid in full. The
+                    proof below is a single application of the correspondence between representations and
+                    universal elements, with no new computation at all.
+                </p>
+
+                <div class="theorem" id="T-limit_as_representation">
+                    <span class="theorem-title">Proposition: Limits are Representations</span>
+                    <p>
+                        Let \(\mathbf{I}\) be a small category, \(\mathscr{A}\) a
+                        <a href="sets_universal_constructions.html#D-small_large_category" class="ref-link"><strong>locally small</strong></a>
+                        category, and \(D : \mathbf{I} \to \mathscr{A}\) a diagram. Then there is a one-to-one
+                        correspondence between limit cones on \(D\) and representations of the functor
+                        \[
+                        \operatorname{Cone}(-, D) : \mathscr{A}^{\mathrm{op}} \to \mathbf{Set},
+                        \]
+                        under which the representing objects are exactly the limit objects of \(D\), the vertices
+                        of the limit cones.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Since \(\mathbf{I}\) is small and \(\mathscr{A}\) is locally small, each
+                        \(\operatorname{Cone}(A, D)\) is a subset of the product of the hom-sets
+                        \(\mathscr{A}(A, D(I))\) over the objects of \(\mathbf{I}\), hence a genuine set, and the
+                        displayed presheaf is well defined. By the correspondence between
+                        <a href="yoneda_consequences.html#T-representation_universal_element" class="ref-link"><strong>representations and universal elements</strong></a>,
+                        to give a representation of \(\operatorname{Cone}(-, D)\) is to give an object
+                        \(L \in \mathscr{A}\) together with a universal element
+                        \(u \in \operatorname{Cone}(L, D)\). Such an element is a cone
+                        \(\big(L \xrightarrow{u_I} D(I)\big)_{I \in \mathbf{I}}\) on \(D\) with the following
+                        property: for every \(A \in \mathscr{A}\) and every \(x \in \operatorname{Cone}(A, D)\)
+                        there is a unique map \(\bar{x} : A \to L\) with
+                        \[
+                        \big(\operatorname{Cone}(\bar{x}, D)\big)(u) = x .
+                        \]
+                    </p>
+                    <p>
+                        By the description of functoriality in the previous section,
+                        \(\operatorname{Cone}(\bar{x}, D)\) composes every leg of a cone with \(\bar{x}\), so this
+                        condition says that for every cone \(\big(A \xrightarrow{x_I} D(I)\big)_{I \in \mathbf{I}}\)
+                        on \(D\) there is a unique map \(\bar{x} : A \to L\) with \(u_I \circ \bar{x} = x_I\) for
+                        all \(I \in \mathbf{I}\). This is precisely the universal property defining a
+                        <a href="categorical_limits.html#D-limit_categorical" class="ref-link"><strong>limit</strong></a>
+                        cone. Universal elements of \(\operatorname{Cone}(-, D)\) are therefore exactly limit
+                        cones on \(D\), and the correspondence matches representations with limit cones, carrying
+                        the representing object to the vertex.
+                    </p>
+                </div>
+
+                <p>
+                    Briefly put, a limit of \(D\) is a representation of
+                    \([\mathbf{I}, \mathscr{A}](\Delta -, D)\). In particular, when \(D\) has a limit, choosing a
+                    limit cone produces an isomorphism
+                    \[
+                    \operatorname{Cone}(A, D) \cong \mathscr{A}(A, \lim D),
+                    \]
+                    natural in \(A \in \mathscr{A}\). Maps into the limit are the same thing as cones. From right
+                    to left the correspondence sends \(g : A \to \lim D\) to the cone \((p_I \circ g)_{I \in \mathbf{I}}\)
+                    obtained by composing with the projections, and from left to right it sends a cone
+                    \((x_I)_{I \in \mathbf{I}}\) to the unique factorization \(\bar{x}\) supplied by the universal
+                    property. We will upgrade this isomorphism to one natural in \(D\) as well, once we have made
+                    \(\lim D\) functorial in \(D\), the task of the next two sections.
+                </p>
+
+                <p>
+                    The rephrasing immediately yields a second route to the
+                    <a href="categorical_limits.html#T-limit_unique_up_to_iso_categorical" class="ref-link"><strong>uniqueness of limits</strong></a>,
+                    proved earlier by a direct cone-chasing argument. Any two limit objects of \(D\)
+                    represent the same presheaf \(\operatorname{Cone}(-, D)\), and any two representing objects of
+                    a single presheaf are isomorphic by the
+                    <a href="yoneda_consequences.html#T-iso_of_representables" class="ref-link"><strong>isomorphism of representables</strong></a>.
+                    The earlier proposition is sharper, since it also makes the isomorphism unique and compatible
+                    with the projections. On the shared core, that limit objects are isomorphic, the elementary
+                    route and the Yoneda route agree, and this agreement is a first sign that the translation
+                    between the formalisms is faithful.
+                </p>
+
+            </section>
+
+            <section id="maps-between-diagrams" class="section-content">
+                <h2>Maps between Diagrams</h2>
+
+                <p>
+                    The identification \(\operatorname{Cone}(A, D) = [\mathbf{I}, \mathscr{A}](\Delta A, D)\)
+                    invites a change of perspective. Since diagrams are objects of a category, we may vary the
+                    diagram as well as the vertex. Given a map of diagrams, that is, a natural transformation
+                    \(\alpha : D \to D'\), it is natural to ask whether it induces a map
+                    \(\lim D \to \lim D'\) between their limits, and whether the induced map interacts correctly
+                    with the factorizations supplied by the universal property. The following lemma answers both
+                    questions, and it is the engine behind everything in the next section. Part (a) will make
+                    \(\lim\) into a functor, and part (b) is exactly the naturality computation that the adjunction
+                    will require.
+                </p>
+
+                <div class="theorem" id="T-induced_map_of_limits">
+                    <span class="theorem-title">Lemma: Induced Map of Limits</span>
+                    <p>
+                        Let \(\mathbf{I}\) be a small category, \(\mathscr{A}\) a category, and
+                        \(\alpha : D \to D'\) a natural transformation between diagrams
+                        \(D, D' : \mathbf{I} \to \mathscr{A}\). Suppose that
+                        \(\big(\lim D \xrightarrow{p_I} D(I)\big)_{I \in \mathbf{I}}\) and
+                        \(\big(\lim D' \xrightarrow{p'_I} D'(I)\big)_{I \in \mathbf{I}}\) are limit cones.
+                        Then:
+                    </p>
+                    <p>
+                        (a) There is a unique map \(\lim \alpha : \lim D \to \lim D'\) such that the square
+                        \[
+                        \begin{array}{ccc}
+                        \lim D & \xrightarrow{p_I} & D(I) \\\\
+                        {\scriptstyle \lim \alpha}\big\downarrow & & \big\downarrow{\scriptstyle \alpha_I} \\\\
+                        \lim D' & \xrightarrow[p'_I]{} & D'(I)
+                        \end{array}
+                        \]
+                        commutes for every \(I \in \mathbf{I}\).
+                    </p>
+                    <p>
+                        (b) Given cones \(\big(A \xrightarrow{f_I} D(I)\big)_{I \in \mathbf{I}}\) on \(D\) and
+                        \(\big(A' \xrightarrow{f'_I} D'(I)\big)_{I \in \mathbf{I}}\) on \(D'\), and a map
+                        \(s : A \to A'\) such that the square
+                        \[
+                        \begin{array}{ccc}
+                        A & \xrightarrow{f_I} & D(I) \\\\
+                        {\scriptstyle s}\big\downarrow & & \big\downarrow{\scriptstyle \alpha_I} \\\\
+                        A' & \xrightarrow[f'_I]{} & D'(I)
+                        \end{array}
+                        \]
+                        commutes for every \(I \in \mathbf{I}\), the square
+                        \[
+                        \begin{array}{ccc}
+                        A & \xrightarrow{\bar{f}} & \lim D \\\\
+                        {\scriptstyle s}\big\downarrow & & \big\downarrow{\scriptstyle \lim \alpha} \\\\
+                        A' & \xrightarrow[\bar{f}']{} & \lim D'
+                        \end{array}
+                        \]
+                        also commutes, where \(\bar{f}\) and \(\bar{f}'\) are the unique factorizations of the two
+                        cones through the respective limit cones.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        (a) We first check that the family
+                        \(\big(\lim D \xrightarrow{\alpha_I \circ p_I} D'(I)\big)_{I \in \mathbf{I}}\) is a
+                        cone on \(D'\). For any map \(u : I \to J\) in \(\mathbf{I}\),
+                        \[
+                        \begin{align*}
+                        D'u \circ \alpha_I \circ p_I
+                        &= \alpha_J \circ Du \circ p_I \\\\
+                        &= \alpha_J \circ p_J ,
+                        \end{align*}
+                        \]
+                        the first equality by naturality of \(\alpha\) at \(u\) and the second by the cone
+                        condition for the limit cone on \(D\). Since
+                        \(\big(\lim D' \xrightarrow{p'_I} D'(I)\big)\) is a limit cone, there is a unique map
+                        \(\lim \alpha : \lim D \to \lim D'\) with
+                        \(p'_I \circ \lim \alpha = \alpha_I \circ p_I\) for all \(I \in \mathbf{I}\), which is
+                        exactly the asserted commuting square.
+                    </p>
+                    <p>
+                        (b) We claim first that maps into a limit are determined by their composites with the
+                        projections. If \(g, h : B \to \lim D'\) satisfy \(p'_I \circ g = p'_I \circ h\) for all
+                        \(I \in \mathbf{I}\), then \(g = h\). Indeed, the family \((p'_I \circ g)_{I \in \mathbf{I}}\)
+                        is a cone on \(D'\), since for \(u : I \to J\) the cone condition for \((p'_I)\) gives
+                        \(D'u \circ p'_I \circ g = p'_J \circ g\). The
+                        uniqueness clause in the definition of
+                        <a href="categorical_limits.html#D-limit_categorical" class="ref-link"><strong>limit</strong></a>
+                        then allows only one map \(B \to \lim D'\) whose composites with the projections realize
+                        this cone. Both \(g\) and \(h\) do, so \(g = h\).
+                    </p>
+                    <p>
+                        Now compute, for each \(I \in \mathbf{I}\),
+                        \[
+                        \begin{align*}
+                        p'_I \circ (\lim \alpha) \circ \bar{f}
+                        &= \alpha_I \circ p_I \circ \bar{f} \\\\
+                        &= \alpha_I \circ f_I \\\\
+                        &= f'_I \circ s \\\\
+                        &= p'_I \circ \bar{f}' \circ s ,
+                        \end{align*}
+                        \]
+                        the four equalities holding, in order, by the defining square of \(\lim \alpha\) from
+                        part (a), the factorization property of \(\bar{f}\), the hypothesis square, and the
+                        factorization property of \(\bar{f}'\). The maps \((\lim \alpha) \circ \bar{f}\) and
+                        \(\bar{f}' \circ s\) from \(A\) to \(\lim D'\) thus have equal composites with every
+                        projection, so by the previous paragraph they are equal.
+                    </p>
+                </div>
+
+                <p>
+                    Part (a) should be read as the statement that limits are functorial in the diagram.
+                    Part (b) says that the factorization \(\bar{f}\), the very bijection underlying
+                    \(\operatorname{Cone}(A, D) \cong \mathscr{A}(A, \lim D)\), is compatible with maps of
+                    diagrams on one side and maps of vertices on the other. In the two-object discrete case the
+                    lemma is a familiar fact about
+                    <a href="categorical_products.html#D-product_categorical" class="ref-link"><strong>products</strong></a>.
+                    A pair of maps \(X \to X'\), \(Y \to Y'\) induces the map
+                    \(X \times Y \to X' \times Y'\) acting coordinatewise, and it commutes with pairing. The next
+                    section assembles these observations into the second rephrasing of the definition of limit.
+                </p>
+
+            </section>
+
+            <section id="limit-functor-right-adjoint" class="section-content">
+                <h2>The Limit Functor as a Right Adjoint</h2>
+
+                <p>
+                    Everything is now in place for the second rephrasing. Suppose \(\mathscr{A}\) has
+                    <em>all</em> limits of shape \(\mathbf{I}\), so that every diagram \(D \in [\mathbf{I}, \mathscr{A}]\)
+                    admits a limit cone. The previous section produced, from any map of diagrams, a map between
+                    chosen limits. The section before that produced, for each fixed diagram, an isomorphism
+                    between cones and maps into the limit. Assembled, these two statements say that
+                    \(\lim\) is a functor and that it participates in an
+                    <a href="adjoint_functors.html#D-adjunction" class="ref-link"><strong>adjunction</strong></a>
+                    with the diagonal functor, the climax of the page.
+                </p>
+
+                <div class="theorem" id="T-lim_right_adjoint_diagonal">
+                    <span class="theorem-title">Proposition: The Limit Functor is Right Adjoint to the Diagonal</span>
+                    <p>
+                        Let \(\mathbf{I}\) be a small category and \(\mathscr{A}\) a locally small category with
+                        all limits of shape \(\mathbf{I}\). Then a choice of limit cone for each diagram makes the
+                        assignment \(D \mapsto \lim D\) into a functor
+                        \[
+                        \lim : [\mathbf{I}, \mathscr{A}] \to \mathscr{A},
+                        \]
+                        and this functor is right adjoint to the diagonal functor:
+                        \(\Delta \dashv \lim\), with adjunction bijection
+                        \[
+                        [\mathbf{I}, \mathscr{A}](\Delta A, D) \cong \mathscr{A}(A, \lim D),
+                        \]
+                        natural in \(A \in \mathscr{A}\) and \(D \in [\mathbf{I}, \mathscr{A}]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Choose for each diagram \(D\) a limit cone
+                        \(\big(\lim D \xrightarrow{p^D_I} D(I)\big)_{I \in \mathbf{I}}\), and for a map
+                        \(\alpha : D \to D'\) of diagrams let
+                        \(\lim \alpha : \lim D \to \lim D'\) be the induced map of the
+                        <a href="#T-induced_map_of_limits" class="ref-link"><strong>previous lemma</strong></a>,
+                        the unique map satisfying \(p^{D'}_I \circ \lim \alpha = \alpha_I \circ p^D_I\) for all
+                        \(I\).
+                    </p>
+                    <p>
+                        <em>Functoriality.</em> Both checks are applications of that uniqueness. For the identity
+                        \(1_D\), the map \(1_{\lim D}\) satisfies
+                        \(p^D_I \circ 1_{\lim D} = p^D_I = (1_D)_I \circ p^D_I\), so
+                        \(\lim 1_D = 1_{\lim D}\). For composable maps
+                        \(\alpha : D \to D'\) and \(\beta : D' \to D''\), we compute
+                        \[
+                        \begin{align*}
+                        p^{D''}_I \circ (\lim \beta) \circ (\lim \alpha)
+                        &= \beta_I \circ p^{D'}_I \circ (\lim \alpha) \\\\
+                        &= \beta_I \circ \alpha_I \circ p^D_I \\\\
+                        &= (\beta \circ \alpha)_I \circ p^D_I ,
+                        \end{align*}
+                        \]
+                        so \((\lim \beta) \circ (\lim \alpha)\) satisfies the property that characterizes
+                        \(\lim(\beta \circ \alpha)\) uniquely, and the two are equal.
+                    </p>
+                    <p>
+                        <em>The bijection, natural in \(A\).</em> Both sides of the displayed bijection are sets:
+                        the right side because \(\mathscr{A}\) is locally small, the left side because it equals
+                        \(\operatorname{Cone}(A, D)\), shown to be a set in the proof that
+                        <a href="#T-limit_as_representation" class="ref-link"><strong>limits are representations</strong></a>.
+                        That proposition, applied to the chosen limit cone on \(D\), gives the bijection
+                        \(\Phi_{A,D} : [\mathbf{I}, \mathscr{A}](\Delta A, D) \to \mathscr{A}(A, \lim D)\) sending
+                        a cone \(f = (f_I)_{I \in \mathbf{I}}\) to its unique factorization \(\bar{f}\) through the
+                        limit cone, and this bijection is natural in \(A\).
+                    </p>
+                    <p>
+                        <em>Naturality in \(D\).</em> Let \(\alpha : D \to D'\) be a map of diagrams. We must show
+                        that \(\Phi_{A,D'}(\alpha \circ f) = (\lim \alpha) \circ \Phi_{A,D}(f)\) for every cone
+                        \(f : \Delta A \to D\), that is,
+                        \[
+                        \overline{\alpha \circ f} = (\lim \alpha) \circ \bar{f} .
+                        \]
+                        The composite \(\alpha \circ f : \Delta A \to D'\) is a cone on \(D'\) with vertex \(A\)
+                        and legs \(\alpha_I \circ f_I\). Apply part (b) of the previous lemma with
+                        \(A' = A\), \(s = 1_A\), \(f'_I = \alpha_I \circ f_I\). The hypothesis square
+                        \(\alpha_I \circ f_I = f'_I \circ 1_A\) holds by construction, so the conclusion gives
+                        \((\lim \alpha) \circ \bar{f} = \overline{\alpha \circ f} \circ 1_A = \overline{\alpha \circ f}\),
+                        as required. The bijection is therefore natural in both variables, and by the definition
+                        of adjunction, \(\Delta \dashv \lim\).
+                    </p>
+                </div>
+
+                <p>
+                    A limit, in summary, is three things at once: a universal cone, a representation of
+                    \(\operatorname{Cone}(-, D)\), and the value at \(D\) of a right adjoint of the diagonal
+                    functor. Dually, the same translations exhibit the
+                    <a href="colimits_of_diagrams.html#D-colimit_categorical" class="ref-link"><strong>colimit</strong></a>
+                    of a diagram
+                    as a representation of the covariant cocone functor and \(\operatorname{colim}\) as a
+                    <em>left</em> adjoint of the diagonal, \(\operatorname{colim} \dashv \Delta\), by running
+                    every argument of this page in \(\mathscr{A}^{\mathrm{op}}\).
+                </p>
+
+                <h3>A Remark on Choice</h3>
+
+                <p>
+                    To define the functor \(\lim\) we had to <em>choose</em>, for every diagram at once, one
+                    limit cone among all of them. The step is genuinely non-canonical, since nothing in the
+                    universal property singles out a preferred cone. The damage this choice can do is, however,
+                    strictly bounded. At the level of a single diagram, any two choices of vertex are both representing
+                    objects of the presheaf \(\operatorname{Cone}(-, D)\), hence isomorphic by the
+                    <a href="yoneda_consequences.html#T-iso_of_representables" class="ref-link"><strong>isomorphism of representables</strong></a>.
+                    At the level of functors, any two versions of \(\lim\) built from different systems of choices
+                    are both right adjoint to the same functor \(\Delta\). Adjoints on a given side are
+                    unique up to natural isomorphism. This is the uniqueness established through the Yoneda
+                    machinery in
+                    <a href="yoneda_consequences.html#uniqueness">the consequences of the Yoneda lemma</a>. The
+                    functor \(\lim\) is thus canonical exactly to the degree that category theory measures
+                    canonicity: not as a single object, but as an object determined up to coherent isomorphism.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why the Adjunction Formulation Earns Its Keep</h3>
+                    <p>
+                        The rephrasings of this page are investments. Once \(\lim\) is known to be a right
+                        adjoint, general facts about adjoints apply to limits wholesale. In the pages ahead we
+                        will prove that every functor with a left adjoint preserves limits, and applying that
+                        theorem to \(\lim\) itself will explain, in one stroke, why limits commute with limits.
+                        A limit of products, for instance, is a product of limits. The representable
+                        formulation will work just as hard, driving the result that hom-functors and, more
+                        broadly, presheaf categories treat limits as transparently as sets do.
+                    </p>
+                    <p>
+                        The same shapes recur in the categorical view of machine learning. Naturality
+                        squares of the kind manipulated throughout this page are the formal template for
+                        equivariance constraints on network layers, and the categorical deep learning programme
+                        proposes to specify architectures by exactly such structure. A specification by
+                        functors, natural transformations, and universal properties turns statements like the
+                        preservation theorems ahead into statements about what a constrained network can and
+                        cannot represent. The diagonal-limit adjunction is a first, fully worked instance of the
+                        pattern that programme builds on.
+                    </p>
+                </div>
+
+            </section>
+
+        </div>
+
+    </body>
+</html>
