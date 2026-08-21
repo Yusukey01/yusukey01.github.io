@@ -1,0 +1,863 @@
+---
+layout: default
+title: "Commuting Limits & Presheaf Completeness"
+topic_id: disc-43
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Commuting Limits & Presheaf Completeness</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#currying-for-categories">Currying for Categories</a>
+            <a href="#limits-commute-with-limits">Limits Commute with Limits</a>
+            <a href="#colimit-duals">The Colimit Duals</a>
+            <a href="#complete-cocomplete-presheaves">The Presheaf Universe</a>
+        </div>
+
+        <div class="container">
+
+            <section id="currying-for-categories" class="section-content">
+                <h2>Currying for Categories</h2>
+
+                <p>
+                    The previous page proved two preservation theorems and left two promissory notes. It showed
+                    that limits in a functor category are computed pointwise, then asserted that the colimit
+                    counterparts hold by duality, without carrying out the dualization. And it announced that
+                    the pointwise computation of limits is the engine behind the completeness of
+                    <a href="categories_functors_naturality.html#D-presheaf" class="ref-link"><strong>presheaf</strong></a>
+                    categories, without proving that completeness. This page pays both debts.
+                </p>
+
+                <p>
+                    Along the way it proves a theorem with the flavor of Fubini's theorem from integration theory: when a
+                    diagram depends on two variables, limits may be taken in either order, and the results
+                    agree.
+                </p>
+
+                <p>
+                    The two-variable statement needs a precise way to pass between functors of a pair and
+                    functors of one variable at a time. For sets, that passage is
+                    <a href="adjoint_functors.html#T-currying_adjunction" class="ref-link"><strong>currying</strong></a>:
+                    a function of two arguments is the same thing as a function of the first argument whose
+                    values are functions of the second.
+                </p>
+
+                <p>
+                    The categorical statement replaces sets by categories
+                    and functions by functors. A functor out of a
+                    <a href="categories_functors_naturality.html#D-product_category" class="ref-link"><strong>product category</strong></a>
+                    is the same thing as a functor into a
+                    <a href="categories_functors_naturality.html#D-functor_category" class="ref-link"><strong>functor category</strong></a>.
+                </p>
+
+                <p>
+                    One word before the statement. Two categories are called isomorphic when there are functors
+                    between them in both directions whose composites are equal, not merely naturally
+                    isomorphic, to the identity functors. An earlier page warned that this strict notion is
+                    usually too rigid to be useful, and that
+                    <a href="categories_functors_naturality.html#D-equivalence_of_categories" class="ref-link"><strong>equivalence</strong></a>
+                    is the right way to compare categories. The warning stands. The present situation is the
+                    rare one where the strict notion holds on the nose, and when it does hold, nothing is lost
+                    by saying so.
+                </p>
+
+                <div class="theorem" id="T-functor_category_currying">
+                    <span class="theorem-title">Proposition: Currying for Functor Categories</span>
+                    <p>
+                        Let \(\mathbf{I}\) and \(\mathbf{J}\) be small categories and \(\mathscr{S}\) a
+                        category.
+                    </p>
+                    <p>
+                        (a) There is an isomorphism of categories
+                        \[
+                        [\mathbf{I} \times \mathbf{J}, \mathscr{S}]
+                        \cong
+                        [\mathbf{I}, [\mathbf{J}, \mathscr{S}]],
+                        \]
+                        sending a functor \(D : \mathbf{I} \times \mathbf{J} \to \mathscr{S}\) to the functor
+                        \(\widehat{D} : \mathbf{I} \to [\mathbf{J}, \mathscr{S}]\) with
+                        \(\widehat{D}(I) = D(I, -)\), and a natural transformation \(\theta : D \to D'\) to
+                        \(\widehat{\theta} : \widehat{D} \to \widehat{D'}\) with components
+                        \((\widehat{\theta}_I)_J = \theta_{(I, J)}\).
+                    </p>
+                    <p>
+                        (b) The isomorphism intertwines the
+                        <a href="limit_functor.html#D-diagonal_functor" class="ref-link"><strong>diagonal functors</strong></a>:
+                        writing \(\Delta_{\mathbf{I} \times \mathbf{J}} : \mathscr{S} \to [\mathbf{I} \times \mathbf{J}, \mathscr{S}]\),
+                        \(\Delta_{\mathbf{J}} : \mathscr{S} \to [\mathbf{J}, \mathscr{S}]\), and
+                        \(\Delta_{\mathbf{I}} : [\mathbf{J}, \mathscr{S}] \to [\mathbf{I}, [\mathbf{J}, \mathscr{S}]]\)
+                        for the diagonals of the relevant shapes,
+                        \[
+                        \begin{align*}
+                        \widehat{\Delta_{\mathbf{I} \times \mathbf{J}}\, S} &= \Delta_{\mathbf{I}}(\Delta_{\mathbf{J}}\, S) \\\\
+                        \widehat{\Delta_{\mathbf{I} \times \mathbf{J}}\, h} &= \Delta_{\mathbf{I}}(\Delta_{\mathbf{J}}\, h)
+                        \end{align*}
+                        \]
+                        for every object \(S\) and every map \(h\) of \(\mathscr{S}\).
+                    </p>
+                    <p>
+                        (c) The mirrored assignment \(\widetilde{D}(J) = D(-, J)\), with
+                        \((\widetilde{\theta}_J)_I = \theta_{(I, J)}\) on natural transformations, defines in
+                        the same way an isomorphism of categories
+                        \([\mathbf{I} \times \mathbf{J}, \mathscr{S}] \cong [\mathbf{J}, [\mathbf{I}, \mathscr{S}]]\)
+                        satisfying the analogue of (b).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Throughout the proof, the product category enters through one computation. For maps
+                        \(f : I \to I'\) in \(\mathbf{I}\) and \(g : J \to J'\) in \(\mathbf{J}\), composition
+                        in \(\mathbf{I} \times \mathbf{J}\) is componentwise, so
+                        \[
+                        (f, g)
+                        = (f, 1_{J'}) \circ (1_I, g)
+                        = (1_{I'}, g) \circ (f, 1_J).
+                        \]
+                        We call this the interchange identity.
+                    </p>
+                    <p>
+                        Applying the functor \(D\) to it gives
+                        \[
+                        D(f, g)
+                        = D(f, 1_{J'}) \circ D(1_I, g)
+                        = D(1_{I'}, g) \circ D(f, 1_J).
+                        \]
+                    </p>
+                    <p>
+                        <em>The functor \(\widehat{D}\).</em>
+                        Fix \(I \in \mathbf{I}\). The assignment \(D(I, -)\) sends \(J\) to \(D(I, J)\) and
+                        \(g : J \to J'\) to \(D(1_I, g)\). It preserves identities because
+                        \(D(1_I, 1_J) = D(1_{(I,J)}) = 1_{D(I,J)}\), and it preserves composition because
+                        \((1_I, g') \circ (1_I, g) = (1_I, g' \circ g)\), so applying \(D\) gives
+                        \(D(1_I, g') \circ D(1_I, g) = D(1_I, g' \circ g)\). Hence \(\widehat{D}(I) = D(I, -)\)
+                        is a functor \(\mathbf{J} \to \mathscr{S}\).
+                    </p>
+                    <p>
+                        For a map \(f : I \to I'\), define \(\widehat{D}(f) : D(I, -) \to D(I', -)\) by the
+                        components \(\widehat{D}(f)_J = D(f, 1_J)\). Naturality is the interchange identity:
+                        for \(g : J \to J'\),
+                        \[
+                        \begin{align*}
+                        D(I', -)(g) \circ \widehat{D}(f)_J
+                        &= D(1_{I'}, g) \circ D(f, 1_J) \\\\
+                        &= D(f, g) \\\\
+                        &= D(f, 1_{J'}) \circ D(1_I, g) \\\\
+                        &= \widehat{D}(f)_{J'} \circ D(I, -)(g).
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Functoriality of \(\widehat{D}\) in \(f\) follows from the same computation in the
+                        first coordinate: \((f', 1) \circ (f, 1) = (f' \circ f, 1)\) gives
+                        \(\widehat{D}(f')\circ\widehat{D}(f) = \widehat{D}(f' \circ f)\) componentwise, and
+                        \(\widehat{D}(1_I) = 1_{\widehat{D}(I)}\) since every component is
+                        \(D(1_I, 1_J)\).
+                    </p>
+                    <p>
+                        <em>The assignment on natural transformations.</em>
+                        Let \(\theta : D \to D'\) be a natural transformation. For fixed \(I\), the family
+                        \((\theta_{(I, J)})_{J \in \mathbf{J}}\) is natural in \(J\), being the naturality of
+                        \(\theta\) at the maps \((1_I, g)\), so it is a map
+                        \(\widehat{\theta}_I : \widehat{D}(I) \to \widehat{D'}(I)\) in
+                        \([\mathbf{J}, \mathscr{S}]\). The family \((\widehat{\theta}_I)_I\) is natural in
+                        \(I\): the required identity
+                        \(\widehat{D'}(f) \circ \widehat{\theta}_I = \widehat{\theta}_{I'} \circ \widehat{D}(f)\)
+                        reads, at the component \(J\),
+                        \(D'(f, 1_J) \circ \theta_{(I, J)} = \theta_{(I', J)} \circ D(f, 1_J)\), which is the
+                        naturality of \(\theta\) at \((f, 1_J)\). Since composition and identities of natural
+                        transformations are computed componentwise, \(\theta \mapsto \widehat{\theta}\)
+                        preserves both, and \(D \mapsto \widehat{D}\), \(\theta \mapsto \widehat{\theta}\) is
+                        a functor \([\mathbf{I} \times \mathbf{J}, \mathscr{S}] \to [\mathbf{I}, [\mathbf{J}, \mathscr{S}]]\).
+                    </p>
+                    <p>
+                        <em>The inverse.</em>
+                        Given \(E : \mathbf{I} \to [\mathbf{J}, \mathscr{S}]\), define
+                        \(\check{E} : \mathbf{I} \times \mathbf{J} \to \mathscr{S}\) on objects by
+                        \(\check{E}(I, J) = E(I)(J)\) and on a map \((f, g) : (I, J) \to (I', J')\) by
+                        \[
+                        \check{E}(f, g)
+                        = E(f)_{J'} \circ E(I)(g)
+                        = E(I')(g) \circ E(f)_J,
+                        \]
+                        the two composites agreeing by the naturality of \(E(f)\) at \(g\). Identities are
+                        preserved: \(E(1_I) = 1_{E(I)}\) by functoriality of \(E\) and \(E(I)(1_J) = 1\) by
+                        functoriality of \(E(I)\), so \(\check{E}(1_I, 1_J)\) is a composite of identities.
+                        For composition, take
+                        \((f', g') : (I', J') \to (I'', J'')\) and compute
+                        \[
+                        \begin{align*}
+                        \check{E}(f', g') \circ \check{E}(f, g)
+                        &= E(f')_{J''} \circ E(I')(g') \circ E(f)_{J'} \circ E(I)(g) \\\\
+                        &= E(f')_{J''} \circ E(f)_{J''} \circ E(I)(g') \circ E(I)(g) \\\\
+                        &= E(f' \circ f)_{J''} \circ E(I)(g' \circ g)
+                        = \check{E}\big((f', g') \circ (f, g)\big),
+                        \end{align*}
+                        \]
+                        where the second equality moves \(E(f)_{J'}\) past \(E(I')(g')\) by the naturality of
+                        \(E(f)\) at \(g'\), and the third uses functoriality of \(E\) and of \(E(I)\).
+                    </p>
+                    <p>
+                        On morphisms, take a map \(\alpha : E \to E'\) in \([\mathbf{I}, [\mathbf{J}, \mathscr{S}]]\) and define
+                        \(\check{\alpha}\) by \(\check{\alpha}_{(I, J)} = (\alpha_I)_J\). Its naturality at \((f, g)\) follows by
+                        composing the naturality of \(\alpha\) at \(f\), read componentwise, with the naturality of \(\alpha_I\) at
+                        \(g\). Functoriality of \(E \mapsto \check{E}\) on maps is again componentwise.
+                    </p>
+                    <p>
+                        <em>Mutually inverse.</em>
+                        On objects and maps of either category the two constructions unwind each other by
+                        inspection. In one direction,
+                        \(\check{\widehat{D}}(I, J) = \widehat{D}(I)(J) = D(I, J)\) and
+                        \[
+                        \check{\widehat{D}}(f, g)
+                        = \widehat{D}(f)_{J'} \circ \widehat{D}(I)(g)
+                        = D(f, 1_{J'}) \circ D(1_I, g)
+                        = D(f, g),
+                        \]
+                        while on natural transformations
+                        \(\check{\widehat{\theta}}_{(I, J)} = (\widehat{\theta}_I)_J = \theta_{(I, J)}\). In
+                        the other direction, \(\widehat{\check{E}}(I)(J) = \check{E}(I, J) = E(I)(J)\), while
+                        \(\widehat{\check{E}}(f)_J = \check{E}(f, 1_J) = E(f)_J\) and
+                        \(\widehat{\check{E}}(I)(g) = \check{E}(1_I, g) = E(I)(g)\) by the identity laws for
+                        \(E\) and \(E(I)\), so \(\widehat{\check{E}} = E\), and
+                        \(\widehat{\check{\alpha}} = \alpha\) componentwise. Both composites
+                        equal the identity functors, which proves (a).
+                    </p>
+                    <p>
+                        <em>Diagonals.</em>
+                        The constant functor \(\Delta_{\mathbf{I} \times \mathbf{J}}\, S\) takes the value
+                        \(S\) on every object and \(1_S\) on every map. Hence
+                        \(\widehat{\Delta_{\mathbf{I} \times \mathbf{J}}\, S}(I)\) is the functor
+                        \(\mathbf{J} \to \mathscr{S}\) constant at \(S\), which is \(\Delta_{\mathbf{J}}\, S\),
+                        and \(\widehat{\Delta_{\mathbf{I} \times \mathbf{J}}\, S}(f)\) has every component
+                        equal to \(1_S\), which is the identity transformation, exactly the value of
+                        \(\Delta_{\mathbf{I}}(\Delta_{\mathbf{J}}\, S)\) on \(f\). On a map
+                        \(h : S \to S'\), every component of
+                        \(\widehat{\Delta_{\mathbf{I} \times \mathbf{J}}\, h}\) at every stage is \(h\), and
+                        the same is true of \(\Delta_{\mathbf{I}}(\Delta_{\mathbf{J}}\, h)\). This proves (b).
+                    </p>
+                    <p>
+                        <em>The mirrored isomorphism.</em>
+                        The two coordinates of \(\mathbf{I} \times \mathbf{J}\) play symmetric roles in every
+                        step above: the product category entered each verification only through the interchange
+                        identity and componentwise composition, both unchanged when the coordinates are
+                        exchanged, and every remaining ingredient was the functoriality or naturality of the
+                        given data, which makes no reference to the coordinates. Running
+                        the same proof with the roles of \(\mathbf{I}\) and \(\mathbf{J}\) exchanged
+                        establishes (c).
+                    </p>
+                </div>
+
+                <p>
+                    For small \(\mathscr{S}\), the isomorphism of (a) exhibits \([\mathbf{J}, \mathscr{S}]\)
+                    as an
+                    <a href="sets_universal_constructions.html#D-exponential_object" class="ref-link"><strong>exponential object</strong></a>
+                    in the category of small categories, a point that will be made precise when cartesian
+                    closure is treated later in this series. For now the isomorphism is a bookkeeping device,
+                    and the bookkeeping is about to pay for itself.
+                </p>
+            </section>
+
+            <section id="limits-commute-with-limits" class="section-content">
+                <h2>Limits Commute with Limits</h2>
+
+                <p>
+                    Consider a diagram \(D : \mathbf{I} \times \mathbf{J} \to \mathscr{S}\) depending on two
+                    variables. There are three ways to take its limit. One can take the limit over the whole
+                    product shape at once. Or one can curry, obtaining
+                    \(\widehat{D} : \mathbf{I} \to [\mathbf{J}, \mathscr{S}]\), take the limit of
+                    \(\widehat{D}\) inside the functor category, and then take the limit of the resulting
+                    functor \(\mathbf{J} \to \mathscr{S}\). Or one can curry the other way and iterate in the
+                    opposite order. The theorem of this section states that all three agree.
+                </p>
+
+                <p>
+                    Because several shapes are now in play at once, we record the shape of each limit as a subscript, writing
+                    \(\lim_{\mathbf{I}} D\) for the limit of a diagram of shape \(\mathbf{I}\).
+                </p>
+
+                <p>
+                    One bookkeeping point first. The
+                    <a href="limit_functor.html#T-lim_right_adjoint_diagonal" class="ref-link"><strong>adjunction between the diagonal and the limit</strong></a>
+                    will be applied inside the functor category \([\mathbf{J}, \mathscr{S}]\), and its statement requires that
+                    category to be locally small. It is, whenever \(\mathbf{J}\) is small and \(\mathscr{S}\) is locally small. A
+                    natural transformation between functors \(X, Y : \mathbf{J} \to \mathscr{S}\) is a family
+                    \((\alpha_J)_{J \in \mathbf{J}}\) drawn from the product of the hom-sets \(\mathscr{S}(X(J), Y(J))\) over the
+                    objects of \(\mathbf{J}\), so the natural transformations \(X \to Y\) form a subset of a product of sets
+                    indexed by a set, hence a set.
+                </p>
+
+                <div class="theorem" id="T-limits_commute_with_limits">
+                    <span class="theorem-title">Theorem: Limits Commute with Limits</span>
+                    <p>
+                        Let \(\mathbf{I}\) and \(\mathbf{J}\) be small categories, and let \(\mathscr{S}\) be a locally small category
+                        with all limits of shape \(\mathbf{I}\) and all limits of shape \(\mathbf{J}\). Then for every functor
+                        \(D : \mathbf{I} \times \mathbf{J} \to \mathscr{S}\), the three limits below exist and are isomorphic:
+                        \[
+                        \lim_{\mathbf{I}} \Big( \lim_{\mathbf{J}} \widetilde{D} \Big)
+                        \cong
+                        \lim_{\mathbf{I} \times \mathbf{J}} D
+                        \cong
+                        \lim_{\mathbf{J}} \Big( \lim_{\mathbf{I}} \widehat{D} \Big).
+                        \]
+                        Here \(\widehat{D} : \mathbf{I} \to [\mathbf{J}, \mathscr{S}]\) and
+                        \(\widetilde{D} : \mathbf{J} \to [\mathbf{I}, \mathscr{S}]\) are the two transposes of \(D\), the inner limits
+                        are taken in the functor categories \([\mathbf{J}, \mathscr{S}]\) and \([\mathbf{I}, \mathscr{S}]\)
+                        respectively, and the outer limits are taken in \(\mathscr{S}\).
+                    </p>
+                    <p>
+                        In particular, \(\mathscr{S}\) has all limits of shape \(\mathbf{I} \times \mathbf{J}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        We prove the second isomorphism. The objects and maps of
+                        \(\mathbf{I} \times \mathbf{J}\) are pairs, so the product of two small categories is
+                        small, and every category and diagram in sight satisfies the smallness hypotheses of
+                        the results we invoke.
+                    </p>
+                    <p>
+                        First, the inner limit exists. Since \(\mathscr{S}\) has all limits of shape \(\mathbf{J}\), the functor
+                        category \([\mathbf{J}, \mathscr{S}]\)
+                        <a href="pointwise_limits.html#T-evaluation_preserves_limits" class="ref-link"><strong>has all limits of shape \(\mathbf{I}\)</strong></a>
+                        as soon as \(\mathscr{S}\) does, and \(\mathscr{S}\) has them by hypothesis. So
+                        \(\lim_{\mathbf{I}} \widehat{D}\) exists as an object of \([\mathbf{J}, \mathscr{S}]\), and the outer limit
+                        \(\lim_{\mathbf{J}} \big( \lim_{\mathbf{I}} \widehat{D} \big)\) exists in \(\mathscr{S}\) because
+                        \(\mathscr{S}\) has all limits of shape \(\mathbf{J}\). Abbreviate
+                        \(L = \lim_{\mathbf{J}} \big( \lim_{\mathbf{I}} \widehat{D} \big)\).
+                    </p>
+                    <p>
+                        Now compute, for an arbitrary object \(S \in \mathscr{S}\),
+                        \[
+                        \begin{align*}
+                        \mathscr{S}(S, L)
+                        &\cong [\mathbf{J}, \mathscr{S}]\big(\Delta_{\mathbf{J}} S, \lim_{\mathbf{I}} \widehat{D}\big) \\\\
+                        &\cong [\mathbf{I}, [\mathbf{J}, \mathscr{S}]]\big(\Delta_{\mathbf{I}} \Delta_{\mathbf{J}} S, \widehat{D}\big) \\\\
+                        &\cong [\mathbf{I} \times \mathbf{J}, \mathscr{S}]\big(\Delta_{\mathbf{I} \times \mathbf{J}} S, D\big).
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        The first bijection is the adjunction between the diagonal and the limit for shape \(\mathbf{J}\) in
+                        \(\mathscr{S}\), read from right to left. The second is the same adjunction for shape \(\mathbf{I}\) in the
+                        locally small category \([\mathbf{J}, \mathscr{S}]\), which has all limits of shape \(\mathbf{I}\) as noted
+                        above, applied at the object \(\Delta_{\mathbf{J}} S\) and the diagram \(\widehat{D}\). The third applies the
+                        inverse of the
+                        <a href="#T-functor_category_currying" class="ref-link"><strong>currying isomorphism</strong></a> to hom-sets.
+                        It carries \(\widehat{D}\) back to \(D\) and, by part (b), carries
+                        \(\Delta_{\mathbf{I}} \Delta_{\mathbf{J}} S\) to \(\Delta_{\mathbf{I} \times \mathbf{J}} S\). Bijectivity
+                        comes for free, since a functor with a two-sided inverse is bijective on every hom-set.
+                    </p>
+                    <p>
+                        Each bijection is natural in \(S\). The adjunction bijections are natural in their
+                        first variable, and naturality of the first bijection in \(S\), respectively of the
+                        second in \(\Delta_{\mathbf{J}} S\), gives naturality in \(S\) after composing with
+                        the functors \(\Delta_{\mathbf{J}}\) and \(\Delta_{\mathbf{I}} \Delta_{\mathbf{J}}\).
+                        The currying bijection is natural in \(S\) because the inverse isomorphism is a
+                        functor and, by part (b) again, sends precomposition by
+                        \(\Delta_{\mathbf{I}} \Delta_{\mathbf{J}} h\) to precomposition by
+                        \(\Delta_{\mathbf{I} \times \mathbf{J}} h\) for every map \(h\) of \(\mathscr{S}\).
+                    </p>
+                    <p>
+                        The composite is therefore a bijection
+                        \(\mathscr{S}(S, L) \cong [\mathbf{I} \times \mathbf{J}, \mathscr{S}](\Delta_{\mathbf{I} \times \mathbf{J}} S, D)\),
+                        natural in \(S\), and the right-hand side
+                        <a href="limit_functor.html#diagonal-functor-and-cones">is exactly the set of cones</a> on \(D\) with vertex
+                        \(S\). A natural isomorphism from \(\mathscr{S}(-, L)\) to \(\operatorname{Cone}(-, D)\) is a representation
+                        of the cone functor, so by the correspondence between
+                        <a href="limit_functor.html#T-limit_as_representation" class="ref-link"><strong>limits and representations</strong></a>,
+                        the diagram \(D\) has a limit and \(L\) is a limit object: \(\lim_{\mathbf{I} \times \mathbf{J}} D\) exists
+                        and is isomorphic to \(L\).
+                    </p>
+                    <p>
+                        For the first isomorphism of the statement, run the same argument with the roles of the two factors exchanged,
+                        using the mirrored transpose of part (c). The transpose \(\widetilde{D}\) is a diagram of shape \(\mathbf{J}\)
+                        valued in \([\mathbf{I}, \mathscr{S}]\), and its inner limit \(\lim_{\mathbf{J}} \widetilde{D}\) exists there
+                        because \(\mathscr{S}\) has all limits of shape \(\mathbf{J}\). The chain of bijections, started from
+                        \(\mathscr{S}\big(S, \lim_{\mathbf{I}} \big( \lim_{\mathbf{J}} \widetilde{D} \big)\big)\), terminates in the
+                        same set of cones on \(D\). Both iterated limits therefore represent \(\operatorname{Cone}(-, D)\), so both
+                        are vertices of limit cones on \(D\), and all three objects of the statement are isomorphic because
+                        <a href="categorical_limits.html#T-limit_unique_up_to_iso_categorical" class="ref-link"><strong>limits are unique up to isomorphism</strong></a>.
+                    </p>
+                </div>
+
+                <p>
+                    The analogy that gives the theorem its informal name is the interchange of integrals. For a function of two
+                    variables one may integrate in either order, and the double integral agrees with both iterations. Limits play
+                    the role of integrals, and the theorem asserts that the order of limit-taking is immaterial. The analogy will
+                    sharpen in the next section, where colimits enter and behave like sums.
+                </p>
+
+                <h3>Products in any order, brackets anywhere</h3>
+
+                <p>
+                    The smallest nontrivial case is already useful. Take \(\mathbf{I}\) and \(\mathbf{J}\) to
+                    be discrete categories with two objects each, so that a diagram
+                    \(D : \mathbf{I} \times \mathbf{J} \to \mathscr{S}\) is a grid of four objects
+                    \(S_{11}, S_{12}, S_{21}, S_{22}\), and suppose \(\mathscr{S}\) has binary
+                    <a href="categorical_products.html#D-product_categorical" class="ref-link"><strong>products</strong></a>.
+                    A limit over a discrete shape is a product, so the theorem says that the four-fold product
+                    exists and can be computed by rows or by columns:
+                    \[
+                    (S_{11} \times S_{21}) \times (S_{12} \times S_{22})
+                    \cong
+                    \prod_{i, j \in \{1, 2\}} S_{ij}
+                    \cong
+                    (S_{11} \times S_{12}) \times (S_{21} \times S_{22}).
+                    \]
+                </p>
+
+                <p>
+                    More generally, the order and bracketing of products never matter. The commutativity
+                    \(S \times T \cong T \times S\) holds because the projections of \(S \times T\), listed in the other order,
+                    form a product cone on the pair \((T, S)\), and
+                    <a href="categorical_limits.html#T-limit_unique_up_to_iso_categorical" class="ref-link"><strong>limits are unique up to isomorphism</strong></a>.
+                    The associativity \((S \times T) \times U \cong S \times (T \times U)\) holds because each side carries three
+                    maps to \(S\), \(T\), and \(U\) through which every triple of maps factors uniquely, so each side is a triple
+                    product, and triple products are unique up to isomorphism for the same reason.
+                </p>
+
+                <p>
+                    When \(\mathscr{S}\) has a
+                    <a href="adjoint_functors.html#D-initial_terminal_object" class="ref-link"><strong>terminal object</strong></a>
+                    \(1\), the identity of \(S\) and the unique map \(S \to 1\) exhibit \(S\) itself as a
+                    product of \(S\) and \(1\), giving \(S \times 1 \cong S \cong 1 \times S\). Habits from
+                    the arithmetic of sets survive intact in any category with products, and the present
+                    theorem is the systematic reason.
+                </p>
+            </section>
+
+            <section id="colimit-duals" class="section-content">
+                <h2>The Colimit Duals</h2>
+
+                <p>
+                    The previous page asserted that colimits in a functor category are also computed
+                    pointwise, with the dual statement to be put to work when presheaf categories are treated
+                    in earnest. That moment has arrived, so the assertion must now be earned. The instrument
+                    is a dictionary that translates every statement about colimits in \([\mathbf{A}, \mathscr{S}]\)
+                    into a statement about limits in a companion functor category, where the theorems of the
+                    previous page apply.
+                </p>
+
+                <h3>A dictionary for dualizing</h3>
+
+                <p>
+                    Every functor \(F : \mathbf{A} \to \mathscr{S}\) determines a functor
+                    \(F^{\mathrm{op}} : \mathbf{A}^{\mathrm{op}} \to \mathscr{S}^{\mathrm{op}}\) between the
+                    <a href="categories_functors_naturality.html#D-opposite_category" class="ref-link"><strong>opposite categories</strong></a>,
+                    given by the same assignments on objects and maps. The functoriality equations for
+                    \(F^{\mathrm{op}}\) are those for \(F\), read in categories where composition is written
+                    in the other order, so nothing needs checking.
+                </p>
+
+                <p>
+                    A natural transformation \(\alpha : F \to G\) likewise determines
+                    \(\alpha^{\mathrm{op}} : G^{\mathrm{op}} \to F^{\mathrm{op}}\), with the same components
+                    regarded as maps of \(\mathscr{S}^{\mathrm{op}}\). Note the reversal: components
+                    \(\alpha_A : F(A) \to G(A)\) become maps \(G^{\mathrm{op}}(A) \to F^{\mathrm{op}}(A)\) in
+                    \(\mathscr{S}^{\mathrm{op}}\). Naturality of \(\alpha^{\mathrm{op}}\) at a map of
+                    \(\mathbf{A}^{\mathrm{op}}\) demands, once unwound in \(\mathscr{S}\), exactly the
+                    naturality square of \(\alpha\) at the corresponding map of \(\mathbf{A}\).
+                </p>
+
+                <p>
+                    Since the passage \(\alpha \mapsto \alpha^{\mathrm{op}}\) reverses the direction of natural transformations
+                    while keeping their components, it assembles, together with the passage \(F \mapsto F^{\mathrm{op}}\) on
+                    objects, into a functor
+                    \[
+                    \Phi : [\mathbf{A}, \mathscr{S}]^{\mathrm{op}} \longrightarrow [\mathbf{A}^{\mathrm{op}}, \mathscr{S}^{\mathrm{op}}].
+                    \]
+                </p>
+
+                <p>
+                    A map \(F \to G\) in \([\mathbf{A}, \mathscr{S}]^{\mathrm{op}}\) is a natural transformation \(G \to F\) in
+                    \([\mathbf{A}, \mathscr{S}]\), and \(\Phi\) sends it to the transformation
+                    \(F^{\mathrm{op}} \to G^{\mathrm{op}}\) just described. Hence \(\Phi\) is covariant, and it preserves
+                    identities and composites because both are computed componentwise on the same components. Applying the same
+                    construction to \(\mathbf{A}^{\mathrm{op}}\) and \(\mathscr{S}^{\mathrm{op}}\) gives a functor from
+                    \([\mathbf{A}^{\mathrm{op}}, \mathscr{S}^{\mathrm{op}}]\) to \([\mathbf{A}, \mathscr{S}]^{\mathrm{op}}\),
+                    because passing to opposites twice returns every category, functor, and transformation to itself, and the
+                    two composites are the identity functors on the nose for the same reason. So \(\Phi\) is an isomorphism of categories, of
+                    the same strict kind as the currying isomorphism.
+                </p>
+
+                <p>
+                    Two entries complete the dictionary. First, an isomorphism of categories converts limit questions faithfully.
+                    If \(K\) is a functor with a two-sided inverse, then \(K\) carries cones on a diagram \(E\) to cones on
+                    \(K \circ E\), since functors preserve the cone equations, and it does so bijectively, the inverse
+                    construction being furnished by \(K^{-1}\). A cone is a limit cone exactly when its image is. Candidate
+                    factorizations through the two cones correspond bijectively under \(K\), so the existence and uniqueness
+                    demanded at one vertex hold exactly when they hold at the other.
+                </p>
+
+                <p>
+                    Second, evaluation commutes with
+                    the passage to opposites. For each \(A \in \mathbf{A}\),
+                    \[
+                    \operatorname{ev}_A \circ\, \Phi = (\operatorname{ev}_A)^{\mathrm{op}}
+                    \quad \text{as functors } [\mathbf{A}, \mathscr{S}]^{\mathrm{op}} \to \mathscr{S}^{\mathrm{op}},
+                    \]
+                    where the left evaluation is that of \([\mathbf{A}^{\mathrm{op}}, \mathscr{S}^{\mathrm{op}}]\)
+                    at the object \(A\) of \(\mathbf{A}^{\mathrm{op}}\). Both sides send \(F\) to \(F(A)\) and
+                    a map \(\alpha\) to the component \(\alpha_A\) regarded in \(\mathscr{S}^{\mathrm{op}}\),
+                    so the two functors agree by inspection.
+                </p>
+
+                <div class="theorem" id="T-colimits_pointwise_functor_category">
+                    <span class="theorem-title">Theorem: Colimits in Functor Categories Are Pointwise</span>
+                    <p>
+                        Let \(\mathbf{A}\) and \(\mathbf{I}\) be small categories, \(\mathscr{S}\) a locally
+                        small category, and \(D : \mathbf{I} \to [\mathbf{A}, \mathscr{S}]\) a diagram.
+                        Suppose that for every \(A \in \mathbf{A}\) the diagram
+                        \(D(-)(A) : \mathbf{I} \to \mathscr{S}\) has a colimit in \(\mathscr{S}\). Then:
+                    </p>
+                    <p>
+                        (a) There is a
+                        <a href="colimits_of_diagrams.html#D-cocone" class="ref-link"><strong>cocone</strong></a>
+                        on \(D\) whose image under \(\operatorname{ev}_A\) is a colimit cocone on
+                        \(D(-)(A)\) for every \(A \in \mathbf{A}\).
+                    </p>
+                    <p>
+                        (b) Every cocone on \(D\) whose image under \(\operatorname{ev}_A\) is a colimit
+                        cocone on \(D(-)(A)\) for every \(A \in \mathbf{A}\) is itself a colimit cocone on
+                        \(D\).
+                    </p>
+                    <p>
+                        In particular, \(D\) has a colimit in \([\mathbf{A}, \mathscr{S}]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Write
+                        \(D^{\vee} = \Phi \circ D^{\mathrm{op}} : \mathbf{I}^{\mathrm{op}} \to [\mathbf{A}^{\mathrm{op}}, \mathscr{S}^{\mathrm{op}}]\).
+                        The categories \(\mathbf{A}^{\mathrm{op}}\) and \(\mathbf{I}^{\mathrm{op}}\) are small, and
+                        \(\mathscr{S}^{\mathrm{op}}\) is locally small because its hom-sets are hom-sets of \(\mathscr{S}\), so
+                        \(D^{\vee}\) satisfies the standing hypotheses of the previous page.
+                    </p>
+                    <p>
+                        We translate each notion in the statement. A
+                        <a href="colimits_of_diagrams.html#D-colimit_categorical" class="ref-link"><strong>colimit</strong></a> of
+                        \(D\) is by definition a limit of
+                        \(D^{\mathrm{op}} : \mathbf{I}^{\mathrm{op}} \to [\mathbf{A}, \mathscr{S}]^{\mathrm{op}}\), and cocones on
+                        \(D\) are by definition cones on \(D^{\mathrm{op}}\). Composition with the isomorphism \(\Phi\), by the first
+                        dictionary entry, carries cocones on \(D\) bijectively to cones on \(D^{\vee}\), with a cocone of vertex \(X\)
+                        corresponding to a cone of vertex \(X^{\mathrm{op}}\), and with colimit cocones corresponding exactly to limit
+                        cones.
+                    </p>
+                    <p>
+                        The pointwise notions translate the same way. Whiskering the identity
+                        \(\operatorname{ev}_A \circ\, \Phi = (\operatorname{ev}_A)^{\mathrm{op}}\) with
+                        \(D^{\mathrm{op}}\) gives, for every \(A \in \mathbf{A}\),
+                        \[
+                        \operatorname{ev}_A \circ\, D^{\vee}
+                        = (\operatorname{ev}_A)^{\mathrm{op}} \circ D^{\mathrm{op}}
+                        = \big(\operatorname{ev}_A \circ\, D\big)^{\mathrm{op}}
+                        = \big(D(-)(A)\big)^{\mathrm{op}}
+                        \]
+                        as diagrams \(\mathbf{I}^{\mathrm{op}} \to \mathscr{S}^{\mathrm{op}}\). A colimit of
+                        \(D(-)(A)\) in \(\mathscr{S}\) is by definition a limit of
+                        \(\big(D(-)(A)\big)^{\mathrm{op}}\) in \(\mathscr{S}^{\mathrm{op}}\), so the
+                        hypothesis says precisely that every pointwise diagram
+                        \(D^{\vee}(-)(A)\) of \(D^{\vee}\) has a limit in \(\mathscr{S}^{\mathrm{op}}\).
+                    </p>
+                    <p>
+                        Likewise, the \(\operatorname{ev}_A\)-image of the cone corresponding to a cocone \(c\) on \(D\) is the
+                        opposite of the \(\operatorname{ev}_A\)-image of \(c\). Hence \(c\) evaluates to colimit cocones at every
+                        object exactly when its corresponding cone on \(D^{\vee}\) evaluates to limit cones at every object.
+                    </p>
+                    <p>
+                        The
+                        <a href="pointwise_limits.html#T-limits_pointwise_functor_category" class="ref-link"><strong>pointwise limit theorem</strong></a>
+                        now applies to \(D^{\vee}\). Its part (a) produces a cone on \(D^{\vee}\) that evaluates to a limit cone at
+                        every object, and the corresponding cocone on \(D\) evaluates to a colimit cocone at every object, proving
+                        (a). For (b), let \(c\) be a cocone on \(D\) evaluating to colimit cocones everywhere. Its corresponding cone
+                        on \(D^{\vee}\) evaluates to limit cones everywhere, hence is a limit cone by part (b) of the cited theorem,
+                        and therefore \(c\) is a colimit cocone. The final clause follows from (a) and (b) together.
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-evaluation_preserves_colimits">
+                    <span class="theorem-title">Corollary: Evaluation Functors Preserve Colimits</span>
+                    <p>
+                        Let \(\mathbf{A}\) and \(\mathbf{I}\) be small categories, and let \(\mathscr{S}\) be
+                        a locally small category with all colimits of shape \(\mathbf{I}\). Then the functor
+                        category \([\mathbf{A}, \mathscr{S}]\) has all colimits of shape \(\mathbf{I}\), and
+                        for every \(A \in \mathbf{A}\) the evaluation functor
+                        \(\operatorname{ev}_A : [\mathbf{A}, \mathscr{S}] \to \mathscr{S}\)
+                        <a href="functors_and_limits.html#D-preserves_limits" class="ref-link"><strong>preserves</strong></a>
+                        colimits of shape \(\mathbf{I}\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Existence is immediate from the theorem. For any diagram
+                        \(D : \mathbf{I} \to [\mathbf{A}, \mathscr{S}]\), each pointwise diagram
+                        \(D(-)(A)\) has a colimit because \(\mathscr{S}\) has all colimits of shape
+                        \(\mathbf{I}\), so \(D\) has a colimit.
+                    </p>
+                    <p>
+                        For preservation, let \(c\) be a colimit cocone on \(D\), with vertex \(X\), and fix
+                        \(A \in \mathbf{A}\). Part (a) of the theorem provides a cocone \(c'\) on \(D\), with
+                        vertex \(X'\), that evaluates to a colimit cocone at every object, and \(c'\) is a colimit cocone by part (b).
+                    </p>
+                    <p>
+                        Colimit cocones on the same diagram
+                        <a href="colimits_of_diagrams.html#T-colimit_unique_up_to_iso_categorical" class="ref-link"><strong>factor through one another by a unique isomorphism</strong></a>:
+                        there is an isomorphism \(j : X' \to X\) composing the legs of \(c'\) into the legs of \(c\). Applying the
+                        functor \(\operatorname{ev}_A\) to these factorizations shows that the evaluated cocone
+                        \(\operatorname{ev}_A(c)\) is obtained from the colimit cocone \(\operatorname{ev}_A(c')\) by composing every
+                        leg with the isomorphism \(\operatorname{ev}_A(j)\). A cocone obtained from a colimit cocone by composing with
+                        an isomorphism of vertices is again a colimit cocone, since factorizations through the two vertices correspond
+                        bijectively along the isomorphism. Hence \(\operatorname{ev}_A(c)\) is a colimit cocone on \(D(-)(A)\), which
+                        is what preservation of colimits demands.
+                    </p>
+                </div>
+
+                <h3>Colimits commute with colimits, but the mixed exchange fails</h3>
+
+                <p>
+                    The dictionary also dualizes the theorem of the previous section wholesale. The opposite
+                    of a product category is the product of the opposites, with the same objects and the same
+                    pairs of maps. A two-variable diagram \(D : \mathbf{I} \times \mathbf{J} \to \mathscr{S}\) therefore has an opposite
+                    \(D^{\mathrm{op}} : \mathbf{I}^{\mathrm{op}} \times \mathbf{J}^{\mathrm{op}} \to \mathscr{S}^{\mathrm{op}}\),
+                    and colimits of \(D\) and of its one-variable transposes are, through the dictionary, limits of \(D^{\mathrm{op}}\) and of its transposes.
+                </p>
+
+                <p>
+                    If \(\mathbf{I}\) and \(\mathbf{J}\) are small and \(\mathscr{S}\) is locally small with all colimits of shape
+                    \(\mathbf{I}\) and of shape \(\mathbf{J}\), then \(\mathscr{S}^{\mathrm{op}}\) satisfies
+                    the hypotheses of the commutation theorem, and translating its conclusion back gives:
+                    colimits commute with colimits,
+                    \[
+                    \operatorname{colim}_{\mathbf{I}} \Big( \operatorname{colim}_{\mathbf{J}} \widetilde{D} \Big)
+                    \cong
+                    \operatorname{colim}_{\mathbf{I} \times \mathbf{J}} D
+                    \cong
+                    \operatorname{colim}_{\mathbf{J}} \Big( \operatorname{colim}_{\mathbf{I}} \widehat{D} \Big),
+                    \]
+                    with all three colimits existing. Sums interchange just as freely as products.
+                </p>
+
+                <p>
+                    What fails, and fails already in \(\mathbf{Set}\), is the mixed exchange of a limit with a colimit. Return to
+                    the two-by-two grid \(S_{11}, S_{12}, S_{21}, S_{22}\), and compare forming
+                    <a href="sets_universal_constructions.html#D-coproduct_set" class="ref-link"><strong>sums</strong></a> along
+                    rows and then the
+                    <a href="sets_universal_constructions.html#D-product_set" class="ref-link"><strong>product</strong></a> of the
+                    results with forming products along columns and then the sum. In general the two disagree:
+                    \[
+                    (S_{11} + S_{12}) \times (S_{21} + S_{22})
+                    \not\cong
+                    (S_{11} \times S_{21}) + (S_{12} \times S_{22}).
+                    \]
+                    Take every \(S_{ij}\) to be a one-element set. The left-hand side is a product of two two-element sets and has
+                    \(2 \times 2 = 4\) elements. The right-hand side is a sum of two one-element sets and has \(1 + 1 = 2\)
+                    elements. No bijection exists between them, so the two constructions produce genuinely different sets.
+                </p>
+
+                <p>
+                    The previous page observed that
+                    hom-functors of either variance land on limits, so that limits hold the upper hand over
+                    colimits. Here is a second asymmetry of the same temperament: each kind of operation
+                    commutes with its own kind, but the two kinds do not commute with each other. The study of
+                    when the mixed exchange does hold, for special shapes on one side, is a rich subject that
+                    this series will meet again.
+                </p>
+            </section>
+
+            <section id="complete-cocomplete-presheaves" class="section-content">
+                <h2>The Presheaf Universe</h2>
+
+                <p>
+                    The page that introduced the
+                    <a href="representable_functors.html#D-yoneda_embedding" class="ref-link"><strong>Yoneda embedding</strong></a>
+                    promised that its target \([\mathscr{A}^{\mathrm{op}}, \mathbf{Set}]\) is a richly structured category, with
+                    limits, colimits, and exponentials that \(\mathscr{A}\) itself may lack. The exponentials are a story for
+                    later. The limits and colimits can now be delivered in full, together with a precise account of how the
+                    embedded copy of \(\mathscr{A}\) sits with respect to them.
+                </p>
+
+                <p>
+                    Call a category <strong>complete</strong> when every diagram of every small shape in it has a
+                    limit, and <strong>cocomplete</strong> when every such diagram has a colimit.
+                </p>
+
+                <div class="theorem" id="T-presheaf_category_complete_cocomplete">
+                    <span class="theorem-title">Theorem: Presheaf Categories Are Complete and Cocomplete</span>
+                    <p>
+                        Let \(\mathbf{A}\) be a small category. Then the presheaf category
+                        \([\mathbf{A}^{\mathrm{op}}, \mathbf{Set}]\) is complete and cocomplete, and for
+                        every \(A \in \mathbf{A}\) the evaluation functor
+                        \(\operatorname{ev}_A : [\mathbf{A}^{\mathrm{op}}, \mathbf{Set}] \to \mathbf{Set}\)
+                        preserves all limits and all colimits.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        The category \(\mathbf{Set}\) is locally small. It
+                        <a href="categorical_limits.html#existence">has all limits</a>
+                        of every small shape by the explicit construction as a subset of a product, and it
+                        <a href="colimits_of_diagrams.html#T-colimit_formula_set" class="ref-link"><strong>has all colimits</strong></a>
+                        of every small shape by the explicit construction as a quotient of a sum. The category
+                        \(\mathbf{A}^{\mathrm{op}}\) is small. For each small shape \(\mathbf{I}\), the
+                        <a href="pointwise_limits.html#T-evaluation_preserves_limits" class="ref-link"><strong>limit corollary</strong></a>
+                        of the previous page and the
+                        <a href="#T-evaluation_preserves_colimits" class="ref-link"><strong>colimit corollary</strong></a>
+                        above, applied with \(\mathbf{A}^{\mathrm{op}}\) in place of \(\mathbf{A}\), give
+                        limits and colimits of shape \(\mathbf{I}\) in
+                        \([\mathbf{A}^{\mathrm{op}}, \mathbf{Set}]\) and their preservation by every
+                        evaluation functor.
+                    </p>
+                </div>
+
+                <p>
+                    Both constituents of the proof were built for this moment. Pointwise computation supplies the limits and
+                    colimits, and the evaluation functors, by preserving them, guarantee that the supplied objects are computed
+                    exactly as expected. The value of a limit of presheaves at \(A\) is the limit of the values at \(A\), and
+                    likewise for colimits. The presheaf category is a universe where every gluing and every carving-out that small
+                    diagrams can express is available, object by object.
+                </p>
+
+                <h3>The embedding respects limits</h3>
+
+                <div class="theorem" id="T-yoneda_preserves_limits">
+                    <span class="theorem-title">Proposition: The Yoneda Embedding Preserves Limits</span>
+                    <p>
+                        Let \(\mathbf{A}\) be a small category. Then the Yoneda embedding
+                        \(H_\bullet : \mathbf{A} \to [\mathbf{A}^{\mathrm{op}}, \mathbf{Set}]\) preserves
+                        limits: for every small category \(\mathbf{I}\), every diagram
+                        \(D : \mathbf{I} \to \mathbf{A}\), and every limit cone
+                        \(\big(\lim D \xrightarrow{p_I} D(I)\big)_{I \in \mathbf{I}}\), the family
+                        \[
+                        \Big( H_{\lim D} \xrightarrow{H_{p_I}} H_{D(I)} \Big)_{I \in \mathbf{I}}
+                        \]
+                        is a limit cone on \(H_\bullet \circ D\) in \([\mathbf{A}^{\mathrm{op}}, \mathbf{Set}]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        The family is a cone, since applying the functor \(H_\bullet\) to the cone equations \(Du \circ p_I = p_J\)
+                        gives \(H_{Du} \circ H_{p_I} = H_{p_J}\). By part (b) of the
+                        <a href="pointwise_limits.html#T-limits_pointwise_functor_category" class="ref-link"><strong>pointwise limit theorem</strong></a>,
+                        applied with \(\mathbf{A}^{\mathrm{op}}\) as the small domain and \(\mathbf{Set}\) as the locally small
+                        target, the cone is a limit cone as soon as its image under \(\operatorname{ev}_A\) is a limit cone for every
+                        \(A \in \mathbf{A}\). The pointwise hypothesis of that theorem holds once those evaluated images are shown to
+                        be limit cones, since a limit cone in particular provides a limit.
+                    </p>
+                    <p>
+                        Fix \(A \in \mathbf{A}\) and compute the composite
+                        \(\operatorname{ev}_A \circ\, H_\bullet : \mathbf{A} \to \mathbf{Set}\). On objects it sends \(B\) to
+                        \(H_B(A) = \mathbf{A}(A, B)\). On a map \(f : B \to B'\) it sends \(f\) to the component \((H_f)_A\), which
+                        post-composes with \(f\). This is exactly the
+                        <a href="representable_functors.html#D-hom_functor_covariant" class="ref-link"><strong>covariant hom-functor</strong></a>
+                        \(\mathbf{A}(A, -)\).
+                    </p>
+                    <p>
+                        The \(\operatorname{ev}_A\)-image of the displayed family is therefore
+                        \[
+                        \Big( \mathbf{A}(A, \lim D) \xrightarrow{\mathbf{A}(A,\, p_I)} \mathbf{A}(A, D(I)) \Big)_{I \in \mathbf{I}},
+                        \]
+                        which is a limit cone on \(\mathbf{A}(A, D)\) because
+                        <a href="pointwise_limits.html#T-representable_preserves_limits" class="ref-link"><strong>representables preserve limits</strong></a>.
+                        Every evaluation of the cone is thus a limit cone, and the cone is a limit cone.
+                    </p>
+                </div>
+
+                <p>
+                    The smallest case redeems the very first display of the previous page. Suppose \(\mathbf{A}\) has binary
+                    products. Applying the proposition to a binary product cone shows that \(H_{X \times Y}\), with legs
+                    \(H_{\mathrm{pr}_1}\) and \(H_{\mathrm{pr}_2}\), is a product cone in the presheaf category:
+                    \[
+                    H_{X \times Y} \cong H_X \times H_Y .
+                    \]
+                    Evaluating at \(A\), which is permitted because evaluation preserves limits, recovers
+                    \(\mathbf{A}(A, X \times Y) \cong \mathbf{A}(A, X) \times \mathbf{A}(A, Y)\), the isomorphism from which the
+                    previous page's whole investigation departed.
+                </p>
+
+                <p>
+                    And since the Yoneda embedding is
+                    <a href="yoneda_consequences.html#T-yoneda_embedding_full_faithful" class="ref-link"><strong>full and faithful</strong></a>,
+                    the category \(\mathbf{A}\) sits inside its presheaf category as a full subcategory whose
+                    limits, whenever \(\mathbf{A}\) has them, agree with the ambient ones. Taking limits of
+                    representables produces representables again, so long as \(\mathbf{A}\) itself has the
+                    limit in question. In this precise sense the
+                    limit-formation of the presheaf universe adds nothing new over the embedded copy of
+                    \(\mathbf{A}\), wherever that copy was already equipped.
+                </p>
+
+                <h3>A warning on colimits, and the view ahead</h3>
+
+                <p>
+                    For colimits the situation is the opposite extreme, and one example settles it. Suppose \(\mathbf{A}\) has an
+                    <a href="adjoint_functors.html#D-initial_terminal_object" class="ref-link"><strong>initial object</strong></a>
+                    \(0\). An initial object is the
+                    <a href="colimits_of_diagrams.html#D-coproduct_categorical" class="ref-link"><strong>empty sum</strong></a>,
+                    the colimit of the empty diagram, and in \(\mathbf{Set}\) the initial object is the empty set. We apply the
+                    <a href="#T-colimits_pointwise_functor_category" class="ref-link"><strong>colimit theorem</strong></a> to the empty diagram in \([\mathbf{A}^{\mathrm{op}}, \mathbf{Set}]\), whose pointwise
+                    diagrams are the empty diagrams in \(\mathbf{Set}\). Part (a) produces a presheaf whose value at every object
+                    is initial in \(\mathbf{Set}\), hence empty, and part (b) makes that presheaf initial. The initial presheaf is
+                    therefore the constant presheaf \(\varnothing\) with empty value everywhere.
+                </p>
+
+                <p>
+                    If \(H_0\) were initial, it would be isomorphic to that presheaf, because initial objects are
+                    <a href="adjoint_functors.html#T-initial_object_unique" class="ref-link"><strong>unique up to isomorphism</strong></a>,
+                    and since a
+                    <a href="categories_functors_naturality.html#T-natural_iso_componentwise" class="ref-link"><strong>natural isomorphism has isomorphisms as components</strong></a>,
+                    its value \(H_0(0) = \mathbf{A}(0, 0)\) would be in bijection with the empty set. But \(1_0\) is an element of
+                    \(\mathbf{A}(0, 0)\). So \(H_0\) is not initial. The Yoneda embedding fails to preserve even the empty
+                    colimit. Colimit-formation in the presheaf universe genuinely leaves the representables behind, and the
+                    colimits it produces are new objects, not relabelings of old ones.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Insight: The Presheaf Universe as a Completion</h3>
+                    <p>
+                        The results of this page fit a single picture. A small category \(\mathbf{A}\),
+                        however sparse, embeds fully and faithfully into
+                        \([\mathbf{A}^{\mathrm{op}}, \mathbf{Set}]\), and the ambient universe is complete
+                        and cocomplete: every limit and every colimit that \(\mathbf{A}\) lacks is supplied
+                        there, computed pointwise in \(\mathbf{Set}\). The two halves of the page describe
+                        how the embedding interacts with that supply. Limits respect the embedded copy, so
+                        the completion is conservative about what \(\mathbf{A}\) already had.
+                    </p>
+                    <p>
+                        Colimits escape it, so the completion is genuinely creative. The objects it creates from representables are
+                        the subject of the pages ahead: every presheaf whatsoever is a colimit of representables, so the embedded copy
+                        of \(\mathbf{A}\), small as it is, generates the entire universe under colimit-formation.
+                    </p>
+                    <p>
+                        This generative density is one reason presheaf categories, rather than bare categories, are the ambient
+                        setting of choice when categorical structures are applied. In compositional accounts of learning systems, for
+                        example, the base category records the primitive shapes, and the presheaf universe supplies every gluing of
+                        them that a construction could require.
+                    </p>
+                </div>
+            </section>
+
+        </div>
+
+    </body>
+</html>
