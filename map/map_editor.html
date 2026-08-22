@@ -196,6 +196,7 @@
         // Shared by the server fetch and by local-file loading.
         function processCurriculumData(data) {
             const tiles = [];
+            const unplaced = [];    // tiles with an empty mapCoords
             const foundGroups = {}; // To store dynamic topic group names
             const formatGroupName = (id) => id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
@@ -227,17 +228,20 @@
             // Add all parts from all sections
             Object.entries(data.sections).forEach(([sectionId, section]) => {
                 section.parts.forEach(part => {
-                    tiles.push({
+                    const tile = {
                         id: part.id,
                         section: sectionId,
                         title: part.title,
                         url: section.baseUrl + part.url,
-                        q: part.mapCoords.q,
-                        r: part.mapCoords.r,
+                        q: 0, r: 0,   // overwritten below from mapCoords
                         prereqs: part.prereqs || [],
                         keywords: part.keywords || [],
                         topicGroup: part.topicGroup || null
-                    });
+                    };
+                    const c = readCoords(part);
+                    if (c) { tile.q = c.q; tile.r = c.r; }
+                    else { tile.isUnplaced = true; unplaced.push(tile); }
+                    tiles.push(tile);
                     // Dynamically collect topic groups
                     if (part.topicGroup) {
                         foundGroups[part.topicGroup] = formatGroupName(part.topicGroup);
@@ -262,6 +266,7 @@
                 }
             });
             
+            stageUnplacedTiles(tiles.filter(t => !t.isUnplaced), unplaced);
             // Return rawData and dynamically generated group names as well
             return { tiles, rawData: data, topicGroupNames: foundGroups };
         }
@@ -577,7 +582,7 @@
             const buildIslands = (tileList) => {
                 const groups = new Map(); // key -> [tiles]
                 tileList.forEach(t => {
-                    if (t.section === 'HOME' || t.section === 'RESEARCH' || t.isReserved) return;
+                    if (t.section === 'HOME' || t.section === 'RESEARCH' || t.isReserved || t.isUnplaced) return;
                     const key = t.topicGroup ? `${t.section}::${t.topicGroup}` : `__solo::${t.id}`;
                     if (!groups.has(key)) groups.set(key, []);
                     groups.get(key).push(t);
@@ -681,7 +686,7 @@
                 const collision = tiles.some(t => !idSet.has(t.id) && cells.has(`${t.q},${t.r}`));
                 if (!collision) {
                     saveHistory(tiles);
-                    setTiles(tiles.map(t => targets.has(t.id) ? { ...t, ...targets.get(t.id) } : t));
+                    setTiles(tiles.map(t => targets.has(t.id) ? { ...t, ...targets.get(t.id), isUnplaced: false } : t));
                     setFloatState(null);
                     return true;
                 }
@@ -863,8 +868,10 @@
                     exportData.sections[key].reservedSlots = [];
                 });
 
-                tiles.forEach(tile => {
-                    if (tile.section === 'HOME') {
+                tiles.forEach(tile => { 
+                    if (tile.isUnplaced) {
+                        return;
+                    } else if (tile.section === 'HOME') {
                         exportData.homeNode.mapCoords = { q: tile.q, r: tile.r };
                     } else if (tile.section === 'RESEARCH') {
                         exportData.researchNode.mapCoords = { q: tile.q, r: tile.r };
@@ -1304,6 +1311,7 @@
                 if (isSwapTarget) { stroke = '#fbbf24'; strokeWidth = 2.5; opacity = 1; }
                 if (inFloat) { stroke = '#00e5ff'; strokeWidth = 2; }
                 if (floatCollides) { stroke = '#ef4444'; strokeWidth = 2.5; }
+                if (tile.isUnplaced && !isMultiSelected && !isSingleSelected) { stroke = '#f472b6'; strokeWidth = 2.5; }
 
                 return (
                     <g key={tile.id} className={isPrereq && !analysisMode ? 'prereq-glow' : ''}
@@ -1525,8 +1533,8 @@
 
                                                 if (targetTile) {
                                                     const newTiles = tiles.map(t => {
-                                                        if (t.id === dragged.id) return { ...t, q: targetTile.q, r: targetTile.r };
-                                                        if (t.id === targetTile.id) return { ...t, q: dragged.q, r: dragged.r };
+                                                        if (t.id === dragged.id) return { ...t, q: targetTile.q, r: targetTile.r, isUnplaced: false };
+                                                        if (t.id === targetTile.id) return { ...t, q: dragged.q, r: dragged.r, isUnplaced: false };
                                                         return t;
                                                     });
                                                     saveHistory(tiles);
@@ -1556,7 +1564,7 @@
                                             const collision = tiles.some(t => !idSet.has(t.id) && targetPositions.has(`${t.q},${t.r}`));
 
                                             if (!collision) {
-                                                const newTiles = tiles.map(t => idSet.has(t.id) ? { ...t, q: t.q + deltaHex.q, r: t.r + deltaHex.r } : t);
+                                                const newTiles = tiles.map(t => idSet.has(t.id) ? { ...t, q: t.q + deltaHex.q, r: t.r + deltaHex.r, isUnplaced: false } : t);
                                                 saveHistory(tiles);
                                                 setTiles(newTiles);
                                             }
@@ -1829,6 +1837,23 @@
                                     );
                                 })}
                             </div>
+
+                            {tiles.some(t => t.isUnplaced) && (
+                                <div className="info-box" style={{ borderLeft: '3px solid #f472b6' }}>
+                                    <h3>⚠ Unplaced ({tiles.filter(t => t.isUnplaced).length})</h3>
+                                    <p style={{ color: '#9ca3af', marginBottom: '6px' }}>
+                                        Empty mapCoords in the source. Parked right of the map — drag each into position. Excluded from export until moved.
+                                    </p>
+                                    {tiles.filter(t => t.isUnplaced).map(t => (
+                                        <div key={t.id}
+                                            onClick={() => { setFloatState(null); setSelectedTile(t); setSelectedIds([t.id]); }}
+                                            style={{ fontSize: '0.68rem', color: '#f9a8d4', cursor: 'pointer', padding: '2px 4px',
+                                                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {t.id} — {t.title}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
                             <div className="info-box">
                                 <h3>Analysis Tools</h3>
