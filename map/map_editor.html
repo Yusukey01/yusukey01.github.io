@@ -963,26 +963,6 @@
                 return cells;
             }, [tiles, selectedIds]);
 
-            // The cross-cluster prereq pairs sitting furthest apart. Long
-            // edges are exactly the ones the eye cannot catch (their two
-            // ends are nowhere near each other), so they need a list rather
-            // than a look. Bare totals were dropped: with no baseline to
-            // compare against, a single number told us nothing actionable.
-            const longestBridges = useMemo(() => {
-                const byId = new Map(tiles.map(t => [t.id, t]));
-                const edges = [];
-                tiles.forEach(t => (t.prereqs || []).forEach(pid => {
-                    const p = byId.get(pid);
-                    if (!p) return;
-                    // Staged tiles sit far outside the map on purpose.
-                    if (t.isUnplaced || p.isUnplaced) return;
-                    if (p.section === t.section && p.topicGroup === t.topicGroup) return;
-                    edges.push({ a: p, b: t, d: hexDist(t, p) });
-                }));
-                edges.sort((x, y) => y.d - x.d);
-                return edges.slice(0, 5);
-            }, [tiles]);
-
             const emptySlots = useMemo(() => {
                 const slots = [];
                 const checked = new Set();
@@ -1042,8 +1022,7 @@
                 }
 
                 // No selection: draw nothing. A whole-map view was tried
-                // twice (raw edges, then island bundles) and both were noise;
-                // the Longest bridges list is the discovery path instead.
+                // twice (raw edges, then island bundles) and both were noise.
                 return { mode: 'off', edges: [] };
             }, [showBridges, tiles, selectedIds, selectedTile]);
 
@@ -1811,29 +1790,6 @@
                                 </p>
                             </div>
                             
-                            <div className="info-box">
-                                <h3>🌉 Longest bridges</h3>
-                                <div style={{ fontSize: '0.65rem', color: '#9ca3af', marginBottom: '4px' }}>
-                                    Prereq pairs sitting furthest apart. Click to select both, then turn on Bridges to see the line.
-                                </div>
-                                {longestBridges.length === 0 && (
-                                    <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>None.</div>
-                                )}
-                                {longestBridges.map((e, i) => (
-                                    <div key={i}
-                                        onClick={() => { setFloatState(null); setSelectedTile(null); setSelectedIds([e.a.id, e.b.id]); }}
-                                        style={{ fontSize: '0.68rem', color: '#e5e7eb', cursor: 'pointer', padding: '2px 4px',
-                                                 borderRadius: '3px', display: 'flex', justifyContent: 'space-between', gap: '6px' }}
-                                        onMouseEnter={ev => ev.currentTarget.style.background = '#374151'}
-                                        onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}>
-                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {e.a.id} ↔ {e.b.id}
-                                        </span>
-                                        <b>{e.d}</b>
-                                    </div>
-                                ))}
-                            </div>
-
                             <div className="info-box">
                                 <h3>📸 Layout Snapshots</h3>
                                 <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
