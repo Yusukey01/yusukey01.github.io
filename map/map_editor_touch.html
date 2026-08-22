@@ -40,9 +40,9 @@
         background: var(--chrome);
         border-bottom: 1px solid var(--line);
     }
-    #topbar .grow { flex: 1; }
+    #topbar .grow { flex: 1; min-width: 0; }
     #status { font-size: 0.7rem; color: var(--dim); white-space: nowrap;
-              overflow: hidden; text-overflow: ellipsis; }
+              overflow: hidden; text-overflow: ellipsis; display: block; }
     button {
         font: inherit; font-size: 0.75rem;
         background: #1f2937; color: var(--ink);
@@ -52,6 +52,7 @@
     }
     button:active { background: #374151; }
     button.on { background: #1d4ed8; border-color: #3b82f6; }
+    button:disabled { opacity: 0.35; }
 
     /* ---- map -------------------------------------------------------- */
     #stage {
@@ -85,17 +86,26 @@
         padding: 8px 10px;
         font-size: 0.75rem;
         min-height: var(--bar);
-        display: flex; align-items: center;
+        display: flex; align-items: center; gap: 10px;
     }
-    #hud .hint { color: #6b7280; }
-    #hud .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    #hud .hint { color: #6b7280; line-height: 1.5; }
+    #hud .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
     #hud .id { font-size: 0.68rem; color: var(--dim); }
     #hud .title { font-weight: 600; overflow: hidden;
                   text-overflow: ellipsis; white-space: nowrap; }
+    #hud .warn { color: #f87171; font-size: 0.7rem; line-height: 1.4; }
+    #hud .tools { display: flex; align-items: center; gap: 8px; flex: 1; }
+    #hud .tools .col { display: flex; flex-direction: column; gap: 5px; }
+    #hud .tools .col button { width: 100%; }
+    /* Six hex directions, laid out the way they read on screen. */
+    #nudge { display: grid; grid-template-columns: repeat(2, 38px); gap: 4px; }
+    #nudge button { padding: 0; height: 30px; min-height: 30px; font-size: 0.8rem; }
 
     /* ---- section sheet ---------------------------------------------- */
     #sheet {
         position: absolute; left: 0; right: 0; bottom: 0;
+        max-height: 70%;
+        overflow-y: auto;
         background: var(--chrome);
         border-top: 1px solid var(--line);
         border-radius: 14px 14px 0 0;
@@ -106,6 +116,7 @@
     }
     #sheet.open { transform: translateY(0); }
     #sheet h2 { font-size: 0.8rem; margin-bottom: 8px; color: var(--dim); font-weight: 600; }
+    #sheet .note { font-size: 0.68rem; color: #6b7280; margin-bottom: 8px; line-height: 1.5; }
     .srow {
         display: flex; align-items: center; gap: 8px;
         padding: 9px 8px; border-radius: 8px;
@@ -115,6 +126,7 @@
     .srow .sw { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; }
     .srow .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .srow .ct { color: var(--dim); font-size: 0.7rem; }
+    .srow button { padding: 4px 9px; min-height: 28px; font-size: 0.65rem; }
     .srow.on { background: #1f2937; }
 
     #splash {
@@ -130,22 +142,24 @@
 
 <div id="topbar">
     <button id="btnSections">Sections</button>
-    <span class="grow"><span id="status">loading…</span></span>
+    <button id="btnUndo" disabled>Undo</button>
+    <span class="grow"><span id="status">loading&hellip;</span></span>
     <button id="btnFit">Fit</button>
 </div>
 
 <div id="stage">
-    <div id="splash">loading curriculum.json…</div>
+    <div id="splash">loading curriculum.json&hellip;</div>
     <div id="zoomcol">
         <button id="btnIn" aria-label="zoom in">+</button>
         <button id="btnOut" aria-label="zoom out">&minus;</button>
     </div>
 </div>
 
-<div id="hud"><span class="hint">Drag to pan &middot; pinch to zoom &middot; tap a tile</span></div>
+<div id="hud"></div>
 
 <div id="sheet">
     <h2>Sections</h2>
+    <div class="note">Tap a row to isolate it. Isolated-out tiles are dimmed and cannot be grabbed.</div>
     <div id="sectionList"></div>
     <button id="btnCloseSheet" style="width:100%; margin-top:8px;">Close</button>
 </div>
@@ -162,6 +176,7 @@
     var HEX = 28;
     var geom = C.makeHexGeometry(HEX);
     var hexToPixel = geom.hexToPixel;
+    var pixelToHex = geom.pixelToHex;
 
     // On-screen hex width below which the id labels are unreadable and are
     // therefore hidden. 1640 world units of content across a ~390px phone
@@ -169,22 +184,41 @@
     var LABEL_MIN_PX = 24;
     var HEX_W = HEX * Math.sqrt(3);
 
+    // A dragged tile sits under the fingertip, where it cannot be seen. It is
+    // therefore lifted by roughly one hex row, in world units so the lift is
+    // a constant number of cells at any zoom. The target cell is the lifted
+    // one, so what you aim with is what lands.
+    var LIFT = HEX * 1.7;
+
+    var TAP_SLOP = 10;           // px of movement still counted as a tap
+    var TAP_MS = 500;
+    var HOLD_MS = 480;           // press-and-hold to grab the whole island
+    var UNDO_DEPTH = 50;
+
     var SVG_NS = 'http://www.w3.org/2000/svg';
 
     // ---- state -----------------------------------------------------------
     var tiles = [];
-    var nodes = new Map();       // tile id -> { g, path, label }
+    var nodes = new Map();       // tile id -> { g, path, label, drawn }
     var byId = new Map();
     var selected = new Set();
     var filter = new Set();      // sections to isolate; empty = show all
-    var fitBox = null;           // auto-fit camera
+    var fitBox = null;           // HOME-centred content box
     var cam = null;              // live camera; the single source of truth
+
+    var undoStack = [];
+    // Pending rotate / flip / nudge of the selection. While set, the data has
+    // not moved: the tiles are only drawn transformed. It commits by itself
+    // the moment the shape stops colliding.
+    var floatState = null;       // { piv, rot, mir, dq, dr }
+    var drag = null;             // { ids, sx, sy, dq, dr, moved, single }
 
     var stage = document.getElementById('stage');
     var hud = document.getElementById('hud');
     var statusEl = document.getElementById('status');
     var splash = document.getElementById('splash');
     var sheet = document.getElementById('sheet');
+    var btnUndo = document.getElementById('btnUndo');
     var svg = null;
     var layer = null;
 
@@ -205,19 +239,23 @@
         stage.classList.toggle('labels', HEX_W * (rectOf().width / cam.width) >= LABEL_MIN_PX);
     }
 
+    // Symmetric about HOME rather than about the bounding box. A single
+    // outlying tile would otherwise drag the centre several cells away from
+    // the origin, and the origin is the map's actual anchor.
     function computeFit() {
-        if (tiles.length === 0) return { x: -100, y: -100, width: 200, height: 200 };
-        var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        var home = tiles.filter(function (t) { return t.section === 'HOME'; })[0];
+        var o = home ? hexToPixel(home.q, home.r) : { x: 0, y: 0 };
+        var rx = 0, ry = 0;
         tiles.forEach(function (t) {
             var p = hexToPixel(t.q, t.r);
-            if (p.x < minX) minX = p.x;
-            if (p.x > maxX) maxX = p.x;
-            if (p.y < minY) minY = p.y;
-            if (p.y > maxY) maxY = p.y;
+            rx = Math.max(rx, Math.abs(p.x - o.x));
+            ry = Math.max(ry, Math.abs(p.y - o.y));
         });
         var pad = HEX * 2;
-        return { x: minX - pad, y: minY - pad,
-                 width: maxX - minX + pad * 2, height: maxY - minY + pad * 2 };
+        rx += pad; ry += pad;
+        if (rx < HEX) rx = HEX * 4;
+        if (ry < HEX) ry = HEX * 4;
+        return { x: o.x - rx, y: o.y - ry, width: rx * 2, height: ry * 2 };
     }
 
     // Letterbox the content box into the stage's aspect ratio, so "Fit"
@@ -287,9 +325,7 @@
     var pointers = new Map();    // pointerId -> { x, y }
     var gesture = null;          // { cam, pts: [{id,x,y}], rect }
     var tapCandidate = null;     // { id, x, y, t, tileId }
-
-    var TAP_SLOP = 10;           // px of movement still counted as a tap
-    var TAP_MS = 500;
+    var holdTimer = null;
 
     function pointerList() {
         var out = [];
@@ -314,6 +350,20 @@
         return null;
     }
 
+    function cancelHold() {
+        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+    }
+
+    // A drag in flight is abandoned, not committed, when a second finger
+    // arrives: the gesture has become a camera move.
+    function abortDrag() {
+        if (!drag) return;
+        drag = null;
+        redrawAll();
+        paint();
+        renderHud();
+    }
+
     stage.addEventListener('pointerdown', function (e) {
         if (!cam) return;
         var hitId = tileIdFromEvent(e);   // read before capture retargets
@@ -323,8 +373,24 @@
         if (pointers.size === 1) {
             tapCandidate = { id: e.pointerId, x: e.clientX, y: e.clientY,
                              t: Date.now(), tileId: hitId };
+            if (hitId && grabbable(hitId)) {
+                var ids = selected.has(hitId) ? new Set(selected) : new Set([hitId]);
+                drag = { ids: ids, sx: e.clientX, sy: e.clientY,
+                         dq: 0, dr: 0, moved: false, single: hitId };
+                cancelHold();
+                holdTimer = setTimeout(function () {
+                    holdTimer = null;
+                    if (!drag || drag.moved) return;
+                    selectIsland(hitId);
+                    drag.ids = new Set(selected);
+                    tapCandidate = null;              // the hold consumed the press
+                    if (navigator.vibrate) navigator.vibrate(18);
+                }, HOLD_MS);
+            }
         } else {
             tapCandidate = null;   // a second finger is never a tap
+            cancelHold();
+            abortDrag();
         }
         beginGesture();
     });
@@ -333,10 +399,34 @@
         if (!pointers.has(e.pointerId) || !gesture) return;
         pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-        if (tapCandidate && tapCandidate.id === e.pointerId) {
-            if (Math.hypot(e.clientX - tapCandidate.x, e.clientY - tapCandidate.y) > TAP_SLOP) {
-                tapCandidate = null;
+        var slipped = tapCandidate && tapCandidate.id === e.pointerId &&
+                      Math.hypot(e.clientX - tapCandidate.x, e.clientY - tapCandidate.y) > TAP_SLOP;
+        if (slipped) tapCandidate = null;
+
+        // A tile drag owns the gesture: the camera stays put under it.
+        if (drag && pointers.size === 1) {
+            if (!drag.moved) {
+                if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) <= TAP_SLOP) return;
+                drag.moved = true;
+                cancelHold();
+                if (!selected.has(drag.single)) {
+                    selected.clear();
+                    selected.add(drag.single);
+                    floatState = null;
+                    drag.ids = new Set(selected);
+                }
             }
+            var r0 = gesture.rect;
+            var dxw = (e.clientX - drag.sx) * (cam.width / r0.width);
+            var dyw = (e.clientY - drag.sy) * (cam.height / r0.height) - LIFT;
+            var d = pixelToHex(dxw, dyw);
+            // Quantised to cells: without this guard every pointer event
+            // would redraw the selection even when nothing moved.
+            if (d.q === drag.dq && d.r === drag.dr) return;
+            drag.dq = d.q; drag.dr = d.r;
+            redrawSelection();
+            paint();
+            return;
         }
 
         var rect = gesture.rect;
@@ -366,13 +456,17 @@
         var wasTap = tapCandidate && tapCandidate.id === e.pointerId &&
                      (Date.now() - tapCandidate.t) < TAP_MS;
         var tappedTile = wasTap ? tapCandidate.tileId : null;
+        var dropping = drag && drag.moved && pointers.size === 1;
 
+        cancelHold();
         pointers.delete(e.pointerId);
         if (tapCandidate && tapCandidate.id === e.pointerId) tapCandidate = null;
 
         if (pointers.size === 0) gesture = null;
         else beginGesture();     // rebase so lifting one of two fingers is smooth
 
+        if (dropping) { dropDrag(); return; }
+        if (drag && pointers.size === 0) { drag = null; }
         if (wasTap) selectTile(tappedTile);
     }
 
@@ -394,57 +488,350 @@
         applyCam();
     }, { passive: false });
 
-    // ---- selection and painting -----------------------------------------
-    // Tiles are built once; everything after that mutates attributes.
+    // ---- selection -------------------------------------------------------
+
+    function grabbable(id) {
+        var t = byId.get(id);
+        return !!t && (filter.size === 0 || filter.has(t.section));
+    }
 
     function selectTile(id) {
-        if (!id) { selected.clear(); }
-        else if (selected.has(id) && selected.size === 1) { selected.clear(); }
+        floatState = null;
+        if (!id) selected.clear();
+        else if (selected.has(id) && selected.size === 1) selected.clear();
         else { selected.clear(); selected.add(id); }
+        redrawAll();
         paint();
         renderHud();
     }
 
+    function selectIsland(id) {
+        var t = byId.get(id);
+        floatState = null;
+        selected.clear();
+        if (t && t.topicGroup) {
+            tiles.forEach(function (o) {
+                if (o.topicGroup === t.topicGroup && o.section === t.section && !o.isReserved) selected.add(o.id);
+            });
+        } else if (t) {
+            selected.add(t.id);
+        }
+        redrawAll();
+        paint();
+        renderHud();
+    }
+
+    function selectSection(key) {
+        floatState = null;
+        selected.clear();
+        tiles.forEach(function (t) { if (t.section === key) selected.add(t.id); });
+        redrawAll();
+        paint();
+        renderHud();
+    }
+
+    // ---- geometry of the current arrangement -----------------------------
+
+    // Where a tile is DRAWN, which differs from where its data says it is
+    // whenever a float preview or a drag is in flight.
+    function posOf(t) {
+        var inSel = selected.has(t.id);
+        var dragging = drag && drag.moved && drag.ids.has(t.id);
+        if (floatState && inSel) {
+            return C.xformN(t, floatState.piv, floatState.rot, floatState.mir, {
+                q: floatState.dq + (dragging ? drag.dq : 0),
+                r: floatState.dr + (dragging ? drag.dr : 0)
+            });
+        }
+        if (dragging) return { q: t.q + drag.dq, r: t.r + drag.dr };
+        return { q: t.q, r: t.r };
+    }
+
+    // Cells held by tiles OTHER than the given id set, by their data
+    // positions. Displaced tiles are excluded because they are the ones
+    // being tested.
+    function cellsExcluding(idSet) {
+        var occ = new Set();
+        tiles.forEach(function (t) {
+            if (idSet && idSet.has(t.id)) return;
+            occ.add(t.q + ',' + t.r);
+        });
+        return occ;
+    }
+
+    function movingIds() {
+        if (floatState) return new Set(selected);
+        if (drag && drag.moved) return new Set(drag.ids);
+        return null;
+    }
+
+    // ---- mutation --------------------------------------------------------
+
+    function pushUndo() {
+        undoStack.push(tiles.map(function (t) { return { id: t.id, q: t.q, r: t.r }; }));
+        if (undoStack.length > UNDO_DEPTH) undoStack.shift();
+        btnUndo.disabled = false;
+    }
+
+    function undo() {
+        var snap = undoStack.pop();
+        if (!snap) return;
+        snap.forEach(function (e) {
+            var t = byId.get(e.id);
+            if (t) { t.q = e.q; t.r = e.r; }
+        });
+        floatState = null;
+        drag = null;
+        btnUndo.disabled = undoStack.length === 0;
+        redrawAll();
+        paint();
+        renderHud();
+    }
+
+    function commit(targets) {
+        pushUndo();
+        targets.forEach(function (c, id) {
+            var t = byId.get(id);
+            t.q = c.q; t.r = c.r;
+            t.isUnplaced = false;
+        });
+    }
+
+    // Commit the transform if the shape lands clear; otherwise leave it as a
+    // floating preview the user can keep rotating or drag somewhere free.
+    function transformOrFloat(piv, rot, mir, d) {
+        if (selected.size === 0) return;
+        var targets = new Map();
+        selected.forEach(function (id) {
+            targets.set(id, C.xformN(byId.get(id), piv, rot, mir, d));
+        });
+        var occ = cellsExcluding(selected);
+        var blocked = false;
+        targets.forEach(function (c) { if (occ.has(c.q + ',' + c.r)) blocked = true; });
+
+        if (blocked) floatState = { piv: piv, rot: rot, mir: mir, dq: d.q, dr: d.r };
+        else { commit(targets); floatState = null; }
+
+        redrawAll();
+        paint();
+        renderHud();
+    }
+
+    function currentTransform() {
+        if (floatState) return floatState;
+        var sel = [];
+        selected.forEach(function (id) { sel.push(byId.get(id)); });
+        return { piv: C.cubePivotOf(sel), rot: 0, mir: 0, dq: 0, dr: 0 };
+    }
+
+    function rotate(dir) {
+        if (selected.size < 2) return;
+        var f = currentTransform();
+        transformOrFloat(f.piv, f.rot + (dir === 'cw' ? 1 : -1), f.mir, { q: f.dq, r: f.dr });
+    }
+
+    // Composing an outer mirror with R^rot . M^mir gives R^(-rot) . M^(mir+1);
+    // the translation is unchanged, so the shape flips in place.
+    function flip() {
+        if (selected.size < 2) return;
+        var f = currentTransform();
+        transformOrFloat(f.piv, -f.rot, f.mir ^ 1, { q: f.dq, r: f.dr });
+    }
+
+    function nudge(dq, dr) {
+        if (selected.size === 0) return;
+        if (floatState) {
+            transformOrFloat(floatState.piv, floatState.rot, floatState.mir,
+                             { q: floatState.dq + dq, r: floatState.dr + dr });
+        } else {
+            // No pending transform: a pure translation, with the identity
+            // pivot so xformN reduces to (q + dq, r + dr).
+            transformOrFloat({ rx: 0, ry: 0, rz: 0 }, 0, 0, { q: dq, r: dr });
+        }
+    }
+
+    function dropDrag() {
+        var d = { q: drag.dq, r: drag.dr };
+        var ids = drag.ids;
+        var single = ids.size === 1 ? drag.single : null;
+        drag = null;
+
+        if (d.q === 0 && d.r === 0) { redrawAll(); paint(); renderHud(); return; }
+
+        // A lone tile dropped onto an occupied cell trades places with it.
+        if (single && !floatState) {
+            var src = byId.get(single);
+            var tq = src.q + d.q, tr = src.r + d.r;
+            var victim = null;
+            tiles.forEach(function (t) {
+                if (t.id !== single && t.q === tq && t.r === tr) victim = t;
+            });
+            if (victim) {
+                var swap = new Map();
+                swap.set(single, { q: victim.q, r: victim.r });
+                swap.set(victim.id, { q: src.q, r: src.r });
+                commit(swap);
+                redrawAll(); paint(); renderHud();
+                return;
+            }
+        }
+
+        var f = floatState || { piv: { rx: 0, ry: 0, rz: 0 }, rot: 0, mir: 0, dq: 0, dr: 0 };
+        transformOrFloat(f.piv, f.rot, f.mir, { q: f.dq + d.q, r: f.dr + d.r });
+    }
+
+    // ---- painting --------------------------------------------------------
+    // Tiles are built once; everything after that mutates attributes.
+
+    function place(id) {
+        var n = nodes.get(id), t = byId.get(id);
+        var p = posOf(t);
+        if (n.drawn && n.drawn.q === p.q && n.drawn.r === p.r) return;
+        n.drawn = p;
+        var px = hexToPixel(p.q, p.r);
+        n.path.setAttribute('d', hexPath(px.x, px.y, HEX * 0.88));
+        if (n.label) { n.label.setAttribute('x', px.x); n.label.setAttribute('y', px.y); }
+    }
+
+    function redrawAll() { nodes.forEach(function (n, id) { place(id); }); }
+    function redrawSelection() {
+        var ids = movingIds() || selected;
+        ids.forEach(function (id) { if (nodes.has(id)) place(id); });
+    }
+
     function paint() {
         var filtering = filter.size > 0;
+        var moving = movingIds();
+        var occ = moving ? cellsExcluding(moving) : null;
+
+        // Where a lone dragged tile would trade places.
+        var swapId = null;
+        if (drag && drag.moved && drag.ids.size === 1 && !floatState) {
+            var n0 = nodes.get(drag.single);
+            if (n0 && n0.drawn) {
+                tiles.forEach(function (t) {
+                    if (t.id !== drag.single && t.q === n0.drawn.q && t.r === n0.drawn.r) swapId = t.id;
+                });
+            }
+        }
+
         nodes.forEach(function (n, id) {
             var t = byId.get(id);
-            var isSel = selected.has(id);
             var opacity = 1, stroke = 'rgba(255,255,255,0.28)', sw = 1;
+            var isSel = selected.has(id);
+            var isMoving = moving && moving.has(id);
 
             if (filtering && !filter.has(t.section)) opacity = 0.12;
             if (t.isReserved) opacity = Math.min(opacity, 0.55);
             if (t.isUnplaced) { stroke = '#f472b6'; sw = 2.5; }
-            if (isSel) { stroke = '#ffffff'; sw = 3; opacity = 1; }
+            if (isSel) { stroke = '#ffffff'; sw = 3; opacity = Math.max(opacity, 1); }
+            if (isMoving) { stroke = '#00e5ff'; sw = 3; opacity = 1; }
+            if (isMoving && occ && n.drawn && occ.has(n.drawn.q + ',' + n.drawn.r)) {
+                stroke = '#ef4444'; sw = 3.5;
+            }
+            if (id === swapId) { stroke = '#fbbf24'; sw = 3; opacity = 1; }
 
             n.path.setAttribute('fill-opacity', opacity);
             n.path.setAttribute('stroke', stroke);
             n.path.setAttribute('stroke-width', sw);
+            n.g.style.pointerEvents = (filtering && !filter.has(t.section)) ? 'none' : 'auto';
             if (n.label) n.label.setAttribute('opacity', opacity);
         });
     }
 
+    // ---- HUD -------------------------------------------------------------
+
+    var NUDGE_DIRS = [
+        ['\u2196', 0, -1], ['\u2197', 1, -1],
+        ['\u2190', -1, 0], ['\u2192', 1, 0],
+        ['\u2199', -1, 1], ['\u2198', 0, 1]
+    ];
+
     function renderHud() {
+        hud.innerHTML = '';
         if (selected.size === 0) {
-            hud.innerHTML = '<span class="hint">Drag to pan &middot; pinch to zoom &middot; tap a tile</span>';
+            hud.innerHTML = '<span class="hint">Drag to pan &middot; pinch to zoom &middot; tap a tile' +
+                            '<br>drag a tile to move it &middot; press and hold for its island</span>';
             return;
         }
-        var t = byId.get(selected.values().next().value);
-        if (!t) { hud.innerHTML = ''; return; }
-        var color = SECTION_COLORS[t.section] || '#888';
-        var who = document.createElement('div');
-        who.className = 'who';
-        var a = document.createElement('div');
-        a.className = 'id';
-        a.textContent = t.id + '  \u00b7  q=' + t.q + ', r=' + t.r;
-        var b = document.createElement('div');
-        b.className = 'title';
-        b.style.color = color;
-        b.textContent = t.title;
-        who.appendChild(a); who.appendChild(b);
-        hud.innerHTML = '';
-        hud.appendChild(who);
+
+        if (selected.size === 1 && !floatState) {
+            var t = byId.get(selected.values().next().value);
+            if (!t) return;
+            var who = document.createElement('div');
+            who.className = 'who';
+            var a = document.createElement('div');
+            a.className = 'id';
+            a.textContent = t.id + '  \u00b7  q=' + t.q + ', r=' + t.r;
+            var b = document.createElement('div');
+            b.className = 'title';
+            b.style.color = SECTION_COLORS[t.section] || '#888';
+            b.textContent = t.title;
+            who.appendChild(a); who.appendChild(b);
+            hud.appendChild(who);
+
+            if (t.topicGroup) {
+                var isl = document.createElement('button');
+                isl.textContent = 'Island';
+                isl.addEventListener('click', function () { selectIsland(t.id); });
+                hud.appendChild(isl);
+            }
+            return;
+        }
+
+        var tools = document.createElement('div');
+        tools.className = 'tools';
+
+        var pad = document.createElement('div');
+        pad.id = 'nudge';
+        NUDGE_DIRS.forEach(function (d) {
+            var btn = document.createElement('button');
+            btn.textContent = d[0];
+            btn.addEventListener('click', function () { nudge(d[1], d[2]); });
+            pad.appendChild(btn);
+        });
+        tools.appendChild(pad);
+
+        var col = document.createElement('div');
+        col.className = 'col';
+        [['\u27f2 CCW', function () { rotate('ccw'); }],
+         ['\u27f3 CW',  function () { rotate('cw'); }],
+         ['\u21cb Flip', flip]].forEach(function (spec) {
+            var btn = document.createElement('button');
+            btn.textContent = spec[0];
+            btn.disabled = selected.size < 2;
+            btn.addEventListener('click', spec[1]);
+            col.appendChild(btn);
+        });
+        tools.appendChild(col);
+
+        var info = document.createElement('div');
+        info.className = 'who';
+        var head = document.createElement('div');
+        head.className = 'title';
+        head.textContent = selected.size + ' tiles selected';
+        info.appendChild(head);
+        if (floatState) {
+            var w = document.createElement('div');
+            w.className = 'warn';
+            w.textContent = 'Overlapping. Keep rotating or drag it somewhere free \u2014 it commits by itself.';
+            info.appendChild(w);
+        } else {
+            var h2 = document.createElement('div');
+            h2.className = 'id';
+            h2.textContent = 'Drag any of them to move the group.';
+            info.appendChild(h2);
+        }
+        var clr = document.createElement('button');
+        clr.textContent = 'Clear';
+        clr.addEventListener('click', function () { selectTile(null); });
+        info.appendChild(clr);
+        tools.appendChild(info);
+
+        hud.appendChild(tools);
     }
+
+    // ---- build -----------------------------------------------------------
 
     function buildMap() {
         svg = document.createElementNS(SVG_NS, 'svg');
@@ -481,7 +868,7 @@
             }
 
             layer.appendChild(g);
-            nodes.set(t.id, { g: g, path: path, label: label });
+            nodes.set(t.id, { g: g, path: path, label: label, drawn: { q: t.q, r: t.r } });
         });
 
         splash.remove();
@@ -498,16 +885,31 @@
             var row = document.createElement('div');
             row.className = 'srow';
             row.style.borderLeftColor = SECTION_COLORS[key];
-            row.innerHTML =
-                '<span class="sw" style="background:' + SECTION_COLORS[key] + '"></span>' +
-                '<span class="nm">' + key + ': ' + SECTION_NAMES[key] + '</span>' +
-                '<span class="ct">' + n + '</span>';
-            row.addEventListener('click', function () {
-                if (filter.has(key)) filter.delete(key);
-                else filter.add(key);
+
+            var sw = document.createElement('span');
+            sw.className = 'sw';
+            sw.style.background = SECTION_COLORS[key];
+            var nm = document.createElement('span');
+            nm.className = 'nm';
+            nm.textContent = key + ': ' + SECTION_NAMES[key];
+            var ct = document.createElement('span');
+            ct.className = 'ct';
+            ct.textContent = n;
+            var pick = document.createElement('button');
+            pick.textContent = 'Select';
+
+            row.appendChild(sw); row.appendChild(nm); row.appendChild(ct); row.appendChild(pick);
+
+            nm.addEventListener('click', function () {
+                if (filter.has(key)) filter.delete(key); else filter.add(key);
                 row.classList.toggle('on', filter.has(key));
                 paint();
                 renderStatus();
+            });
+            pick.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                selectSection(key);
+                closeSheet();
             });
             list.appendChild(row);
         });
@@ -517,23 +919,36 @@
         var msg = tiles.length + ' tiles';
         var unplaced = tiles.filter(function (t) { return t.isUnplaced; }).length;
         if (unplaced) msg += '  \u00b7  ' + unplaced + ' unplaced';
-        if (filter.size) msg += '  \u00b7  filter: ' + Array.from(filter).join(', ');
+        if (filter.size) msg += '  \u00b7  only ' + Array.from(filter).join(', ');
         statusEl.textContent = msg;
     }
 
     // ---- chrome ----------------------------------------------------------
+    function closeSheet() {
+        sheet.classList.remove('open');
+        document.getElementById('btnSections').classList.remove('on');
+    }
+
     document.getElementById('btnFit').addEventListener('click', function () {
         cam = fitCam(); applyCam();
     });
     document.getElementById('btnIn').addEventListener('click', function () { zoomBy(1 / 1.4); });
     document.getElementById('btnOut').addEventListener('click', function () { zoomBy(1.4); });
+    btnUndo.addEventListener('click', undo);
     document.getElementById('btnSections').addEventListener('click', function () {
         sheet.classList.toggle('open');
         this.classList.toggle('on', sheet.classList.contains('open'));
     });
-    document.getElementById('btnCloseSheet').addEventListener('click', function () {
-        sheet.classList.remove('open');
-        document.getElementById('btnSections').classList.remove('on');
+    document.getElementById('btnCloseSheet').addEventListener('click', closeSheet);
+
+    // Physical keyboard, when this is opened on a desktop.
+    window.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { selectTile(null); return; }
+        if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); return; }
+        if (e.key === 'r' || e.key === 'R') { rotate(e.shiftKey ? 'ccw' : 'cw'); return; }
+        if (e.key === 'f' || e.key === 'F') { flip(); return; }
+        var arrow = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+        if (arrow) { e.preventDefault(); nudge(arrow[0], arrow[1]); }
     });
 
     // A rotation or a URL-bar collapse changes the stage aspect ratio; keep
@@ -561,7 +976,7 @@
         renderHud();
     }).catch(function (err) {
         splash.className = 'err';
-        splash.textContent = 'Could not load curriculum.json — ' + err.message;
+        splash.textContent = 'Could not load curriculum.json \u2014 ' + err.message;
         statusEl.textContent = 'load failed';
     });
 })();
