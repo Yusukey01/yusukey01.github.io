@@ -108,10 +108,14 @@
 
         // --- AUTO-LAYOUT UTILITIES ---
 
-        // Hex grid distance (Manhattan distance on hex grid)
+        // Hex grid distance (Manhattan distance on hex grid).
+        // Two entry points, one formula: hexDistance takes raw coordinates
+        // (the island packer's inner loops have them as scalars and should
+        // not allocate), hexDist is the tile-object wrapper.
         const hexDistance = (q1, r1, q2, r2) => {
             return (Math.abs(q1 - q2) + Math.abs(q1 + r1 - q2 - r2) + Math.abs(r1 - r2)) / 2;
         };
+        const hexDist = (a, b) => hexDistance(a.q, a.r, b.q, b.r);
 
         // Get 6 neighbors for a hex
         const getHexNeighbors = (q, r) => [
@@ -527,52 +531,6 @@
                     occ.add(`${best.q},${best.r}`);
                 }
                 return pos;
-            };
-
-            // Build the list of islands (topicGroup clusters) from the current tiles.
-            // Reserved tiles and HOME/RESEARCH are excluded; ungrouped real tiles each
-            // form their own singleton island so they are never moved by accident.
-            const buildIslands = (tileList) => {
-                const groups = new Map(); // key -> [tiles]
-                tileList.forEach(t => {
-                    if (t.section === 'HOME' || t.section === 'RESEARCH' || t.isReserved || t.isUnplaced) return;
-                    const key = t.topicGroup ? `${t.section}::${t.topicGroup}` : `__solo::${t.id}`;
-                    if (!groups.has(key)) groups.set(key, []);
-                    groups.get(key).push(t);
-                });
-                return groups;
-            };
-
-            // Compact ALL islands in place (each sees others' current cells as forbidden).
-            // Larger islands first so they claim their tight blob before small ones fill gaps.
-            const performAutoLayout = () => {
-                setLoading(true);
-                const groups = buildIslands(tiles);
-                const orderedKeys = [...groups.keys()].sort((a, b) => groups.get(b).length - groups.get(a).length);
-
-                // working coordinate map id -> {q,r}, seeded from current positions
-                const coordOf = new Map(tiles.map(t => [t.id, { q: t.q, r: t.r }]));
-                const cellOwner = new Map(); // "q,r" -> id (live occupancy across all tiles)
-                tiles.forEach(t => cellOwner.set(`${t.q},${t.r}`, t.id));
-
-                orderedKeys.forEach(key => {
-                    const members = groups.get(key).map(m => ({ ...m, q: coordOf.get(m.id).q, r: coordOf.get(m.id).r }));
-                    const memberIds = new Set(members.map(m => m.id));
-                    // forbidden = every occupied cell NOT owned by this island
-                    const forbidden = new Set();
-                    cellOwner.forEach((id, cell) => { if (!memberIds.has(id)) forbidden.add(cell); });
-                    const newPos = compactIslandTiles(members, forbidden);
-                    // free this island's old cells, then commit new ones
-                    members.forEach(m => cellOwner.delete(`${coordOf.get(m.id).q},${coordOf.get(m.id).r}`));
-                    newPos.forEach((c, id) => { coordOf.set(id, c); cellOwner.set(`${c.q},${c.r}`, id); });
-                });
-
-                saveHistory(tiles);
-                setTiles(tiles.map(t => {
-                    const c = coordOf.get(t.id);
-                    return c ? { ...t, q: c.q, r: c.r } : t;
-                }));
-                setTimeout(() => setLoading(false), 300);
             };
 
             // Compact only ONE island (the one containing the given tile), in place.
@@ -1010,15 +968,14 @@
             // the longest cross-cluster edges for targeted improvement.
             const layoutMetrics = useMemo(() => {
                 const byId = new Map(tiles.map(t => [t.id, t]));
-                const hexDist = (a, b) => {
-                    const dq = a.q - b.q, dr = a.r - b.r;
-                    return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
-                };
                 let total = 0, cross = 0, crossCount = 0;
                 const edges = [];
                 tiles.forEach(t => (t.prereqs || []).forEach(pid => {
                     const p = byId.get(pid);
                     if (!p) return;
+                    // Staged tiles sit far outside the map on purpose; their
+                    // edges would dominate both totals and the longest list.
+                    if (t.isUnplaced || p.isUnplaced) return;
                     const d = hexDist(t, p);
                     total += d;
                     if (p.section !== t.section || p.topicGroup !== t.topicGroup) {
@@ -1061,12 +1018,8 @@
             // Cross-cluster dependency bridges, in two practical modes.
             const bridges = useMemo(() => {
                 if (!showBridges) return { mode: 'off', edges: [] };
-                const active = tiles.filter(t => !t.isReserved);
+                const active = tiles.filter(t => !t.isReserved && !t.isUnplaced);
                 const byId = new Map(active.map(t => [t.id, t]));
-                const hexDist = (a, b) => {
-                    const dq = a.q - b.q, dr = a.r - b.r;
-                    return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
-                };
                 const crossEdges = [];
                 active.forEach(t => (t.prereqs || []).forEach(pid => {
                     const p = byId.get(pid);
@@ -1351,6 +1304,7 @@
                         <span>🗺 <b>select</b> button on a section row to grab the whole section</span>
                         <span>⟳ <b>R / Shift+R</b> rotate, <b>F</b> flip, <b>arrows</b> nudge selection</span>
                         <span>🖱 <b>Drag Tile</b> to move</span>
+                        <span>◎ <b>Double-click</b> a tile to select its island</span>
                         <span>📐 <b>Drag Background</b> to box select</span>
                         <span>🔀 <b>Drag onto</b> another tile to swap</span>
                         <span>⌨️ <b>Ctrl/⌘ + Click/Drag</b> multi-select</span>
@@ -1886,27 +1840,6 @@
                             </div>
 
                             <div className="info-box">
-                                <h3>Island Layout</h3>
-                                <p style={{ color: '#9ca3af', marginBottom: '8px' }}>
-                                    Compacts every topic-group island into a tight hub-centered blob, in place.
-                                    Islands never move into each other's cells — placement stays manual (drag).
-                                </p>
-                                <button 
-                                    style={{ width: '100%', padding: '8px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                                    onClick={() => {
-                                        if(window.confirm("This compacts all islands in place. Island positions are preserved; only tiles within each island are rearranged. Ctrl+Z to undo. Proceed?")) {
-                                            performAutoLayout();
-                                        }
-                                    }}
-                                >
-                                    ✨ Compact All Islands
-                                </button>
-                                <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '8px' }}>
-                                    Tip: double-click a tile to select its whole island, then drag to reposition.
-                                </p>
-                            </div>
-
-                            <div className="info-box">
                                 <h3>📸 Layout Snapshots</h3>
                                 <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
                                     <input value={snapName} onChange={e => setSnapName(e.target.value)}
@@ -1980,7 +1913,7 @@
             );
         }
 
-        ReactDOM.render(<HexMapEditor />, document.getElementById('root'));
+        ReactDOM.createRoot(document.getElementById('root')).render(<HexMapEditor />);
     </script>
 </body>
 </html>
