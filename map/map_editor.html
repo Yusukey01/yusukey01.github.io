@@ -343,10 +343,21 @@
                 if (undoStack.current.length > 50) undoStack.current.shift();
             }, []);
 
+            const NON_POSITIONAL_FIELDS = ['prereqs', 'topicGroup'];
+
             const undo = useCallback(() => {
                 const snapshot = undoStack.current.pop();
                 if (!snapshot) return;
-                setTiles(snapshot);
+                setTiles(prev => {
+                    const live = new Map(prev.map(t => [t.id, t]));
+                    return snapshot.map(s => {
+                        const cur = live.get(s.id);
+                        if (!cur) return s;   // a reserved tile being resurrected
+                        const merged = { ...s };
+                        NON_POSITIONAL_FIELDS.forEach(k => { if (k in cur) merged[k] = cur[k]; });
+                        return merged;
+                    });
+                });
                 setFloatState(null);
                 // Selections may reference tiles that no longer exist (or
                 // resurrect ones that do again) - clear to stay consistent.
