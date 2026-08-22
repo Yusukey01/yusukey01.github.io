@@ -177,6 +177,21 @@
             return processCurriculumData(data);
         }
 
+        // A part whose mapCoords is an empty object has not been positioned yet.
+        const readCoords = (owner) => {
+            const mc = owner && owner.mapCoords;
+            if (!mc || typeof mc.q !== 'number' || typeof mc.r !== 'number') return null;
+            return { q: mc.q, r: mc.r };
+        };
+
+        // Stepping by (dq, dr) = (-1, +2) keeps pixel x fixed and moves down one and a half rows.
+        const stageUnplacedTiles = (placed, unplaced) => {
+            if (unplaced.length === 0 || placed.length === 0) return;
+            let r = Math.min(...placed.map(t => t.r));
+            let q = Math.round(Math.max(...placed.map(t => t.q + t.r / 2)) + 4 - r / 2);
+            unplaced.forEach(t => { t.q = q; t.r = r; q -= 1; r += 2; });
+        };
+
         // Pure transformation: curriculum.json object -> editor state pieces.
         // Shared by the server fetch and by local-file loading.
         function processCurriculumData(data) {
