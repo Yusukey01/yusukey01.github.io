@@ -1439,25 +1439,20 @@
                                             }
                                         });
 
-                                        if (selectionBox.isCtrl) {
-                                            // Toggle selection for multi-select
-                                            setSelectedIds(prev => {
-                                                const newSet = new Set(prev);
-                                                selectedInBox.forEach(id => {
-                                                    if (newSet.has(id)) newSet.delete(id);
-                                                    else newSet.add(id);
-                                                });
-                                                return Array.from(newSet);
-                                            });
-                                        } else {
-                                            // New selection
-                                            setSelectedIds(selectedInBox);
-                                            if (selectedInBox.length === 1) {
-                                                setSelectedTile(tiles.find(t => t.id === selectedInBox[0]));
-                                            } else {
-                                                setSelectedTile(null);
-                                            }
-                                        }
+                                        // Both modes end in one place so that
+                                        // selectedTile always matches selectedIds: it is
+                                        // set only for a selection of exactly one, and
+                                        // cleared otherwise. Leaving a stale selectedTile
+                                        // behind makes the panel show a single tile while
+                                        // several are selected, hiding rotate and flip.
+                                        const next = new Set(selectionBox.isCtrl ? selectedIds : []);
+                                        selectedInBox.forEach(id => {
+                                            if (selectionBox.isCtrl && next.has(id)) next.delete(id);
+                                            else next.add(id);
+                                        });
+                                        const ids = Array.from(next);
+                                        setSelectedIds(ids);
+                                        setSelectedTile(ids.length === 1 ? (tiles.find(t => t.id === ids[0]) || null) : null);
                                         setSelectionBox(null);
                                         return;
                                     }
