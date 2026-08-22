@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Map Editor (touch)</title>
+<script src="map_editor_core.js"></script>
+<style>
+    :root {
+        --bar: 44px;
+        --bg: #030712;
+        --chrome: #111827;
+        --line: #1f2937;
+        --ink: #e5e7eb;
+        --dim: #9ca3af;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* ---- top bar ---------------------------------------------------- */
+    #topbar {
+        flex: 0 0 var(--bar);
+        display: flex; align-items: center; gap: 6px;
+        padding: 0 8px;
+        background: var(--chrome);
+        border-bottom: 1px solid var(--line);
+    }
+    #topbar .grow { flex: 1; }
+    #status { font-size: 0.7rem; color: var(--dim); white-space: nowrap;
+              overflow: hidden; text-overflow: ellipsis; }
+    button {
+        font: inherit; font-size: 0.75rem;
+        background: #1f2937; color: var(--ink);
+        border: 1px solid #374151; border-radius: 8px;
+        padding: 7px 11px; min-height: 34px;
+        cursor: pointer; white-space: nowrap;
+    }
+    button:active { background: #374151; }
+    button.on { background: #1d4ed8; border-color: #3b82f6; }
+
+    /* ---- map -------------------------------------------------------- */
+    #stage {
+        flex: 1 1 auto;
+        position: relative;
+        min-height: 0;              /* let flex actually shrink this */
+        background: var(--bg);
+        touch-action: none;         /* we own every gesture in here */
+    }
+    #stage svg { display: block; width: 100%; height: 100%; }
+    /* Labels are illegible below a certain on-screen hex size. The
+       gesture handler toggles this class rather than re-rendering. */
+    #stage:not(.labels) text.lab { display: none; }
+    text { user-select: none; pointer-events: none; }
+
+    #zoomcol {
+        position: absolute; right: 8px; bottom: 8px;
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    #zoomcol button {
+        width: 40px; height: 40px; padding: 0;
+        font-size: 1.05rem; line-height: 1;
+        background: rgba(31, 41, 55, 0.92);
+    }
+
+    /* ---- bottom context bar ----------------------------------------- */
+    #hud {
+        flex: 0 0 auto;
+        background: var(--chrome);
+        border-top: 1px solid var(--line);
+        padding: 8px 10px;
+        font-size: 0.75rem;
+        min-height: var(--bar);
+        display: flex; align-items: center;
+    }
+    #hud .hint { color: #6b7280; }
+    #hud .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    #hud .id { font-size: 0.68rem; color: var(--dim); }
+    #hud .title { font-weight: 600; overflow: hidden;
+                  text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ---- section sheet ---------------------------------------------- */
+    #sheet {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        background: var(--chrome);
+        border-top: 1px solid var(--line);
+        border-radius: 14px 14px 0 0;
+        padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+        transform: translateY(101%);
+        transition: transform 0.18s ease-out;
+        z-index: 10;
+    }
+    #sheet.open { transform: translateY(0); }
+    #sheet h2 { font-size: 0.8rem; margin-bottom: 8px; color: var(--dim); font-weight: 600; }
+    .srow {
+        display: flex; align-items: center; gap: 8px;
+        padding: 9px 8px; border-radius: 8px;
+        border-left: 3px solid transparent;
+        font-size: 0.75rem;
+    }
+    .srow .sw { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; }
+    .srow .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .srow .ct { color: var(--dim); font-size: 0.7rem; }
+    .srow.on { background: #1f2937; }
+
+    #splash {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        text-align: center; padding: 24px;
+        color: var(--dim); font-size: 0.8rem; line-height: 1.6;
+    }
+    #splash.err { color: #f87171; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+    <button id="btnSections">Sections</button>
+    <span class="grow"><span id="status">loading…</span></span>
+    <button id="btnFit">Fit</button>
+</div>
+
+<div id="stage">
+    <div id="splash">loading curriculum.json…</div>
+    <div id="zoomcol">
+        <button id="btnIn" aria-label="zoom in">+</button>
+        <button id="btnOut" aria-label="zoom out">&minus;</button>
+    </div>
+</div>
+
+<div id="hud"><span class="hint">Drag to pan &middot; pinch to zoom &middot; tap a tile</span></div>
+
+<div id="sheet">
+    <h2>Sections</h2>
+    <div id="sectionList"></div>
+    <button id="btnCloseSheet" style="width:100%; margin-top:8px;">Close</button>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var C = window.MapEditorCore;
+    var SECTION_COLORS = C.SECTION_COLORS;
+    var SECTION_NAMES  = C.SECTION_NAMES;
+    var hexPath        = C.hexPath;
+
+    var HEX = 28;
+    var geom = C.makeHexGeometry(HEX);
+    var hexToPixel = geom.hexToPixel;
+
+    // On-screen hex width below which the id labels are unreadable and are
+    // therefore hidden. 1640 world units of content across a ~390px phone
+    // puts the fit-all view at roughly 11px per hex, well under this.
+    var LABEL_MIN_PX = 24;
+    var HEX_W = HEX * Math.sqrt(3);
+
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+
+    // ---- state -----------------------------------------------------------
+    var tiles = [];
+    var nodes = new Map();       // tile id -> { g, path, label }
+    var byId = new Map();
+    var selected = new Set();
+    var filter = new Set();      // sections to isolate; empty = show all
+    var fitBox = null;           // auto-fit camera
+    var cam = null;              // live camera; the single source of truth
+
+    var stage = document.getElementById('stage');
+    var hud = document.getElementById('hud');
+    var statusEl = document.getElementById('status');
+    var splash = document.getElementById('splash');
+    var sheet = document.getElementById('sheet');
+    var svg = null;
+    var layer = null;
+
+    // ---- camera ----------------------------------------------------------
+    // Written straight to the DOM. No framework, no re-render: a pan or a
+    // pinch costs one setAttribute per frame regardless of tile count.
+
+    // The stage rect only changes on resize or rotation, so it is measured
+    // there rather than inside the per-frame path: reading it during a pinch
+    // would force a layout flush on every single frame.
+    var stageRect = null;
+    function measure() { stageRect = stage.getBoundingClientRect(); return stageRect; }
+    function rectOf() { return stageRect || measure(); }
+
+    function applyCam() {
+        if (!svg || !cam) return;
+        svg.setAttribute('viewBox', cam.x + ' ' + cam.y + ' ' + cam.width + ' ' + cam.height);
+        stage.classList.toggle('labels', HEX_W * (rectOf().width / cam.width) >= LABEL_MIN_PX);
+    }
+
+    function computeFit() {
+        if (tiles.length === 0) return { x: -100, y: -100, width: 200, height: 200 };
+        var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        tiles.forEach(function (t) {
+            var p = hexToPixel(t.q, t.r);
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        });
+        var pad = HEX * 2;
+        return { x: minX - pad, y: minY - pad,
+                 width: maxX - minX + pad * 2, height: maxY - minY + pad * 2 };
+    }
+
+    // Letterbox the content box into the stage's aspect ratio, so "Fit"
+    // really shows everything instead of cropping the long axis.
+    function letterbox(b, rect) {
+        if (!rect.width || !rect.height) return { x: b.x, y: b.y, width: b.width, height: b.height };
+        var stageAspect = rect.width / rect.height;
+        var w = b.width, h = b.height;
+        if (w / h < stageAspect) w = h * stageAspect;
+        else h = w / stageAspect;
+        return { x: b.x + b.width / 2 - w / 2, y: b.y + b.height / 2 - h / 2, width: w, height: h };
+    }
+
+    function fitCam() { return letterbox(fitBox, measure()); }
+
+    function clampWidth(w) {
+        var maxW = fitBox.width * 3;
+        return Math.min(Math.max(w, 120), maxW);
+    }
+
+    function zoomBy(f) {
+        var rect = rectOf();
+        var cx = cam.x + cam.width / 2, cy = cam.y + cam.height / 2;
+        var w = clampWidth(cam.width * f);
+        var h = w * (rect.height / rect.width);
+        cam = { x: cx - w / 2, y: cy - h / 2, width: w, height: h };
+        applyCam();
+    }
+
+    // ---- gestures --------------------------------------------------------
+    // One pointer on the background pans; two pointers pan and zoom together.
+    // Every move is computed from the gesture's START state rather than from
+    // the previous frame, so rounding never accumulates into drift.
+
+    // Both are pure: (start camera, stage rect, pointer positions) -> camera.
+    // Kept free of state so the anchoring invariants can be checked directly.
+
+    function panCam(g0, rect, sx, sy, nx, ny) {
+        return {
+            x: g0.x - (nx - sx) * (g0.width / rect.width),
+            y: g0.y - (ny - sy) * (g0.height / rect.height),
+            width: g0.width, height: g0.height
+        };
+    }
+
+    function pinchCam(g0, rect, sA, sB, nA, nB, clamp) {
+        var d0 = Math.hypot(sB.x - sA.x, sB.y - sA.y);
+        var d1 = Math.hypot(nB.x - nA.x, nB.y - nA.y);
+        if (d0 < 1 || d1 < 1) return null;
+
+        var w = clamp(g0.width * (d0 / d1));
+        var h = g0.height * (w / g0.width);
+
+        // Keep the world point under the starting midpoint pinned to the
+        // current midpoint: that is what makes a pinch feel attached.
+        var sMx = (sA.x + sB.x) / 2, sMy = (sA.y + sB.y) / 2;
+        var nMx = (nA.x + nB.x) / 2, nMy = (nA.y + nB.y) / 2;
+        var wx = g0.x + (sMx - rect.left) * (g0.width / rect.width);
+        var wy = g0.y + (sMy - rect.top) * (g0.height / rect.height);
+        return {
+            x: wx - (nMx - rect.left) * (w / rect.width),
+            y: wy - (nMy - rect.top) * (h / rect.height),
+            width: w, height: h
+        };
+    }
+
+    var pointers = new Map();    // pointerId -> { x, y }
+    var gesture = null;          // { cam, pts: [{id,x,y}], rect }
+    var tapCandidate = null;     // { id, x, y, t, tileId }
+
+    var TAP_SLOP = 10;           // px of movement still counted as a tap
+    var TAP_MS = 500;
+
+    function pointerList() {
+        var out = [];
+        pointers.forEach(function (p, id) { out.push({ id: id, x: p.x, y: p.y }); });
+        return out;
+    }
+
+    function beginGesture() {
+        gesture = {
+            cam: { x: cam.x, y: cam.y, width: cam.width, height: cam.height },
+            pts: pointerList(),
+            rect: measure()
+        };
+    }
+
+    function tileIdFromEvent(e) {
+        var el = e.target;
+        while (el && el !== svg) {
+            if (el.dataset && el.dataset.id) return el.dataset.id;
+            el = el.parentNode;
+        }
+        return null;
+    }
+
+    stage.addEventListener('pointerdown', function (e) {
+        if (!cam) return;
+        var hitId = tileIdFromEvent(e);   // read before capture retargets
+        stage.setPointerCapture(e.pointerId);
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pointers.size === 1) {
+            tapCandidate = { id: e.pointerId, x: e.clientX, y: e.clientY,
+                             t: Date.now(), tileId: hitId };
+        } else {
+            tapCandidate = null;   // a second finger is never a tap
+        }
+        beginGesture();
+    });
+
+    stage.addEventListener('pointermove', function (e) {
+        if (!pointers.has(e.pointerId) || !gesture) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (tapCandidate && tapCandidate.id === e.pointerId) {
+            if (Math.hypot(e.clientX - tapCandidate.x, e.clientY - tapCandidate.y) > TAP_SLOP) {
+                tapCandidate = null;
+            }
+        }
+
+        var rect = gesture.rect;
+        if (!rect.width || !rect.height) return;
+        var g0 = gesture.cam;
+        var now = pointerList();
+
+        // Match the start pointers to the current ones by id; a pointer that
+        // went up mid-gesture is handled by the restart in pointerup.
+        var starts = gesture.pts.filter(function (p) { return pointers.has(p.id); });
+        if (starts.length === 0) return;
+
+        var next;
+        if (starts.length === 1 || now.length === 1) {
+            var s = starts[0], n = pointers.get(s.id);
+            next = panCam(g0, rect, s.x, s.y, n.x, n.y);
+        } else {
+            var sA = starts[0], sB = starts[1];
+            next = pinchCam(g0, rect, sA, sB, pointers.get(sA.id), pointers.get(sB.id), clampWidth);
+        }
+        if (!next) return;
+        cam = next;
+        applyCam();
+    });
+
+    function endPointer(e) {
+        var wasTap = tapCandidate && tapCandidate.id === e.pointerId &&
+                     (Date.now() - tapCandidate.t) < TAP_MS;
+        var tappedTile = wasTap ? tapCandidate.tileId : null;
+
+        pointers.delete(e.pointerId);
+        if (tapCandidate && tapCandidate.id === e.pointerId) tapCandidate = null;
+
+        if (pointers.size === 0) gesture = null;
+        else beginGesture();     // rebase so lifting one of two fingers is smooth
+
+        if (wasTap) selectTile(tappedTile);
+    }
+
+    stage.addEventListener('pointerup', endPointer);
+    stage.addEventListener('pointercancel', endPointer);
+
+    // Trackpad and mouse wheel, so the same file is usable on a desktop.
+    stage.addEventListener('wheel', function (e) {
+        if (!cam) return;
+        e.preventDefault();
+        var rect = rectOf();
+        var wx = cam.x + (e.clientX - rect.left) * (cam.width / rect.width);
+        var wy = cam.y + (e.clientY - rect.top) * (cam.height / rect.height);
+        var w = clampWidth(cam.width * (e.deltaY > 0 ? 1.15 : 1 / 1.15));
+        var h = cam.height * (w / cam.width);
+        cam = { x: wx - (e.clientX - rect.left) * (w / rect.width),
+                y: wy - (e.clientY - rect.top) * (h / rect.height),
+                width: w, height: h };
+        applyCam();
+    }, { passive: false });
+
+    // ---- selection and painting -----------------------------------------
+    // Tiles are built once; everything after that mutates attributes.
+
+    function selectTile(id) {
+        if (!id) { selected.clear(); }
+        else if (selected.has(id) && selected.size === 1) { selected.clear(); }
+        else { selected.clear(); selected.add(id); }
+        paint();
+        renderHud();
+    }
+
+    function paint() {
+        var filtering = filter.size > 0;
+        nodes.forEach(function (n, id) {
+            var t = byId.get(id);
+            var isSel = selected.has(id);
+            var opacity = 1, stroke = 'rgba(255,255,255,0.28)', sw = 1;
+
+            if (filtering && !filter.has(t.section)) opacity = 0.12;
+            if (t.isReserved) opacity = Math.min(opacity, 0.55);
+            if (t.isUnplaced) { stroke = '#f472b6'; sw = 2.5; }
+            if (isSel) { stroke = '#ffffff'; sw = 3; opacity = 1; }
+
+            n.path.setAttribute('fill-opacity', opacity);
+            n.path.setAttribute('stroke', stroke);
+            n.path.setAttribute('stroke-width', sw);
+            if (n.label) n.label.setAttribute('opacity', opacity);
+        });
+    }
+
+    function renderHud() {
+        if (selected.size === 0) {
+            hud.innerHTML = '<span class="hint">Drag to pan &middot; pinch to zoom &middot; tap a tile</span>';
+            return;
+        }
+        var t = byId.get(selected.values().next().value);
+        if (!t) { hud.innerHTML = ''; return; }
+        var color = SECTION_COLORS[t.section] || '#888';
+        var who = document.createElement('div');
+        who.className = 'who';
+        var a = document.createElement('div');
+        a.className = 'id';
+        a.textContent = t.id + '  \u00b7  q=' + t.q + ', r=' + t.r;
+        var b = document.createElement('div');
+        b.className = 'title';
+        b.style.color = color;
+        b.textContent = t.title;
+        who.appendChild(a); who.appendChild(b);
+        hud.innerHTML = '';
+        hud.appendChild(who);
+    }
+
+    function buildMap() {
+        svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('xmlns', SVG_NS);
+        layer = document.createElementNS(SVG_NS, 'g');
+        svg.appendChild(layer);
+
+        tiles.forEach(function (t) {
+            var p = hexToPixel(t.q, t.r);
+            var g = document.createElementNS(SVG_NS, 'g');
+            g.dataset.id = t.id;
+
+            var path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute('d', hexPath(p.x, p.y, HEX * 0.88));
+            path.setAttribute('fill', SECTION_COLORS[t.section] || '#888');
+            path.setAttribute('stroke', 'rgba(255,255,255,0.28)');
+            path.setAttribute('stroke-width', 1);
+            if (t.isReserved) path.setAttribute('stroke-dasharray', '3,2');
+            g.appendChild(path);
+
+            var label = null;
+            if (!t.isReserved) {
+                label = document.createElementNS(SVG_NS, 'text');
+                label.setAttribute('class', 'lab');
+                label.setAttribute('x', p.x);
+                label.setAttribute('y', p.y);
+                label.setAttribute('text-anchor', 'middle');
+                label.setAttribute('dominant-baseline', 'middle');
+                label.setAttribute('fill', '#ffffff');
+                label.setAttribute('font-size', 9);
+                label.setAttribute('font-weight', 'bold');
+                label.textContent = String(t.id).split('-').pop();
+                g.appendChild(label);
+            }
+
+            layer.appendChild(g);
+            nodes.set(t.id, { g: g, path: path, label: label });
+        });
+
+        splash.remove();
+        stage.insertBefore(svg, stage.firstChild);
+    }
+
+    function buildSectionList() {
+        var list = document.getElementById('sectionList');
+        list.innerHTML = '';
+        Object.keys(SECTION_NAMES).forEach(function (key) {
+            if (key === 'HOME') return;
+            var n = tiles.filter(function (t) { return t.section === key; }).length;
+            if (n === 0) return;
+            var row = document.createElement('div');
+            row.className = 'srow';
+            row.style.borderLeftColor = SECTION_COLORS[key];
+            row.innerHTML =
+                '<span class="sw" style="background:' + SECTION_COLORS[key] + '"></span>' +
+                '<span class="nm">' + key + ': ' + SECTION_NAMES[key] + '</span>' +
+                '<span class="ct">' + n + '</span>';
+            row.addEventListener('click', function () {
+                if (filter.has(key)) filter.delete(key);
+                else filter.add(key);
+                row.classList.toggle('on', filter.has(key));
+                paint();
+                renderStatus();
+            });
+            list.appendChild(row);
+        });
+    }
+
+    function renderStatus() {
+        var msg = tiles.length + ' tiles';
+        var unplaced = tiles.filter(function (t) { return t.isUnplaced; }).length;
+        if (unplaced) msg += '  \u00b7  ' + unplaced + ' unplaced';
+        if (filter.size) msg += '  \u00b7  filter: ' + Array.from(filter).join(', ');
+        statusEl.textContent = msg;
+    }
+
+    // ---- chrome ----------------------------------------------------------
+    document.getElementById('btnFit').addEventListener('click', function () {
+        cam = fitCam(); applyCam();
+    });
+    document.getElementById('btnIn').addEventListener('click', function () { zoomBy(1 / 1.4); });
+    document.getElementById('btnOut').addEventListener('click', function () { zoomBy(1.4); });
+    document.getElementById('btnSections').addEventListener('click', function () {
+        sheet.classList.toggle('open');
+        this.classList.toggle('on', sheet.classList.contains('open'));
+    });
+    document.getElementById('btnCloseSheet').addEventListener('click', function () {
+        sheet.classList.remove('open');
+        document.getElementById('btnSections').classList.remove('on');
+    });
+
+    // A rotation or a URL-bar collapse changes the stage aspect ratio; keep
+    // the same world centre and re-derive the height so nothing squashes.
+    window.addEventListener('resize', function () {
+        if (!cam) return;
+        var rect = measure();
+        if (!rect.width || !rect.height) return;
+        var cx = cam.x + cam.width / 2, cy = cam.y + cam.height / 2;
+        var h = cam.width * (rect.height / rect.width);
+        cam = { x: cx - cam.width / 2, y: cy - h / 2, width: cam.width, height: h };
+        applyCam();
+    });
+
+    // ---- boot ------------------------------------------------------------
+    C.loadCurriculumData().then(function (res) {
+        tiles = res.tiles;
+        tiles.forEach(function (t) { byId.set(t.id, t); });
+        fitBox = computeFit();
+        buildMap();
+        buildSectionList();
+        cam = fitCam();
+        applyCam();
+        renderStatus();
+        renderHud();
+    }).catch(function (err) {
+        splash.className = 'err';
+        splash.textContent = 'Could not load curriculum.json — ' + err.message;
+        statusEl.textContent = 'load failed';
+    });
+})();
+</script>
+</body>
+</html>
