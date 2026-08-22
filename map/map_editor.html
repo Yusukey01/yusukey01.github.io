@@ -74,6 +74,20 @@
         svg g.prereq-glow path {
             animation: prereq-pulse 1.2s ease-in-out infinite;
         }
+        .shortcuts {
+            display: flex; flex-wrap: wrap; gap: 6px 20px;
+            margin-bottom: 12px; font-size: 0.7rem; color: #9ca3af;
+        }
+        .shortcut-group { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+        .shortcut-group > .g-label {
+            color: #6b7280; font-size: 0.6rem; letter-spacing: 0.08em;
+            text-transform: uppercase; margin-right: 2px;
+        }
+        .shortcuts kbd {
+            background: #1f2937; border: 1px solid #374151; border-bottom-width: 2px;
+            border-radius: 3px; padding: 0 4px; margin: 0 1px;
+            font-family: inherit; font-size: 0.65rem; color: #e5e7eb;
+        }
         .loading { text-align: center; padding: 40px; color: #9ca3af; }
         .error { text-align: center; padding: 40px; color: #ef4444; }
         .error code { display: block; margin-top: 12px; font-size: 0.8rem; color: #9ca3af; }
@@ -294,6 +308,10 @@
             // camera that stays put while tiles move (no mid-drag refits).
             const [view, setView] = useState(null);
             const [panState, setPanState] = useState(null);
+            // A pan or a box-select that actually moved must not be followed
+            // by the click that the browser fires on mouseup: on an empty
+            // slot that click would pop the "add reserved" panel.
+            const suppressClickRef = React.useRef(false);
             // Pending rotate/move preview of the current selection:
             // { pivot, rot, mir, deltaHex } or null. Data is untouched while set.
             const [floatState, setFloatState] = useState(null);
@@ -343,6 +361,7 @@
 
             // ---  Multi-Select Logic ---
            const handleTileClick = (e, tile) => {
+                if (suppressClickRef.current) { suppressClickRef.current = false; return; }
                 setFloatState(null); // a click outside the float gesture cancels the preview
                 if (tile.section === 'EMPTY') {
                     setAddReservedTarget({ q: tile.q, r: tile.r });
@@ -645,6 +664,31 @@
                 applyTransformOrFloat(piv, rot, mir, delta);
                 return true;
             }, [selectedIds, floatState, applyTransformOrFloat]);
+
+            // Panning listens on the window, not the SVG: a drag that runs
+            // past the container edge must keep panning, and a mouseup
+            // anywhere must end it.
+            useEffect(() => {
+                if (!panState) return;
+                const onMove = (e) => {
+                    const el = svgRef.current;
+                    if (!el) return;
+                    const rect = el.getBoundingClientRect();
+                    suppressClickRef.current = true;
+                    setView({
+                        ...panState.view,
+                        x: panState.view.x - (e.clientX - panState.startX) * (panState.view.width / rect.width),
+                        y: panState.view.y - (e.clientY - panState.startY) * (panState.view.height / rect.height)
+                    });
+                };
+                const onUp = () => setPanState(null);
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onUp);
+                return () => {
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                };
+            }, [panState]);
 
             const persistSnapshots = (next) => {
                 setSnapshots(next);
@@ -1197,11 +1241,15 @@
                     onClick={(e) => { if (!dragState?.moved) handleTileClick(e, tile); }}
                     onDoubleClick={(e) => { e.stopPropagation(); if (!isEmpty) selectIsland(tile); }}
                     onMouseDown={(e) => {
+                            // Every new gesture starts trusting its own click again:
+                            // a pan that ended over the background never reaches a
+                            // tile's onClick, so the flag has to be cleared here too.
+                            suppressClickRef.current = false;
                             // Middle button / Alt+drag = camera pan, even over tiles
                             if (e.button === 1 || e.altKey) return;
                             // Empty slots are not draggable: no id means the drag
                             // matched every empty slot at once. Let the event fall
-                            // through to the background (box select).
+                            // through to the background (pan, or modifier box select).
                             if (isEmpty) return;
                             e.stopPropagation();
                             const idsToDrag = selectedIds.includes(tile.id) ? selectedIds : [tile.id];
@@ -1274,18 +1322,37 @@
                         </label>
                     </div>
 
-                    <div style={{ fontSize: '0.65rem', color: '#6b7280', marginBottom: '10px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                        <span>🔍 <b>Wheel</b> zoom, <b>Alt/Middle-Drag</b> pan</span>
-                        <span>🗺 <b>select</b> button on a section row to grab the whole section</span>
-                        <span>⟳ <b>R / Shift+R</b> rotate, <b>F</b> flip, <b>arrows</b> nudge selection</span>
-                        <span>🖱 <b>Drag Tile</b> to move</span>
-                        <span>◎ <b>Double-click</b> a tile to select its island</span>
-                        <span>📐 <b>Drag Background</b> to box select</span>
-                        <span>🔀 <b>Drag onto</b> another tile to swap</span>
-                        <span>⌨️ <b>Ctrl/⌘ + Click/Drag</b> multi-select</span>
-                        <span>↩️ <b>Ctrl+Z</b> undo</span>
-                        <span>➕ Click <b>empty slot</b> to add reserved</span>
-                        <span>🗑 Select reserved + <b>Delete</b> to remove</span>
+                    <div className="shortcuts">
+                        <div className="shortcut-group">
+                            <span className="g-label">Camera</span>
+                            <span><kbd>Drag</kbd> background &rarr; pan</span>
+                            <span><kbd>Wheel</kbd> &rarr; zoom at cursor</span>
+                            <span><kbd>Alt</kbd>/<kbd>Middle</kbd>+drag &rarr; pan from anywhere</span>
+                        </div>
+                        <div className="shortcut-group">
+                            <span className="g-label">Select</span>
+                            <span><kbd>Click</kbd> a tile</span>
+                            <span><kbd>Ctrl</kbd>/<kbd>&#8984;</kbd>+click &rarr; add or remove</span>
+                            <span><kbd>Shift</kbd>+drag &rarr; box select</span>
+                            <span><kbd>Ctrl</kbd>/<kbd>&#8984;</kbd>+drag &rarr; box toggle</span>
+                            <span><kbd>Double-click</kbd> &rarr; whole island</span>
+                            <span>section row <kbd>select</kbd> &rarr; whole section</span>
+                            <span><kbd>Esc</kbd> &rarr; clear</span>
+                        </div>
+                        <div className="shortcut-group">
+                            <span className="g-label">Move</span>
+                            <span><kbd>Drag</kbd> a tile</span>
+                            <span>drop onto another &rarr; swap</span>
+                            <span><kbd>R</kbd>/<kbd>Shift</kbd>+<kbd>R</kbd> &rarr; rotate</span>
+                            <span><kbd>F</kbd> &rarr; flip</span>
+                            <span><kbd>&larr;&uarr;&darr;&rarr;</kbd> &rarr; nudge</span>
+                        </div>
+                        <div className="shortcut-group">
+                            <span className="g-label">Edit</span>
+                            <span><kbd>Click</kbd> an empty slot &rarr; add reserved</span>
+                            <span>reserved + <kbd>Delete</kbd> &rarr; remove</span>
+                            <span><kbd>Ctrl</kbd>+<kbd>Z</kbd> &rarr; undo position only</span>
+                        </div>
                     </div>
                     
                     <div className="main-content">
@@ -1297,15 +1364,20 @@
                             </div>
                             <svg
                                 ref={svgRef}
+                                style={{ cursor: panState ? 'grabbing' : 'grab' }}
                                 viewBox={`${vb.x} ${vb.y} ${vb.width} ${vb.height}`}
                                 onMouseDown={(e) => {
-                                    // Middle button or Alt+drag pans the camera
-                                    if (e.button === 1 || e.altKey) {
+                                    suppressClickRef.current = false;
+                                    // On the background, a plain drag pans - that is the
+                                    // gesture used constantly. Box select is the occasional
+                                    // one and so takes a modifier: Shift replaces the
+                                    // selection, Ctrl/Cmd toggles tiles into it.
+                                    const boxSelect = e.shiftKey || e.ctrlKey || e.metaKey;
+                                    if (e.button === 1 || e.altKey || !boxSelect) {
                                         e.preventDefault();
                                         setPanState({ startX: e.clientX, startY: e.clientY, view: vb });
                                         return;
                                     }
-                                    // Start Box Selection if clicked on the SVG background
                                     const svg = e.currentTarget;
                                     const rect = svg.getBoundingClientRect();
                                     const scaleX = vb.width / rect.width;
@@ -1318,7 +1390,7 @@
                                         startY: y,
                                         currentX: x,
                                         currentY: y,
-                                        isCtrl: e.shiftKey || e.ctrlKey || e.metaKey
+                                        isCtrl: e.ctrlKey || e.metaKey
                                     });
                                 }}
                                 onMouseMove={(e) => {
@@ -1327,21 +1399,14 @@
                                     const scaleX = vb.width / rect.width;
                                     const scaleY = vb.height / rect.height;
 
-                                    // Handle camera panning (delta from gesture start,
-                                    // against the view captured at gesture start)
-                                    if (panState) {
-                                        setView({
-                                            ...panState.view,
-                                            x: panState.view.x - (e.clientX - panState.startX) * (panState.view.width / rect.width),
-                                            y: panState.view.y - (e.clientY - panState.startY) * (panState.view.height / rect.height)
-                                        });
-                                        return;
-                                    }
+                                    // Panning is handled by window listeners while active.
+                                    if (panState) return;
 
                                     // Handle Box Selection
                                     if (selectionBox) {
                                         const x = (e.clientX - rect.left) * scaleX + vb.x;
                                         const y = (e.clientY - rect.top) * scaleY + vb.y;
+                                        suppressClickRef.current = true;
                                         setSelectionBox(prev => ({ ...prev, currentX: x, currentY: y }));
                                         return;
                                     }
@@ -1357,8 +1422,7 @@
                                     setDragState(s => ({...s, deltaHex: pixelToHex(dx, dy), moved: true }));
                                 }}
                                 onMouseUp={() => {
-                                    // Finish camera panning
-                                    if (panState) { setPanState(null); return; }
+                                    if (panState) return;   // ended by the window listener
                                     // Finish Box Selection
                                     if (selectionBox) {
                                         const minX = Math.min(selectionBox.startX, selectionBox.currentX);
@@ -1455,7 +1519,6 @@
                                 onMouseLeave={() => {
                                     setSelectionBox(null); // Cancel box selection if mouse leaves SVG
                                     setDragState(null);    // A drag released outside the SVG must not stay stuck
-                                    setPanState(null);
                                 }}
                             >
                                 
