@@ -107,15 +107,6 @@
         };
 
         // --- AUTO-LAYOUT UTILITIES ---
-        // Define ideal radial angles for each section (SVG y-axis points DOWN)
-        // Top is -π/2, Bottom is π/2, Right is 0, Left is ±π
-        const SECTION_TARGET_ANGLES = {
-            'I': -Math.PI * 0.75,  // Top-Left (-135 deg)
-            'II': -Math.PI * 0.25, // Top-Right (-45 deg)
-            'III': Math.PI * 0.15, // Right-ish (27 deg)
-            'IV': Math.PI * 0.85,  // Left-ish (153 deg)
-            'V': Math.PI * 0.5     // Bottom (90 deg)
-        };
 
         // Hex grid distance (Manhattan distance on hex grid)
         const hexDistance = (q1, r1, q2, r2) => {
@@ -127,21 +118,7 @@
             {q: q+1, r: r}, {q: q-1, r: r}, {q: q, r: r+1},
             {q: q, r: r-1}, {q: q+1, r: r-1}, {q: q-1, r: r+1}
         ];
-
-        // Convert hex to pixel just for angle calculations (assumes size 1)
-        const getHexAngle = (q, r) => {
-            const x = Math.sqrt(3) * (q + r / 2);
-            const y = (3 / 2) * r;
-            return Math.atan2(y, x);
-        };
-        
-        // Shortest angular distance between two angles in radians
-        const angleDifference = (a1, a2) => {
-            let diff = Math.abs(a1 - a2) % (2 * Math.PI);
-            return diff > Math.PI ? (2 * Math.PI) - diff : diff;
-        };
-        
-        
+    
         /**
          * Load curriculum data from JSON file - same logic as compass.html
          */
@@ -259,7 +236,6 @@
                             q: slot.q,
                             r: slot.r,
                             isReserved: true,
-                            reservedIndex: index, // Track original index for export
                             topicGroup: null
                         });
                     });
@@ -300,10 +276,7 @@
             const [showEmptySlots, setShowEmptySlots] = useState(true);
             const [showReserved, setShowReserved] = useState(true);
             const [highlightSections, setHighlightSections] = useState(new Set());
-            const [draggingId, setDraggingId] = useState(null);
-            const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-            const [dragHex, setDragHex] = useState(null);
-
+           
             const [selectedIds, setSelectedIds] = useState([]); // For multi-select
             const undoStack = React.useRef([]); // undo stack
             const [analysisMode, setAnalysisMode] = useState(null); // For visual analysis
@@ -312,8 +285,7 @@
             const [addReservedTarget, setAddReservedTarget] = useState(null);
             const [selectionBox, setSelectionBox] = useState(null);
             const [showBridges, setShowBridges] = useState(false);
-            const [showIslandHulls, setShowIslandHulls] = useState(false);
-
+           
             // Zoom / pan: null = auto-fit to content; an object = user-set
             // camera that stays put while tiles move (no mid-drag refits).
             const [view, setView] = useState(null);
@@ -388,7 +360,6 @@
 
             // --- Add / Delete Reserved Tiles ---
             const addReservedTile = (section, q, r) => {
-                const existingCount = tiles.filter(t => t.isReserved && t.section === section).length;
                 const newTile = {
                     id: `${section}-reserved-${Date.now()}`,
                     section,
@@ -396,7 +367,6 @@
                     url: null,
                     q, r,
                     isReserved: true,
-                    reservedIndex: existingCount,
                     topicGroup: null
                 };
                 saveHistory(tiles);
@@ -417,40 +387,8 @@
                 setSelectedIds([]);
             }, [selectedIds, tiles, saveHistory]);
             
+           
             // --- Analysis Logic ---
-            const getAnalysisHighlights = (tile) => {
-                if (!tile || !analysisMode) return { upstream: [], downstream: [] };
-                
-                let upstream = new Set();
-                let downstream = new Set();
-                
-                // Upstream (Prerequisites)
-                if (analysisMode === 'prereqs' || analysisMode === 'full_chain') {
-                    const toProcess = [...(tile.prereqs || [])];
-                    while (toProcess.length > 0) {
-                        const id = toProcess.pop();
-                        if (!upstream.has(id)) {
-                            upstream.add(id);
-                            const prereqTile = tiles.find(t => t.id === id);
-                            if (prereqTile && prereqTile.prereqs) {
-                                toProcess.push(...prereqTile.prereqs);
-                            }
-                        }
-                    }
-                }
-                
-                // Downstream (Dependents)
-                if (analysisMode === 'dependents' || analysisMode === 'full_chain') {
-                    tiles.forEach(t => {
-                        if (t.prereqs && t.prereqs.includes(tile.id)) {
-                            downstream.add(t.id);
-                        }
-                    });
-                }
-
-                return { upstream: Array.from(upstream), downstream: Array.from(downstream) };
-            };
-
            const analysisHighlights = useMemo(() => {
                 if (!selectedTile || !analysisMode) return { upstream: new Set(), downstream: new Set() };
                 const upstream = new Set();
@@ -1118,7 +1056,7 @@
 
             // Cross-cluster dependency bridges, in two practical modes.
             const bridges = useMemo(() => {
-                if (!showBridges) return { mode: 'off', edges: [], bundles: [] };
+                if (!showBridges) return { mode: 'off', edges: [] };
                 const active = tiles.filter(t => !t.isReserved);
                 const byId = new Map(active.map(t => [t.id, t]));
                 const hexDist = (a, b) => {
@@ -1147,13 +1085,13 @@
                                      fx: fpx.x, fy: fpx.y, d: e.d,
                                      color: SECTION_COLORS[far.section] || '#888' };
                         });
-                    return { mode: 'selection', edges, bundles: [] };
+                    return { mode: 'selection', edges };
                 }
 
                 // No selection: draw nothing. A whole-map view was tried
                 // twice (raw edges, then island bundles) and both were noise;
                 // the macro picture lives in Layout Metrics instead.
-                return { mode: 'off', edges: [], bundles: [] };
+                return { mode: 'off', edges: [] };
             }, [showBridges, tiles, selectedIds, selectedTile]);
 
             const pixelToHex = (x, y) => {
@@ -1584,14 +1522,12 @@
                                     setDragState(null);
                                 }}
                                 onMouseLeave={() => {
-                                    setDraggingId(null);
-                                    setDragHex(null);
                                     setSelectionBox(null); // Cancel box selection if mouse leaves SVG
                                     setDragState(null);    // A drag released outside the SVG must not stay stuck
                                     setPanState(null);
                                 }}
                             >
-                                <rect x={vb.x} y={vb.y} width={vb.width} height={vb.height} fill="url(#grid)" />
+                                
                                 {showEmptySlots && emptySlots.map(tile => renderTile(tile, true))}
                                 {activeTiles.map(tile => renderTile(tile, false))}
                                 {showBridges && bridges.mode === 'selection' && bridges.edges.map((b, i) => (
