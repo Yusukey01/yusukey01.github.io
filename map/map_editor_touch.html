@@ -68,6 +68,8 @@
     #stage:not(.labels) text.lab { display: none; }
     text { user-select: none; pointer-events: none; }
 
+    #slotLayer { pointer-events: none; }   /* a tap on a gap falls through to the background */
+
     #zoomcol {
         position: absolute; right: 8px; bottom: 8px;
         display: flex; flex-direction: column; gap: 6px;
@@ -143,6 +145,7 @@
 <div id="topbar">
     <button id="btnSections">Sections</button>
     <button id="btnUndo" disabled>Undo</button>
+    <button id="btnSlots" aria-label="show empty slots">&#11041;</button>
     <span class="grow"><span id="status">loading&hellip;</span></span>
     <button id="btnFit">Fit</button>
 </div>
@@ -221,6 +224,10 @@
     var btnUndo = document.getElementById('btnUndo');
     var svg = null;
     var layer = null;
+    var slotLayer = null;
+    var slotMap = new Map();     // "q,r" -> { el, fill, seam }
+    var slotFree = [];           // path nodes retired from a cell, kept for reuse
+    var showSlots = false;
 
     // ---- camera ----------------------------------------------------------
     // Written straight to the DOM. No framework, no re-render: a pan or a
@@ -693,10 +700,11 @@
         if (n.label) { n.label.setAttribute('x', px.x); n.label.setAttribute('y', px.y); }
     }
 
-    function redrawAll() { nodes.forEach(function (n, id) { place(id); }); }
+    function redrawAll() { nodes.forEach(function (n, id) { place(id); }); renderSlots(); }
     function redrawSelection() {
         var ids = movingIds() || selected;
         ids.forEach(function (id) { if (nodes.has(id)) place(id); });
+        renderSlots();
     }
 
     function paint() {
@@ -731,12 +739,115 @@
             }
             if (id === swapId) { stroke = '#fbbf24'; sw = 3; opacity = 1; }
 
+            // Diffed, for the same reason the slot layer is: a drag repaints on
+            // every cell change, and all but a handful of tiles look identical
+            // from one cell to the next.
+            var inert = (filtering && !filter.has(t.section)) ? 'none' : 'auto';
+            var face = opacity + '|' + stroke + '|' + sw + '|' + inert;
+            if (n.face === face) return;
+            n.face = face;
+
             n.path.setAttribute('fill-opacity', opacity);
             n.path.setAttribute('stroke', stroke);
             n.path.setAttribute('stroke-width', sw);
-            n.g.style.pointerEvents = (filtering && !filter.has(t.section)) ? 'none' : 'auto';
+            n.g.style.pointerEvents = inert;
             if (n.label) n.label.setAttribute('opacity', opacity);
         });
+    }
+
+    // ---- empty slots -----------------------------------------------------
+    // The unoccupied cells touching the current arrangement: its frontier and
+    // its holes. Computed from DRAWN positions, so the frontier reshapes live
+    // while a tile is being dragged.
+    //
+    // Each slot records which sections border it. The desktop editor labels
+    // slots with their coordinates, which are unreadable at phone zoom levels;
+    // colouring by neighbour makes the territory boundary legible instead, and
+    // marks in white the cells where two sections meet.
+
+    function computeSlots() {
+        var occ = new Map();
+        tiles.forEach(function (t) {
+            var p = posOf(t);
+            occ.set(p.q + ',' + p.r, t);
+        });
+        var out = [], seen = new Set();
+        occ.forEach(function (tile, key) {
+            var c = key.split(',');
+            C.getHexNeighbors(+c[0], +c[1]).forEach(function (n) {
+                var k = n.q + ',' + n.r;
+                if (occ.has(k) || seen.has(k)) return;
+                seen.add(k);
+                var borders = new Set();
+                C.getHexNeighbors(n.q, n.r).forEach(function (m) {
+                    var o = occ.get(m.q + ',' + m.r);
+                    if (o && !o.isReserved) borders.add(o.section);
+                });
+                out.push({ q: n.q, r: n.r, borders: Array.from(borders) });
+            });
+        });
+        return out;
+    }
+
+    // Diffed against the previous frame. A drag changes the status of a dozen
+    // cells out of four hundred, so repainting the whole layer would cost two
+    // orders of magnitude more DOM writes than the change actually warrants.
+    function slotFace(s) {
+        var seam = s.borders.length > 1;
+        return {
+            seam: seam,
+            fill: seam ? '#ffffff'
+                       : (s.borders.length === 1 ? (SECTION_COLORS[s.borders[0]] || '#888')
+                                                 : (SECTION_COLORS.EMPTY || '#2a2a2a'))
+        };
+    }
+
+    function retire(key, entry) {
+        entry.el.style.display = 'none';
+        slotFree.push(entry.el);
+        slotMap.delete(key);
+    }
+
+    function takeSlotNode() {
+        if (slotFree.length) return slotFree.pop();
+        var el = document.createElementNS(SVG_NS, 'path');
+        el.setAttribute('stroke-dasharray', '3,2');
+        el.setAttribute('stroke-width', 1);
+        slotLayer.appendChild(el);
+        return el;
+    }
+
+    function renderSlots() {
+        if (!slotLayer) return;
+        if (!showSlots) {
+            slotMap.forEach(function (entry, key) { retire(key, entry); });
+            return;
+        }
+        var slots = computeSlots();
+        var live = new Set();
+
+        slots.forEach(function (s) {
+            var key = s.q + ',' + s.r;
+            live.add(key);
+            var face = slotFace(s);
+            var cur = slotMap.get(key);
+            if (cur && cur.fill === face.fill && cur.seam === face.seam) return;
+
+            var el = cur ? cur.el : takeSlotNode();
+            if (!cur) {
+                // Position depends only on the cell, so it is written once,
+                // when a node is first assigned to that cell.
+                var px = hexToPixel(s.q, s.r);
+                el.setAttribute('d', hexPath(px.x, px.y, HEX * 0.88));
+                el.style.display = '';
+            }
+            el.setAttribute('fill', face.fill);
+            el.setAttribute('fill-opacity', face.seam ? 0.16 : 0.2);
+            el.setAttribute('stroke', face.seam ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)');
+            slotMap.set(key, { el: el, fill: face.fill, seam: face.seam });
+        });
+
+        slotMap.forEach(function (entry, key) { if (!live.has(key)) retire(key, entry); });
     }
 
     // ---- HUD -------------------------------------------------------------
@@ -836,7 +947,10 @@
     function buildMap() {
         svg = document.createElementNS(SVG_NS, 'svg');
         svg.setAttribute('xmlns', SVG_NS);
+        slotLayer = document.createElementNS(SVG_NS, 'g');
+        slotLayer.setAttribute('id', 'slotLayer');
         layer = document.createElementNS(SVG_NS, 'g');
+        svg.appendChild(slotLayer);   // beneath the tiles
         svg.appendChild(layer);
 
         tiles.forEach(function (t) {
@@ -868,7 +982,8 @@
             }
 
             layer.appendChild(g);
-            nodes.set(t.id, { g: g, path: path, label: label, drawn: { q: t.q, r: t.r } });
+            nodes.set(t.id, { g: g, path: path, label: label,
+                              drawn: { q: t.q, r: t.r }, face: null });
         });
 
         splash.remove();
@@ -935,6 +1050,11 @@
     document.getElementById('btnIn').addEventListener('click', function () { zoomBy(1 / 1.4); });
     document.getElementById('btnOut').addEventListener('click', function () { zoomBy(1.4); });
     btnUndo.addEventListener('click', undo);
+    document.getElementById('btnSlots').addEventListener('click', function () {
+        showSlots = !showSlots;
+        this.classList.toggle('on', showSlots);
+        renderSlots();
+    });
     document.getElementById('btnSections').addEventListener('click', function () {
         sheet.classList.toggle('open');
         this.classList.toggle('on', sheet.classList.contains('open'));
