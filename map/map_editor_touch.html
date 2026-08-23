@@ -9,11 +9,11 @@
 <style>
     :root {
         --bar: 44px;
-        --bg: #030712;
-        --chrome: #111827;
-        --line: #1f2937;
-        --ink: #e5e7eb;
-        --dim: #9ca3af;
+        --bg: #0b111c;
+        --chrome: #18202f;
+        --line: #2b3648;
+        --ink: #eef2f8;
+        --dim: #aab4c4;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body {
@@ -45,12 +45,12 @@
               overflow: hidden; text-overflow: ellipsis; display: block; }
     button {
         font: inherit; font-size: 0.75rem;
-        background: #1f2937; color: var(--ink);
-        border: 1px solid #374151; border-radius: 8px;
+        background: #263145; color: var(--ink);
+        border: 1px solid #3b4a64; border-radius: 8px;
         padding: 7px 11px; min-height: 34px;
         cursor: pointer; white-space: nowrap;
     }
-    button:active { background: #374151; }
+    button:active { background: #3b4a64; }
     button.on { background: #1d4ed8; border-color: #3b82f6; }
     button:disabled { opacity: 0.35; }
 
@@ -77,7 +77,7 @@
     #zoomcol button {
         width: 40px; height: 40px; padding: 0;
         font-size: 1.05rem; line-height: 1;
-        background: rgba(31, 41, 55, 0.92);
+        background: rgba(38, 49, 69, 0.94);
     }
 
     /* ---- bottom context bar ----------------------------------------- */
@@ -90,7 +90,7 @@
         min-height: var(--bar);
         display: flex; align-items: center; gap: 10px;
     }
-    #hud .hint { color: #6b7280; line-height: 1.5; }
+    #hud .hint { color: #8b96a8; line-height: 1.5; }
     #hud .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
     #hud .id { font-size: 0.68rem; color: var(--dim); }
     #hud .title { font-weight: 600; overflow: hidden;
@@ -99,6 +99,7 @@
     #hud .tools { display: flex; align-items: center; gap: 8px; flex: 1; }
     #hud .tools .col { display: flex; flex-direction: column; gap: 5px; }
     #hud .tools .col button { width: 100%; }
+    #hud .who button { align-self: flex-start; }
     /* Six hex directions, laid out the way they read on screen. */
     #nudge { display: grid; grid-template-columns: repeat(2, 38px); gap: 4px; }
     #nudge button { padding: 0; height: 30px; min-height: 30px; font-size: 0.8rem; }
@@ -118,7 +119,7 @@
     }
     #sheet.open { transform: translateY(0); }
     #sheet h2 { font-size: 0.8rem; margin-bottom: 8px; color: var(--dim); font-weight: 600; }
-    #sheet .note { font-size: 0.68rem; color: #6b7280; margin-bottom: 8px; line-height: 1.5; }
+    #sheet .note { font-size: 0.68rem; color: #8b96a8; margin-bottom: 8px; line-height: 1.5; }
     .srow {
         display: flex; align-items: center; gap: 8px;
         padding: 9px 8px; border-radius: 8px;
@@ -129,7 +130,7 @@
     .srow .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .srow .ct { color: var(--dim); font-size: 0.7rem; }
     .srow button { padding: 4px 9px; min-height: 28px; font-size: 0.65rem; }
-    .srow.on { background: #1f2937; }
+    .srow.on { background: #2b3648; }
 
     #splash {
         position: absolute; inset: 0;
@@ -575,7 +576,12 @@
     // ---- mutation --------------------------------------------------------
 
     function pushUndo() {
-        undoStack.push(tiles.map(function (t) { return { id: t.id, q: t.q, r: t.r }; }));
+        // isUnplaced belongs in the snapshot: commit() clears it, so a restore
+        // that only put the coordinates back would silently "place" a tile
+        // that had never been placed.
+        undoStack.push(tiles.map(function (t) {
+            return { id: t.id, q: t.q, r: t.r, unplaced: !!t.isUnplaced };
+        }));
         if (undoStack.length > UNDO_DEPTH) undoStack.shift();
         btnUndo.disabled = false;
     }
@@ -585,7 +591,7 @@
         if (!snap) return;
         snap.forEach(function (e) {
             var t = byId.get(e.id);
-            if (t) { t.q = e.q; t.r = e.r; }
+            if (t) { t.q = e.q; t.r = e.r; t.isUnplaced = e.unplaced; }
         });
         floatState = null;
         drag = null;
@@ -593,6 +599,7 @@
         redrawAll();
         paint();
         renderHud();
+        renderStatus();
     }
 
     function commit(targets) {
@@ -602,6 +609,7 @@
             t.q = c.q; t.r = c.r;
             t.isUnplaced = false;
         });
+        renderStatus();
     }
 
     // Commit the transform if the shape lands clear; otherwise leave it as a
@@ -725,7 +733,7 @@
 
         nodes.forEach(function (n, id) {
             var t = byId.get(id);
-            var opacity = 1, stroke = 'rgba(255,255,255,0.28)', sw = 1;
+            var opacity = 1, stroke = 'rgba(255,255,255,0.38)', sw = 1;
             var isSel = selected.has(id);
             var isMoving = moving && moving.has(id);
 
@@ -792,14 +800,75 @@
     // Diffed against the previous frame. A drag changes the status of a dozen
     // cells out of four hundred, so repainting the whole layer would cost two
     // orders of magnitude more DOM writes than the change actually warrants.
+    // The section palette spans a 3x range in luminance: at one alpha the
+    // purple of Section IV is invisible while the orange of Section V reads
+    // as a real tile. So a slot's colour keeps its section's HUE but has its
+    // luminance solved to a fixed target, making every slot equally legible
+    // whatever it borders. The target sits just under the dimmest tile, so a
+    // slot can never out-shout a real one.
+    var SLOT_BG = [0x0b, 0x11, 0x1c];
+    var slotTintCache = new Map();
+
+    function relLum(rgb) {
+        var f = function (c) { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+        return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]);
+    }
+
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        var mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, h = 0, s = 0;
+        if (mx !== mn) {
+            var d = mx - mn;
+            s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+            h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+            h /= 6;
+        }
+        return [h, s, l];
+    }
+
+    function hslToRgb(h, s, l) {
+        if (s === 0) { var v = Math.round(l * 255); return [v, v, v]; }
+        var f = function (p, q, t) {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        };
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+        return [f(p, q, h + 1 / 3), f(p, q, h), f(p, q, h - 1 / 3)].map(function (x) { return Math.round(x * 255); });
+    }
+
+    // `contrast` is the WCAG ratio the result should have against the page
+    // background; the lightness that achieves it is found by bisection.
+    function tintTo(hexColor, contrast) {
+        var key = hexColor + '@' + contrast;
+        if (slotTintCache.has(key)) return slotTintCache.get(key);
+        var rgb = [1, 3, 5].map(function (i) { return parseInt(hexColor.slice(i, i + 2), 16); });
+        var hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+        var sat = hsl[1] < 0.06 ? 0 : Math.min(Math.max(hsl[1], 0.30), 0.62);
+        var target = contrast * (relLum(SLOT_BG) + 0.05) - 0.05;
+        var lo = 0, hi = 1, out = [0, 0, 0];
+        for (var i = 0; i < 32; i++) {
+            var mid = (lo + hi) / 2;
+            out = hslToRgb(hsl[0], sat, mid);
+            if (relLum(out) < target) lo = mid; else hi = mid;
+        }
+        var css = '#' + out.map(function (v) { return v.toString(16).length < 2 ? '0' + v.toString(16) : v.toString(16); }).join('');
+        slotTintCache.set(key, css);
+        return css;
+    }
+
+    var SLOT_CONTRAST = 2.0;     // just under the dimmest tile in the palette
+    var SEAM_CONTRAST = 3.3;     // cells where two sections meet, deliberately louder
+
     function slotFace(s) {
         var seam = s.borders.length > 1;
-        return {
-            seam: seam,
-            fill: seam ? '#ffffff'
-                       : (s.borders.length === 1 ? (SECTION_COLORS[s.borders[0]] || '#888')
-                                                 : (SECTION_COLORS.EMPTY || '#2a2a2a'))
-        };
+        var base = seam ? '#b8c6dd'
+                        : (s.borders.length === 1 ? (SECTION_COLORS[s.borders[0]] || '#888888')
+                                                  : (SECTION_COLORS.EMPTY || '#2a2a2a'));
+        return { seam: seam, fill: tintTo(base, seam ? SEAM_CONTRAST : SLOT_CONTRAST) };
     }
 
     function retire(key, entry) {
@@ -842,8 +911,9 @@
                 el.style.display = '';
             }
             el.setAttribute('fill', face.fill);
-            el.setAttribute('fill-opacity', face.seam ? 0.16 : 0.2);
-            el.setAttribute('stroke', face.seam ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)');
+            el.setAttribute('fill-opacity', face.seam ? 0.34 : 0.28);
+            el.setAttribute('stroke', face.fill);
+            el.setAttribute('stroke-opacity', face.seam ? 1 : 0.9);
             slotMap.set(key, { el: el, fill: face.fill, seam: face.seam });
         });
 
@@ -920,7 +990,7 @@
         info.className = 'who';
         var head = document.createElement('div');
         head.className = 'title';
-        head.textContent = selected.size + ' tiles selected';
+        head.textContent = selected.size + (selected.size === 1 ? ' tile selected' : ' tiles selected');
         info.appendChild(head);
         if (floatState) {
             var w = document.createElement('div');
@@ -961,7 +1031,7 @@
             var path = document.createElementNS(SVG_NS, 'path');
             path.setAttribute('d', hexPath(p.x, p.y, HEX * 0.88));
             path.setAttribute('fill', SECTION_COLORS[t.section] || '#888');
-            path.setAttribute('stroke', 'rgba(255,255,255,0.28)');
+            path.setAttribute('stroke', 'rgba(255,255,255,0.38)');
             path.setAttribute('stroke-width', 1);
             if (t.isReserved) path.setAttribute('stroke-dasharray', '3,2');
             g.appendChild(path);
@@ -1084,7 +1154,41 @@
     });
 
     // ---- boot ------------------------------------------------------------
-    C.loadCurriculumData().then(function (res) {
+
+    // Reported where the user can see it. The splash is gone once the map has
+    // been built, so late failures go to the status bar instead.
+    function fail(message, short) {
+        if (splash && splash.parentNode) {
+            splash.className = 'err';
+            splash.textContent = message;
+        }
+        statusEl.textContent = short;
+    }
+
+    // A stage can still be zero-sized when the data arrives (a background tab,
+    // a slow layout). Fitting against a zero box would freeze a nonsense
+    // viewBox, so re-fit as soon as the element really has one. Each fallback
+    // covers environments where the previous API is missing.
+    function refitWhenSized() {
+        if (measure().width) { cam = fitCam(); applyCam(); return; }
+        if (window.ResizeObserver) {
+            var ro = new window.ResizeObserver(function () {
+                if (measure().width) { ro.disconnect(); cam = fitCam(); applyCam(); }
+            });
+            ro.observe(stage);
+            return;
+        }
+        var tries = 0;
+        var settle = function () {
+            if (measure().width) { cam = fitCam(); applyCam(); return; }
+            if (++tries > 200) return;
+            if (window.requestAnimationFrame) window.requestAnimationFrame(settle);
+            else setTimeout(settle, 50);
+        };
+        setTimeout(settle, 16);
+    }
+
+    function render(res) {
         tiles = res.tiles;
         tiles.forEach(function (t) { byId.set(t.id, t); });
         fitBox = computeFit();
@@ -1092,13 +1196,24 @@
         buildSectionList();
         cam = fitCam();
         applyCam();
+        paint();          // buildMap only writes the default face; markers such
+                          // as the unplaced outline come from here
         renderStatus();
         renderHud();
-    }).catch(function (err) {
-        splash.className = 'err';
-        splash.textContent = 'Could not load curriculum.json \u2014 ' + err.message;
-        statusEl.textContent = 'load failed';
-    });
+        refitWhenSized();
+    }
+
+    // The two failures are kept apart on purpose: a drawing bug used to be
+    // swallowed by the load handler and misreported as a failed download.
+    C.loadCurriculumData().then(
+        function (res) {
+            try { render(res); }
+            catch (err) { fail('Could not draw the map \u2014 ' + err.message, 'render failed'); }
+        },
+        function (err) {
+            fail('Could not load curriculum.json \u2014 ' + err.message, 'load failed');
+        }
+    );
 })();
 </script>
 </body>
