@@ -1233,27 +1233,95 @@
         ta.setSelectionRange(0, text.length);
     }
 
+    // The last resort for both routes: put the text on screen, selected, so
+    // it can be copied by hand. Never leaves the user with nothing.
+    function copyByHand(text, note) {
+        showPatchText(text);
+        say(note + ' The full patch is in the box above \u2014 press and hold to copy it.', 'err');
+    }
+
+    // `lead` is why we ended up here, if we arrived via a failed share. It is
+    // carried into every outcome: a successful fallback must not erase the
+    // reason the first route failed, or a share that never reached an app
+    // looks exactly like one that worked.
+    function copyText(text, count, lead) {
+        var pre = lead ? lead + ' ' : '';
+        var kind = lead ? '' : 'good';
+        if (!window.isSecureContext) {
+            copyByHand(text, pre + 'The clipboard needs an https page.');
+            return;
+        }
+        if (!navigator.clipboard || !navigator.clipboard.writeText) {
+            copyByHand(text, pre + 'This browser has no clipboard API.');
+            return;
+        }
+        var promise;
+        try { promise = navigator.clipboard.writeText(text); }
+        catch (err) { copyByHand(text, pre + 'Clipboard threw ' + errName(err) + '.'); return; }
+        if (!promise || !promise.then) { copyByHand(text, pre + 'The clipboard did not answer.'); return; }
+        promise.then(
+            function () {
+                say(pre + count + ' moved tiles copied. Paste it into the desktop editor.', kind);
+            },
+            function (err) { copyByHand(text, pre + 'Clipboard refused (' + errName(err) + ').'); }
+        );
+    }
+
     function copyPatch() {
         var b = buildPatch();
         if (b.count === 0) { say('Nothing has moved yet.', 'err'); return; }
-        var text = JSON.stringify(b.patch);
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(
-                function () { say(b.count + ' moved tiles copied. Paste it into the desktop editor.', 'good'); },
-                function () { showPatchText(text); say('Clipboard refused. Copy the text above by hand.', 'err'); }
-            );
-        } else {
-            showPatchText(text);
-            say('No clipboard here. Copy the text above by hand.', 'err');
-        }
+        copyText(JSON.stringify(b.patch), b.count);
     }
 
+    function errName(err) {
+        return (err && (err.name || err.message)) || 'unknown';
+    }
+
+    // Why the share sheet is not usable here, or null if it is. Checked
+    // rather than assumed, because the Web Share API is gated on a secure
+    // context and silently absent otherwise.
+    function shareBlockedBecause() {
+        if (!window.isSecureContext) return 'Sharing needs an https page.';
+        if (typeof navigator.share !== 'function') return 'This browser has no share sheet.';
+        return null;
+    }
+
+    // Every failure is reported and falls back to the clipboard. The previous
+    // version swallowed all of them, so a share that never reached an app was
+    // indistinguishable from one that worked.
     function sharePatch() {
         var b = buildPatch();
         if (b.count === 0) { say('Nothing has moved yet.', 'err'); return; }
-        navigator.share({ title: 'MATH-CS COMPASS map patch', text: JSON.stringify(b.patch) })
-            .then(function () { say(b.count + ' moved tiles shared.', 'good'); },
-                  function () { /* the user dismissed the sheet; nothing to report */ });
+        var text = JSON.stringify(b.patch);
+
+        var blocked = shareBlockedBecause();
+        if (blocked) { copyText(text, b.count, blocked); return; }
+
+        var payload = { title: 'MATH-CS COMPASS map patch', text: text };
+        if (typeof navigator.canShare === 'function') {
+            var allowed = false;
+            try { allowed = navigator.canShare(payload); } catch (err) { allowed = false; }
+            if (!allowed) { copyText(text, b.count, 'The share sheet will not take this.'); return; }
+        }
+
+        var promise;
+        try { promise = navigator.share(payload); }
+        catch (err) {
+            // A synchronous throw here almost always means the click was no
+            // longer counted as a user gesture.
+            copyText(text, b.count, 'Share failed (' + errName(err) + ').');
+            return;
+        }
+        if (!promise || !promise.then) { copyText(text, b.count, 'Share returned nothing.'); return; }
+
+        promise.then(
+            function () { say(b.count + ' moved tiles handed to the share sheet.', 'good'); },
+            function (err) {
+                // Dismissing the sheet is a normal outcome, not a failure.
+                if (errName(err) === 'AbortError') { say('Share cancelled.'); return; }
+                copyText(text, b.count, 'Share failed (' + errName(err) + ').');
+            }
+        );
     }
 
     // ---- snapshots (same key and shape as the desktop editor) ------------
@@ -1524,7 +1592,7 @@
         sourceMeta = (res.rawData && res.rawData.meta)
             ? { version: res.rawData.meta.version, lastUpdated: res.rawData.meta.lastUpdated }
             : null;
-        if (navigator.share) document.getElementById('btnShare').hidden = false;
+        if (!shareBlockedBecause()) document.getElementById('btnShare').hidden = false;
         fitBox = computeFit();
         buildMap();
         buildSectionList();
