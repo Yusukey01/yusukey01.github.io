@@ -19,7 +19,8 @@
     html, body {
         height: 100%;
         overflow: hidden;
-        overscroll-behavior: none;
+        overscroll-behavior: none;   /* kills Android pull-to-refresh */
+        touch-action: manipulation;  /* and double-tap zoom */
         background: var(--bg);
         color: var(--ink);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -33,6 +34,15 @@
     }
 
     /* ---- top bar ---------------------------------------------------- */
+    /* Chrome for Android ignores user-scalable=no, so the chrome has to
+       claim its own gestures or a stray pinch zooms the whole page. */
+    #topbar, #hud { touch-action: none; }
+    #sheet { touch-action: pan-y; }
+    #stage, #topbar, #hud {
+        -webkit-user-select: none; user-select: none;
+        -webkit-touch-callout: none;   /* no long-press callout over a tile */
+    }
+
     #topbar {
         flex: 0 0 var(--bar);
         display: flex; align-items: center; gap: 6px;
@@ -119,6 +129,26 @@
     }
     #sheet.open { transform: translateY(0); }
     #sheet h2 { font-size: 0.8rem; margin-bottom: 8px; color: var(--dim); font-weight: 600; }
+    #sheet h3 { font-size: 0.72rem; margin: 14px 0 6px; color: var(--dim); font-weight: 600; }
+    #tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    #tabs button { flex: 1; }
+    .row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+    .row > button { flex: 1; }
+    #sheet input, #sheet textarea {
+        font: inherit; font-size: 0.72rem;
+        background: #0e1523; color: var(--ink);
+        border: 1px solid #3b4a64; border-radius: 8px;
+        padding: 8px; width: 100%;
+    }
+    #sheet textarea { min-height: 74px; resize: vertical; font-family: ui-monospace, Menlo, monospace; }
+    #sheet input { min-height: 34px; }
+    .snap { display: flex; align-items: center; gap: 6px; padding: 6px 0; font-size: 0.72rem; }
+    .snap .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .snap .when { color: var(--dim); font-size: 0.64rem; }
+    .snap button { padding: 4px 9px; min-height: 28px; font-size: 0.65rem; }
+    #patchMsg { font-size: 0.68rem; color: var(--dim); min-height: 1.1em; margin-top: 4px; line-height: 1.4; }
+    #patchMsg.err { color: #f87171; }
+    #patchMsg.good { color: #4ade80; }
     #sheet .note { font-size: 0.68rem; color: #8b96a8; margin-bottom: 8px; line-height: 1.5; }
     .srow {
         display: flex; align-items: center; gap: 8px;
@@ -144,7 +174,7 @@
 <body>
 
 <div id="topbar">
-    <button id="btnSections">Sections</button>
+    <button id="btnSections">Menu</button>
     <button id="btnUndo" disabled>Undo</button>
     <button id="btnSlots" aria-label="show empty slots">&#11041;</button>
     <span class="grow"><span id="status">loading&hellip;</span></span>
@@ -162,10 +192,43 @@
 <div id="hud"></div>
 
 <div id="sheet">
-    <h2>Sections</h2>
-    <div class="note">Tap a row to isolate it. Isolated-out tiles are dimmed and cannot be grabbed.</div>
-    <div id="sectionList"></div>
-    <button id="btnCloseSheet" style="width:100%; margin-top:8px;">Close</button>
+    <div id="tabs">
+        <button id="tabSections" class="on">Sections</button>
+        <button id="tabLayout">Layout</button>
+    </div>
+
+    <div id="paneSections">
+        <div class="note">Tap a row to isolate it. Isolated-out tiles are dimmed and cannot be grabbed.</div>
+        <div id="sectionList"></div>
+    </div>
+
+    <div id="paneLayout" hidden>
+        <h2>Send this layout to the desktop</h2>
+        <div class="note" id="movedNote"></div>
+        <div class="row">
+            <button id="btnCopy">Copy patch</button>
+            <button id="btnShare" hidden>Share</button>
+        </div>
+        <textarea id="patchOut" readonly hidden></textarea>
+
+        <h3>Snapshots</h3>
+        <div class="note">Saved in this browser only. The desktop editor reads the same format.</div>
+        <div class="row">
+            <input id="snapName" type="text" placeholder="name this layout" autocomplete="off">
+            <button id="btnSave" style="flex:0 0 auto;">Save</button>
+        </div>
+        <div id="snapList"></div>
+
+        <h3>Apply a patch</h3>
+        <textarea id="patchIn" placeholder="paste a patch or a snapshot here"></textarea>
+        <div class="row">
+            <button id="btnApply">Apply</button>
+            <button id="btnReset">Reset to server</button>
+        </div>
+        <div id="patchMsg"></div>
+    </div>
+
+    <button id="btnCloseSheet" style="width:100%; margin-top:12px;">Close</button>
 </div>
 
 <script>
@@ -211,6 +274,13 @@
     var cam = null;              // live camera; the single source of truth
 
     var undoStack = [];
+    // Where every tile sat in the file that was loaded. The patch is the
+    // difference against this, not the whole map: a diff states its intent,
+    // survives the desktop's curriculum.json having moved on, and is small
+    // enough to paste into a chat window.
+    var baseline = new Map();
+    var SNAP_KEY = 'mapEditorSnapshots';   // shared with the desktop editor
+    var sourceMeta = null;                 // curriculum.json's own version stamp
     // Pending rotate / flip / nudge of the selection. While set, the data has
     // not moved: the tiles are only drawn transformed. It commits by itself
     // the moment the shape stops colliding.
@@ -460,11 +530,11 @@
         applyCam();
     });
 
-    function endPointer(e) {
-        var wasTap = tapCandidate && tapCandidate.id === e.pointerId &&
+    function endPointer(e, cancelled) {
+        var wasTap = !cancelled && tapCandidate && tapCandidate.id === e.pointerId &&
                      (Date.now() - tapCandidate.t) < TAP_MS;
         var tappedTile = wasTap ? tapCandidate.tileId : null;
-        var dropping = drag && drag.moved && pointers.size === 1;
+        var dropping = !cancelled && drag && drag.moved && pointers.size === 1;
 
         cancelHold();
         pointers.delete(e.pointerId);
@@ -474,12 +544,21 @@
         else beginGesture();     // rebase so lifting one of two fingers is smooth
 
         if (dropping) { dropDrag(); return; }
+        // Chrome for Android cancels a pointer whenever it decides the gesture
+        // belongs to the browser. Committing the move at wherever the finger
+        // happened to be would be a silent edit nobody asked for, so a cancel
+        // abandons the drag instead of dropping it.
+        if (cancelled) { abortDrag(); return; }
         if (drag && pointers.size === 0) { drag = null; }
         if (wasTap) selectTile(tappedTile);
     }
 
-    stage.addEventListener('pointerup', endPointer);
-    stage.addEventListener('pointercancel', endPointer);
+    stage.addEventListener('pointerup', function (e) { endPointer(e, false); });
+    stage.addEventListener('pointercancel', function (e) { endPointer(e, true); });
+
+    // A long press on Android otherwise raises the selection or context menu
+    // on top of the island the press just selected.
+    stage.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
     // Trackpad and mouse wheel, so the same file is usable on a desktop.
     stage.addEventListener('wheel', function (e) {
@@ -1104,8 +1183,211 @@
         var msg = tiles.length + ' tiles';
         var unplaced = tiles.filter(function (t) { return t.isUnplaced; }).length;
         if (unplaced) msg += '  \u00b7  ' + unplaced + ' unplaced';
+        if (baseline.size) {
+            var moved = movedCoords().count;
+            if (moved) msg += '  \u00b7  ' + moved + ' moved';
+        }
         if (filter.size) msg += '  \u00b7  only ' + Array.from(filter).join(', ');
         statusEl.textContent = msg;
+    }
+
+    // ---- layout transport ------------------------------------------------
+
+    function movedCoords() {
+        var out = {}, n = 0;
+        tiles.forEach(function (t) {
+            if (t.isUnplaced) return;
+            var b = baseline.get(t.id);
+            if (b && b[0] === t.q && b[1] === t.r) return;
+            out[t.id] = [t.q, t.r];
+            n++;
+        });
+        return { coords: out, count: n };
+    }
+
+    function buildPatch() {
+        var m = movedCoords();
+        return {
+            patch: {
+                mapPatch: 1,
+                savedAt: Date.now(),
+                source: sourceMeta,
+                moved: m.count,
+                coords: m.coords
+            },
+            count: m.count
+        };
+    }
+
+    function say(msg, kind) {
+        var el = document.getElementById('patchMsg');
+        el.className = kind || '';
+        el.textContent = msg;
+    }
+
+    function showPatchText(text) {
+        var ta = document.getElementById('patchOut');
+        ta.hidden = false;
+        ta.value = text;
+        ta.focus();
+        ta.setSelectionRange(0, text.length);
+    }
+
+    function copyPatch() {
+        var b = buildPatch();
+        if (b.count === 0) { say('Nothing has moved yet.', 'err'); return; }
+        var text = JSON.stringify(b.patch);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(
+                function () { say(b.count + ' moved tiles copied. Paste it into the desktop editor.', 'good'); },
+                function () { showPatchText(text); say('Clipboard refused. Copy the text above by hand.', 'err'); }
+            );
+        } else {
+            showPatchText(text);
+            say('No clipboard here. Copy the text above by hand.', 'err');
+        }
+    }
+
+    function sharePatch() {
+        var b = buildPatch();
+        if (b.count === 0) { say('Nothing has moved yet.', 'err'); return; }
+        navigator.share({ title: 'MATH-CS COMPASS map patch', text: JSON.stringify(b.patch) })
+            .then(function () { say(b.count + ' moved tiles shared.', 'good'); },
+                  function () { /* the user dismissed the sheet; nothing to report */ });
+    }
+
+    // ---- snapshots (same key and shape as the desktop editor) ------------
+
+    function readSnapshots() {
+        try { return JSON.parse(localStorage.getItem(SNAP_KEY) || '{}'); }
+        catch (e) { return {}; }
+    }
+
+    function writeSnapshots(next) {
+        try { localStorage.setItem(SNAP_KEY, JSON.stringify(next)); return true; }
+        catch (e) { say('Could not save: ' + e.message, 'err'); return false; }
+    }
+
+    function saveSnapshot() {
+        var input = document.getElementById('snapName');
+        var name = input.value.trim() ||
+                   'phone-' + new Date().toISOString().slice(0, 16).replace('T', ' ');
+        var coords = {};
+        tiles.forEach(function (t) { coords[t.id] = [t.q, t.r]; });
+        var all = readSnapshots();
+        all[name] = { savedAt: Date.now(), coords: coords };
+        if (!writeSnapshots(all)) return;
+        input.value = '';
+        renderSnapshots();
+        say('Saved as "' + name + '".', 'good');
+    }
+
+    function renderSnapshots() {
+        var list = document.getElementById('snapList');
+        var all = readSnapshots();
+        var names = Object.keys(all).sort(function (a, b) {
+            return (all[b].savedAt || 0) - (all[a].savedAt || 0);
+        });
+        list.innerHTML = '';
+        if (names.length === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'note';
+            empty.textContent = 'No snapshots yet.';
+            list.appendChild(empty);
+            return;
+        }
+        names.forEach(function (name) {
+            var row = document.createElement('div');
+            row.className = 'snap';
+            var nm = document.createElement('span');
+            nm.className = 'nm';
+            nm.textContent = name;
+            var when = document.createElement('span');
+            when.className = 'when';
+            when.textContent = all[name].savedAt
+                ? new Date(all[name].savedAt).toISOString().slice(0, 16).replace('T', ' ')
+                : '';
+            var load = document.createElement('button');
+            load.textContent = 'Load';
+            load.addEventListener('click', function () {
+                applyCoords(all[name].coords, 'Loaded "' + name + '"');
+            });
+            var del = document.createElement('button');
+            del.textContent = 'Delete';
+            del.addEventListener('click', function () {
+                var cur = readSnapshots();
+                delete cur[name];
+                if (writeSnapshots(cur)) { renderSnapshots(); say('Deleted "' + name + '".'); }
+            });
+            row.appendChild(nm); row.appendChild(when); row.appendChild(load); row.appendChild(del);
+            list.appendChild(row);
+        });
+    }
+
+    // ---- applying a patch ------------------------------------------------
+
+    // Validated before it is committed. A hand-edited or stale patch can put
+    // two tiles on one cell, which no gesture in this editor can produce and
+    // which the map renderer has no way to show. Refusing is better than
+    // silently corrupting the layout.
+    function applyCoords(coords, okMessage) {
+        if (!coords || typeof coords !== 'object') { say('That patch has no coords.', 'err'); return; }
+
+        var proposed = new Map();
+        var unknown = [];
+        Object.keys(coords).forEach(function (id) {
+            var c = coords[id];
+            if (!Array.isArray(c) || c.length < 2 ||
+                typeof c[0] !== 'number' || typeof c[1] !== 'number' ||
+                !isFinite(c[0]) || !isFinite(c[1])) {
+                unknown.push(id + ' (bad coordinate)');
+                return;
+            }
+            if (!byId.has(id)) { unknown.push(id + ' (no such tile)'); return; }
+            proposed.set(id, { q: Math.round(c[0]), r: Math.round(c[1]) });
+        });
+        if (proposed.size === 0) { say('Nothing in that patch matches this map.', 'err'); return; }
+
+        var cells = new Map();
+        var clash = null;
+        tiles.forEach(function (t) {
+            var p = proposed.get(t.id) || { q: t.q, r: t.r };
+            var k = p.q + ',' + p.r;
+            if (cells.has(k)) clash = cells.get(k) + ' and ' + t.id + ' at ' + k;
+            cells.set(k, t.id);
+        });
+        if (clash) { say('Refused: that patch puts ' + clash + '.', 'err'); return; }
+
+        pushUndo();
+        proposed.forEach(function (p, id) {
+            var t = byId.get(id);
+            t.q = p.q; t.r = p.r; t.isUnplaced = false;
+        });
+        floatState = null;
+        drag = null;
+        selected.clear();
+        redrawAll();
+        paint();
+        renderHud();
+        renderStatus();
+        var msg = okMessage + ' \u2014 ' + proposed.size + ' tiles placed.';
+        if (unknown.length) msg += ' Skipped ' + unknown.length + ': ' + unknown.slice(0, 3).join(', ') + '.';
+        say(msg, unknown.length ? '' : 'good');
+    }
+
+    function applyPasted() {
+        var raw = document.getElementById('patchIn').value.trim();
+        if (!raw) { say('Paste a patch first.', 'err'); return; }
+        var data;
+        try { data = JSON.parse(raw); }
+        catch (e) { say('That is not valid JSON: ' + e.message, 'err'); return; }
+        var coords = data && data.coords ? data.coords : data;
+        if (data && data.source && sourceMeta && data.source.lastUpdated &&
+            sourceMeta.lastUpdated && data.source.lastUpdated !== sourceMeta.lastUpdated) {
+            say('Note: that patch came from curriculum.json dated ' + data.source.lastUpdated +
+                ', this map is ' + sourceMeta.lastUpdated + '.');
+        }
+        applyCoords(coords, 'Applied');
     }
 
     // ---- chrome ----------------------------------------------------------
@@ -1128,8 +1410,42 @@
     document.getElementById('btnSections').addEventListener('click', function () {
         sheet.classList.toggle('open');
         this.classList.toggle('on', sheet.classList.contains('open'));
+        if (sheet.classList.contains('open') && !document.getElementById('paneLayout').hidden) {
+            renderSnapshots();
+            refreshMovedNote();
+        }
     });
     document.getElementById('btnCloseSheet').addEventListener('click', closeSheet);
+
+    function showTab(which) {
+        var layout = which === 'layout';
+        document.getElementById('paneSections').hidden = layout;
+        document.getElementById('paneLayout').hidden = !layout;
+        document.getElementById('tabSections').classList.toggle('on', !layout);
+        document.getElementById('tabLayout').classList.toggle('on', layout);
+        if (layout) { renderSnapshots(); refreshMovedNote(); say(''); }
+    }
+    document.getElementById('tabSections').addEventListener('click', function () { showTab('sections'); });
+    document.getElementById('tabLayout').addEventListener('click', function () { showTab('layout'); });
+
+    document.getElementById('btnCopy').addEventListener('click', copyPatch);
+    document.getElementById('btnShare').addEventListener('click', sharePatch);
+    document.getElementById('btnSave').addEventListener('click', saveSnapshot);
+    document.getElementById('btnApply').addEventListener('click', applyPasted);
+    document.getElementById('btnReset').addEventListener('click', function () {
+        var m = movedCoords();
+        if (m.count && !window.confirm('Discard ' + m.count + ' moved tiles and reload from the server?')) return;
+        leavingDeliberately = true;   // the confirm above already asked
+        location.reload();
+    });
+
+    function refreshMovedNote() {
+        var m = movedCoords();
+        document.getElementById('movedNote').textContent = m.count === 0
+            ? 'Nothing has moved since this map was loaded.'
+            : m.count + (m.count === 1 ? ' tile has' : ' tiles have') +
+              ' moved. The patch carries only those.';
+    }
 
     // Physical keyboard, when this is opened on a desktop.
     window.addEventListener('keydown', function (e) {
@@ -1139,6 +1455,17 @@
         if (e.key === 'f' || e.key === 'F') { flip(); return; }
         var arrow = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
         if (arrow) { e.preventDefault(); nudge(arrow[0], arrow[1]); }
+    });
+
+    // An edge swipe (Android's back gesture) or a stray reload would take
+    // unsent work with it. The browser only honours this after the user has
+    // interacted with the page, which by definition they have.
+    var leavingDeliberately = false;
+    window.addEventListener('beforeunload', function (e) {
+        if (leavingDeliberately || baseline.size === 0) return;
+        if (movedCoords().count === 0) return;
+        e.preventDefault();
+        e.returnValue = '';
     });
 
     // A rotation or a URL-bar collapse changes the stage aspect ratio; keep
@@ -1190,7 +1517,14 @@
 
     function render(res) {
         tiles = res.tiles;
-        tiles.forEach(function (t) { byId.set(t.id, t); });
+        tiles.forEach(function (t) {
+            byId.set(t.id, t);
+            if (!t.isUnplaced) baseline.set(t.id, [t.q, t.r]);
+        });
+        sourceMeta = (res.rawData && res.rawData.meta)
+            ? { version: res.rawData.meta.version, lastUpdated: res.rawData.meta.lastUpdated }
+            : null;
+        if (navigator.share) document.getElementById('btnShare').hidden = false;
         fitBox = computeFit();
         buildMap();
         buildSectionList();
