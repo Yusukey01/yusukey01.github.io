@@ -1399,35 +1399,18 @@
     // which the map renderer has no way to show. Refusing is better than
     // silently corrupting the layout.
     function applyCoords(coords, okMessage) {
-        if (!coords || typeof coords !== 'object') { say('That patch has no coords.', 'err'); return; }
+        var plan = C.planCoords(tiles, coords);
 
-        var proposed = new Map();
-        var unknown = [];
-        Object.keys(coords).forEach(function (id) {
-            var c = coords[id];
-            if (!Array.isArray(c) || c.length < 2 ||
-                typeof c[0] !== 'number' || typeof c[1] !== 'number' ||
-                !isFinite(c[0]) || !isFinite(c[1])) {
-                unknown.push(id + ' (bad coordinate)');
-                return;
-            }
-            if (!byId.has(id)) { unknown.push(id + ' (no such tile)'); return; }
-            proposed.set(id, { q: Math.round(c[0]), r: Math.round(c[1]) });
-        });
-        if (proposed.size === 0) { say('Nothing in that patch matches this map.', 'err'); return; }
-
-        var cells = new Map();
-        var clash = null;
-        tiles.forEach(function (t) {
-            var p = proposed.get(t.id) || { q: t.q, r: t.r };
-            var k = p.q + ',' + p.r;
-            if (cells.has(k)) clash = cells.get(k) + ' and ' + t.id + ' at ' + k;
-            cells.set(k, t.id);
-        });
-        if (clash) { say('Refused: that patch puts ' + clash + '.', 'err'); return; }
+        if (plan.proposed.size === 0) {
+            say(plan.skipped.length
+                ? 'Nothing in that patch matches this map: ' + plan.skipped.slice(0, 3).join(', ') + '.'
+                : 'That patch has no coords.', 'err');
+            return;
+        }
+        if (plan.clash) { say('Refused: that patch puts ' + plan.clash + '.', 'err'); return; }
 
         pushUndo();
-        proposed.forEach(function (p, id) {
+        plan.proposed.forEach(function (p, id) {
             var t = byId.get(id);
             t.q = p.q; t.r = p.r; t.isUnplaced = false;
         });
@@ -1438,9 +1421,11 @@
         paint();
         renderHud();
         renderStatus();
-        var msg = okMessage + ' \u2014 ' + proposed.size + ' tiles placed.';
-        if (unknown.length) msg += ' Skipped ' + unknown.length + ': ' + unknown.slice(0, 3).join(', ') + '.';
-        say(msg, unknown.length ? '' : 'good');
+        var msg = okMessage + ' \u2014 ' + plan.proposed.size + ' tiles placed.';
+        if (plan.skipped.length) {
+            msg += ' Skipped ' + plan.skipped.length + ': ' + plan.skipped.slice(0, 3).join(', ') + '.';
+        }
+        say(msg, plan.skipped.length ? '' : 'good');
     }
 
     function applyPasted() {

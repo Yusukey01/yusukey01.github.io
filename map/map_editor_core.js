@@ -492,6 +492,53 @@
         return exportData;
     };
 
+    // =========================================================================
+    // Applying a coordinate patch
+    // =========================================================================
+
+    /**
+     * Work out what a `{ id: [q, r] }` patch would do, without doing it.
+     * Callers commit only when `clash` is null.
+     *
+     * A patch can arrive from a snapshot, from the touch editor's clipboard,
+     * or from a hand-edited paste, so nothing about it is trusted: unknown
+     * ids and malformed coordinates are reported rather than applied, and the
+     * resulting arrangement is checked for two tiles landing on one cell —
+     * a state no gesture in either editor can produce and which the renderer
+     * has no way to show.
+     *
+     * Returns { proposed: Map(id -> {q, r}), skipped: string[], clash: string|null }.
+     */
+    const planCoords = (tiles, coords) => {
+        const proposed = new Map();
+        const skipped = [];
+        if (!coords || typeof coords !== 'object') return { proposed, skipped, clash: null };
+
+        const byId = new Map();
+        tiles.forEach(t => byId.set(t.id, t));
+
+        Object.keys(coords).forEach(id => {
+            const c = coords[id];
+            const ok = Array.isArray(c) && c.length >= 2 &&
+                       typeof c[0] === 'number' && typeof c[1] === 'number' &&
+                       isFinite(c[0]) && isFinite(c[1]);
+            if (!ok) { skipped.push(`${id} (bad coordinate)`); return; }
+            if (!byId.has(id)) { skipped.push(`${id} (no such tile)`); return; }
+            proposed.set(id, { q: Math.round(c[0]), r: Math.round(c[1]) });
+        });
+
+        let clash = null;
+        const cells = new Map();
+        tiles.forEach(t => {
+            const p = proposed.get(t.id) || { q: t.q, r: t.r };
+            const key = `${p.q},${p.r}`;
+            if (cells.has(key) && !clash) clash = `${cells.get(key)} and ${t.id} at ${key}`;
+            cells.set(key, t.id);
+        });
+
+        return { proposed, skipped, clash };
+    };
+
     global.MapEditorCore = {
         SECTION_COLORS, SECTION_NAMES,
         hexDistance, hexDist, getHexNeighbors,
@@ -500,6 +547,7 @@
         processCurriculumData, loadCurriculumData,
         cubePivotOf, xformN,
         compactIslandTiles,
-        formatCurriculum, buildExportData
+        formatCurriculum, buildExportData,
+        planCoords
     };
 })(typeof window !== 'undefined' ? window : this);

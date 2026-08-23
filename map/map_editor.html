@@ -106,7 +106,7 @@
             makeHexGeometry, hexPath,
             processCurriculumData, loadCurriculumData,
             cubePivotOf, xformN, compactIslandTiles,
-            formatCurriculum, buildExportData
+            formatCurriculum, buildExportData, planCoords
         } = MapEditorCore;
 
         const buttonBaseStyle = {
@@ -165,6 +165,9 @@
                 catch (e) { return {}; }
             });
             const [snapName, setSnapName] = useState('');
+            // Paste target for a patch produced by the touch editor.
+            const [patchText, setPatchText] = useState('');
+            const [patchMsg, setPatchMsg] = useState(null);   // { text, kind }
             const svgRef = React.useRef(null);
             const fitBoundsRef = React.useRef(null);
             const fileInputRef = React.useRef(null);
@@ -420,16 +423,66 @@
                 persistSnapshots({ ...snapshots, [name]: { savedAt: Date.now(), coords } });
                 setSnapName('');
             };
-            const loadSnapshot = (name) => {
-                const snap = snapshots[name];
-                if (!snap) return;
+            // Snapshots and pasted patches take the same route, so both get
+            // the same validation. A stale snapshot or a hand-edited patch can
+            // put two tiles on one cell, which no gesture here can produce and
+            // which the map has no way to draw.
+            const applyCoords = (coords, label) => {
+                const plan = planCoords(tiles, coords);
+                if (plan.proposed.size === 0) {
+                    setPatchMsg({
+                        kind: 'err',
+                        text: plan.skipped.length
+                            ? `Nothing matched this map: ${plan.skipped.slice(0, 3).join(', ')}`
+                            : 'That patch has no coordinates.'
+                    });
+                    return false;
+                }
+                if (plan.clash) {
+                    setPatchMsg({ kind: 'err', text: `Refused: it puts ${plan.clash}.` });
+                    return false;
+                }
                 saveHistory(tiles);
                 setFloatState(null);
                 setSelectedTile(null);
                 setSelectedIds([]);
-                setTiles(tiles.map(t => snap.coords[t.id]
-                    ? { ...t, q: snap.coords[t.id][0], r: snap.coords[t.id][1] }
+                setTiles(tiles.map(t => plan.proposed.has(t.id)
+                    ? { ...t, ...plan.proposed.get(t.id), isUnplaced: false }
                     : t));
+                let text = `${label} — ${plan.proposed.size} tiles placed.`;
+                if (plan.skipped.length) {
+                    text += ` Skipped ${plan.skipped.length}: ${plan.skipped.slice(0, 3).join(', ')}.`;
+                }
+                setPatchMsg({ kind: plan.skipped.length ? '' : 'good', text });
+                return true;
+            };
+
+            const loadSnapshot = (name) => {
+                const snap = snapshots[name];
+                if (!snap) return;
+                applyCoords(snap.coords, `Loaded "${name}"`);
+            };
+
+            // Accepts the touch editor's patch envelope or a bare coords map.
+            const applyPastedPatch = () => {
+                const body = patchText.trim();
+                if (!body) { setPatchMsg({ kind: 'err', text: 'Paste a patch first.' }); return; }
+                let data;
+                try { data = JSON.parse(body); }
+                catch (e) { setPatchMsg({ kind: 'err', text: `Not valid JSON: ${e.message}` }); return; }
+                const coords = data && data.coords ? data.coords : data;
+                const stamp = originalData && originalData.meta && originalData.meta.lastUpdated;
+                if (applyCoords(coords, 'Applied patch')) {
+                    setPatchText('');
+                    if (data && data.source && data.source.lastUpdated && stamp &&
+                        data.source.lastUpdated !== stamp) {
+                        setPatchMsg(prev => ({
+                            kind: '',
+                            text: `${prev ? prev.text + ' ' : ''}Note: the patch came from curriculum.json dated ` +
+                                  `${data.source.lastUpdated}, this one is ${stamp}.`
+                        }));
+                    }
+                }
             };
             const deleteSnapshot = (name) => {
                 const next = { ...snapshots };
@@ -818,7 +871,10 @@
                 if (tile.isUnplaced && !isMultiSelected && !isSingleSelected) { stroke = '#f472b6'; strokeWidth = 2.5; }
 
                 return (
-                    <g key={tile.id} className={isPrereq && !analysisMode ? 'prereq-glow' : ''}
+                    // Empty slots carry no id, so keying on it alone gave every one of
+                    // them key=undefined: React fell back to positional matching and
+                    // reshuffled the whole frontier on each drag.
+                    <g key={tile.id || `slot-${tile.q},${tile.r}`} className={isPrereq && !analysisMode ? 'prereq-glow' : ''}
                     onClick={(e) => { if (!dragState?.moved) handleTileClick(e, tile); }}
                     onDoubleClick={(e) => { e.stopPropagation(); if (!isEmpty) selectIsland(tile); }}
                     onMouseDown={(e) => {
@@ -1454,6 +1510,37 @@
                                             style={{ background: '#7f1d1d', border: 'none', color: '#fff', borderRadius: '3px', padding: '2px 6px', fontSize: '0.62rem', cursor: 'pointer' }}>×</button>
                                     </div>
                                 ))}
+
+                                <h3 style={{ marginTop: '12px' }}>📥 Patch from phone</h3>
+                                <div style={{ fontSize: '0.65rem', color: '#6b7280', marginBottom: '6px' }}>
+                                    Paste what the touch editor copied, or a whole snapshot. Only the tiles it names move.
+                                </div>
+                                <textarea value={patchText} onChange={e => setPatchText(e.target.value)}
+                                    placeholder='{"mapPatch":1,...} or {"calc-1":[3,-2]}'
+                                    spellCheck={false}
+                                    style={{ width: '100%', minHeight: '58px', resize: 'vertical',
+                                             background: '#111827', color: '#e5e7eb', border: '1px solid #374151',
+                                             borderRadius: '4px', padding: '5px 6px', fontSize: '0.65rem',
+                                             fontFamily: 'ui-monospace, Menlo, monospace' }} />
+                                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                                    <button onClick={applyPastedPatch}
+                                        style={{ flex: 1, background: '#1f4b8f', border: 'none', color: '#fff',
+                                                 borderRadius: '4px', padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer' }}>
+                                        Apply patch
+                                    </button>
+                                    <button onClick={() => { setPatchText(''); setPatchMsg(null); }}
+                                        style={{ background: '#374151', border: 'none', color: '#e5e7eb',
+                                                 borderRadius: '4px', padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer' }}>
+                                        Clear
+                                    </button>
+                                </div>
+                                {patchMsg && (
+                                    <div style={{ fontSize: '0.65rem', marginTop: '6px', lineHeight: 1.4,
+                                                  color: patchMsg.kind === 'err' ? '#f87171'
+                                                       : patchMsg.kind === 'good' ? '#4ade80' : '#9ca3af' }}>
+                                        {patchMsg.text}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="info-box" style={{ marginTop: 'auto' }}>
