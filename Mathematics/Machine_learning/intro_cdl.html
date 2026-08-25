@@ -1,0 +1,513 @@
+---
+layout: default
+title: "Intro to Categorical Deep Learning"
+topic_id: ml-19
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+        
+        <div class="hero-section">
+            <h1 class="webpage-name">Intro to Categorical Deep Learning</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#what-cdl-asks">What Category Theory Sees in a Network</a>
+            <a href="#layers">A Layer Is Not a Map From Inputs to Outputs</a>
+            <a href="#stacking">Stacking Accumulates Parameters</a>
+            <a href="#reparameterization">A Second Kind of Morphism</a>
+            <a href="#what-collapses">Why the Second Dimension Is Kept</a>
+        </div>
+
+        <div class="container">  
+
+            <section id="what-cdl-asks" class="section-content">
+                <h2>What Category Theory Sees in a Network</h2>
+
+                <p>
+                    A neural network is specified twice over. The first specification is the code, where the
+                    network is a function with a great many numbers attached to it. The second is the set of
+                    sentences we use to say what the code is doing: this layer shares its weights with that one,
+                    the optimizer updates the parameters, the backward pass reuses what the forward pass
+                    computed. That second description is the one that carries the design decisions, and it is
+                    the one with no settled mathematical notation. <strong>Categorical deep learning (CDL)</strong>
+                    is an attempt to give it one.
+                </p>
+
+                <p>
+                    The vocabulary it uses is already familiar from the page on <a
+                    href="../Discrete/categories_functors_naturality.html"><strong>categories, functors, and
+                    naturality</strong></a>: objects, morphisms, composition, and the two axioms composition is
+                    required to satisfy. What CDL asks is what those axioms say when the morphisms are the
+                    layers of a network. The question is a semantic one rather than an empirical one. It is not
+                    whether describing a network categorically makes it train faster, but what a network
+                    <em>is</em> when described compositionally, and the answer is not settled by measuring
+                    anything. The page on <a href="intro_gdl.html"><strong>geometric deep learning</strong></a>
+                    asks something different. There a symmetry group is fixed in advance and the question is
+                    which architectures respect it. Here nothing is fixed except the demand that the description
+                    compose.
+                </p>
+
+                <p>
+                    Part of the answer is established. A compositional account presented at a peer-reviewed
+                    venue in 2019 organizes supervised learning systems into a category whose morphisms carry a
+                    parameter space, an implementation, an update rule, and a request function that passes
+                    training data backward to the preceding morphism. In that account gradient descent, once an
+                    error function and a step size are fixed, determines a functor from parameterized
+                    differentiable maps between Euclidean spaces into that category
+                    <a href="https://arxiv.org/abs/1711.10455">[1]</a>. A paper from 2022 rebuilds the same
+                    material on three ingredients instead, that computation is parameterized, that information
+                    flows in both directions, and that the update step is obtained by differentiation, and
+                    recovers several standard optimizers and loss functions uniformly inside the resulting
+                    framework <a
+                    href="https://arxiv.org/abs/2103.01931">[2]</a>. A peer-reviewed survey from 2025 maps the
+                    area these and their successors have produced <a
+                    href="https://arxiv.org/abs/2408.14014">[3]</a>.
+                </p>
+
+                <p>
+                    Part of it is not. A position paper accepted at a peer-reviewed venue in 2024 proposes that
+                    current architectures can be presented, essentially without exception, as instances of a
+                    single algebraic pattern imposed on parameterized maps <a
+                    href="https://arxiv.org/abs/2402.15332">[4]</a>. The proposal is labeled a position paper by
+                    its authors and by the venue that accepted it, and the claim about all architectures is a
+                    research program, not a theorem. The distinction matters for reading the field. What has
+                    been proved is that certain constructions compose and that certain familiar algorithms arise
+                    from them, and what has been proposed is that one such algebraic pattern exhausts the design space. No claim about
+                    deployed systems is attached to either, and none is made here.
+                </p>
+
+                <p>
+                    This page takes a small part of that program which can be made fully precise with the
+                    tools already available on this site, and follows it to its conclusion. We define what a
+                    layer is once its parameters are treated as part of the layer rather than as an extra
+                    argument, then compose two such layers and watch the parameters accumulate. From there we
+                    observe that the composition we have defined does not satisfy the category axioms on the
+                    nose, and identify the second kind of morphism that this failure points at. Two operations
+                    practitioners already perform, tying weights together and updating them, turn out to
+                    live in that second kind. The ambient setting is fixed throughout to sets and functions. The
+                    general theory is built over considerably more general structures, and we do not build it
+                    here.
+                </p>
+            </section>
+
+            <section id="layers" class="section-content">
+                <h2>A Layer Is Not a Map From Inputs to Outputs</h2>
+
+                <p>
+                    The distinction we need is already written down. The definition of a <a
+                    href="neural_networks.html#D-multilayer_perceptron" class="ref-link"><strong>multilayer
+                    perceptron</strong></a> records the network as \(f(\mathbf{x}; \boldsymbol{\theta})\), with
+                    a semicolon between the two arguments. The comma form \(f(\mathbf{x}, \boldsymbol{\theta})\)
+                    is the rarer choice, and the reason is not typographical. The semicolon marks the input as
+                    the thing the network is applied to and the weights as the thing the network <em>is</em>,
+                    and the subscript form \(f_{\boldsymbol{\theta}}(\mathbf{x})\) makes the same choice more
+                    emphatically. What the semicolon does not have is a
+                    meaning. It is a piece of notation with no corresponding piece of structure.
+                </p>
+
+                <p>
+                    That the two arguments differ is visible in what we do to them. An input is supplied
+                    and discarded. A weight is initialized, updated at every step, sometimes constrained to
+                    equal another weight elsewhere in the network, sometimes frozen while its neighbors continue
+                    to move. None of these are operations on inputs. They are operations on the second argument
+                    alone, and a description of a network which treats both arguments alike cannot express any
+                    of them.
+                </p>
+
+                <p>
+                    Care is needed in saying what fails here, because a layer is perfectly well a function. Fix
+                    the weights and it is a function from inputs to outputs. Leave them free and it is a
+                    function of the pair. What a layer is not is a morphism from the object of inputs to the
+                    object of outputs, in the sense the page on <a
+                    href="../Discrete/categories_functors_naturality.html"><strong>categories</strong></a> fixes
+                    that word. A morphism \(A \to B\) has nothing attached to it. If we want the weights to
+                    survive the translation, they have to be part of the arrow.
+                </p>
+
+                <p>
+                    <strong>Convention.</strong> We write the parameter on the right, so that a layer from \(A\)
+                    to \(B\) is implemented by a map out of \(A \times P\), with the ordinary input first and
+                    the weights second. The ambient setting is sets and functions throughout. Here \(A\), \(B\)
+                    and \(P\) are sets, \(A \times P\) is the set of pairs, and products of sets are the only
+                    construction used anywhere on this page.
+                </p>
+
+                <div class="theorem" id="D-parameterized_layer">
+                    <span class="theorem-title">Definition: Parameterized Layer</span>
+                    <p>
+                    Let \(A\) and \(B\) be sets. A <strong>parameterized layer</strong> from \(A\) to \(B\) is a
+                    pair \((P, f)\) consisting of a set \(P\), called the <strong>parameter object</strong>,
+                    together with a map
+                    \[
+                    f : A \times P \to B,
+                    \]
+                    called the <strong>implementation</strong>. Two parameterized layers from \(A\) to \(B\) are
+                    equal when their parameter objects are equal and their implementations are equal.
+                </p>
+                </div>
+
+                <p>
+                    For the \(\ell\)-th layer of a multilayer perceptron the definition reads
+                    \[
+                    \begin{align*}
+                    A &= \mathbb{R}^{d_{\ell-1}}, \quad B = \mathbb{R}^{d_\ell}, \quad
+                    P_\ell = \mathbb{R}^{d_\ell \times d_{\ell-1}} \times \mathbb{R}^{d_\ell}, \\
+                    f_\ell\!\left(\mathbf{z}, \left(W^{(\ell)}, \mathbf{b}^{(\ell)}\right)\right)
+                    &= g_\ell\!\left(W^{(\ell)} \mathbf{z} + \mathbf{b}^{(\ell)}\right),
+                    \end{align*}
+                    \]
+                    where the elements of the parameter object are exactly the pairs consisting of a weight
+                    matrix and a bias vector. Nothing has been added. Every symbol on the right already appears
+                    in the definition the semicolon came from, and \(f_\ell\), which that definition writes
+                    as a map of \(\mathbf{z}\) alone with the weights implicit, now takes them as its second
+                    argument. What has changed is that the weights sit inside the layer's data rather than
+                    beside it.
+                </p>
+
+                <p>
+                    The clause about equality is where the definition earns its keep, and it is stricter than it
+                    looks. A layer is not determined by the functions it can compute. Take the layer above and
+                    replace its bias vector by a pair of vectors which are always added together. The parameter
+                    object has changed, the collection of functions \(f(-, p)\) available to the network has
+                    not, and the two are different parameterized layers. This is the ordinary situation of a
+                    model with redundant parameters, and the definition declares it a difference rather than an
+                    artifact. Training operates on the parameter object, not on the collection of functions it
+                    can compute, so a notion of layer which identified these two would be blind to the thing we
+                    spend the compute on.
+                </p>
+            </section>
+
+            <section id="stacking" class="section-content">
+                <h2>Stacking Accumulates Parameters</h2>
+
+                <p>
+                    Layers are stacked, so the definition has to say how. Given a parameterized layer \((P, f)\)
+                    from \(A\) to \(B\) and a parameterized layer \((Q, g)\) from \(B\) to \(C\), there is one
+                    evident way to run them in order. We feed the input and the first set of weights to
+                    \(f\), then feed the result and the second set of weights to \(g\). The weights of the two
+                    layers are both needed, and neither is consumed by the other, so the composite carries both
+                    of them. It is the parameterized layer \(\bigl(P \times Q,\ h\bigr)\) from \(A\) to \(C\)
+                    whose implementation is
+                    \[
+                    h\bigl(a, (p, q)\bigr) = g\bigl(f(a, p),\, q\bigr).
+                    \]
+                    This is a structural fact worth stating in words. Layers
+                    compose in sequence, and their parameter objects compose in parallel. Depth accumulates on
+                    one axis, weights on the other.
+                </p>
+
+                <p>
+                    Now stack three. Let \((R, k)\) run from \(C\) to \(D\), and compose the three layers in the
+                    two possible orders of bracketing. Composing the first two and then the third gives a
+                    parameter object \((P \times Q) \times R\). Composing the first with the composite of the
+                    last two gives \(P \times (Q \times R)\). The implementations are
+                    \[
+                    \begin{align*}
+                    h_{L}\bigl(a, ((p, q), r)\bigr) &= k\bigl(g(f(a, p), q),\, r\bigr), \\
+                    h_{R}\bigl(a, (p, (q, r))\bigr) &= k\bigl(g(f(a, p), q),\, r\bigr).
+                    \end{align*}
+                    \]
+                    The right-hand sides are the same expression. The two composites compute the same output
+                    from the same weights, and they are still not equal as parameterized layers, because their
+                    parameter objects are different sets. One consists of pairs whose first entry is a pair, the
+                    other of pairs whose second entry is a pair. In code the difference is the shape of the
+                    tuple the optimizer is handed, and it is a real difference there too.
+                </p>
+
+                <p>
+                    The identity behaves no better. A layer that does nothing to its input still has to have a
+                    parameter object, and the only parameter object that adds nothing beyond packaging is a
+                    one-element set \(1 = \{*\}\), with implementation \((a, *) \mapsto a\). Composing any
+                    layer \((P, f)\) with it, identity last, produces the parameter object \(P \times 1\),
+                    whose elements are the pairs \((p, *)\). Identity first gives \(1 \times P\) instead. Again this is not
+                    \(P\), but a set that looks like \(P\) with a piece of packaging around it.
+                </p>
+
+                <p>
+                    So the composition we have just defined satisfies neither of the two axioms that the page on
+                    <a href="../Discrete/categories_functors_naturality.html"><strong>categories</strong></a>
+                    requires of a composition. Both failures are of the same kind. In each case the two sides
+                    are <a href="../Discrete/categories_functors_naturality.html#D-isomorphism_categorical"
+                    class="ref-link"><strong>isomorphic</strong></a> rather than equal, by a bijection which is
+                    entirely canonical, namely rebracketing the tuple or deleting the \(*\). Nothing is lost
+                    under either bijection and no choice is involved in making it.
+                </p>
+
+                <p>
+                    That observation is not yet a repair, and the reason is worth stating precisely. A bijection
+                    \((P \times Q) \times R \to P \times (Q \times R)\) is a map between parameter objects, and
+                    the axioms it would have to rescue are statements about layers. To use it we would need to
+                    know what a map between two parameterized layers is, and so far we have not said. Layers
+                    have been compared only by equality, and equality is exactly what is failing. The structure
+                    the situation is asking for is a second kind of morphism, one that relates two layers with
+                    different parameter objects, and it turns out that deep learning has been using it all
+                    along.
+                </p>
+            </section>
+
+            <section id="reparameterization" class="section-content">
+                <h2>A Second Kind of Morphism</h2>
+
+                <p>
+                    Suppose we want to describe the same computation with a different set of weights. To do that
+                    we have to say, for each element of the new parameter object, which element of the old one
+                    it stands for. That is a map \(r : P' \to P\), and once it is given, the new layer has no
+                    freedom left. Its implementation must be the old one, run on the weights that \(r\)
+                    produces. Notice which way the map points. The layer we are moving towards has the parameter
+                    object in the <em>domain</em>, because what a redescription of the weights has to supply is
+                    a recipe for recovering the old weights from the new ones, not the other way round.
+                </p>
+
+                <div class="theorem" id="D-layer_reparameterization">
+                    <span class="theorem-title">Definition: Reparameterization</span>
+                    <p>
+                    Let \((P, f)\) and \((P', f')\) be parameterized layers from \(A\) to \(B\). A
+                    <strong>reparameterization</strong> from \((P, f)\) to \((P', f')\) is a map
+                    \(r : P' \to P\) satisfying
+                    \[
+                    f' = f \circ (1_A \times r),
+                    \]
+                    that is, \(f'(a, p') = f\bigl(a, r(p')\bigr)\) for every \(a \in A\) and every
+                    \(p' \in P'\).
+                </p>
+                </div>
+
+                <p>
+                    The definition asks nothing of \(r\) beyond that one equation. It need not be injective,
+                    surjective, or invertible, and the two layers it relates need not compute the same
+                    collection of functions. The word is also used for something else in generative modeling.
+                    The <a href="vae.html#D-reparameterization_trick"
+                    class="ref-link"><strong>reparameterization trick</strong></a> rewrites a sample so that its
+                    randomness enters as an independent input, and is a statement about distributions. What is
+                    defined here relates parameter objects, and no probability enters into it.
+                </p>
+
+                <p>
+                    Return to the two failures of the previous section with this in hand. The canonical
+                    bijection \(\rho : P \times (Q \times R) \to (P \times Q) \times R\) that rebrackets a tuple
+                    satisfies \(h_{R} = h_{L} \circ (1_A \times \rho)\), which is exactly the condition above.
+                    So \(\rho\) is a reparameterization from \(\bigl((P \times Q) \times R,\, h_{L}\bigr)\) to
+                    \(\bigl(P \times (Q \times R),\, h_{R}\bigr)\), and since \(\rho\) is a bijection the
+                    reparameterization runs both ways. The same holds for the unit. Write \(f_1\) for the
+                    implementation of \((P, f)\) composed with the identity layer, so that
+                    \(f_1(a, (p, *)) = f(a, p)\). The map \(p \mapsto (p, *)\) is a reparameterization from
+                    \((P \times 1,\, f_1)\) to \((P, f)\), and it too runs both ways. The axioms were not
+                    failing because the composition was wrong. They were failing because equality was the wrong
+                    relation to test them with, and the right relation lives one level up: not an equality of
+                    layers but a morphism between them.
+                </p>
+
+                <p>
+                    The second kind of morphism is not an artifact of bookkeeping either, and the plainest
+                    evidence is an operation practitioners perform. Take two layers that are to share
+                    their weights: \(f : A \times P \to B\) and \(g : B \times P \to C\), with the same \(P\),
+                    tied so that both use the same values. Composing them as parameterized layers produces the
+                    parameter object \(P \times P\) with implementation \(h(a, (p, p')) = g\bigl(f(a, p),\, p'\bigr)\),
+                    which is precisely what tying is meant to prevent. The tied
+                    layer is instead \((P, h')\) with \(h'(a, p) = g\bigl(f(a, p),\, p\bigr)\), and the two are
+                    related by the diagonal
+                    \[
+                    \begin{align*}
+                    \Delta_P &: P \to P \times P, \quad p \mapsto (p, p), \\
+                    h'(a, p) &= h\bigl(a, \Delta_P(p)\bigr).
+                    \end{align*}
+                    \]
+                    So weight sharing is a reparameterization, and a non-invertible one whenever \(P\) has more
+                    than one element. In code it is the line
+                    where the same parameter object is handed to two layers instead of two separate ones being
+                    allocated, which is exactly a map \(P \to P \times P\) written in another language.
+                </p>
+
+                <p>
+                    The diagonal is the only construction on this page that needs more than the bare set of
+                    pairs, and it needs very little. In sets it is the map \(p \mapsto (p, p)\). In any category
+                    with finite <a href="../Discrete/categorical_products.html#D-product_categorical"
+                    class="ref-link"><strong>products</strong></a> it is the unique map into \(P \times P\)
+                    whose two projections are both the identity on \(P\), supplied by the universal property and
+                    by nothing else. Every argument above therefore runs in any such category once the pointwise formulas are
+                    read as composites of projections and pairings, which is why fixing sets as the ambient
+                    setting cost us nothing within the reach of finite products.
+                </p>
+
+                <p>
+                    It is worth noting how modest that requirement is. The page on <a
+                    href="../Discrete/adjoint_functors.html"><strong>adjoint functors</strong></a> identified
+                    categories in which every exponential object exists as the reference point for categorical
+                    accounts of computation, and one might expect an account of learning systems to start there.
+                    Nothing on this page has used an exponential, or currying, or any structure beyond finite
+                    products. Layers, their composition, their failure to be a category on the nose, and the
+                    repair of that failure are all supported by products alone.
+                </p>
+
+                <p>
+                    The two directions in play are worth drawing once, with the weight-sharing example as the
+                    specimen.
+                </p>
+
+                <figure class="diagram-figure" style="margin:1.5rem auto; max-width:520px; text-align:center;">
+                    <svg viewBox="0 0 440 290" xmlns="http://www.w3.org/2000/svg"
+                         style="width:100%; height:auto; font-family:'Latin Modern Math','STIX Two Math',Cambria,serif;"
+                         role="img"
+                         aria-label="Two layers compose into a layer with parameter object P times P; the diagonal reparameterizes it to the tied layer with parameter object P">
+                        <defs>
+                            <marker id="cdl-arrow-one" viewBox="0 0 10 10" refX="9" refY="5"
+                                    markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                <path d="M 0 1 L 9 5 L 0 9" fill="none"
+                                      stroke="#2980b9" stroke-width="1.6"/>
+                            </marker>
+                            <marker id="cdl-arrow-two" viewBox="0 0 10 10" refX="9" refY="5"
+                                    markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                                <path d="M 0 1 L 9 5 L 0 9" fill="none"
+                                      stroke="#8e44ad" stroke-width="1.6"/>
+                            </marker>
+                        </defs>
+
+                        <text x="60"  y="50" text-anchor="middle" font-size="22" fill="currentColor">A</text>
+                        <text x="220" y="50" text-anchor="middle" font-size="22" fill="currentColor">B</text>
+                        <text x="380" y="50" text-anchor="middle" font-size="22" fill="currentColor">C</text>
+                        <line x1="78" y1="43" x2="200" y2="43" stroke="#2980b9" stroke-width="1.6"
+                              marker-end="url(#cdl-arrow-one)"/>
+                        <text x="139" y="32" text-anchor="middle" font-size="16" fill="#2980b9">(P, f)</text>
+                        <line x1="240" y1="43" x2="362" y2="43" stroke="#2980b9" stroke-width="1.6"
+                              marker-end="url(#cdl-arrow-one)"/>
+                        <text x="301" y="32" text-anchor="middle" font-size="16" fill="#2980b9">(P, g)</text>
+
+                        <line x1="220" y1="62" x2="220" y2="118" stroke="currentColor" stroke-width="1.2"
+                              stroke-dasharray="4 4" opacity=".6"/>
+                        <text x="232" y="94" text-anchor="start" font-size="13" fill="currentColor" opacity=".75">compose</text>
+
+                        <text x="60"  y="150" text-anchor="middle" font-size="22" fill="currentColor">A</text>
+                        <text x="380" y="150" text-anchor="middle" font-size="22" fill="currentColor">C</text>
+                        <line x1="78" y1="143" x2="362" y2="143" stroke="#2980b9" stroke-width="1.6"
+                              marker-end="url(#cdl-arrow-one)"/>
+                        <text x="220" y="132" text-anchor="middle" font-size="16" fill="#2980b9">(P &#215; P, h)</text>
+
+                        <line x1="214" y1="165" x2="214" y2="228" stroke="#8e44ad" stroke-width="1.6"
+                              marker-end="url(#cdl-arrow-two)"/>
+                        <line x1="226" y1="165" x2="226" y2="228" stroke="#8e44ad" stroke-width="1.6"
+                              marker-end="url(#cdl-arrow-two)"/>
+                        <text x="248" y="190" text-anchor="start" font-size="15" fill="#8e44ad">reparameterization</text>
+                        <text x="248" y="212" text-anchor="start" font-size="15" fill="#8e44ad">&#916;<tspan dy="4" font-size="11">P</tspan><tspan dy="-4"> : P &#8594; P &#215; P</tspan></text>
+
+                        <text x="60"  y="262" text-anchor="middle" font-size="22" fill="currentColor">A</text>
+                        <text x="380" y="262" text-anchor="middle" font-size="22" fill="currentColor">C</text>
+                        <line x1="78" y1="255" x2="362" y2="255" stroke="#2980b9" stroke-width="1.6"
+                              marker-end="url(#cdl-arrow-one)"/>
+                        <text x="220" y="282" text-anchor="middle" font-size="16" fill="#2980b9">(P, h&#8242;)</text>
+                    </svg>
+                    <figcaption style="font-size:.9em; margin-top:.5rem; opacity:.85;">
+                        Two axes. Along the blue arrows, layers compose and their parameter objects multiply:
+                        \((P, f)\) followed by \((P, g)\) is \((P \times P,\, h)\). Across them, the purple
+                        double arrow is the reparameterization from \((P \times P,\, h)\) to \((P,\, h')\),
+                        given by \(\Delta_P : P \to P \times P\) with \(h' = h \circ (1_A \times \Delta_P)\).
+                        The map runs from the target's parameter object to the source's, against the double
+                        arrow, as the definition requires.
+                    </figcaption>
+                </figure>
+            </section>
+
+            <section id="what-collapses" class="section-content">
+                <h2>Why the Second Dimension Is Kept</h2>
+
+                <p>
+                    Nothing forces us to keep the second kind of morphism. If what we want is a category in the
+                    ordinary sense, we can have one, and there are two obvious ways to arrange it. We can throw
+                    the reparameterizations away and go back to comparing layers by equality alone, or we can go
+                    the other way and declare two layers the same whenever a reparameterization connects them.
+                    Both produce something simpler. The cost of each is worth seeing, because in both cases it
+                    is an operation that training runs perform.
+                </p>
+
+                <p>
+                    Take the first. Discard the reparameterizations, and the only relation left between two
+                    layers is equality. Now consider what a single step of training does, a step of <a
+                    href="../Calculus/gradient.html"><strong>gradient descent</strong></a> for instance. Once
+                    the batch is fixed, the step takes the weights of a layer and moves them, which is a map
+                    \(u : P \to P\), and it leaves us
+                    holding the layer \(\bigl(P,\, f \circ (1_A \times u)\bigr)\). That is not the layer we
+                    started with, since its implementation is different, and under the definition it is a
+                    different layer. What relates the two is \(u\) itself, which satisfies the
+                    reparameterization condition by construction. Discard that relation and a training run
+                    becomes a sequence of unrelated layers with nothing connecting consecutive terms. The update
+                    step is not merely hard to express. There is nothing left for it to be.
+                </p>
+
+                <p>
+                    Take the second. Identify any two layers joined by a reparameterization, together with
+                    everything that identification forces, and the diagonal
+                    from the previous section identifies \((P \times P,\, h)\) with \((P,\, h')\). Those are the
+                    untied and the tied network. Under this identification a network whose two layers share
+                    their weights and a network whose two layers have independent weights become the same
+                    object, though one has half as many parameters as the other. Weight sharing is not a small
+                    feature of the field. It is part of what makes a convolutional layer convolutional and what
+                    a recurrent layer does by definition, and the collapse removes the distinction it consists of.
+                </p>
+
+                <p>
+                    So the structure resists flattening in both directions, and it resists it for the same
+                    reason each time. There are two independent things one can do to a network. Layers can be
+                    stacked, and weights can be moved or tied, and these are not variations of one operation.
+                    The stacking runs along one axis, the reparameterizations run across it, and every
+                    construction on this page has had this shape: the composition accumulating parameter objects
+                    along the first axis, the diagonal and the rebracketings acting along the second. A
+                    description with only one axis has to give up one of the two, and the field uses both.
+                </p>
+
+                <p>
+                    Keeping both axes is what the categorical account is for. The account does not replace the
+                    network with something more abstract, and it does not propose a new architecture. What it
+                    does is give a name to a distinction that every framework already implements and the usual
+                    notation does not record, and once the distinction has a name the operations that depend on it can be stated
+                    rather than described. The general form of the construction, carried out over ambient
+                    settings far more general than sets and pursued in considerably more depth than a first pass
+                    requires, is developed at length in the literature <a
+                    href="https://arxiv.org/abs/2403.13001">[5]</a>.
+                </p>
+
+                <p>
+                    One half of the picture has been left out entirely. Everything above concerns the forward
+                    pass, where information travels from inputs to outputs, and a layer that can be trained also
+                    has to send information the other way. The structure that carries the backward direction,
+                    and the sense in which it is dual to what we have built here, needs machinery this page has
+                    not introduced.
+                </p>
+
+                <h3>References</h3>
+                <ul style="padding-left: 40px; font-size: 0.92rem;">
+                    <li>
+                        Fong, Spivak, and Tuyéras, "Backprop as Functor: A Compositional Perspective on Supervised
+                        Learning," <em>Proceedings of the 34th Annual ACM/IEEE Symposium on Logic in Computer
+                        Science (LICS)</em>, 2019.
+                    </li>
+                    <li>
+                        Cruttwell, Gavranović, Ghani, Wilson, and Zanasi, "Categorical Foundations of Gradient-Based
+                        Learning," <em>Programming Languages and Systems (ESOP 2022)</em>, Lecture Notes in Computer
+                        Science, vol. 13240, pp. 1-28, 2022.
+                    </li>
+                    <li>
+                        Jia, Peng, Yang, and Chen, "Category-Theoretical and Topos-Theoretical Frameworks in Machine
+                        Learning: A Survey," <em>Axioms</em>, vol. 14, no. 3, article 204, 2025.
+                    </li>
+                    <li>
+                        Gavranović, Lessard, Dudzik, von Glehn, Araújo, and Veličković, "Position: Categorical Deep
+                        Learning is an Algebraic Theory of All Architectures," <em>Proceedings of the 41st
+                        International Conference on Machine Learning (ICML)</em>, PMLR vol. 235, pp. 15209-15241, 2024.
+                    </li>
+                    <li>
+                        Gavranović, "Fundamental Components of Deep Learning: A Category-Theoretic Approach," PhD
+                        thesis, University of Strathclyde, 2024, arXiv:2403.13001.
+                    </li>
+                </ul>
+            </section>
+
+        </div>
+
+    </body>
+</html>
