@@ -1,0 +1,800 @@
+---
+layout: default
+title: "Cartesian Closed Categories"
+topic_id: disc-46
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Cartesian Closed Categories</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#cartesian-closure">Cartesian Closure</a>
+            <a href="#when-closure-fails">When Closure Fails</a>
+            <a href="#presheaf-exponentials">Exponentials in a Presheaf Category</a>
+            <a href="#types-and-toposes">Function Types and the Logic of Presheaves</a>
+        </div>
+
+        <div class="container">
+
+            <section id="cartesian-closure" class="section-content">
+                <h2>Cartesian Closure</h2>
+
+                <p>
+                    An adjunction can be discovered or demanded. In \(\mathbf{Set}\) it was
+                    discovered. The bijection between functions of two arguments and functions
+                    valued in function sets was already there, waiting to be recognized as
+                    \(- \times B \dashv (-)^B\). Demanding the same pattern of an arbitrary category
+                    is a strong condition, and the categories that meet it are those whose objects
+                    can hold the maps between objects of their own kind. Such a category carries an
+                    internal notion of function.
+                </p>
+
+                <div class="theorem" id="D-cartesian_closed">
+                    <span class="theorem-title">Definition: Cartesian Closed Category</span>
+                    <p>
+                        A category \(\mathscr{A}\) is <strong>cartesian closed</strong> if it has
+                        finite
+                        <a href="categorical_products.html#D-product_categorical" class="ref-link"><strong>products</strong></a>,
+                        that is, binary products and a
+                        <a href="adjoint_functors.html#D-initial_terminal_object" class="ref-link"><strong>terminal object</strong></a>,
+                        and if for every object \(B\) the functor
+                        \(- \times B : \mathscr{A} \to \mathscr{A}\) has a right
+                        <a href="adjoint_functors.html#D-adjunction" class="ref-link"><strong>adjoint</strong></a>,
+                        written \((-)^B\). For objects \(B\) and \(C\), the object \(C^B\) is the
+                        <strong>exponential</strong> of \(C\) by \(B\). Adjointness says that for all
+                        objects \(A\), \(B\), \(C\) of \(\mathscr{A}\) there is a bijection
+                        \[
+                        \mathscr{A}(A \times B, C) \cong \mathscr{A}(A, C^B),
+                        \]
+                        natural in \(A\) and in \(C\).
+                    </p>
+                </div>
+
+                <p>
+                    The definition asks for a right adjoint, not for a formula, so \(C^B\) is
+                    pinned down only up to isomorphism and a cartesian closed structure carries a
+                    choice of exponentials along with it. The
+                    <a href="adjunctions_units_counits.html#D-unit_counit" class="ref-link"><strong>counit</strong></a>
+                    of \(- \times B \dashv (-)^B\) has components
+                    \[
+                    \operatorname{ev}_{B,C} : C^B \times B \to C ,
+                    \]
+                    the <strong>evaluation</strong> maps, and by the
+                    <a href="adjunctions_units_counits.html#T-transpose_via_unit_counit" class="ref-link"><strong>transpose formulae</strong></a>
+                    the bijection of the definition, read from right to left, sends
+                    \(\bar{h} : A \to C^B\) to \(\operatorname{ev}_{B,C} \circ (\bar{h} \times 1_B)\).
+                    A map out of a product is recovered from its transpose by feeding the transpose
+                    its second argument.
+                </p>
+
+                <p>
+                    Naturality in the exponent \(B\) is absent from the definition, and it need not
+                    be imposed, because it follows. Fix \(C\) and let \(g : B' \to B\) be a map. The
+                    exponential is made contravariantly functorial in the exponent by defining
+                    \(g^* : C^B \to C^{B'}\) to be the transpose of
+                    \(\operatorname{ev}_{B,C} \circ (1_{C^B} \times g)\), which is to say the unique
+                    map with
+                    \[
+                    \operatorname{ev}_{B',C} \circ (g^* \times 1_{B'})
+                    = \operatorname{ev}_{B,C} \circ (1_{C^B} \times g) .
+                    \]
+                    With that definition the bijection is natural in \(B\) as well.
+                </p>
+
+                <p>
+                    <em>The transposes agree.</em> Let \(h : A \times B \to C\) with transpose
+                    \(\bar{h} : A \to C^B\). Since a map into an exponential is determined by its
+                    composite with the evaluation map, it is enough to compare the two candidates
+                    after that composition, and
+                    \[
+                    \begin{align*}
+                    \operatorname{ev}_{B',C} \circ \big((g^* \circ \bar{h}) \times 1_{B'}\big)
+                    &= \operatorname{ev}_{B',C} \circ (g^* \times 1_{B'}) \circ (\bar{h} \times 1_{B'}) \\\\
+                    &= \operatorname{ev}_{B,C} \circ (1_{C^B} \times g) \circ (\bar{h} \times 1_{B'}) \\\\
+                    &= \operatorname{ev}_{B,C} \circ (\bar{h} \times 1_B) \circ (1_A \times g) \\\\
+                    &= h \circ (1_A \times g) .
+                    \end{align*}
+                    \]
+                    The second equality is the defining property of \(g^*\), and the third holds
+                    because the product of the two maps \(\bar{h}\) and \(g\) may be formed one
+                    coordinate at a time, in either order. The last line is the image of \(h\) under
+                    precomposition with \(1_A \times g\), so \(g^* \circ \bar{h}\) is the transpose
+                    of \(h \circ (1_A \times g)\), which is exactly the naturality square in \(B\).
+                </p>
+
+                <h3>Sets</h3>
+
+                <p>
+                    The category \(\mathbf{Set}\) is cartesian closed, and it is the example the
+                    definition was reverse engineered from. It has finite products, the
+                    <a href="sets_universal_constructions.html#D-product_set" class="ref-link"><strong>product of sets</strong></a>
+                    together with a one-element set as terminal object, and the
+                    <a href="adjoint_functors.html#T-currying_adjunction" class="ref-link"><strong>currying adjunction</strong></a>
+                    is the required right adjoint, with the
+                    <a href="sets_universal_constructions.html#D-exponential_object" class="ref-link"><strong>exponential</strong></a>
+                    \(C^B\) the set of functions from \(B\) to \(C\). The evaluation map of the
+                    definition is the function \((h, b) \mapsto h(b)\) recorded there, so the
+                    abstract counit is the concrete act of applying a function to an argument.
+                </p>
+
+                <h3>Small categories</h3>
+
+                <p>
+                    The category \(\mathbf{Cat}\) of
+                    <a href="sets_universal_constructions.html#D-cat_category" class="ref-link"><strong>small categories</strong></a>
+                    is cartesian closed, with the exponential
+                    \(\mathscr{C}^{\mathscr{B}} = [\mathscr{B}, \mathscr{C}]\) the
+                    <a href="categories_functors_naturality.html#D-functor_category" class="ref-link"><strong>functor category</strong></a>.
+                    Three things have to hold: that \(\mathbf{Cat}\) has finite products, that
+                    \([\mathscr{B}, \mathscr{C}]\) is again small and so is an object of
+                    \(\mathbf{Cat}\), and that the currying isomorphism already proved for functor
+                    categories is an adjunction.
+                </p>
+
+                <p>
+                    The
+                    <a href="categories_functors_naturality.html#D-product_category" class="ref-link"><strong>product category</strong></a>
+                    \(\mathscr{A} \times \mathscr{B}\), equipped with the two coordinate
+                    projections, is a product in \(\mathbf{Cat}\). Its objects, maps, composition
+                    and identities are all formed coordinatewise, so a functor
+                    \(\mathscr{X} \to \mathscr{A} \times \mathscr{B}\) is precisely a pair of
+                    functors \(\mathscr{X} \to \mathscr{A}\) and \(\mathscr{X} \to \mathscr{B}\),
+                    which is the universal property. The category \(\mathbf{1}\) with a single
+                    object and only its identity map is terminal, every functor into it being
+                    forced.
+                </p>
+
+                <p>
+                    Smallness of \([\mathscr{B}, \mathscr{C}]\) follows from the argument that made
+                    \(\mathbf{Cat}\)
+                    <a href="sets_universal_constructions.html#size">locally small</a>. A functor
+                    between small categories is set-sized data, so the functors
+                    \(\mathscr{B} \to \mathscr{C}\) form a set. A natural transformation between two
+                    of them is a family of maps of \(\mathscr{C}\) indexed by the objects of
+                    \(\mathscr{B}\), and both indexing collection and value collection are sets, so
+                    the natural transformations form a set as well. Hence
+                    \([\mathscr{B}, \mathscr{C}]\) is small.
+                </p>
+
+                <p>
+                    <a href="commuting_limits.html#T-functor_category_currying" class="ref-link"><strong>Currying for functor categories</strong></a>
+                    supplies the adjunction. For small \(\mathscr{A}\), \(\mathscr{B}\) and
+                    \(\mathscr{C}\) it gives an isomorphism of categories
+                    \([\mathscr{A} \times \mathscr{B}, \mathscr{C}] \cong [\mathscr{A}, [\mathscr{B}, \mathscr{C}]]\),
+                    sending a functor \(D\) to \(\widehat{D}\) with \(\widehat{D}(A) = D(A, -)\) on
+                    objects and \(\widehat{D}(u) = D(u, -)\) on maps. Reading off the objects on the
+                    two sides is a bijection
+                    \[
+                    \mathbf{Cat}\big(\mathscr{A} \times \mathscr{B}, \mathscr{C}\big)
+                    \cong
+                    \mathbf{Cat}\big(\mathscr{A}, [\mathscr{B}, \mathscr{C}]\big) .
+                    \]
+                </p>
+
+                <p>
+                    What the definition demands beyond the bijection is naturality in
+                    \(\mathscr{A}\) and \(\mathscr{C}\), and the explicit formula for
+                    \(\widehat{D}\) supplies both. For a functor
+                    \(K : \mathscr{A}' \to \mathscr{A}\) the two functors
+                    \(\widehat{D \circ (K \times 1_{\mathscr{B}})}\) and \(\widehat{D} \circ K\)
+                    send an object \(A'\) of \(\mathscr{A}'\) to \(D(KA', -)\) and a map \(u\) of
+                    \(\mathscr{A}'\) to \(D(Ku, -)\), so they agree.
+                </p>
+
+                <p>
+                    For a functor \(L : \mathscr{C} \to \mathscr{C}'\) the candidate right adjoint
+                    acts by postcomposition, \(L_* = [\mathscr{B}, L]\), and both
+                    \(\widehat{L \circ D}\) and \(L_* \circ \widehat{D}\) send \(A\) to
+                    \(L \circ D(A, -)\) and \(u\) to \(L \circ D(u, -)\). The bijection is therefore
+                    natural in both variables, and \(- \times \mathscr{B} \dashv [\mathscr{B}, -]\)
+                    on \(\mathbf{Cat}\).
+                </p>
+
+                <p>
+                    Examples that fit tell little about the reach of a definition. The instructive
+                    question is which familiar categories fail to be cartesian closed, and what the
+                    failure costs them.
+                </p>
+
+            </section>
+
+            <section id="when-closure-fails" class="section-content">
+                <h2>When Closure Fails</h2>
+
+                <p>
+                    The two examples so far might suggest that any category whose maps assemble
+                    into an object of the same kind is cartesian closed. Vector spaces are the
+                    standard warning. Over a field \(k\), the linear maps \(V \to W\) form a vector
+                    space under pointwise addition and scaling, so \(\mathbf{Vect}_k\) has spaces of
+                    maps in the most literal sense available, and it is still not cartesian closed.
+                    The space of linear maps is a perfectly good object. It is simply adjoint to the
+                    wrong operation.
+                </p>
+
+                <h3>The direct sum defeats closure</h3>
+
+                <p>
+                    Finite products are present. The direct sum \(V \oplus W\) with its two
+                    coordinate projections is a product in \(\mathbf{Vect}_k\), since a linear map
+                    \(U \to V \oplus W\) is exactly a pair of linear maps \(U \to V\) and
+                    \(U \to W\), read off coordinatewise. The zero space \(\{0\}\) is terminal and
+                    <a href="adjoint_functors.html#D-initial_terminal_object" class="ref-link"><strong>initial</strong></a>
+                    at once, the zero map being the only linear map into it and the only one out
+                    of it.
+                </p>
+
+                <p>
+                    Suppose \(\mathbf{Vect}_k\) were cartesian closed and fix an object \(B\). Then
+                    \(- \times B\) has a right adjoint, and \(\mathbf{Vect}_k\) is locally small,
+                    the linear maps between two vector spaces forming a set, so
+                    <a href="adjoints_preserve_limits.html#T-rapl_lapc" class="ref-link"><strong>left adjoints preserve colimits</strong></a>
+                    applies to it. An initial object is the
+                    <a href="colimits_of_diagrams.html#the-three-constructions">colimit of the empty diagram</a>,
+                    so preservation forces \(\{0\} \times B\) to be initial in \(\mathbf{Vect}_k\).
+                    The product is the direct sum, and
+                    \[
+                    \{0\} \oplus B \cong B ,
+                    \]
+                    the isomorphism sending \((0, b)\) to \(b\).
+                </p>
+
+                <p>
+                    So \(B\) would be initial, and since initial objects are
+                    <a href="adjoint_functors.html#T-initial_object_unique" class="ref-link"><strong>unique up to isomorphism</strong></a>,
+                    every object \(B\) whatsoever would be isomorphic to \(\{0\}\). The field \(k\)
+                    is itself a vector space over \(k\) and is not the zero space, a field having
+                    \(1 \neq 0\). The supposition fails, and \(\mathbf{Vect}_k\) is not cartesian
+                    closed.
+                </p>
+
+                <p>
+                    The isomorphism \(0 \times B \cong 0\) in \(\mathbf{Set}\) is the statement just
+                    refuted, transported to another category. It was obtained
+                    <a href="adjoints_preserve_limits.html#consequences">from the currying adjunction</a>
+                    as the categorical form of the annihilation of zero. Cartesian closure casts an
+                    arithmetic shadow, and the shadow is one that \(\mathbf{Vect}_k\) declines to
+                    cast, because its initial object is also its terminal object and a product with
+                    a terminal object absorbs nothing.
+                </p>
+
+                <h3>Bilinearity, and the operation that fits</h3>
+
+                <p>
+                    The reason \([V, W]\), the space of linear maps from \(V\) to \(W\), fails to be
+                    an exponential is worth isolating, because the failure is precise rather than
+                    accidental.
+                </p>
+
+                <p>
+                    A linear map \(\varphi : U \to [V, W]\) is the same data as a function
+                    \(b : U \times V \to W\) with \(b(u, v) = \varphi(u)(v)\). Linearity of
+                    \(\varphi\) makes \(b\) linear in its first argument, and linearity of each
+                    value \(\varphi(u)\) makes it linear in the second. Maps into \([V, W]\)
+                    therefore correspond to <strong>bilinear</strong> maps out of \(U \times V\).
+                    Linear maps \(U \oplus V \to W\) are pairs of linear maps, since such a map is
+                    determined by its restrictions to the two summands and any pair of linear maps
+                    on the summands arises from one. That is a different correspondence altogether.
+                </p>
+
+                <p>
+                    The adjunction pattern survives once the operation on the left is changed to
+                    fit. The tensor product \(U \otimes V\) is the vector space whose defining
+                    property is exactly the one now wanted. Linear maps \(U \otimes V \to W\)
+                    correspond to bilinear maps \(U \times V \to W\). Its construction is not
+                    carried out here. Composing the two correspondences gives
+                    \[
+                    \mathbf{Vect}_k\big(U \otimes V, W\big)
+                    \cong
+                    \mathbf{Vect}_k\big(U, [V, W]\big) ,
+                    \]
+                    natural in \(U\) and in \(W\), since both correspondences are given by
+                    composition. A category carrying an adjunction of this shape for an operation
+                    that need not be the categorical product is called <strong>monoidal
+                    closed</strong>, and cartesian closure is the case where the operation is the
+                    product.
+                </p>
+
+                <p>
+                    The distinction is not bookkeeping. The tensor product is not the categorical
+                    product in \(\mathbf{Vect}_k\), the direct sum already being that, and in finite
+                    dimensions the two are told apart by a dimension count, one multiplying where
+                    the other adds.
+                </p>
+
+                <p>
+                    So \(U \otimes V\) arrives with no projections and no diagonal handed to it by a
+                    universal property, and a map out of a tensor product cannot in general read its
+                    two inputs separately, copy one of them, or throw one away. Compositional
+                    accounts of learning systems, in which a parameter is consumed by the process it
+                    feeds rather than duplicated across it, are naturally staged in monoidal closed
+                    rather than cartesian closed categories. The difference between the two is the
+                    difference this section has just measured.
+                </p>
+
+                <p>
+                    Sets and small categories are closed, vector spaces are not. The category the
+                    rest of the page is about lies between the two in difficulty. Presheaf
+                    categories are cartesian closed, but their exponentials are not computed
+                    pointwise, and locating them takes nearly everything the surrounding pages have
+                    built.
+                </p>
+
+            </section>
+
+            <section id="presheaf-exponentials" class="section-content">
+                <h2>Exponentials in a Presheaf Category</h2>
+
+                <p>
+                    Throughout this section \(\mathbf{A}\) is a small category and presheaves on it
+                    are written \(X\), \(Y\), \(Z\).
+                </p>
+
+                <p>
+                    <strong>Convention.</strong> The presheaf category
+                    \([\mathbf{A}^{\mathrm{op}}, \mathbf{Set}]\) is abbreviated \(\hat{\mathbf{A}}\)
+                    for the remainder of the page, since its hom-sets are displayed repeatedly in
+                    the argument ahead and the unabbreviated name would not fit on a line. It is
+                    locally small, a map of presheaves being a family of functions indexed by the
+                    objects of \(\mathbf{A}\) and so an element of a set-indexed product of sets.
+                </p>
+
+                <p>
+                    Half of cartesian closure is already in hand. Presheaf categories are
+                    <a href="commuting_limits.html#T-presheaf_category_complete_cocomplete" class="ref-link"><strong>complete and cocomplete</strong></a>,
+                    so finite products exist, and the same result records that each evaluation
+                    functor preserves them, so that products of presheaves are computed pointwise.
+                    What is missing is the exponential, and the first thing to establish is that it
+                    cannot also be pointwise.
+                </p>
+
+                <h3>What the exponential is forced to be</h3>
+
+                <p>
+                    When \(\mathbf{A}\) is discrete a presheaf is nothing but a family of sets
+                    indexed by the objects, a map of presheaves is a family of functions, and
+                    everything in sight is computed coordinate by coordinate. Cartesian closure is
+                    then inherited from \(\mathbf{Set}\) coordinatewise, exponentials included. The
+                    general case is not like this, and the quickest way to see what it must look
+                    like instead is to assume the conclusion and read off the consequence.
+                </p>
+
+                <p>
+                    Suppose then that \(\hat{\mathbf{A}}\) were cartesian closed, with exponentials
+                    \(Z^Y\). Evaluating a presheaf at an object is the same as probing it by a
+                    <a href="representable_functors.html#D-yoneda_embedding" class="ref-link"><strong>representable</strong></a>,
+                    so for every \(A \in \mathbf{A}\) the
+                    <a href="yoneda_lemma.html#T-yoneda_lemma" class="ref-link"><strong>Yoneda lemma</strong></a>
+                    followed by the adjointness bijection would give
+                    \[
+                    Z^Y(A) \cong \hat{\mathbf{A}}\big(H_A, Z^Y\big) \cong \hat{\mathbf{A}}\big(H_A \times Y, Z\big) .
+                    \]
+                    The exponential is thereby forced. Its value at \(A\) has to be the set of maps
+                    \(H_A \times Y \to Z\).
+                </p>
+
+                <p>
+                    Notice what that value is not. It is not \(Z(A)^{Y(A)}\), and exponentials in a
+                    presheaf category are accordingly not generally computed pointwise, in contrast
+                    with the products and colimits of the pages leading here. The value at \(A\)
+                    sees not only \(A\) but everything that maps into it.
+                </p>
+
+                <p>
+                    Turn the consequence into a definition. Given presheaves \(Y\) and \(Z\), let
+                    \[
+                    Z^Y(A) = \hat{\mathbf{A}}\big(H_A \times Y, Z\big)
+                    \]
+                    for each object \(A\), and for a map \(f : A' \to A\) of \(\mathbf{A}\) let
+                    \(Z^Y(f)\) send \(\sigma : H_A \times Y \to Z\) to
+                    \(\sigma \circ (H_f \times 1_Y) : H_{A'} \times Y \to Z\), where
+                    \(H_f : H_{A'} \to H_A\) is the image of \(f\) under the Yoneda embedding.
+                    Because \(H_\bullet\) is a functor and composition is associative, this
+                    assignment respects identities and composites in the direction required of a
+                    presheaf, so \(Z^Y\) is an object of \(\hat{\mathbf{A}}\).
+                </p>
+
+                <h3>Evaluation, and the map to be inverted</h3>
+
+                <p>
+                    A candidate exponential is not an exponential until a bijection is produced, and
+                    a bijection produced one object at a time would not be enough. Adjointness
+                    demands naturality in \(X\) and in \(Z\), and naturality is a property of a map,
+                    not of a family of bijections. So the map comes first. In a cartesian closed
+                    category the map is composition with the counit, and here the counit can be
+                    written down.
+                </p>
+
+                <p>
+                    Define \(\operatorname{ev} : Z^Y \times Y \to Z\) by
+                    \[
+                    \operatorname{ev}_A(\sigma, y) = \sigma_A(1_A, y)
+                    \]
+                    for \(A \in \mathbf{A}\), \(\sigma \in Z^Y(A)\) and \(y \in Y(A)\), the product
+                    being pointwise. This is the only reasonable thing to write. An element of
+                    \(Z^Y(A)\) is a map \(H_A \times Y \to Z\) and the one element of \(H_A(A)\)
+                    that is always available is the identity.
+                </p>
+
+                <p>
+                    <em>Evaluation is natural.</em> Let \(f : A' \to A\) in \(\mathbf{A}\). The
+                    presheaf \(Z^Y \times Y\) carries \((\sigma, y)\) to
+                    \(\big(\sigma \circ (H_f \times 1_Y), (Yf)(y)\big)\), and
+                    \[
+                    \begin{align*}
+                    \operatorname{ev}_{A'}\big(\sigma \circ (H_f \times 1_Y), (Yf)(y)\big)
+                    &= \sigma_{A'}\big(H_f(1_{A'}), (Yf)(y)\big) \\\\
+                    &= \sigma_{A'}\big(f, (Yf)(y)\big) \\\\
+                    &= (Zf)\big(\sigma_A(1_A, y)\big) \\\\
+                    &= (Zf)\big(\operatorname{ev}_A(\sigma, y)\big) ,
+                    \end{align*}
+                    \]
+                    the second line because \(H_f\) sends \(1_{A'}\) to \(f \circ 1_{A'}\), and the
+                    third by the naturality of \(\sigma : H_A \times Y \to Z\) at \(f\), applied to
+                    the element \((1_A, y)\), whose image under \(H_A(f) \times Y(f)\) is
+                    \((1_A \circ f, (Yf)(y))\).
+                </p>
+
+                <p>
+                    With evaluation in place, define for every presheaf \(X\)
+                    \[
+                    \Theta_X : \hat{\mathbf{A}}\big(X, Z^Y\big) \to \hat{\mathbf{A}}\big(X \times Y, Z\big),
+                    \quad
+                    \Theta_X(\varphi) = \operatorname{ev} \circ (\varphi \times 1_Y) ,
+                    \]
+                    whose value on components reads
+                    \(\Theta_X(\varphi)_A(x, y) = \big(\varphi_A(x)\big)_A(1_A, y)\).
+                </p>
+
+                <p>
+                    Three properties come for nothing. The values of \(\Theta_X\) are maps of
+                    presheaves, being composites of such maps. It is natural in \(X\), since
+                    precomposing \(\varphi\) with \(k : X' \to X\) precomposes \(\Theta_X(\varphi)\)
+                    with \(k \times 1_Y\). And it is natural in \(Z\). For \(t : Z \to Z'\),
+                    postcomposition with \(t\) is a map of presheaves \(t_* : Z^Y \to (Z')^Y\), by
+                    associativity of composition, and it makes \(Z \mapsto Z^Y\) a functor,
+                    identities and composites being preserved for the same reason. Naturality
+                    reduces to the identity
+                    \(\operatorname{ev}' \circ (t_* \times 1_Y) = t \circ \operatorname{ev}\), since
+                    precomposing it with \(\varphi \times 1_Y\) turns
+                    \(\operatorname{ev}' \circ \big((t_* \circ \varphi) \times 1_Y\big)\) into
+                    \(t \circ \Theta_X(\varphi)\), and both of its sides send \((\sigma, y)\) to
+                    \(t_A(\sigma_A(1_A, y))\).
+                </p>
+
+                <p>
+                    Everything therefore rests on a single question, and it is a question about one
+                    map rather than about a family of sets: is \(\Theta_X\) a bijection?
+                </p>
+
+                <h3>Two tools</h3>
+
+                <p>
+                    The first tool is the dual of the fact that
+                    <a href="pointwise_limits.html#T-representable_preserves_limits" class="ref-link"><strong>representables preserve limits</strong></a>.
+                    Applied in \(\mathscr{S}^{\mathrm{op}}\), which is locally small exactly when
+                    \(\mathscr{S}\) is, that proposition concerns the covariant hom-functor of the
+                    opposite category based at an object \(W\), which is the contravariant
+                    hom-functor \(\mathscr{S}(-, W)\). A colimit cocone on a diagram \(D\) is a
+                    limit cone on \(D^{\mathrm{op}}\). The dualization was
+                    <a href="pointwise_limits.html#representables-preserve-limits">recorded when the proposition was proved</a>,
+                    there in isomorphism form.
+                </p>
+
+                <p>
+                    In cone form the statement reads as follows. If
+                    \(\big(D(I) \to C\big)_{I \in \mathbf{I}}\) is a colimit
+                    <a href="colimits_of_diagrams.html#D-cocone" class="ref-link"><strong>cocone</strong></a>
+                    in a locally small \(\mathscr{S}\), then
+                    \[
+                    \Big(\mathscr{S}(C, W) \to \mathscr{S}\big(D(I), W\big)\Big)_{I \in \mathbf{I}^{\mathrm{op}}},
+                    \]
+                    with legs given by precomposition with the coprojections, is a limit cone in
+                    \(\mathbf{Set}\). Colimits go in, limits come out.
+                </p>
+
+                <p>
+                    The second tool converts cartesian closure of \(\mathbf{Set}\) into a statement
+                    about presheaves. Closure is not a curiosity about sets. It propagates.
+                </p>
+
+                <div class="theorem" id="T-product_preserves_colimits_presheaf">
+                    <span class="theorem-title">Proposition: Products with a Fixed Presheaf Preserve Colimits</span>
+                    <p>
+                        Let \(\mathbf{A}\) be a small category and \(Y\) a presheaf on
+                        \(\mathbf{A}\). Then the functor
+                        \(- \times Y : \hat{\mathbf{A}} \to \hat{\mathbf{A}}\) preserves colimits.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        <em>Reduction to sets.</em> Let \(\big(D(I) \to C\big)_{I \in \mathbf{I}}\)
+                        be a colimit cocone in \(\hat{\mathbf{A}}\) on a diagram
+                        \(D : \mathbf{I} \to \hat{\mathbf{A}}\) of small shape. Fix
+                        \(A \in \mathbf{A}\). Evaluation at \(A\)
+                        <a href="commuting_limits.html#T-presheaf_category_complete_cocomplete" class="ref-link"><strong>preserves all limits and all colimits</strong></a>,
+                        so applying it to the given cocone yields a colimit cocone
+                        \(\big(D(I)(A) \to C(A)\big)_{I \in \mathbf{I}}\) in \(\mathbf{Set}\), and
+                        applying it to the cocone \(\big(D(I) \times Y \to C \times Y\big)_{I}\)
+                        yields the family
+                        \(\big(D(I)(A) \times Y(A) \to C(A) \times Y(A)\big)_{I}\).
+                    </p>
+                    <p>
+                        <em>Sets do the work.</em> \(\mathbf{Set}\) is locally small and cartesian
+                        closed, so \(- \times Y(A)\) is a left adjoint and therefore
+                        <a href="adjoints_preserve_limits.html#T-rapl_lapc" class="ref-link"><strong>preserves colimits</strong></a>.
+                        The second family above is thus a colimit cocone in \(\mathbf{Set}\), for
+                        every \(A\).
+                    </p>
+                    <p>
+                        <em>Back up to presheaves.</em> Every diagram of small shape in
+                        \(\mathbf{Set}\) has a
+                        <a href="colimits_of_diagrams.html#T-colimit_formula_set" class="ref-link"><strong>colimit</strong></a>,
+                        and \(\mathbf{A}^{\mathrm{op}}\) is small along with \(\mathbf{A}\), so the
+                        criterion that
+                        <a href="commuting_limits.html#T-colimits_pointwise_functor_category" class="ref-link"><strong>colimits in a functor category are pointwise</strong></a>
+                        applies to the diagram \(I \mapsto D(I) \times Y\). Its second half states
+                        that a cocone whose image under every evaluation functor is a colimit cocone
+                        is itself one. Hence
+                        \(\big(D(I) \times Y \to C \times Y\big)_{I \in \mathbf{I}}\) is a colimit
+                        cocone in \(\hat{\mathbf{A}}\), which is what preservation of colimits asks.
+                    </p>
+                </div>
+
+                <p>
+                    The proof is worth reading twice for its shape rather than its content. The
+                    currying adjunction on \(\mathbf{Set}\), the single concrete adjunction these
+                    pages began with, is fed to the preservation theorem, and what comes out is a
+                    statement about presheaves on an arbitrary small category. The bootstrap is the
+                    whole mechanism.
+                </p>
+
+                <h3>The exponential exists</h3>
+
+                <div class="theorem" id="T-presheaf_cartesian_closed">
+                    <span class="theorem-title">Theorem: Presheaf Categories are Cartesian Closed</span>
+                    <p>
+                        Let \(\mathbf{A}\) be a small category. Then the presheaf category
+                        \(\hat{\mathbf{A}}\) is cartesian closed, with exponentials given by
+                        \[
+                        Z^Y(A) = \hat{\mathbf{A}}\big(H_A \times Y, Z\big)
+                        \]
+                        and with the adjointness bijection
+                        \(\hat{\mathbf{A}}(X \times Y, Z) \cong \hat{\mathbf{A}}(X, Z^Y)\) inverse
+                        to composition with the evaluation map.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof</span>
+                    <p>
+                        Finite products exist and \(\Theta_X\) has been constructed, natural in
+                        \(X\) and in \(Z\). It remains to prove that \(\Theta_X\) is a bijection for
+                        every presheaf \(X\), since a natural bijection is exactly what adjointness
+                        requires.
+                    </p>
+                    <p>
+                        <em>Representable \(X\).</em> Take \(X = H_A\) and let
+                        \(\varphi : H_A \to Z^Y\). The Yoneda lemma classifies \(\varphi\) by the
+                        element \(\varphi_A(1_A)\) of \(Z^Y(A)\), an element that is itself a map
+                        \(H_A \times Y \to Z\). We claim it is the same map as
+                        \(\Theta_{H_A}(\varphi)\).
+                    </p>
+                    <p>
+                        Let \(B \in \mathbf{A}\), let \(p \in H_A(B)\), a map \(p : B \to A\), and
+                        let \(y \in Y(B)\). Naturality of \(\varphi\) at \(p\) gives
+                        \(\varphi_B(p) = \varphi_B\big(H_A(p)(1_A)\big) = Z^Y(p)\big(\varphi_A(1_A)\big) = \varphi_A(1_A) \circ (H_p \times 1_Y)\),
+                        and evaluating both sides at \(B\) on the element \((1_B, y)\),
+                        \[
+                        \Theta_{H_A}(\varphi)_B(p, y)
+                        = \big(\varphi_B(p)\big)_B(1_B, y)
+                        = \big(\varphi_A(1_A)\big)_B(p, y) ,
+                        \]
+                        since \(H_p\) sends \(1_B\) to \(p \circ 1_B\). So \(\Theta_{H_A}\) agrees
+                        with the Yoneda bijection and is itself a bijection.
+                    </p>
+                    <p>
+                        <em>Arbitrary \(X\), by density.</em> Every presheaf is a
+                        <a href="density_theorem.html#T-density_theorem" class="ref-link"><strong>colimit of representables</strong></a>.
+                        Writing \(P : \mathbf{E}(X) \to \mathbf{A}\) for the projection from the
+                        <a href="density_theorem.html#D-category_of_elements" class="ref-link"><strong>category of elements</strong></a>,
+                        the tautological cocone
+                        \(\big(\alpha_x : H_A \to X\big)_{(A, x) \in \mathbf{E}(X)}\) exhibits \(X\)
+                        as the colimit of \(H_\bullet \circ P\). Its shape is small because
+                        \(\mathbf{A}\) is. Apply the two tools to this one cocone.
+                    </p>
+                    <p>
+                        The first tool, with \(W = Z^Y\), turns it into a limit cone
+                        \[
+                        \Big(\hat{\mathbf{A}}\big(X, Z^Y\big) \to \hat{\mathbf{A}}\big(H_A, Z^Y\big)\Big)_{(A, x)},
+                        \]
+                        with legs \(\varphi \mapsto \varphi \circ \alpha_x\).
+                    </p>
+                    <p>
+                        The second tool says that \(\big(\alpha_x \times 1_Y\big)_{(A, x)}\) is
+                        again a colimit cocone, now exhibiting \(X \times Y\) as the colimit of
+                        \((H_\bullet \circ P) \times Y\), and the first tool applied to it, with
+                        \(W = Z\), gives a second limit cone
+                        \[
+                        \Big(\hat{\mathbf{A}}\big(X \times Y, Z\big) \to \hat{\mathbf{A}}\big(H_A \times Y, Z\big)\Big)_{(A, x)},
+                        \]
+                        with legs \(\psi \mapsto \psi \circ (\alpha_x \times 1_Y)\).
+                    </p>
+                    <p>
+                        The two cones lie over different diagrams of shape
+                        \(\mathbf{E}(X)^{\mathrm{op}}\), and \(\Theta\) is the bridge between them.
+                        Its component \(\Theta_{H_A}\) at the object \((A, x)\) is a bijection by the
+                        representable case, and naturality of \(\Theta\) in its presheaf variable
+                        makes these components commute with the maps of both diagrams, so they
+                        constitute an isomorphism of diagrams. Composing the first limit cone with
+                        that isomorphism
+                        <a href="adjoints_preserve_limits.html#T-limit_cone_transport" class="ref-link"><strong>yields a limit cone</strong></a>
+                        on the second diagram, with unchanged vertex
+                        \(\hat{\mathbf{A}}(X, Z^Y)\) and with legs
+                        \(\varphi \mapsto \Theta_X(\varphi) \circ (\alpha_x \times 1_Y)\), the same
+                        naturality identifying \(\Theta_{H_A}(\varphi \circ \alpha_x)\) with
+                        \(\Theta_X(\varphi) \circ (\alpha_x \times 1_Y)\).
+                    </p>
+                    <p>
+                        Two limit cones on one diagram remain. By the
+                        <a href="categorical_limits.html#T-limit_unique_up_to_iso_categorical" class="ref-link"><strong>uniqueness of limits</strong></a>
+                        there is a unique isomorphism between their vertices commuting with the
+                        legs, and by the universal property any map between the vertices commuting
+                        with the legs is that one. The displayed identity of legs says precisely
+                        that \(\Theta_X\) commutes with them. Hence \(\Theta_X\) is an isomorphism
+                        in \(\mathbf{Set}\), that is, a bijection, and \(\hat{\mathbf{A}}\) is
+                        cartesian closed.
+                    </p>
+                </div>
+
+                <p>
+                    Read backwards, the proof is an inventory of the surrounding pages. Yoneda
+                    supplies the representable case, density reduces the general case to it,
+                    representables preserving limits converts colimits of presheaves into limits of
+                    hom-sets, and the preservation theorem for adjoints, applied to currying in
+                    \(\mathbf{Set}\), supplies the one step where the two variables interact. The
+                    exponential of presheaves is not built by hand. It is assembled out of results
+                    that were proved for other reasons.
+                </p>
+
+            </section>
+
+            <section id="types-and-toposes" class="section-content">
+                <h2>Function Types and the Logic of Presheaves</h2>
+
+                <p>
+                    A definition earns its keep by what it turns out to be equivalent to. Cartesian
+                    closure has two such second lives, one in the theory of programming languages
+                    and one in the theory of toposes, and the exponential just constructed sits at
+                    the junction.
+                </p>
+
+                <h3>Types</h3>
+
+                <p>
+                    The
+                    <a href="formal_methods.html#T-curry_howard_table" class="ref-link"><strong>correspondence between logic and type theory</strong></a>
+                    lines up propositions with types: a conjunction with a product type, a
+                    disjunction with a sum type, an implication with a function type, truth with the
+                    unit type and falsity with the empty type.
+                </p>
+
+                <p>
+                    Read that dictionary once more with a cartesian closed category in view and a
+                    third column appears. A product type is a product, a function type \(B \to C\)
+                    is an exponential \(C^B\), and the unit type is the terminal object. The
+                    transposition that carries a map \(A \times B \to C\) to a map \(A \to C^B\) is
+                    the operation a programmer knows as currying and a logician as the deduction
+                    theorem. Evaluation \(\operatorname{ev} : C^B \times B \to C\) is function
+                    application.
+                </p>
+
+                <p>
+                    Several rows of the dictionary reach past cartesian closure and it is worth
+                    saying where the boundary lies. Sum types and the empty type ask for coproducts
+                    and an initial object, which a cartesian closed category is not required to
+                    have. The dependent function and pair types ask for more still, a compatibility
+                    of exponentials with slicing that the present definition does not mention.
+                </p>
+
+                <p>
+                    What the theorem of the previous section delivers is the simply typed fragment,
+                    and it delivers it exactly. The syntactic category built from a simply typed
+                    calculus is cartesian closed, and every cartesian closed category interprets
+                    that calculus, the two passages being mutually inverse up to the appropriate
+                    notion of sameness. That equivalence, due to Joachim Lambek, is a substantial
+                    theorem, and it is not proved here. What is proved here is that presheaf
+                    categories are on the semantic side of it.
+                </p>
+
+                <h3>Toposes</h3>
+
+                <p>
+                    The other second life begins from an observation about \(\mathbf{Set}\) already
+                    on record. Subsets of a set \(A\) correspond to functions \(A \to 2\), so that
+                    the
+                    <a href="sets_universal_constructions.html#D-power_set" class="ref-link"><strong>power set</strong></a>
+                    is the exponential \(2^A\), and the two-element set does for subsets what an
+                    exponential does for maps. That set turns a property into an object of the
+                    category. An object with this behaviour is called a <strong>subobject
+                    classifier</strong>. Its formal definition requires the notion of subobject,
+                    which this page does not develop, and the discussion here goes no further than
+                    naming the pattern.
+                </p>
+
+                <p>
+                    A <strong>topos</strong> is a cartesian closed category with finite limits and a
+                    subobject classifier. Of the three requirements, presheaf categories have now
+                    been shown to meet the first, and they
+                    <a href="commuting_limits.html#T-presheaf_category_complete_cocomplete" class="ref-link"><strong>meet the second</strong></a>
+                    with room to spare, having all limits and not merely the finite ones. They meet
+                    the third as well, though stating the classifier explicitly would call for the
+                    definition just deferred. Taking \(\mathbf{A}\) to be the terminal category
+                    recovers \(\mathbf{Set}\). So cartesian closure, the part established above, is
+                    the hard third of the statement that every presheaf category is a topos.
+                </p>
+
+                <p>
+                    The name carries two readings that pull in opposite directions and are both
+                    accurate. A topos is a universe of sets, in which one may reason about objects
+                    as though they were sets, with the caution that the reasoning permitted is
+                    intuitionistic rather than classical. A topos is also a generalized space, of
+                    which the presheaf categories are the tamest examples, and the topological
+                    properties of a space can be read off from categorical properties of an
+                    associated topos. Neither reading is developed further here.
+                </p>
+
+                <div class="insight-box">
+                    <h3>Why the exponential could not be pointwise</h3>
+                    <p>
+                        The formula \(Z^Y(A) = \hat{\mathbf{A}}(H_A \times Y, Z)\) looked at first
+                        like an accident of the proof. It is not. Read an object \(A\) of
+                        \(\mathbf{A}\) as a stage of information and a map \(A' \to A\) as a passage
+                        to a later stage, so that a presheaf assigns to every stage the data
+                        available there. Then \(Z^Y(A)\) is not the set of functions from
+                        \(Y(A)\) to \(Z(A)\), which would be a promise about the present alone. It
+                        is the set of ways of turning \(Y\) into \(Z\) at \(A\) and at every stage
+                        beyond it, coherently. A function type is a commitment that must survive
+                        every future refinement of what is known.
+                    </p>
+                    <p>
+                        That commitment is why the internal logic of a presheaf category is
+                        intuitionistic. An implication holds at a stage when it holds at every later
+                        stage, so establishing one requires a construction that keeps working as
+                        information grows. The law of the excluded middle, which would let a
+                        disjunction be settled at the present stage without evidence for either
+                        half, need not be available. The same discipline is what a
+                        <a href="lean_in_practice.html">proof assistant</a> enforces when it demands
+                        a term rather than a truth value, and the failure of pointwise computation
+                        for exponentials is the categorical shadow of that demand.
+                    </p>
+                </div>
+
+                <p>
+                    The arc of these pages closes on itself. It opened by asking what a functor with
+                    an adjoint does to limits, and the answer, that a right adjoint preserves them,
+                    looked at the time like a technical convenience. That convenience was the
+                    engine. Applied to the diagonal it explained why limits commute with limits.
+                    Applied to currying in \(\mathbf{Set}\), and combined with density and the
+                    Yoneda lemma, it produced an exponential in a category no one constructed by
+                    hand. With that exponential came a universe in which sets, spaces, and the terms
+                    of a typed calculus are all describable as the same kind of object.
+                </p>
+
+            </section>
+
+        </div>
+
+    </body>
+</html>
