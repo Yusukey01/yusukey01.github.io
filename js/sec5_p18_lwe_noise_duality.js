@@ -16,7 +16,7 @@
 // exactly (pinned in T0): the centered lift shifts the argument by a multiple
 // of P slots, invisible mod P; (ii) Math.round vs floor(x+0.5) — dec only ever
 // receives non-negative arguments, where the two agree (the roundHalfUp pin
-// exists so a later edit cannot silently change the negative-half behaviour).
+// exists so a later edit cannot silently change the negative-half behavior).
 //
 // ml-18 "Learning With Errors, Read Twice" — noise-duality visualizer.
 //
@@ -70,7 +70,7 @@ var LndCore = (function () {
   function centeredLift(x) { const r = mod(x); return r >= q / 2 ? r - q : r; }         // image is [-q/2, q/2)
   function dot(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
   // Not Math.round: JS rounds -0.5 to -0, breaking half-integer symmetry. dec() only ever
-  // feeds a non-negative argument, but pin the behaviour so a later edit cannot silently change it.
+  // feeds a non-negative argument, but pin the behavior so a later edit cannot silently change it.
   function roundHalfUp(x) { return Math.floor(x + 0.5); }
 
   // --- attack core ---
