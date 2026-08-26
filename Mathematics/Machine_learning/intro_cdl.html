@@ -157,8 +157,9 @@ uses_python: false
                     For the \(\ell\)-th layer of a multilayer perceptron the definition reads
                     \[
                     \begin{align*}
-                    A &= \mathbb{R}^{d_{\ell-1}}, \quad B = \mathbb{R}^{d_\ell}, \quad
-                    P_\ell = \mathbb{R}^{d_\ell \times d_{\ell-1}} \times \mathbb{R}^{d_\ell}, \\
+                    A &= \mathbb{R}^{d_{\ell-1}}, \\
+                    B &= \mathbb{R}^{d_\ell}, \\
+                    P_\ell &= \mathbb{R}^{d_\ell \times d_{\ell-1}} \times \mathbb{R}^{d_\ell}, \\
                     f_\ell\!\left(\mathbf{z}, \left(W^{(\ell)}, \mathbf{b}^{(\ell)}\right)\right)
                     &= g_\ell\!\left(W^{(\ell)} \mathbf{z} + \mathbf{b}^{(\ell)}\right),
                     \end{align*}
@@ -292,13 +293,20 @@ uses_python: false
                 <p>
                     Return to the two failures of the previous section with this in hand. The canonical
                     bijection \(\rho : P \times (Q \times R) \to (P \times Q) \times R\) that rebrackets a tuple
-                    satisfies \(h_{R} = h_{L} \circ (1_A \times \rho)\), which is exactly the condition above.
-                    So \(\rho\) is a reparameterization from \(\bigl((P \times Q) \times R,\, h_{L}\bigr)\) to
-                    \(\bigl(P \times (Q \times R),\, h_{R}\bigr)\), and since \(\rho\) is a bijection the
-                    reparameterization runs both ways. The same holds for the unit. Write \(f_1\) for the
-                    implementation of \((P, f)\) composed with the identity layer, so that
-                    \(f_1(a, (p, *)) = f(a, p)\). The map \(p \mapsto (p, *)\) is a reparameterization from
-                    \((P \times 1,\, f_1)\) to \((P, f)\), and it too runs both ways. The axioms were not
+                    satisfies
+                    \[
+                    h_{R} = h_{L} \circ (1_A \times \rho),
+                    \]
+                    which is exactly the condition above. So \(\rho\) is a reparameterization from
+                    \(\bigl((P \times Q) \times R,\, h_{L}\bigr)\) to \(\bigl(P \times (Q \times R),\, h_{R}\bigr)\),
+                    and since \(\rho\) is a bijection the reparameterization runs both ways. The same holds for
+                    the unit. Write \(f_1\) for the implementation of \((P, f)\) composed with the identity
+                    layer, so that
+                    \[
+                    f_1\bigl(a, (p, *)\bigr) = f(a, p).
+                    \]
+                    The map \(p \mapsto (p, *)\) is a reparameterization from \((P \times 1,\, f_1)\) to
+                    \((P, f)\), and it too runs both ways. The axioms were not
                     failing because the composition was wrong. They were failing because equality was the wrong
                     relation to test them with, and the right relation lives one level up: not an equality of
                     layers but a morphism between them.
@@ -309,14 +317,16 @@ uses_python: false
                     evidence is an operation practitioners perform. Take two layers that are to share
                     their weights: \(f : A \times P \to B\) and \(g : B \times P \to C\), with the same \(P\),
                     tied so that both use the same values. Composing them as parameterized layers produces the
-                    parameter object \(P \times P\) with implementation \(h(a, (p, p')) = g\bigl(f(a, p),\, p'\bigr)\),
-                    which is precisely what tying is meant to prevent. The tied
-                    layer is instead \((P, h')\) with \(h'(a, p) = g\bigl(f(a, p),\, p\bigr)\), and the two are
-                    related by the diagonal
+                    parameter object \(P \times P\) with implementation
+                    \[
+                    h\bigl(a, (p, p')\bigr) = g\bigl(f(a, p),\, p'\bigr),
+                    \]
+                    which is precisely what tying is meant to prevent. The tied layer is instead \((P, h')\),
+                    and the two are related by the diagonal \(\Delta_P : P \to P \times P\), \(p \mapsto (p, p)\):
                     \[
                     \begin{align*}
-                    \Delta_P &: P \to P \times P, \quad p \mapsto (p, p), \\
-                    h'(a, p) &= h\bigl(a, \Delta_P(p)\bigr).
+                    h'(a, p) &= g\bigl(f(a, p),\, p\bigr) = h\bigl(a, \Delta_P(p)\bigr), \\
+                    h' &= h \circ (1_A \times \Delta_P).
                     \end{align*}
                     \]
                     So weight sharing is a reparameterization, and a non-invertible one whenever \(P\) has more
