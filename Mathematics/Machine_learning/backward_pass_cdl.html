@@ -1,0 +1,592 @@
+---
+layout: default
+title: "Backward Passes & the Training Loop"
+topic_id: ml-20
+level: detail
+uses_math: true
+uses_python: false
+---
+<!DOCTYPE html>
+<html>
+    <body>
+        {% include learning_resource_schema.html topic_id=page.topic_id %}
+
+        <div class="hero-section">
+            <h1 class="webpage-name">Backward Passes & the Training Loop</h1>
+        </div>
+
+        {% include section_navigation.html %}
+
+        <div class="topic-nav">
+            <a href="#update-source">The Update Step Has No Source Yet</a>
+            <a href="#backward-part">A Layer With a Backward Part</a>
+            <a href="#reverse-order">Why the Backward Part Runs in Reverse</a>
+            <a href="#loss-closes">The Loss Closes the Loop</a>
+            <a href="#parameter-copied">The Parameter Was Copied</a>
+        </div>
+
+        <div class="container">
+
+            <section id="update-source" class="section-content">
+                <h2>The Update Step Has No Source Yet</h2>
+
+                <p>
+                    The previous page stopped one step short of the thing it was describing. It established
+                    four things. A training update, once the batch is fixed, takes the weights of a layer and
+                    moves them. That motion is a map \(u : P \to P\) on the parameter object. The layer we are
+                    left holding is \(\bigl(P,\, f \circ (1_A \times u)\bigr)\). And \(u\) relates the two
+                    layers in precisely the way the second kind of morphism requires. All of that concerns the
+                    <em>type</em> of the update. Which map \(u\) is, and out of what it is assembled, was not
+                    said there and cannot be said with the material that page had.
+                </p>
+
+                <p>
+                    Everything built there runs in one direction. A <a
+                    href="intro_cdl.html#D-parameterized_layer" class="ref-link"><strong>parameterized
+                    layer</strong></a> is a parameter object \(P\) together with an implementation
+                    \(f : A \times P \to B\). Two layers in sequence compose into a layer whose parameter
+                    object is the product of the two, and the identity layer carries the one-point parameter
+                    object. In each of these constructions an input enters at \(A\), is combined with a choice
+                    of parameters, and leaves at \(B\). Nothing in the definition, and nothing in the
+                    composition built on it, sends any quantity in the other direction.
+                </p>
+
+                <p>
+                    Consider what \(u\) would have to consult. The updates at issue here are the ones built by
+                    differentiating, the example on the previous page being a step of gradient descent. To
+                    move a weight that way we need a quantity attached to \(P\) which records how sensitive
+                    the network's error is to that weight. Such a quantity is not recoverable from \(f\) by
+                    evaluating it. Its value depends on where the layer sits in the network, on what the
+                    layers downstream of it do to its output, and on how that output is scored against a
+                    target. Every one of those depends on data that originates at the far end of the network
+                    and has to be carried backward, layer by layer, to reach \(P\).
+                </p>
+
+                <p>
+                    A description in which no construction transports anything backward has no way to produce
+                    \(u\), and this is a gap in the description rather than in the practice. The traversal is
+                    performed on every training step, by the mechanism recorded on the page on <a
+                    href="autodiff.html#D-automatic_differentiation" class="ref-link"><strong>automatic
+                    differentiation</strong></a>.
+                </p>
+
+                <p>
+                    So the question this page begins from is not how the backward traversal is computed, but
+                    what kind of thing it is. It is not a layer in the sense just recalled, since it does not
+                    run from inputs to outputs. Nor is it attached to the layer by the definition, which
+                    consists of a parameter object and a forward implementation and of nothing else. Until it
+                    is given a type, two facts that every practitioner relies on remain outside the
+                    description: that the backward traversals of two stacked layers combine into the backward
+                    traversal of the composite, and that they combine in the reverse of the order in which the
+                    layers were stacked.
+                </p>
+
+                <p>
+                    This page supplies the missing half. We attach to the layer of the previous page a second
+                    component running from the output side back to the input and the parameters, derive the
+                    rule by which two such layers compose rather than postulating it, and read the reversal of
+                    order off that derivation. A loss then supplies the one datum the rule leaves free, and
+                    \(u\) is assembled. All of this requires differentiating, so the ambient setting changes
+                    in the next section, explicitly rather than by assumption.
+                </p>
+            </section>
+
+            <section id="backward-part" class="section-content">
+                <h2>A Layer With a Backward Part</h2>
+
+                <p>
+                    Nothing can be differentiated where the previous page left us, since \(A\), \(P\) and
+                    \(B\) were arbitrary sets there. Changing that needs no argument beyond what the page
+                    itself recorded. Every construction it made was assembled from finite products and nothing
+                    else, so all of them survive verbatim in any ambient category that has finite products. We
+                    name one that also permits differentiation. Its objects are the open subsets of the
+                    Euclidean spaces, each regarded as an <a
+                    href="../Calculus/smooth_manifolds.html#D-open_submanifold"
+                    class="ref-link"><strong>open submanifold</strong></a> of the \(\mathbb{R}^n\) containing
+                    it, and its morphisms are all the <a
+                    href="../Calculus/smooth_functions_and_maps.html#D-smooth_map_manifolds"
+                    class="ref-link"><strong>smooth maps</strong></a> between them: a <a
+                    href="../Discrete/categories_functors_naturality.html#D-subcategory" class="ref-link"><strong>full
+                    subcategory</strong></a> of smooth manifolds, which is specified by naming its objects
+                    alone.
+                </p>
+
+                <p>
+                    The category axioms and the products come from results already established. Identities are
+                    smooth and composites of smooth maps are smooth, which is all a category requires, and
+                    both are parts of one <a
+                    href="../Calculus/smooth_functions_and_maps.html#T-smooth_map_composition"
+                    class="ref-link"><strong>theorem</strong></a>. A product \(A \times P\) of open sets is
+                    open in \(\mathbb{R}^{n+k}\) and carries the <a
+                    href="../Calculus/smooth_constructed_spaces.html#T-smooth_product_manifold"
+                    class="ref-link"><strong>product smooth structure</strong></a>, which agrees with its
+                    structure as an open submanifold of \(\mathbb{R}^{n+k}\) since both contain the chart
+                    given by the inclusion, so it stays inside the setting. The two projections are linear and
+                    so smooth, a map into it is smooth in charts exactly when its two components are, and the
+                    pairing is already unique as a function, so this is a categorical product.
+                </p>
+
+                <p>
+                    The terminal object is the zero-dimensional manifold \(\mathbb{R}^0 = \{0\}\), whose
+                    unique smooth structure is established on the page on
+                    <a href="../Calculus/smooth_manifolds.html"><strong>smooth manifolds</strong></a>, and it
+                    plays the part of the one-point parameter object the previous page gave to the identity
+                    layer.
+                </p>
+
+                <p>
+                    Three restrictions come with the move, and they are restrictions rather than consequences.
+                    The input, output and parameter objects must now be open subsets of Euclidean spaces. In
+                    particular the parameter object, which was an arbitrary set before, is one of these, and
+                    the case in use is a finite-dimensional real vector space or an open piece of one. The
+                    implementation must be smooth, which excludes activation functions that are only piecewise
+                    differentiable. And every vector space appearing below is finite-dimensional and real,
+                    which is the hypothesis under which the results on dual maps are stated.
+                </p>
+
+                <p>
+                    Now fix the layer \((P, f)\) and a point \((a, p)\). What a downstream computation hands
+                    back is not an input to \(f\) but a measurement made on its output: a linear functional
+                    recording how much some later quantity moves per unit of motion of \(f(a, p)\). Its home
+                    is the <a href="../Calculus/covectors_cotangent_bundle.html#D-cotangent_space"
+                    class="ref-link"><strong>cotangent space</strong></a> \(T^*_{f(a,p)}B\), and what it
+                    should be turned into is a functional of the same kind at \(a\) and at \(p\).
+                </p>
+
+                <p>
+                    The tangent space of an open \(A \subseteq \mathbb{R}^n\) at any of its points is
+                    canonically \(\mathbb{R}^n\), by an
+                    <a href="../Calculus/tangent_vectors.html#T-tangent_space_open_submanifold"
+                    class="ref-link"><strong>isomorphism</strong></a> with the tangent space of the ambient
+                    space followed by the <a
+                    href="../Calculus/tangent_vectors.html#T-tangent_space_iso_Rn"
+                    class="ref-link"><strong>standard identification</strong></a> there. The dual of an
+                    isomorphism is again one, by contravariance of the dual map, so each cotangent space in
+                    sight is canonically the dual of the Euclidean space it sits over, and the notation could
+                    be dropped. We keep it, because the difference between a covector and a vector is used
+                    again at the end of this page.
+                </p>
+
+                <p>
+                    The two maps \(f(-, p) : A \to B\) and \(f(a, -) : P \to B\) are composites of \(f\) with
+                    affine maps and are therefore smooth, so each has a <a
+                    href="../Calculus/tangent_vectors.html#D-differential_of_smooth_map"
+                    class="ref-link"><strong>differential</strong></a> at the point in question. Differentials
+                    are linear maps, and linear maps have <a
+                    href="../Calculus/covectors_cotangent_bundle.html#D-dual_map"
+                    class="ref-link"><strong>dual maps</strong></a>, which run in the direction we want.
+                </p>
+
+                <div class="theorem" id="D-layer_with_backward_part">
+                    <span class="theorem-title">Definition: Layer With a Backward Part</span>
+                    <p>
+                        Let \(A \subseteq \mathbb{R}^n\), \(B \subseteq \mathbb{R}^m\) and
+                        \(P \subseteq \mathbb{R}^k\) be open, and let \((P, f)\) be a parameterized layer from
+                        \(A\) to \(B\) whose implementation \(f : A \times P \to B\) is smooth. For
+                        \((a, p) \in A \times P\), write
+                        \[
+                        \begin{align*}
+                        d_Af_{(a,p)} &: T_aA \to T_{f(a,p)}B, \\\\
+                        d_Pf_{(a,p)} &: T_pP \to T_{f(a,p)}B,
+                        \end{align*}
+                        \]
+                        for the differentials at \(a\) and at \(p\) of the partial maps \(f(-, p)\) and
+                        \(f(a, -)\). The <strong>backward part</strong> of \((P, f)\) is the family of linear
+                        maps
+                        \[
+                        f'(a, p, -) : T^*_{f(a,p)}B \longrightarrow T^*_aA \times T^*_pP,
+                        \]
+                        indexed by \((a, p) \in A \times P\) and given by
+                        \[
+                        f'(a, p, b') = \Bigl( \bigl(d_Af_{(a,p)}\bigr)^* b',\ \bigl(d_Pf_{(a,p)}\bigr)^* b' \Bigr).
+                        \]
+                        A <strong>layer with a backward part</strong> is a parameterized layer with smooth
+                        implementation, taken together with this family.
+                    </p>
+                </div>
+
+                <p>
+                    Under the identifications above the family is a single map
+                    \[
+                    f' : A \times P \times (\mathbb{R}^m)^* \longrightarrow
+                    (\mathbb{R}^n)^* \times (\mathbb{R}^k)^*,
+                    \]
+                    which is the shape a framework stores. A point, a parameter and an incoming covector go
+                    in, and two outgoing covectors come out. Nothing has been chosen in the definition, since
+                    the backward part is determined by \(f\). What the definition fixes is that from here on
+                    the pair, rather than the implementation alone, is the thing that gets composed.
+                </p>
+
+                <p>
+                    One layer of a <a href="neural_networks.html#D-multilayer_perceptron"
+                    class="ref-link"><strong>multilayer perceptron</strong></a> is the concrete case. Here
+                    \(A = \mathbb{R}^{d_{\ell-1}}\),
+                    \(P = \mathbb{R}^{d_\ell \times d_{\ell-1}} \times \mathbb{R}^{d_\ell}\) and
+                    \(f(\mathbf{z}, (W, \mathbf{b})) = g(W\mathbf{z} + \mathbf{b})\) with \(g\) smooth.
+                    Writing \(\mathbf{s} = W\mathbf{z} + \mathbf{b}\), and writing \(W\) also for the linear
+                    map it defines, the two partial differentials are
+                    \[
+                    \begin{align*}
+                    d_Af_{(\mathbf{z}, (W, \mathbf{b}))} &= dg_{\mathbf{s}} \circ W, \\\\
+                    d_Pf_{(\mathbf{z}, (W, \mathbf{b}))}(V, \mathbf{w}) &= dg_{\mathbf{s}}(V\mathbf{z} + \mathbf{w}),
+                    \end{align*}
+                    \]
+                    where \((V, \mathbf{w})\) is a tangent direction in the parameter space.
+                </p>
+
+                <p>
+                    In the standard bases the
+                    <a href="../Calculus/tangent_vectors.html#T-differential_in_coordinates"
+                    class="ref-link"><strong>matrix of a differential</strong></a> is the <a
+                    href="../Calculus/jacobian.html#D-jacobian" class="ref-link"><strong>Jacobian</strong></a>
+                    and the matrix of a dual map in the dual bases is its <a
+                    href="../Calculus/covectors_cotangent_bundle.html#T-dual_map"
+                    class="ref-link"><strong>transpose</strong></a>, so the backward part multiplies the
+                    incoming covector by transposed Jacobians. Its second component is a covector on the
+                    parameter space, which is the kind of thing the update step was missing.
+                </p>
+            </section>
+
+            <section id="reverse-order" class="section-content">
+                <h2>Why the Backward Part Runs in Reverse</h2>
+
+                <p>
+                    Two layers in sequence were composed on the previous page into the layer
+                    \(h(a, (p, q)) = g\bigl(f(a, p), q\bigr)\) with parameter object \(P \times Q\). Its
+                    implementation is smooth whenever the two given ones are, since \(h\) is \(g\) composed
+                    with the map \((a, (p, q)) \mapsto (f(a, p), q)\), whose two components are smooth, so the
+                    composite has a backward part of its own, obtained from the definition in the same way as
+                    any other. Nothing so far connects that backward part to the backward parts of \(f\) and
+                    \(g\). We compute it, and what comes out is the rule implementations use, as a consequence
+                    of the definition rather than as an addition to it.
+                </p>
+
+                <p>
+                    The slot subscripts follow the objects, so the two differentials of \(g\) at \((b, q)\)
+                    are \(d_Bg_{(b,q)}\) on its input object and \(d_Qg_{(b,q)}\) on its parameter object.
+                </p>
+
+                <p>
+                    Half of the work is already done. The differential preserves composites and identities,
+                    \(d(G \circ F)_p = dG_{F(p)} \circ dF_p\) and \(d(\mathrm{Id})_p = \mathrm{Id}\), by a
+                    <a href="../Calculus/tangent_vectors.html#T-differential_properties"
+                    class="ref-link"><strong>proposition</strong></a> proved when the differential was
+                    introduced. The page on <a
+                    href="../Discrete/categories_functors_naturality.html#functors"><strong>functors</strong></a>
+                    observes that these two identities are exactly the functor axioms for the assignment
+                    sending a pointed manifold to its tangent space and a smooth map to its differential.
+                    Direction is preserved by it. The differential of the outer map is applied second.
+                </p>
+
+                <p>
+                    The other half reverses direction. For linear maps, dualizing reverses composites,
+                    \((B \circ A)^* = A^* \circ B^*\), and sends identities to identities, by the <a
+                    href="../Calculus/covectors_cotangent_bundle.html#T-dual_map"
+                    class="ref-link"><strong>properties of the dual map</strong></a>. In the vocabulary of the
+                    same page on functors, this makes the dual construction a <a
+                    href="../Discrete/categories_functors_naturality.html#D-contravariant_functor"
+                    class="ref-link"><strong>contravariant functor</strong></a>, a functor out of the <a
+                    href="../Discrete/categories_functors_naturality.html#D-opposite_category"
+                    class="ref-link"><strong>opposite category</strong></a>, and that page names the
+                    dual-space construction as the prototype of the notion.
+                </p>
+
+                <p>
+                    Two points have to be kept straight. The implementation \(f\) is not linear, so it cannot
+                    be dualized at all. What is dualized is its differential, so the linearization comes first
+                    and the reversal second. And it is the linear maps rather than the layers that are being
+                    sent through this construction. A layer together with its backward part is not a morphism
+                    of the opposite category, since the backward part depends on \(a\) and \(p\), and no
+                    reversal of arrows produces that dependence.
+                </p>
+
+                <p>
+                    Composing the two assignments gives \(F \mapsto (dF_p)^*\), covariant followed by
+                    contravariant, hence contravariant. That is the entire reason the backward pass runs in
+                    the reverse order, and the composition rule is what the two assignments produce when
+                    applied to the composite layer.
+                </p>
+
+                <div class="theorem" id="T-backward_part_composition">
+                    <span class="theorem-title">Theorem: Composition of Backward Parts</span>
+                    <p>
+                        Let \((P, f)\) from \(A\) to \(B\) and \((Q, g)\) from \(B\) to \(C\) be layers with
+                        backward parts, and let \((P \times Q, h)\) with \(h(a, (p, q)) = g(f(a, p), q)\) be
+                        their composite. Fix \(a \in A\), \(p \in P\), \(q \in Q\), and write \(b = f(a, p)\).
+                        For every \(c' \in T^*_{g(b,q)}C\), set
+                        \(b' = \bigl(d_Bg_{(b,q)}\bigr)^* c' \in T^*_bB\). Then the backward part of \(h\)
+                        at \((a, (p, q))\) is given by
+                        \[
+                        \begin{align*}
+                        \bigl(d_Ah_{(a,(p,q))}\bigr)^* c' &= \bigl(d_Af_{(a,p)}\bigr)^* b', \\\\
+                        \bigl(d_Ph_{(a,(p,q))}\bigr)^* c' &= \bigl(d_Pf_{(a,p)}\bigr)^* b', \\\\
+                        \bigl(d_Qh_{(a,(p,q))}\bigr)^* c' &= \bigl(d_Qg_{(b,q)}\bigr)^* c',
+                        \end{align*}
+                        \]
+                        where \(d_Ph\) and \(d_Qh\) are the differentials of the partial maps of \(h\) in the
+                        two factors of \(P \times Q\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The three partial maps of \(h\) factor through the partial maps of \(f\) and \(g\):
+                        \[
+                        \begin{align*}
+                        h(-, (p, q)) &= g(-, q) \circ f(-, p), \\\\
+                        h(a, (-, q)) &= g(-, q) \circ f(a, -), \\\\
+                        h(a, (p, -)) &= g(b, -),
+                        \end{align*}
+                        \]
+                        as maps \(A \to C\), \(P \to C\) and \(Q \to C\) respectively, the first two passing
+                        through \(b = f(a, p)\). Each factor is smooth, so the chain rule for differentials
+                        applies to the first two and gives
+                        \[
+                        \begin{align*}
+                        d_Ah_{(a,(p,q))} &= d_Bg_{(b,q)} \circ d_Af_{(a,p)}, \\\\
+                        d_Ph_{(a,(p,q))} &= d_Bg_{(b,q)} \circ d_Pf_{(a,p)},
+                        \end{align*}
+                        \]
+                        while the third partial map is \(g(b, -)\) itself, so
+                        \(d_Qh_{(a,(p,q))} = d_Qg_{(b,q)}\). All of these are linear maps between
+                        finite-dimensional real vector spaces, so contravariance of the dual applies to the
+                        first two composites and reverses them,
+                        \[
+                        \begin{align*}
+                        \bigl(d_Ah_{(a,(p,q))}\bigr)^* &= \bigl(d_Af_{(a,p)}\bigr)^* \circ \bigl(d_Bg_{(b,q)}\bigr)^*, \\\\
+                        \bigl(d_Ph_{(a,(p,q))}\bigr)^* &= \bigl(d_Pf_{(a,p)}\bigr)^* \circ \bigl(d_Bg_{(b,q)}\bigr)^*.
+                        \end{align*}
+                        \]
+                        Evaluating both at \(c'\) and writing \(b' = \bigl(d_Bg_{(b,q)}\bigr)^* c'\) gives the
+                        first two lines, and dualizing \(d_Qh_{(a,(p,q))} = d_Qg_{(b,q)}\) gives the third.
+                    </p>
+                </div>
+
+                <p>
+                    The three entries are the backward parts we started with. The first two are what \(f'\)
+                    returns at \((a, p)\) on the covector \(b'\), and the third is the parameter component of
+                    what \(g'\) returns at \((b, q)\) on \(c'\). So the composite's backward part is assembled
+                    from the two given ones, with \(g\) acting first and \(f\) second, and the assembly costs
+                    one evaluation of each. Read in coordinates, where the tangent space of a product is the
+                    <a href="../Calculus/tangent_vectors.html#T-tangent_space_product"
+                    class="ref-link"><strong>product of the tangent spaces</strong></a>, the last two entries
+                    are the two halves of a single covector on \(P \times Q\). This is because precomposing
+                    \(h(a, -)\) with \(p \mapsto (p, q)\) or with \(q \mapsto (p, q)\) returns the partial
+                    maps \(h(a, (-, q))\) and \(h(a, (p, -))\), so by the chain rule \(d_Ph\) and \(d_Qh\) are
+                    the restrictions of the differential of \(h(a, -)\) to the two summands, and nothing has
+                    been dropped in recording the parameter component slot by slot.
+                </p>
+
+                <p>
+                    One symbol in the statement carries more than it appears to. The differentials of \(g\)
+                    are taken at \(b = f(a, p)\), which is a value produced by the forward pass, and \(b'\)
+                    cannot be formed without it. The backward computation is therefore not a function of the
+                    incoming covector alone. It requires the forward value at every intermediate point, and an
+                    implementation must either keep those values from the forward pass or compute them again.
+                    Keeping only some of them and recomputing the rest is what is called gradient
+                    checkpointing.
+                </p>
+
+                <p>
+                    Which of the two an implementation does is a trade of memory against time. The proposal
+                    that this trade is what separates the two composition rules available for structures of
+                    this kind has been advanced in the literature as a hypothesis rather than a theorem
+                    <a href="https://arxiv.org/abs/2403.13001">[1]</a>. Only one side of the comparison is
+                    available here. The rule derived above is the one that keeps \(f(a, p)\), and the
+                    structure carrying the other rule has not been constructed here.
+                </p>
+
+                <p>
+                    Nothing so far says where \(c'\) comes from. The theorem holds for every covector at the
+                    output and produces none. It transports covectors backward, and transport needs something
+                    to transport. Two of its three entries are covectors on parameter objects, the very thing
+                    the update step lacked, and they are exactly as undetermined as \(c'\) is. What supplies
+                    \(c'\) is a single map out of the output object, and that map is the loss.
+                </p>
+            </section>
+
+            <section id="loss-closes" class="section-content">
+                <h2>The Loss Closes the Loop</h2>
+
+                <p>
+                    Once the batch is fixed, the score attached to an output is a map. Let \(C\) be the output
+                    object of the last layer and let
+                    \[
+                    L : C \longrightarrow \mathbb{R}
+                    \]
+                    be smooth, \(\mathbb{R}\) being an object of the ambient setting like any other open
+                    subset of a Euclidean space. Requiring smoothness excludes losses that are only piecewise
+                    differentiable, exactly as it excluded such activations. Note what \(L\) is not. It has no
+                    parameter object and is not a layer, but a plain morphism out of \(C\).
+                </p>
+
+                <p>
+                    The differential of \(L\) at \(c\) is a linear map \(T_cC \to T_{L(c)}\mathbb{R}\), and
+                    under the identification of the tangent space of \(\mathbb{R}\) with \(\mathbb{R}\) made
+                    earlier this is a linear functional on \(T_cC\):
+                    \[
+                    c' := dL_c \in T^*_cC .
+                    \]
+                    That is the whole of the supply. The composition rule left exactly one argument free, a
+                    covector at the output, and a real-valued function on the output object produces one at
+                    every point. No further machinery is needed for the scalar case, and none is available
+                    without a real-valued function. A network with no loss attached has nothing to run
+                    backward.
+                </p>
+
+                <p>
+                    Now run the rule. A network of several layers is the iterated composite of the previous
+                    section, so the theorem applies at each stage. Beginning with \(c'\) at the output and
+                    working toward the input, each layer receives the covector at its own output and returns
+                    two covectors. The one at its input is passed to the layer before it, and the one on its
+                    own parameter object stays where it is. When the traversal reaches the input, every layer
+                    holds one element \(p' \in T^*_pP\), computed at the current parameters and the fixed
+                    batch.
+                </p>
+
+                <p>
+                    For a batch of more than one example the score is a sum of per-example scores and
+                    differentiation distributes over the sum, so the traversal runs once per example and the
+                    covectors landing on a given parameter object are added.
+                </p>
+
+                <p>
+                    Unwinding the dual identifies what that element is. Since \(\bigl(d_Ph\bigr)^*\) acts by
+                    precomposition, \(\bigl(d_Ph_{(a,(p,q))}\bigr)^*(dL_c) = dL_c \circ d_Ph_{(a,(p,q))}\),
+                    which by the chain rule is the differential at \(p\) of the loss regarded as a function of
+                    that layer's parameters alone. The covector kept at each parameter slot is therefore the
+                    differential of \(L\) in that layer's parameters, and the backward traversal is a
+                    procedure for computing all of these at once from one traversal of the network.
+                </p>
+
+                <p>
+                    A covector is still not a point of \(P\), and \(p - \eta p'\) is not a defined expression.
+                    The step across is the subject of the page on dual spaces. Fixing an inner product on the
+                    tangent space makes it a finite-dimensional Hilbert space, complete because every <a
+                    href="../Calculus/bounded_linear_operators.html#T-finite_dim_subspace_closed"
+                    class="ref-link"><strong>finite-dimensional normed space</strong></a> is, on which the <a
+                    href="../Calculus/dual_spaces.html#D-sharp_map" class="ref-link"><strong>sharp
+                    map</strong></a> sends a covector to the unique vector representing it, and the <a
+                    href="../Calculus/dual_spaces.html#D-gradient_as_sharp"
+                    class="ref-link"><strong>gradient</strong></a> of a real-valued function is defined there
+                    as the image of its differential under that map.
+                </p>
+
+                <p>
+                    What this page contributes is the identification of the argument. The covector \(p'\)
+                    delivered at the parameter slot is that differential. Which inner product is used is a
+                    choice, and on \(\mathbb{R}^k\) with the Euclidean one the choice is invisible, which is
+                    why the distinction can be carried this far without being noticed.
+                </p>
+
+                <p>
+                    With a step size \(\eta \gt 0\) fixed, the update is the map \(u : P \to P\) given by
+                    \[
+                    u(p) = p - \eta \,(p')^\sharp ,
+                    \]
+                    defined where the right-hand side stays in \(P\), which is automatic when \(P\) is the
+                    whole of \(\mathbb{R}^k\). It is smooth, for an inner product on \(\mathbb{R}^k\) that
+                    does not vary with \(p\), since the components of \(p'\) are partial derivatives of a
+                    smooth function and are therefore smooth in \(p\), so it is a morphism of the ambient
+                    setting. And it is the map the previous page named. The map \(u\) is a <a
+                    href="intro_cdl.html#D-layer_reparameterization"
+                    class="ref-link"><strong>reparameterization</strong></a> from the layer we had to the
+                    layer \(\bigl(P,\, f \circ (1_A \times u)\bigr)\) we now have, which was established there
+                    and is not re-derived here. Nothing requires the same \(u\) at every step, and each step
+                    produces its own.
+                </p>
+
+                <p>
+                    The loop is closed. A forward pass computes the output and leaves behind the intermediate
+                    values the composition rule requires. The loss converts the output into a covector. The
+                    composition rule transports that covector backward through the network and deposits one
+                    covector on each parameter object. The sharp map turns each of those into a direction in
+                    the parameter object. And \(u\) moves the weights and returns a layer of the same kind we
+                    began with, which is what allows the next step to begin where this one started. The
+                    previous page could say that the update step lives among the reparameterizations and could
+                    not say which reparameterization it is. It is this one.
+                </p>
+            </section>
+
+            <section id="parameter-copied" class="section-content">
+                <h2>The Parameter Was Copied</h2>
+
+                <p>
+                    One piece of bookkeeping on this page was not forced. What the backward part carries has
+                    been kept in cotangent spaces throughout, and the crossing to a vector was made once and
+                    named when it was made. The standard treatment identifies a finite-dimensional space with
+                    its dual and takes the quantities travelling backward to be vectors from the start <a
+                    href="https://arxiv.org/abs/2403.13001">[1]</a>. Neither convention loses anything. The
+                    reason for the one used here is that it puts the choice of inner product in view instead
+                    of dissolving it, and a choice that has been made can be reconsidered.
+                </p>
+
+                <p>
+                    What the page has not captured shows up in what it used without comment. The backward part
+                    is evaluated at \((a, p)\), the same pair the implementation consumed. The composition
+                    rule calls for \(f(a, p)\) again, after \(g\) has already been applied to it. The previous
+                    page tied the weights of two layers by sending \(p\) to \((p, p)\). Each of these is one
+                    value used twice, and each is available only because the ambient setting hands us a
+                    diagonal \(P \to P \times P\) for every object, out of the product structure and at no
+                    cost. Nothing here had to argue for a copy, which is why nothing here mentions one.
+                </p>
+
+                <p>
+                    There are accounts of learning systems in which copying is not free, where a parameter is
+                    consumed by the process it feeds rather than duplicated across it and the operation that
+                    combines two objects is not the categorical product, so that no diagonal accompanies it.
+                    Settings of that kind are monoidal without being cartesian, and the pages here do not
+                    develop them.
+                </p>
+
+                <p>
+                    It is worth saying exactly what would have to give, rather than leaving a name in place of
+                    the content. The definition of the backward part could not name \((a, p)\) twice, and the
+                    composition rule could not reuse \(f(a, p)\) after \(g\) had consumed it. Those two places
+                    are where the constructions above rest on the diagonal. The general form of the
+                    construction, carried out over ambient settings considerably more general than open
+                    subsets of Euclidean spaces, is developed in the literature
+                    <a href="https://arxiv.org/abs/2103.01931">[2]</a>.
+                </p>
+
+                <p>
+                    A marker was set at this point well before it was reached. The page on <a
+                    href="../Discrete/adjoint_functors.html#beyond-algebra"><strong>adjunctions and universal
+                    properties</strong></a> named the categories with finite products in which every
+                    exponential object exists as the reference point against which categorical accounts of
+                    learning systems would later be positioned. The previous page answered half of that, by
+                    recording that nothing it did went beyond finite products. The position can now be given.
+                    What runs out first is not the absence of exponentials but one half of the finite-product
+                    structure itself, the half that copies. The setting these constructions would not survive
+                    is one with less cartesian structure, not one with more.
+                </p>
+
+                <p>
+                    So the account given here is exact about one turn of the training loop, and exact in a
+                    setting where copying costs nothing. The networks are indifferent to that. Every framework
+                    copies, and the arithmetic is the same either way. What the setting decides is whether the
+                    description can tell a parameter used once from a parameter used twice, and in a cartesian
+                    setting it cannot, because the diagonal is always there to make the second case out of the
+                    first. That is what the page does not capture. The omission is not a gap in the derivation
+                    but a property of the ground the derivation stands on.
+                </p>
+
+                <h3>References</h3>
+                <ul style="padding-left: 40px; font-size: 0.92rem;">
+                    <li>
+                        Gavranović, "Fundamental Components of Deep Learning: A Category-Theoretic Approach," PhD
+                        thesis, University of Strathclyde, 2024, arXiv:2403.13001.
+                    </li>
+                    <li>
+                        Cruttwell, Gavranović, Ghani, Wilson, and Zanasi, "Categorical Foundations of Gradient-Based
+                        Learning," <em>Programming Languages and Systems (ESOP 2022)</em>, Lecture Notes in Computer
+                        Science, vol. 13240, pp. 1-28, 2022.
+                    </li>
+                </ul>
+            </section>
+
+        </div>
+
+    </body>
+</html>
