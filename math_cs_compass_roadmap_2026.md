@@ -1,17 +1,7 @@
-# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v15)
-
-*(v15, 2026-08-26: CDL-only update. **The Section V bridge has landed as two pages** — ml-19 `intro_cdl` (2026-08-25) and ml-20 `backward_pass_cdl` (2026-08-26), both published, both passes done, both without a demo (verdicts 2026-08-25 / 2026-08-26). The reach verdict resolved as cartesian-only; parameter non-duplication is declared out of scope on ml-20. Open: the third CDL page's subject (four candidates in `ml20_page_design_handout`). Stage table and track tables updated; nothing else touched. v14, 2026-08-24: CDL-only update. **Leinster Ch.6 is complete** — disc-41~46 published and
-deployed, closing the whole Leinster body; the CDL track's Section IV work is finished and the
-remaining work is the Section V bridge. Part 5 rewritten: stage table, references (one
-classification error corrected), status monitoring re-verified 2026-08-24. Reach analysis added:
-the site owns none of monoidal / 2-category / monad / lens / optic / Kan extension / CRDC, so the
-first Section V page is bounded by what a cartesian setting can carry. Handout version numbers
-stripped from cross-references site-wide (they belong in filenames only). v13, 2026-08-19: Phase 2e
-backlink batch pushed; CDL disc-41 drafting plan fixed. v12/v11, 2026-08-18: Phase 2e body
-complete, prob-38~46 live.)*
+# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v16)
 
 **Author:** Yusuke Yokota
-**Last Updated:** 8/24/2026
+**Last Updated:** 8/27/2026
 **Website:** https://math-cs-compass.com
 
 ---
@@ -104,12 +94,13 @@ Four of the five tracks share the same shape:
 ### 2.3 Start priority (mood-driven; no single order enforced)
 
 No forced order — if one track stalls, others proceed (Part 12 principle 7). With crypto, the
-Phase 2e body, and now the **CDL Section IV body** all complete, the remaining active work is
-**the CDL Section V bridge, the trigger-gated Phase 2e app dispersal, and the optional TDL
-persistent-homology branch**. Dispatch by interest: CDL still carries the only real deadline
-pressure (asymmetric prep cost), but the pressure has changed character — the mathematics is now
-pre-positioned, and what remains is an application-facing page whose honest scope depends on
-machinery the site does not yet own (Part 5.3). The former hard-ordering constraint (Shor after
+Phase 2e body, the **CDL Section IV body**, and now the **CDL Section V bridge** (ml-19 + ml-20)
+all complete, the remaining active work is **the third CDL page (subject open), the
+trigger-gated Phase 2e app dispersal, and the optional TDL persistent-homology branch**.
+Dispatch by interest: CDL still carries the only real deadline pressure (asymmetric prep cost),
+but the pressure has changed character — the mathematics is pre-positioned and the bridge has
+landed, so what remains is a *choice of subject* among four candidates, three of which need
+machinery the site does not yet own (Part 5.3, stage 4′). The former hard-ordering constraint (Shor after
 crypto substrate + linalg-41) is fully discharged — nothing blocks anything now.
 
 ---
@@ -342,7 +333,7 @@ stage 3 -> 4 is the IV -> V crossing (identity shifts from math to ML applicatio
 - Fong & Spivak *Seven Sketches* (applied, **free** arXiv:1803.05316, CC BY 4.0)
 - **Both free, no purchase.** Leinster himself includes poset/monoid examples in the book (an
   entry-design option).
-- **Section V CDL bridge (stage 4) is the next active task.** When written, **restrict the load-bearing claims to the peer-reviewed layer**: *Backprop as Functor* (LICS 2019) / *Categorical Foundations of Gradient-Based Learning* (**ACT 2021 → ESOP 2022**, Springer LNCS) / *Category-Theoretical and Topos-Theoretical Frameworks in ML: A Survey* (**Axioms 2025 14(3):204**, the only peer-reviewed map of the field). Frame the ICML 2024 position paper's "all architectures" claim honestly as an ongoing research direction, not settled theory — the venue is peer-reviewed but the paper is a position paper.
+- **Section V CDL bridge (stage 4) landed 2026-08-25 / 2026-08-26.** The rule it was written under is now a **standing constraint on every further CDL page**: **restrict the load-bearing claims to the peer-reviewed layer**: *Backprop as Functor* (LICS 2019) / *Categorical Foundations of Gradient-Based Learning* (**ACT 2021 → ESOP 2022**, Springer LNCS) / *Category-Theoretical and Topos-Theoretical Frameworks in ML: A Survey* (**Axioms 2025 14(3):204**, the only peer-reviewed map of the field). Frame the ICML 2024 position paper's "all architectures" claim honestly as an ongoing research direction, not settled theory — the venue is peer-reviewed but the paper is a position paper.
 - **Classification correction (2026-08-24):** *Deep Learning with Parametric Lenses* (arXiv:2404.00408) was listed here as established layer. **It is still unpublished** — 2025–2026 citations treat it as a preprint. Its content largely extends the ESOP paper, so **cite the ESOP version for anything load-bearing.**
 - **Rigour source for the definitions:** Gavranović, *Fundamental Components of Deep Learning* (Strathclyde thesis 2024, arXiv:2403.13001). The ESOP paper compresses the Para and Lens definitions; the site's no-external-deferral rule needs the uncompressed version.
 - The CDL bridge is where **disc-20's monad foreshadowing** pays off, and where **disc-19 and disc-46 already carry the forward pointers** ("the reference point against which the categorical accounts of learning systems are later positioned" / the monoidal-closed paragraph).
@@ -365,8 +356,8 @@ architectures" is still a position, and there is **no production deployment** (n
 primitives in PyTorch/JAX). Slow-burn, mathematics-first, stands.
 
 **Newly relevant to this site**: the transformer-topos work runs directly through the presheaf and
-Yoneda machinery disc-22~24 and disc-46 now own — the cheapest possible connection point if a
-second Section V page is ever wanted. Status-shift triggers unchanged: a CDL architecture wins a
+Yoneda machinery disc-22~24 and disc-46 now own — the cheapest possible connection point for a
+further Section V page (the bridge's two pages did not need it). Status-shift triggers unchanged: a CDL architecture wins a
 benchmark / a major framework adds categorical primitives / a well-funded second entrant.
 Paper list with peer-review status and survey date: `cdl_track_handout` §11-2.
 
@@ -447,7 +438,7 @@ References for the five tracks plus existing ones, by acquisition status. **No p
 | Rep Theory | **Hall *Lie Groups…* 2nd ed.** (registered I, GTM 222, ISBN 9783319134666) | ✅ on hand; used for linalg-31~40 (incl. Peter–Weyl §12.3) |
 | Rep Theory (applied) | Gerken et al. (AI Review 2023, arXiv:2105.13926) / Esteves (arXiv:2004.05154) / Brehmer et al. (TMLR 2024, arXiv:2410.23179) | placed as ml-16 in-page References; **not** added to `references.json` (no papers category) |
 | CDL (Section IV) | Leinster *Basic Category Theory* (registered IV, arXiv:1612.09375, v2 2025/8) / Fong-Spivak *Seven Sketches* (registered IV/V, arXiv:1803.05316) | ✅ both free; **Leinster fully consumed 2026-08-24** |
-| CDL (Section V bridge) | Fong-Spivak-Tuyéras LICS 2019 (arXiv:1711.10455) / Cruttwell et al. ACT 2021 → ESOP 2022 (arXiv:2103.01931) / Jia et al. *Axioms* 2025 14(3):204 / Gavranović thesis 2024 (arXiv:2403.13001) | ✅ all free; **placed as ml-19 in-page References, not in `references.json`** — the site rule is that `references.json` carries textbook-level works only and single papers live on the page (same pattern as ml-16, and it does not conflict with the no-external-deferral rule: attribution is not delegation) |
+| CDL (Section V bridge) | Fong-Spivak-Tuyéras LICS 2019 (arXiv:1711.10455) / Cruttwell et al. ACT 2021 → ESOP 2022 (arXiv:2103.01931) / Jia et al. *Axioms* 2025 14(3):204 / Gavranović thesis 2024 (arXiv:2403.13001) | ✅ all free. **The three papers live in the pages' own References blocks** (ml-19 / ml-20), not in `references.json` — single papers stay on the page (same pattern as ml-16), and attribution is not delegation. **The thesis is the exception: registered in `references.json` 2026-08-26 with `sections: ["V"]`** because it is the track's rigour source and the calibration rule was otherwise running on an empty entry — book-length treatment, not paper-length. `sections` is `["V"]` alone so that Section IV keeps textbook-only rigour sources |
 | Crypto (✅ done) | Menezes *Handbook* / de Wolf *Quantum Computing* (books) / Regev *Lattices in CS* (**`courses`**) / Peikert *Decade of Lattice Crypto* (books) / FIPS 203-205 | ✅ all free, all registered |
 | TDL | Hajij et al. *Topological Deep Learning* (registered IV/V, tdlbook.org) / Edelsbrunner-Harer (registered IV) | ✅ all free |
 
@@ -456,7 +447,7 @@ References for the five tracks plus existing ones, by acquisition status. **No p
 - **Mac Lane *Categories for the Working Mathematician* or Awodey *Category Theory*** — monoidal categories and monads. **Trigger = a CDL page that defines rather than describes them** (Part 5.3 reach note).
 - **Johnson & Yau *2-Dimensional Categories*** — 2-categories. Same trigger; needed for Para-as-a-2-category and for string diagrams (stage 3).
 - **Riehl *Category Theory in Context*** — Kan extensions. Neither primary has a chapter; **applied demand now exists** (2026 transformer literature).
-- **All three are textbook-level and would go into `references.json`** if acquired. The CDL papers do not (Part 7.1).
+- **All three are textbook-level and would go into `references.json`** if acquired. The CDL *papers* do not; the Gavranović thesis already is, on book-length grounds (Part 7.1).
 
 ---
 
@@ -561,7 +552,7 @@ Completed tracks (on index.html, no planned pages).
 | **Phase 2e app: Optimal Stopping / HJB** | **Øksendal Ch.10–11. Section V landing (RL/optimal control); continuous-time limit of ml-10 discrete Bellman (`T-bellman_optimality`), new one-directional link, ml-10 unchanged. Stopping-time definition owned by prob-39** |
 | **Reverse-time SDE at law level + time-inhomogeneous Fokker-Planck** | **prob-46 derives the reverse-time equation at operator level (`T-fp_invariant_family` + the reversed-path computation) with the trust localized to two named passages. Owning the law-level statement needs (a) a time-inhomogeneous FP theorem and (b) FP uniqueness (next row). Trigger = OT/generative-modelling literature acquisition, or the Part 11 martingale tier** |
 | **Fokker-Planck uniqueness (equation → law)** | **the second trust point of prob-46's reverse-time reading (S28): two processes whose densities solve one FP equation share one law. Trigger = a parabolic-PDE-uniqueness treatment, or jointly with the row above. Nothing on the site currently spends this passage** |
-| String Diagrams | after CDL Stage 4 (or part of Stage 4). **Blocked on monoidal categories, which the site does not own** — acquisition (Part 7.2) is the real trigger |
+| String Diagrams | CDL stage 3 (IV) — stage 4 has landed and did not need them. **Blocked on monoidal categories, which the site does not own** — acquisition (Part 7.2) is the only remaining trigger |
 | Persistent Homology | TDL optional branch (disc-15 forecast, Part 3.4) |
 | Uniform Integrability & Martingale Convergence | RL theory / stochastic approximation; resolves prob-23 UI forward-ref |
 | Variational Representations & f-Divergences | contrastive learning / MI estimation (MINE, f-GAN, InfoNCE, PAC-Bayes) |
