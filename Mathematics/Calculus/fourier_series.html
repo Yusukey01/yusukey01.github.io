@@ -55,6 +55,9 @@ uses_python: false
                     b_n &= \frac{1}{L} \int_{-L}^{L} f(x)\sin\left(\frac{n\pi x}{L}\right) \, dx, \quad n \geq 1
                     \end{align*}
                     \]
+                    The sense in which the series equality holds varies with the regularity of \(f\) and is made precise in the
+                    convergence section. At a jump discontinuity the series converges to the midpoint of the one-sided
+                    limits rather than to \(f(x)\).
                 </div>
                 <p>
                     The constant term \(\frac{a_0}{2}\) represents the average value of the function over one period. Each term
@@ -76,7 +79,7 @@ uses_python: false
                             identifying which frequency components humans are least sensitive to.
                         </li>
                         <li><strong>Speech recognition and synthesis:</strong><br>
-                            Modern speech LLM systems use Fourier-based spectrograms to convert audio waveforms into features that neural networks can process.
+                            Fourier-based spectrograms are commonly used to convert audio waveforms into features that neural networks can process.
                         </li>
                         <li><strong>Music information retrieval:</strong><br>
                             Applications like Shazam identify songs by analyzing their frequency signatures using Fast Fourier Transforms (FFT).
@@ -89,7 +92,7 @@ uses_python: false
 
                     <p>
                         The fundamental idea of decomposing complex signals into simple periodic components remains at the heart of 
-                        how modern systems process audio, images, and temporal data. Understanding Fourier series provides the 
+                        how many modern systems process audio, images, and temporal data. Understanding Fourier series provides the 
                         mathematical foundation for these ubiquitous technologies.
                     </p>
                 </div>             
@@ -102,7 +105,7 @@ uses_python: false
                 <p>
                     The Fourier series formula claims that any periodic function can be decomposed into sines and cosines. But
                     how do we extract the individual coefficients? The answer lies in the same principle that makes
-                    <a href="../Linear_algebra/orthogonality.html"><strong>orthogonal projections</strong></a> work in
+                    <a href="../Linear_algebra/orthogonality.html#T-orthogonal_decomposition" class="ref-link"><strong>orthogonal projections</strong></a> work in
                     finite-dimensional spaces. Inner products with orthogonal basis functions isolate each component. We define
                     an inner product on the space of functions over \([-L, L]\) by:
                     \[
@@ -125,6 +128,7 @@ uses_python: false
                         \int_{-L}^{L} \sin\left(\frac{m\pi x}{L}\right)\sin\left(\frac{n\pi x}{L}\right) \, dx &= \begin{cases}
                         0 & \text{if } m \neq n \\\\
                         L & \text{if } m = n \neq 0 \\\\
+                        0 & \text{if } m = n = 0
                         \end{cases} \\\\
                         \int_{-L}^{L} \cos\left(\frac{m\pi x}{L}\right)\sin\left(\frac{n\pi x}{L}\right) \, dx &= 0
                         \end{align*}
@@ -184,7 +188,7 @@ uses_python: false
                 <p>
                     This system is moreover <strong>complete</strong>. Every square-integrable function can be approximated
                     arbitrarily well in the \(L^2\) norm by finite linear combinations of these functions, so the system serves
-                    as an <strong>orthogonal basis</strong> of \(L^2[-L, L]\). Completeness combines the Riesz-Fischer theorem,
+                    as an <strong>orthogonal basis</strong> of \(L^2[-L, L]\). Completeness combines the <a href="lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz-Fischer theorem</strong></a>,
                     proved on the page devoted to \(L^p\) completeness and convergence, with a density argument. We expand on
                     this in the convergence section below.
                 </p>
@@ -357,7 +361,7 @@ uses_python: false
                     \[
                     \begin{align*}
                         f(x) &= \frac{a_0}{2}
-                             + \frac{1}{2}\sum_{n = -1}^{-\infty} (a_{-n} - i b_{-n})\, e^{-i n\pi x/L}
+                             + \frac{1}{2}\sum_{n=-\infty}^{-1} (a_{-n} - i b_{-n})\, e^{-i n\pi x/L}
                              + \frac{1}{2}\sum_{n=1}^{\infty} (a_n + i b_n)\, e^{-i n\pi x/L}.
                     \end{align*}
                     \]
@@ -390,7 +394,7 @@ uses_python: false
                         \[
                         f(x) =  \sum_{n= -\infty}^{\infty} c_n e^{\frac{-i n \pi x}{L}}
                         \]
-                        where the complex Fourier coefficients are:
+                        where, for \(n \gt 0\), the complex Fourier coefficients reduce to a single closed formula:
                         \[
                         \begin{align*}
                         c_n
@@ -399,6 +403,8 @@ uses_python: false
                             &= \frac{1}{2L} \int_{-L}^{L} f(x)e^{\frac{i n\pi x}{L}} \, dx
                         \end{align*}
                         \]
+                        A direct check shows that the cases \(n = 0\) and \(n \lt 0\) lead to the same final expression,
+                        so the closed integral formula holds for every integer \(n\).
                         Note that if \(f\) is real-valued, the coefficients satisfy <strong>conjugate symmetry</strong>:
                         \(c_{-n} = \overline{c_n}\).
                     </p>        
@@ -465,7 +471,8 @@ uses_python: false
                     \[
                     \frac{d}{dx}\,e^{-\frac{i n\pi x}{L}} = -\frac{i n\pi}{L}\,e^{-\frac{i n\pi x}{L}},
                     \]
-                    which makes the eigenvalue \(-\frac{i n\pi}{L}\) align naturally with the negative definite nature of the 
+                    so applying the derivative twice multiplies by \(-\frac{n^2\pi^2}{L^2}\), and these nonpositive eigenvalues
+                    of the second-derivative operator align naturally with the negative semidefinite nature of the
                     Laplacian in PDEs.
                 </p>
                 <p>
@@ -565,9 +572,9 @@ uses_python: false
             <section id="parseval" class="section-content">
                 <h2>Parseval's Identity</h2>
                 <p>
-                    In finite-dimensional linear algebra, the
-                    <a href="../Linear_algebra/orthogonality.html"><strong>Pythagorean theorem</strong></a> states that the
-                    squared norm of a vector equals the sum of squares of its components in an orthonormal basis. Parseval's
+                    In finite-dimensional linear algebra, the squared norm of a vector equals the sum of squares of its
+                    components in an orthonormal basis, an iterated form of the Pythagorean theorem that appears there as
+                    <a href="../Linear_algebra/orthogonality.html#T-orthonormal_columns_preserve_norm" class="ref-link"><strong>norm preservation under orthonormal coordinates</strong></a>. Parseval's
                     identity is the infinite-dimensional analogue, and it guarantees that no information is lost or created
                     when passing between the time and frequency domains.
                 </p>
@@ -605,7 +612,7 @@ uses_python: false
                         </li>
                         <li><strong>Data Compression (for example, JPEG and MP3):</strong><br>
                             Because total energy is preserved, we can truncate small Fourier coefficients that contribute little to the total energy. 
-                            This allows us to discard "insignificant" data with minimal loss of perceived quality.
+                            This allows us to discard "insignificant" data with small energy error, which in practice translates into minimal loss of perceived quality.
                         </li>
                         <li><strong>Feature Selection:</strong><br>
                             Parseval's identity allows us to identify which frequency components contain the majority of the signal's energy, 
@@ -626,7 +633,7 @@ uses_python: false
                         finite, so interchanging sum and integral is elementary, and the identity
                         \(\|S_N\|_2^2 = \sum_{|n|\leq N} |c_n|^2\) follows. Taking \(N \to \infty\) and using
                         \(L^2\)-convergence \(S_N \to f\) in \(L^2[-L,L]\), established in the
-                        <a href="#convergence">convergence section</a> and resting on the Riesz-Fischer theorem of the \(L^p\)
+                        <a href="#convergence">convergence section</a> and resting on the <a href="lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz-Fischer theorem</strong></a> of the \(L^p\)
                         completeness page, yields the full identity. We present the calculation in the suggestive infinite-sum
                         form below, with this limiting procedure understood.
                     </p>
@@ -727,7 +734,7 @@ uses_python: false
                         \quad
                         D_N(t) = \sum_{n=-N}^{N} e^{in\pi t/L}.
                         \]
-                        A geometric-series computation puts \(D_N\) in closed form:
+                        A geometric-series computation puts \(D_N\) in closed form for \(t\) not a multiple of \(2L\):
                         \[
                         D_N(t) = \frac{\sin\!\left((N+\tfrac{1}{2})\pi t/L\right)}{\sin(\pi t/(2L))}.
                         \]
@@ -797,7 +804,7 @@ uses_python: false
                         integrable on a bounded interval, the oscillatory integrals \(\int g(t)\, e^{\pm iNt}\,dt\) tend to
                         \(0\) as \(N \to \infty\). In our application the relevant tail integrand is bounded, hence
                         square-integrable on \([\delta, L]\), so the \(L^2\) form of the lemma is what we need. That form
-                        follows directly from Bessel's inequality and will be proved in the forthcoming page on Fourier
+                        follows directly from Bessel's inequality and is proved on the forthcoming page on Fourier
                         analysis in Hilbert spaces. The extension to general integrable functions, obtained via density, is
                         also established there.
                     </p>
@@ -809,8 +816,9 @@ uses_python: false
 
                 <h3>2. Mean Square (\(L^2\)) Convergence:</h3>
                 <p>
-                    For any square-integrable function \(f \in L^2[-L, L]\) (the space of functions where
-                    \(\int_{-L}^{L} |f(x)|^2 \, dx \lt \infty\)), the Fourier series converges in the mean square sense:
+                    For any square-integrable function \(f \in L^2[-L, L]\) (the space of functions with
+                    \(\int_{-L}^{L} |f(x)|^2 \, dx \lt \infty\), understood as usual up to equality almost everywhere),
+                    the Fourier series converges in the mean square sense:
                     \[
                     \lim_{N \to \infty} \int_{-L}^{L} \left|f(x) - \left(\frac{a_0}{2} + \sum_{n=1}^{N} \left(a_n\cos\left(\frac{n\pi x}{L}\right) + b_n\sin\left(\frac{n\pi x}{L}\right)\right)\right)\right|^2 dx = 0
                     \]
@@ -818,7 +826,7 @@ uses_python: false
                     orthogonal basis</strong> of \(L^2[-L, L]\). Two ingredients combine to establish this.
                 </p>
                 <p>
-                    First, the <strong>Riesz-Fischer theorem</strong>, established in the upcoming page on \(L^p\) completeness
+                    First, the <a href="lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz-Fischer theorem</strong></a>, established in the upcoming page on \(L^p\) completeness
                     and convergence, guarantees that \(L^2[-L, L]\) is a complete Hilbert space under the inner product
                     \(\langle f, g\rangle = \frac{1}{2L}\int_{-L}^{L} f(x)\overline{g(x)}\,dx\). Second, the <strong>density of
                     trigonometric polynomials</strong> in \(L^2[-L, L]\) follows from the Weierstrass approximation theorem
@@ -835,7 +843,7 @@ uses_python: false
                     <li>It holds for <em>every</em> square-integrable function, even highly discontinuous ones.</li>
                     <li>It justifies truncating Fourier series for approximation (basis for compression algorithms).</li>
                     <li>It connects directly to Parseval's identity, which we proved earlier.</li>
-                    <li>It provides the theoretical foundation for frequency-domain methods in machine learning.</li>
+                    <li>It provides a theoretical foundation for frequency-domain methods in machine learning.</li>
                 </ul><br>
                 
                 <h3>3. The Gibbs Phenomenon:</h3>
