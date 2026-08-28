@@ -33,7 +33,8 @@ uses_python: false
                     In the study of complex systems, from the orbits of planets to the loss landscapes of deep neural
                     networks, most functions are inherently nonlinear and difficult to solve directly. Linear
                     approximation is the fundamental strategy of calculus. It approximates a complex function \(f(x)\)
-                    near a specific point \(x_o\) using the simplest possible tool, a linear function.
+                    near a specific point \(x_o\) using the simplest possible tool, an affine function, a linear function
+                    plus a constant.
                 </p>
 
                 <p>
@@ -43,7 +44,8 @@ uses_python: false
                     \(h\). More generally \(\varphi(h) = o(|h|^k)\) means \(\varphi(h)/|h|^k \to 0\). The companion
                     symbol \(\varphi(h) = O(h)\) means \(|\varphi(h)| \leq C|h|\) for some constant \(C\) and all \(h\)
                     near \(0\). In the multivariate case, \(h\) is replaced by a vector \(\mathbf{h}\) and \(|h|\) by a
-                    norm \(\|\mathbf{h}\|\).
+                    norm \(\|\mathbf{h}\|\). When \(\varphi\) is vector- or matrix-valued, \(|\varphi(h)|\) is likewise
+                    replaced by a norm of the output.
                 </p>
 
                 <p>
@@ -57,13 +59,14 @@ uses_python: false
                     \(|h|\) plays this role implicitly, so the point passes unnoticed. Once inputs or outputs live in
                     higher-dimensional spaces of vectors, matrices, and eventually functions, we need a genuine measure
                     of magnitude, and that measure is a <strong>norm</strong>. The statement
-                    "\(f(x+\mathbf{h}) - f(x) - f'(x)\mathbf{h} = o(\|\mathbf{h}\|)\)" is not just a compact notation.
-                    It <em>is</em> the definition of differentiability, formulated so that both the displacement and the
-                    residual are measured in compatible units.
+                    "\(f(\mathbf{x}+\mathbf{h}) - f(\mathbf{x}) - f'(\mathbf{x})\mathbf{h} = o(\|\mathbf{h}\|)\)" is not just a
+                    compact notation. It <em>is</em> the definition of differentiability, formulated so that both the
+                    displacement and the residual are measured in compatible units.
                 </p>
 
                 <p>
-                    In finite dimensions all norms are equivalent, so the choice is inessential for pointwise calculus.
+                    In finite dimensions all norms are equivalent (a fact proved later in this section when we turn to
+                    normed spaces), so the choice is inessential for pointwise calculus.
                     In infinite-dimensional settings the choice becomes substantive. Different norms induce different
                     notions of continuity and differentiability, which is why functional analysis begins, rather than
                     ends, with the choice of norm.
@@ -142,8 +145,8 @@ uses_python: false
 
                 <p>
                     In other words, \(df = f'(x)\,dx\) is the unique linear map whose deviation from the true increment
-                    \(\Delta f\) is higher-order. (Uniqueness: if two linear maps \(L_1, L_2\) both satisfy
-                    \(\Delta f = L_i(dx) + o(dx)\), then \(L_1 - L_2 = o(dx)\) is a linear map that is \(o(dx)\), hence
+                    \(\Delta f\) is higher-order. (Uniqueness: if two linear maps \(\ell_1, \ell_2\) both satisfy
+                    \(\Delta f = \ell_i(dx) + o(dx)\), then \(\ell_1 - \ell_2 = o(dx)\) is a linear map that is \(o(dx)\), hence
                     identically zero.)
                 </p>
 
@@ -167,7 +170,9 @@ uses_python: false
                         displacement in the input space (\(dx\)) to a displacement in the output space (\(df\)). This
                         perspective is essential once \(x\) is no longer a scalar but a vector
                         \(\mathbf{x} \in \mathbb{R}^n\) or a matrix \(X \in \mathbb{R}^{m \times n}\). There, \(f'\) is
-                        no longer a number but the matrix of partial derivatives called the <strong>Jacobian</strong>.
+                        no longer a number but a linear map, represented by the matrix of partial derivatives called
+                        the <strong>Jacobian</strong> (for matrix inputs, after listing the entries of \(X\) in a single
+                        column).
                         In the scalar-output case, the transpose of the Jacobian yields the <strong>gradient</strong>.
                     </p>
                 </div>
@@ -179,7 +184,9 @@ uses_python: false
                     \(\mathbf{x} \in \mathbb{R}^n\). From here on, <strong>bold</strong> symbols
                     \(\mathbf{x}, \mathbf{y}, d\mathbf{x}\) denote vectors. Plain italic \(x_i\) denotes the \(i\)-th
                     scalar component. For a scalar-valued differentiable function \(f : \mathbb{R}^n \to \mathbb{R}\),
-                    the differential at \(\mathbf{x}\) is the linear map
+                    restricting the definition of differentiability to the line through \(\mathbf{x}\) in direction
+                    \(\mathbf{e}_i\) shows \(df(\mathbf{e}_i) = \partial f/\partial x_i\), and linearity then gives
+                    the differential at \(\mathbf{x}\) as the linear map
                     \[
                     \begin{align*}
                     df &: \mathbb{R}^n \to \mathbb{R}, \\\\
@@ -207,8 +214,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    In practice, when a computation yields \(df = \mathbf{v}^\top\, d\mathbf{x}\) for some row vector
-                    \(\mathbf{v}\), we read off the gradient as \(\nabla f = \mathbf{v}^\top\).
+                    In practice, when a computation yields \(df = \mathbf{v}^\top\, d\mathbf{x}\) for some column vector
+                    \(\mathbf{v}\), we read off the gradient as \(\nabla f = \mathbf{v}\).
                 </p>
 
                 <p>
@@ -233,9 +240,9 @@ uses_python: false
                     calculus just developed is the right tool. Rather than writing out \(n\) partial derivatives by
                     hand, we manipulate \(d(\cdot)\) symbolically and read off the gradient from the row-vector
                     coefficient of \(d\mathbf{x}\). The three examples below are the squared norm, the quadratic form,
-                    and the \(L_2\) norm. Together they cover essentially every gradient that appears in standard
-                    regularization and second-order optimization. We first state the product rule in the differential
-                    form that will be used throughout.
+                    and the \(L_2\) norm. Together they cover the gradients that appear most often in standard
+                    regularization and in the quadratic models of second-order optimization. We first state the product
+                    rule in the differential form that will be used throughout.
                 </p>
 
                 <div class="theorem" id="T-differential_product_rule">
@@ -267,9 +274,11 @@ uses_python: false
                     <p>
                         The first two terms contribute the linear part \((dg)\,h(x) + g(x)\,(dh)\), up to \(o(dx)\).
                         Here we use that \(h(x)\) and \(g(x)\) are fixed (independent of \(dx\)), so multiplication by
-                        either preserves \(o(dx)\). In the vector/matrix setting the same step uses submultiplicativity
-                        of the operator norm. The cross term \((\Delta g)(\Delta h)\) is \(O(dx)\cdot O(dx) = o(dx)\).
-                        Therefore
+                        either preserves \(o(dx)\). In the vector/matrix setting the same step holds because each entry
+                        of a product with a fixed factor is a fixed linear combination of the entries of the other factor,
+                        so multiplication by \(g(x)\) or \(h(x)\) preserves \(o(dx)\) entrywise. The cross term
+                        \((\Delta g)(\Delta h)\) is \(O(dx)\cdot O(dx) = o(dx)\), since \(\Delta g = dg + o(dx) = O(dx)\)
+                        and likewise for \(\Delta h\). Therefore
                         \[
                         \Delta f = (dg)\,h + g\,(dh) + o(dx),
                         \]
@@ -328,20 +337,22 @@ uses_python: false
 
                 <p>
                     <a href="../Linear_algebra/symmetry.html#qf"><strong>Quadratic forms</strong></a> are essential for
-                    modeling local curvature. Specifically, they form the basis of the <strong>Hessian matrix</strong>
-                    in optimization. Let \(\mathbf{x} \in \mathbb{R}^n\) and \(A \in \mathbb{R}^{n \times n}\).
+                    modeling local curvature. Specifically, the second-order term of a Taylor expansion is the quadratic
+                    form of the <strong>Hessian matrix</strong>. Let \(\mathbf{x} \in \mathbb{R}^n\) and
+                    \(A \in \mathbb{R}^{n \times n}\).
                 </p>
 
                 <div class="proof">
                     <span class="proof-title">Example 2.</span>
                     <p>
-                        Expanding the increment and dropping the quadratic term (which is \(o(\|d\mathbf{x}\|)\)):
+                        Expanding the increment:
                         \[
                         \begin{align*}
                         \Delta f &= (\mathbf{x} + d\mathbf{x})^\top A\,(\mathbf{x} + d\mathbf{x}) - \mathbf{x}^\top A\mathbf{x} \\\\
-                                 &= d\mathbf{x}^\top A\,\mathbf{x} + \mathbf{x}^\top A\, d\mathbf{x} + d\mathbf{x}^\top A\, d\mathbf{x},
+                                 &= d\mathbf{x}^\top A\,\mathbf{x} + \mathbf{x}^\top A\, d\mathbf{x} + d\mathbf{x}^\top A\, d\mathbf{x}.
                         \end{align*}
                         \]
+                        The last term is bounded by a constant times \(\|d\mathbf{x}\|^2\), hence \(o(\|d\mathbf{x}\|)\),
                         so the linear part is
                         \[
                         df = d\mathbf{x}^\top A\,\mathbf{x} + \mathbf{x}^\top A\, d\mathbf{x}.
@@ -367,15 +378,17 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Symmetry and Optimization Efficiency</h3>
                     <p>
-                        In most machine learning contexts, for instance in the second-order Taylor expansion of a loss
-                        function, the matrix \(A\) is the <strong>Hessian</strong>, which is symmetric: \(A = A^\top\).
+                        In many optimization contexts, for instance in the second-order Taylor expansion of a loss
+                        function, the matrix \(A\) is the <strong>Hessian</strong>, which is symmetric whenever the loss
+                        is twice continuously differentiable: \(A = A^\top\).
                         In this case the gradient simplifies to
                         \[
                         \nabla f = (A + A^\top)\,\mathbf{x} = 2A\,\mathbf{x}.
                         \]
                         Symmetry is not a mathematical curiosity. Numerical solvers exploit it to reduce memory and
-                        computation by roughly half (for example, storing only the upper triangle, using Cholesky in
-                        place of general LU, and using the conjugate-gradient method instead of GMRES).
+                        computation by roughly half (for example, storing only the upper triangle, and, when the matrix is
+                        also positive definite, using Cholesky in place of general LU and the conjugate-gradient method
+                        instead of GMRES).
                     </p>
                     <p>
                         Moreover, Example 1 is recovered as the special case \(A = I\), for which
@@ -390,8 +403,9 @@ uses_python: false
                 <h2>The \(L_2\) Norm \(f(\mathbf{x}) = \|\mathbf{x}\|_2\)</h2>
                 <p>
                     The <a href="../Linear_algebra/orthogonality.html#inner"><strong>\(L_2\) norm, or Euclidean distance</strong></a>
-                    is the most common regularization term used to prevent overfitting in machine learning models.
-                    Understanding its derivative is key to understanding how <strong>weight decay</strong> works.
+                    is the building block of one of the most common regularization terms. <strong>Weight decay</strong>
+                    penalizes its square, the function of Example 1. The derivative of the norm itself, computed here,
+                    is what separates the unsquared penalty from the squared one.
                 </p>
 
                 <div class="proof">
@@ -432,12 +446,13 @@ uses_python: false
                         \(\mathbf{x}\).
                     </p>
                     <p>
-                        In <a href="gradient.html#gradient"><strong>gradient descent</strong></a>, this means the
-                        regularization force has magnitude independent of the weights' scale. The force always pulls the
-                        weights directly toward the origin with a constant pressure (proportional to the learning rate).
-                        This is the mathematical reason \(L_2\) regularization effectively shrinks weights but rarely
-                        drives them to exactly zero. The contrast is with \(L_1\) regularization, whose subgradient can
-                        point toward zero with full magnitude across a whole axis.
+                        In <a href="gradient.html#gradient"><strong>gradient descent</strong></a>, this means that a
+                        penalty on the unsquared norm pulls the weights toward the origin with a force whose magnitude is
+                        independent of their scale, so it can drive the whole weight vector to exactly zero in finitely
+                        many steps, as group-sparsity penalties do. Weight decay, by contrast, penalizes the squared norm
+                        of Example 1, whose gradient \(2\mathbf{x}\) shrinks the weights in proportion to their size and
+                        therefore rarely drives them to exactly zero. \(L_1\) regularization applies the same
+                        constant-magnitude pull coordinate by coordinate, which is why it produces sparsity.
                     </p>
                 </div>
 
