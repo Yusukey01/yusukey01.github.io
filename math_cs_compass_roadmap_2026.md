@@ -1,7 +1,7 @@
-# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v16)
+# MATH-CS COMPASS: Curriculum Roadmap & Development Plan (v17)
 
 **Author:** Yusuke Yokota
-**Last Updated:** 8/27/2026
+**Last Updated:** 8/28/2026
 **Website:** https://math-cs-compass.com
 
 ---
@@ -462,6 +462,7 @@ cross-check before naming a new anchor. The manifold handout §2 overload notes 
 | `infinitesimal_generator` | Lie one-param subgroup `D-infinitesimal_generator` (owner calc-64 `integral_curves.html`) | SDE generator `D-sde_generator` (owner prob-42) | — | realized; downstream ref-links, no re-own |
 | `score_function` | Fisher `D-score_function` (∇_θ) | data `D-score_function_data_gradient` (∇_x, ml-14) | continuous score (prob-46) | realized: prob-46 ref-links ml-14 (Stein + invariant family), no new owner |
 | `lattice` | order-theoretic lattice (future FA) | integer lattice (crypto, new) | — | crypto uses `D-integer_lattice` |
+| `absorbing` / `absorption` | LCS absorbing set `D-balanced_absorbing` (owner calc-95 `locally_convex_spaces.html`) | trajectory absorption `T-trajectory_absorbs_integral_curves` (owner calc-65 `flow_theorem.html`, 2026-08-28) | — | different objects (a set absorbing points vs. a maximal integral curve absorbing integral curves) and different Sections of Part II; anchors already disjoint, link text kept explicit (`absorption lemma` / `absorption of integral curves by trajectories`). No action beyond this record |
 | `\hat{g}` | tangent-cotangent map (calc-81) | product metric (calc-78 separated to `g(+)g̃`) | — | already separated (manifold §2) |
 | `F_*` | pushforward (calc-61) | induced Lie alg hom (calc-63) | — | state assumption (manifold §2) |
 | `character` | (planned in rep theory) | possibly existing in coding theory etc. | — | grep required at Rep start |
