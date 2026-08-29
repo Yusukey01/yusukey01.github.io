@@ -45,7 +45,8 @@ uses_python: true
                 </p>
 
                 <p>
-                    In this page we work through the simpler case \(f(X) = X^2\), for which the differential is
+                    In this page we work through the simpler case \(f(X) = X^2\), for which, expanding
+                    \((X + dX)^2 - X^2\) as in the cubic case, the differential is
                     \[
                     df = f'(X)[dX] = X(dX) + (dX)X,
                     \]
@@ -56,8 +57,9 @@ uses_python: true
 
                 <p>
                     For a differentiable function \(f\), the
-                    <a href="linear_approximation.html#D-differential" class="ref-link"><strong>differential</strong></a>
-                    \(df\) at \(X\) is the linear part of the increment, equivalently the quantity that satisfies
+                    <a href="jacobian.html#D-differentiable_multivariate" class="ref-link"><strong>differential</strong></a>
+                    \(df\) at \(X\) (matrices being identified with the vectors of their entries) is the linear part
+                    of the increment, equivalently the quantity that satisfies
                     \[
                     f(X + dX) - f(X) = df + o(\|dX\|).
                     \]
@@ -93,21 +95,24 @@ uses_python: true
                     </p>
                     <ul style="padding-left: 40px;">
                         <li><strong>Truncation error</strong> from the \(o(\|dX\|)\) remainder. For \(C^2\) functions
-                            the remainder is \(O(\|dX\|^2)\), and its <em>relative</em> size (against
+                            the remainder is \(O(\|dX\|^2)\) (by the second-order Taylor expansion, treated later in
+                            this section), and its <em>relative</em> size (against
                             \(\|df\| = \Theta(\|dX\|)\), assuming \(df \neq 0\)) is \(O(\|dX\|)\). The \(C^2\) case
                             is the regime where finite-difference validation is used in practice, and it covers
                             \(f(X) = X^2\) here, whose remainder is exactly \((dX)^2\).</li>
-                        <li><strong>Rounding error</strong> from subtracting two nearly equal floating-point numbers
+                        <li><strong>Rounding error</strong> from subtracting two nearly equal floating-point entries
                             in \(f(X + dX) - f(X)\). Its <em>relative</em> size is
-                            \(O(\varepsilon_{\text{mach}} / \|dX\|)\), where
+                            \(O(\varepsilon_{\text{mach}} / \|dX\|)\), a consequence of the floating-point rounding
+                            model that we take as given, where
                             \(\varepsilon_{\text{mach}} \approx 2.2\times 10^{-16}\) for IEEE 754 double precision.</li>
                     </ul>
                     <p>
-                        Balancing the two gives optimal
+                        Balancing the two (minimizing \(\|dX\| + \varepsilon_{\text{mach}}/\|dX\|\)) gives optimal
                         \(\|dX\| \approx \sqrt{\varepsilon_{\text{mach}}} \approx 1.5 \times 10^{-8}\) for one-sided
                         differences, with corresponding best achievable relative error
                         \(\approx \sqrt{\varepsilon_{\text{mach}}}\). This is why we set the perturbation scale to
-                        \(10^{-8}\) in the code below. Any smaller and rounding dominates. Any larger and the
+                        \(10^{-8}\) in the code below (relative to \(\|X\|\), which is of order one for the test
+                        matrices used there). Any smaller and rounding dominates. Any larger and the
                         quadratic truncation term does.
                     </p>
                 </div>
@@ -189,7 +194,7 @@ print(f"Relative error (backward): {b_rel_err:.2e}")
                         The same logic applies to gradient checks in scientific-computing libraries and to the
                         testing of custom CUDA kernels. The technique on this page is to pick a perturbation at the
                         \(\sqrt{\varepsilon_{\text{mach}}}\) scale, compare against a forward or backward difference,
-                        and measure the relative error. That recipe is the workhorse behind all of these checks.
+                        and measure the relative error. That recipe is the workhorse behind these checks.
                     </p>
                 </div>
 
