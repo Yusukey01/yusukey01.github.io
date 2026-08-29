@@ -57,14 +57,17 @@ uses_python: false
                     <span class="proof-title">Sketch of the proof of Rolle's Theorem.</span>
                     <p>
                         Since \(f\) is continuous on the compact interval \([a,b]\), the Extreme Value Theorem
-                        guarantees that \(f\) attains its maximum \(M\) and minimum \(m\) on \([a,b]\). Since
-                        \(m \leq f(a) = f(b) \leq M\), exactly one of the following three cases holds:
+                        (a continuous function on a compact set attains its maximum and minimum, a fact we use
+                        without proof on this page) guarantees that \(f\) attains its maximum \(M\) and minimum \(m\) on
+                        \([a,b]\). Since
+                        \(m \leq f(a) = f(b) \leq M\), at least one of the following three cases holds:
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>If \(M = m\), then \(f\) is constant and \(f'(c) = 0\) for every \(c \in (a,b)\).</li>
                         <li>If \(M \gt f(a) = f(b)\), the maximum is attained at some interior point \(c \in (a,b)\).
-                            Since \(f\) is differentiable there and \(c\) is a local maximum, Fermat's theorem gives
-                            \(f'(c) = 0\).</li>
+                            Since \(f\) is differentiable there and \(c\) is a local maximum, \(f'(c) = 0\), because the
+                            difference quotients at an interior maximum are nonnegative from the left and nonpositive
+                            from the right.</li>
                         <li>If \(m \lt f(a) = f(b)\), the minimum is attained at an interior point \(c\), and the
                             same argument yields \(f'(c) = 0\).</li>
                     </ul>
@@ -171,11 +174,11 @@ uses_python: false
                     <span class="theorem-title">Taylor's Theorem, Lagrange Form</span> 
                     <p>
                         Let \(n \geq 1\) be an integer and let \(I \subseteq \mathbb{R}\) be an interval
-                        containing both \(a\) and \(x\). Suppose \(f: I \to \mathbb{R}\) is \(n\) times
+                        containing both \(a\) and \(x\), with \(x \neq a\). Suppose \(f: I \to \mathbb{R}\) is \((n+1)\) times
                         differentiable on \(I\). Then there exists
                         \(c\) strictly between \(a\) and \(x\) such that
                         \[
-                        R_n(x) = \frac{f^{(n)}(c)}{n!}\,(x - a)^n,
+                        R_n(x) = \frac{f^{(n+1)}(c)}{(n+1)!}\,(x - a)^{n+1},
                         \]
                         where \(R_n(x) = f(x) - T_n(x)\) is the remainder.
                     </p>   
@@ -183,11 +186,29 @@ uses_python: false
 
                 <p>
                     The Lagrange form is useful when a <em>concrete pointwise bound</em> on \(R_n\) is needed. Any bound
-                    on \(|f^{(n)}|\) over \(I\) yields a bound on \(|R_n(x)|\) via
-                    \(|R_n(x)| \leq \frac{\sup_{c \in I} |f^{(n)}(c)|}{n!}\,|x-a|^n\). This is the form invoked in error
+                    on \(|f^{(n+1)}|\) over \(I\) yields a bound on \(|R_n(x)|\) via
+                    \(|R_n(x)| \leq \frac{\sup_{c \in I} |f^{(n+1)}(c)|}{(n+1)!}\,|x-a|^{n+1}\). This is the form invoked in error
                     analysis for numerical methods and in convergence proofs for optimization algorithms where an explicit
                     remainder estimate is required.
                 </p>
+
+                <div class="proof">
+                    <span class="proof-title">Proof sketch of both forms.</span>
+                    <p>
+                        Both reduce to the mean value machinery of this page. Every derivative of \(R_n\) up to order
+                        \(n\) vanishes at \(a\), because \(T_n\) matches \(f\) to that order there. For the Lagrange
+                        form, apply <a href="#c_mvt">Cauchy's Mean Value Theorem</a> below to the pair \(R_n\) and \((x-a)^{n+1}\), then to
+                        their derivatives, and so on \(n+1\) times, each time moving the evaluation point strictly
+                        closer to \(a\). Since \(T_n^{(n+1)} = 0\), the last quotient is \(f^{(n+1)}(c)/(n+1)!\).
+                    </p>
+                    <p>
+                        For the Peano form the same descent stops after \(n-1\) steps, leaving
+                        \(R_n(x)/(x-a)^n = R_n^{(n-1)}(\xi)/\bigl(n!\,(\xi - a)\bigr)\) with \(\xi\) between \(a\)
+                        and \(x\). Writing out
+                        \(R_n^{(n-1)}(\xi) = f^{(n-1)}(\xi) - f^{(n-1)}(a) - f^{(n)}(a)(\xi - a)\), the quotient tends
+                        to \(0\) as \(x \to a\) precisely because \(f^{(n-1)}\) is differentiable at \(a\).
+                    </p>
+                </div>
 
                 <p>
                     When \(f\) is infinitely differentiable on \(I\) and the Lagrange remainder satisfies
@@ -222,8 +243,9 @@ uses_python: false
                         <strong>real-analytic</strong>, a condition strictly stronger than \(C^\infty\). This distinction
                         matters in information geometry, where the exponential and other parametric families are typically
                         real-analytic, and in the high-accuracy convergence theory of spectral methods (Chebyshev and
-                        Fourier expansions), where analyticity yields exponential convergence while mere \(C^\infty\)
-                        regularity only gives polynomial convergence.
+                        Fourier expansions), where analyticity yields exponential convergence, \(C^\infty\) regularity alone
+                        gives convergence faster than any power of the truncation order, and finite differentiability
+                        only an algebraic rate.
                     </p>
                 </div>
             </section>
@@ -264,10 +286,10 @@ uses_python: false
                         for L'H&ocirc;pital's Rule but also a critical concept when transitioning to advanced topics.
                     </p>
                     <p>
-                        In the context of modern machine learning and <strong>Information Geometry</strong>, this theorem 
-                        foreshadows the analysis of how different metrics (like loss functions vs. probability constraints) 
-                        scale relative to one another. Understanding these relative rates of change is essential for analyzing 
-                        the geometry of probability manifolds and natural gradient methods.
+                        In <strong>Information Geometry</strong> one again compares two rates of change at once, the change of
+                        a loss along a parameter curve against the Fisher-metric length of the same curve, and Cauchy's MVT
+                        is the one-variable prototype of such a comparison. The comparison itself is developed on the pages
+                        on Fisher information and natural gradient, not here.
                     </p>
                 </div>
             </section>
@@ -277,7 +299,7 @@ uses_python: false
 
                 <p>
                     Before moving to optimization, we must extend the MVT to multidimensional spaces. While gradient descent relies on local 
-                    linear approximations in practice, this theorem provides the theoretical foundation for proving the convergence of such 
+                    linear approximations in practice, this theorem is one of the ingredients in proving the convergence of such 
                     algorithms. It guarantees that the discrete change in a scalar-valued loss function can be related to the continuous field 
                     of its gradients.
                 </p>
@@ -286,16 +308,18 @@ uses_python: false
                     <span class="theorem-title">Higher-Dimensional MVT</span>
                     <p>
                         Let \(f: X \to \mathbb{R}\) be differentiable on an open set \(X \subseteq \mathbb{R}^n\) (in the
-                        sense that the
-                        <a href="linear_approximation.html#D-linearization" class="ref-link"><strong>linearization</strong></a>
-                        exists at every point of \(X\), that is, \(f\) is Fr&eacute;chet differentiable, a condition
-                        stronger than mere existence of all partial derivatives). Let \(a, b \in X\) with the closed
-                        segment \([a,b] \subset X\). Then there exists \(c \in (a,b)\) such that
+                        sense of the
+                        <a href="jacobian.html#D-differentiable_multivariate" class="ref-link"><strong>vector-valued definition</strong></a>
+                        with \(m = 1\), that is, \(f\) is Fr&eacute;chet differentiable, a condition
+                        stronger than mere existence of all partial derivatives). Let \(a, b \in X\) be distinct points with
+                        the closed segment \([a,b] \subset X\). Then there exists \(c \in (a,b)\) such that
                         \[
                         f(b) - f(a) = \nabla f(c) \cdot (b - a).
                         \]
                         Here \([a,b] := \{(1-t)a + tb : t \in [0,1]\}\) and \((a,b) := \{(1-t)a + tb : t \in (0,1)\}\)
-                        denote the closed and open segments joining \(a\) and \(b\).
+                        denote the closed and open segments joining \(a\) and \(b\), and \(\nabla f\) is the
+                        <a href="linear_approximation.html#diff">gradient</a> in the convention fixed on the Linear
+                        Approximations page.
                     </p>
                 </div>
 
@@ -333,7 +357,9 @@ uses_python: false
                 <div class="theorem" id="T-mean_value_inequality">
                     <span class="theorem-title">Mean Value Inequality</span>
                     <p>
-                        Let \(F : X \to \mathbb{R}^m\) be differentiable on an open set
+                        Let \(F : X \to \mathbb{R}^m\) be
+                        <a href="jacobian.html#D-differentiable_multivariate" class="ref-link"><strong>differentiable</strong></a>
+                        on an open set
                         \(X \subseteq \mathbb{R}^n\), and let \(a, b \in X\) with the closed segment
                         \([a,b] \subset X\). Then
                         \[
@@ -342,7 +368,9 @@ uses_python: false
                         where \(\|DF(c)\|\) denotes the
                         <a href="../Linear_algebra/trace.html#D-induced_norm" class="ref-link"><strong>operator norm</strong></a>
                         of the total derivative
-                        \(DF(c) : \mathbb{R}^n \to \mathbb{R}^m\). In particular, if \(F\) is of class \(C^1\)
+                        \(DF(c) : \mathbb{R}^n \to \mathbb{R}^m\), with Euclidean norms on \(\mathbb{R}^n\) and
+                        \(\mathbb{R}^m\) throughout. The right-hand side may be \(+\infty\), in which case the inequality
+                        holds trivially. In particular, if \(F\) is of class \(C^1\)
                         and \(K \subseteq X\) is compact and convex, then \(F\) is
                         <a href="continuity.html#D-Lipschitz_Continuous_Function" class="ref-link"><strong>Lipschitz continuous</strong></a>
                         on \(K\) with Lipschitz constant \(\sup_{x \in K} \|DF(x)\|\).
@@ -372,8 +400,9 @@ uses_python: false
                         = \langle \mathbf{u}, \mathbf{u}\rangle = \|\mathbf{u}\|^2\).
                     </p>
                     <p>
-                        Writing \(c := a + \theta(b-a)\) and applying the Cauchy-Schwarz inequality to the right-hand
-                        side,
+                        Writing \(c := a + \theta(b-a)\) and applying the Cauchy-Schwarz inequality
+                        \(|\langle \mathbf{u}, \mathbf{v}\rangle| \leq \|\mathbf{u}\|\,\|\mathbf{v}\|\) on \(\mathbb{R}^m\),
+                        which we take as known, to the right-hand side \(\varphi'(\theta)\),
                         \[
                         \begin{align*}
                         \|\mathbf{u}\|^2
@@ -383,11 +412,13 @@ uses_python: false
                         \end{align*}
                         \]
                         the last step by the definition of the operator norm. Dividing by \(\|\mathbf{u}\| \gt 0\) gives
-                        \(\|F(b) - F(a)\| \leq \|DF(c)\|\,\|b-a\| \leq \big(\sup_{c \in [a,b]}\|DF(c)\|\big)\|b-a\|\).
+                        \(\|F(b) - F(a)\| \leq \|DF(c)\|\,\|b-a\| \leq \big(\sup_{z \in [a,b]}\|DF(z)\|\big)\|b-a\|\).
                     </p>
                     <p>
                         For the \(C^1\) statement, fix a compact convex \(K \subseteq X\). The operator norm
-                        \(x \mapsto \|DF(x)\|\) is continuous, hence attains a finite maximum
+                        \(x \mapsto \|DF(x)\|\) is continuous, since
+                        \(\bigl|\|A\| - \|B\|\bigr| \leq \|A - B\| \leq \sum_{i,j} |A_{ij} - B_{ij}|\) and the entries of
+                        \(DF\) are continuous for \(F\) of class \(C^1\), hence attains a finite maximum
                         \(M = \sup_{x \in K}\|DF(x)\|\) on \(K\). For any \(a, b \in K\), convexity gives
                         \([a,b] \subseteq K\), so the inequality above yields
                         \(\|F(b) - F(a)\| \leq M\,\|b-a\|\), which is precisely the Lipschitz condition with
@@ -400,9 +431,9 @@ uses_python: false
                     <p>
                         The <em>exact equality</em> of the Higher-Dimensional MVT holds only for
                         <strong>scalar-valued</strong> functions \(f : \mathbb{R}^n \to \mathbb{R}\). For vector-valued
-                        maps only the Mean Value Inequality above survives. This distinction is the reason first-order
-                        convergence proofs for gradient descent operate on scalar loss functions directly rather than on
-                        vector-valued forward maps. The inequality form, by contrast, is the workhorse for controlling how
+                        maps only the Mean Value Inequality above survives. First-order convergence proofs for gradient
+                        descent work with the scalar loss rather than the vector-valued forward map, and it is for the
+                        scalar loss that the exact identity above is available to them. The inequality form, by contrast, is the workhorse for controlling how
                         far a smooth map can spread points apart, and it is exactly the estimate that converts a bound on
                         a derivative into the contraction property underlying the inverse function theorem.
                     </p>
@@ -433,7 +464,9 @@ uses_python: false
                     \(f\) to the segment from \(a\) to \(x\) by composing with the curve \(t \mapsto a + t(x-a)\), which
                     reduces a multivariable problem to a single-variable one, and then invoke the single-variable theory.
                     What changes is only the bookkeeping for higher-order derivatives, which we organize with multi-index
-                    notation.
+                    notation. Throughout, \(f \in C^{k+1}(X)\) means that all partial derivatives of order at most
+                    \(k+1\) exist and are continuous on \(X\). Such a function is differentiable in the vector-valued
+                    sense, a fact recorded without proof on the Jacobian page, so the chain rule applies to it.
                 </p>
 
                 <h3>Multi-index notation</h3>
@@ -498,8 +531,9 @@ uses_python: false
                     \[
                     \frac{1}{2} \sum_{i,j=1}^{n} \frac{\partial^2 f}{\partial x^i \partial x^j}(a)\,(x^i - a^i)(x^j - a^j),
                     \]
-                    which is precisely one-half the quadratic form of the <strong>Hessian</strong>, the symmetric matrix
-                    of second partial derivatives \(\partial^2 f / \partial x^i \partial x^j(a)\), evaluated on the
+                    which is precisely one-half the quadratic form of the <strong>Hessian</strong>, the matrix
+                    of second partial derivatives \(\partial^2 f / \partial x^i \partial x^j(a)\) (symmetric here, since
+                    continuous mixed partials commute, a fact we do not prove on this page), evaluated on the
                     displacement vector \(x - a\). This quadratic form is itself a scalar. The \(k = 2\) expansion is what
                     underlies second-order optimization and Laplace-type approximations.
                 </p>
@@ -546,7 +580,9 @@ uses_python: false
                         <em>Base case \(k = 0\).</em> Here \(P_0(x) = f(a)\). By the chain rule,
                         \(u'(t) = \sum_{i=1}^n \partial_i f(a + t(x-a))\,(x^i - a^i)
                         = \sum_{I : |I| = 1} (x-a)^I\, \partial_I f(a + t(x-a))\).
-                        The Fundamental Theorem of Calculus applied to \(u\) on \([0,1]\) gives
+                        The Fundamental Theorem of Calculus (for a \(C^1\) function \(\int_0^1 u' = u(1) - u(0)\), used
+                        without proof here, as is the integration by parts it yields from the product rule) applied to
+                        \(u\) on \([0,1]\) gives
                         \[
                         \begin{align*}
                         f(x) - f(a)
@@ -558,7 +594,9 @@ uses_python: false
                         which is exactly \(f(x) = P_0(x) + R_0(x)\), since \((1-t)^0 = 1\) and \(0! = 1\).
                     </p>
                     <p>
-                        <em>Inductive step.</em> Suppose the formula holds for some \(k\). We promote it to \(k + 1\).
+                        <em>Inductive step.</em> Suppose the formula holds for some \(k\) and every \(C^{k+1}\)
+                        function. We promote it to \(k + 1\), so now \(f \in C^{k+2}(X)\) and each \(\partial_I f\) with
+                        \(|I| = k+1\) is \(C^1\).
                         Each remainder integral has the form \(\int_0^1 (1-t)^k\, g(t)\,dt\) with
                         \(g(t) = \partial_I f(a + t(x-a))\). Integrating by parts, using
                         \(\frac{d}{dt}\!\left[-\frac{(1-t)^{k+1}}{k+1}\right] = (1-t)^k\) and again the chain rule for
@@ -623,7 +661,7 @@ uses_python: false
                         bound above recovers exactly that role in the multivariate setting. But the integral form of the
                         remainder does something the Lagrange form cannot. It exhibits the remainder as an explicit sum in
                         which each term carries a factor \((x^i - a^i)\) that <em>vanishes</em> at \(x = a\), multiplied
-                        by a smooth coefficient.
+                        by a continuous coefficient (smooth whenever \(f\) is).
                     </p>
                     <p>
                         This algebraic structure, a remainder built from products that die at the base point, is exactly
