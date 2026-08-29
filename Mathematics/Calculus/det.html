@@ -29,19 +29,19 @@ uses_python: true
 
                 <p>
                     So far we have studied differentials of
-                    <a href="linear_approximation.html#D-differential"><strong>scalar-input</strong></a>,
-                    <a href="jacobian.html#D-jacobian"><strong>vector-input</strong></a>, and
+                    <a href="linear_approximation.html#D-differential" class="ref-link"><strong>scalar-input</strong></a>,
+                    <a href="jacobian.html#D-jacobian" class="ref-link"><strong>vector-input</strong></a>, and
                     <a href="matrix_cal.html#square"><strong>matrix-input / matrix-output</strong></a> functions. This
                     page closes the natural square of cases: <strong>scalar-output functions of a matrix
                     argument</strong>, \(f : \mathbb{R}^{m \times n} \to \mathbb{R}\). In machine learning these arise
-                    everywhere. Regularization terms, log-likelihoods, and scalar losses are all such functions of
-                    weight matrices.
+                    constantly. Regularization terms, log-likelihoods, and scalar losses are typically such functions
+                    of weight matrices.
                 </p>
 
                 <p>
-                    The <a href="../Linear_algebra/trace.html"><strong>Frobenius norm</strong></a> measures the total
-                    magnitude of a matrix \(X \in \mathbb{R}^{m \times n}\) and serves as the matrix-space analogue of
-                    the Euclidean \(L_2\) norm. It is defined through the <strong>trace</strong>:
+                    The <a href="../Linear_algebra/trace.html#D-frobenius_norm" class="ref-link"><strong>Frobenius norm</strong></a>
+                    measures the total magnitude of a matrix \(X \in \mathbb{R}^{m \times n}\) and serves as the
+                    matrix-space analogue of the Euclidean \(L_2\) norm. It is defined through the <strong>trace</strong>:
                     \[
                     \|X\|_F = \sqrt{\operatorname{tr}(X^\top X)} = \sqrt{\sum_{i,j} X_{ij}^2}.
                     \]
@@ -58,8 +58,9 @@ uses_python: true
                     Unlike vectors, matrices admit several genuinely different norms: the Frobenius norm
                     \(\|\cdot\|_F\) we use throughout this page, the operator (spectral) norm \(\|\cdot\|_2\), the
                     nuclear norm \(\|\cdot\|_*\), and more. In finite dimensions these are all equivalent as
-                    topologies, but they produce qualitatively different <em>geometric</em> statements. A ball of
-                    radius \(1\) in Frobenius norm is not the same shape as a ball of radius \(1\) in operator norm.
+                    topologies (a fact proved later in this section when we turn to normed spaces), but they produce
+                    qualitatively different <em>geometric</em> statements. A ball of radius \(1\) in Frobenius norm is
+                    not the same shape as a ball of radius \(1\) in operator norm.
                 </p>
 
                 <p>
@@ -111,10 +112,11 @@ uses_python: true
                         \]
                     </p>
                     <p>
-                        To handle the inner expression, we use linearity of the trace:
+                        To handle the inner expression, we use linearity of the trace. The increment
+                        \(\operatorname{tr}(A + \Delta A) - \operatorname{tr}(A) = \operatorname{tr}(\Delta A)\) is exactly
+                        linear in \(\Delta A\), so
                         \[
-                        d\bigl(\operatorname{tr}(A)\bigr) = \operatorname{tr}(A + dA) - \operatorname{tr}(A)
-                                                          = \operatorname{tr}(dA),
+                        d\bigl(\operatorname{tr}(A)\bigr) = \operatorname{tr}(dA),
                         \]
                         so \(d\) and \(\operatorname{tr}\) commute. Transposition is likewise linear, so
                         \(d(X^\top) = (dX)^\top\). The
@@ -147,6 +149,8 @@ uses_python: true
                         \[
                         \nabla f = \frac{X}{\|X\|_F}.
                         \]
+                        As for the vector norm, \(f\) is not differentiable at \(X = 0\), so the formula holds on
+                        \(\mathbb{R}^{m \times n} \setminus \{0\}\).
                     </p>
                 </div>
 
@@ -166,7 +170,8 @@ uses_python: true
 
                 <p>
                     The trace carries a single additional tool that matrix calculus uses constantly: the
-                    <strong>cyclic property</strong>, \(\operatorname{tr}(ABC) = \operatorname{tr}(BCA) = \operatorname{tr}(CAB)\)
+                    <a href="../Linear_algebra/trace.html#T-trace_properties" class="ref-link"><strong>cyclic property</strong></a>,
+                    \(\operatorname{tr}(ABC) = \operatorname{tr}(BCA) = \operatorname{tr}(CAB)\)
                     whenever the products are defined. This turns almost every matrix-gradient calculation into a
                     one-step transformation.
                 </p>
@@ -190,7 +195,7 @@ uses_python: true
                         \]
                         Comparing with \(df = \operatorname{tr}((\nabla f)^\top dA)\), we read off
                         \[
-                        \nabla_A f = \mathbf{x}\mathbf{y}^\top.
+                        \nabla f = \mathbf{x}\mathbf{y}^\top.
                         \]
                     </p>
                 </div>
@@ -201,9 +206,9 @@ uses_python: true
                 <h2>Derivative of the Determinant</h2>
 
                 <p>
-                    The <a href="../Linear_algebra/determinants.html"><strong>determinant</strong></a> \(\det X\)
+                    The <a href="../Linear_algebra/determinants.html"><strong>determinant</strong></a> \(\det A\)
                     measures the oriented volume scaling factor of a linear transformation
-                    \(X : \mathbb{R}^n \to \mathbb{R}^n\). Its differential is central to
+                    \(A : \mathbb{R}^n \to \mathbb{R}^n\). Its differential is central to
                     <strong>Normalizing Flows</strong>, to log-determinant losses in Gaussian models, and to any
                     optimization involving <a href="../Probability/covariance.html"><strong>covariance matrices</strong></a>.
                     The key formula is due to Jacobi.
@@ -222,7 +227,7 @@ uses_python: true
                         \[
                         d(\det A) = (\det A)\, \operatorname{tr}(A^{-1}\, dA).
                         \]
-                        Equivalently, via the <a href="#D-matrix_gradient"><strong>gradient convention</strong></a>,
+                        Equivalently, via the <a href="#D-matrix_gradient" class="ref-link"><strong>gradient convention</strong></a>,
                         \[
                         \begin{align*}
                         \nabla (\det A)
@@ -238,8 +243,8 @@ uses_python: true
                     <p>
                         Since \(\det A\) is a polynomial in the entries of \(A\), it is \(C^\infty\) and in particular
                         differentiable everywhere on \(\mathbb{R}^{n \times n}\). Fix indices \(i, j\) and recall the
-                        <a href="../Linear_algebra/determinants.html"><strong>cofactor expansion</strong></a> along
-                        the \(i\)-th row:
+                        <a href="../Linear_algebra/determinants.html#D-cofactor" class="ref-link"><strong>cofactor expansion</strong></a>
+                        along the \(i\)-th row:
                         \[
                         \det A = \sum_{k=1}^n A_{ik}\, C_{ik},
                         \]
@@ -278,13 +283,15 @@ uses_python: true
                     <p>
                         In <strong>Normalizing Flows</strong>, the change-of-variables formula for a bijective
                         transformation \(\mathbf{z} = f_\theta(\mathbf{x})\) requires \(\log |\det J_{f_\theta}|\) in
-                        the log-likelihood. Training by gradient descent on \(\theta\) relies on Jacobi's formula to
-                        differentiate through the determinant. In <strong>Gaussian-likelihood losses</strong>
+                        the log-likelihood. Differentiating the determinant with respect to \(\theta\) is, in general, an
+                        instance of Jacobi's formula (many flow architectures arrange for a triangular Jacobian, so that
+                        the log-determinant reduces to a sum of logarithms and the general formula is not needed). In
+                        <strong>Gaussian-likelihood losses</strong>
                         (maximum-likelihood estimation of a covariance matrix, Gaussian processes, variational
                         inference with full-covariance posteriors), the \(\log \det \Sigma\) term's gradient is, via
                         \(d(\log \det A) = \operatorname{tr}(A^{-1} dA)\), simply \((\Sigma^{-1})^\top\). In
-                        <strong>physics-informed learning</strong>, Jacobians of coordinate transformations enter
-                        Hamiltonians and action functionals the same way.
+                        <strong>physics-informed learning</strong>, Jacobian determinants of coordinate transformations
+                        enter through change-of-variables factors in integrals, where the same formula applies.
                     </p>
                 </div>
 
@@ -317,18 +324,22 @@ uses_python: true
                 </div>
 
                 <p>
-                    This identity has a striking consequence. Writing
-                    \(\operatorname{tr}\bigl((xI-A)^{-1}\bigr) = \sum_{k=1}^n 1/(x - \lambda_k)\), where \(\lambda_k\)
-                    are the eigenvalues of \(A\), we recover the familiar logarithmic derivative identity
-                    \(p'(x)/p(x) = \sum_k 1/(x - \lambda_k)\). The result bridges matrix calculus and the algebra of
-                    polynomial roots.
+                    This identity has a striking consequence. Over \(\mathbb{C}\) the
+                    <a href="../Linear_algebra/eigenvectors.html#D-characteristic_equation" class="ref-link"><strong>characteristic polynomial</strong></a>
+                    factors as \(p(x) = \prod_{k=1}^n (x - \lambda_k)\), where \(\lambda_1, \dots, \lambda_n\) are the
+                    eigenvalues of \(A\), possibly complex and counted with algebraic multiplicity (a consequence of the
+                    fundamental theorem of algebra, which we take as given). The product rule then gives the
+                    logarithmic derivative \(p'(x)/p(x) = \sum_{k=1}^n 1/(x - \lambda_k)\), and comparing with the
+                    corollary yields, for \(x\) not an eigenvalue of \(A\),
+                    \(\operatorname{tr}\bigl((xI-A)^{-1}\bigr) = \sum_{k=1}^n 1/(x - \lambda_k)\). The result bridges
+                    matrix calculus and the algebra of polynomial roots.
                 </p>
 
                 <p>
                     In numerical practice, <a href="../Machine_learning/autodiff.html"><strong>reverse-mode automatic
-                    differentiation</strong></a> can be preferable to the analytical formula when \(A\) is poorly
-                    conditioned or close to singular (\(\det(xI - A) \approx 0\)), since it avoids explicitly forming
-                    the inverse.
+                    differentiation</strong></a> can be preferable to the analytical formula when \(xI - A\) is poorly
+                    conditioned or close to singular (\(\det(xI - A) \approx 0\)), since it can avoid explicitly forming
+                    its inverse.
                 </p>
 
                 <h3>Numerical verification</h3>
