@@ -29,12 +29,13 @@ uses_python: true
             <section id="LS" class="section-content">
                 <h2>Line Search</h2>
                 <p>
-                    Our treatment of <a href="gradient.html"><strong>gradient descent</strong></a> used a fixed <strong>learning
-                    rate</strong> (or <strong>step size</strong>) \(\eta\) chosen by experiment. A principled alternative is the
-                    <strong>line search</strong>. Given a current iterate \(\boldsymbol{\theta}_t\) and a <strong>descent
-                    direction</strong> \(\mathbf{d}_t\) (that is, one with
-                    \(\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t) \lt 0\)), we select the step that minimizes the
-                    objective along the ray \(\{\boldsymbol{\theta}_t + \eta\, \mathbf{d}_t : \eta \gt 0\}\):
+                    Our treatment of <a href="gradient.html"><strong>gradient descent</strong></a> used a fixed
+                    <strong>learning rate</strong> (or <strong>step size</strong>) \(\eta\) chosen by experiment. A
+                    principled alternative is the <strong>line search</strong>. Given a current iterate
+                    \(\boldsymbol{\theta}_t\) and a <strong>descent direction</strong> \(\mathbf{d}_t\) (that is, one
+                    with \(\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t) \lt 0\)), we select a step that
+                    minimizes the objective along the ray
+                    \(\{\boldsymbol{\theta}_t + \eta\, \mathbf{d}_t : \eta \gt 0\}\), assuming such a step exists:
                     \[
                     \eta_t \in \operatorname*{arg\,min}_{\eta \gt 0}\, \mathcal{L}(\boldsymbol{\theta}_t + \eta\, \mathbf{d}_t).
                     \]
@@ -96,11 +97,18 @@ uses_python: true
                 </div>
 
                 <p>
-                    The standard <strong>backtracking</strong> implementation starts from an initial trial step \(\eta\) (often
-                    \(\eta = 1\) for Newton-type methods) and shrinks it by a factor \(\tau \in (0, 1)\) (commonly \(\tau = 0.5\))
-                    until (1) holds. By continuity of \(\mathcal{L}\) and the negativity of
-                    \(\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t)\), (1) is eventually satisfied for
-                    sufficiently small \(\eta\).
+                    The standard <strong>backtracking</strong> implementation starts from an initial trial step
+                    \(\eta\) (often \(\eta = 1\) for Newton-type methods) and shrinks it by a factor
+                    \(\tau \in (0, 1)\) (commonly \(\tau = 0.5\)) until (1) holds. Since \(\mathcal{L}\) is
+                    differentiable at \(\boldsymbol{\theta}_t\),
+                    \[
+                    \mathcal{L}(\boldsymbol{\theta}_t + \eta\, \mathbf{d}_t)
+                    = \mathcal{L}(\boldsymbol{\theta}_t) + \eta\, \mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t) + o(\eta),
+                    \]
+                    and because \(c_1 \lt 1\) and
+                    \(\mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t) \lt 0\), the leftover
+                    \((1 - c_1)\, \eta\, \mathbf{d}_t^\top \nabla \mathcal{L}(\boldsymbol{\theta}_t)\) dominates the
+                    \(o(\eta)\) term, so (1) holds for all sufficiently small \(\eta\).
                 </p>
             </section>
 
@@ -148,24 +156,37 @@ uses_python: true
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        \(q\) is strictly convex because \(\mathbf{H}_t \succ 0\), so its unique minimizer is the stationary
-                        point. Setting \(\nabla q = \mathbf{g}_t + \mathbf{H}_t\, \Delta\boldsymbol{\theta} = \mathbf{0}\) and
-                        using invertibility of \(\mathbf{H}_t\) gives \(\mathbf{d}_t = -\mathbf{H}_t^{-1} \mathbf{g}_t\).
-                        Positive-definiteness of \(\mathbf{H}_t^{-1}\) (inherited from \(\mathbf{H}_t\)) yields
-                        \(\mathbf{g}_t^\top \mathbf{H}_t^{-1} \mathbf{g}_t \gt 0\) whenever \(\mathbf{g}_t \neq \mathbf{0}\).
+                        Completing the square gives
+                        \[
+                        \begin{align*}
+                        q(\Delta\boldsymbol{\theta})
+                        &= \tfrac{1}{2}\, (\Delta\boldsymbol{\theta} + \mathbf{H}_t^{-1}\mathbf{g}_t)^\top \mathbf{H}_t\, (\Delta\boldsymbol{\theta} + \mathbf{H}_t^{-1}\mathbf{g}_t) \\\\
+                        &\quad - \tfrac{1}{2}\, \mathbf{g}_t^\top \mathbf{H}_t^{-1} \mathbf{g}_t.
+                        \end{align*}
+                        \]
+                        Since \(\mathbf{H}_t \succ 0\), the first term is nonnegative and vanishes exactly at
+                        \(\Delta\boldsymbol{\theta} = -\mathbf{H}_t^{-1}\mathbf{g}_t\), which is therefore the unique
+                        minimizer \(\mathbf{d}_t\). Positive-definiteness of \(\mathbf{H}_t^{-1}\), inherited from
+                        \(\mathbf{H}_t\) because \(\mathbf{H}_t^{-1}\) is symmetric and
+                        \(\mathbf{x}^\top \mathbf{H}_t^{-1} \mathbf{x} = (\mathbf{H}_t^{-1}\mathbf{x})^\top \mathbf{H}_t (\mathbf{H}_t^{-1}\mathbf{x}) \gt 0\)
+                        for \(\mathbf{x} \neq \mathbf{0}\), yields
+                        \(\mathbf{g}_t^\top \mathbf{H}_t^{-1} \mathbf{g}_t \gt 0\) whenever
+                        \(\mathbf{g}_t \neq \mathbf{0}\).
                     </p>
                 </div>
 
                 <p>
                     <strong>Pure Newton's method</strong> takes
-                    \(\boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t + \mathbf{d}_t\) (unit step). This scheme enjoys
-                    <strong>local quadratic convergence</strong> near a strict local minimum, but can diverge when started far
-                    from the optimum or when the Hessian is not positive definite.
+                    \(\boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t + \mathbf{d}_t\) (unit step). Near a minimizer
+                    at which the Hessian is positive definite and Lipschitz continuous, this scheme converges
+                    quadratically (<strong>local quadratic convergence</strong>), a classical result we state without
+                    proof on this page, but can diverge when started far from the optimum or when the Hessian is not
+                    positive definite.
                 </p>
 
                 <p>
-                    To restore global convergence, the <strong>Damped Newton's Method</strong> scales the Newton direction by a
-                    line-search step size:
+                    To recover global convergence (under standard assumptions that we do not prove here), the
+                    <strong>Damped Newton's Method</strong> scales the Newton direction by a line-search step size:
                     \[
                     \boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t + \eta_t\, \mathbf{d}_t,
                     \quad \eta_t \text{ chosen to satisfy the }
@@ -214,9 +235,9 @@ uses_python: true
                         of its eigenvalues).
                     </p>
                     <p>
-                        Another concern is cost. Storing the full Hessian requires \(O(n^2)\) memory, and solving the Newton
-                        system is \(O(n^3)\), which is intractable for modern neural networks with \(n \sim 10^9\). This motivates
-                        the <em>quasi-Newton</em> methods of the next section.
+                        Another concern is cost. Storing the full Hessian requires \(O(n^2)\) memory, and solving the
+                        Newton system is \(O(n^3)\), which is intractable for modern neural networks with \(n\) of
+                        order \(10^9\) or more. This motivates the <em>quasi-Newton</em> methods of the next section.
                     </p>
                 </div>
 
@@ -269,16 +290,19 @@ uses_python: true
                 </p>
 
                 <p>
-                    BFGS makes the update unique by requiring (i) the update be a symmetric <strong>rank-2 correction</strong> of
-                    \(\mathbf{B}_t\), and (ii) \(\mathbf{B}_{t+1} \succ 0\) be preserved. Writing
-                    \(\mathbf{B}_{t+1} = \mathbf{B}_t + \mathbf{U}\), the secant condition forces
-                    \(\mathbf{U}\, \mathbf{s}_t = \mathbf{y}_t - \mathbf{B}_t\, \mathbf{s}_t\), and the rank-2 ansatz
+                    BFGS singles out one update by requiring (i) the update be a symmetric <strong>rank-2
+                    correction</strong> of \(\mathbf{B}_t\), and (ii) \(\mathbf{B}_{t+1} \succ 0\) be preserved.
+                    Writing \(\mathbf{B}_{t+1} = \mathbf{B}_t + \mathbf{U}\), the secant condition forces
+                    \(\mathbf{U}\, \mathbf{s}_t = \mathbf{y}_t - \mathbf{B}_t\, \mathbf{s}_t\), and the specific
+                    rank-2 ansatz built from
+                    \(\mathbf{y}_t\) and \(\mathbf{B}_t \mathbf{s}_t\), the two vectors this equation involves,
                     \[
                     \mathbf{U} = \alpha\, \mathbf{y}_t \mathbf{y}_t^\top + \beta\, (\mathbf{B}_t \mathbf{s}_t)(\mathbf{B}_t \mathbf{s}_t)^\top
-                    \]
-                    is chosen so that the first term injects curvature along \(\mathbf{y}_t\) while the second removes the
-                    now-stale curvature along \(\mathbf{B}_t \mathbf{s}_t\). Enforcing
-                    \(\mathbf{U}\, \mathbf{s}_t = \mathbf{y}_t - \mathbf{B}_t \mathbf{s}_t\) pins the scalars to
+                    \] is chosen so that the first term injects curvature along \(\mathbf{y}_t\) while the second
+                    removes the now-stale curvature along \(\mathbf{B}_t \mathbf{s}_t\). Enforcing
+                    \(\mathbf{U}\, \mathbf{s}_t = \mathbf{y}_t - \mathbf{B}_t \mathbf{s}_t\) pins the scalars, by
+                    comparing coefficients when \(\mathbf{y}_t\) and \(\mathbf{B}_t \mathbf{s}_t\) are linearly
+                    independent (the formula is then adopted in all cases), to
                     \(\alpha = 1/(\mathbf{y}_t^\top \mathbf{s}_t)\) and
                     \(\beta = -1/(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t)\), yielding the BFGS update formula.
                 </p>
@@ -286,8 +310,9 @@ uses_python: true
                 <div class="theorem" id="T-bfgs_update">
                     <span class="theorem-title">Proposition: BFGS Hessian Update</span>
                     <p>
-                        Given \(\mathbf{B}_t \succ 0\) and vectors \(\mathbf{s}_t, \mathbf{y}_t\) satisfying the <strong>curvature
-                        condition</strong> \(\mathbf{y}_t^\top \mathbf{s}_t \gt 0\), define
+                        Given a symmetric \(\mathbf{B}_t \succ 0\) and vectors \(\mathbf{s}_t, \mathbf{y}_t\)
+                        satisfying the <strong>curvature condition</strong> \(\mathbf{y}_t^\top \mathbf{s}_t \gt 0\),
+                        define
                         \[
                         \begin{align*}
                         \mathbf{B}_{t+1}
@@ -322,13 +347,13 @@ uses_python: true
                     </p>
                     <p>
                         <strong>Positive-definiteness.</strong> Note first that \(\mathbf{s}_t \neq \mathbf{0}\). If
-                        \(\mathbf{s}_t = \mathbf{0}\) then \(\mathbf{y}_t^\top \mathbf{s}_t = 0\), contradicting the curvature
-                        condition. Hence \(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t \gt 0\) by \(\mathbf{B}_t \succ 0\), and
-                        the scalar below is well-defined. For any \(\mathbf{v} \neq \mathbf{0}\), decompose by projecting onto
-                        \(\mathbf{s}_t\) (in the \(\mathbf{B}_t\)-inner product): write
-                        \(\mathbf{w} = \mathbf{v} - \alpha \mathbf{s}_t\) with
-                        \(\alpha = (\mathbf{s}_t^\top \mathbf{B}_t \mathbf{v})/(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t)\), so
-                        that \(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{w} = 0\). A direct calculation then gives
+                        \(\mathbf{s}_t = \mathbf{0}\) then \(\mathbf{y}_t^\top \mathbf{s}_t = 0\), contradicting the
+                        curvature condition. Hence \(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t \gt 0\) by
+                        \(\mathbf{B}_t \succ 0\), and the scalar below is well-defined. For any
+                        \(\mathbf{v} \neq \mathbf{0}\), decompose by projecting onto \(\mathbf{s}_t\) (in the
+                        \(\mathbf{B}_t\)-inner product): write \(\mathbf{w} = \mathbf{v} - \gamma \mathbf{s}_t\) with
+                        \(\gamma = (\mathbf{s}_t^\top \mathbf{B}_t \mathbf{v})/(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t)\),
+                        so that \(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{w} = 0\). A direct calculation then gives
                         \[
                         \begin{align*}
                         \mathbf{v}^\top \mathbf{B}_{t+1} \mathbf{v}
@@ -337,13 +362,15 @@ uses_python: true
                         \end{align*}
                         \]
                         Both terms are \(\geq 0\): the first by \(\mathbf{B}_t \succ 0\), the second because
-                        \(\mathbf{y}_t^\top \mathbf{s}_t \gt 0\). To see that the sum is <em>strictly</em> positive when
-                        \(\mathbf{v} \neq \mathbf{0}\), suppose both terms vanish. The first vanishes only when
-                        \(\mathbf{w} = \mathbf{0}\), that is, when \(\mathbf{v} = \alpha \mathbf{s}_t\). Substituting into the
-                        second term gives \(\mathbf{v}^\top \mathbf{y}_t = \alpha\, \mathbf{s}_t^\top \mathbf{y}_t\). Since
-                        \(\mathbf{s}_t^\top \mathbf{y}_t \gt 0\), this vanishes only when \(\alpha = 0\), forcing
-                        \(\mathbf{v} = \mathbf{0}\), a contradiction. Hence \(\mathbf{v}^\top \mathbf{B}_{t+1} \mathbf{v} \gt 0\)
-                        for every \(\mathbf{v} \neq \mathbf{0}\).
+                        \(\mathbf{y}_t^\top \mathbf{s}_t \gt 0\). To see that the sum is <em>strictly</em> positive
+                        when \(\mathbf{v} \neq \mathbf{0}\), suppose both terms vanish. The first vanishes only when
+                        \(\mathbf{w} = \mathbf{0}\), that is, when \(\mathbf{v} = \gamma \mathbf{s}_t\). Substituting
+                        into the second term gives
+                        \(\mathbf{v}^\top \mathbf{y}_t = \gamma\, \mathbf{s}_t^\top \mathbf{y}_t\). Since
+                        \(\mathbf{s}_t^\top \mathbf{y}_t \gt 0\), this vanishes only when \(\gamma = 0\), forcing
+                        \(\mathbf{v} = \mathbf{0}\), a contradiction. Hence
+                        \(\mathbf{v}^\top \mathbf{B}_{t+1} \mathbf{v} \gt 0\) for every
+                        \(\mathbf{v} \neq \mathbf{0}\).
                     </p>
                 </div>
 
@@ -377,7 +404,12 @@ uses_python: true
                         <a href="../Linear_algebra/woodbury.html#T-sherman_morrison" class="ref-link"><strong>Sherman-Morrison formula</strong></a>
                         first to the rank-1 addition
                         \(\mathbf{B}_t + \mathbf{y}_t \mathbf{y}_t^\top / (\mathbf{y}_t^\top \mathbf{s}_t)\): with
-                        \(\mathbf{u} = \mathbf{y}_t\), \(\mathbf{v}^\top = \mathbf{y}_t^\top / (\mathbf{y}_t^\top \mathbf{s}_t)\),
+                        \(\mathbf{u} = \mathbf{y}_t\),
+                        \(\mathbf{v}^\top = \mathbf{y}_t^\top / (\mathbf{y}_t^\top \mathbf{s}_t)\) (the formula
+                        applies because
+                        \(1 + \mathbf{y}_t^\top \mathbf{C}_t \mathbf{y}_t / \mathbf{y}_t^\top \mathbf{s}_t \gt 0\), as
+                        \(\mathbf{C}_t \succ 0\) inherits positive-definiteness from \(\mathbf{B}_t\) exactly as
+                        \(\mathbf{H}_t^{-1}\) did above, and \(\mathbf{y}_t^\top \mathbf{s}_t \gt 0\)),
                         \[
                         \begin{align*}
                         \Bigl(\mathbf{B}_t + \frac{\mathbf{y}_t \mathbf{y}_t^\top}{\mathbf{y}_t^\top \mathbf{s}_t}\Bigr)^{-1}
@@ -388,7 +420,12 @@ uses_python: true
                     <p>
                         Next apply Sherman-Morrison to the rank-1 subtraction of
                         \((\mathbf{B}_t \mathbf{s}_t)(\mathbf{B}_t \mathbf{s}_t)^\top / (\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t)\)
-                        from the intermediate matrix. After collecting terms and repeatedly using
+                        from the intermediate matrix. This second application is again legitimate, because the scalar
+                        in the formula works out to
+                        \[
+                        \frac{(\mathbf{y}_t^\top \mathbf{s}_t)^2}{(\mathbf{y}_t^\top \mathbf{s}_t + \mathbf{y}_t^\top \mathbf{C}_t \mathbf{y}_t)\, \mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t} \gt 0.
+                        \]
+                        After collecting terms and repeatedly using
                         \(\mathbf{C}_t \mathbf{B}_t \mathbf{s}_t = \mathbf{s}_t\) (since \(\mathbf{C}_t = \mathbf{B}_t^{-1}\)) and
                         the identity
                         \(\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t \cdot (\mathbf{y}_t^\top \mathbf{s}_t + \mathbf{y}_t^\top \mathbf{C}_t \mathbf{y}_t) - (\mathbf{s}_t^\top \mathbf{B}_t \mathbf{s}_t)(\mathbf{y}_t^\top \mathbf{C}_t \mathbf{y}_t)
@@ -498,9 +535,9 @@ uses_python: true
                     &emsp;&emsp;\(\mathbf{r} \leftarrow \mathbf{C}_t^{(0)}\, \mathbf{q}\)  (typically \(\mathbf{C}_t^{(0)} = \mathbf{I}\) or a scaled identity);<br>
                     &emsp;&emsp;<em>Forward loop (oldest to newest stored pair):</em><br>
                     &emsp;&emsp;&emsp;\(\beta_i \leftarrow \rho_i\, \mathbf{y}_i^\top \mathbf{r}\); \(\mathbf{r} \leftarrow \mathbf{r} + \mathbf{s}_i (\alpha_i - \beta_i)\);<br>
-                    &emsp;&emsp;\(\mathbf{p}_t \leftarrow -\mathbf{r}\);<br>
-                    &emsp;&emsp;\(\eta_t \leftarrow \mathrm{LINE\_SEARCH}(\boldsymbol{\theta}_t, \mathbf{p}_t)\) satisfying Wolfe conditions;<br>
-                    &emsp;&emsp;\(\boldsymbol{\theta}_{t+1} \leftarrow \boldsymbol{\theta}_t + \eta_t\, \mathbf{p}_t\);<br>
+                    &emsp;&emsp;\(\mathbf{d}_t \leftarrow -\mathbf{r}\);<br>
+                    &emsp;&emsp;\(\eta_t \leftarrow \mathrm{LINE\_SEARCH}(\boldsymbol{\theta}_t, \mathbf{d}_t)\) satisfying Wolfe conditions;<br>
+                    &emsp;&emsp;\(\boldsymbol{\theta}_{t+1} \leftarrow \boldsymbol{\theta}_t + \eta_t\, \mathbf{d}_t\);<br>
                     &emsp;&emsp;\(\mathbf{g}_{t+1} \leftarrow \nabla \mathcal{L}(\boldsymbol{\theta}_{t+1})\);<br>
                     &emsp;&emsp;Store \(\mathbf{s}_t \leftarrow \boldsymbol{\theta}_{t+1} - \boldsymbol{\theta}_t\), \(\mathbf{y}_t \leftarrow \mathbf{g}_{t+1} - \mathbf{g}_t\), \(\rho_t \leftarrow 1/(\mathbf{y}_t^\top \mathbf{s}_t)\);<br>
                     &emsp;&emsp;If the number of stored pairs exceeds \(m\), discard the oldest pair;<br>
@@ -528,12 +565,11 @@ uses_python: true
                     a standard optimization benchmark with global minimum \(f(\mathbf{1}) = 0\).
                 </p>
 
-                <p>
-                    Despite the simple appearance, the Rosenbrock function is notoriously difficult for optimization algorithms
-                    because its global minimum lies at the bottom of a narrow, curved, "banana-shaped" valley. The surrounding
-                    landscape is ill-conditioned (strong anisotropy of the Hessian) and contains broad flat regions where
-                    gradients are small, so naive gradient descent crawls while Newton-type methods must handle curvature
-                    carefully.
+                <p> Despite the simple appearance, the Rosenbrock function is notoriously difficult for optimization
+                algorithms because its global minimum lies at the bottom of a narrow, curved, "banana-shaped" valley.
+                The surrounding landscape is ill-conditioned (strong anisotropy of the Hessian) and along the valley
+                floor the gradient is small, so naive gradient descent crawls while Newton-type methods must handle
+                curvature carefully.
                 </p>
 
                 <div class="code-container">
@@ -697,13 +733,14 @@ uses_python: true
                         <li><strong>Ill-conditioning.</strong> Along the valley the Hessian has eigenvalues differing by several
                             orders of magnitude. The condition number is large, and first-order methods slow dramatically (cf. the
                             <a href="duality.html#Lip"><strong>condition-number analysis</strong></a> later in this section).</li>
-                        <li><strong>Broad flat regions.</strong> Outside the valley, the gradient is small but the function is
-                            still far from its minimum, so step sizes must be large without overshooting the valley walls.</li>
+                        <li><strong>Slow progress along the floor.</strong> Along the valley floor the gradient is
+                            small while the function is still far from its minimum, so progress requires long steps that
+                            must not overshoot the valley walls.</li>
                     </ul>
                     <p>
-                        These three properties are exactly the pathologies that plague loss landscapes in deep learning:
-                        anisotropic curvature, ill-conditioning, and flat plateaus. This is why Rosenbrock remains the standard
-                        testbed for new optimization algorithms.
+                        These three properties mirror pathologies commonly reported for loss landscapes in deep
+                        learning, namely anisotropic curvature, ill-conditioning, and flat plateaus, which is why
+                        Rosenbrock remains a standard testbed for new optimization algorithms.
                     </p>
                 </div>
             </section>
