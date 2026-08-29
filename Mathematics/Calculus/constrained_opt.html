@@ -52,6 +52,11 @@ uses_python: true
                         \]
                     </p>
                 </div>
+                <p>
+                    Throughout this page \(\mathcal{L}\), the \(g_i\), and the \(h_j\) are assumed continuously
+                    differentiable on \(\mathbb{R}^d\). We write \(\mathcal{I} = \{1, \ldots, m\}\) and
+                    \(\mathcal{E} = \{1, \ldots, p\}\).
+                </p>
 
                 <h3>Penalty Method</h3>
                 <p>
@@ -74,7 +79,7 @@ uses_python: true
                 <p>
                     When constraints must be strictly satisfied or high-precision solutions are required, the
                     <strong>Lagrangian</strong> machinery introduced below provides a principled alternative that reformulates
-                    constrained optimality as a system of equations (the <strong>KKT conditions</strong>). In large-scale
+                    constrained optimality as a system of equations and inequalities (the <strong>KKT conditions</strong>). In large-scale
                     problems, hybrid approaches such as <strong>Augmented Lagrangian methods</strong> combine the numerical
                     robustness of penalties with the exactness of Lagrangian multipliers.
                 </p>
@@ -149,10 +154,13 @@ uses_python: true
                     \(\mathcal{C}\)" is geometrically intuitive but not self-justifying. The linearized tangent space
                     \(T_{\boldsymbol{\theta}^*}\mathcal{C}\) is defined by a first-order condition, and it is a
                     non-trivial fact that every tangent vector is actually realized as the velocity of a smooth curve
-                    <em>inside</em> \(\mathcal{C}\). This realization is the content of the
-                    <a href="inverse_implicit_function.html#T-implicit_function_theorem" class="ref-link"><strong>implicit function theorem</strong></a>,
-                    and it is precisely what the regularity condition
-                    \(\nabla h(\boldsymbol{\theta}^*) \neq \mathbf{0}\) buys.
+                    <em>inside</em> \(\mathcal{C}\). This realization follows from the
+                    <a href="inverse_implicit_function.html#T-implicit_function_theorem" class="ref-link"><strong>implicit function theorem</strong></a>.
+                    For a single constraint the nonsingularity hypothesis of that theorem is that some partial
+                    derivative \(\partial h / \partial \theta_\ell\) is nonzero at \(\boldsymbol{\theta}^*\), which after
+                    reordering coordinates is exactly \(\nabla h(\boldsymbol{\theta}^*) \neq \mathbf{0}\), and the theorem
+                    then presents \(\mathcal{C}\) near \(\boldsymbol{\theta}^*\) as the graph of a smooth function of
+                    the remaining \(d - 1\) coordinates.
                 </p>
 
                 <p>
@@ -202,7 +210,7 @@ uses_python: true
                     \end{align*}
                     \]
                     Such a point is called a <strong>critical point</strong>. It simultaneously satisfies primal feasibility
-                    and the stationarity condition (LM).
+                    and the multi-constraint form of the stationarity condition (LM).
                 </p>
 
                 <div class="insight-box">
@@ -213,8 +221,9 @@ uses_python: true
                         \(\nabla \mathcal{L}(\boldsymbol{\theta}^*)\) has no component tangent to \(\mathcal{C}\). It must
                         point purely in the normal direction, which is spanned by \(\{\nabla h_j(\boldsymbol{\theta}^*)\}\).
                         The Lagrange multiplier \(\lambda_j\) measures "how much" of the objective gradient is absorbed by
-                        constraint \(h_j\), and its sign records whether the constraint pulls the objective up or down as it
-                        is relaxed.
+                        constraint \(h_j\), and its sign records the direction in which the optimal value moves as the
+                        constraint level \(h_j = 0\) is shifted, a reading made quantitative by the sensitivity
+                        interpretation in the next section.
                     </p>
                 </div>
             </section>
@@ -294,7 +303,8 @@ uses_python: true
                     <span class="theorem-title">Theorem: Karush-Kuhn-Tucker (KKT) Conditions</span>
 
                     <p>
-                        Let \(\boldsymbol{\theta}^*\) be a feasible point. Say that
+                        Let \(\mathcal{L}\), the \(g_i\), and the \(h_j\) be continuously differentiable on
+                        \(\mathbb{R}^d\), and let \(\boldsymbol{\theta}^*\) be a feasible point. Say that
                         \((\boldsymbol{\theta}^*, \boldsymbol{\mu}^*, \boldsymbol{\lambda}^*)\) satisfies the <strong>KKT
                         conditions</strong> if all four of the following hold:
                     </p>
@@ -328,16 +338,18 @@ uses_python: true
                             \[
                             \mu_i^*\, g_i(\boldsymbol{\theta}^*) = 0 \quad \text{for all } i = 1, \ldots, m,
                             \]
-                            equivalently \(\boldsymbol{\mu}^* \odot \mathbf{g}(\boldsymbol{\theta}^*) = \mathbf{0}\). For each
-                            \(i\), either \(\mu_i^* = 0\) (constraint inactive) or \(g_i(\boldsymbol{\theta}^*) = 0\)
-                            (constraint active). Only constraints in the active set \(\mathcal{A}(\boldsymbol{\theta}^*)\)
+                            equivalently \(\boldsymbol{\mu}^* \odot \mathbf{g}(\boldsymbol{\theta}^*) = \mathbf{0}\), where
+                            \(\mathbf{g} = (g_1, \ldots, g_m)^\top\) and \(\odot\) is the componentwise product. For each
+                            \(i\), at least one of \(\mu_i^* = 0\) and \(g_i(\boldsymbol{\theta}^*) = 0\) holds. In
+                            particular \(\mu_i^* = 0\) whenever the constraint is inactive. Only constraints in the
+                            active set \(\mathcal{A}(\boldsymbol{\theta}^*)\)
                             contribute non-trivially.
                         </li>
                     </ol>
 
                     <p><strong>(i) Necessity.</strong>
                         If \(\boldsymbol{\theta}^*\) is a local minimum of the constrained problem and
-                        <a href="#D-licq"><strong>LICQ</strong></a> holds at \(\boldsymbol{\theta}^*\), then there exist
+                        <a href="#D-licq" class="ref-link"><strong>LICQ</strong></a> holds at \(\boldsymbol{\theta}^*\), then there exist
                         multipliers \((\boldsymbol{\mu}^*, \boldsymbol{\lambda}^*)\) such that the KKT conditions hold. (No
                         convexity of \(\mathcal{L}\) or \(g_i\) is required for necessity.)
                     </p>
@@ -349,14 +361,64 @@ uses_python: true
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Proof of (ii):</span>
+                    <p>
+                        Fix any feasible \(\boldsymbol{\theta}\) and write \(\mathbf{v} = \boldsymbol{\theta} - \boldsymbol{\theta}^*\).
+                        For a convex differentiable \(\psi: \mathbb{R}^d \to \mathbb{R}\), the function
+                        \(\varphi(t) = \psi(\boldsymbol{\theta}^* + t\mathbf{v})\) is convex on \(\mathbb{R}\) (immediate
+                        from the definition) and differentiable by the chain rule, with
+                        \(\varphi'(0) = \nabla \psi(\boldsymbol{\theta}^*)^\top \mathbf{v}\), so the
+                        <a href="gradient.html#T-first_order_convexity" class="ref-link"><strong>first-order characterization of convexity</strong></a>
+                        applied to \(\varphi\) at the points \(0\) and \(1\) gives
+                        \[
+                        \psi(\boldsymbol{\theta}) \geq \psi(\boldsymbol{\theta}^*) + \nabla \psi(\boldsymbol{\theta}^*)^\top \mathbf{v}.
+                        \]
+                        We use this for \(\psi = \mathcal{L}\) and for \(\psi = g_i\). For the affine \(h_j\) it holds with
+                        equality. Then
+                        \[
+                        \begin{align*}
+                        \mathcal{L}(\boldsymbol{\theta})
+                        &\geq \mathcal{L}(\boldsymbol{\theta}^*) + \nabla \mathcal{L}(\boldsymbol{\theta}^*)^\top \mathbf{v} \\\\
+                        &= \mathcal{L}(\boldsymbol{\theta}^*)
+                        - \sum_{i=1}^{m} \mu_i^*\, \nabla g_i(\boldsymbol{\theta}^*)^\top \mathbf{v}
+                        - \sum_{j=1}^{p} \lambda_j^*\, \nabla h_j(\boldsymbol{\theta}^*)^\top \mathbf{v} \\\\
+                        &\geq \mathcal{L}(\boldsymbol{\theta}^*)
+                        - \sum_{i=1}^{m} \mu_i^* \bigl(g_i(\boldsymbol{\theta}) - g_i(\boldsymbol{\theta}^*)\bigr)
+                        - \sum_{j=1}^{p} \lambda_j^* \bigl(h_j(\boldsymbol{\theta}) - h_j(\boldsymbol{\theta}^*)\bigr) \\\\
+                        &= \mathcal{L}(\boldsymbol{\theta}^*) - \sum_{i=1}^{m} \mu_i^*\, g_i(\boldsymbol{\theta}) \\\\
+                        &\geq \mathcal{L}(\boldsymbol{\theta}^*).
+                        \end{align*}
+                        \]
+                        The second line is stationarity. The third uses \(\mu_i^* \geq 0\) together with the first-order
+                        inequality for \(g_i\), and the equality for \(h_j\). The fourth uses complementary slackness
+                        \(\mu_i^*\, g_i(\boldsymbol{\theta}^*) = 0\) and \(h_j(\boldsymbol{\theta}) = h_j(\boldsymbol{\theta}^*) = 0\).
+                        The last uses \(\mu_i^* \geq 0\) and \(g_i(\boldsymbol{\theta}) \leq 0\). Hence
+                        \(\boldsymbol{\theta}^*\) is a global minimum.
+                    </p>
+                    <p>
+                        <strong>On (i).</strong> The proof of necessity is beyond the scope of this page. It has two
+                        ingredients. First, under LICQ the
+                        <a href="inverse_implicit_function.html#T-implicit_function_theorem" class="ref-link"><strong>implicit function theorem</strong></a>
+                        realizes every direction \(\mathbf{v}\) with \(\nabla g_i(\boldsymbol{\theta}^*)^\top \mathbf{v} \leq 0\)
+                        for active \(i\) and \(\nabla h_j(\boldsymbol{\theta}^*)^\top \mathbf{v} = 0\) for all \(j\) as the
+                        initial velocity of a feasible curve, generalizing the single-constraint caveat above, so local
+                        optimality forces \(\nabla \mathcal{L}(\boldsymbol{\theta}^*)^\top \mathbf{v} \geq 0\) for all such
+                        \(\mathbf{v}\). Second, a finite-dimensional separation argument (Farkas' lemma) converts this sign
+                        condition into multipliers with \(\mu_i^* \geq 0\) and \(\mu_i^* = 0\) off the active set.
+                    </p>
+                </div>
+
                 <div class="insight-box">
                     <h3>Reading KKT: sign conventions and the role of each condition</h3>
                     <p>
-                        The dual-feasibility sign \(\mu_i^* \geq 0\) also carries a quantitative reading. If a small
-                        relaxation of \(g_i\) (moving from \(g_i \leq 0\) to \(g_i \leq \varepsilon\), \(\varepsilon \gt 0\))
-                        would let us decrease \(\mathcal{L}\), then \(\mu_i^*\) measures the rate. This is the
-                        <em>sensitivity</em> interpretation of Lagrange multipliers. Equality multipliers \(\lambda_j^*\) can
-                        have either sign, which reflects that an equality constraint can be relaxed in either direction.
+                        The dual-feasibility sign \(\mu_i^* \geq 0\) also carries a quantitative reading. Relax
+                        \(g_i \leq 0\) to \(g_i \leq \varepsilon\) with \(\varepsilon \gt 0\) and let \(V(\varepsilon)\) denote
+                        the resulting optimal value. Under regularity conditions not developed on this page, \(V\) is
+                        differentiable at \(0\) with \(V'(0) = -\mu_i^*\), so \(\mu_i^*\) is the rate at which the optimal
+                        value falls as the constraint is loosened. This is the <em>sensitivity</em> interpretation of
+                        Lagrange multipliers. Equality multipliers \(\lambda_j^*\) can have either sign, which reflects
+                        that an equality constraint can be loosened in either direction.
                     </p>
                 </div>
 
@@ -656,7 +718,7 @@ uses_python: true
                 <div class="insight-box">
                     <h3>Implementation note: slack variables vs. active-set tracking</h3>
                     <p>
-                        Numerical KKT solvers cannot directly handle the inequality \(g_i(\mathbf{x}) \leq 0\) nor the
+                        Newton-type KKT solvers do not directly handle the inequality \(g_i(\mathbf{x}) \leq 0\) nor the
                         kink in the complementary slackness condition \(\mu_i\, g_i(\mathbf{x}) = 0\). Two strategies
                         resolve this:
                     </p>
@@ -664,7 +726,7 @@ uses_python: true
                         <strong>(1) Slack variables.</strong> Introduce \(s_i \geq 0\) and convert each inequality to an
                         equality:
                         \[
-                        g_i(\mathbf{x}) \leq 0 \iff g_i(\mathbf{x}) + s_i = 0, \quad s_i \geq 0.
+                        g_i(\mathbf{x}) \leq 0 \iff g_i(\mathbf{x}) + s_i = 0 \text{ for some } s_i \geq 0.
                         \]
                         Complementary slackness then becomes \(\mu_i\, s_i = 0\), which is a smooth bilinear equation and is
                         amenable to Newton-type solvers (as in the code above).
@@ -678,7 +740,7 @@ uses_python: true
                     </p>
                     <p>
                         Modern interior-point methods use a smoothed version of slack-variable tracking with barrier
-                        functions, and are the workhorse for large-scale convex programs. Such programs are the natural
+                        functions, and are among the standard solvers for convex programs. Such programs are the natural
                         setting for <a href="duality.html"><strong>duality</strong></a>, which reformulates the primal problem
                         in a way that reveals structure often invisible in the primal.
                     </p>
