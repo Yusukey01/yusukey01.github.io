@@ -63,7 +63,7 @@ uses_python: false
                     <a href="linear_approximation.html#T-differential_product_rule" class="ref-link"><strong>differential product rule</strong></a>
                     must preserve the relative positions of the factors:
                     \[
-                    d(AB) = (dA)\,B + A\,(dB).
+                    d(GH) = (dG)\,H + G\,(dH).
                     \]
                     Moving a \(dX\) past a constant matrix changes the value. That move is the single most common
                     source of error in matrix calculus.
@@ -103,9 +103,11 @@ uses_python: false
                         \end{align*}
                         \]
                         The four nonlinear terms (three quadratic and one cubic in \(dX\)) are \(o(\|dX\|)\). Each is
-                        bounded by a constant multiple of \(\|dX\|^2\) via submultiplicativity of the operator norm
-                        (for example, \(\|X(dX)^2\| \leq \|X\|_{\mathrm{op}}\|dX\|^2\)). The three linear terms give
-                        the differential:
+                        bounded by a constant multiple of \(\|dX\|^2\) via submultiplicativity of the operator norm,
+                        which follows from applying the defining bound
+                        \(\|M\mathbf{v}\| \leq \|M\|_{\mathrm{op}}\|\mathbf{v}\|\) twice (for example,
+                        \(\|X(dX)^2\| \leq \|X\|_{\mathrm{op}}\|dX\|^2\), all norms being operator norms). The three
+                        linear terms give the differential:
                         \[
                         dF = F'(X)[\,dX\,] = (dX)X^2 + X(dX)X + X^2(dX).
                         \]
@@ -121,8 +123,9 @@ uses_python: false
                     <h3>Why there is no single "\(\partial F / \partial X\)" matrix</h3>
                     <p>
                         One might hope to write \(dF = (\partial F / \partial X)\, dX\) in analogy with the scalar
-                        case, but Example 1 shows this is impossible. In that example \(dX\) appears in three
-                        different positions, and no single constant matrix \(M\) satisfies
+                        case, but Example 1 shows this is impossible in general. In that example \(dX\) appears in three
+                        different positions, and for \(n \geq 2\) and \(X\) not a scalar multiple of the identity, no
+                        single constant matrix \(M\) satisfies
                         \(M\,dX = (dX)X^2 + X(dX)X + X^2(dX)\) for all \(dX\). The correct object is the linear map
                         \(F'(X)\), described by how it <em>acts</em> on \(dX\) rather than by a single multiplicand.
                         This is why the operator notation \(F'(X)[\,dX\,]\) is the right one for matrix-in /
@@ -137,9 +140,11 @@ uses_python: false
                     <p>
                         Let \(X \in \mathbb{R}^{n \times n}\) be
                         <a href="../Linear_algebra/matrix_algebra.html#inv"><strong>invertible</strong></a>, and set
-                        \(F(X) = X^{-1}\). The set of invertible matrices is open in \(\mathbb{R}^{n \times n}\), and
-                        the entries of \(X^{-1}\) are rational functions of the entries of \(X\) (via the cofactor
-                        formula \(X^{-1} = (\det X)^{-1}\operatorname{adj}(X)\)) with nonvanishing denominator, so
+                        \(F(X) = X^{-1}\). The set of invertible matrices is open in \(\mathbb{R}^{n \times n}\) (it is
+                        the preimage of \(\mathbb{R} \setminus \{0\}\) under the continuous polynomial map \(\det\)), and
+                        the entries of \(X^{-1}\) are rational functions of the entries of \(X\) (via the
+                        <a href="../Linear_algebra/determinants.html#T-adjugate_inverse" class="ref-link"><strong>adjugate formula</strong></a>
+                        \(X^{-1} = (\det X)^{-1}\operatorname{adj}(X)\)) with nonvanishing denominator, so
                         \(F\) is \(C^\infty\), and in particular differentiable, at every such \(X\).
                     </p>
                     <p>
@@ -173,7 +178,7 @@ uses_python: false
                         \(X^{-1} b\), for instance in <strong>Gaussian process</strong> marginal likelihoods or in
                         <strong>second-order optimization</strong> with a Hessian solve. The gradient with respect to
                         \(X\) is then obtained by contracting the upstream gradient against \(-X^{-1}(\cdot)X^{-1}\),
-                        never by materializing an inverse and differentiating elementwise.
+                        rather than by materializing an inverse and differentiating elementwise.
                     </p>
                 </div>
 
@@ -183,11 +188,19 @@ uses_python: false
                 <h2>Derivative of the LU Decomposition</h2>
 
                 <p>
-                    <a href="../Linear_algebra/matrix_algebra.html#lu"><strong>LU decomposition</strong></a> factors a
-                    square matrix \(X\) as \(X = LU\), where \(L\) is unit lower triangular (diagonal entries equal
+                    <a href="../Linear_algebra/matrix_algebra.html#D-LU_factorization" class="ref-link"><strong>LU decomposition</strong></a>
+                    factors a square matrix \(X\) as \(X = LU\), where \(L\) is unit lower triangular (diagonal entries equal
                     to one) and \(U\) is upper triangular. Understanding how \(L\) and \(U\) change when \(X\) is
                     perturbed is fundamental for <strong>stability analysis</strong> in numerical linear algebra and
                     for <strong>differentiable linear-algebra primitives</strong> in modern autodiff systems.
+                </p>
+
+                <p>
+                    The usual condition that guarantees the existence and uniqueness of an LU decomposition is
+                    that all leading principal minors of \(X\) be nonzero, equivalently that all diagonal entries
+                    \(U_{ii}\) be nonzero, a fact we use without proof. Under that condition the entries of \(L\)
+                    and \(U\) are rational functions of the entries of \(X\) (Gaussian elimination divides only by
+                    the pivots \(U_{ii}\)), so both factors are differentiable functions of \(X\).
                 </p>
 
                 <p>
@@ -198,15 +211,9 @@ uses_python: false
                     The structural constraints on \(L\) and \(U\) carry over to their differentials. Here \(dL\) is
                     strictly lower triangular (the unit-diagonal constraint freezes the diagonal of \(L\), so
                     \((dL)_{ii} = 0\)), and \(dU\) is upper triangular. Between them, \(dL\) and \(dU\) have exactly
-                    \(n^2\) independent entries, the same count as \(dX\).
-                </p>
-
-                <p>
-                    The standard condition that guarantees the existence and uniqueness of an LU decomposition is
-                    that all leading principal minors of \(X\) be nonzero, equivalently that all diagonal entries
-                    \(U_{ii}\) be nonzero. Under that condition the linear map \((dL, dU) \mapsto dX\) defined by
-                    \(dX = (dL)U + L(dU)\) is invertible, and this is what allows us to solve for \(dL\) and \(dU\)
-                    given \(dX\).
+                    \(n^2\) independent entries, the same count as \(dX\). Under the same condition the linear map
+                    \((dL, dU) \mapsto dX\) defined by \(dX = (dL)U + L(dU)\) is invertible, and this is what allows
+                    us to solve for \(dL\) and \(dU\) given \(dX\).
                 </p>
 
                 <h3>A \(2 \times 2\) worked example</h3>
@@ -257,12 +264,12 @@ uses_python: false
                     dU_{22} &= dX_{22} - L_{21}\,dU_{12} - U_{12}\,dL_{21},
                     \end{align*}
                     \]
-                    by back-substitution.
+                    by substitution.
                 </p>
 
                 <p>
                     This triangular-then-triangular solve pattern is exactly how the general LU-differentiation
-                    algorithm works at scale. The diagonal entries \(U_{ii}\) play the same role there, as the
+                    algorithm works at scale. The pivots \(U_{11}, \dots, U_{n-1,n-1}\) play the same role there, as the
                     divisors that must be nonzero.
                 </p>
 
@@ -270,15 +277,16 @@ uses_python: false
                     <h3>Application: differentiable linear algebra in modern ML</h3>
                     <p>
                         The identity \(dX = (dL)U + L(dU)\) is the starting point for <strong>reverse-mode autodiff
-                        through matrix factorizations</strong>. That capability is a key ingredient in frameworks
+                        through the LU factorization</strong>, and the same pattern (differentiate the defining
+                        identity, then solve triangular systems) underlies other factorizations. That capability is a key ingredient in frameworks
                         that differentiate through linear solves, determinant computations, and Cholesky
                         factorizations.
                     </p>
                     <p>
-                        Given an upstream gradient \(\bar X\) (the sensitivity of a downstream loss with respect to
-                        \(X\)), one recovers \(\bar L\) and \(\bar U\) by solving the adjoint equations derived from
-                        the identity above. This is what allows end-to-end training of models that embed linear
-                        solves, without ever writing hand-tuned backward passes. Such models range from
+                        Given the upstream gradients \(\bar L\) and \(\bar U\) (the sensitivities of a downstream loss
+                        with respect to the factors), one recovers \(\bar X\) by solving the adjoint equations derived
+                        from the identity above. This is what allows end-to-end training of models that embed linear
+                        solves, without writing hand-tuned backward passes. Such models range from
                         <strong>Gaussian processes</strong> and <strong>differentiable physics simulators</strong> to
                         <strong>structured-prediction layers</strong>.
                     </p>
