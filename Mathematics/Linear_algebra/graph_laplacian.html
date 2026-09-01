@@ -58,7 +58,9 @@ uses_python: false
                 <div class="theorem" id="D-graph_laplacian_unnormalized">
                     <span class="theorem-title">Definition: Unnormalized Graph Laplacian</span>
                     <p>
-                        For a graph \(G\) with adjacency matrix \(\boldsymbol{A}\) and degree matrix \(\boldsymbol{D}\), 
+                        For a graph \(G\) with \(n\) vertices \(v_1, \ldots, v_n\),
+                        <a href="../Discrete/Eulerian.html#D-adjacency_matrix" class="ref-link"><strong>adjacency matrix</strong></a>
+                        \(\boldsymbol{A}\), and degree matrix \(\boldsymbol{D} = \operatorname{diag}(\deg(v_1), \ldots, \deg(v_n))\),
                         the <strong>unnormalized graph Laplacian</strong> is the matrix
                         \[
                         \boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}.
@@ -115,6 +117,16 @@ uses_python: false
                     which measures how much a signal varies across the edges of the graph.
                 </p>
 
+                <p>
+                    From here on we allow edge weights. A weighted graph carries a symmetric weight matrix
+                    \(\boldsymbol{A} = (w_{ij})\) with \(w_{ij} = w_{ji} \geq 0\) and \(w_{ii} = 0\), and the vertices \(v_i\)
+                    and \(v_j\) are adjacent, \(v_i \sim v_j\), exactly when \(w_{ij} \gt 0\). The weighted degree is
+                    \(d_i = \sum_j w_{ij}\), the degree matrix is \(\boldsymbol{D} = \operatorname{diag}(d_1, \ldots, d_n)\),
+                    and the Laplacian is \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\) as before. The unweighted case
+                    is \(w_{ij} \in \{0, 1\}\), which recovers the definition above, and every statement below is proved in
+                    the weighted setting.
+                </p>
+
                 <div class="theorem" id="T-dirichlet_energy">
                     <span class="theorem-title">Theorem: Dirichlet Energy</span>
                     <p>
@@ -131,10 +143,8 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        We work with the weighted adjacency matrix \(\boldsymbol{A} = (w_{ij})\), where \(w_{ij} = w_{ji} \geq 0\)
-                        and \(w_{ij} = 0\) when \(v_i \not\sim v_j\) (the unweighted case is \(w_{ij} \in \{0, 1\}\)). The
-                        weighted degree is \(d_i = \sum_{j} w_{ij}\), and \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\).
-                        Split the quadratic form:
+                        Recall that \(d_i = \sum_{j} w_{ij}\) and \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\). Split
+                        the quadratic form:
                         \[
                         \begin{align*}
                         \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f}
@@ -212,15 +222,15 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Insight: Dirichlet Energy as a Regularizer in ML</h3>
                     <p>
-                        The Dirichlet energy \(\boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f}\) is widely used as a
-                        <strong>graph regularization</strong> term in semi-supervised learning. The objective
+                        The Dirichlet energy \(\boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f}\) is widely used as a <strong>graph
+                        regularization</strong> term in semi-supervised learning. The objective
                         \[
                         \min_{\boldsymbol{f}} \|\boldsymbol{f} - \boldsymbol{y}\|^2 + \alpha \, \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f}
                         \]
-                        penalizes label assignments where connected nodes receive different labels, encoding the
-                        <strong>smoothness assumption</strong> that nearby nodes in a graph are likely to share the same label. This
-                        principle underlies label propagation, graph-based semi-supervised learning, and the message-passing mechanism
-                        in Graph Neural Networks.
+                        penalizes label assignments where connected nodes receive different labels, encoding the <strong>smoothness
+                        assumption</strong> that nearby nodes in a graph are likely to share the same label. This principle underlies
+                        label propagation and graph-based semi-supervised learning, and it motivates the smoothing bias of message
+                        passing in Graph Neural Networks.
                     </p>
                 </div>
 
@@ -235,11 +245,12 @@ uses_python: false
                 <div class="theorem" id="D-normalized_laplacian_sym">
                     <span class="theorem-title">Definition: Symmetric Normalized Laplacian</span>
                     <p>
-                        The <strong>symmetric normalized Laplacian</strong> is
+                        For a graph without isolated vertices (so that \(\boldsymbol{D}\) is invertible), the <strong>symmetric
+                        normalized Laplacian</strong> is
                         \[
                         \mathcal{L}_{sym} = \boldsymbol{D}^{-1/2} \boldsymbol{L} \boldsymbol{D}^{-1/2} = \boldsymbol{I} - \boldsymbol{D}^{-1/2} \boldsymbol{A} \boldsymbol{D}^{-1/2}.
                         \]
-                        As a symmetric congruence transform of \(\boldsymbol{L}\), it is itself symmetric and admits 
+                        As a symmetric congruence transform of \(\boldsymbol{L}\), it is itself symmetric and admits
                         an orthonormal eigenbasis.
                     </p>
                 </div>
@@ -247,23 +258,26 @@ uses_python: false
                 <div class="theorem" id="D-normalized_laplacian_rw">
                     <span class="theorem-title">Definition: Random Walk Normalized Laplacian</span>
                     <p>
-                        The <strong>random walk normalized Laplacian</strong> is
+                        For a graph without isolated vertices, the <strong>random walk normalized Laplacian</strong> is
                         \[
                         \begin{align*}
                         \mathcal{L}_{rw} &= \boldsymbol{D}^{-1} \boldsymbol{L}  \\\\
                                          &= \boldsymbol{I} - \boldsymbol{D}^{-1} \boldsymbol{A} = \boldsymbol{I} - \boldsymbol{P}.
                         \end{align*}
                         \]
-                        Here, \(\boldsymbol{P} = \boldsymbol{D}^{-1}\boldsymbol{A}\) is the transition matrix of a random walk. 
-                        Thus, the eigenvalues of \(\mathcal{L}_{rw}\) relate directly to the convergence rate of the random walk.
+                        Here \(\boldsymbol{P} = \boldsymbol{D}^{-1}\boldsymbol{A}\), with entries \(P_{ij} = w_{ij}/d_i\), is the
+                        transition matrix of the random walk on \(G\) that steps from \(v_i\) to \(v_j\) with probability \(P_{ij}\).
+                        It is written row-wise, with each row summing to one, which is the transpose of the column convention used for
+                        stochastic matrices on the previous page. Consequently \(\lambda\) is an eigenvalue of \(\mathcal{L}_{rw}\)
+                        exactly when \(1 - \lambda\) is an eigenvalue of \(\boldsymbol{P}\).
                     </p>
                 </div>
 
                 <div class="theorem" id="T-normalized_laplacian_spectrum">
                     <span class="theorem-title">Theorem: Spectrum of the Normalized Laplacians</span>
                     <p>
-                        The symmetric and random-walk normalized Laplacians share the same spectrum, and all 
-                        eigenvalues lie in the interval \([0, 2]\):
+                        For a graph without isolated vertices, the symmetric and random-walk normalized Laplacians share the same
+                        spectrum, and all eigenvalues lie in the interval \([0, 2]\):
                         \[
                         \sigma(\mathcal{L}_{sym}) = \sigma(\mathcal{L}_{rw}) \subset [0, 2].
                         \]
@@ -283,8 +297,9 @@ uses_python: false
                         \end{align*}
                         \]
                         Thus \(\mathcal{L}_{rw}\) is similar to \(\mathcal{L}_{sym}\) via the invertible transform
-                        \(\boldsymbol{D}^{1/2}\). Similar matrices have identical eigenvalues, so
-                        \(\sigma(\mathcal{L}_{rw}) = \sigma(\mathcal{L}_{sym})\).
+                        \(\boldsymbol{D}^{1/2}\).
+                        <a href="eigenvectors.html#T-similar_matrices_same_char_poly" class="ref-link"><strong>Similar matrices have identical eigenvalues</strong></a>,
+                        so \(\sigma(\mathcal{L}_{rw}) = \sigma(\mathcal{L}_{sym})\).
                     </p>
                     <p>
                         <strong>(ii) Lower bound \(\lambda \geq 0\).</strong><br> For any \(\boldsymbol{g} \in \mathbb{R}^n\), set
@@ -313,13 +328,14 @@ uses_python: false
                         \[
                         \begin{align*}
                         \boldsymbol{g}^\top (2\boldsymbol{I} - \mathcal{L}_{sym}) \boldsymbol{g}
-                        &= \sum_{(i,j) \in E} \left(\frac{g_i}{\sqrt{d_i}} + \frac{g_j}{\sqrt{d_j}}\right)^2 \\\\
+                        &= \sum_{(i,j) \in E} w_{ij} \left(\frac{g_i}{\sqrt{d_i}} + \frac{g_j}{\sqrt{d_j}}\right)^2 \\\\
                         &\geq 0,
                         \end{align*}
                         \]
-                        where \(d_i = \deg(v_i)\). (The identity is verified by expanding the square and matching the diagonal term
-                        \(\sum_i g_i^2\) with \(d_i \cdot (1/d_i) = 1\) contributions from incident edges, and the cross term with the
-                        off-diagonal entries of \(\boldsymbol{D}^{-1/2}\boldsymbol{A}\boldsymbol{D}^{-1/2}\).) Thus
+                        where \(d_i = \sum_j w_{ij}\). (The identity is verified by expanding the square and matching the diagonal term
+                        \(\sum_i g_i^2\) with the contributions \(\sum_j w_{ij} \cdot (1/d_i) = 1\) from the edges incident to \(v_i\),
+                        and the cross term with the off-diagonal entries of
+                        \(\boldsymbol{D}^{-1/2}\boldsymbol{A}\boldsymbol{D}^{-1/2}\).) Thus
                         \(2\boldsymbol{I} - \mathcal{L}_{sym} \succeq 0\), giving \(\lambda \leq 2\).
                     </p>
                 </div>
@@ -411,11 +427,11 @@ uses_python: false
                         orthonormal eigenbasis \(\boldsymbol{v}_0, \ldots, \boldsymbol{v}_{n-1}\) with eigenvalues
                         \(0 \leq \lambda_0 \leq \cdots \leq \lambda_{n-1}\) (nonnegativity by
                         <a href="#T-laplacian_psd" class="ref-link"><strong>positive semidefiniteness</strong></a>). Expanding
-                        \(\boldsymbol{f} = \sum_k c_k \boldsymbol{v}_k\) in this basis,
+                        \(\boldsymbol{f} = \sum_k b_k \boldsymbol{v}_k\) in this basis,
                         \[
-                        0 = \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = \sum_k \lambda_k c_k^2,
+                        0 = \boldsymbol{f}^\top \boldsymbol{L} \boldsymbol{f} = \sum_k \lambda_k b_k^2,
                         \]
-                        and since each \(\lambda_k c_k^2 \geq 0\), every summand must vanish. Thus \(c_k = 0\) whenever
+                        and since each \(\lambda_k b_k^2 \geq 0\), every summand must vanish. Thus \(b_k = 0\) whenever
                         \(\lambda_k \gt 0\), so \(\boldsymbol{f}\) lies in the span of eigenvectors with eigenvalue zero, that is,
                         \(\boldsymbol{f} \in \ker \boldsymbol{L}\).
                     </p>
@@ -460,29 +476,29 @@ uses_python: false
                     <span class="theorem-title">Definition: Fiedler Vector</span>
                     <p>
                         An eigenvector \(\boldsymbol{v}_1\) corresponding to the algebraic connectivity 
-                        \(\lambda_1\) is called a <strong>Fiedler vector</strong>. The sign of its entries 
-                        (\(+\)/\(-\)) provides a natural partition of the graph's vertices into two sets, 
-                        often revealing the graph's weakest link. This is the foundation of spectral clustering.
+                        \(\lambda_1\) is called a <strong>Fiedler vector</strong>.
                     </p>
                 </div>
+
+                <p>
+                    The sign pattern of a Fiedler vector splits the vertices into two sets, and this split often exposes the graph's
+                    sparsest cut. That observation is the seed of spectral clustering, taken up below.
+                </p>
 
                 <div class="theorem" id="T-fiedler_connectivity">
                     <span class="theorem-title">Theorem: Algebraic Connectivity and Graph Connectedness</span>
                     <p>
-                        For a graph \(G\):
-                    </p>
-                    <ul style="padding-left: 40px;">
-                        <li>\(\lambda_1 \gt 0\) if and only if \(G\) is connected.</li>
-                        <li>A larger \(\lambda_1\) indicates a more "well-connected" graph (less of a "bottleneck").</li>
-                    </ul>
-                    <p>
-                        The first statement is an immediate corollary of
+                        For a graph \(G\), \(\lambda_1 \gt 0\) if and only if \(G\) is connected. This is an immediate corollary of
                         <a href="#T-kernel_connectivity" class="ref-link"><strong>Theorem: Kernel of \(\boldsymbol{L}\) and Connected Components</strong></a>:
                         \(G\) is connected if and only if \(c = 1\), and by the theorem this holds if and only if
-                        \(\dim \ker \boldsymbol{L} = 1\), that is, if and only if \(\lambda_1 \gt 0\). The second statement is
-                        quantified precisely by Cheeger's inequality below.
+                        \(\dim \ker \boldsymbol{L} = 1\), that is, if and only if \(\lambda_1 \gt 0\).
                     </p>
                 </div>
+
+                <p>
+                    Heuristically, a larger \(\lambda_1\) indicates a more "well-connected" graph, one with less of a "bottleneck". The
+                    next subsection turns this heuristic into an inequality.
+                </p>
                 
                 <h3>The Spectral Gap and Cheeger's Inequality</h3>
 
@@ -496,12 +512,14 @@ uses_python: false
                 <div class="theorem" id="T-cheeger_inequality">
                     <span class="theorem-title">Theorem: Cheeger's Inequality</span>
                     <p>
-                        Let \(h(G)\) be the <strong>Cheeger constant</strong> (or conductance), which measures the "bottleneck" of the
-                        graph by finding the minimum cut normalized by the volume of the smaller set:
+                        Let \(G\) have no isolated vertices and vertex set \(V\). For \(\varnothing \neq S \subsetneq V\), write
+                        \(|\partial S|\) for the total weight of the edges with exactly one endpoint in \(S\) (their number, in the
+                        unweighted case) and \(\operatorname{Vol}(S) = \sum_{v_i \in S} d_i\) for the total degree of \(S\). The
+                        <strong>Cheeger constant</strong> (or conductance) \(h(G)\) measures the "bottleneck" of the graph by finding
+                        the minimum cut normalized by the volume of the smaller set:
                         \[
-                        h(G) = \min_{S \subset V} \frac{|\partial S|}{\min(\operatorname{Vol}(S), \operatorname{Vol}(V \setminus S))}
+                        h(G) = \min_{\varnothing \neq S \subsetneq V} \frac{|\partial S|}{\min(\operatorname{Vol}(S), \operatorname{Vol}(V \setminus S))}.
                         \]
-                        where \(\operatorname{Vol}(S) = \sum_{v \in S} \deg(v)\).
                     </p>
                     <p>
                         Let \(\lambda_1^{\mathrm{norm}}\) denote the second smallest eigenvalue of the
@@ -531,13 +549,13 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Insight: The Spectral Gap in Network Science and ML</h3>
                     <p>
-                        The spectral gap \(\lambda_1\) has direct practical significance. In
-                        <strong>graph-based semi-supervised learning</strong>, a large spectral gap means that label information
-                        propagates quickly through the graph, leading to better generalization from few labeled examples. In
-                        <strong>network robustness</strong>, \(\lambda_1\) measures how resilient a network is to partitioning.
-                        Networks with small algebraic connectivity are vulnerable to targeted edge removal. The Cheeger inequality thus
-                        provides a principled criterion for evaluating graph quality in applications from social network analysis to
-                        mesh generation in computational geometry.
+                        The spectral gap, \(\lambda_1\) or its normalized counterpart \(\lambda_1^{\mathrm{norm}}\), has direct
+                        practical significance. In <strong>graph-based semi-supervised learning</strong>, a large spectral gap means
+                        that label information propagates quickly through the graph, which is generally associated with better
+                        generalization from few labeled examples. In <strong>network robustness</strong>, \(\lambda_1\) measures how
+                        resilient a network is to partitioning. Networks with small algebraic connectivity are vulnerable to targeted
+                        edge removal. The Cheeger inequality thus provides a principled criterion for evaluating graph quality in
+                        applications from social network analysis to mesh generation in computational geometry.
                     </p>
                 </div>
 
@@ -563,12 +581,12 @@ uses_python: false
                         (\(\hat{\boldsymbol{f}}\)) is its projection onto this basis:
                         \[
                         \hat{\boldsymbol{f}} = \boldsymbol{V}^\top \boldsymbol{f}
-                        \quad \text{(Analysis)}
+                        \quad \text{(Analysis)}.
                         \]
                         And the inverse GFT reconstructs the signal:
                         \[
                         \boldsymbol{f} = \boldsymbol{V} \hat{\boldsymbol{f}} = \sum_{k=0}^{n-1} \hat{f}_k \boldsymbol{v}_k
-                        \quad \text{(Synthesis)}
+                        \quad \text{(Synthesis)}.
                         \]
                     </p>
                 </div>
@@ -666,13 +684,13 @@ uses_python: false
                 <p>
                     Spectral clustering re-frames this problem. Instead of clustering points by distance, it clusters them by
                     <strong>connectivity</strong>. The Fiedler vector (\(\boldsymbol{v}_1\)) and the subsequent eigenvectors
-                    (\(\boldsymbol{v}_2, \ldots, \boldsymbol{v}_k\)) provide a new, low-dimensional "spectral embedding" of the
+                    (\(\boldsymbol{v}_2, \ldots, \boldsymbol{v}_{r-1}\)) provide a new, low-dimensional "spectral embedding" of the
                     data. In this new space, complex cluster structures (like intertwined moons or spirals) are "unrolled" and often
                     become linearly separable.
                 </p>
                 <p>
-                    The general algorithm involves using the first \(K\) eigenvectors of the Laplacian (often \(\mathcal{L}_{sym}\))
-                    to create an \(n \times K\) embedding matrix, and then running a simple algorithm like K-means on the
+                    The general algorithm involves using the first \(r\) eigenvectors of the Laplacian (often \(\mathcal{L}_{sym}\))
+                    to create an \(n \times r\) embedding matrix, and then running a simple algorithm like K-means on the
                     <em>rows</em> of that matrix.
                 </p>
                 <p>
@@ -688,19 +706,20 @@ uses_python: false
                     \(g(\boldsymbol{\Lambda})\) to the graph signal's "frequencies."
                     \[
                     \boldsymbol{f}_{out} = g(\boldsymbol{L}) \boldsymbol{f}_{in} = 
-                    \boldsymbol{V} g(\boldsymbol{\Lambda}) \boldsymbol{V}^\top \boldsymbol{f}_{in}
+                    \boldsymbol{V} g(\boldsymbol{\Lambda}) \boldsymbol{V}^\top \boldsymbol{f}_{in}.
                     \]
                     This is a "convolution" in the graph spectral domain.
                 </p>
 
                 <p>
                     Directly computing this is too expensive. Instead, methods like <strong>ChebNet</strong> approximate the filter
-                    \(g(\cdot)\) using a \(K\)-th order polynomial:
+                    \(g(\cdot)\), here applied to \(\mathcal{L}_{sym}\), using a \(K\)-th order polynomial:
                     \[
-                    g_\theta(\boldsymbol{L}) \approx \sum_{k=0}^K \theta_k T_k(\tilde{\boldsymbol{L}})
+                    g_\theta(\mathcal{L}_{sym}) \approx \sum_{k=0}^K \theta_k T_k(\tilde{\boldsymbol{L}})
                     \]
-                    where \(T_k\) are Chebyshev polynomials. Crucially, \(\tilde{\boldsymbol{L}}\) is the
-                    <strong>rescaled Laplacian</strong> mapping eigenvalues from \([0, 2]\) to \([-1, 1]\):
+                    where \(T_k\) are Chebyshev polynomials. Crucially, \(\tilde{\boldsymbol{L}}\) is the <strong>rescaled
+                    Laplacian</strong>, which rescales the spectrum of \(\mathcal{L}_{sym}\) from \([0, \lambda_{\max}]\) onto
+                    \([-1, 1]\), where \(\lambda_{\max}\) is its largest eigenvalue:
                     \[
                     \tilde{\boldsymbol{L}} = \frac{2}{\lambda_{\max}}\mathcal{L}_{sym} - \boldsymbol{I}.
                     \]
@@ -715,7 +734,8 @@ uses_python: false
                 <p>
                     The Laplacian is the canonical "generator" of diffusion processes, whether as the continuous operator \(\Delta\) or
                     as its graph counterpart \(\boldsymbol{L}\). On a continuous domain, the heat equation
-                    \(\partial u/\partial t = k\,\Delta u\) describes how temperature spreads through space. On a graph, the same role
+                    \(\partial u/\partial t = \kappa\,\Delta u\) (with diffusivity \(\kappa \gt 0\)) describes how temperature spreads
+                    through space. On a graph, the same role
                     is played by \(\boldsymbol{L}\), and the resulting discrete diffusion is the mathematical foundation for many GNN
                     architectures and semi-supervised learning algorithms.
                 </p>
@@ -726,36 +746,109 @@ uses_python: false
                     is its classification.
                 </p>
                 <p>
-                    Formalizing this intuition gives the <strong>graph heat equation</strong>. It is the direct discrete analogue of
+                    Formalizing this intuition gives the graph heat equation. It is the direct discrete analogue of
                     the classical heat equation on a continuous domain, in which the negative Laplacian \(-\Delta\) is replaced by the
                     graph Laplacian \(\boldsymbol{L}\) itself (both are positive semidefinite, so the sign of the equation matches):
                 </p>
                 <div class="theorem" id="T-heat_diffusion_graph">
                     <span class="theorem-title">Theorem: Heat Diffusion on Graphs</span>
                     <p>
+                        Let \(\boldsymbol{L}\) be the Laplacian of a graph on \(n\) vertices. The <strong>graph heat equation</strong>
+                        is the linear system
                         \[
-                        \frac{\partial \boldsymbol{u}}{\partial t} = -\boldsymbol{L} \boldsymbol{u}
+                        \frac{d\boldsymbol{u}}{dt} = -\boldsymbol{L} \boldsymbol{u}
                         \]
-                        The solution, which describes how an initial heat distribution \(\boldsymbol{u}(0)\) spreads over the graph,
-                        is given by:
+                        for a differentiable \(\boldsymbol{u} : [0, \infty) \to \mathbb{R}^n\). For every initial heat distribution
+                        \(\boldsymbol{u}(0) \in \mathbb{R}^n\) it has exactly one solution, which describes how that distribution
+                        spreads over the graph:
                         \[
                         \boldsymbol{u}(t) = e^{-t\boldsymbol{L}} \boldsymbol{u}(0),
                         \]
-                        where \(e^{-t\boldsymbol{L}} = \sum_{k=0}^{\infty} \frac{(-t\boldsymbol{L})^k}{k!} = \boldsymbol{V} e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^\top\).
+                        where
+                        \(e^{-t\boldsymbol{L}} = \sum_{k=0}^{\infty} \frac{(-t\boldsymbol{L})^k}{k!} = \boldsymbol{V} e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^\top\)
+                        and \(e^{-t\boldsymbol{\Lambda}} = \operatorname{diag}(e^{-t\lambda_0}, \ldots, e^{-t\lambda_{n-1}})\).
+                    </p>
+                </div>
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Write \(\boldsymbol{L} = \boldsymbol{V}\boldsymbol{\Lambda}\boldsymbol{V}^\top\) with \(\boldsymbol{V}\)
+                        orthogonal and \(\boldsymbol{\Lambda} = \operatorname{diag}(\lambda_0, \ldots, \lambda_{n-1})\), as the
+                        <a href="symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a> permits.
+                        Since \(\boldsymbol{V}^\top \boldsymbol{V} = \boldsymbol{I}\), induction gives
+                        \(\boldsymbol{L}^k = \boldsymbol{V}\boldsymbol{\Lambda}^k\boldsymbol{V}^\top\) for every \(k \geq 0\), so the
+                        partial sums of the series satisfy
+                        \[
+                        \sum_{k=0}^{N} \frac{(-t\boldsymbol{L})^k}{k!}
+                        = \boldsymbol{V} \left( \sum_{k=0}^{N} \frac{(-t\boldsymbol{\Lambda})^k}{k!} \right) \boldsymbol{V}^\top.
+                        \]
+                        The matrix in parentheses is diagonal, with \(j\)-th entry \(\sum_{k=0}^{N} (-t\lambda_j)^k/k!\), which
+                        converges to \(e^{-t\lambda_j}\) as \(N \to \infty\) by the scalar exponential series. Hence the matrix series
+                        converges entrywise to \(\boldsymbol{V} e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^\top\), which justifies the
+                        two expressions for \(e^{-t\boldsymbol{L}}\).
+                    </p>
+                    <p>
+                        <strong>Existence.</strong> Set
+                        \(\boldsymbol{u}(t) = \boldsymbol{V} e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^\top \boldsymbol{u}(0)\).
+                        Differentiating the diagonal entries gives
+                        \(\frac{d}{dt} e^{-t\boldsymbol{\Lambda}} = -\boldsymbol{\Lambda} e^{-t\boldsymbol{\Lambda}}\), and
+                        multiplication by the constant matrices \(\boldsymbol{V}\) and \(\boldsymbol{V}^\top \boldsymbol{u}(0)\)
+                        commutes with differentiation, so
+                        \[
+                        \begin{align*}
+                        \frac{d\boldsymbol{u}}{dt}
+                        &= \boldsymbol{V} (-\boldsymbol{\Lambda}) e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^\top \boldsymbol{u}(0) \\\\
+                        &= -(\boldsymbol{V}\boldsymbol{\Lambda}\boldsymbol{V}^\top)(\boldsymbol{V} e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^\top \boldsymbol{u}(0)) \\\\
+                        &= -\boldsymbol{L}\boldsymbol{u}(t),
+                        \end{align*}
+                        \]
+                        where the middle step inserts \(\boldsymbol{V}^\top \boldsymbol{V} = \boldsymbol{I}\).
+                    </p>
+                    <p>
+                        <strong>Uniqueness.</strong> Let \(\boldsymbol{u}\) be any differentiable solution and set
+                        \(\boldsymbol{y}(t) = \boldsymbol{V}^\top \boldsymbol{u}(t)\). Then
+                        \[
+                        \begin{align*}
+                        \boldsymbol{y}'
+                        &= \boldsymbol{V}^\top \boldsymbol{u}' \\\\
+                        &= -\boldsymbol{V}^\top \boldsymbol{L} \boldsymbol{u} \\\\
+                        &= -\boldsymbol{\Lambda} \boldsymbol{V}^\top \boldsymbol{u} \\\\
+                        &= -\boldsymbol{\Lambda}\boldsymbol{y},
+                        \end{align*}
+                        \]
+                        that is, \(y_j' = -\lambda_j y_j\) for each coordinate \(j\). For each \(j\), the product rule gives
+                        \[
+                        \begin{align*}
+                        \frac{d}{dt}\bigl(e^{\lambda_j t} y_j(t)\bigr)
+                        &= e^{\lambda_j t}\bigl(\lambda_j y_j(t) + y_j'(t)\bigr) \\\\
+                        &= 0,
+                        \end{align*}
+                        \]
+                        so, by the
+                        <a href="../Calculus/mvt.html#T-higher_dimensional_mvt" class="ref-link"><strong>mean value theorem</strong></a>
+                        (applied with \(n = 1\) on the open interval \((0, \infty)\), and extended to the endpoint \(0\)
+                        by continuity), \(e^{\lambda_j t} y_j(t)\) is constant on \([0, \infty)\) and equals its value
+                        \(y_j(0)\) at \(t = 0\). Thus
+                        \(\boldsymbol{y}(t) = e^{-t\boldsymbol{\Lambda}} \boldsymbol{y}(0)\), and
+                        \(\boldsymbol{u}(t) = \boldsymbol{V}\boldsymbol{y}(t)\) equals
+                        \(\boldsymbol{V} e^{-t\boldsymbol{\Lambda}} \boldsymbol{V}^\top \boldsymbol{u}(0)\), the
+                        solution constructed above.
                     </p>
                 </div>
                 <p>
                     The matrix \(e^{-t\boldsymbol{L}}\) is known as the <strong>graph heat kernel</strong>. It acts as a low-pass
                     filter, since high-frequency components \(e^{-t\lambda_k}\) with large \(\lambda_k\) decay fastest. That decay is
                     the discrete counterpart of the instantaneous-smoothing phenomenon of the continuous heat equation, where high
-                    spatial frequencies are damped by a Gaussian factor \(e^{-k\xi^2 t}\) in the Fourier domain. The continuous
-                    version, including the eigenvalue scaling \(\lambda_n = (n\pi/L)^2\) on a bounded interval and the Gaussian heat
-                    kernel that solves the problem on \(\mathbb{R}\), is treated in
+                    spatial frequencies are damped by a Gaussian factor \(e^{-\kappa\xi^2 t}\) in the Fourier domain. The continuous
+                    version, including the eigenvalue scaling \((j\pi/\ell)^2\) of the \(j\)-th mode on a bounded interval of length
+                    \(\ell\) and the Gaussian heat kernel that solves the problem on \(\mathbb{R}\), is treated in
                     <a href="../Calculus/fourier_pde_heat.html"><strong>The Heat Equation</strong></a>.
                 </p>
                 <p>
                     The same diffusive process is also the formal explanation for the <strong>over-smoothing</strong> problem in deep
-                    GNNs. Repeated graph-Laplacian application drives features toward the kernel of \(\boldsymbol{L}\).
+                    GNNs. Repeated application of a smoothing operator such as \(e^{-t\boldsymbol{L}}\), or of the GCN propagation
+                    matrix, drives features toward the kernel of the corresponding Laplacian (for \(e^{-t\boldsymbol{L}}\), the signals
+                    that are constant on every connected component), so that node representations become indistinguishable.
                 </p>
                 <p>
                     More advanced models take this connection to its logical conclusion, explicitly modeling GNNs as continuous-time
@@ -770,17 +863,21 @@ uses_python: false
                         spatial viewpoint (aggregating information from neighbors) are unified in GCNs. Kipf & Welling (2017) proposed
                         the <strong>renormalization trick</strong>:
                         \[
-                        \tilde{\boldsymbol{A}} = \boldsymbol{A} + \boldsymbol{I}, \quad \tilde{\boldsymbol{D}}_{ii} = \sum_j \tilde{\boldsymbol{A}}_{ij}
+                        \tilde{\boldsymbol{A}} = \boldsymbol{A} + \boldsymbol{I}, \quad \tilde{\boldsymbol{D}}_{ii} = \sum_j \tilde{\boldsymbol{A}}_{ij}.
                         \]
                     </p>
                     <p>
                         Replacing \(\boldsymbol{A}\) with \(\tilde{\boldsymbol{A}}\) (adding self-loops) serves two mathematical
-                        purposes. It preserves a node's own features during aggregation, and, critically, it
-                        <strong>controls the spectral radius</strong>. Without this, the operation
-                        \(\boldsymbol{I} + \boldsymbol{D}^{-1/2}\boldsymbol{A}\boldsymbol{D}^{-1/2}\) has eigenvalues up to 2,
-                        leading to exploding gradients in deep networks. The renormalization ensures eigenvalues stay within
-                        \([-1, 1]\) (with \(\lambda_{\max} \approx 1\)), guaranteeing numerical stability while maintaining the
-                        low-pass filtering effect.
+                        purposes. It preserves a node's own features during aggregation, and, critically, it <strong>controls the
+                        spectral radius</strong>. Without this, the operation
+                        \(\boldsymbol{I} + \boldsymbol{D}^{-1/2}\boldsymbol{A}\boldsymbol{D}^{-1/2}\) has eigenvalues in \([0, 2]\),
+                        so repeated application can amplify some components, which can lead to numerical instability (exploding or
+                        vanishing gradients) in deep networks. After renormalization, the operator
+                        \(\tilde{\boldsymbol{D}}^{-1/2}\tilde{\boldsymbol{A}}\tilde{\boldsymbol{D}}^{-1/2}\) has all eigenvalues in
+                        \([-1, 1]\), with largest eigenvalue exactly \(1\) (the range follows from the same edge-sum arguments run on
+                        the graph with a self-loop at every vertex, and the eigenvector
+                        \(\tilde{\boldsymbol{D}}^{1/2}\boldsymbol{1}\) attains \(1\)), so repeated application never amplifies a
+                        component while the low-pass filtering effect is maintained.
                     </p>
                 </div>
 
@@ -788,12 +885,13 @@ uses_python: false
 
                 <ul style="padding-left: 40px;">
                     <li><strong>Recommender Systems:</strong><br>
-                        Used extensively in industry to model user-item interactions as a graph, often leveraging matrix factorization on 
-                        the Laplacian or graph-based diffusion models to predict preferences.
+                        Used extensively in industry to model user-item interactions as a graph, often leveraging Laplacian-regularized
+                        matrix factorization or graph-based diffusion models to predict preferences.
                     </li>
                     <li><strong>Protein Structure:</strong><br>
-                         Foundational to bioinformatics, where GNNs (like those used by AlphaFold) model the 3D structure of proteins by 
-                         treating amino acids as nodes and using Laplacian-based graph convolutions to capture bond geometry.
+                         Foundational to structural bioinformatics, where graph neural networks represent a protein as a residue graph
+                         (amino acids as nodes, spatial contacts as edges) and learn from its geometry with Laplacian-based or
+                         message-passing convolutions.
                     </li>
                     <li><strong>Electrical Networks &amp; Effective Resistance:</strong><br>
                         Treating each edge as a unit resistor, the
@@ -839,11 +937,12 @@ uses_python: false
                     \]
                 </p>
                 <p>
-                    This factorization is the graph-theoretic analogue of the continuous identity \(\Delta = \nabla \cdot \nabla\), the
-                    operator at the heart of <a href="../Calculus/fourier_pde_laplace.html"><strong>the Laplace equation</strong></a>.
-                    The Laplacian is the composition of a discrete <em>gradient</em> (\(\boldsymbol{B}^\top\), mapping vertex
-                    potentials to edge differences) with a discrete <em>divergence</em> (\(\boldsymbol{B}\), mapping edge flows to
-                    vertex net outflows). The factorization makes positive semidefiniteness immediate, since
+                    This factorization is the graph-theoretic analogue of the continuous identity \(\Delta = \nabla \cdot \nabla\)
+                    (with the sign flip \(\boldsymbol{L} \leftrightarrow -\Delta\) noted above), the operator at the heart of
+                    <a href="../Calculus/fourier_pde_laplace.html"><strong>the Laplace equation</strong></a>. The Laplacian is the
+                    composition of a discrete <em>gradient</em> (\(\boldsymbol{B}^\top\), mapping vertex potentials to edge
+                    differences) with a discrete <em>divergence</em> (\(\boldsymbol{B}\), mapping edge flows to vertex net outflows).
+                    The factorization makes positive semidefiniteness immediate, since
                     \(\boldsymbol{x}^\top\boldsymbol{L}\boldsymbol{x} = \|\boldsymbol{B}^\top\boldsymbol{x}\|^2\). It also opens the
                     door to cycle/cut space decompositions, Kirchhoff's current law, and the cohomological picture of graphs.
                 </p>
