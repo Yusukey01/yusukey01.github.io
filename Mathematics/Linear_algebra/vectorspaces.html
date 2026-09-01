@@ -45,7 +45,7 @@ uses_python: false
                     <ol style="padding-left: 40px;">
                         <li>Commutativity of vector addition: \(\mathbf{u} + \mathbf{v} = \mathbf{v} + \mathbf{u}\).</li>
                         <li>Associativity of vector addition: \((\mathbf{u} + \mathbf{v}) + \mathbf{w} = \mathbf{u} + (\mathbf{v} + \mathbf{w})\).</li>
-                        <li>Existence of an additive identity: there exists \(\mathbf{0} \in V\) such that \(\mathbf{u} + \mathbf{0} = \mathbf{u}\).</li>
+                        <li>Existence of an additive identity: there is a vector \(\mathbf{0} \in V\) with \(\mathbf{u} + \mathbf{0} = \mathbf{u}\) for every \(\mathbf{u} \in V\).</li>
                         <li>Existence of an additive inverse: for every \(\mathbf{u} \in V\) there exists \(-\mathbf{u} \in V\) such that \(\mathbf{u} + (-\mathbf{u}) = \mathbf{0}\).</li>
                         <li>Existence of a multiplicative identity: \(1\mathbf{u} = \mathbf{u}\).</li>
                         <li>Distributivity of scalar multiplication over vector addition: \(c(\mathbf{u} + \mathbf{v}) = c\mathbf{u} + c\mathbf{v}\).</li>
@@ -551,6 +551,8 @@ uses_python: false
                     <p>
                         The <strong>dimension</strong> of a vector space \(V\), written \(\dim V\), is the number of vectors in a basis for \(V\). A vector space is
                         <strong>finite-dimensional</strong> if it has a basis with finitely many vectors, and <strong>infinite-dimensional</strong> otherwise.
+                        The zero space \(\{\mathbf{0}\}\) is the one case this leaves open, since it contains no linearly independent list of
+                        vectors and therefore has no basis in the sense above. We assign it dimension \(0\).
                     </p>
                     <p>
                         For this definition to be sensible, any two bases of the same vector space must contain the same number of vectors. The theorem below proves
@@ -619,6 +621,11 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof of Invariance of Dimension:</span>
                     <p>
+                        First, every basis of \(V\) is finite. A set in \(V\) with more than \(n\) vectors contains \(n + 1\) vectors that are
+                        linearly dependent by the Lemma, and a dependent subset makes the whole set dependent, so no linearly independent subset of
+                        \(V\) has more than \(n\) elements. A basis is linearly independent, so it has at most \(n\) vectors.
+                    </p>
+                    <p>
                         Let \(\mathcal{B}' = \{\mathbf{b}'_1, \ldots, \mathbf{b}'_m\}\) be another basis of \(V\). Since
                         \(\mathcal{B} = \{\mathbf{b}_1, \ldots, \mathbf{b}_n\}\) spans \(V\) with \(n\) vectors, and \(\mathcal{B}'\) is a linearly independent set in
                         \(V\), the Lemma forbids \(\mathcal{B}'\) from having more than \(n\) elements: \(m \leq n\).
@@ -685,8 +692,8 @@ uses_python: false
                         \[
                         \operatorname{rank} A = \dim(\operatorname{Col} A).
                         \]
-                        Equivalently (as we will see in the Rank-Nullity proof), \(\operatorname{rank} A\) is the number of pivot columns in any row echelon form of
-                        \(A\).
+                        Equivalently (as we will see in the Rank-Nullity proof), \(\operatorname{rank} A\) is the number of pivot columns in the
+                        reduced row echelon form of \(A\).
                     </p>
                 </div>
 
@@ -722,6 +729,12 @@ uses_python: false
                         and \(R\mathbf{c} = \mathbf{0}\) with \(\mathbf{c} = (c_1, \ldots, c_n)^\top\).
                     </p>
                     <p>
+                        Two boundary cases are settled directly by the convention \(\dim\{\mathbf{0}\} = 0\). If \(r = 0\), then \(R = 0\), and since
+                        \(A\) is recovered from \(R\) by inverting the elementary matrices, \(A = 0\) and \(\operatorname{Col} A = \{\mathbf{0}\}\),
+                        so \(\operatorname{rank} A = 0\). If \(r = n\), no variable is free and \(\operatorname{Nul} A = \{\mathbf{0}\}\), so
+                        \(\dim(\operatorname{Nul} A) = 0\). Step 1 below therefore assumes \(r \geq 1\) and Step 2 assumes \(r \leq n - 1\).
+                    </p>
+                    <p>
                         <strong>Step 1: the pivot columns of \(A\) form a basis for \(\operatorname{Col} A\), so \(\dim(\operatorname{Col} A) = r\).</strong>
                     </p>
                     <p>
@@ -752,23 +765,23 @@ uses_python: false
                         expresses each basic variable \(x_{j_\ell}\) (for \(1 \leq \ell \leq r\)) as a linear combination of the free variables. Writing the general
                         solution in parametric vector form,
                         \[
-                        \mathbf{x} = x_{j_{r+1}} \mathbf{v}_{r+1} + x_{j_{r+2}} \mathbf{v}_{r+2} + \cdots + x_{j_n} \mathbf{v}_n,
+                        \mathbf{x} = x_{j_{r+1}} \mathbf{h}_{r+1} + x_{j_{r+2}} \mathbf{h}_{r+2} + \cdots + x_{j_n} \mathbf{h}_n,
                         \]
-                        where each \(\mathbf{v}_k \in \mathbb{R}^n\) is obtained by setting the free variable \(x_{j_k}\) to \(1\) and all other free variables to
+                        where each \(\mathbf{h}_k \in \mathbb{R}^n\) is obtained by setting the free variable \(x_{j_k}\) to \(1\) and all other free variables to
                         \(0\), then reading off the resulting basic coordinates.
                     </p>
                     <p>
                         By the invariant, the same parametrization gives the general solution of \(A\mathbf{x} = \mathbf{0}\), so
-                        \(\{\mathbf{v}_{r+1}, \ldots, \mathbf{v}_n\}\) spans \(\operatorname{Nul} A\).
+                        \(\{\mathbf{h}_{r+1}, \ldots, \mathbf{h}_n\}\) spans \(\operatorname{Nul} A\).
                     </p>
                     <p>
-                        To see linear independence, note that in \(\mathbf{v}_k\) the coordinate at position \(j_k\) (the free variable we set to \(1\)) equals \(1\),
+                        To see linear independence, note that in \(\mathbf{h}_k\) the coordinate at position \(j_k\) (the free variable we set to \(1\)) equals \(1\),
                         while at position \(j_{k'}\) for \(k' \neq k\) (the other free variables set to \(0\)) it equals \(0\). Suppose
-                        \(\sum_{k=r+1}^n t_k \mathbf{v}_k = \mathbf{0}\). Reading the coordinate at position \(j_k\) gives
+                        \(\sum_{k=r+1}^n t_k \mathbf{h}_k = \mathbf{0}\). Reading the coordinate at position \(j_k\) gives
                         \(t_k \cdot 1 + \sum_{k' \neq k} t_{k'} \cdot 0 = t_k\), so \(t_k = 0\) for each \(k\).
                     </p>
                     <p>
-                        The vectors \(\mathbf{v}_{r+1}, \ldots, \mathbf{v}_n\) thus form a basis for \(\operatorname{Nul} A\). Combined with
+                        The vectors \(\mathbf{h}_{r+1}, \ldots, \mathbf{h}_n\) thus form a basis for \(\operatorname{Nul} A\). Combined with
                         <a href="#T-dimension_well_defined" class="ref-link"><strong>Invariance of Dimension</strong></a>, this yields
                         \(\dim(\operatorname{Nul} A) = n - r\).
                     </p>
