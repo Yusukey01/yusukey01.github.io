@@ -43,6 +43,10 @@ uses_python: false
                     construct the <strong>finite fields</strong> necessary for error-correcting codes and encryption.
                 </p>
 
+                <p>
+                    Throughout this page, fields and integral domains are understood to satisfy \(1 \neq 0\).
+                </p>
+
                 <div class="theorem" id="D-polynomial_ring">
                     <span class="theorem-title">Definition: Ring of Polynomials over \(R\)</span>
                     Let \(R\) be a commutative ring. The set of formal symbols
@@ -143,7 +147,8 @@ uses_python: false
 
                 <p>
                     By convention, the <strong>zero polynomial</strong> has no degree (or is sometimes assigned degree \(-\infty\)). 
-                    This convention ensures the Division Algorithm statement remains valid when the remainder is zero.
+                    This is why the Division Algorithm below states its conclusion as an alternative. The remainder is
+                    either the zero polynomial or has degree less than that of the divisor.
                 </p>
 
                 <div class="theorem" id="T-Dx_integral_domain">
@@ -153,15 +158,16 @@ uses_python: false
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
-                    Since \(D[x]\) is a ring, we show that \(D[x]\) is commutative with a unity and has no zero-divisors. 
-                    Commutativity of \(D[x]\) follows from the commutativity of \(D\). Writing \(c_k = \sum_{i=0}^k a_i b_{k-i}\)
-                    for the coefficients of \(f(x)g(x)\) and \(d_k = \sum_{j=0}^k b_j a_{k-j}\) for those of \(g(x)f(x)\),
-                    the substitution \(j = k - i\) reindexes the second sum as
+                    Since \(D[x]\) is a ring, we show that \(D[x]\) is commutative with a unity and has no zero-divisors.
+                    Commutativity of \(D[x]\) follows from the commutativity of \(D\). For \(f(x), g(x) \in D[x]\) with
+                    coefficients \(a_i\) and \(b_i\), write \(c_k = \sum_{i=0}^k a_i b_{k-i}\) for the coefficients of
+                    \(f(x)g(x)\) and \(d_k = \sum_{j=0}^k b_j a_{k-j}\) for those of \(g(x)f(x)\). The substitution
+                    \(j = k - i\) reindexes the second sum as
                     \(d_k = \sum_{i=0}^k b_{k-i} a_i = \sum_{i=0}^k a_i b_{k-i} = c_k\). The second equality uses commutativity of \(D\).
                     For the unity, let \(1\) denote the unity of \(D\). Then the constant polynomial \(f(x) = 1\) satisfies 
                     \(1 \cdot g(x) = g(x)\) for every \(g(x) \in D[x]\) (the product formula reduces to copying \(g\)'s coefficients), 
-                    so \(f(x) = 1\) is the unity of \(D[x]\). 
-                    Now suppose that
+                    so \(f(x) = 1\) is the unity of \(D[x]\).
+                    Now suppose that \(f(x)\) and \(g(x)\) are nonzero, so that they can be written as
                     \[
                     f(x) = a_n x^n + a_{n-1} x^{n-1} + \cdots + a_1 x + a_0
                     \]
@@ -224,7 +230,8 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        <strong>Existence.</strong> We argue by strong induction on \(n = \operatorname{deg} f(x)\).
+                        <strong>Existence.</strong> We argue by strong induction on \(n = \operatorname{deg} f(x)\), treating
+                        \(f(x) = 0\) separately.
                     </p>
                     <p>
                         <em>Base case</em>: if \(f(x) = 0\) or \(\operatorname{deg} f(x) \lt \operatorname{deg} g(x)\), set
@@ -243,12 +250,13 @@ uses_python: false
                         f_1(x) = f(x) - a_n b_m^{-1} x^{n-m} g(x).
                         \]
                         The coefficient of \(x^n\) in \(f_1(x)\) is \(a_n - a_n b_m^{-1} \cdot b_m = 0\), so either \(f_1(x) = 0\) or
-                        \(\operatorname{deg} f_1(x) \lt n\). Applying the induction hypothesis to \(f_1(x)\) (whose degree is
-                        strictly less than \(n\), or which is zero), there exist \(q_1(x), r_1(x) \in F[x]\) with
+                        \(\operatorname{deg} f_1(x) \lt n\). Applying the base case to \(f_1(x)\) if \(f_1(x) = 0\), and the
+                        induction hypothesis otherwise (its degree is then strictly less than \(n\)), there exist
+                        \(q_1(x), r_1(x) \in F[x]\) with
                         \[
                         \begin{align*}
                         f_1(x) &= g(x) q_1(x) + r_1(x) \\\\
-                        r_1(x) &= 0 \text{ or } \operatorname{deg} r_1(x) \lt \operatorname{deg} g(x)
+                        r_1(x) &= 0 \text{ or } \operatorname{deg} r_1(x) \lt \operatorname{deg} g(x).
                         \end{align*}
                         \]
                         Substituting back:
@@ -283,8 +291,9 @@ uses_python: false
                 </div>
 
                  <p>
-                    This theorem ensures that we can always "reduce" a large polynomial modulo a smaller one, creating a 
-                    finite set of remainders. Two immediate and powerful consequences follow:
+                    This theorem ensures that we can always "reduce" a large polynomial modulo a smaller one, replacing it
+                    by a remainder that is either zero or of lower degree than the divisor. Three consequences follow in
+                    turn, each resting on the previous result:
                 </p>
    
                 <div class="theorem" id="T-remainder_theorem">
@@ -322,24 +331,29 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     We argue by induction on \(n = \operatorname{deg} f(x)\). The case \(n = 0\) is immediate. A nonzero constant
-                    polynomial has no zeros. For \(n \geq 1\), if \(f(x)\) has no zeros in \(F\), the bound holds vacuously.
+                    polynomial has no zeros. For \(n \geq 1\), if \(f(x)\) has no zeros in \(F\), the bound holds trivially.
                     Otherwise, let \(a\) be a zero of \(f(x)\). By the 
                     <a href="#T-factor_theorem" class="ref-link"><strong>Factor Theorem</strong></a>, 
                     \(f(x) = (x - a) q(x)\) for some \(q(x) \in F[x]\) with \(\operatorname{deg} q(x) = n - 1\) (by 
                     <a href="#T-degree_product_integral_domain" class="ref-link"><strong>Degree of a Product</strong></a>, 
                     using that \(F\) is an integral domain). By induction, \(q(x)\) has at most \(n - 1\) zeros (counted with multiplicity). Any zero \(b\) of \(f\) other than \(a\) 
                     satisfies \((b - a) q(b) = 0\), and since \(b - a \neq 0\) and \(F\) has no zero-divisors, \(q(b) = 0\). 
-                    Thus \(f\) has at most \(1 + (n - 1) = n\) zeros. The same bound holds when zeros are counted with multiplicity.
-                    If \(a\) appears in \(f\) with multiplicity \(k \geq 1\), then \(a\) appears in \(q\) with multiplicity \(k - 1\),
-                    and the multiplicities of all other zeros of \(f\) coincide with their multiplicities in \(q\). The total
-                    multiplicity of zeros of \(f\) is therefore \(1\) (for the new factor \((x - a)\)) plus the total multiplicity
-                    of zeros of \(q\), which is at most \(n - 1\) by induction.
+                    Thus \(f\) has at most \(1 + (n - 1) = n\) zeros. The same bound holds when zeros are counted with multiplicity,
+                    where the multiplicity of a zero \(b\) of \(f(x)\) is the largest \(j\) such that \((x - b)^j\) divides \(f(x)\).
+                    If \(a\) appears in \(f\) with multiplicity \(k \geq 1\), then \(a\) appears in \(q\) with multiplicity
+                    \(k - 1\), since cancellation in \(F[x]\) makes \((x - a)^j\) divide \(f(x) = (x - a)q(x)\) exactly when
+\((x - a)^{j-1}\) divides \(q(x)\). For a zero \(b \neq a\), the multiplicities in \(f\) and in \(q\) agree.
+                    Writing \(x - a = (x - b) + (b - a)\) with the constant \(b - a\) invertible, a factor \(x - b\)
+                    dividing \((x - a)q(x)\)
+                    must divide \(q(x)\), and replacing \(q(x)\) by \(q(x)/(x - b)\) repeats the argument for the higher powers. The
+                    total multiplicity of zeros of \(f\) is therefore \(1\) (for the new factor \((x - a)\)) plus the total
+                    multiplicity of zeros of \(q\), which is at most \(n - 1\) by induction.
                 </div>
 
                 <p>
                     The Division Algorithm does more than count zeros. It reveals the ideal structure of polynomial rings.
-                    Recall that an <a href="ideals.html#D-ideal" class="ref-link"><strong>ideal</strong></a> is a subset closed
-                    under addition and "absorbing" multiplication from the ring. In \(F[x]\), every ideal turns out to have a
+                    Recall that an <a href="ideals.html#D-ideal" class="ref-link"><strong>ideal</strong></a> is a subring that absorbs
+                    multiplication by every element of the ring. In \(F[x]\), every ideal turns out to have a
                     very simple form:
                 </p>
 
@@ -366,7 +380,7 @@ uses_python: false
                     If \(I \neq \{0\}\), then among all the nonzero elements of \(I\), let \(g(x)\) be 
                     one of minimum degree. 
                     Since \(g(x) \in I\) and \(I\) is an ideal, every multiple of \(g(x)\) lies in \(I\). That is,
-                    \(\langle g(x) \rangle = \{r(x) g(x) \mid r(x) \in F[x]\} \subseteq I\). 
+                    \(\langle g(x) \rangle = \{h(x) g(x) \mid h(x) \in F[x]\} \subseteq I\). 
                     Conversely, let \(f(x) \in I\). 
                     Then, by the 
                     <a href="#T-division_algorithm_Fx" class="ref-link"><strong>Division Algorithm</strong></a>, 
@@ -383,7 +397,7 @@ uses_python: false
 
                 <p>
                     The fact that \(F[x]\) is a PID has far-reaching algorithmic consequences. Every ideal being principal means that
-                    for any set of polynomials, we can find a single "Greatest Common Divisor" that generates the same ideal. This is
+                    for any finite set of polynomials, we can find a single "Greatest Common Divisor" that generates the same ideal. This is
                     what the <strong>Extended Euclidean Algorithm</strong> exploits when AES computes multiplicative inverses.
                 </p>
 
@@ -413,7 +427,8 @@ uses_python: false
 
                  <p>
                     <strong>Important.</strong> Irreducibility is <strong>relative to the ring</strong>. The polynomial \(x^2 - 2\)
-                    is irreducible over \(\mathbb{Q}\) (it has no rational roots), but it factors as \((x - \sqrt{2})(x + \sqrt{2})\)
+                    is irreducible over \(\mathbb{Q}\) (it has no rational roots, which suffices in degree 2 by the test
+                    below), but it factors as \((x - \sqrt{2})(x + \sqrt{2})\)
                     over \(\mathbb{R}\). Similarly, \(x^2 + 1\) is irreducible over \(\mathbb{R}\) but factors as \((x-i)(x+i)\) over
                     \(\mathbb{C}\). For cryptography, we specifically need irreducibility over finite fields like \(\mathbb{Z}_2\).
                 </p>
@@ -426,6 +441,10 @@ uses_python: false
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
+                    The units of \(F[x]\) are exactly the nonzero constants. If \(u(x)v(x) = 1\), then additivity of the
+                    degree forces \(\operatorname{deg} u(x) = \operatorname{deg} v(x) = 0\), and every nonzero constant is
+                    invertible because \(F\) is a field.
+                    <br><br>
                     (\(\Rightarrow\)) Suppose \(f(x)\) is reducible. Then there exist \(g(x), h(x) \in F[x]\), both nonunit, with
                     \(f(x) = g(x) h(x)\). Since \(F[x]\) units are exactly the nonzero constants, both \(g(x)\) and \(h(x)\) have degree 
                     \(\geq 1\). Since \(F\) is a field (hence an integral domain), the 
@@ -552,7 +571,8 @@ uses_python: false
                     is reducible over \(\mathbb{Z}_p\).
                     <br><br>
                     Suppose \(f(x)\) is reducible over \(\mathbb{Q}\). That is, \(f(x) = g(x) h(x)\) with \(g(x), h(x) \in \mathbb{Q}[x]\)
-                    both nonunit, equivalently with \(\operatorname{deg} g(x), \operatorname{deg} h(x) \geq 1\). 
+                    both nonunit, equivalently with \(\operatorname{deg} g(x), \operatorname{deg} h(x) \geq 1\), so that each of
+                    the two degrees is at most \(\operatorname{deg} f(x) - 1\) by additivity of the degree over \(\mathbb{Q}\). 
                     By the <a href="#T-reducible_Q_implies_reducible_Z" class="ref-link"><strong>degree-preserving \(\mathbb{Z}\)-factorization</strong></a>, 
                     we may assume \(g(x), h(x) \in \mathbb{Z}[x]\) with \(\operatorname{deg} g(x), \operatorname{deg} h(x) \lt \operatorname{deg} f(x)\). 
                     Let \(\bar{g}(x), \bar{h}(x)\) be obtained from \(g(x), h(x)\) by reducing coefficients modulo \(p\). 
@@ -586,8 +606,8 @@ uses_python: false
                 </p>
 
                 <div class="theorem" id="T-eisenstein_criterion">
-                    <span class="theorem-title">Theorem: Eisenstein's Criterion (1850)</span> 
-                    Let
+                    <span class="theorem-title">Theorem: Eisenstein's Criterion (1850)</span>
+                    Let \(n \geq 1\) and let
                     \[
                     f(x) = a_n x^n + a_{n-1} x^{n-1} + \cdots + a_0 \in \mathbb{Z}[x].
                     \]
@@ -601,7 +621,7 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof Sketch:</span>
+                    <span class="proof-title">Proof:</span>
                     <p>
                         We argue by contradiction. Suppose \(f(x)\) is reducible over \(\mathbb{Q}\). By the
                         <a href="#T-reducible_Q_implies_reducible_Z" class="ref-link"><strong>degree-preserving \(\mathbb{Z}\)-factorization</strong></a>,
@@ -650,16 +670,16 @@ uses_python: false
                 </p>
 
                 <p>
-                    In cryptography and error-correction, we often need to construct large extension fields. Eisenstein's
-                    Criterion provides a constructive way to generate irreducible polynomials of any degree \(n\) we desire. We
-                    simply choose a prime \(p\) and set the coefficients accordingly. This ensures the mathematical integrity of
-                    the field we are building.
+                    Eisenstein's Criterion gives a quick supply of polynomials that are irreducible over \(\mathbb{Q}\) of any
+                    degree we desire. We simply choose a prime \(p\) and set the coefficients accordingly. This is how
+                    extensions of \(\mathbb{Q}\) of prescribed degree are built. The finite fields used in cryptography need
+                    irreducibility over \(\mathbb{Z}_p\) instead, and the criterion says nothing about that question.
                 </p>
 
                 <p>
                     <strong>Algorithmic Perspective.</strong> Testing irreducibility is a fundamental operation in
                     <strong>Computer Algebra Systems (CAS)</strong> like Mathematica. The tests covered here (degree 2-3 test, Mod
-                    \(p\) test, Eisenstein's Criterion) are exactly what these systems use internally. For large polynomials over
+                    \(p\) test, Eisenstein's Criterion) are among the elementary checks such systems apply first. For large polynomials over
                     finite fields, more sophisticated algorithms are employed: <strong>Berlekamp's algorithm</strong> (1967), a
                     deterministic method based on linear algebra, and the <strong>Cantor-Zassenhaus algorithm</strong> (1981), a
                     probabilistic method that is now the dominant approach in modern implementations.
@@ -768,7 +788,7 @@ uses_python: false
                     <br><br>
                     <strong>Uniqueness.</strong> Two ingredients combine. First, 
                     <a href="#T-Fx_is_pid" class="ref-link"><strong>\(\mathbb{Q}[x]\) is a principal ideal domain</strong></a>, 
-                    and from this it can be shown that \(\mathbb{Q}[x]\) admits unique factorization (up to units in \(\mathbb{Q}\)). 
+                    and \(\mathbb{Q}[x]\) therefore admits unique factorization up to units in \(\mathbb{Q}\), a step we do not prove here. 
                     So if our polynomial in \(\mathbb{Z}[x]\) had two essentially different factorizations into positive-degree irreducibles, 
                     the same disagreement would persist over \(\mathbb{Q}[x]\), which is impossible. Second, 
                     <a href="#T-gauss_lemma" class="ref-link"><strong>Gauss's Lemma</strong></a> 
