@@ -107,7 +107,8 @@ uses_python: false
                 <p>
                     Consider <strong>the ring \(\mathbb{Z}[\sqrt{-5}]\)</strong>, which is formed by adjoining \(\sqrt{-5}\) to the integers. 
                     Unlike a polynomial ring \(\mathbb{Z}[x]\) where the variable is indeterminate, elements here are constrained by the relation \((\sqrt{-5})^2 = -5\). 
-                    As a result, every element can be expressed in the form \(a + b\sqrt{-5}\) where \(a, b \in \mathbb{Z}\).
+                    As a result, every element can be expressed in the form \(a + b\sqrt{-5}\) where \(a, b \in \mathbb{Z}\). Being a
+                    subring of \(\mathbb{C}\), this ring is an integral domain, so the notions of irreducible and prime apply to it.
                 </p>
 
                 <p>
@@ -123,7 +124,7 @@ uses_python: false
                 <p>
                     While these look like simple factorizations, the "integrity" of the system is broken. The prime property fails because
                     \(2\) divides the product \((1 + \sqrt{-5})(1 - \sqrt{-5}) = 6\), but \(2\) does not divide either factor individually
-                    in this ring.
+                    in this ring, since \(1 \pm \sqrt{-5} = 2(a + b\sqrt{-5})\) would force \(2a = 1\).
                 </p>
                 
                 <div class="insight-box">
@@ -135,12 +136,20 @@ uses_python: false
                     <p>
                         For any element \(\alpha = a + b\sqrt{-5}\), we define the norm as:
                         \[ 
-                        N(a + b\sqrt{-5}) = a^2 + 5b^2 
+                        N(a + b\sqrt{-5}) = a^2 + 5b^2.
                         \]
                     </p>
                     <p>
-                        Think of this as a <strong>multiplicative hash function</strong>. It maps complex algebraic integers to 
-                        simple positive integers while preserving multiplication: \( N(\alpha \beta) = N(\alpha)N(\beta) \).
+                        Think of this as a <strong>multiplicative hash function</strong>. It maps complex algebraic integers to ordinary
+                        nonnegative integers while preserving multiplication: \( N(\alpha \beta) = N(\alpha)N(\beta) \).
+                        Multiplicativity is inherited from the complex modulus, since \(N(\alpha) = |\alpha|^2\) for
+                        \(\alpha = a + b\sqrt{-5} = a + bi\sqrt{5}\).
+                    </p>
+                    <p>
+                        Before using the norm as a test, we record which elements are units. In \(\mathbb{Z}[\sqrt{-5}]\), \(\alpha\) is a
+                        unit if and only if \(N(\alpha) = 1\). If \(\alpha \beta = 1\), then \(N(\alpha) N(\beta) = N(1) = 1\) forces
+                        \(N(\alpha) = 1\), since both are nonnegative integers. Conversely, \(a^2 + 5b^2 = 1\) forces \(b = 0\) and
+                        \(a = \pm 1\), both of which are indeed units. So the units of \(\mathbb{Z}[\sqrt{-5}]\) are exactly \(\pm 1\).
                     </p>
                     <p>
                         <strong>Example: Proving \(2\) is Irreducible</strong>
@@ -160,8 +169,9 @@ uses_python: false
                         </ul>
                     </p>
                     <p>
-                        No element has a norm of \(2\). Therefore, the factorization \(4 = 2 \times 2\) cannot exist in this ring. The number
-                        \(2\) is atomically solid (irreducible), even though it fails to be prime.
+                        No element has a norm of \(2\). Therefore, the norm split \(4 = 2 \times 2\) cannot be realized by any
+                        factorization of \(2\) in this ring. The number \(2\) is atomically solid (irreducible), even though it
+                        fails to be prime.
                     </p>
                     <p>
                         <strong>Example: Proving \(1 + \sqrt{-5}\) is Irreducible</strong>
@@ -171,12 +181,9 @@ uses_python: false
                         \(\beta\) a unit). Then \(N(\alpha) N(\beta) = 6\).
                     </p>
                     <p>
-                        We need to know which elements are units. In \(\mathbb{Z}[\sqrt{-5}]\), \(\alpha\) is a unit if and 
-                        only if \(N(\alpha) = 1\). If \(\alpha \beta = 1\), then \(N(\alpha) N(\beta) = N(1) = 1\) forces
-                        \(N(\alpha) = 1\). Conversely, \(a^2 + 5b^2 = 1\) forces \(b = 0\) and \(a = \pm 1\), both of 
-                        which are indeed units. So \(N(\alpha) \gt 1\) and \(N(\beta) \gt 1\), meaning both norms are integers 
-                        strictly greater than \(1\) whose product is \(6\). The only such split is \(2 \times 3\), so we 
-                        would need an element of norm \(2\) or norm \(3\) in \(\mathbb{Z}[\sqrt{-5}]\).
+                        Neither factor is a unit, so by the test just given neither has norm \(1\). Their norms multiply to \(6\), so
+                        both are integers strictly greater than \(1\). The only such split is \(2 \times 3\), so we would need an
+                        element of norm \(2\) or norm \(3\) in \(\mathbb{Z}[\sqrt{-5}]\).
                         <ul style="margin-top: 10px;">
                             <li>Norm \(2\): \(a^2 + 5b^2 = 2\). The argument above already rules this out.</li>
                             <li>Norm \(3\): \(a^2 + 5b^2 = 3\). Since \(b \in \mathbb{Z}\), if \(b \neq 0\) then \(b^2 \geq 1\), so
@@ -187,14 +194,17 @@ uses_python: false
                         elements \(3\) and \(1 - \sqrt{-5}\) are also irreducible.
                     </p>
                     <p>
-                        Thus all four elements in the two factorizations \(2 \cdot 3 = (1+\sqrt{-5})(1 - \sqrt{-5})\) are 
-                        irreducible, and unique factorization genuinely fails in \(\mathbb{Z}[\sqrt{-5}]\).
+                        Thus all four elements in the two factorizations \(2 \cdot 3 = (1+\sqrt{-5})(1 - \sqrt{-5})\) are
+                        irreducible. The two lists cannot be matched up either, because associates share the same norm, and the
+                        left-hand factors have norms \(4\) and \(9\) while the right-hand factors both have norm \(6\). Unique
+                        factorization genuinely fails in \(\mathbb{Z}[\sqrt{-5}]\).
                     </p>
                 </div>
 
                 <p>
                     Thus, while every prime element is irreducible in any integral domain, the converse is not always true. A ring where
-                    every irreducible is also prime is a very special place, one that allows for unique factorization.
+                    every irreducible is also prime is a very special place. Once factorizations into irreducibles are known to exist,
+                    this property is exactly what forces them to be unique.
                 </p>
 
                 <div class="theorem" id="T-pid_iff_prime_irreducible">
@@ -204,15 +214,15 @@ uses_python: false
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
-                    The forward direction (prime \(\Rightarrow\) irreducible) holds in any integral domain by
-                    <a href="#T-prime_implies_irreducible" class="ref-link"><strong>Prime implies Irreducible</strong></a>. We prove the
-                    converse. In a PID \(R\), every irreducible is prime.
+                    That every prime is irreducible holds in any integral domain by
+                    <a href="#T-prime_implies_irreducible" class="ref-link"><strong>Prime implies Irreducible</strong></a>. The substance
+                    of this theorem is the other implication, that in a PID \(R\) every irreducible is prime.
                     <br><br>
                     Let \(a \in R\) be irreducible. By the definition of irreducible, \(a \neq 0\) and \(a\) is not a unit, so the first two
                     conditions for being prime are inherited automatically. We need only verify the divisibility property. Suppose
                     \(a \mid bc\) for some \(b, c \in R\). We must show \(a \mid b\) or \(a \mid c\).
                     <br><br>
-                    Consider the set \(\langle a, b \rangle = \{ra + sb \mid r, s \in R\}\). This is an ideal of \(R\) (closed under
+                    Consider the set \(\langle a, b \rangle = \{ma + nb \mid m, n \in R\}\). This is an ideal of \(R\) (closed under
                     addition, subtraction, and multiplication by any ring element). Since \(R\) is a
                     <a href="polynomial_rings.html#D-pid" class="ref-link"><strong>PID</strong></a>, there exists \(d \in R\) with
                     \(\langle a, b \rangle = \langle d \rangle\).
@@ -244,10 +254,10 @@ uses_python: false
 
                 <p>
                     If \(\mathbb{Z}[x]\) were a PID, there would have to exist a single polynomial \(h(x)\) acting as the greatest common
-                    divisor of both \(3\) and \(x\). To divide the constant \(3\), \(h(x)\) must be either \(1\) or \(3\). If \(h(x) = 3\),
-                    it cannot divide \(x\) because \(\frac{1}{3}\) is not an integer. If \(h(x) = 1\), \(I\) would have to contain every
-                    polynomial in \(\mathbb{Z}[x]\), including \(1\). However, any element in \(\langle 3, x \rangle\) must have a constant
-                    term divisible by \(3\). Thus, no such \(h(x)\) exists.
+                    divisor of both \(3\) and \(x\). To divide the constant \(3\), \(h(x)\) must be a constant, namely \(\pm 1\) or
+                    \(\pm 3\). If \(h(x) = \pm 3\), it cannot divide \(x\) because \(\frac{1}{3}\) is not an integer. If \(h(x) = \pm 1\),
+                    \(I\) would have to contain every polynomial in \(\mathbb{Z}[x]\), including \(1\). However, any element in
+                    \(\langle 3, x \rangle\) must have a constant term divisible by \(3\). Thus, no such \(h(x)\) exists.
                 </p>
             </section>
 
@@ -280,9 +290,9 @@ uses_python: false
 
                 <h3>2. Principal Ideal Domains (PID)</h3>
                 <p>
-                    A <a href="polynomial_rings.html#D-pid" class="ref-link"><strong>principal ideal domain</strong></a> 
-                    is a ring where every ideal is generated by a single element. In a PID, the distinction between primes 
-                    and irreducibles disappears.
+                    A <a href="polynomial_rings.html#D-pid" class="ref-link"><strong>principal ideal domain</strong></a>
+                    is an integral domain in which every ideal is generated by a single element. In a PID, the distinction between
+                    primes and irreducibles disappears.
                 </p>
 
                 <div class="theorem" id="T-ed_implies_pid">
@@ -292,8 +302,9 @@ uses_python: false
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
-                    Let \(R\) be a Euclidean domain with measure \(d\), and let \(I\) be an
-                    <a href="ideals.html#D-ideal" class="ref-link"><strong>ideal</strong></a> of \(R\). We show \(I\) is principal.
+                    Let \(R\) be a Euclidean domain with measure \(d\). A Euclidean domain is by definition an integral domain, so we
+                    need only show that every <a href="ideals.html#D-ideal" class="ref-link"><strong>ideal</strong></a> \(I\) of \(R\)
+                    is principal.
                     <br><br>
                     If \(I = \{0\}\), then \(I = \langle 0 \rangle\) (since \(\langle 0 \rangle = \{r \cdot 0 \mid r \in R\} = \{0\}\)),
                     which is principal.
@@ -365,16 +376,18 @@ uses_python: false
                     in \(R\) cannot be infinite.
                     <br><br>
                     Suppose such a chain exists, and let \(I = \bigcup_{j \geq 1} \langle a_j \rangle\). Then \(I\) is an ideal. It is closed
-                    under addition (any two elements lie in some common \(\langle a_n \rangle\) by the chain property), and closed under
+                    under subtraction (any two elements lie in some common \(\langle a_n \rangle\) by the chain property), and closed under
                     multiplication by elements of \(R\) (each \(\langle a_j \rangle\) is). Since \(R\) is a PID, \(I = \langle c \rangle\)
                     for some \(c \in R\). Now \(c \in I\), so \(c \in \langle a_n \rangle\) for some \(n\). Hence
                     \(I = \langle c \rangle \subseteq \langle a_n \rangle\), and combined with \(\langle a_n \rangle \subseteq I\), we get
-                    \(I = \langle a_n \rangle\). But this forces the chain to terminate at step \(n\), contradicting strict ascent.
+                    \(I = \langle a_n \rangle\). But then \(\langle a_{n+1} \rangle \subseteq I = \langle a_n \rangle\), contradicting
+                    \(\langle a_n \rangle \subsetneq \langle a_{n+1} \rangle\).
                     <br><br>
                     <strong>Step 2 (Existence of irreducible factorization).</strong> We show that every nonzero non-unit \(a \in R\) is a
                     finite product of irreducibles. Suppose, for contradiction, that some nonzero non-unit \(a_1 \in R\) cannot be written as
                     such a product. Then \(a_1\) is itself not irreducible (otherwise \(a_1\) is already a one-factor irreducible product),
-                    so \(a_1 = b_1 c_1\) with neither \(b_1\) nor \(c_1\) a unit.
+                    so \(a_1 = b_1 c_1\) with neither \(b_1\) nor \(c_1\) a unit. Both factors are nonzero, since \(a_1 \neq 0\) and
+                    \(R\) has no zero-divisors.
                     <br><br>
                     At least one of \(b_1\), \(c_1\) also fails to be a product of irreducibles. If both factored, so would \(a_1\),
                     contradicting our assumption. Without loss of generality, \(b_1\) fails. Set \(a_2 := b_1\).
@@ -418,10 +431,9 @@ uses_python: false
                     <em>Base case \(m = 1\).</em> Then \(p_1 = q_1 q_2 \cdots q_n\). Group the right side as
                     \(p_1 = q_1 \cdot (q_2 q_3 \cdots q_n)\). Since \(p_1\) is irreducible, either \(q_1\) is a unit or
                     \(q_2 q_3 \cdots q_n\) is a unit. The first option is ruled out because \(q_1\) is irreducible, hence non-unit. So
-                    \(q_2 q_3 \cdots q_n\) must be a unit. But if \(n \geq 2\), writing this as
-                    \(q_2 \cdot (q_3 \cdots q_n) = \text{unit}\), the same reasoning forces \(q_2\) to be a unit (since if \(xy = 1\) then
-                    \(x\) is a unit with inverse \(y\)). That contradicts the irreducibility of \(q_2\). Hence \(n = 1\), and \(p_1 = q_1\),
-                    so they are trivially associates (via the unit \(1\)).
+                    \(q_2 q_3 \cdots q_n\) must be a unit, say \(q_2 q_3 \cdots q_n = w\). But if \(n \geq 2\), then
+                    \(q_2 \cdot (q_3 \cdots q_n w^{-1}) = 1\), so \(q_2\) is a unit, contradicting its irreducibility. Hence
+                    \(n = 1\), and \(p_1 = q_1\), so they are trivially associates (via the unit \(1\)).
                     <br><br>
                     <em>Inductive step.</em> Assume the claim holds for left-side factorizations of length \(m - 1\), and consider
                     \(m \geq 2\). Since \(p_1\) is irreducible (hence prime by
@@ -439,7 +451,8 @@ uses_python: false
                     <br><br>
                     To apply the inductive hypothesis we need both sides to be irreducible factorizations of equal length. Since
                     \(n \geq m \geq 2\), at least one index \(k \neq j\) remains. Choose any such \(k\) (the choice does not affect the
-                    conclusion) and absorb \(u\) into \(q_k\). The product \(u q_k\) is irreducible. Any factorization \(u q_k = xy\) yields
+                    conclusion) and absorb \(u\) into \(q_k\). The product \(u q_k\) is again irreducible. It is nonzero and not a unit,
+                    since \(q_k\) is neither and \(u\) is a unit. Any factorization \(u q_k = xy\) yields
                     \(q_k = (u^{-1} x) y\), and irreducibility of \(q_k\) makes \(u^{-1} x\) or \(y\) a unit, hence \(x\) or \(y\) a unit. So
                     the right-hand side is a product of \(n - 1\) irreducibles.
                     <br><br>
@@ -450,14 +463,16 @@ uses_python: false
                  
                 <p>
                     What about \(\mathbb{Z}[x]\)? This ring fails to be a PID, so we lack a universal division algorithm for simplifying
-                    ideals. Even so, \(\mathbb{Z}[x]\) remains a <strong>UFD</strong>, thanks to a corollary of
-                    <a href="polynomial_rings.html#T-gauss_lemma" class="ref-link"><strong>Gauss's Lemma</strong></a>.
+                    ideals. Even so, \(\mathbb{Z}[x]\) remains a
+                    <a href="polynomial_rings.html#T-unique_factorization_Zx" class="ref-link"><strong>UFD</strong></a>, thanks to a
+                    corollary of <a href="polynomial_rings.html#T-gauss_lemma" class="ref-link"><strong>Gauss's Lemma</strong></a>.
                 </p>
                 <p>
                     The relevant corollary says that 
                     <a href="polynomial_rings.html#T-reducible_Q_implies_reducible_Z" class="ref-link"><strong>reducibility over \(\mathbb{Q}\) implies reducibility over \(\mathbb{Z}\)</strong></a>.
-                    It acts as a crucial bridge between the two rings. This "inherited integrity" ensures that the uniqueness we need for factoring 
-                    polynomials is preserved, even in a world where we cannot always rely on the Euclidean Algorithm.
+                    It acts as a crucial bridge between the two rings. Combined with unique factorization in \(\mathbb{Q}[x]\), it is
+                    what lets \(\mathbb{Z}[x]\) inherit uniqueness, even in a world where we cannot always rely on the Euclidean
+                    Algorithm.
                 </p>
 
                 <p>
@@ -484,14 +499,17 @@ uses_python: false
                 </div>
 
                 <p>
-                    The relationships established above can be summarized by the following chain of implications, together with the failure
-                    of their converses:
+                    The relationships proved above can be summarized by the following chain of implications, together with the failure
+                    of every converse:
                     \[
                     \text{ED} \Rightarrow \text{PID} \Rightarrow \text{UFD} \Rightarrow \text{Integral Domain},
                     \]
                     \[
                     \text{Integral Domain} \not\Rightarrow \text{UFD} \not\Rightarrow \text{PID} \not\Rightarrow \text{ED}.
                     \]
+                    The first two failures are witnessed by the rings treated above, \(\mathbb{Z}[\sqrt{-5}]\) and \(\mathbb{Z}[x]\).
+                    The third is genuine as well, but exhibiting a principal ideal domain that carries no Euclidean measure needs
+                    more machinery than this page develops.
                 </p>
 
                 <div class="theorem" id="T-Dx_ufd_implies_DxX_ufd">
@@ -525,8 +543,9 @@ uses_python: false
                     The extended Gauss's Lemma then lifts the \(K[x]\)-factorization back to \(D[x]\), so that every factor lies in \(D[x]\).
                     The lifting clears denominators in each \(K[x]\)-factor and rebalances the resulting scalar factors between content and
                     primitive parts, as in the \(\mathbb{Z} \to \mathbb{Q}\) case. Uniqueness follows from uniqueness in \(K[x]\) combined
-                    with uniqueness of content (which uses \(D\) being a UFD). The full verification mirrors the \(\mathbb{Z}\)-case
-                    detail-for-detail, and we omit the remaining bookkeeping.
+                    with uniqueness of content (which uses \(D\) being a UFD). What remains is the verification that each lifted factor
+                    is irreducible in \(D[x]\) and that no factors are lost or duplicated in the passage between the two rings. Both
+                    steps follow the \(\mathbb{Z}\)-case line for line, and we do not carry them out here.
                 </div>
 
             </section>
@@ -539,9 +558,11 @@ uses_python: false
                     are available at each level:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li><strong>Modular Inversion (ED).</strong><br> The Extended Euclidean Algorithm, available in any Euclidean domain,
-                        computes B&eacute;zout coefficients \(ax + by = \gcd(a, b)\). When \(\gcd(a, n) = 1\), this immediately yields
-                        \(a^{-1} \pmod{n}\). RSA key generation uses this in \(\mathbb{Z}\) to compute the private exponent
+                    <li><strong>Modular Inversion (ED).</strong><br> The Extended Euclidean Algorithm computes B&eacute;zout
+                        coefficients \(ax + by = \gcd(a, b)\). It terminates in any Euclidean domain, since the measure of the remainder
+                        strictly decreases at every step, and it is effective whenever the division step itself can be carried out. When
+                        \(\gcd(a, n) = 1\), the identity immediately yields \(a^{-1} \pmod{n}\). RSA key generation uses this in
+                        \(\mathbb{Z}\) to compute the private exponent
                         \(d \equiv e^{-1} \pmod{\varphi(n)}\), where \(\varphi(n)\) is Euler's totient function (the count of integers in
                         \([1, n]\) coprime to \(n\)). AES uses the same idea in \(\mathbb{Z}_2[x]\) to invert nonzero elements of \(GF(2^8)\)
                         when constructing its \(S\)-box.</li>
@@ -577,8 +598,9 @@ uses_python: false
                 <div id="algebra-map-root" style="display: flex; flex-direction: column; align-items: center; gap: 20px; margin: 20px 0;"></div>
                 
                 <p>
-                    However, even within the most sophisticated Integral Domains, one barrier remains. Not every nonzero element has a
-                    multiplicative inverse. Recovering that operation requires moving beyond integral domains into the realm of Field Theory.
+                    However, even in a Euclidean domain as familiar as \(\mathbb{Z}\), one barrier remains. Not every nonzero element
+                    has a multiplicative inverse. Recovering that operation means passing to fields, the integral domains in which
+                    every nonzero element is a unit.
                 </p>
 
                 <p>
