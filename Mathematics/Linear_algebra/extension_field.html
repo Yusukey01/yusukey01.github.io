@@ -66,7 +66,7 @@ uses_python: false
                     Instead, they asked: <em>can we build a larger number system where this equation does have a solution?</em>
                     The answer is the complex numbers \(\mathbb{C}\), constructed by "adjoining" the imaginary unit \(i\).
                     The Fundamental Theorem of Field Theory guarantees that this construction is always possible for
-                    <em>any</em> polynomial over <em>any</em> field.
+                    <em>any</em> nonconstant polynomial over <em>any</em> field.
                 </p>
 
                 <div class="theorem" id="D-extension_field">
@@ -86,11 +86,16 @@ uses_python: false
                 </div>
 
                 <p>
-                    This theorem provides the theoretical guarantee for <strong>symbolic computation</strong>.
-                    It asserts that we are never truly "stuck" with an unsolvable polynomial. We can always construct a
-                    larger algebraic structure, an extension field, that contains the necessary zero. In algorithm design,
-                    this justifies the creation of data types representing algebraic numbers, so that our system is always
-                    <strong>solvable by construction</strong>.
+                    We do not prove this theorem here. The quotient ring that carries the construction,
+                    \(F[x] \, / \langle p(x) \rangle\), is the subject of <a href="#splitting">Splitting Field</a> below.
+                </p>
+
+                <p>
+                    This theorem is what licenses <strong>symbolic computation</strong> with algebraic numbers. It asserts
+                    that no nonconstant polynomial is permanently out of reach, since we can always pass to a larger
+                    algebraic structure, an extension field, that contains the zero we need. In algorithm design, this is
+                    what justifies a data type whose values are zeros of polynomials, since the theorem guarantees that
+                    the object such a type names always exists.
                 </p>
 
             </section>
@@ -102,6 +107,19 @@ uses_python: false
                     While the Fundamental Theorem gives us <em>one</em> zero, practical applications often require the complete picture.
                     In structural terms, we seek the <strong>minimal sufficient environment</strong> that fully resolves the polynomial.
                 </p>
+
+                <div class="theorem" id="D-simple_extension">
+                    <span class="theorem-title">Definition: Adjoining Elements</span>
+                    <p>
+                        Let \(E\) be an extension field of \(F\) and let \(a_1, a_2, \ldots, a_n \in E\). An intersection
+                        of subfields of \(E\) is again a subfield, since every subfield contains \(0\) and \(1\), and a sum,
+                        product, negative or inverse formed from elements lying in all of them again lies in all of them. We
+                        may therefore write \(F(a_1, a_2, \ldots, a_n)\) for the intersection of all subfields of \(E\) that
+                        contain \(F\) together with \(a_1, a_2, \ldots, a_n\), the smallest such subfield. An extension of
+                        the form \(F(a)\), obtained by adjoining a single element, is called a <strong>simple extension</strong>
+                        of \(F\).
+                    </p>
+                </div>
 
                 <div class="theorem" id="D-splitting_field">
                     <span class="theorem-title">Definition: Splitting Field</span>
@@ -117,9 +135,10 @@ uses_python: false
                 </div>
 
                 <p>
-                    This definition emphasizes <strong>minimality</strong>. A splitting field is the most efficient data structure
-                    that contains all zeros of the polynomial and nothing more. It represents the <strong>closure</strong> of the
-                    problem space, and no resources are wasted on unnecessary dimensions.
+                    This definition emphasizes <strong>minimality</strong>. A splitting field is the smallest field containing
+                    \(F\) together with every zero of the polynomial, so it carries nothing that the polynomial does not force.
+                    It represents the <strong>closure</strong> of the problem space, and no resources are spent on structure the
+                    problem never asked for.
                 </p>
 
                 <div class="theorem">
@@ -129,6 +148,11 @@ uses_python: false
                         splitting field \(E\) for \(f(x)\) over \(F\).
                     </p>
                 </div>
+
+                <p>
+                    We omit the proof. The argument adjoins one zero at a time, applying the Fundamental Theorem of Field
+                    Theory repeatedly until the polynomial factors completely.
+                </p>
 
                 <p>
                     The existence of a splitting field confirms that every polynomial equation implies a specific, natural geometry
@@ -153,45 +177,57 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof Sketch:</span>
                     <p>
-                        Consider a function \(\phi: F[x] \to F(a)\) defined by \(\phi(f(x)) = f(a)\). Note that this \(\phi\) is
-                        a ring homomorphism and we claim that
+                        Consider a function \(\phi: F[x] \to F(a)\) defined by \(\phi(f(x)) = f(a)\). Since \(F(a)\) is
+                        commutative, substituting \(a\) for \(x\) respects both sums and products, so this \(\phi\) is a ring
+                        homomorphism. We claim that
                         \[
                         \operatorname{Ker} \phi = \langle p(x) \rangle.
                         \]
                     </p>
                     <p>
-                        Since \(p(a) = 0\), we have \(p(x) \in \operatorname{Ker} \phi\), and therefore
+                        Since \(p(a) = 0\), we have \(p(x) \in \operatorname{Ker} \phi\). Because
+                        <a href="ideals.html#T-kernels_are_ideals" class="ref-link"><strong>Kernels are Ideals</strong></a>,
+                        it follows that
                         \[
                         \langle p(x) \rangle \subseteq \operatorname{Ker} \phi.
                         \]
-                        On the other hand, since \(p(x)\) is irreducible over \(F\), we know that
+                        On the other hand, \(p(x)\) is irreducible over \(F\). By the
+                        <a href="polynomial_rings.html#T-principal_ideal_maximal_iff_irreducible" class="ref-link"><strong>characterization of \(\langle p(x) \rangle\) as maximal</strong></a>,
                         the ideal \(\langle p(x) \rangle\) is maximal in \(F[x]\).
                         Since \(\phi\) is non-trivial (as \(\phi(1) = 1 \neq 0\)), we have
                         \[
                         \operatorname{Ker} \phi \neq F[x].
                         \]
-                        By maximality of \(\langle p(x) \rangle\), the only ideals of \(F[x]\) containing
-                        \(\langle p(x) \rangle\) are \(\langle p(x) \rangle\) itself and \(F[x]\), so we must have
+                        By the definition of a
+                        <a href="ideals.html#D-maximal_ideal" class="ref-link"><strong>maximal ideal</strong></a>, the only
+                        ideals of \(F[x]\) containing \(\langle p(x) \rangle\) are \(\langle p(x) \rangle\) itself and
+                        \(F[x]\), so we must have
                         \[
                         \operatorname{Ker} \phi = \langle p(x) \rangle.
                         \]
                     </p>
 
                     <p>
-                        By the First Isomorphism Theorem for Rings, \(\phi(F[x])\) is isomorphic to
-                        \(F[x] \, / \langle p(x) \rangle\). Since \(\langle p(x) \rangle\) is a maximal ideal,
-                        \(F[x] \, / \langle p(x) \rangle\) is a field, and therefore \(\phi(F[x])\) is a subfield of \(F(a)\).
+                        By the
+                        <a href="ideals.html#T-first_isomorphism_rings" class="ref-link"><strong>First Isomorphism Theorem for Rings</strong></a>,
+                        \(\phi(F[x])\) is isomorphic to \(F[x] \, / \langle p(x) \rangle\). Since \(\langle p(x) \rangle\) is
+                        maximal, the
+                        <a href="ideals.html#T-quotient_field_maximal" class="ref-link"><strong>characterization of factor rings as fields via maximal ideals</strong></a>
+                        makes \(F[x] \, / \langle p(x) \rangle\) a field, and therefore \(\phi(F[x])\) is a subfield of \(F(a)\).
                         Moreover, \(\phi(F[x])\) contains both \(F\) (since constant polynomials evaluate to themselves: \(\phi(c) = c\)
                         for all \(c \in F\)) and \(a\) (since \(\phi(x) = a\)).
-                        Since \(F(a)\) is by definition the smallest field containing both
-                        \(F\) and \(a\), we have
+                        So \(\phi(F[x])\) is a subfield of \(E\) that contains \(F\) and \(a\), while
+                        <a href="#D-simple_extension" class="ref-link"><strong>Adjoining Elements</strong></a> makes \(F(a)\)
+                        the smallest such subfield. Hence
                         \[
                         F[x] \, / \langle p(x) \rangle \cong \phi(F[x]) = F(a).
                         \]
                     </p>
 
                     <p>
-                        Finally, by the division algorithm in \(F[x]\), every polynomial \(f(x) \in F[x]\) can be written as
+                        Finally, by the
+                        <a href="polynomial_rings.html#T-division_algorithm_Fx" class="ref-link"><strong>Division Algorithm</strong></a>
+                        in \(F[x]\), every polynomial \(f(x) \in F[x]\) can be written as
                         \(f(x) = q(x)p(x) + r(x)\) where \(\deg r(x) \lt n\) or \(r(x) = 0\). Thus, every element of
                         \(F[x] \, / \langle p(x) \rangle\) has a unique representative of the form
                         \[
@@ -227,13 +263,15 @@ uses_python: false
                         <li>
                             <strong>Deterministic Memory Footprint:</strong><br>
                             Because every element is uniquely represented by a polynomial of degree less than \(n\), an element of
-                            \(GF(2^n)\) fits perfectly into an \(n\)-bit register.
+                            \(GF(2^n)\) occupies exactly \(n\) bits, and for the small \(n\) used in practice it fits in a single
+                            machine register.
                             For instance, in <strong>AES</strong> (where \(n=8\)), every field element is exactly 1 byte.
                         </li>
                         <li>
                             <strong>Addition is XOR:</strong><br>
-                            When working over \(GF(2)\), adding two coefficients (\(0+0, 0+1, 1+1\)) is equivalent to the <code>XOR</code>
-                            operation. This means field addition is a single-cycle CPU instruction regardless of the field size.
+                            When working over \(GF(2)\), adding two coefficients is exactly the <code>XOR</code>
+                            operation. Whenever the whole element fits in a machine word, field addition is therefore a single
+                            CPU instruction, independent of which \(n\) that word holds.
                         </li>
                         <li>
                             <strong>Multiplication and "Overflow":</strong><br>
@@ -248,7 +286,7 @@ uses_python: false
                         finite field \(GF(2^8)\). To maintain the closure and symmetry required for encryption, AES defines its arithmetic
                         via the specific irreducible polynomial:
                         \[
-                        p(x) = x^8 + x^4 + x^3 + x + 1
+                        p(x) = x^8 + x^4 + x^3 + x + 1.
                         \]
                     </p>
 
@@ -262,7 +300,7 @@ uses_python: false
                         According to the isomorphism theorem, we must reduce this result modulo \(p(x)\).
                         Since \(p(x) \equiv 0 \pmod{p(x)}\), it follows that:
                         \[
-                        x^8 \equiv x^4 + x^3 + x + 1 \pmod{p(x)} .
+                        x^8 \equiv x^4 + x^3 + x + 1 \pmod{p(x)}.
                         \]
                     </p>
                     <p>
@@ -276,16 +314,17 @@ uses_python: false
                     </p>
 
                     <div class="pseudocode">
-                        &emsp;//From Linux Kernel crypto/aes_generic.c (simplified for clarity)
+                        &emsp;// The xtime idiom, as it appears in AES implementations
                         &emsp;#define _poly 0x1b
                         &emsp;// ...
-                        &emsp;t = (a &lt;&lt; 1) ^ ((a &amp; 0x80) ? _poly : 0);
+                        &emsp;t = ((a &lt;&lt; 1) ^ ((a &amp; 0x80) ? _poly : 0)) &amp; 0xff;
                     </div>
                 </div>
 
-                <h3>GF(\(2^8\)) Multiplication Visualizer</h3>
+                <h3>\(GF(2^8)\) Multiplication Visualizer</h3>
                 <p>
-                    The visualizer below turns the <a href="#T-simple_extension_structure"><strong>structure theorem</strong></a>
+                    The visualizer below turns the
+                    <a href="#T-simple_extension_structure" class="ref-link"><strong>structure theorem for \(F(a)\)</strong></a>
                     into something we can watch. It computes the same product \(a \cdot b\) in \(GF(2^8)\) twice, by two
                     independently implemented routes shown side by side. The <strong>theorem route</strong> works where the
                     theorem lives. It expands \(a(x) \cdot b(x)\) in \(F_2[x]\) as a sum of shifted copies of \(a(x)\),
@@ -307,8 +346,10 @@ uses_python: false
                     Three experiments are worth running. The preset <em>57&middot;83</em> reproduces the worked example from
                     the AES specification. The preset <em>53&middot;CA</em> lands on \(\mathtt{0x01}\). These two bytes are
                     multiplicative inverses, and the existence of an inverse for <em>every</em> nonzero byte is precisely
-                    what the AES S-box is built on. That property is what makes \(F_2[x] / \langle p(x) \rangle\) a field
-                    rather than a mere ring, and it is guaranteed by the irreducibility of \(p(x)\).
+                    what the AES S-box is built on. That property is what makes \(F_2[x] \, / \langle p(x) \rangle\) a field
+                    rather than a mere ring, and it follows from the
+                    <a href="polynomial_rings.html#T-quotient_field_irreducible" class="ref-link"><strong>characterization of \(F[x] \, / \langle p(x) \rangle\) as a field</strong></a>
+                    together with the irreducibility of \(p(x)\).
                 </p>
 
                 <p>
@@ -323,24 +364,30 @@ uses_python: false
                     <span class="theorem-title">Lemma: Isomorphism Extension \(\phi: F \to F'\)</span>
                     <p>
                         Let \(F\) be a field and let \(p(x) \in F[x]\) be irreducible over \(F\), and let \(a\) be a zero
-                        of \(p(x)\) in some extension of \(F\). If \(\phi\) is a field isomorphism from \(F\) to \(F'\) and
-                        \(b\) is a zero of \(\phi(p(x))\) in some extension of \(F'\), then there is an isomorphism from
-                        \(F(a)\) to \(F'(b)\) that agrees with \(\phi\) on \(F\) and carries \(a\) to \(b\).
+                        of \(p(x)\) in some extension of \(F\). Let \(\phi\) be a field isomorphism from \(F\) to \(F'\),
+                        and write \(\phi(p(x))\) for the polynomial obtained by applying \(\phi\) to each coefficient of
+                        \(p(x)\). If \(b\) is a zero of \(\phi(p(x))\) in some extension of \(F'\), then there is an
+                        isomorphism from \(F(a)\) to \(F'(b)\) that agrees with \(\phi\) on \(F\) and carries \(a\) to \(b\).
                     </p>
                 </div>
 
                 <p>
-                    This technical lemma ensures consistency when mapping between isomorphic systems. It serves as the logical bridge
-                    to prove that the resulting structure is independent of the specific choice of zeros.
+                    We state this lemma without proof. It ensures consistency when mapping between isomorphic systems, and it
+                    is the logical bridge to the uniqueness of splitting fields.
                 </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Corollary: Uniqueness of Splitting Fields</span>
                     <p>
-                        Let \(F\) be a field and let \(f(x) \in F[x]\). Then any two splitting fields of \(f(x)\) over
-                        \(F\) are isomorphic.
+                        Let \(F\) be a field and let \(f(x)\) be a nonconstant element of \(F[x]\). Then any two splitting
+                        fields of \(f(x)\) over \(F\) are isomorphic.
                     </p>
                 </div>
+
+                <p>
+                    The proof is an induction on the degree of \(f(x)\) that repeatedly applies the isomorphism extension
+                    lemma, and we do not carry it out here.
+                </p>
 
                 <p>
                     This corollary guarantees that the "Splitting Field" is a standard, canonical object. It implies that no matter
@@ -365,14 +412,14 @@ uses_python: false
                 <h3>Path A: Continuous Symmetry and Geometry (Algebraic Extensions &rarr; Geometric Deep Learning)</h3>
                 <p>
                     The first path, <strong>Algebraic Extensions</strong>, develops the theory of <em>degree</em> and the
-                    <strong>Tower Law</strong>:
+                    <strong>Tower Law</strong>, which states that for a tower of fields \(F \subseteq E \subseteq K\),
                     \[
-                    [K:F] = [K:E][E:F]
+                    [K:F] = [K:E][E:F].
                     \]
-                    This multiplicative property of extension degrees is the algebraic foundation for
-                    <strong>dimension counting</strong> in Lie theory. When we later study Lie groups like \(SO(3)\)
-                    and \(SE(3)\), understanding why \(SO(3)\) is a 3-dimensional manifold while \(SE(3)\) is
-                    6-dimensional relies on exactly this kind of structural analysis.
+                    The degree \([K:F]\) is the dimension of \(K\) as a vector space over \(F\), so the Tower Law says that
+                    dimension multiplies along a chain of extensions. The same habit of reading the size of a structure off a
+                    chain returns in Lie theory, where the dimensions of groups such as \(SO(3)\) and \(SE(3)\) are counted
+                    from the constraints that define them.
                 </p>
                 <p>
                     <strong>Destination:</strong> Lie Groups, Lie Algebras, Geometric Deep Learning (equivariant neural networks,
