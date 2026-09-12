@@ -37,11 +37,12 @@ uses_python: false
                 </p>
             
                 <p>
-                    Enter <strong>finite fields</strong>, also known as <strong>Galois fields</strong> (denoted \(GF(q)\)), named after the French 
-                    mathematician Évariste Galois — the <strong>discrete computation and security</strong> branch of 
-                    <a href="extension_field.html#crossroads">the field theory crossroads</a>. Finite fields are the crown jewel of abstract algebra for computer scientists. Because they possess 
-                    exactly a finite number of elements, operations never "overflow" into infinity or require decimals. This absolute precision makes 
-                    finite fields the indestructible mathematical engine powering modern cryptography (like the AES standard), error-correcting codes 
+                    Enter <strong>finite fields</strong>, also known as <strong>Galois fields</strong> (denoted \(GF(q)\)) after the
+                    French mathematician &Eacute;variste Galois. They form the <strong>discrete computation and security</strong>
+                    branch of <a href="extension_field.html#crossroads">the field theory crossroads</a>. Finite fields are the crown
+                    jewel of abstract algebra for computer scientists. Because they possess exactly a finite number of elements,
+                    operations never "overflow" into infinity or require decimals. This absolute precision makes finite fields the
+                    indestructible mathematical engine powering modern cryptography (like the AES standard), error-correcting codes
                     (like those in QR codes), and digital signal processing.
                 </p>
 
@@ -51,10 +52,58 @@ uses_python: false
                 <h2>Classification</h2>
 
                 <p>
-                    A fundamental question arises: for which integers \(q\) does a field of exactly \(q\) elements exist? For instance, 
-                    can we construct a field with exactly 10 elements to naturally map to our decimal system? The answer is determined by 
-                    the Classification Theorem, which tightly constrains the possible sizes of finite fields to prime powers.
+                    A fundamental question arises: for which integers \(q\) does a field of exactly \(q\) elements exist? For instance,
+                    can we construct a field with exactly 10 elements to naturally map to our decimal system? The answer is determined
+                    by the Classification Theorem, which tightly constrains the possible sizes of finite fields to prime powers.
+                    Throughout, fields are assumed to satisfy \(1 \neq 0\).
                 </p>
+
+                <div class="theorem" id="T-frobenius_identity">
+                    <span class="theorem-title">Lemma: Frobenius Identity in Characteristic \(p\)</span>
+                    <p>
+                        Let \(R\) be a commutative ring with unity of prime characteristic \(p\), and let \(n\) be a positive integer.
+                        Then for all \(a, b \in R\),
+                        \[
+                        \begin{align*}
+                        (a + b)^{p^n} &= a^{p^n} + b^{p^n} \\\\
+                        (a - b)^{p^n} &= a^{p^n} - b^{p^n}.
+                        \end{align*}
+                        \]
+                        Consequently the map \(x \mapsto x^{p^n}\) is a ring homomorphism from \(R\) to itself.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        The binomial theorem
+                        \[
+                        (a + b)^p = \sum_{k=0}^{p} \binom{p}{k} a^k b^{p-k}
+                        \]
+                        holds in any commutative ring, since its usual proof by induction on the exponent uses only the ring axioms and
+                        the commutativity of multiplication. For \(0 \lt k \lt p\) the integer \(\binom{p}{k}\) is divisible by \(p\).
+                        Indeed, \(p! = \binom{p}{k} \, k! \, (p - k)!\), and in the field \(\mathbb{Z}_p\)
+                        (<a href="intro_rings.html#T-Zp_is_field" class="ref-link"><strong>\(\mathbb{Z}_p\) is a Field</strong></a>)
+                        the product \(k! \, (p - k)!\) of the nonzero residues \(1, 2, \ldots, p - 1\) is nonzero, so \(p! \equiv 0\)
+                        forces \(\binom{p}{k} \equiv 0 \pmod p\). Since \(R\) has characteristic \(p\), every term with
+                        \(0 \lt k \lt p\) vanishes, and \((a + b)^p = a^p + b^p\).
+                    </p>
+
+                    <p>
+                        The case of general \(n\) follows by induction. If \((a + b)^{p^{n-1}} = a^{p^{n-1}} + b^{p^{n-1}}\), then
+                        \[
+                        \begin{align*}
+                        (a + b)^{p^n}
+                        &= \bigl((a + b)^{p^{n-1}}\bigr)^p \\\\
+                        &= \bigl(a^{p^{n-1}} + b^{p^{n-1}}\bigr)^p \\\\
+                        &= a^{p^n} + b^{p^n}.
+                        \end{align*}
+                        \]
+                        For the difference, apply the sum formula to \(a = (a - b) + b\) to get \(a^{p^n} = (a - b)^{p^n} + b^{p^n}\),
+                        and rearrange. Finally, \(x \mapsto x^{p^n}\) preserves products because \(R\) is commutative and sends \(1\)
+                        to \(1\), so it is a ring homomorphism.
+                    </p>
+                </div>
 
                 <div class="theorem" id="T-classification_finite_fields">
                     <span class="theorem-title">Theorem: Classification of Finite Fields</span>
@@ -68,36 +117,46 @@ uses_python: false
                     <span class="proof-title">Proof Sketch:</span>
 
                     <p>
-                        <strong>Order is a prime power.</strong> Let \(F\) be a finite field. Since every field is an integral domain, 
+                        <strong>Order is a prime power.</strong> Let \(F\) be a finite field. Since
+                        <a href="intro_rings.html#T-field_is_integral_domain" class="ref-link"><strong>every field is an integral domain</strong></a>,
                         by <a href="intro_rings.html#T-char_integral_domain" class="ref-link"><strong>Characteristic of an Integral Domain</strong></a>, 
                         \(F\) has characteristic \(p\) for some prime \(p\) (the characteristic cannot be \(0\) since \(F\) is finite). 
                         Thus \(p \cdot x = 0\) for every \(x \in F\). Suppose, for contradiction, that some prime \(q \neq p\) divides 
                         \(|F|\). Viewing \(F\) as an additive Abelian group, 
                         <a href="group_classification.html#T-cauchy_abelian" class="ref-link"><strong>Cauchy's theorem for Abelian groups</strong></a> 
-                        produces an element of additive order \(q\) — but every element has additive order dividing \(p\), a contradiction. 
+                        produces an element of additive order \(q\). But every element has additive order dividing \(p\), a contradiction. 
                         Hence \(|F| = p^n\) for some positive integer \(n\).
                     </p>
 
                     <p>
-                        <strong>Existence of \(GF(p^n)\).</strong> Let \(g(x) = x^{p^n} - x \in \mathbb{Z}_p[x]\) and let \(E\) be a 
-                        splitting field of \(g(x)\) over \(\mathbb{Z}_p\); since \(g\) splits in \(E\), it has \(p^n\) zeros in \(E\) 
-                        counted with multiplicity. The formal derivative \(g'(x) = p^n \cdot x^{p^n - 1} - 1\) reduces to \(-1\) in 
-                        \(\mathbb{Z}_p[x]\), so \(\gcd(g, g') = 1\) and \(g\) has \(p^n\) <em>distinct</em> zeros in \(E\). Now, the 
-                        zero set of \(g\) is closed under field operations: for any zeros \(a, b \in E\), the binomial theorem in 
-                        characteristic \(p\) gives \((a + b)^{p^n} = a^{p^n} + b^{p^n} = a + b\); multiplicativity \((ab)^{p^n} = ab\) 
-                        and closure under inverses \((a^{-1})^{p^n} = a^{-1}\) follow directly from \(a^{p^n} = a\). Hence the zero set 
-                        of \(g\) is itself a subfield of \(E\); since it contains \(\mathbb{Z}_p\) and all the roots of \(g\), the 
-                        minimality of the splitting field gives that it equals \(E\). Therefore \(|E| = p^n\).
+                        <strong>Existence of \(GF(p^n)\).</strong> Let \(g(x) = x^{p^n} - x \in \mathbb{Z}_p[x]\) and let \(E\) be a
+                        splitting field of \(g(x)\) over \(\mathbb{Z}_p\). Since \(g\) splits in \(E\), it has \(p^n\) zeros in \(E\)
+                        counted with multiplicity. The formal derivative \(g'(x) = p^n \cdot x^{p^n - 1} - 1\) reduces to \(-1\) in
+                        \(\mathbb{Z}_p[x]\), so \(\gcd(g, g') = 1\), and \(g\) has \(p^n\) <em>distinct</em> zeros in \(E\) (a repeated
+                        zero of \(g\) would also be a zero of \(g'\), a fact we take for granted here).
                     </p>
 
                     <p>
-                        <strong>Uniqueness up to isomorphism.</strong> Conversely, let \(K\) be any field of order \(p^n\). The prime 
-                        subfield generated by \(1\) is isomorphic to \(\mathbb{Z}_p\). Since the multiplicative group \(K^*\) has order 
-                        \(p^n - 1\), <a href="group_isomorphism.html#T-lagrange_theorem" class="ref-link"><strong>Lagrange's theorem</strong></a> 
-                        gives \(a^{p^n - 1} = 1\) for every \(a \in K^*\), so every element of \(K\) 
-                        (including \(0\)) is a zero of \(g(x) = x^{p^n} - x\). Hence \(K\) consists of exactly the \(p^n\) roots of 
-                        \(g\), so \(K\) is a splitting field of \(g\) over \(\mathbb{Z}_p\). Splitting fields of a given polynomial 
-                        over a given field are unique up to isomorphism, so any two finite fields of order \(p^n\) are isomorphic.
+                        Now, the zero set of \(g\) is closed under field operations. For any zeros \(a, b \in E\), the
+                        <a href="#T-frobenius_identity" class="ref-link"><strong>Frobenius Identity</strong></a> gives
+                        \((a + b)^{p^n} = a^{p^n} + b^{p^n} = a + b\). Multiplicativity \((ab)^{p^n} = ab\) and closure under inverses
+                        \((a^{-1})^{p^n} = a^{-1}\) follow directly from \(a^{p^n} = a\). Hence the zero set of \(g\) is itself a
+                        subfield of \(E\). Since it contains \(\mathbb{Z}_p\) and all the roots of \(g\), the minimality of the
+                        splitting field forces it to equal \(E\). Therefore \(|E| = p^n\).
+                    </p>
+
+                    <p>
+                        <strong>Uniqueness up to isomorphism.</strong> Now let \(K\) be any field of order \(p^n\). The additive
+                        subgroup \(\{k \cdot 1 : k \in \mathbb{Z}\}\) generated by \(1\) has \(p\) elements (the first part gives \(K\)
+                        characteristic \(p\)), is closed under multiplication since \((k \cdot 1)(l \cdot 1) = kl \cdot 1\), and
+                        \(k \mapsto k \cdot 1\) identifies it with \(\mathbb{Z}_p\). So \(K\) contains a copy of \(\mathbb{Z}_p\). By a
+                        purely group-theoretic argument, every element of \(K\) is a zero of \(g(x) = x^{p^n} - x\). Indeed, the
+                        nonzero elements of \(K\) form a multiplicative group \(K^*\) of order \(p^n - 1\), so the
+                        <a href="group_isomorphism.html#T-lagrange_corollaries" class="ref-link"><strong>Corollaries of Lagrange's Theorem</strong></a>
+                        give \(a^{p^n - 1} = 1\), hence \(a^{p^n} = a\), for every \(a \in K^*\), and \(0\) is trivially a zero. Hence
+                        \(K\) consists of exactly the \(p^n\) roots of \(g\), so \(K\) is a splitting field of \(g\) over
+                        \(\mathbb{Z}_p\). Splitting fields of a given polynomial over a given field are unique up to isomorphism (a
+                        fact we take for granted here), so any two finite fields of order \(p^n\) are isomorphic.
                     </p>
                 </div>
 
@@ -107,9 +166,9 @@ uses_python: false
                 </p>
 
                 <p>
-                    This structural guarantee is highly consequential for computing. Because an 8-bit byte inherently has 256 distinct states, 
-                    we can map any byte directly to an element in \(GF(2^8)\). This algebraic mapping enables cryptographic algorithms to securely 
-                    add, multiply, and compute inverses of bytes without ever exceeding the 8-bit space constraint.
+                    This structural guarantee is highly consequential for computing. Because an 8-bit byte inherently has 256 distinct
+                    states, we can map any byte directly to an element in \(GF(2^8)\). This algebraic mapping enables cryptographic
+                    algorithms to add, multiply, and compute inverses of bytes without ever exceeding the 8-bit space constraint.
                 </p>
 
             </section>
@@ -140,14 +199,13 @@ uses_python: false
                     <span class="proof-title">Proof:</span>
 
                     <p>
-                        Since \(GF(p^n)\) is a finite field of order \(p^n\), the proof of the 
-                        <a href="#T-classification_finite_fields" class="ref-link"><strong>Classification of Finite Fields</strong></a> 
-                        shows that it has characteristic \(p\), so every nonzero element has additive order \(p\). 
-                        Hence the additive group of \(GF(p^n)\) is an <em>elementary abelian \(p\)-group</em> of order \(p^n\): 
-                        by the <a href="group_classification.html#T-ftfag" class="ref-link"><strong>Fundamental Theorem of Finite Abelian Groups</strong></a>, 
-                        it decomposes as \(\bigoplus_i \mathbb{Z}_{p^{a_i}}\) with \(\sum_i a_i = n\); the constraint that 
-                        every element has order dividing \(p\) forces each \(a_i = 1\), giving \(n\) summands isomorphic to 
-                        \(\mathbb{Z}_p\).
+                        Since \(GF(p^n)\) is a finite field of order \(p^n\), the proof of the
+                        <a href="#T-classification_finite_fields" class="ref-link"><strong>Classification of Finite Fields</strong></a>
+                        shows that it has characteristic \(p\), so every nonzero element has additive order \(p\). Hence the additive
+                        group of \(GF(p^n)\) is an <em>elementary Abelian \(p\)-group</em> of order \(p^n\). By the
+                        <a href="group_classification.html#T-ftfag" class="ref-link"><strong>Fundamental Theorem of Finite Abelian Groups</strong></a>,
+                        it decomposes as \(\bigoplus_i \mathbb{Z}_{p^{a_i}}\) with \(\sum_i a_i = n\). The constraint that every
+                        element has order dividing \(p\) forces each \(a_i = 1\), giving \(n\) summands isomorphic to \(\mathbb{Z}_p\).
                     </p>
 
                     <p>
@@ -164,26 +222,31 @@ uses_python: false
                     </p>
 
                     <p>
-                        Assume for the sake of contradiction that they are <em>not</em> pairwise relatively prime. Then there exists an integer \(d > 1\) that 
-                        divides the orders of at least two of the components. From the 
-                        <a href="cyclic_groups.html#T-ftcg" class="ref-link"><strong>Fundamental Theorem of Cyclic Groups</strong></a>, we know that each of these 
-                        components has a unique subgroup of order \(d\). 
+                        Assume for the sake of contradiction that these orders are <em>not</em> pairwise relatively prime. Then there
+                        exists an integer \(d \gt 1\) that divides the orders of at least two of the components. From the
+                        <a href="cyclic_groups.html#T-ftcg" class="ref-link"><strong>Fundamental Theorem of Cyclic Groups</strong></a>,
+                        we know that each of these components has a unique subgroup of order \(d\).
                     </p>
 
                     <p>
-                        This means that the overall group \(GF(p^n)^*\) contains at least two distinct subgroups, \(H\) and \(K\), both of order \(d\). 
-                        Since \(H \neq K\), the union \(H \cup K\) contains strictly more than \(d\) elements. However, every element in both \(H\) and \(K\) 
-                        satisfies the equation \(x^d = 1\), meaning they are all roots of the polynomial \(x^d - 1\). 
+                        Consequently, \(GF(p^n)^*\) contains at least two distinct subgroups, \(H\) and \(K\), both of order \(d\).
+                        Since \(H \neq K\), the union \(H \cup K\) contains strictly more than \(d\) elements. However, every element
+                        in both \(H\) and \(K\) satisfies the equation \(x^d = 1\), meaning they are all roots of the polynomial
+                        \(x^d - 1\).
                     </p>
 
                     <p>
-                        This yields strictly more than \(d\) roots for a polynomial of degree \(d\). This contradicts the theorem that 
-                        <a href="polynomial_rings.html#T-poly_at_most_n_zeros" class="ref-link"><strong>a polynomial of degree \(d\) over a field has at most \(d\) zeros</strong></a>. Thus, the components must be pairwise relatively prime, and \(GF(p^n)^*\) is cyclic.
+                        The polynomial \(x^d - 1\) thus has strictly more than \(d\) roots although its degree is \(d\). This
+                        contradicts the theorem that
+                        <a href="polynomial_rings.html#T-poly_at_most_n_zeros" class="ref-link"><strong>a polynomial of degree \(d\) over a field has at most \(d\) zeros</strong></a>.
+                        Thus, the components must be pairwise relatively prime, and \(GF(p^n)^*\) is cyclic.
                     </p>
 
                     <p>
-                        We have established both claims of the theorem. The additive group is isomorphic to the direct product of \(n\) copies of \(\mathbb{Z}_p\), and 
-                        the multiplicative group of nonzero elements is isomorphic to \(\mathbb{Z}_{p^n-1}\) and is therefore cyclic.
+                        Being cyclic of order \(p^n - 1\), the multiplicative group \(GF(p^n)^*\) is isomorphic to
+                        \(\mathbb{Z}_{p^n - 1}\) by the
+                        <a href="group_isomorphism.html#T-cyclic_classified_by_order" class="ref-link"><strong>classification of finite cyclic groups by order</strong></a>.
+                        Both claims of the theorem are now established.
                     </p>
                 </div>
        
@@ -195,22 +258,25 @@ uses_python: false
                 </p>
 
                 <div class="insight-box">
-                    <h3>Caution: Component-wise Multiplication is NOT a Field</h3>
+                    <h3>Caution: Component-wise Multiplication is Not a Field</h3>
                     <p>
-                        It is important to understand that the isomorphism to \(\mathbb{Z}_p \oplus \ldots \oplus \mathbb{Z}_p\) applies <strong>only to addition</strong>. 
-                        If we attempted to multiply these vectors component-wise, the resulting structure would fail to be a field.
+                        The isomorphism to \(\mathbb{Z}_p \oplus \ldots \oplus \mathbb{Z}_p\) applies
+                        <strong>only to addition</strong>. If we attempted to multiply these vectors component-wise, the resulting
+                        structure would fail to be a field.
                     </p>
                     <p>
-                        Why? Because in a field, every nonzero element must have a multiplicative inverse. But under component-wise multiplication, any vector that has at 
-                        least one coordinate equal to \(0\) (but is not the all-zero vector) can never be multiplied by anything to reach the identity element \((1, 1, \ldots, 1)\). 
+                        In a field, every nonzero element must have a multiplicative inverse. Under component-wise multiplication,
+                        however, any vector that has at least one coordinate equal to \(0\) (but is not the all-zero vector) can never
+                        be multiplied by anything to reach the identity element \((1, 1, \ldots, 1)\).
                     </p>
                     <p>
                         Furthermore, it creates <strong>zero-divisors</strong>. For example, in \(\mathbb{Z}_2 \oplus \mathbb{Z}_2\):
                         \[
-                        (1, 0) \times (0, 1) = (0, 0)
+                        (1, 0) \times (0, 1) = (0, 0).
                         \]
-                        Because fields cannot contain zero-divisors, \(GF(p^n)\) <em>must</em> use a completely different rule for multiplication—specifically, polynomial multiplication 
-                        modulo an irreducible polynomial—to ensure every nonzero element has an inverse.
+                        Because fields cannot contain zero-divisors, \(GF(p^n)\) <em>must</em> use a completely different rule for
+                        multiplication, namely polynomial multiplication modulo an irreducible polynomial, so that every nonzero
+                        element has an inverse.
                     </p>
                 </div>
                 
@@ -224,29 +290,32 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Insight: Maximum-Period PRNGs</h3>
                     <p>
-                        The cyclic nature of the multiplicative group provides the exact mathematical foundation for <strong>Pseudo-Random Number Generators (PRNGs)</strong>. 
-                        Machine learning relies heavily on high-quality PRNGs for weight initialization, Dropout layers, and Stochastic Gradient Descent (SGD).
+                        The cyclic nature of the multiplicative group provides the mathematical foundation for
+                        <strong>Pseudo-Random Number Generators (PRNGs)</strong>. Machine learning relies heavily on high-quality PRNGs
+                        for weight initialization, Dropout layers, and Stochastic Gradient Descent (SGD).
                     </p>
                     <p>
-                        Fast random number generators, such as Linear Feedback Shift Registers (LFSRs) and the famous Mersenne Twister, operate via polynomial 
-                        arithmetic over \(GF(2)\). Because this theorem guarantees the existence of a "primitive element" (generator), we can strictly design 
-                        state transitions that multiply by this generator, forcing the internal state to visit every single non-zero element in \(GF(2^n)\) 
-                        exactly once before repeating. 
+                        Fast random number generators, such as Linear Feedback Shift Registers (LFSRs) and the famous Mersenne Twister,
+                        operate via polynomial arithmetic over \(GF(2)\). Because this theorem guarantees the existence of a "primitive
+                        element" (generator), we can design state transitions that multiply by this generator. The internal state then
+                        visits every nonzero element of \(GF(2^n)\) exactly once before repeating.
                     </p>
                     <p>
-                        This guarantees a sequence with the maximum possible period length (e.g., \(2^n - 1\)). Without this cyclic property ensuring a maximal 
-                        period, random generators would fall into short, predictable loops, introducing statistical correlations that severely degrade the 
-                        convergence and generalization of neural networks.
+                        This guarantees a sequence with the maximum possible period length (namely \(2^n - 1\)). Without this cyclic
+                        property ensuring a maximal period, random generators would fall into short, predictable loops, and the
+                        resulting statistical correlations can undermine the randomness that stochastic training relies on.
                     </p>
                 </div>
 
                 <p>
-                    From the 
-                    <a href="#T-structure_finite_fields" class="ref-link"><strong>Structure of Finite Fields</strong></a> 
-                    we know that the additive group of \(GF(p^n)\) is isomorphic to \((\mathbb{Z}_p)^n\), which is an 
-                    \(n\)-dimensional vector space over \(\mathbb{Z}_p\) with standard basis \(\{(1, 0, \ldots, 0), 
-                    (0, 1, 0, \ldots, 0), \ldots, (0, 0, \ldots, 1)\}\). Identifying \(GF(p) = \mathbb{Z}_p\) (the prime 
-                    subfield of \(GF(p^n)\)), we obtain the following useful formula.
+                    From the
+                    <a href="#T-structure_finite_fields" class="ref-link"><strong>Structure of Finite Fields</strong></a> we
+                    know that the additive group of \(GF(p^n)\) is isomorphic to \((\mathbb{Z}_p)^n\), which is an
+                    \(n\)-dimensional vector space over \(\mathbb{Z}_p\) with standard basis
+                    \(\{(1, 0, \ldots, 0), (0, 1, 0, \ldots, 0), \ldots, (0, 0, \ldots, 1)\}\). This isomorphism is
+                    \(\mathbb{Z}_p\)-linear, because multiplication by a scalar \(k \in \mathbb{Z}_p\) is the \(k\)-fold sum on
+                    both sides. Identifying \(GF(p) = \mathbb{Z}_p\) (the prime subfield of \(GF(p^n)\)), we obtain the
+                    following useful formula.
                 </p>
 
                 <div class="theorem" id="T-degree_GF_pn">
@@ -269,25 +338,29 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Since \(a\) generates \(GF(p^n)^*\), every nonzero element of \(GF(p^n)\) is a power of \(a\), and thus 
-                        \(GF(p)(a) \supseteq GF(p^n)\); the reverse inclusion is immediate from \(a \in GF(p^n)\). Hence 
-                        \(GF(p)(a) = GF(p^n)\), and 
+                        Since \(a\) generates \(GF(p^n)^*\), every nonzero element of \(GF(p^n)\) is a power of \(a\), and thus
+                        \(GF(p)(a) \supseteq GF(p^n)\). The reverse inclusion is immediate from \(a \in GF(p^n)\). Hence
+                        \(GF(p)(a) = GF(p^n)\), and
                         \[
-                        [GF(p)(a) : GF(p)] \;=\; [GF(p^n) : GF(p)] \;=\; n
+                        [GF(p)(a) : GF(p)] = [GF(p^n) : GF(p)] = n
                         \]
-                        by the <a href="#T-degree_GF_pn" class="ref-link"><strong>Degree of \(GF(p^n)\)</strong></a>. 
-                        In particular \(GF(p)(a)\) has finite \(GF(p)\)-dimension, so \(a\) is algebraic over \(GF(p)\); let 
-                        \(m(x) \in GF(p)[x]\) be its minimal polynomial (which is irreducible). By the 
-                        <a href="extension_field.html#T-simple_extension_structure" class="ref-link"><strong>structure theorem for \(F(a)\)</strong></a> 
-                        applied with \(p(x) = m(x)\), the dimension \([GF(p)(a) : GF(p)]\) equals \(\deg m(x)\). Combined with the 
-                        equality above, \(\deg m(x) = n\); that is, \(a\) is algebraic over \(GF(p)\) of degree \(n\).
+                        by the <a href="#T-degree_GF_pn" class="ref-link"><strong>Degree of \(GF(p^n)\)</strong></a>. In particular
+                        \(GF(p)(a)\) has finite \(GF(p)\)-dimension, so \(a\) is algebraic over \(GF(p)\) by
+                        <a href="algebraic_extension.html#T-finite_implies_algebraic" class="ref-link"><strong>Finite Implies Algebraic</strong></a>.
+                        Let \(m(x) \in GF(p)[x]\) be its minimal polynomial, the monic irreducible polynomial of least degree with
+                        \(m(a) = 0\) supplied by the
+                        <a href="algebraic_extension.html#T-characterization_extensions" class="ref-link"><strong>Characterization of Extensions</strong></a>.
+                        By the
+                        <a href="extension_field.html#T-simple_extension_structure" class="ref-link"><strong>structure theorem for \(F(a)\)</strong></a>
+                        applied with \(p(x) = m(x)\), the dimension \([GF(p)(a) : GF(p)]\) equals \(\deg m(x)\). Combined with the
+                        equality above, this gives \(\deg m(x) = n\), so \(a\) is algebraic over \(GF(p)\) of degree \(n\).
                     </p>
                 </div>
 
                 <p>
-                    These corollaries connect finite fields directly to the theory of Algebraic Extensions. Just as \(\mathbb{C}\) is constructed 
-                    by adjoining a root of an irreducible polynomial to \(\mathbb{R}\), \(GF(p^n)\) is constructed by taking an irreducible 
-                    polynomial of degree \(n\) over \(\mathbb{Z}_p\) and adjoining its root.
+                    These corollaries connect finite fields directly to the theory of algebraic extensions. Just as \(\mathbb{C}\) is
+                    constructed by adjoining a root of an irreducible polynomial to \(\mathbb{R}\), \(GF(p^n)\) is constructed by
+                    taking an irreducible polynomial of degree \(n\) over \(\mathbb{Z}_p\) and adjoining its root.
                 </p>
 
                 <div class="theorem" id="T-zeros_irreducible_Zp">
@@ -303,51 +376,71 @@ uses_python: false
                     <span class="proof-title">Proof:</span>
 
                     <p>
-                        <strong>The case \(d = 1\).</strong> If \(a \in \mathbb{Z}_p\), then \(d = 1\) and \(a\) is the only zero of 
-                        \(f(x)\); the listed sequence is just \(\{a\}\) and the claim is immediate.
+                        <strong>The case \(d = 1\).</strong> If \(d = 1\), then \(a \in \mathbb{Z}_p\) and \(a\) is the only zero of
+                        \(f(x)\). The listed sequence is just \(\{a\}\) and the claim is immediate.
                     </p>
 
                     <p>
-                        <strong>The case \(d \geq 2\): Each \(a^{p^i}\) is a zero of \(f(x)\).</strong> 
-                        Write \(f(x) = c_d x^d + c_{d-1} x^{d-1} + \cdots + c_1 x + c_0\) with \(c_j \in \mathbb{Z}_p\). 
-                        The multiplicative group \(\mathbb{Z}_p^*\) has order \(p - 1\), so \(c^{p-1} = 1\) for every 
-                        \(c \in \mathbb{Z}_p^*\); multiplying by \(c\) gives \(c^p = c\), and this also holds (trivially) at 
-                        \(c = 0\). By induction on \(i\), \(c^{p^i} = c\) for every \(c \in \mathbb{Z}_p\) and every \(i \geq 0\). 
-                        Now apply the Frobenius map \(\phi: x \mapsto x^p\) iterated \(i\) times to the equation \(f(a) = 0\): 
-                        the binomial theorem in characteristic \(p\) makes \(\phi\) (and hence \(\phi^i\)) a ring homomorphism on 
-                        \(E\), so 
+                        <strong>The case \(d \geq 2\): Each \(a^{p^i}\) is a zero of \(f(x)\).</strong> Write
+                        \(f(x) = c_d x^d + c_{d-1} x^{d-1} + \cdots + c_1 x + c_0\) with \(c_j \in \mathbb{Z}_p\). The nonzero elements
+                        of the field \(\mathbb{Z}_p\) form a group \(\mathbb{Z}_p^*\) of order \(p - 1\) under multiplication, and the
+                        <a href="group_isomorphism.html#T-lagrange_corollaries" class="ref-link"><strong>Corollaries of Lagrange's Theorem</strong></a>
+                        yield \(c^{p-1} = 1\) for every \(c \in \mathbb{Z}_p^*\). Multiplying by \(c\) gives \(c^p = c\), and this also
+                        holds (trivially) at \(c = 0\). By induction on \(i\), \(c^{p^i} = c\) for every \(c \in \mathbb{Z}_p\) and
+                        every \(i \geq 0\).
+                    </p>
+
+                    <p>
+                        Now apply the Frobenius map \(\phi: x \mapsto x^p\) iterated \(i\) times to the equation \(f(a) = 0\). The
+                        <a href="#T-frobenius_identity" class="ref-link"><strong>Frobenius Identity</strong></a> makes \(\phi\) (and
+                        hence \(\phi^i\)) a ring homomorphism on \(E\), so
                         \[
-                        0 \;=\; \phi^i\bigl(f(a)\bigr) \;=\; \sum_{j=0}^d c_j^{p^i} \bigl(a^{p^i}\bigr)^j 
-                        \;=\; \sum_{j=0}^d c_j \bigl(a^{p^i}\bigr)^j \;=\; f\bigl(a^{p^i}\bigr),
+                        \begin{align*}
+                        0
+                        &= \phi^i\bigl(f(a)\bigr) \\\\
+                        &= \sum_{j=0}^d c_j^{p^i} \bigl(a^{p^i}\bigr)^j \\\\
+                        &= \sum_{j=0}^d c_j \bigl(a^{p^i}\bigr)^j \\\\
+                        &= f\bigl(a^{p^i}\bigr),
+                        \end{align*}
                         \]
-                        where the third equality uses \(c_j^{p^i} = c_j\) for \(c_j \in \mathbb{Z}_p\). Thus 
-                        \(a^{p^i}\) is a zero of \(f(x)\) for each \(i = 0, 1, \ldots, d-1\).
+                        where the third equality uses \(c_j^{p^i} = c_j\) for \(c_j \in \mathbb{Z}_p\). Thus \(a^{p^i}\) is a zero of
+                        \(f(x)\) for each \(i = 0, 1, \ldots, d-1\).
                     </p>
 
                     <p>
-                        <strong>The zeros are distinct.</strong> Suppose, for contradiction, that \(a^{p^m} = a^{p^n}\) for some 
-                        \(0 \leq n < m \leq d - 1\), and set \(j = m - n\) (so \(1 \leq j \leq d - 1\)). Then 
+                        <strong>The zeros are distinct.</strong> Suppose, for contradiction, that \(a^{p^m} = a^{p^n}\) for some
+                        \(0 \leq n \lt m \leq d - 1\), and set \(j = m - n\) (so \(1 \leq j \leq d - 1\)). Then
                         \[
-                        0 \;=\; a^{p^m} - a^{p^n} \;=\; \bigl(a^{p^j}\bigr)^{p^n} - a^{p^n} \;=\; \bigl(a^{p^j} - a\bigr)^{p^n},
+                        \begin{align*}
+                        0
+                        &= a^{p^m} - a^{p^n} \\\\
+                        &= \bigl(a^{p^j}\bigr)^{p^n} - a^{p^n} \\\\
+                        &= \bigl(a^{p^j} - a\bigr)^{p^n},
+                        \end{align*}
                         \]
-                        where the last equality is the Frobenius identity \((u - v)^{p^n} = u^{p^n} - v^{p^n}\) in characteristic 
-                        \(p\). Since \(E\) is a field (no zero divisors), \(a^{p^j} = a\). 
+                        where the last equality is the
+                        <a href="#T-frobenius_identity" class="ref-link"><strong>Frobenius Identity</strong></a>
+                        \((u - v)^{p^n} = u^{p^n} - v^{p^n}\). Since \(E\) is a field (no zero-divisors), \(a^{p^j} = a\).
                     </p>
 
                     <p>
-                        Consider \(K = \{x \in \mathbb{Z}_p(a) \mid x^{p^j} - x = 0\}\). The set \(K\) is closed under field 
-                        operations by the same Frobenius-and-binomial computation used in the 
-                        <a href="#T-classification_finite_fields" class="ref-link"><strong>Classification of Finite Fields</strong></a>, 
-                        so \(K\) is a subfield of \(\mathbb{Z}_p(a)\). Moreover \(K\) consists of the roots of the polynomial 
-                        \(x^{p^j} - x\), so 
-                        <a href="polynomial_rings.html#T-poly_at_most_n_zeros" class="ref-link"><strong>a polynomial of degree \(p^j\) has at most \(p^j\) zeros</strong></a>, 
-                        giving \(|K| \leq p^j\). On the other hand \(K\) contains \(\mathbb{Z}_p\) (since \(c^p = c\) implies 
-                        \(c^{p^j} = c\) for \(c \in \mathbb{Z}_p\)) and contains \(a\) (since \(a^{p^j} = a\)), so by minimality 
-                        \(K \supseteq \mathbb{Z}_p(a)\). Now since \(f(x)\) is irreducible over \(\mathbb{Z}_p\) with zero \(a\), 
-                        it is (up to a constant factor) the minimal polynomial of \(a\) over \(\mathbb{Z}_p\); the 
-                        <a href="extension_field.html#T-simple_extension_structure" class="ref-link"><strong>structure theorem for \(F(a)\)</strong></a> 
-                        then gives \([\mathbb{Z}_p(a) : \mathbb{Z}_p] = d\), so \(|\mathbb{Z}_p(a)| = p^d\) and \(|K| \geq p^d\). 
-                        Therefore \(p^j \geq p^d\), i.e., \(j \geq d\) — contradicting \(j \leq d - 1\). The zeros 
+                        Consider \(K = \{x \in \mathbb{Z}_p(a) \mid x^{p^j} - x = 0\}\). The set \(K\) is closed under field operations
+                        by the <a href="#T-frobenius_identity" class="ref-link"><strong>Frobenius Identity</strong></a>, exactly as in
+                        the proof of the
+                        <a href="#T-classification_finite_fields" class="ref-link"><strong>Classification of Finite Fields</strong></a>,
+                        so \(K\) is a subfield of \(\mathbb{Z}_p(a)\). Moreover \(K\) consists of roots of the polynomial
+                        \(x^{p^j} - x\), and
+                        <a href="polynomial_rings.html#T-poly_at_most_n_zeros" class="ref-link"><strong>a polynomial of degree \(p^j\) has at most \(p^j\) zeros</strong></a>.
+                        Hence \(|K| \leq p^j\). On the other hand \(K\) contains \(\mathbb{Z}_p\) (since \(c^p = c\) implies
+                        \(c^{p^j} = c\) for \(c \in \mathbb{Z}_p\)) and contains \(a\) (since \(a^{p^j} = a\)), so by minimality
+                        \(K \supseteq \mathbb{Z}_p(a)\).
+                    </p>
+
+                    <p>
+                        Now since \(f(x)\) is irreducible over \(\mathbb{Z}_p\) with zero \(a\), the
+                        <a href="extension_field.html#T-simple_extension_structure" class="ref-link"><strong>structure theorem for \(F(a)\)</strong></a>
+                        gives \([\mathbb{Z}_p(a) : \mathbb{Z}_p] = d\), so \(|\mathbb{Z}_p(a)| = p^d\) and \(|K| \geq p^d\). Therefore
+                        \(p^j \geq p^d\), that is, \(j \geq d\), which contradicts \(j \leq d - 1\). The zeros
                         \(a, a^p, \ldots, a^{p^{d-1}}\) are therefore distinct.
                     </p>
 
@@ -367,28 +460,36 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Let \(d = \deg f(x)\). By the 
-                        <a href="#T-zeros_irreducible_Zp" class="ref-link"><strong>Zeros of an Irreducible over \(\mathbb{Z}_p\)</strong></a>, 
-                        the zeros of \(f(x)\) are \(a, a^p, a^{p^2}, \ldots, a^{p^{d-1}}\), all distinct. Since \(a \in \mathbb{Z}_p(a)\) 
-                        and \(\mathbb{Z}_p(a)\) is closed under multiplication, every \(a^{p^i}\) lies in \(\mathbb{Z}_p(a)\). With 
-                        \(d\) distinct roots in hand, \(f(x)\) factors completely over \(\mathbb{Z}_p(a)\) as 
+                        Let \(d = \deg f(x)\). By the
+                        <a href="#T-zeros_irreducible_Zp" class="ref-link"><strong>Zeros of an Irreducible over \(\mathbb{Z}_p\)</strong></a>,
+                        the zeros of \(f(x)\) are \(a, a^p, a^{p^2}, \ldots, a^{p^{d-1}}\), all distinct. Since
+                        \(a \in \mathbb{Z}_p(a)\) and \(\mathbb{Z}_p(a)\) is closed under multiplication, every \(a^{p^i}\) lies in
+                        \(\mathbb{Z}_p(a)\). With \(d\) distinct roots in hand, repeated use of the
+                        <a href="polynomial_rings.html#T-factor_theorem" class="ref-link"><strong>Factor Theorem</strong></a> and a
+                        comparison of degrees show that \(f(x)\) factors completely over \(\mathbb{Z}_p(a)\) as
                         \[
-                        f(x) \;=\; c_d (x - a)(x - a^p) \cdots \bigl(x - a^{p^{d-1}}\bigr),
+                        f(x) = c_d (x - a)(x - a^p) \cdots \bigl(x - a^{p^{d-1}}\bigr),
                         \]
-                        where \(c_d \in \mathbb{Z}_p\) is the leading coefficient — that is, \(f(x)\) splits in \(\mathbb{Z}_p(a)\). 
-                        For minimality, the field generated over \(\mathbb{Z}_p\) by all the roots is 
-                        \(\mathbb{Z}_p(a, a^p, \ldots, a^{p^{d-1}}) = \mathbb{Z}_p(a)\), since on the one hand each \(a^{p^i}\) 
-                        already lies in \(\mathbb{Z}_p(a)\), and on the other hand \(a\) is itself one of the listed roots. By the 
-                        <a href="extension_field.html#D-splitting_field" class="ref-link"><strong>Definition of Splitting Field</strong></a>, 
+                        where \(c_d \in \mathbb{Z}_p\) is the leading coefficient. That is, \(f(x)\) splits in \(\mathbb{Z}_p(a)\).
+                    </p>
+
+                    <p>
+                        For minimality, the field generated over \(\mathbb{Z}_p\) by all the roots is
+                        \(\mathbb{Z}_p(a, a^p, \ldots, a^{p^{d-1}}) = \mathbb{Z}_p(a)\). Indeed, each \(a^{p^i}\) already lies in
+                        \(\mathbb{Z}_p(a)\), and \(a\) is itself one of the listed roots. By the
+                        <a href="extension_field.html#D-splitting_field" class="ref-link"><strong>Definition of Splitting Field</strong></a>,
                         \(\mathbb{Z}_p(a)\) is the splitting field of \(f(x)\) over \(\mathbb{Z}_p\).
                     </p>
                 </div>
 
                 <p>
-                    This reveals a remarkable property of fields of characteristic \(p\): if one root \(a\) of an irreducible polynomial is known, 
-                    the remaining roots are generated simply by repeatedly taking the \(p\)-th power. The mapping \(x \mapsto x^p\) is a field 
-                    automorphism known as the <strong>Frobenius automorphism</strong>, which plays a critical role in polynomial factorization 
-                    algorithms over finite fields.
+                    This reveals a distinctive property of fields of characteristic \(p\). If one root \(a\) of an irreducible
+                    polynomial is known, the remaining roots are generated simply by repeatedly taking the \(p\)-th power. On a finite
+                    field, the mapping \(x \mapsto x^p\) is a field automorphism known as the <strong>Frobenius automorphism</strong>
+                    (it is a ring homomorphism by the
+                    <a href="#T-frobenius_identity" class="ref-link"><strong>Frobenius Identity</strong></a>, injective because a field
+                    has no zero-divisors, and hence surjective on a finite set), and it plays a critical role in polynomial
+                    factorization algorithms over finite fields.
                 </p>
 
             </section>
@@ -397,9 +498,9 @@ uses_python: false
                 <h2>Subfields</h2>
 
                 <p>
-                    Just as we can track the dimensions of vector spaces, we can track how smaller finite fields nest inside larger ones. 
-                    This creates a highly structured "lattice" of fields, which is heavily utilized when optimizing cryptographic hardware 
-                    to save space and power.
+                    Just as we can track the dimensions of vector spaces, we can track how smaller finite fields nest inside larger
+                    ones. This creates a highly structured "lattice" of fields, which is used when optimizing cryptographic hardware to
+                    save space and power.
                 </p>
 
                 <div class="theorem" id="T-subfield_finite_field">
@@ -414,52 +515,62 @@ uses_python: false
                     <span class="proof-title">Proof:</span>
 
                     <p>
-                        <strong>The candidate subfield.</strong> Suppose \(d \mid n\). Then \(p^d - 1\) divides \(p^n - 1\): writing 
-                        \(n = dq\), the geometric-series factorization 
+                        <strong>The candidate subfield.</strong> Suppose \(d \mid n\). Then \(p^d - 1\) divides \(p^n - 1\). Writing
+                        \(n = dq\), the geometric-series factorization
                         \[
-                        p^n - 1 \;=\; (p^d)^q - 1 \;=\; (p^d - 1)\bigl((p^d)^{q-1} + (p^d)^{q-2} + \cdots + 1\bigr)
+                        \begin{align*}
+                        p^n - 1
+                        &= (p^d)^q - 1 \\\\
+                        &= (p^d - 1)\bigl((p^d)^{q-1} + (p^d)^{q-2} + \cdots + 1\bigr)
+                        \end{align*}
                         \]
-                        exhibits the divisibility. Consider the set 
+                        exhibits the divisibility. Consider the set
                         \[
-                        K \;=\; \{x \in GF(p^n) \mid x^{p^d} = x\},
+                        K = \{x \in GF(p^n) \mid x^{p^d} = x\},
                         \]
-                        which is exactly the zero set of the polynomial \(x^{p^d} - x\) inside \(GF(p^n)\). The set \(K\) is closed 
-                        under field operations by the same Frobenius-and-binomial computation used in the 
-                        <a href="#T-classification_finite_fields" class="ref-link"><strong>Classification of Finite Fields</strong></a>, 
+                        which is exactly the zero set of the polynomial \(x^{p^d} - x\) inside \(GF(p^n)\). The
+                        <a href="#T-frobenius_identity" class="ref-link"><strong>Frobenius Identity</strong></a> shows that \(K\) is
+                        closed under field operations (the computation is the one already used for the
+                        <a href="#T-classification_finite_fields" class="ref-link"><strong>Classification of Finite Fields</strong></a>),
                         so \(K\) is a subfield of \(GF(p^n)\).
                     </p>
 
                     <p>
-                        <strong>\(|K| = p^d\).</strong> The polynomial \(x^{p^d} - x\) has degree \(p^d\), so 
-                        <a href="polynomial_rings.html#T-poly_at_most_n_zeros" class="ref-link"><strong>it has at most \(p^d\) zeros</strong></a> 
-                        in \(GF(p^n)\); hence \(|K| \leq p^d\). For the reverse inequality, by the 
-                        <a href="#T-structure_finite_fields" class="ref-link"><strong>Structure of Finite Fields</strong></a> 
-                        the multiplicative group \(GF(p^n)^*\) is cyclic of order \(p^n - 1\), so by the 
-                        <a href="cyclic_groups.html#T-ftcg" class="ref-link"><strong>Fundamental Theorem of Cyclic Groups</strong></a> 
-                        it contains a (unique) subgroup \(H\) of order \(p^d - 1\). Every \(x \in H\) satisfies \(x^{p^d - 1} = 1\) 
-                        (since \(H\) is cyclic of order \(p^d - 1\), every element's order divides \(p^d - 1\)), hence \(x^{p^d} = x\), 
-                        so \(H \subseteq K\). Combined with \(0 \in K\), we get \(|K| \geq |H| + 1 = p^d\). Therefore \(|K| = p^d\), 
+                        <strong>\(|K| = p^d\).</strong> The polynomial \(x^{p^d} - x\) has degree \(p^d\), so
+                        <a href="polynomial_rings.html#T-poly_at_most_n_zeros" class="ref-link"><strong>a polynomial of degree \(p^d\) has at most \(p^d\) zeros</strong></a>
+                        in \(GF(p^n)\). Hence \(|K| \leq p^d\).
+                    </p>
+
+                    <p>
+                        For the reverse inequality, by the
+                        <a href="#T-structure_finite_fields" class="ref-link"><strong>Structure of Finite Fields</strong></a> the
+                        multiplicative group \(GF(p^n)^*\) is cyclic of order \(p^n - 1\), so by the
+                        <a href="cyclic_groups.html#T-ftcg" class="ref-link"><strong>Fundamental Theorem of Cyclic Groups</strong></a>
+                        it contains a (unique) subgroup \(H\) of order \(p^d - 1\). Every \(x \in H\) satisfies \(x^{p^d - 1} = 1\)
+                        (since \(H\) is cyclic of order \(p^d - 1\), every element's order divides \(p^d - 1\)), hence \(x^{p^d} = x\),
+                        so \(H \subseteq K\). Combined with \(0 \in K\), we get \(|K| \geq |H| + 1 = p^d\). Therefore \(|K| = p^d\),
                         and \(K\) is a subfield of \(GF(p^n)\) of order \(p^d\).
                     </p>
 
                     <p>
-                        <strong>Uniqueness.</strong> Let \(K'\) be any subfield of \(GF(p^n)\) of order \(p^d\). Every nonzero 
-                        \(x \in K'\) lies in \((K')^*\) of order \(p^d - 1\), so by 
-                        <a href="group_isomorphism.html#T-lagrange_theorem" class="ref-link"><strong>Lagrange's theorem</strong></a> 
-                        \(x^{p^d - 1} = 1\), giving \(x^{p^d} = x\); the same holds at \(x = 0\). Hence \(K' \subseteq K\). 
-                        Since \(|K'| = |K| = p^d\), we conclude \(K' = K\). The subfield of order \(p^d\) is unique.
+                        <strong>Uniqueness.</strong> Let \(K'\) be any subfield of \(GF(p^n)\) of order \(p^d\). Every nonzero
+                        \(x \in K'\) lies in \((K')^*\) of order \(p^d - 1\), so \(x^{p^d - 1} = 1\) by the
+                        <a href="group_isomorphism.html#T-lagrange_corollaries" class="ref-link"><strong>Corollaries of Lagrange's Theorem</strong></a>,
+                        giving \(x^{p^d} = x\). The same holds at \(x = 0\). Hence \(K' \subseteq K\). Since \(|K'| = |K| = p^d\), we
+                        conclude \(K' = K\). The subfield of order \(p^d\) is unique.
                     </p>
 
                     <p>
-                        <strong>Only divisors give subfields.</strong> Conversely, let \(K\) be any subfield of \(GF(p^n)\). 
-                        Identifying the prime subfield of \(GF(p^n)\) with \(\mathbb{Z}_p\), we have \(\mathbb{Z}_p \subseteq K \subseteq GF(p^n)\). 
-                        By the <a href="algebraic_extension.html#T-tower_rule" class="ref-link"><strong>Tower Rule</strong></a>, 
+                        <strong>Only divisors give subfields.</strong> Conversely, let \(K\) be any subfield of \(GF(p^n)\).
+                        Identifying the prime subfield of \(GF(p^n)\) with \(\mathbb{Z}_p\), we have
+                        \(\mathbb{Z}_p \subseteq K \subseteq GF(p^n)\). Both extensions are finite, since \(GF(p^n)\) is a finite set,
+                        so the <a href="algebraic_extension.html#T-tower_rule" class="ref-link"><strong>Tower Rule</strong></a> gives
                         \[
-                        [GF(p^n) : \mathbb{Z}_p] \;=\; [GF(p^n) : K] \cdot [K : \mathbb{Z}_p].
+                        [GF(p^n) : \mathbb{Z}_p] = [GF(p^n) : K] \cdot [K : \mathbb{Z}_p].
                         \]
-                        Set \(d = [K : \mathbb{Z}_p]\); then \(K\) is a \(\mathbb{Z}_p\)-vector space of dimension \(d\), so 
-                        \(|K| = p^d\). The above equation reads \(n = [GF(p^n) : K] \cdot d\), so \(d \mid n\). Therefore the 
-                        order of any subfield of \(GF(p^n)\) is \(p^d\) for some divisor \(d\) of \(n\).
+                        Set \(d = [K : \mathbb{Z}_p]\). Then \(K\) is a \(\mathbb{Z}_p\)-vector space of dimension \(d\), so
+                        \(|K| = p^d\). The above equation reads \(n = [GF(p^n) : K] \cdot d\), so \(d \mid n\). Therefore the order of
+                        any subfield of \(GF(p^n)\) is \(p^d\) for some divisor \(d\) of \(n\).
                     </p>
                 </div>
 
@@ -478,32 +589,37 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Let \(g(x)\) be an irreducible factor of \(x^{p^n} - x\) over \(\mathbb{Z}_p\), and set \(d = \deg g(x)\). 
-                        Let \(a\) be a zero of \(g(x)\) in some extension field of \(\mathbb{Z}_p\). Since \(g(x) \mid x^{p^n} - x\), 
-                        the element \(a\) also satisfies \(a^{p^n} = a\); hence \(a\) lies in the subfield 
-                        \(\{x \mid x^{p^n} = x\} = GF(p^n)\) constructed in the proof of the 
-                        <a href="#T-classification_finite_fields" class="ref-link"><strong>Classification of Finite Fields</strong></a>. 
-                        Then \(\mathbb{Z}_p(a) \subseteq GF(p^n)\). 
+                        Let \(g(x)\) be an irreducible factor of \(x^{p^n} - x\) over \(\mathbb{Z}_p\), and set \(d = \deg g(x)\). Let
+                        \(E\) be a splitting field of \(x^{p^n} - x\) over \(\mathbb{Z}_p\). The proof of the
+                        <a href="#T-classification_finite_fields" class="ref-link"><strong>Classification of Finite Fields</strong></a>
+                        shows that \(E\) consists exactly of the \(p^n\) distinct zeros of \(x^{p^n} - x\), so \(E = GF(p^n)\) and
+                        \(x^{p^n} - x\) is a product of distinct linear factors in \(E[x]\). Since \(g(x)\) divides \(x^{p^n} - x\),
+                        unique factorization in \(E[x]\)
+                        (<a href="integral_domains.html#T-Fx_is_ufd" class="ref-link"><strong>\(F[x]\) is a UFD</strong></a>) shows
+                        that \(g(x)\) is, up to a unit, a product of some of these linear factors. Hence \(g(x)\) has a zero
+                        \(a \in GF(p^n)\), and \(\mathbb{Z}_p(a) \subseteq GF(p^n)\).
                     </p>
 
                     <p>
-                        By the 
-                        <a href="#T-splitting_field_irreducible_Zp" class="ref-link"><strong>Splitting Field of an Irreducible Polynomial Over \(\mathbb{Z}_p\)</strong></a>, 
-                        \(\mathbb{Z}_p(a)\) is the splitting field of \(g(x)\) over \(\mathbb{Z}_p\). Since \(g(x)\) is irreducible 
-                        with zero \(a\), it is (up to a constant factor) the minimal polynomial of \(a\) over \(\mathbb{Z}_p\); the 
-                        <a href="extension_field.html#T-simple_extension_structure" class="ref-link"><strong>structure theorem for \(F(a)\)</strong></a> 
-                        then gives \([\mathbb{Z}_p(a) : \mathbb{Z}_p] = d\), so \(|\mathbb{Z}_p(a)| = p^d\) and \(\mathbb{Z}_p(a)\) is 
-                        a subfield of \(GF(p^n)\) of order \(p^d\). By the 
-                        <a href="#T-subfield_finite_field" class="ref-link"><strong>Subfields of a Finite Field</strong></a>, 
-                        the order of any subfield of \(GF(p^n)\) is \(p^d\) for some divisor \(d\) of \(n\); therefore \(d \mid n\).
+                        By the
+                        <a href="#T-splitting_field_irreducible_Zp" class="ref-link"><strong>Splitting Field of an Irreducible Polynomial Over \(\mathbb{Z}_p\)</strong></a>,
+                        \(\mathbb{Z}_p(a)\) is the splitting field of \(g(x)\) over \(\mathbb{Z}_p\). Because \(g(x)\) is irreducible
+                        over \(\mathbb{Z}_p\) with zero \(a\), the
+                        <a href="extension_field.html#T-simple_extension_structure" class="ref-link"><strong>structure theorem for \(F(a)\)</strong></a>
+                        gives \([\mathbb{Z}_p(a) : \mathbb{Z}_p] = d\). Hence \(|\mathbb{Z}_p(a)| = p^d\), and \(\mathbb{Z}_p(a)\) is a
+                        subfield of \(GF(p^n)\) of order \(p^d\). By the
+                        <a href="#T-subfield_finite_field" class="ref-link"><strong>Subfields of a Finite Field</strong></a>,
+                        \(d \mid n\).
                     </p>
                 </div>
            
                 <p>
-                    The polynomial \(x^{p^n} - x\) completely characterizes the elements of \(GF(p^n)\). As a consequence of Lagrange's theorem on 
-                    the multiplicative group, every element in \(GF(p^n)\) is a root of this exact polynomial. Thus, \(x^{p^n} - x\) factors into 
-                    the product of all monic irreducible polynomials over \(\mathbb{Z}_p\) whose degrees divide \(n\). This theorem elegantly ties 
-                    together the concepts of polynomial factorization, extension degrees, and field sizes into one unified algebraic structure.
+                    The polynomial \(x^{p^n} - x\) completely characterizes the elements of \(GF(p^n)\). As a consequence of Lagrange's
+                    theorem on the multiplicative group, every element in \(GF(p^n)\) is a root of this exact polynomial. In fact
+                    \(x^{p^n} - x\) is the product of all monic irreducible polynomials over \(\mathbb{Z}_p\) whose degrees divide
+                    \(n\). The theorem above proves one half of this statement, that every irreducible factor has degree dividing
+                    \(n\). The converse is beyond the scope of this page. The theorem ties together the concepts of polynomial
+                    factorization, extension degrees, and field sizes into one unified algebraic structure.
                 </p>
 
             </section>
