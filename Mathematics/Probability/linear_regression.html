@@ -30,11 +30,10 @@ uses_python: false
                 <h2>Recap from Linear Algebra</h2>
 
                 <p>
-                    With <a href="mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation</strong></a> and 
-                    <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a> in hand, we are ready to 
-                    apply these tools to the most fundamental predictive model in statistics. Linear regression sits at the intersection of 
-                    linear algebra and probability: the algebraic formulation leads to least-squares, while the probabilistic formulation 
-                    leads to MLE - and the two turn out to be equivalent under Gaussian noise.
+                    With <a href="mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation</strong></a> and
+                    <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a> in hand, we are ready to apply these tools to the most fundamental
+                    predictive model in statistics. Linear regression sits at the intersection of linear algebra and probability. The algebraic formulation leads
+                    to least-squares, while the probabilistic formulation leads to MLE. The two turn out to be equivalent under Gaussian noise.
                 </p>
 
                 <p>
@@ -59,11 +58,10 @@ uses_python: false
                 </p>
 
                 <p>
-                    An important point: the model is "linear" in the <strong>parameters</strong> \(\boldsymbol{\beta}\), not in the features \(\boldsymbol{x}\). 
-                    We can apply any nonlinear transformation to the features - for example, in a scalar case, 
-                    \(y = \beta_0 + \beta_1 x^2 + \beta_2 \sin(2\pi x)\) is still a linear model because \(y\) is a linear 
-                    combination of the transformed features with respect to \(\boldsymbol{\beta}\). We now show that the same normal equations arise 
-                    naturally from a probabilistic argument.
+                    The model is "linear" in the <strong>parameters</strong> \(\boldsymbol{\beta}\), not in the features \(\boldsymbol{x}\). We can apply any
+                    nonlinear transformation to the features. In a scalar case, for example, \(y = \beta_0 + \beta_1 x^2 + \beta_2 \sin(2\pi x)\) is still a
+                    linear model because \(y\) is a linear combination of the transformed features with respect to \(\boldsymbol{\beta}\). We now show that the
+                    same normal equations arise naturally from a probabilistic argument.
                 </p>
 
             </section>
@@ -73,17 +71,21 @@ uses_python: false
                 <h2>Linear Regression: A Probabilistic Perspective</h2>
 
                 <p>
-                    We now reinterpret the linear model above probabilistically. Assume that each observation \(y_i\) is the realized value of a random variable 
-                    \(Y_i\) that depends on the predictor \(\boldsymbol{x}_i\), corrupted by i.i.d. Gaussian noise:
+                    We now reinterpret the linear model above probabilistically. Assume that each observation \(y_i\) is the realized value of a random variable
+                    \(Y_i = \boldsymbol{x}_i^\top \boldsymbol{\beta} + \epsilon_i\), where the \(\epsilon_i\) are i.i.d. Gaussian noise of variance
+                    \(\sigma^2 \gt 0\):
                     \[
                     \epsilon_i \sim \mathcal{N}(0, \sigma^2).
                     \]
+                </p>
+
+                <p>
                     Since \(\mathbb{E}[\epsilon_i] = 0\), the conditional mean of \(Y_i\) is
                     \[
-                    \mathbb{E}[Y_i] = \mu_i = \boldsymbol{x}_i^\top \boldsymbol{\beta}
+                    \mathbb{E}[Y_i \mid \boldsymbol{x}_i] = \mu_i = \boldsymbol{x}_i^\top \boldsymbol{\beta}
                     \]
-                    where \(\boldsymbol{\beta} \in \mathbb{R}^d\) contains the unknown regression parameters. 
-                    This means each response is an independent <a href="gaussian.html#D-normal_distribution" class="ref-link"><strong>Gaussian</strong></a> random variable 
+                    where \(\boldsymbol{\beta} \in \mathbb{R}^d\) contains the unknown regression parameters. This means that, given \(\boldsymbol{x}_i\), each
+                    response is an independent <a href="gaussian.html#D-normal_distribution" class="ref-link"><strong>Gaussian</strong></a> random variable
                     \(Y_i \sim \mathcal{N}(\boldsymbol{x}_i^\top \boldsymbol{\beta}, \sigma^2)\).
                 </p>
 
@@ -115,18 +117,26 @@ uses_python: false
                 </p>
                 
                 <p>
-                    We set the gradient of the log-likelihood with respect to \(\boldsymbol{\beta}\) equal to zero.
-                    By the chain rule, the derivative of \((y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})^2\) with respect to \(\boldsymbol{\beta}\) is 
-                    \(-2(y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})\boldsymbol{x}_i\). Combined with the outer coefficient \(-\frac{1}{2\sigma^2}\) 
-                    from the log-likelihood, the gradient simplifies to the overall factor \(\frac{1}{\sigma^2}\) below:
+                    We set the gradient of the log-likelihood with respect to \(\boldsymbol{\beta}\) equal to zero. By the chain rule, the derivative of
+                    \((y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})^2\) with respect to \(\boldsymbol{\beta}\) is
+                    \(-2(y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta})\boldsymbol{x}_i\). Combined with the outer coefficient \(-\frac{1}{2\sigma^2}\) from the
+                    log-likelihood, the gradient simplifies to the overall factor \(\frac{1}{\sigma^2}\) below:
                     \[
                     \nabla_{\boldsymbol{\beta}} \ln L(\boldsymbol{\beta}) = \frac{1}{\sigma^2} \sum_{i=1}^n (y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta}) \boldsymbol{x}_i = \mathbf{0}.
                     \]
-                    Since \(\sigma^2 > 0\), this reduces to \(\sum_{i=1}^n (y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta}) \boldsymbol{x}_i = \mathbf{0}\). 
-                    Distributing the sum and using the scalar-vector identity \((\boldsymbol{x}_i^\top \boldsymbol{\beta}) \boldsymbol{x}_i = \boldsymbol{x}_i \boldsymbol{x}_i^\top \boldsymbol{\beta}\):
+                </p>
+
+                <p>
+                    Since \(\sigma^2 \gt 0\), the equation reduces to
+                    \(\sum_{i=1}^n (y_i - \boldsymbol{x}_i^\top \boldsymbol{\beta}) \boldsymbol{x}_i = \mathbf{0}\). Distributing the sum and using the
+                    scalar-vector identity
+                    \((\boldsymbol{x}_i^\top \boldsymbol{\beta}) \boldsymbol{x}_i = \boldsymbol{x}_i \boldsymbol{x}_i^\top \boldsymbol{\beta}\):
                     \[
                     \begin{align*}
-                    \sum_{i=1}^n y_i \boldsymbol{x}_i = \sum_{i=1}^n (\boldsymbol{x}_i^\top \boldsymbol{\beta}) \boldsymbol{x}_i = \sum_{i=1}^n \boldsymbol{x}_i \boldsymbol{x}_i^\top \boldsymbol{\beta} = X^\top X \boldsymbol{\beta}.
+                    \sum_{i=1}^n y_i \boldsymbol{x}_i
+                    &= \sum_{i=1}^n (\boldsymbol{x}_i^\top \boldsymbol{\beta}) \boldsymbol{x}_i \\\\
+                    &= \sum_{i=1}^n \boldsymbol{x}_i \boldsymbol{x}_i^\top \boldsymbol{\beta} \\\\
+                    &= X^\top X \boldsymbol{\beta}.
                     \end{align*}
                     \]
                     Recognizing the left side as \(X^\top \boldsymbol{y}\), we obtain
@@ -136,8 +146,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    This is exactly the normal equations from the linear-algebra derivation. Thus, the MLE solution for linear regression under Gaussian noise 
-                    coincides with the least-squares solution:
+                    We have recovered exactly the normal equations of the linear-algebra derivation. When \(X^\top X\) is invertible, the MLE solution for linear
+                    regression under Gaussian noise coincides with the least-squares solution:
                     \[
                     \begin{align*}
                     \hat{\boldsymbol{\beta}}_{\text{MLE}} &= \Big(\sum_{i=1}^n \boldsymbol{x}_i\boldsymbol{x}_i^\top \Big)^{-1}\Big(\sum_{i=1}^n \boldsymbol{x}_i y_i \Big) \\\\
@@ -167,45 +177,66 @@ uses_python: false
                         \]
                     </p>
                     <p>
-                        Taking the gradient of \(f(\boldsymbol{\beta})\) with respect to \(\boldsymbol{\beta}\) term by term, 
-                        using the standard matrix-calculus identities \(\nabla_{\boldsymbol{\beta}}(\boldsymbol{b}^\top \boldsymbol{\beta}) = \boldsymbol{b}\) 
-                        and \(\nabla_{\boldsymbol{\beta}}(\boldsymbol{\beta}^\top A \boldsymbol{\beta}) = (A + A^\top)\boldsymbol{\beta}\):
+                        We take the gradient of \(f(\boldsymbol{\beta})\) with respect to \(\boldsymbol{\beta}\) term by term. Fix a vector
+                        \(\boldsymbol{b} \in \mathbb{R}^d\) and a matrix \(A \in \mathbb{R}^{d \times d}\), and write
+                        \(\boldsymbol{b}^\top \boldsymbol{\beta} = \sum_k b_k \beta_k\) and
+                        \(\boldsymbol{\beta}^\top A \boldsymbol{\beta} = \sum_{k, l} \beta_k A_{kl} \beta_l\). Differentiating in \(\beta_k\) yields
+                        \(\nabla_{\boldsymbol{\beta}}(\boldsymbol{b}^\top \boldsymbol{\beta}) = \boldsymbol{b}\). The same computation gives
+                        \(\nabla_{\boldsymbol{\beta}}(\boldsymbol{\beta}^\top A \boldsymbol{\beta}) = (A + A^\top)\boldsymbol{\beta}\), because \(\beta_k\)
+                        occurs in both factors of the quadratic form. The four terms of \(f\) then have the gradients:
                         \[
                         \begin{align*}
                         \nabla_{\boldsymbol{\beta}}(\boldsymbol{y}^\top \boldsymbol{y}) &= \mathbf{0}, \\\\
                         \nabla_{\boldsymbol{\beta}}(\boldsymbol{y}^\top X \boldsymbol{\beta}) &= X^\top \boldsymbol{y}, \\\\
                         \nabla_{\boldsymbol{\beta}}(\boldsymbol{\beta}^\top X^\top \boldsymbol{y}) &= X^\top \boldsymbol{y}, \\\\
-                        \nabla_{\boldsymbol{\beta}}(\boldsymbol{\beta}^\top X^\top X \boldsymbol{\beta}) &= 2 X^\top X \boldsymbol{\beta} \qquad \text{(since \(X^\top X\) is symmetric).}
+                        \nabla_{\boldsymbol{\beta}}(\boldsymbol{\beta}^\top X^\top X \boldsymbol{\beta}) &= 2 X^\top X \boldsymbol{\beta} \quad \text{(since \(X^\top X\) is symmetric).}
                         \end{align*}
                         \]
-                        Assembling the four terms and setting the gradient to zero: 
+                    </p>
+                    <p>
+                        Assembling the four terms and setting the gradient to zero:
                         \[
-                        \nabla_{\boldsymbol{\beta}} f(\boldsymbol{\beta}) = - X^\top \boldsymbol{y} - X^\top \boldsymbol{y} + 2X^\top X\boldsymbol{\beta} = -2 X^\top \boldsymbol{y} + 2X^\top X\boldsymbol{\beta} = \mathbf{0},
+                        \begin{align*}
+                        \nabla_{\boldsymbol{\beta}} f(\boldsymbol{\beta})
+                        &= - X^\top \boldsymbol{y} - X^\top \boldsymbol{y} + 2X^\top X\boldsymbol{\beta} \\\\
+                        &= -2 X^\top \boldsymbol{y} + 2X^\top X\boldsymbol{\beta} \\\\
+                        &= \mathbf{0},
+                        \end{align*}
                         \]
-                        which simplifies to the normal equations \(X^\top X\boldsymbol{\beta} = X^\top \boldsymbol{y}\). 
-                        When \(X^\top X\) is invertible, the unique minimizer is
+                        which simplifies to the normal equations \(X^\top X\boldsymbol{\beta} = X^\top \boldsymbol{y}\). Since
+                        \(\boldsymbol{\beta}^\top X^\top X \boldsymbol{\beta} = \| X \boldsymbol{\beta} \|_{2}^2 \geq 0\), the matrix \(X^\top X\) is
+                        positive semi-definite, so \(f\) is convex and every stationary point is a global minimizer. When \(X^\top X\) is invertible, the
+                        unique minimizer is
                         \[
                         \hat{\boldsymbol{\beta}}_{\text{LS}} = (X^\top X)^{-1}X^\top \boldsymbol{y}.
                         \]
-                        Note that \(X^\top X\) is symmetric and positive semi-definite. It is invertible if and only if \(\operatorname{rank}(X) = d\), i.e., 
-                        the columns of \(X\) are linearly independent (which requires \(n \geq d\)). 
+                    </p>
+                    <p>
+                        The matrix \(X^\top X\) is symmetric, and it is invertible if and only if \(\operatorname{rank}(X) = d\), that is, the columns of \(X\)
+                        are linearly independent (this requires \(n \geq d\)).
                     </p>
                 </div>
 
                 <div class="insight-box">
                     <h3>Connections to Machine Learning</h3>
                     <p>
-                        The equivalence \(\hat{\boldsymbol{\beta}}_{\text{MLE}} = \hat{\boldsymbol{\beta}}_{\text{LS}}\) reveals a fundamental principle: 
-                        minimizing squared error is equivalent to maximum likelihood under Gaussian noise. This connection extends broadly. 
-                        Adding an \(\ell^2\) penalty (<a href="../Machine_learning/regression.html#T-ridge_regression_solution" class="ref-link"><strong>ridge regression</strong></a>) 
-                        corresponds to placing a <a href="bayesian.html"><strong>Gaussian prior</strong></a> on \(\boldsymbol{\beta}\) and computing the MAP estimate, while 
-                        an \(\ell^1\) penalty (<a href="../Machine_learning/regression.html#D-lasso_regression" class="ref-link"><strong>Lasso</strong></a>) corresponds to a 
-                        <a href="student.html#D-laplace" class="ref-link"><strong>Laplace prior</strong></a>. 
-                        The <a href="../Machine_learning/regression.html#T-bias_variance_decomposition" class="ref-link"><strong>bias-variance tradeoff</strong></a> 
-                        in regularized regression directly reflects the <a href="mle.html#D-MSE" class="ref-link"><strong>MSE decomposition</strong></a> developed 
-                        with maximum likelihood estimation.
-                        When the Gaussian noise assumption fails, one may use generalized linear models or robust regression methods that replace 
-                        the squared loss with alternatives derived from other likelihood models.
+                        The equivalence \(\hat{\boldsymbol{\beta}}_{\text{MLE}} = \hat{\boldsymbol{\beta}}_{\text{LS}}\) reveals a fundamental principle.
+                        Minimizing squared error is equivalent to maximum likelihood under Gaussian noise. The connection extends broadly.
+                    </p>
+                    <p>
+                        Adding an \(\ell^2\) penalty
+                        (<a href="../Machine_learning/regression.html#T-ridge_regression_solution" class="ref-link"><strong>ridge regression</strong></a>)
+                        corresponds to placing a <a href="bayesian.html"><strong>Gaussian prior</strong></a> on \(\boldsymbol{\beta}\) and computing the MAP
+                        estimate, while an \(\ell^1\) penalty
+                        (<a href="../Machine_learning/regression.html#D-lasso_regression" class="ref-link"><strong>Lasso</strong></a>) corresponds to a
+                        <a href="student.html#D-laplace" class="ref-link"><strong>Laplace prior</strong></a>. The
+                        <a href="../Machine_learning/regression.html#T-bias_variance_decomposition" class="ref-link"><strong>bias-variance decomposition</strong></a>
+                        of the ridge prediction error mirrors the split of the <a href="mle.html#D-MSE" class="ref-link"><strong>mean squared error</strong></a>
+                        into variance and squared bias, which we met with maximum likelihood estimation.
+                    </p>
+                    <p>
+                        When the Gaussian noise assumption fails, one may use generalized linear models or robust regression methods that replace the squared
+                        loss with alternatives derived from other likelihood models.
                     </p>
                 </div>
             
@@ -214,27 +245,27 @@ uses_python: false
             <section id="interactive-tool" class="section-content section-wide">
                 <h2>Interactive Statistical Regression Tool</h2>
                 <p>
-                    The tool below runs the full statistical analysis this page develops — on your own data (upload or 
-                    paste a CSV) or on the built-in samples. The coefficients are computed by the QR route from 
-                    the least-squares page, and every entry of the coefficient table is genuine inference: standard errors 
-                    from \(\hat{\sigma}^2 (X^\top X)^{-1}\) with \(\hat{\sigma}^2 = \text{SSE}/(n - p)\), 
-                    \(t\)-statistics with their two-sided \(p\)-values, and 95% confidence intervals built from the 
-                    \(t_{n-p}\) distribution — the critical value is computed for your actual sample size, not approximated 
-                    by the large-sample 1.96. The summary line reports \(R^2\), adjusted \(R^2\), and the overall 
-                    \(F\)-test of the hypothesis that every non-intercept coefficient is zero, connecting directly to the 
-                    hypothesis-testing machinery of the previous page.
+                    The tool below runs the full statistical analysis this page develops, either on uploaded or pasted CSV data or on the built-in samples. The
+                    coefficients are computed by the QR route, and every entry of the coefficient table is genuine inference: standard errors from
+                    \(\hat{\sigma}^2 (X^\top X)^{-1}\) with \(\hat{\sigma}^2 = \text{SSE}/(n - p)\) for \(p\) estimated coefficients, \(t\)-statistics with their
+                    two-sided \(p\)-values, and 95% confidence intervals built from the \(t_{n-p}\) distribution. The critical value is computed for the actual
+                    sample size, not approximated by the large-sample 1.96.
                 </p>
                 <p>
-                    The regression plot distinguishes two different 95% bands: the <strong>confidence band</strong> for the mean 
-                    response \(\mathbb{E}[Y \mid \boldsymbol{x}]\), and the wider <strong>prediction band</strong> for a new observation, 
-                    whose extra width is exactly the irreducible noise \(\sigma^2\) that no amount of data removes. 
-                    The diagnostics panel checks the Gaussian assumption that made MLE equal least squares in the first 
-                    place: the residuals-vs-fitted plot exposes nonlinearity and heteroscedasticity (try the 
-                    "Heteroscedastic" sample and watch the funnel), and the normal QQ plot puts the standardized 
-                    residuals against Gaussian quantiles (try "Outliers" and watch the tails peel off the line). 
-                    When predictors are collinear or \(n \leq p\), the tool reports that \(X^\top X\) is singular instead of 
-                    printing meaningless coefficients — the invertibility condition \(\operatorname{rank}(X) = d\) from the 
-                    proof above, enforced live.
+                    The summary line reports \(R^2\), adjusted \(R^2\), and the overall \(F\)-test of the hypothesis that every non-intercept coefficient is
+                    zero. That test applies the hypothesis-testing machinery to the model as a whole.
+                </p>
+                <p>
+                    The regression plot distinguishes two different 95% bands: the <strong>confidence band</strong> for the mean response
+                    \(\mathbb{E}[Y \mid \boldsymbol{x}]\), and the wider <strong>prediction band</strong> for a new observation. The prediction band is wider
+                    because its variance carries an extra \(\sigma^2\), the irreducible noise that no amount of data removes.
+                </p>
+                <p>
+                    The diagnostics panel checks the Gaussian assumption that made MLE equal least squares in the first place. The residuals-vs-fitted plot
+                    exposes nonlinearity and heteroscedasticity (try the "Heteroscedastic" sample and watch the funnel), and the normal QQ plot puts the
+                    standardized residuals against Gaussian quantiles (try "Outliers" and watch the tails peel off the line). When predictors are collinear or
+                    \(n \lt p\), the matrix \(X^\top X\) is singular, and the tool says so instead of printing meaningless coefficients. That check enforces the
+                    invertibility condition \(\operatorname{rank}(X) = d\) from the proof above.
                 </p>
                 
                 <div id="statistical-regression-analyzer"></div>
