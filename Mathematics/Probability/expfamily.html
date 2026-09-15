@@ -28,11 +28,11 @@ uses_python: false
                 <h2>The Exponential Family</h2>
 
                 <p>
-                    In the <a href="bayesian.html"><strong>previous chapter on Bayesian statistics</strong></a>, we saw that certain likelihood-prior pairs such 
-                    as Binomial-Beta and Normal-Normal produce posteriors in the same family as the prior. This is not a coincidence. 
-                    These distributions all belong to the <strong>exponential family</strong>, a unified framework that encompasses 
-                    the vast majority of distributions used in statistics and machine learning including the Bernoulli, Poisson, Normal, 
-                    Gamma, and Dirichlet distributions, and many others.
+                    Our treatment of <a href="bayesian.html"><strong>Bayesian statistics</strong></a> showed that certain likelihood-prior pairs such
+                    as Binomial-Beta and Normal-Normal produce posteriors in the same family as the prior. This is not a coincidence. These
+                    distributions all belong to the <strong>exponential family</strong>, a unified framework that encompasses the vast majority of
+                    distributions used in statistics and machine learning, among them the Bernoulli, Poisson, Normal, Gamma, and Dirichlet
+                    distributions.
                 </p>
 
                 <p>
@@ -43,10 +43,10 @@ uses_python: false
                     <li><strong>Conjugacy</strong>:<br>
                         Every member possesses a natural conjugate prior, ensuring tractable Bayesian updates.
                     </li>
-                    <li><strong>Efficiency</strong>:
-                        Maximum Likelihood Estimation (MLE) reduces to moment matching, significantly simplifying the optimization landscape.
+                    <li><strong>Efficiency</strong>:<br>
+                        Maximum likelihood estimation (MLE) reduces to moment matching, significantly simplifying the optimization landscape.
                     </li>
-                    <li><strong>Geometry</strong>:
+                    <li><strong>Geometry</strong>:<br>
                         The log-partition function serves as a cumulant generating function, providing a direct bridge to Fisher information and 
                         information geometry.
                     </li>
@@ -55,44 +55,54 @@ uses_python: false
                 <div class="theorem" id="D-exponential_family">
                     <span class="theorem-title">Definition: Exponential Family</span>
                     <p>
-                        The exponential family is a family of probability distributions parameterized by 
-                        <strong>natural parameters</strong>(or <strong>canonical parameters</strong>) \(\eta \in \mathbb{R}^K\) with 
-                        support over \(\mathcal{X} \subseteq \mathbb{R}^D\) such that 
+                        The exponential family is a family of probability distributions parameterized by <strong>natural parameters</strong> (or
+                        <strong>canonical parameters</strong>) \(\eta \in \mathbb{R}^K\) with support over \(\mathcal{X} \subseteq \mathbb{R}^D\) such
+                        that
                         \[
                         \begin{align*}
                         p(x \mid \eta ) &= \frac{1}{Z(\eta)} h(x) \exp\{\eta^\top \mathcal{T}(x)\}\\\\
                                         &= h(x) \exp\{\eta^\top \mathcal{T}(x) - A(\eta)\}
                         \end{align*}
                         \]
-                        where 
+                        where
                     </p>
                     <ul style="padding-left: 40px;">
-                        <li>\(h(x)\) is a <strong>base measure</strong> (or <strong>carrier measure</strong>): a function depending only on \(x\) and not on \(\eta\); often equal to \(1\).</li>
-                        <li>\(\mathcal{T}(x) \in \mathbb{R}^K\) is the <strong>sufficient statistic</strong> vector. It is called <em>sufficient</em> because the likelihood depends on \(x\) only through \(\mathcal{T}(x)\): all information in \(x\) relevant to estimating \(\eta\) is captured by \(\mathcal{T}(x)\).</li>
-                        <li>\(Z(\eta)\) is the <strong>normalization function</strong>, defined so that \(p(x \mid \eta)\) integrates to one over the support.</li>
+                        <li>\(h(x)\) is a <strong>base measure</strong> (or <strong>carrier measure</strong>): a function depending only on \(x\), not
+                            on \(\eta\), and often equal to \(1\).
+                        </li>
+                        <li>\(\mathcal{T}(x) \in \mathbb{R}^K\) is the <strong>sufficient statistic</strong> vector. It is called <em>sufficient</em>
+                            because the likelihood depends on \(x\) only through \(\mathcal{T}(x)\). All information in \(x\) relevant to estimating
+                            \(\eta\) is captured by \(\mathcal{T}(x)\).
+                        </li>
+                        <li>\(Z(\eta)\) is the <strong>normalization function</strong>, defined so that \(p(x \mid \eta)\) integrates to one over the
+                            support.
+                        </li>
                     </ul>
                     <p>
-                    Each exponential family is defined by different \(h(x)\) and \(\mathcal{T}(x)\).
+                        Each exponential family is defined by different \(h(x)\) and \(\mathcal{T}(x)\).
                     </p>
                 </div>
 
                 <p>
-                    The normalization function \(Z(\eta)\) is often referred to as the <strong>partition function</strong> in 
-                    statistical physics and machine learning. Especially, the <strong>log-partition function</strong>:
+                    The normalization function \(Z(\eta)\) is often referred to as the <strong>partition function</strong> in statistical physics and
+                    machine learning. In particular, the <strong>log-partition function</strong>:
                     \[
                      A(\eta) = \log Z(\eta)
                     \]
-                    is <strong>convex</strong> over the convex set \(\Omega = \{\eta \in \mathbb{R}^K : A(\eta) < \infty\}\), 
-                    and is <strong>strictly convex</strong> when the family is minimal. We verify these properties below 
-                    via the Hessian formula \(\nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]\). 
-                    In the context of optimization and information geometry, \(A(\eta)\) acts as a <strong>convex potential function</strong> 
-                    that links natural parameters to moment parameters.
+                    is <strong>convex</strong> over the convex set \(\Omega = \{\eta \in \mathbb{R}^K : A(\eta) \lt \infty\}\), and is
+                    <strong>strictly convex</strong> when the family is minimal. Both statements follow from the Hessian formula
+                    \(\nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]\) proved below.
+                </p>
+
+                <p>
+                    In the context of optimization and information geometry, \(A(\eta)\) acts as a <strong>convex potential function</strong> that
+                    links natural parameters to moment parameters.
                 </p>
                 
                 <div class="theorem" id="D-minimal_representation">
                     <span class="theorem-title">Definition: Minimal Representation</span>
                     <p>
-                        An exponential family is said to be <strong>minimal</strong> if there is no nonzero \(\eta \in \mathbb{R}^K\) such that 
+                        An exponential family is said to be <strong>minimal</strong> if there is no nonzero \(\eta \in \mathbb{R}^K\) such that
                         \[
                         \eta^\top \mathcal{T}(x) = \text{const}
                         \]
@@ -101,54 +111,55 @@ uses_python: false
                 </div>
 
                 <p>
-                    Equivalently, the components of the sufficient statistic vector \(\mathcal{T}(x)\) 
-                    (along with the constant function \(1\)) are <strong>linearly independent</strong> as functions of \(x\). 
-                    This property ensures the <strong>identifiability</strong> of the model: there is a unique, one-to-one mapping 
-                    between the natural parameters \(\eta\) and the resulting probability distribution.
+                    Equivalently, the components of the sufficient statistic vector \(\mathcal{T}(x)\) (along with the constant function \(1\)) are
+                    <strong>linearly independent</strong> as functions of \(x\). This property ensures the <strong>identifiability</strong> of the
+                    model. There is a unique, one-to-one mapping between the natural parameters \(\eta\) and the resulting probability distribution.
                 </p>
 
                 <div class="insight-box">
                     <h3>Math vs. ML Perspectives: Handling the Constant</h3>
                     <p>
-                        In many machine learning contexts, you may see the condition simplified to 
+                        In many machine learning contexts, the condition is simplified to
                         \[
                         \eta^\top \mathcal{T}(x) = 0.
                         \] 
-                        This assumes that the bias (constant) term has already been absorbed into the sufficient statistic vector 
-                        \(\mathcal{T}(x)\) by augmenting it with a constant \(1\).
+                        This assumes that the bias (constant) term has already been absorbed into the sufficient statistic vector \(\mathcal{T}(x)\) by
+                        augmenting it with a constant \(1\).
                     </p>
                     <p>
-                        However, in our canonical definition where the log-partition function \(A(\eta)\) and base measure \(h(x)\) 
-                        are explicitly separated, we must use the more rigorous \(\text{const}\) condition. 
-                        If \(\eta^\top \mathcal{T}(x)\) were a constant, that value would be absorbed by \(A(\eta)\), meaning multiple 
-                        \(\eta\) values could represent the same distribution. A <strong>minimal</strong> representation prevents this 
-                        redundancy, ensuring that the Fisher information matrix is strictly positive definite and the optimization surface 
-                        is well-behaved.
+                        However, in our canonical definition where the log-partition function \(A(\eta)\) and base measure \(h(x)\) are explicitly
+                        separated, we must use the more rigorous \(\text{const}\) condition. If \(\eta^\top \mathcal{T}(x)\) were a constant, that
+                        value would be absorbed by \(A(\eta)\), meaning multiple \(\eta\) values could represent the same distribution. A
+                        <strong>minimal</strong> representation prevents this redundancy, ensuring that the Fisher information matrix is strictly
+                        positive definite and the optimization surface is well-behaved.
                     </p>
                 </div>
 
                 <p>
-                    A common example of a non-minimal representation is the \(K\)-class <strong>multinomial distribution</strong>. 
-                    Because the probabilities must sum to one (\(\sum p_i = 1\)), the natural parameters are over-specified. 
-                    While we can work with this redundant form (as often done in Softmax regression), we can always reparameterize 
-                    it into a minimal representation using \(K-1\) independent components to restore unique identifiability.
+                    A common example of a non-minimal representation is the \(K\)-class <strong>multinomial distribution</strong>. Because the
+                    probabilities must sum to one (\(\sum p_i = 1\)), the natural parameters are over-specified. While we can work with this redundant
+                    form (as often done in Softmax regression), we can always reparameterize it into a minimal representation using \(K-1\) independent
+                    components to restore unique identifiability.
                 </p>
 
                
                 <p>
-                    Let \(\eta = f(\phi)\), where \(\phi \in \mathbb{R}^M\) is some other possibly smaller set of parameters (\(M \leq K\)), and then 
+                    Let \(\eta = f(\phi)\), where \(\phi \in \mathbb{R}^M\) is some other possibly smaller set of parameters (\(M \leq K\)), and then
                     \[
                     p(x \mid \phi ) = h(x) \exp\{ f(\phi)^\top \mathcal{T}(x) - A(f(\phi))\}.
                     \]
-                    If \(M < K\) and the mapping \(\phi \to \eta\) is nonlinear, it is said to be a <strong>curved exponential family</strong>.
+                    If \(M \lt K\) and the mapping \(\phi \to \eta\) is nonlinear, it is said to be a <strong>curved exponential family</strong>.
                 </p>
 
                 <p>
-                    If \(\eta = f(\phi) = \phi\), the model is in <strong>canonical form</strong> and in addition, if \(\mathcal{T} =x\), 
-                    we call it a <strong>natural exponential family(NEF)</strong>: 
+                    If \(\eta = f(\phi) = \phi\), the model is in <strong>canonical form</strong> and in addition, if \(\mathcal{T} =x\), we call it a
+                    <strong>natural exponential family (NEF)</strong>:
                     \[
                     p(x \mid \eta ) =  h(x) \exp\{\eta^\top x - A(\eta)\}.
                     \]
+                </p>
+
+                <p>
                     Finally, we define the <strong>moment parameters</strong> as follows:
                     \[
                     m = \mathbb{E}[\mathcal{T}(x)] \in \mathbb{R}^K.
@@ -156,7 +167,7 @@ uses_python: false
                 </p>
 
                 <div class="proof">
-                    <span class="proof-title">Example 1:  Bernoulli Distribution</span>
+                    <span class="proof-title">Example 1: Bernoulli Distribution</span>
 
                     <p>
                     \[
@@ -166,7 +177,7 @@ uses_python: false
                                            &= \exp\{\mathcal{T}(x)^\top \eta\}
                     \end{align*}
                     \]
-                    where 
+                        where
                     </p>
 
                     <ul style="padding-left: 40px;">
@@ -176,14 +187,14 @@ uses_python: false
                     </ul>
                     
                     <p>
-                        In this representation, the components \(\mathbb{1}\{x=1\}\) and \(\mathbb{1}\{x=0\}\) of \(\mathcal{T}(x)\) satisfy 
-                        \(\mathbb{1}\{x=1\} + \mathbb{1}\{x=0\} = 1\) for all \(x\) in the support, violating the minimality condition with the 
-                        nonzero vector \(\eta = (1, 1)\). Consequently, shifting \(\eta\) by any vector parallel to \((1, 1)\) yields the same 
-                        distribution, so \(\eta\) is not uniquely determined. To restore uniqueness, we use a <strong>minimal representation</strong>:
+                        In this representation, the components \(\mathbb{1}\{x=1\}\) and \(\mathbb{1}\{x=0\}\) of \(\mathcal{T}(x)\) satisfy
+                        \(\mathbb{1}\{x=1\} + \mathbb{1}\{x=0\} = 1\) for all \(x\) in the support, violating the minimality condition with the nonzero
+                        vector \(v = (1, 1)\). Consequently, shifting \(\eta\) by any multiple of \(v\) yields the same distribution, so \(\eta\) is
+                        not uniquely determined. To restore uniqueness, we use a <strong>minimal representation</strong>:
                         \[
                         \operatorname{Ber}(x \mid \mu) = \exp\left\{x \log \left(\frac{\mu}{1-\mu}\right) + \log (1-\mu)\right\}
                         \]
-                        where 
+                        where
                     </p>
 
                     <ul style="padding-left: 40px;">
@@ -195,12 +206,16 @@ uses_python: false
                 </div>
 
                 <p>
-                    The Bernoulli example reveals a fundamental connection to classification models. The mean 
-                    parameter \(\mu\) can be recovered from the canonical parameter \(\eta\) via:
+                    The Bernoulli example reveals a fundamental connection to classification models. The mean parameter \(\mu\) can be recovered from
+                    the canonical parameter \(\eta\) via:
                     \[
-                    \mu = \sigma(\eta) = \frac{1}{1+e^{-\eta}} \text{(This is a logistic function.)}
+                    \mu = \sigma(\eta) = \frac{1}{1+e^{-\eta}}.
                     \]
-                    Also, you might notice that 
+                    Here \(\sigma(\cdot)\) is the logistic function.
+                </p>
+
+                <p>
+                    A direct computation gives
                     \[
                     \begin{align*}
                     \frac{dA}{d \eta} &= \frac{d}{d\eta} \log(1+ e^{\eta}) \\\\
@@ -212,30 +227,60 @@ uses_python: false
                 </p>
 
                 <p>
-                    In general, the log partition function \(A(\eta)\) acts as the <strong>cumulant generating function</strong> for 
-                    the sufficient statistics \(\mathcal{T}(x)\). In other words, the derivatives of \(A(\eta)\) generate all the 
-                    <strong>cumulants</strong> of \(\mathcal{T}(x)\). The first two are particularly important.
+                    In general, the log-partition function \(A(\eta)\) acts as the <strong>cumulant generating function</strong> for the sufficient
+                    statistics \(\mathcal{T}(x)\). In other words, the derivatives of \(A(\eta)\) generate all the <strong>cumulants</strong> of
+                    \(\mathcal{T}(x)\). The first two are particularly important.
                 </p>
 
                 <div class="theorem" id="T-cumulants_from_log_partition">
                     <span class="theorem-title">Theorem: Cumulants from the Log-Partition Function</span>
                     <p>
-                        For an exponential family with log-partition function \(A(\eta)\), the gradient and Hessian of \(A\) recover the first two cumulants of the sufficient statistic vector:
+                        Let \(\eta\) lie in the interior of \(\Omega = \{\eta \in \mathbb{R}^K : A(\eta) \lt \infty\}\). Then the gradient and Hessian
+                        of the log-partition function recover the first two cumulants of the sufficient statistic vector:
                         \[
-                        \nabla A(\eta) = \mathbb{E}[\mathcal{T}(x)], \qquad \nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)].
+                        \nabla A(\eta) = \mathbb{E}[\mathcal{T}(x)], \quad \nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)].
                         \]
                     </p>
                 </div>
 
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Write \(Z(\eta) = \int h(x) \exp\{\eta^\top \mathcal{T}(x)\}\,dx\), so that \(A(\eta) = \log Z(\eta)\). For \(\eta\) in the
+                        interior of \(\Omega\) the integral converges on a neighbourhood of \(\eta\), and we take for granted that differentiation may
+                        be carried out under the integral sign there. Differentiating once gives
+                        \[
+                        \begin{align*}
+                        \nabla A(\eta) &= \frac{\nabla Z(\eta)}{Z(\eta)} \\\\
+                                       &= \frac{1}{Z(\eta)} \int \mathcal{T}(x) h(x) \exp\{\eta^\top \mathcal{T}(x)\}\,dx \\\\
+                                       &= \int \mathcal{T}(x)\, p(x \mid \eta)\,dx = \mathbb{E}[\mathcal{T}(x)].
+                        \end{align*}
+                        \]
+                        Differentiating a second time and applying the quotient rule to \(\nabla Z / Z\),
+                        \[
+                        \begin{align*}
+                        \nabla^2 A(\eta) &= \frac{\nabla^2 Z(\eta)}{Z(\eta)} - \frac{\nabla Z(\eta)\,\nabla Z(\eta)^\top}{Z(\eta)^2} \\\\
+                                         &= \mathbb{E}[\mathcal{T}(x)\mathcal{T}(x)^\top] - \mathbb{E}[\mathcal{T}(x)]\,\mathbb{E}[\mathcal{T}(x)]^\top \\\\
+                                         &= \operatorname{Cov}[\mathcal{T}(x)].
+                        \end{align*}
+                        \]
+                        The same computation applies verbatim to a discrete support, with the integral replaced by a sum over the support.
+                    </p>
+                </div>
+
                 <p>
-                    The first identity says the gradient of \(A\) returns the <strong>moment parameters</strong> \(m := \mathbb{E}[\mathcal{T}(x)]\) (sometimes denoted \(\mu\)). 
-                    The second identity says the Hessian of \(A\) returns the covariance of the sufficient statistics. As a consequence, for a <strong>minimal</strong> exponential family, the Hessian is <strong>strictly positive definite</strong>, 
-                    and thus \(A(\eta)\) is <strong>strictly convex</strong> in \(\eta\). 
-                    This convexity guarantees that the MLE (derived in the next section) has a <strong>unique</strong> solution.
+                    The first identity says the gradient of \(A\) returns the <strong>moment parameters</strong> \(m := \mathbb{E}[\mathcal{T}(x)]\).
+                    The second identity says the Hessian of \(A\) returns the covariance of the sufficient statistics.
                 </p>
 
                 <p>
-                    We now verify these properties for the two most important continuous distributions in machine learning.
+                    As a consequence, for a <strong>minimal</strong> exponential family, the Hessian is <strong>strictly positive definite</strong>,
+                    and thus \(A(\eta)\) is <strong>strictly convex</strong> in \(\eta\). This convexity guarantees that the MLE (derived in the next
+                    section) is <strong>unique</strong> whenever it exists.
+                </p>
+
+                <p>
+                    We now write two of the most widely used continuous distributions in machine learning in exponential family form.
                 </p>
 
                 <div class="proof">
@@ -263,26 +308,26 @@ uses_python: false
                         \[
                         m = \begin{bmatrix} \mu \\ \mu^2 + \sigma^2 \end{bmatrix}.
                         \]
-                        <strong>Note.</strong> If \(\sigma = 1\), the distribution becomes a natural exponential family such that 
+                        <strong>Note.</strong> If \(\sigma = 1\), the distribution becomes a natural exponential family such that
                     </p>
 
                     <ul style="padding-left: 40px;">
                         <li>\(\mathcal{T}(x) = x\)</li>
                         <li>\(\eta = \mu\)</li>
                         <li>\(A(\eta) = \frac{\mu^2}{2} = \frac{\eta^2}{2}\)</li>
-                        <li>\(h(x) = \frac{1}{\sqrt{2\pi}}\exp\{-\frac{x^2}{2}\} = \mathcal{N}(x \mid 0, 1)\) : Not constant.</li>
+                        <li>\(h(x) = \frac{1}{\sqrt{2\pi}}\exp\{-\frac{x^2}{2}\} = \mathcal{N}(x \mid 0, 1)\), which is not constant.</li>
                     </ul>
                 </div>
 
                 <p>
-                    The univariate case extends naturally to higher dimensions. 
-                    The <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> introduces the 
-                    <strong>information form</strong> parameterization, which is the natural exponential family 
-                    representation for Gaussians and plays a central role in graphical models and message passing algorithms.
+                    The univariate case extends naturally to higher dimensions. The
+                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> introduces the
+                    <strong>information form</strong> parameterization, which is the natural exponential family representation for Gaussians and plays
+                    a central role in graphical models and message passing algorithms.
                 </p>
 
                 <div class="proof">
-                    <span class="proof-title">Example 3: Multivariate Normal Distribution(MVN)</span>
+                    <span class="proof-title">Example 3: Multivariate Normal Distribution (MVN)</span>
 
                     <p>
                         \[
@@ -292,11 +337,11 @@ uses_python: false
                                               &= c \exp\left \{x^\top \Sigma^{-1}\mu -\frac{1}{2}x^\top \Sigma^{-1}x \right\}
                         \end{align*}
                         \]
-                        where 
+                        where
                         \[
                         c = \frac{\exp \left\{-\frac{1}{2}\mu^\top \Sigma^{-1} \mu\right\}}{(2\pi)^{\frac{D}{2}}\sqrt{\det(\Sigma)}}
                         \]
-                        and \(\Sigma\) is a covariance matrix. 
+                        and \(\Sigma\) is a covariance matrix.
                     </p>
 
                     <p>
@@ -304,7 +349,7 @@ uses_python: false
                         \[
                         \mathcal{N}_c (x \mid \xi, \Lambda) = c' \exp \left\{x^\top \xi - \frac{1}{2}x^\top \Lambda x \right\}
                         \]
-                        where 
+                        where
                     </p>
 
                     <ul style="padding-left: 40px;">
@@ -337,12 +382,18 @@ uses_python: false
                     </ul>
 
                     <p>
-                        The moment parameters are given by: 
+                        The moment parameters are given by:
                         \[
                         m = [\mu ; \operatorname{vec}(\mu\mu^\top + \Sigma)].
                         \]
-                        <strong>Note.</strong> This form is <strong>non-minimal</strong> because the symmetry \(\Lambda_{ij} = \Lambda_{ji}\) of the precision matrix imposes a linear constraint on \(\operatorname{vec}(\Lambda)\): the natural parameter \(\eta\) is over-specified by \(D(D-1)/2\) redundant components. A minimal representation would use only the upper-triangular (or lower-triangular) part of \(\Lambda\). However, in practice, the non-minimal representation is easier to plug into algorithms 
-                        and stable for certain operations, while the minimal form is preferred for mathematical derivations. 
+                    </p>
+
+                    <p>
+                        <strong>Note.</strong> This form is <strong>non-minimal</strong> because the symmetry \(\Lambda_{ij} = \Lambda_{ji}\) of the
+                        precision matrix imposes a linear constraint on \(\operatorname{vec}(\Lambda)\). The natural parameter \(\eta\) is
+                        over-specified by \(D(D-1)/2\) redundant components. A minimal representation would use only the upper-triangular (or
+                        lower-triangular) part of \(\Lambda\). However, in practice, the non-minimal representation is easier to plug into algorithms
+                        and stable for certain operations, while the minimal form is preferred for mathematical derivations.
                     </p>
                 </div>
             </section>
@@ -351,14 +402,15 @@ uses_python: false
                 <h2>MLE for the Exponential Family</h2>
 
                 <p>
-                    One of the most elegant consequences of the exponential family structure is that 
-                    <a href="mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation</strong></a> reduces to a simple condition: 
-                    matching empirical moments to theoretical moments. This is because the gradient of the log-likelihood involves only 
-                    the sufficient statistics and the log-partition function.
+                    One of the most useful consequences of the exponential family structure is that
+                    <a href="mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation</strong></a> reduces to a simple condition:
+                    matching empirical moments to theoretical moments. This is because the gradient of the log-likelihood involves only the sufficient
+                    statistics and the log-partition function.
                 </p>
 
                 <p>
-                    Assume \(\mathcal{D} = \{x_1, \ldots, x_N\}\) is an i.i.d. sample from an exponential family distribution with natural parameter \(\eta\). The likelihood is then given by: 
+                    Assume \(\mathcal{D} = \{x_1, \ldots, x_N\}\) is an i.i.d. sample from an exponential family distribution with natural parameter
+                    \(\eta\). The likelihood is then given by:
                     \[ 
                     \begin{align*}
                     p(\mathcal{D} \mid \eta) 
@@ -366,14 +418,14 @@ uses_python: false
                     &\propto \exp\{\eta^\top \mathcal{T}(\mathcal{D}) - N A(\eta)\}
                     \end{align*}
                     \]
-                    where, dropping the \(\eta\)-independent factor \(\prod_n h(x_n)\), we define the <strong>aggregated sufficient statistic</strong>: 
+                    where, dropping the \(\eta\)-independent factor \(\prod_n h(x_n)\), we define the <strong>aggregated sufficient statistic</strong>:
                     \[
                     \mathcal{T}(\mathcal{D}) := \sum_{n=1}^N \mathcal{T}(x_n) \in \mathbb{R}^K.
                     \]
                 </p>
 
                 <p>
-                    The derivative of the log partition function yields the expected value of the sufficient statistic vector:
+                    The derivative of the log-partition function yields the expected value of the sufficient statistic vector:
                     \[
                     \begin{align*}
                     \nabla_{\eta} \log p(\mathcal{D} \mid \eta) 
@@ -381,50 +433,68 @@ uses_python: false
                     &= \mathcal{T}(\mathcal{D}) - N \mathbb{E}[\mathcal{T}(x)],
                     \end{align*}
                     \]
-                    where in the second line we used the <a href="#T-cumulants_from_log_partition" class="ref-link">first-cumulant identity</a> \(\nabla A(\eta) = \mathbb{E}[\mathcal{T}(x)]\) established in the previous section.
+                    where in the second line we used the <a href="#T-cumulants_from_log_partition" class="ref-link">first cumulant identity</a>
+                    \(\nabla A(\eta) = \mathbb{E}[\mathcal{T}(x)]\) established in the previous section.
                 </p>
 
                 <p>
-                    Setting this gradient to zero, we obtain the MLE \(\hat{\eta}\), characterized by 
+                    Setting this gradient to zero, we obtain the MLE \(\hat{\eta}\), characterized by
                     \[
                     \mathbb{E}_{\hat{\eta}}[\mathcal{T}(x)] = \frac{1}{N}\sum_{n=1}^N \mathcal{T}(x_n).
                     \]
-                    The left-hand side is the theoretical expectation of \(\mathcal{T}(x)\) under the model with natural parameter \(\hat{\eta}\); the right-hand side is the empirical average of the sufficient statistics. This principle is called <strong>moment matching</strong>. 
+                    The left-hand side is the theoretical expectation of \(\mathcal{T}(x)\) under the model with natural parameter \(\hat{\eta}\). The
+                    right-hand side is the empirical average of the sufficient statistics. This principle is called <strong>moment matching</strong>.
                 </p>
 
                 <p>
-                    For example, consider the univariate Gaussian \(\mathcal{N}(\mu, \sigma^2)\) with \(\mathcal{T}(x) = [x, x^2]^\top\) (Example 2 above). The moment matching condition becomes 
-                    \[
-                    \mathbb{E}_{\hat{\eta}}[x] = \bar{x}, \qquad \mathbb{E}_{\hat{\eta}}[x^2] = \overline{x^2} := \frac{1}{N}\sum_{n=1}^N x_n^2.
-                    \]
-                    Using \(\mathbb{E}[x] = \mu\) and \(\mathbb{E}[x^2] = \mu^2 + \sigma^2\), we obtain the closed-form MLE 
-                    \[
-                    \hat{\mu}_{\text{MLE}} = \bar{x}, \qquad \widehat{\sigma^2}_{\text{MLE}} = \overline{x^2} - \bar{x}^2 = \frac{1}{N}\sum_{n=1}^N (x_n - \bar{x})^2.
-                    \]
-                </p>
-
-                 <p>
-                    In <a href="variational_inference.html"><strong>Variational Inference (VI)</strong></a>, 
-                    approximating an intractable posterior with an exponential family distribution 
-                    is standard practice: the moment matching condition from MLE generalizes to moment matching between the true and approximate 
-                    posteriors. The log-partition function \(A(\eta)\) reappears as the <strong>Fenchel conjugate</strong> of the negative entropy, 
-                    connecting the exponential family to convex duality and <strong>Information Geometry</strong>.
+                    Uniqueness does not give existence. A solution exists only when the empirical average on the right is an interior point of the set
+                    of attainable moments. For a Bernoulli sample in which every observation is \(0\), for instance, the condition forces
+                    \(\hat{\mu} = 0\), and no finite \(\hat{\eta}\) satisfies it.
                 </p>
 
                 <p>
-                    The exponential family structure reveals that the log-partition function \(A(\eta)\) encodes all distributional information 
-                    through its derivatives. The support \(\mathcal{X}\) is fixed and does not vary with \(\eta\), so the 
-                    <a href="fisher_info.html#T-fim_hessian_form" class="ref-link"><strong>expected negative Hessian form</strong></a> of the 
-                    <a href="fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher information matrix</strong></a> is available. 
-                    Differentiating \(\log p(x \mid \eta) = \log h(x) + \eta^\top \mathcal{T}(x) - A(\eta)\) twice in \(\eta\) leaves 
-                    \(\nabla_\eta^2 \log p(x \mid \eta) = -\nabla^2 A(\eta)\), a quantity carrying no dependence on \(x\), so taking the 
-                    expectation changes nothing and \(F(\eta) = \nabla^2 A(\eta)\). The <a href="#T-cumulants_from_log_partition" class="ref-link">second cumulant identity</a> 
-                    \(\nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]\) established above is therefore a statement about the Fisher information itself, 
-                    which measures how sensitive the distribution is to changes in the natural parameter and governs the geometry of the statistical 
-                    model — the subject of the next chapter.
+                    For example, consider the univariate Gaussian \(\mathcal{N}(\mu, \sigma^2)\) with \(\mathcal{T}(x) = [x, x^2]^\top\) (Example 2
+                    above). The moment matching condition becomes
+                    \[
+                    \mathbb{E}_{\hat{\eta}}[x] = \bar{x}, \quad \mathbb{E}_{\hat{\eta}}[x^2] = \overline{x^2} := \frac{1}{N}\sum_{n=1}^N x_n^2.
+                    \]
+                </p>
+
+                <p>
+                    Using \(\mathbb{E}[x] = \mu\) and \(\mathbb{E}[x^2] = \mu^2 + \sigma^2\), we obtain the closed-form MLE
+                    \[
+                    \hat{\mu}_{\text{MLE}} = \bar{x}, \quad \widehat{\sigma^2}_{\text{MLE}} = \overline{x^2} - \bar{x}^2 = \frac{1}{N}\sum_{n=1}^N (x_n - \bar{x})^2.
+                    \]
+                </p>
+
+                <p>
+                    In <a href="variational_inference.html"><strong>Variational Inference (VI)</strong></a>, approximating an intractable posterior
+                    with an exponential family distribution is standard practice. Minimizing \(D_{\mathbb{KL}}(p \| q)\) over an exponential family
+                    \(q\) reproduces the moment matching condition of this section, with the expected sufficient statistics of \(p\) in place of the
+                    empirical average. Standard variational inference minimizes the reverse divergence \(D_{\mathbb{KL}}(q \| p)\), whose stationary
+                    condition is a different one. The log-partition function \(A(\eta)\) reappears as the <strong>Fenchel conjugate</strong> of the
+                    negative entropy, connecting the exponential family to convex duality and <strong>Information Geometry</strong>.
+                </p>
+
+                <p>
+                    The exponential family structure reveals that the log-partition function \(A(\eta)\) encodes all distributional information through
+                    its derivatives. The support \(\mathcal{X}\) is fixed and does not vary with \(\eta\), so the
+                    <a href="fisher_info.html#T-fim_hessian_form" class="ref-link"><strong>expected negative Hessian form</strong></a> of the
+                    <a href="fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher information matrix</strong></a> is
+                    available.
+                </p>
+
+                <p>
+                    Differentiating \(\log p(x \mid \eta) = \log h(x) + \eta^\top \mathcal{T}(x) - A(\eta)\) twice in \(\eta\) leaves
+                    \(\nabla_\eta^2 \log p(x \mid \eta) = -\nabla^2 A(\eta)\), a quantity carrying no dependence on \(x\), so taking the expectation
+                    changes nothing and \(F(\eta) = \nabla^2 A(\eta)\). The
+                    <a href="#T-cumulants_from_log_partition" class="ref-link">second cumulant identity</a>
+                    \(\nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]\) established above is therefore a statement about the Fisher information
+                    itself, which measures how sensitive the distribution is to changes in the natural parameter and governs the geometry of the
+                    statistical model. That geometry is the subject of the next page.
                 </p>
             </section>
 
         </div>  
-</body>
+    </body>
 </html>
