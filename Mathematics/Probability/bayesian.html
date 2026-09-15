@@ -29,57 +29,61 @@ uses_python: false
                 <h2>Bayesian Inference</h2>
 
                  <p>
-                    Our discussion of <a href="mle.html"><strong>maximum likelihood estimation</strong></a> developed a frequentist procedure
-                    for fitting parameters to data. Our treatment of <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a>
-                    then introduced both frequentist confidence intervals and Bayesian credible intervals as ways to quantify uncertainty. 
-                    The credible interval example there gave a first glimpse of the Bayesian approach. It treated the parameter as a
-                    random variable and computed a posterior via a conjugate prior. We now develop the Bayesian framework systematically.
+                    Our discussion of <a href="mle.html"><strong>maximum likelihood estimation</strong></a> developed a frequentist procedure for fitting
+                    parameters to data. Our treatment of <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a> then introduced both
+                    frequentist confidence intervals and Bayesian credible intervals as ways to quantify uncertainty. The credible interval example there gave a
+                    first glimpse of the Bayesian approach. It treated the parameter as a random variable and computed a posterior via a conjugate prior. We now
+                    develop the Bayesian framework systematically.
                 </p>
 
                 <p>
-                    Recall the core idea. The unknown parameter \(\theta\) is treated as a <strong>random variable</strong> with a probability
-                    distribution, and the observed data \(\mathcal{D}\) are considered fixed. Prior knowledge or uncertainty about \(\theta\) 
-                    is encoded in a <strong>prior distribution</strong> \(p(\theta)\), which is updated after observing data to produce a 
-                    <strong>posterior distribution</strong> \(p(\theta \mid \mathcal{D})\) via <a href="basic.html#T-bayes_theorem" class="ref-link"><strong>Bayes' theorem</strong></a>:
+                    Recall the core idea. The unknown parameter \(\theta\) is treated as a <strong>random variable</strong> with a probability distribution, and
+                    the observed data \(\mathcal{D}\) are considered fixed. Prior knowledge or uncertainty about \(\theta\) is encoded in a
+                    <strong>prior distribution</strong> \(p(\theta)\), which is updated after observing data to produce a <strong>posterior distribution</strong>
+                    \(p(\theta \mid \mathcal{D})\) via <a href="basic.html#T-bayes_theorem" class="ref-link"><strong>Bayes' theorem</strong></a>:
                     \[
                     p(\theta \mid \mathcal{D}) = \frac{p(\mathcal{D} \mid \theta)\,p(\theta)}{p(\mathcal{D})}.
                     \]
-                    Let us now examine each component in detail:
+                </p>
+                <p>
+                    Our statement of Bayes' theorem is for a finite partition of the sample space into events. The display above is its density form, in which
+                    \(\theta\) ranges over a continuum, and we take that analogue for granted here. Let us now examine each component in detail:
                 </p>
 
                 <ol style="padding-left: 40px;">
                     <li><strong>Prior distribution</strong> \(p(\theta)\):<br>
                         <p>
-                            Encodes our belief about the parameters \(\theta\) before observing any data. 
-                            It captures prior knowledge, domain expertise, or initial uncertainty through a specific probability distribution.
+                            Encodes our belief about the parameters \(\theta\) before observing any data. It captures prior knowledge, domain expertise, or
+                            initial uncertainty through a specific probability distribution.
                         </p>  
                     </li> 
                     
                     <li><strong>Likelihood</strong> \(p(\mathcal{D} \mid \theta)\):<br>
                         <p>
                             Quantifies how well a specific value of \(\theta\) explains the observed data \(\mathcal{D}\). Formally it is the conditional
-                            distribution of the data given the parameter. As discussed in our treatment of <a href="mle.html#D-likelihood_function" class="ref-link"><strong>maximum likelihood estimation</strong></a>, 
-                            once \(\mathcal{D}\) is fixed by observation, this quantity is reinterpreted as a function of \(\theta\).
+                            distribution of the data given the parameter. As discussed in our treatment of the
+                            <a href="mle.html#D-likelihood_function" class="ref-link"><strong>likelihood function</strong></a>, once \(\mathcal{D}\) is fixed by
+                            observation, this quantity is reinterpreted as a function of \(\theta\).
                         </p>
                     </li>
                     
                     <li><strong>Marginal likelihood</strong> (or <strong>evidence</strong>) \(p(\mathcal{D})\):<br>
                         <p>
-                            Serves as a normalization constant that ensures the posterior integrates to one. 
-                            During parameter estimation it can often be ignored, since the posterior is determined up to proportionality by the prior-likelihood product. 
-                            However, it plays a central role in <strong>model selection</strong> via the Bayes factor, and explicit closed-form expressions become available 
-                            for conjugate models, as we will see below.
+                            Serves as a normalization constant that ensures the posterior integrates to one. During parameter estimation it can often be ignored,
+                            since the posterior is determined up to proportionality by the prior-likelihood product. However, it plays a central role in
+                            <strong>model selection</strong> via the Bayes factor, and explicit closed-form expressions become available for conjugate models, as
+                            we will see below.
                         </p>
                         <p>
-                            For continuous parameters, marginal likelihood is computed by integrating over all possible values of \(\theta\):  
+                            For continuous parameters, the marginal likelihood is computed by integrating over all possible values of \(\theta\):
                             \[
                             p(\mathcal{D}) = \int p(\theta')p(\mathcal{D} \mid \theta') \, d\theta'.
                             \]
-                            In the integral for the marginal likelihood, we use \(\theta'\) instead of \(\theta\) to clarify that 
-                            the integration is over the entire parameter space, not a specific parameter. 
+                            In the integral for the marginal likelihood, we use \(\theta'\) instead of \(\theta\) to clarify that the integration is over the
+                            entire parameter space, not a specific parameter.
                         </p>
                         <p>
-                            For discrete  parameters, marginal likelihood is given by:
+                            For discrete parameters, the marginal likelihood is given by:
                             \[
                             p(\mathcal{D}) = \sum_{\theta'} p(\theta')p(\mathcal{D} \mid \theta').
                             \]
@@ -93,27 +97,26 @@ uses_python: false
                 <h2>Conjugate Prior</h2>
 
                 <p>
-                    One of the main challenges in Bayesian inference is choosing an appropriate prior. In general, finding the 
-                    exact normalizing constant of the posterior requires evaluating the integral in the marginal likelihood, which 
-                    is often intractable. What if there are families of priors for which the posterior has a known closed form 
-                    without this difficulty?
+                    One of the main challenges in Bayesian inference is choosing an appropriate prior. In general, finding the exact normalizing constant of the
+                    posterior requires evaluating the integral in the marginal likelihood, which is often intractable. What if there are families of priors for
+                    which the posterior has a known closed form without this difficulty?
                 </p>
 
                 <div class="theorem" id="D-conjugate_prior">
                     <span class="theorem-title">Definition: Conjugate Prior</span>
                     <p>
-                        A prior \(p(\theta) \in \mathcal{F}\) is said to be a <strong>conjugate prior</strong> for a likelihood function 
-                        \(p(\mathcal{D} \mid \theta)\) if the posterior is in the same parameterized family as the prior: 
+                        Let \(\mathcal{F}\) be a parameterized family of distributions on the parameter space. A prior \(p(\theta) \in \mathcal{F}\) is said to be
+                        a <strong>conjugate prior</strong> for a likelihood function \(p(\mathcal{D} \mid \theta)\) if, for every possible observation
+                        \(\mathcal{D}\), the posterior lies in the same family as the prior:
                         \[
-                        p(\theta \mid \mathcal{D}) \in \mathcal{F}. 
+                        p(\theta \mid \mathcal{D}) \in \mathcal{F}.
                         \]
                     </p>
                 </div>
 
                 <p>
-                    The notion of conjugacy is defined relative to a particular parametric family \(\mathcal{F}\) and a likelihood function. 
-                    Familiar conjugate pairs will be derived in the examples below. They include Beta-Binomial, Normal-Normal with
-                    known variance, and Inverse-Gamma-Normal with known mean. The abstract definition above is best understood through these concrete instances.
+                    Familiar conjugate pairs will be derived in the examples below. They include Beta-Binomial, Normal-Normal with known variance, and
+                    Inverse-Gamma-Normal with known mean. The abstract definition above is best understood through these concrete instances.
                 </p>
 
                 <p>
@@ -123,12 +126,12 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Example 1: Beta-Binomial Model</span>
                     <p>
-                        Consider tossing a coin \(N\) times. Let \(\theta \in [0, 1]\) be a chance of getting head. We record the outcomes as 
+                        Consider tossing a coin \(N\) times. Let \(\theta \in [0, 1]\) be a chance of getting head. We record the outcomes as
                         \(\mathcal{D} = \{y_n \in \{0, 1\} : n = 1, \ldots, N\}\). We assume the data are iid.
                     </p>
 
                     <p>
-                        If we consider a sequence of coin tosses, the <strong>likelihood</strong> can be written as a Bernoulli likelihood model: 
+                        If we consider a sequence of coin tosses, the <strong>likelihood</strong> can be written as a Bernoulli likelihood model:
                         \[
                         \begin{align*}
                         p(\mathcal{D} \mid \theta) &= \prod_{n = 1}^N \theta^{y_n}(1 - \theta)^{1-y_n} \\\\
@@ -139,11 +142,11 @@ uses_python: false
                     </p>
 
                     <p>
-                        Equivalently, since the two models differ only by a combinatorial factor that does not depend on \(\theta\), we can summarize the data 
-                        via the head count \(y = N_1\) and use the Binomial likelihood: 
+                        Equivalently, since the two models differ only by a combinatorial factor that does not depend on \(\theta\), we can summarize the data via
+                        the head count \(y = N_1\) and use the Binomial likelihood:
                         \[
                         \begin{align*}
-                        p(\mathcal{D} \mid \theta) &= \operatorname{Bin}(y \mid N, \theta)  \\\\
+                        p(y \mid N, \theta) &= \operatorname{Bin}(y \mid N, \theta)  \\\\
                                                 &= \binom{N}{y} \theta^y (1 - \theta)^{N - y} \\\\
                                                 &\propto  \theta^y (1 - \theta)^{N - y}.
                         \end{align*}
@@ -152,29 +155,31 @@ uses_python: false
                     </p>
 
                     <p>
-                        Next, we have to specify a <strong>prior</strong>. If we know nothing about the parameter, an 
-                        <strong>uninformative prior</strong> can be used:
+                        Next, we have to specify a <strong>prior</strong>. If we know nothing about the parameter, an <strong>uninformative prior</strong> can be
+                        used:
                         \[
                         p(\theta) = \operatorname{Unif}(\theta \mid 0, 1).
                         \]
-                        However, in this example, using the <a href="gamma.html#D-beta_distribution" class="ref-link"><strong>Beta distribution</strong></a>, 
-                        we can represent the prior as follows:
+                    </p>
+                    <p>
+                        However, in this example, using the <a href="gamma.html#D-beta_distribution" class="ref-link"><strong>Beta distribution</strong></a>, we
+                        can represent the prior as follows:
                         \[
                         \begin{align*}
                         p(\theta) = \operatorname{Beta}(\theta \mid a, b) &= \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1} \tag{1} \\\\
                                                                 &\propto \theta^{a-1}(1-\theta)^{b-1}
                         \end{align*}
                         \]
-                        where \(a, b > 0\) are usually called hyper-parameters.(Our main parameter is \(\theta\).)
+                        where \(a, b \gt 0\) are usually called hyper-parameters. (Our main parameter is \(\theta\).)
                     </p>
 
                     <p>
-                        <strong>Note.</strong> If \(a = b = 1\), we get the uninformative prior. 
+                        <strong>Note.</strong> If \(a = b = 1\), we get the uninformative prior.
                     </p>
 
                     <p>
-                        Applying Bayes' theorem and absorbing the marginal likelihood \(p(\mathcal{D})\) into the normalization (since it does not depend on \(\theta\)), 
-                        the <strong>posterior</strong> is proportional to the product of the likelihood and the prior:
+                        Applying Bayes' theorem and absorbing the marginal likelihood \(p(\mathcal{D})\) into the normalization (since it does not depend on
+                        \(\theta\)), the <strong>posterior</strong> is proportional to the product of the likelihood and the prior:
                         \[
                         \begin{align*}
                         p(\theta \mid \mathcal{D}) &\propto [\theta^{y}(1 - \theta)^{N-y}] \cdot [\theta^{a-1}(1-\theta)^{b-1}] \\\\
@@ -183,29 +188,31 @@ uses_python: false
                                                 &= \frac{\Gamma(a+b+N)}{\Gamma(a+y)\Gamma(b+N-y)}\theta^{a+y-1}(1-\theta)^{b+N-y-1}. \tag{2}
                         \end{align*}
                         \]
-                        Here, the posterior has the same functional form as the prior. Thus, the beta distribution is the 
-                        <strong>conjugate prior</strong> for the binomial distribution. 
+                        Here, the posterior has the same functional form as the prior. Thus, the beta distribution is the <strong>conjugate prior</strong> for the
+                        binomial distribution.
                     </p>
 
                     <p>
-                        Once we got the posterior distribution, for example, we can use the <strong>posterior mean</strong> \(\bar{\theta}\) as a point estimate of \(\theta\). 
-                        Since the posterior is \(\operatorname{Beta}(\theta \mid a+y, \, b+N-y)\), its mean is given by the standard formula for the 
-                        <a href="gamma.html#D-beta_distribution" class="ref-link"><strong>Beta distribution</strong></a>:
+                        Once we have the posterior distribution, for example, we can use the <strong>posterior mean</strong> \(\bar{\theta}\) as a point estimate
+                        of \(\theta\). Since the posterior is \(\operatorname{Beta}(\theta \mid a+y, \, b+N-y)\), its mean is given by the standard formula for
+                        the <a href="gamma.html#D-beta_distribution" class="ref-link"><strong>Beta distribution</strong></a>:
                         \[
                         \bar{\theta} = \mathbb{E}[\theta \mid \mathcal{D}] = \frac{a+y}{a+b+N}.
                         \]
+                    </p>
+                    <p>
                         <strong>Note.</strong> By adjusting hyper-parameters \(a\) and \(b\), we can control the influence of the prior on the posterior.
                     </p>
 
                     <p>
-                        If \(a\) and \(b\) are small, the posterior mean will closely reflect the data: 
+                        If \(a\) and \(b\) are small, the posterior mean will closely reflect the data:
                         \[
                         \bar{\theta} \approx  \frac{y}{N} = \hat{\theta}_{\text{MLE}}
                         \]
                         while if \(a\) and \(b\) are large, the posterior mean will be more influenced by the prior.
                     </p>
                     <p>
-                        Often we need to check the <strong>standard error</strong> of our estimate, which is the posterior standard deviation. Again invoking the 
+                        Often we need to check the <strong>standard error</strong> of our estimate, which is the posterior standard deviation. Again invoking the
                         Beta variance formula, we have:
                         \[
                         \begin{align*}
@@ -213,7 +220,10 @@ uses_python: false
                                         &= \sqrt{\frac{(a+y)(b+N-y)}{(a+b+N)^2(a+b+N+1)}}.
                         \end{align*}
                         \]
-                        Here, in the data-rich regime where \(N \gg a, b\) and the empirical fraction \(\hat{\theta} = y/N\) is bounded away from 0 and 1, we can simplify the <strong>posterior variance</strong> as follows:
+                    </p>
+                    <p>
+                        Here, in the data-rich regime where \(N \gg a, b\) and the empirical fraction \(\hat{\theta} = y/N\) is bounded away from 0 and 1, we can
+                        simplify the <strong>posterior variance</strong> as follows:
                         \[
                         \begin{align*}
                         \operatorname{Var}[\theta \mid \mathcal{D}] &\approx \frac{y(N-y)}{N^3} \\\\
@@ -224,41 +234,48 @@ uses_python: false
                         where \(\hat{\theta} = \frac{y}{N}\) is the MLE.
                     </p>
                     <p>
-                        Thus, the standard error is given by 
+                        Thus, the standard error is given by
                         \[
                         \operatorname{SE}(\theta) \approx \sqrt{\frac{\hat{\theta}(1 - \hat{\theta})}{N}}.
                         \]
                     </p>
                     <p>
-                        From (1) and (2), the <strong>marginal likelihood</strong> for the Bernoulli sequence \(\mathcal{D} = \{y_1, \ldots, y_N\}\) is given by the ratio of normalization constants(beta functions) 
-                        for the prior and posterior:
+                        From (1) and (2), the <strong>marginal likelihood</strong> for the Bernoulli sequence \(\mathcal{D} = \{y_1, \ldots, y_N\}\) is given by
+                        the ratio of normalization constants for the prior and posterior. Each constant is the reciprocal of a
+                        <a href="gamma.html#D-beta_function" class="ref-link"><strong>beta function</strong></a>, because the
+                        <a href="gamma.html#T-beta_gamma_identity" class="ref-link"><strong>Beta-Gamma Identity</strong></a> gives
+                        \(B(a, b) = \Gamma(a)\Gamma(b)/\Gamma(a+b)\). Hence
                         \[
                         p(\mathcal{D}) = \frac{B(a+y,\, b+N-y)}{B(a, b)}.
                         \]
                         (For the Binomial summary \(y = \sum_n y_n\), the marginal likelihood acquires the additional factor \(\binom{N}{y}\).)
-                        <strong>Note.</strong> In general, computing the marginal likelihood is too expensive or impossible, but the conjugate prior allows us to get the 
-                        exact marginal likelihood easily. Otherwise, we have to introduce some approximation methods.
+                    </p>
+                    <p>
+                        <strong>Note.</strong> In general, computing the marginal likelihood is too expensive or impossible, but the conjugate prior allows us to
+                        get the exact marginal likelihood easily. Otherwise, we have to introduce some approximation methods.
                     </p>
                     <p>
                         Finally, to make predictions for new observations, we use <strong>posterior predictive distribution</strong>:
                         \[
-                        p(x_{new} \mid \mathcal{D}) = \int p(x_{new} \mid \theta) p(\theta \mid \mathcal{D}) d\theta.
+                        p(x_{\text{new}} \mid \mathcal{D}) = \int p(x_{\text{new}} \mid \theta) p(\theta \mid \mathcal{D}) d\theta.
                         \]
-                        Again, like computing the marginal likelihood, it is difficult to compute posterior predictive distribution, but in this case, 
-                        we can get it easily due to the conjugate prior. 
+                        Again, like computing the marginal likelihood, it is difficult to compute posterior predictive distribution, but in this case, we can get
+                        it easily due to the conjugate prior.
                     </p>
                     <p>
                         For example, the probability of observing a head in the next coin toss is given by:
                         \[
                         \begin{align*}
-                        p(y_{new}=1 \mid \mathcal{D}) &= \int_0^1  p(y_{new}=1 \mid \theta) \, p(\theta \mid \mathcal{D}) \, d\theta \\\\
-                                                &= \int_0^1 \theta \cdot \operatorname{Beta}(\theta \mid a+y, \, b+N-y) \, d\theta \quad (\because p(y_{new}=1 \mid \theta) = \theta) \\\\
+                        p(y_{\text{new}}=1 \mid \mathcal{D}) &= \int_0^1  p(y_{\text{new}}=1 \mid \theta) \, p(\theta \mid \mathcal{D}) \, d\theta \\\\
+                                                &= \int_0^1 \theta \cdot \operatorname{Beta}(\theta \mid a+y, \, b+N-y) \, d\theta \quad \text{since } p(y_{\text{new}}=1 \mid \theta) = \theta \\\\
                                                 &= \mathbb{E}[\theta \mid \mathcal{D}] \\\\
                                                 &= \frac{a+y}{a+b+N}.
                         \end{align*}
                         \]
-                        <strong>Note.</strong> As you can see, the hyper-parameters \(a\) and \(b\) are critical in the whole process of our inference. 
-                        In practice, setting up hyper-parameters is one of the most challenging aspects of the project. 
+                    </p>
+                    <p>
+                        <strong>Note.</strong> The hyper-parameters \(a\) and \(b\) are critical in the whole process of our inference. In practice, setting up
+                        hyper-parameters is one of the most challenging aspects of the project.
                     </p>
                 </div>
 
@@ -266,10 +283,10 @@ uses_python: false
                     <h3>Hyperparameters as Pseudo-Counts</h3>
                     <p>
                         In machine learning, the hyper-parameters \(a\) and \(b\) of the Beta prior are highly intuitive. They act as
-                        <strong>pseudo-observations</strong>, or <strong>effective prior counts</strong>. Before flipping the coin even once, 
-                        an AI agent with a prior of \(\operatorname{Beta}(a, b)\) behaves exactly as if it has already observed \(a\) heads and \(b\) tails. 
-                        This structural equivalence is a common trick in natural language processing, Laplace smoothing in Naive Bayes
-                        being the standard example. It prevents models from assigning zero probability to unseen events.
+                        <strong>pseudo-observations</strong>, or <strong>effective prior counts</strong>. Before flipping the coin even once, an AI agent with a
+                        prior of \(\operatorname{Beta}(a, b)\) behaves exactly as if it has already observed \(a\) heads and \(b\) tails. This structural
+                        equivalence is a common trick in natural language processing, Laplace smoothing in Naive Bayes being the standard example. It prevents
+                        models from assigning zero probability to unseen events.
                     </p>
                 </div>
 
@@ -280,8 +297,9 @@ uses_python: false
 
 
                 <p>
-                    We now apply the same Bayesian framework to the <a href="gaussian.html#D-normal_distribution" class="ref-link"><strong>normal distribution</strong></a>. 
-                    Given the univariate normal distribution \(\mathcal{N}(\mu, \sigma^2)\), there are three cases for our target posterior: 
+                    We now apply the same Bayesian framework to the
+                    <a href="gaussian.html#D-normal_distribution" class="ref-link"><strong>normal distribution</strong></a>. Given the univariate normal
+                    distribution \(\mathcal{N}(\mu, \sigma^2)\), there are three cases for our target posterior:
                 </p>
 
                 <ol style="padding-left: 40px;">
@@ -291,15 +309,14 @@ uses_python: false
                 </ol>
 
                 <p>
-                    Here, we discuss cases 1 and 2. (Case 3 requires the normal-inverse-gamma conjugate prior and is treated in 
-                    more advanced references.)
+                    Here, we discuss cases 1 and 2. (Case 3 requires the normal-inverse-gamma conjugate prior and is beyond the scope of this page.)
                 </p>
 
                 <div class="proof">
                     <span class="proof-title">Example 2: Normal distribution model with known variance \(\sigma^2\)</span>
 
                     <p>
-                        In the case where \(\sigma^2\) is known constant, the <strong>likelihood</strong> for \(\mu\) is given by 
+                        In the case where \(\sigma^2\) is a known positive constant, the <strong>likelihood</strong> for \(\mu\) is given by
                         \[
                         \begin{align*}
                         p(\mathcal{D} \mid \mu) &= \prod_{n=1}^N \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left(-\frac{(y_n - \mu)^2}{2\sigma^2}\right)\\\\
@@ -310,7 +327,8 @@ uses_python: false
                     </p>
 
                     <p>
-                        Following the Beta-Binomial pattern, we conjecture that another normal distribution might serve as a conjugate prior:
+                        Following the Beta-Binomial pattern, we conjecture that another normal distribution might serve as a conjugate prior, with prior mean
+                        \(\mu_0 \in \mathbb{R}\) and prior variance \(\sigma_0^2 \gt 0\):
                         \[
                         \begin{align*}
                         p(\mu) &= \mathcal{N}(\mu \mid \, \mu_0, \sigma_0^2) \\\\
@@ -323,30 +341,30 @@ uses_python: false
                         Applying Bayes' theorem and absorbing \(p(\mathcal{D})\) into the normalization, we compute the <strong>posterior</strong> as follows:
                         \[
                         \begin{align*}
-                        p(\mu \mid \, \mathcal{D}, \sigma^2) 
+                        p(\mu \mid \, \mathcal{D}, \sigma^2)
                         &\propto \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right) \cdot \exp \left(-\frac{(\mu - \mu_0)^2}{2\sigma_0^2} \right) \\\\
-                        &= \exp \left\{-\frac{1}{2}\left(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \right)\mu^2 +\left(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \right)\mu 
-                                    + \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N y_n^2 - \frac{\mu_0^2}{2\sigma_0^2} \right) \right\}
+                        &= \exp \left\{-\frac{1}{2}\left(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \right)\mu^2 +\left(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \right)\mu
+                                    + \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N y_n^2 - \frac{\mu_0^2}{2\sigma_0^2} \right) \right\}.
                         \end{align*}
                         \]
                         Since \(-\frac{1}{2\sigma^2} \sum_{n=1}^N y_n^2 - \frac{\mu_0^2}{2\sigma_0^2}\) is constant with respect to \(\mu\), we ignore it.
                     </p>
 
                     <p>
-                        Let \(A = \left(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \right)\) and \(B = \left(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \right)\), 
-                        and completing the square, we get:
+                        Let \(A = \left(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \right)\) and
+                        \(B = \left(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \right)\), and completing the square, we get:
                         \[
                         \begin{align*}
-                        p(\mu \mid \, \mathcal{D}, \sigma^2) 
+                        p(\mu \mid \, \mathcal{D}, \sigma^2)
                         &\propto \exp \left\{-\frac{1}{2}A\mu^2 + B\mu \right\} \\\\
-                        &= \exp \left\{-\frac{1}{2}A \left(\mu - \frac{B}{A} \right)^2 + \frac{B^2}{2A}\right\}.                     
+                        &= \exp \left\{-\frac{1}{2}A \left(\mu - \frac{B}{A} \right)^2 + \frac{B^2}{2A}\right\}.
                         \end{align*}
                         \]
                     </p>
 
                     <p>
-                        Since the term \(\frac{B^2}{2A}\) does not depend on \(\mu\), and \(-\frac{1}{2}A \left(\mu - \frac{B}{A} \right)^2\) 
-                        is a quadratic form of an univariate normal distribution, we conclude that
+                        Since the term \(\frac{B^2}{2A}\) does not depend on \(\mu\), and \(-\frac{1}{2}A \left(\mu - \frac{B}{A} \right)^2\) is a quadratic form
+                        of a univariate normal distribution, we conclude that
                         \[
                         \begin{align*}
                         p(\mu \mid \, \mathcal{D}, \sigma^2)  = \mathcal{N}(\mu \mid \, \mu_N, \sigma_N^2 )
@@ -364,37 +382,39 @@ uses_python: false
                         \begin{align*}
                         \mu_N &= \frac{B}{A} \\\\
                             &= \sigma_N^2 \left(\frac{\mu_0}{\sigma_0^2} + \frac{N \bar{y}}{\sigma^2} \right) \\\\
-                            &= \frac{\sigma^2}{N\sigma_0^2 + \sigma^2}\mu_0 + \frac{N\sigma_0^2}{N\sigma_0^2 + \sigma^2}\bar{y} \\\\
+                            &= \frac{\sigma^2}{N\sigma_0^2 + \sigma^2}\mu_0 + \frac{N\sigma_0^2}{N\sigma_0^2 + \sigma^2}\bar{y}
                         \end{align*}
                         \]
-                        where \(\bar{y} = \frac{1}{N}\sum_{n=1}^N y_n\) is the empirical mean. The posterior is again normal. The normal family is therefore
-                        <strong>conjugate</strong> to the normal likelihood with known variance.
+                        where \(\bar{y} = \frac{1}{N}\sum_{n=1}^N y_n\) is the empirical mean.
+                    </p>
+                    <p>
+                        The posterior is again normal. The normal family is therefore <strong>conjugate</strong> to the normal likelihood with known variance.
                     </p>
 
                     <p>
-                        Equivalently, this is a <strong>precision-weighted average</strong>. The posterior mean balances the prior mean \(\mu_0\) against the empirical mean
-                        \(\bar{y}\). The weights are the respective precisions \(1/\sigma_0^2\) and \(N/\sigma^2\). The posterior precision \(1/\sigma_N^2 = 1/\sigma_0^2 + N/\sigma^2\) 
-                        is simply the sum of the prior and data precisions.
+                        Equivalently, this is a <strong>precision-weighted average</strong>. The posterior mean balances the prior mean \(\mu_0\) against the
+                        empirical mean \(\bar{y}\). The weights are the respective precisions \(1/\sigma_0^2\) and \(N/\sigma^2\). The posterior precision
+                        \(1/\sigma_N^2 = 1/\sigma_0^2 + N/\sigma^2\) is simply the sum of the prior and data precisions.
                     </p>
 
                     <p>
                         <strong>Note.</strong> In this case, \(\mu_0\) and \(\sigma_0^2\) are hyper-parameters of the prior distribution. The form of the
-                        posterior mean \(\mu_N\) shows what they control. A small \(\sigma_0^2\) gives more weight to the prior mean \(\mu_0\). A
-                        large \(\sigma_0^2\) reduces the influence of the prior, and the posterior then relies more on the data.
+                        posterior mean \(\mu_N\) shows what they control. A small \(\sigma_0^2\) gives more weight to the prior mean \(\mu_0\). A large
+                        \(\sigma_0^2\) reduces the influence of the prior, and the posterior then relies more on the data.
                     </p>
                 </div>
 
                 <div class="insight-box">
                     <h3>Online Learning via Sequential Updates</h3>
                     <p>
-                        The true power of conjugate priors in computer science is memory efficiency. In <strong>online learning</strong>, we do not need 
-                        to store massive historical datasets in memory. Because the posterior and prior share the same functional form, today's posterior 
-                        simply becomes tomorrow's prior. For sequential data points \(y_1, y_2\), the update rule is structurally elegant:
+                        The true power of conjugate priors in computer science is memory efficiency. In <strong>online learning</strong>, we do not need to store
+                        massive historical datasets in memory. Because the posterior and prior share the same functional form, today's posterior simply becomes
+                        tomorrow's prior. For sequential data points \(y_1, y_2\), the update rule is structurally elegant:
                         \[
-                        p(\mu \mid y_1, y_2) \propto p(y_2 \mid \mu) p(\mu \mid y_1)
+                        p(\mu \mid y_1, y_2) \propto p(y_2 \mid \mu) p(\mu \mid y_1).
                         \]
-                        An ML system only needs to maintain the current sufficient statistics, such as \(\mu_N\) and \(\sigma_N^2\), and update them as new
-                        data streams in. Mathematical structure and computational limits meet exactly here.
+                        An ML system only needs to maintain the current sufficient statistics, such as \(\mu_N\) and \(\sigma_N^2\), and update them as new data
+                        streams in. Mathematical structure and computational limits meet exactly here.
                     </p>  
                 </div>
 
@@ -402,15 +422,18 @@ uses_python: false
                     <span class="proof-title">Example 3: Normal distribution model with known mean \(\mu\)</span>
 
                     <p>
-                        In the case where \(\mu\) is known constant, the <strong>likelihood</strong> for \(\sigma^2\) is given by 
+                        In the case where \(\mu\) is a known constant, the <strong>likelihood</strong> for \(\sigma^2\) is given by
                         \[
                         \begin{align*}
-                        p(\mathcal{D} \mid \sigma^2) 
+                        p(\mathcal{D} \mid \sigma^2)
                         &= \frac{1}{(2 \pi \sigma^2)^{\frac{N}{2}}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right) \\\\
                         &\propto (\sigma^2)^{-\frac{N}{2}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right),
                         \end{align*}
                         \]
-                        where the \(\sigma^2\)-independent factor \((2\pi)^{-N/2}\) has been dropped. Following the same pattern as before, we conjecture that the <strong>inverse gamma distribution</strong> might serve as a conjugate prior:
+                        where the \(\sigma^2\)-independent factor \((2\pi)^{-N/2}\) has been dropped.
+                    </p>
+                    <p>
+                        Following the same pattern as before, we conjecture that the <strong>inverse gamma distribution</strong> might serve as a conjugate prior:
                         \[
                         \begin{align*}
                         p(\sigma^2) &= \operatorname{InvGamma}(\sigma^2 \mid \, a, b) \\\\
@@ -418,20 +441,23 @@ uses_python: false
                                     &\propto (\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right)
                         \end{align*}
                         \]
-                        where \(a > 0\) is the shape parameter and  \(b > 0\) is the scale parameter.
+                        where \(a \gt 0\) is the shape parameter and \(b \gt 0\) is the scale parameter.
                     </p>
 
                     <p>
                         The <strong>posterior</strong> is given by:
                         \[
                         \begin{align*}
-                        p(\sigma^2 \mid \, \mathcal{D}, \mu) 
+                        p(\sigma^2 \mid \, \mathcal{D}, \mu)
                         &\propto \left\{ (\sigma^2)^{-\frac{N}{2}} \exp \left(-\frac{1}{2\sigma^2} \sum_{n=1}^N (y_n - \mu)^2 \right) \right\}
-                                      \cdot \left\{ (\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right) \right\} \\\\   
-                        &= (\sigma^2)^{-(a+\frac{N}{2}+1)} \exp \left\{ - \frac{1}{\sigma^2}\left(b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2 \right) \right\}.                                                           
+                                      \cdot \left\{ (\sigma^2)^{-(a+1)} \exp \left(- \frac{b}{\sigma^2}\right) \right\} \\\\
+                        &= (\sigma^2)^{-(a+\frac{N}{2}+1)} \exp \left\{ - \frac{1}{\sigma^2}\left(b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2 \right) \right\}.
                         \end{align*}
                         \]
-                        Letting \(\hat{a} = a + \frac{N}{2}\) and \(\hat{b} = b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2\), the right-hand side is the kernel of an inverse-gamma density. Since the posterior is determined by its proportionality class up to normalization, we conclude
+                    </p>
+                    <p>
+                        Letting \(\hat{a} = a + \frac{N}{2}\) and \(\hat{b} = b + \frac{1}{2} \sum_{n=1}^N (y_n - \mu)^2\), the right-hand side is the kernel of
+                        an inverse-gamma density. Since the posterior is determined by its proportionality class up to normalization, we conclude
                         \[
                         p(\sigma^2 \mid \, \mathcal{D}, \mu) = \operatorname{InvGamma}(\sigma^2 \mid \, \hat{a}, \hat{b}),
                         \]
@@ -447,16 +473,17 @@ uses_python: false
                                     &\propto (\sigma^2)^{-\frac{\nu_0}{2}-1} \exp \left(- \frac{\nu_0 \sigma_0^2}{2\sigma^2} \right)
                         \end{align*}
                         \]
-                        where \(\nu_0\) is the prior degrees of freedom. Since this is the same family in a different parametrization, the conjugacy property carries over directly. 
+                        where \(\nu_0\) is the prior degrees of freedom. Since this is the same family in a different parametrization, the conjugacy property
+                        carries over directly.
                     </p>
                     <p>
                         Thus, the posterior in this parametrization is given by:
                         \[
-                        p(\sigma^2 \mid \, \mathcal{D}, \mu) 
+                        p(\sigma^2 \mid \, \mathcal{D}, \mu)
                         = \text{Scaled-Inv-}\chi^2\!\left(\sigma^2 \mid \, \nu_0 + N, \, \frac{\nu_0 \sigma_0^2 + \sum_{n=1}^N (y_n - \mu)^2}{\nu_0 + N}\right).
                         \]
                         This form gives the hyperparameters \((\nu_0, \sigma_0^2)\) a direct interpretation. Here \(\nu_0\) plays the role of a
-                        <strong>prior sample size</strong>, or prior degrees of freedom, and \(\sigma_0^2\) is a prior point estimate of the variance. The 
+                        <strong>prior sample size</strong>, or prior degrees of freedom, and \(\sigma_0^2\) is a prior point estimate of the variance. The
                         \(\operatorname{InvGamma}(a, b)\) form requires the indirect identification \(a = \nu_0/2\) and \(b = \nu_0 \sigma_0^2 / 2\).
                     </p>
                 </div>
@@ -464,26 +491,25 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Anomaly Detection and Uncertainty</h3>
                     <p>
-                        This model is a cornerstone for <strong>quality control</strong> and process monitoring. In industrial manufacturing, the "target" mean of 
+                        This model is a cornerstone for <strong>quality control</strong> and process monitoring. In industrial manufacturing, the "target" mean of
                         a process is often known from historical data, while the variance represents the stability of the process.
                     </p>
                     <p>
-                        In machine learning, this is the fundamental principle of <strong>anomaly detection</strong>. Unlike simple frequentist methods that use a 
-                        point estimate for variance, the Bayesian approach evaluates new data points against the <strong>posterior predictive distribution</strong>. 
-                        Integrating over the inverse-gamma posterior of \(\sigma^2\) yields a
-                        <a href="student.html#D-student_t" class="ref-link"><strong>Student's t-distribution</strong></a>. That predictive
-                        distribution accounts for our uncertainty about the variance itself. The result is a far more robust system. With very
-                        little data the model is cautious, and it requires stronger evidence to flag a point as an anomaly.
+                        In machine learning, this is the fundamental principle of <strong>anomaly detection</strong>. Unlike simple frequentist methods that use a
+                        point estimate for variance, the Bayesian approach evaluates new data points against the
+                        <strong>posterior predictive distribution</strong>. Integrating over the inverse-gamma posterior of \(\sigma^2\) yields a
+                        <a href="student.html#D-student_t" class="ref-link"><strong>Student's t-distribution</strong></a>. That predictive distribution accounts
+                        for our uncertainty about the variance itself. The result is a far more robust system. With very little data the model is cautious, and it
+                        requires stronger evidence to flag a point as an anomaly.
                     </p>
                 </div>
                 
                 <p>
-                    The Beta prior was conjugate for the Binomial likelihood, the Normal prior was conjugate for the Normal likelihood with 
-                    known variance, and the Inverse-Gamma prior was conjugate for the Normal likelihood with known mean. Is there a unifying 
-                    structure that explains <em>why</em> these conjugacies exist? In the upcoming chapter on 
-                    the <a href="expfamily.html"><strong>Exponential Family</strong></a>, we show that all these distributions belong to a 
-                    single parametric family. Its canonical form guarantees the existence of
-                    conjugate priors and reduces MLE to moment matching.
+                    The Beta prior was conjugate for the Binomial likelihood, the Normal prior was conjugate for the Normal likelihood with known variance, and
+                    the Inverse-Gamma prior was conjugate for the Normal likelihood with known mean. Is there a unifying structure that explains <em>why</em>
+                    these conjugacies exist? Our treatment of the <a href="expfamily.html"><strong>Exponential Family</strong></a> shows that all these
+                    distributions belong to a single parametric family. Its canonical form guarantees the existence of conjugate priors and reduces MLE to moment
+                    matching.
                 </p>
 
                 
