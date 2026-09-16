@@ -72,33 +72,34 @@ uses_python: false
                 <div class="theorem" id="D-gaussian_process">
                     <span class="theorem-title">Definition: Gaussian Process (GP)</span>
                     <p>
-                        A <strong>Gaussian process</strong> is a collection of random variables, any finite subset of which has a joint 
-                        Gaussian distribution. A GP is fully specified by its mean function and covariance function:
+                        A <strong>Gaussian process</strong> is a collection of random variables, any finite subset of which has a joint Gaussian
+                        distribution. A GP is fully specified by its mean function and covariance function:
                         \[
                         f(\boldsymbol{x}) \sim \mathcal{GP}\left(m(\boldsymbol{x}), \, \mathcal{K}(\boldsymbol{x}, \boldsymbol{x}')\right),
                         \]
-                        where 
+                        where
                         \[
                         m(\boldsymbol{x}) = \mathbb{E}[f(\boldsymbol{x})]
                         \]
-                        and 
+                        and
                         \[
-                        \mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \operatorname{Cov}[f(\boldsymbol{x}), f(\boldsymbol{x}')]. 
+                        \mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \operatorname{Cov}[f(\boldsymbol{x}), f(\boldsymbol{x}')].
                         \]
-                        The covariance function \(\mathcal{K}\) is required to be a positive definite <strong>Mercer kernel</strong>: 
-                        equivalently, the Gram matrix 
+                    </p>
+                    <p>
+                        The covariance function \(\mathcal{K}\) is required to be a <strong>Mercer kernel</strong> (defined below). Equivalently,
+                        the Gram matrix
                         \[
                         \boldsymbol{K}_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)
                         \]
-                        is positive semi-definite for every finite set of inputs. This is precisely the condition that the resulting 
+                        is positive semi-definite for every finite set of inputs. This is precisely the condition that the resulting
                         finite-dimensional joint distribution is a valid multivariate Gaussian.
                     </p>
                 </div>
 
                 <p>
-                    In practice, the mean function is often set to zero, \(m(\boldsymbol{x}) = 0\), since the data can be centered and 
-                    the GP's expressiveness comes primarily from the covariance function. The choice of \(\mathcal{K}\) then determines 
-                    all structural properties of the functions: their smoothness, periodicity, amplitude, and length-scale.
+                    In practice, the mean function is often set to zero, \(m(\boldsymbol{x}) = 0\), since the data can be centered and the GP's
+                    expressiveness comes primarily from the covariance function.
                 </p>
 
                 <p>
@@ -118,174 +119,161 @@ uses_python: false
                 <h2>Mercer Kernels</h2>
 
                 <p>
-                    The <strong>kernel function</strong> defines the notion of <strong>similarity</strong> between function values 
-                    at different input points. In a Gaussian process (GP), the choice of kernel is crucial since it 
-                    determines the smoothness, periodicity, and other structural properties of the functions drawn 
-                    from the GP prior.
+                    The <strong>kernel function</strong> defines the notion of <strong>similarity</strong> between function values at different
+                    input points. In a Gaussian process, the choice of kernel is crucial since it determines the smoothness, periodicity, and other
+                    structural properties of the functions drawn from the GP prior.
                 </p>
 
                 <p>
-                    While the kernel function intuitively measures similarity between inputs, not every function can serve 
-                    as a valid covariance function in a Gaussian process.  
-                    To ensure that the resulting covariance matrix is positive semi-definite for every finite set of inputs — 
-                    a requirement for the GP to define a valid multivariate Gaussian distribution — 
-                    we restrict our attention to <strong>Mercer kernels</strong>.
+                    While the kernel function intuitively measures similarity between inputs, not every symmetric function can serve as a
+                    covariance function in a Gaussian process. We now make precise the class of admissible kernels.
                 </p>
 
                 <div class="theorem" id="D-mercer_kernel">
                     <span class="theorem-title">Definition: Mercer Kernel</span>
                     <p>
-                        A <strong>Mercer kernel</strong> (also called a <strong>positive definite kernel</strong>) 
-                        is a symmetric function 
+                        A <strong>Mercer kernel</strong> (also called a <strong>positive definite kernel</strong>) is a symmetric function
                         \[
                         \mathcal{K}: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}
                         \]
-                        such that for every \(N \in \mathbb{N}\), every choice of distinct points 
-                        \(\boldsymbol{x}_1, \ldots, \boldsymbol{x}_N \in \mathcal{X}\), and every choice of scalars 
+                        such that for every \(N \in \mathbb{N}\), every choice of distinct points
+                        \(\boldsymbol{x}_1, \ldots, \boldsymbol{x}_N \in \mathcal{X}\), and every choice of scalars
                         \(c_1, \ldots, c_N \in \mathbb{R}\),
                         \[
                         \sum_{i=1}^N \sum_{j=1}^N c_i c_j \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) \geq 0.
                         \]
-                        Equivalently, the Gram matrix 
-                        \(\boldsymbol{K} = [\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)]_{i,j=1}^N\) 
-                        is positive semi-definite for every finite collection of distinct points. 
-                        A Mercer kernel is called <strong>strictly positive definite</strong> if equality holds only when 
-                        \(c_1 = \cdots = c_N = 0\) — equivalently, every such Gram matrix is strictly positive definite.
+                    </p>
+                    <p>
+                        Equivalently, the Gram matrix \(\boldsymbol{K} = [\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)]_{i,j=1}^N\) is positive
+                        semi-definite for every finite collection of distinct points. A Mercer kernel is called
+                        <strong>strictly positive definite</strong> if equality holds only when \(c_1 = \cdots = c_N = 0\). In matrix terms, every
+                        such Gram matrix is strictly positive definite.
                     </p>
                 </div>
 
                 <p>
-                    Note that this condition does NOT require each individual kernel value 
-                    \(\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)\) to be nonnegative; only the quadratic form 
-                    built from the Gram matrix \(\boldsymbol{K}\) must be.
+                    Note that this condition does <em>not</em> require each individual kernel value
+                    \(\mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)\) to be nonnegative. Only the quadratic form built from the Gram matrix
+                    \(\boldsymbol{K}\) must be nonnegative.
                 </p>
 
                 <p>
-                    The definition above captures everything required to use Mercer kernels in Gaussian processes: 
-                    a finite-sample positive semi-definiteness condition that ensures every Gram matrix 
-                    \(\boldsymbol{K}\) defines a valid covariance for a multivariate Gaussian. A deeper 
-                    treatment — including the connection to <strong>reproducing kernel Hilbert spaces</strong> 
-                    and Mercer's integral-operator decomposition 
-                    \(\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \sum_n \lambda_n e_n(\boldsymbol{x}) e_n(\boldsymbol{x}')\) — 
-                    is developed later in the curriculum, where the same notion appears under the name 
-                    <a href="../Calculus/rkhs.html#D-positive_definite_kernel" class="ref-link"><strong>positive definite kernel</strong></a>
-                    in the more general functional-analytic setting.
+                    The finite-sample condition above is all that a Gaussian process requires of its kernel. A deeper treatment belongs to the
+                    functional-analytic setting, where the same notion is studied under the name
+                    <a href="../Calculus/rkhs.html#D-positive_definite_kernel" class="ref-link"><strong>positive definite kernel</strong></a>. That
+                    treatment covers the connection to <strong>reproducing kernel Hilbert spaces</strong> and Mercer's integral-operator
+                    decomposition \(\mathcal{K}(\boldsymbol{x}, \boldsymbol{x}') = \sum_n \lambda_n e_n(\boldsymbol{x}) e_n(\boldsymbol{x}')\).
                 </p>
 
                 <p>
                     We often focus on <strong>stationary kernels</strong>, which depend only on the difference between inputs,
-                    \(\boldsymbol{r} = \boldsymbol{x} - \boldsymbol{x}'\), and not on their absolute locations. 
-                    In many cases, only the Euclidean distance between inputs matters:
+                    \(\boldsymbol{r} = \boldsymbol{x} - \boldsymbol{x}'\), and not on their absolute locations. In many cases, only the Euclidean
+                    distance between inputs matters:
                     \[
-                    r = \|\boldsymbol{r}\|_2 = \|\boldsymbol{x} - \boldsymbol{x}'\|.
+                    r = \|\boldsymbol{r}\| = \|\boldsymbol{x} - \boldsymbol{x}'\|.
                     \]
                 </p>
 
                 <p>
-                    One of the most widely used stationary kernels in practice is the <strong>radial basis function (RBF) kernel</strong> 
-                    (also used in 
-                    <a href="../Machine_learning/intro_classification.html#rbf-approx"><strong>classification</strong></a>, 
-                    where its random Fourier-feature approximation enables linear-time training):
+                    One of the most widely used stationary kernels in practice is the <strong>radial basis function (RBF) kernel</strong> (also
+                    used in <a href="../Machine_learning/intro_classification.html#rbf-approx"><strong>classification</strong></a>, where its
+                    random Fourier-feature approximation enables linear-time training):
                     \[
                     \begin{align*}
                     \mathcal{K}_\text{RBF}(r ; \ell) &= \exp \left( -\frac{r^2}{2\ell^2}\right) \\\\
                                           &= \exp \left( -\frac{\| \boldsymbol{x} - \boldsymbol{x}'\|^2}{2\ell^2}\right)
                     \end{align*}
-                    \]          
-                    where \(\ell > 0\) is the <strong>length-scale</strong> parameter controlling how quickly the correlation 
-                    between points decays with distance. This kernel is also known as the <strong>Gaussian kernel</strong>.
+                    \]
+                    where \(\ell \gt 0\) is the <strong>length-scale</strong> parameter controlling how quickly the correlation between points
+                    decays with distance. This kernel is also known as the <strong>Gaussian kernel</strong>.
                 </p>
                 
                 <p>
-                    Furthermore, by replacing Euclidean distance with Mahalanobis distance, we obtain the generalized RBF kernel: 
+                    Furthermore, by replacing Euclidean distance with Mahalanobis distance, we obtain the generalized RBF kernel:
                     \[
                     \mathcal{K}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
                     = \sigma^2 \exp \left( - \frac{1}{2} \boldsymbol{r}^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{r}\right).
                     \]
-                    In the case \(\boldsymbol{\Sigma}\) is diagonal, i.e. \(\boldsymbol{\Sigma} = \operatorname{diag}(\ell_1^2, \ldots, \ell_D^2)\),
+                </p>
+
+                <p>
+                    When \(\boldsymbol{\Sigma}\) is diagonal, that is, \(\boldsymbol{\Sigma} = \operatorname{diag}(\ell_1^2, \ldots, \ell_D^2)\),
                     we obtain the <strong>Automatic Relevance Determination (ARD) kernel</strong>:
                     \[
                     \mathcal{K}_\text{ARD}(\boldsymbol{r}; \boldsymbol{\Sigma}, \sigma^2)
                     =  \sigma^2 \exp \left( - \frac{1}{2} \sum_{d=1}^D \frac{1}{\ell_d^2 }r_d^2 \right)
                     \]
-                    where \(\sigma^2\) is the overall variance and \(\ell_d >0\) is the characteristic length scale of dimension \(d\), 
-                    controlling the sensitivity of the function to that input. If a dimension \(d\) is irrelevant, we can 
-                    set \(\ell_d = \infty\), effectively ignoring that input. 
+                    where \(\sigma^2\) is the overall variance and \(\ell_d \gt 0\) is the characteristic length scale of dimension \(d\),
+                    controlling the sensitivity of the function to that input. If a dimension \(d\) is irrelevant, we can set \(\ell_d = \infty\),
+                    effectively ignoring that input.
                 </p>
 
                 <p>
-                    While RBF and ARD kernels are infinitely smooth and often used as default choices, there are 
-                    situations where we may want more flexible control over the smoothness of the functions.  
-                    For example, in Bayesian optimisation or when modeling rougher processes, it is useful to have kernels 
-                    whose sample paths are only once or twice differentiable.
+                    While RBF and ARD kernels are infinitely smooth and often used as default choices, there are situations where we may want more
+                    flexible control over the smoothness of the functions. For example, in Bayesian optimization or when modeling rougher
+                    processes, it is useful to have kernels whose sample paths are only once or twice differentiable.
                 </p>
 
                 <p>
-                    This motivates the use of <strong>Matérn kernels</strong>, which form a family of stationary kernels 
-                    that include the RBF kernel as a limiting case (\(\nu \to \infty\)), while introducing an explicit 
-                    smoothness parameter \(\nu > 0\) to control the differentiability of the functions.  
-                    By adjusting \(\nu\), we can interpolate between very rough kernels (like the exponential kernel) and 
-                    infinitely smooth kernels (like the RBF), giving us fine-grained control over function smoothness.
+                    This motivates the <strong>Mat&eacute;rn kernels</strong>, a family of stationary kernels with an explicit smoothness parameter
+                    \(\nu \gt 0\). The family contains the RBF kernel as the limiting case \(\nu \to \infty\). By adjusting \(\nu\), we can
+                    interpolate between very rough kernels (like the exponential kernel) and infinitely smooth kernels (like the RBF).
                 </p>
 
                 <p>
-                    For parameters \(\nu > 0\), \(\ell > 0\), the Matérn kernel is
+                    For parameters \(\nu \gt 0\), \(\ell \gt 0\), the Mat&eacute;rn kernel is
                     \[
-                    \mathcal{K}_\text{Matérn}(r; \nu, \ell) 
+                    \mathcal{K}_\text{Mat&eacute;rn}(r; \nu, \ell)
                     = \frac{2^{1-\nu}}{\Gamma(\nu)}\left(\frac{\sqrt{2\nu}\,r}{\ell}\right)^\nu K_\nu\!\left(\frac{\sqrt{2\nu}\,r}{\ell}\right),
                     \]
                     where \(K_\nu\) denotes the modified Bessel function of the second kind.
                 </p>
 
                 <p>
-                    The parameter \(\nu\) controls the smoothness of the resulting functions. Specifically, the Gaussian process 
-                    is \(k\)-times <em>mean-square differentiable</em> if and only if \(\nu > k\). Consequently, the actual sample paths 
-                    of the GP are <strong>\(\lfloor \nu - \tfrac{1}{2}\rfloor\)-times continuously differentiable</strong>. Common choices 
-                    (up to the variance factor \(\sigma^2\)) admit closed forms:
+                    The parameter \(\nu\) controls the smoothness of the resulting functions. Specifically, the Gaussian process is \(k\)-times
+                    <em>mean-square differentiable</em> if and only if \(\nu \gt k\). Consequently, the actual sample paths of the GP are
+                    <strong>\(\lfloor \nu - \tfrac{1}{2}\rfloor\)-times continuously differentiable</strong>. Common choices (up to the variance
+                    factor \(\sigma^2\)) admit closed forms:
                 </p>
 
                 <ul style="padding-left:40px;">
                     <li>Exponential Kernel (Non-Differentiable):</li>
                     \[
-                    \mathcal{K}_\text{Matérn}(r; \frac{1}{2}, \ell )  = \exp \left(- \frac{r}{\ell}\right)
+                    \mathcal{K}_\text{Mat&eacute;rn}(r; \frac{1}{2}, \ell )  = \exp \left(- \frac{r}{\ell}\right)
                     \]
                     <li>Once Differentiable:</li>
                     \[
-                    \mathcal{K}_\text{Matérn}(r; \frac{3}{2}, \ell )  = \left(1 + \frac{\sqrt{3}r}{\ell}\right)\exp \left(- \frac{\sqrt{3}r}{\ell}\right)
+                    \mathcal{K}_\text{Mat&eacute;rn}(r; \frac{3}{2}, \ell )  = \left(1 + \frac{\sqrt{3}r}{\ell}\right)\exp \left(- \frac{\sqrt{3}r}{\ell}\right)
                     \]
                     <li>Twice Differentiable:</li>
                     \[
-                    \mathcal{K}_\text{Matérn}(r; \frac{5}{2}, \ell )  = \left(1 + \frac{\sqrt{5}r}{\ell} + \frac{5r^2}{3\ell^2}\right)\exp \left(- \frac{\sqrt{5}r}{\ell}\right)
+                    \mathcal{K}_\text{Mat&eacute;rn}(r; \frac{5}{2}, \ell )  = \left(1 + \frac{\sqrt{5}r}{\ell} + \frac{5r^2}{3\ell^2}\right)\exp \left(- \frac{\sqrt{5}r}{\ell}\right)
                     \]
                 </ul>
                 
-                <p>    
-                    Note: In Gaussian process regression, the kernel can be multiplied by a positive amplitude 
-                    parameter \(\sigma^2 > 0\) to scale the variance of the function values:
+                <p>
+                    In Gaussian process regression, the kernel can be multiplied by a positive amplitude parameter \(\sigma^2 \gt 0\) to scale the
+                    variance of the function values:
                     \[
-                    \mathcal{K}(r;\nu,\ell) \;\longrightarrow\; \sigma^2 \mathcal{K}(r;\nu,\ell).
+                    \mathcal{K}(r;\nu,\ell) \longrightarrow \sigma^2 \mathcal{K}(r;\nu,\ell).
                     \]
-                    This scaling changes the magnitude of function fluctuations but does not affect the smoothness or 
-                    correlation structure of the GP.
+                    This scaling changes the magnitude of function fluctuations but does not affect the smoothness or correlation structure
+                    of the GP.
                 </p>
 
                 <p>
-                    Some functions exhibit repeating or periodic behavior that is not captured by standard RBF or Matérn kernels.  
-                    To model such patterns, we can use a <strong>periodic kernel</strong>, which explicitly encodes periodicity into 
-                    the covariance function.
+                    Some functions exhibit repeating or periodic behavior that is not captured by standard RBF or Mat&eacute;rn
+                    kernels. To model such patterns, we can use a <strong>periodic kernel</strong>, which explicitly encodes
+                    periodicity into the covariance function.
                 </p>
 
                 <p>
                     A common choice for a one-dimensional periodic kernel is:
-                </p>
-
-                \[
-                \mathcal{K}_\text{per}(r; \ell, p) = \exp \Bigg( - \frac{2 \, \sin^2\big(\pi r / p\big)}{\ell^2} \Bigg),
-                \]
-
-                <p>
-                    where \(p > 0\) is the period of the function and \(\ell > 0\) is the length-scale controlling how quickly 
-                    correlations decay away from exact multiples of the period. 
+                    \[
+                    \mathcal{K}_\text{per}(r; \ell, p) = \exp \Bigg( - \frac{2 \, \sin^2\big(\pi r / p\big)}{\ell^2} \Bigg),
+                    \]
+                    where \(p \gt 0\) is the period of the function and \(\ell \gt 0\) is the length-scale controlling how quickly correlations
+                    decay away from exact multiples of the period.
                 </p>
 
                 <p>
@@ -298,91 +286,88 @@ uses_python: false
             <section id="regression" class="section-content">
                 <h2>GP Regression</h2>
                 <p>
-                    Suppose we observe a training data set 
-                    \(\mathcal{D} = \{(\boldsymbol{x}_n, y_n)\}_{n=1}^N\),
-                    where each observation follows
+                    Suppose we observe a training data set \(\mathcal{D} = \{(\boldsymbol{x}_n, y_n)\}_{n=1}^N\), where each observation follows
                     \[
-                    y_n = f(\boldsymbol{x}_n) + \epsilon_n, \quad 
+                    y_n = f(\boldsymbol{x}_n) + \epsilon_n, \quad
                     \epsilon_n \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, \sigma_y^2),
                     \]
-                    and the noise \(\{\epsilon_n\}\) is independent of the latent function \(f\).
-                    Under this model, the covariance of the noisy observations is
+                    and the noise \(\{\epsilon_n\}\) is independent of the latent function \(f\). Under this model, the covariance of the
+                    noisy observations is
                     \[
                     \begin{align*}
-                    \operatorname{Cov}[y_i, y_j] 
+                    \operatorname{Cov}[y_i, y_j]
                     &= \operatorname{Cov}[f_i, f_j] + \operatorname{Cov}[\epsilon_i, \epsilon_j] \\\\
                     &= \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) + \sigma_y^2 \, \mathbb{1}\{i = j\},
                     \end{align*}
                     \]
                     so that
                     \[
-                    \operatorname{Cov}[\boldsymbol{y} \mid \boldsymbol{X}] 
+                    \operatorname{Cov}[\boldsymbol{y} \mid \boldsymbol{X}]
                     = \boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N.
                     \]
+                </p>
 
-                    Because a Gaussian process defines a joint Gaussian distribution 
-                    over any finite collection of function values, we can express both 
-                    the noisy training outputs and the noise-free test values together. 
-                    For test inputs \(\boldsymbol{X}_* = \{\boldsymbol{x}_{*,m}\}_{m=1}^M\), let 
-                    \(\boldsymbol{f}_* = [f(\boldsymbol{x}_{*,1}), \ldots, f(\boldsymbol{x}_{*,M})]^\top\) and 
-                    \(\boldsymbol{\mu}_* = [m(\boldsymbol{x}_{*,1}), \ldots, m(\boldsymbol{x}_{*,M})]^\top\). 
-                    Define the cross-covariance and test-test covariance blocks by 
-                    \((\boldsymbol{K}_{X,*})_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_{*,j})\) and 
-                    \((\boldsymbol{K}_{*,*})_{ij} = \mathcal{K}(\boldsymbol{x}_{*,i}, \boldsymbol{x}_{*,j})\). 
-                    Then
+                <p>
+                    Because a Gaussian process defines a joint Gaussian distribution over any finite collection of function values, we can express
+                    both the noisy training outputs and the noise-free test values together. For test inputs
+                    \(\boldsymbol{X}_* = \{\boldsymbol{x}_{*,m}\}_{m=1}^M\), let
+                    \(\boldsymbol{f}_* = [f(\boldsymbol{x}_{*,1}), \ldots, f(\boldsymbol{x}_{*,M})]^\top\) and
+                    \(\boldsymbol{\mu}_* = [m(\boldsymbol{x}_{*,1}), \ldots, m(\boldsymbol{x}_{*,M})]^\top\). Define the cross-covariance and
+                    test-test covariance blocks by \((\boldsymbol{K}_{X,*})_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_{*,j})\) and
+                    \((\boldsymbol{K}_{*,*})_{ij} = \mathcal{K}(\boldsymbol{x}_{*,i}, \boldsymbol{x}_{*,j})\). Then
                     \[
-                    \begin{bmatrix} 
-                    \boldsymbol{y} \\ 
-                    \boldsymbol{f}_* 
-                    \end{bmatrix} 
-                    \sim 
+                    \begin{bmatrix}
+                    \boldsymbol{y} \\
+                    \boldsymbol{f}_*
+                    \end{bmatrix}
+                    \sim
                     \mathcal{N} \Bigg(
-                    \begin{bmatrix} 
-                        \boldsymbol{\mu}_X \\ 
-                        \boldsymbol{\mu}_* 
+                    \begin{bmatrix}
+                        \boldsymbol{\mu}_X \\
+                        \boldsymbol{\mu}_*
                     \end{bmatrix},
-                    \begin{bmatrix} 
-                        \boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N & \boldsymbol{K}_{X,*} \\\\
+                    \begin{bmatrix}
+                        \boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N & \boldsymbol{K}_{X,*} \\
                         \boldsymbol{K}_{X,*}^\top & \boldsymbol{K}_{*,*}
                     \end{bmatrix}
                     \Bigg).
                     \]
+                </p>
 
-                    The posterior predictive distribution at the test points 
-                    \(\boldsymbol{X}_*\) is obtained by conditioning on the observed data:
+                <p>
+                    The posterior predictive distribution at the test points \(\boldsymbol{X}_*\) is obtained by conditioning on the observed data:
                     \[
-                    p(\boldsymbol{f}_* \mid \mathcal{D}, \boldsymbol{X}_*) 
+                    p(\boldsymbol{f}_* \mid \mathcal{D}, \boldsymbol{X}_*)
                     = \mathcal{N}\big(
-                        \boldsymbol{f}_* \mid 
-                        \boldsymbol{\mu}_{* \mid X}, 
+                        \boldsymbol{f}_* \mid
+                        \boldsymbol{\mu}_{* \mid X},
                         \boldsymbol{\Sigma}_{* \mid X}
                     \big),
                     \]
                     where
                     \[
-                    \boldsymbol{\mu}_{* \mid X} 
-                    = \boldsymbol{\mu}_* 
-                    + \boldsymbol{K}_{X,*}^\top  
-                        \big(\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N \big)^{-1} 
+                    \boldsymbol{\mu}_{* \mid X}
+                    = \boldsymbol{\mu}_*
+                    + \boldsymbol{K}_{X,*}^\top
+                        \big(\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N \big)^{-1}
                         (\boldsymbol{y} - \boldsymbol{\mu}_X),
                     \]
                     \[
-                    \boldsymbol{\Sigma}_{* \mid X} 
-                    = \boldsymbol{K}_{*,*} 
-                    - \boldsymbol{K}_{X,*}^\top 
-                        \big(\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N \big)^{-1} 
+                    \boldsymbol{\Sigma}_{* \mid X}
+                    = \boldsymbol{K}_{*,*}
+                    - \boldsymbol{K}_{X,*}^\top
+                        \big(\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N \big)^{-1}
                         \boldsymbol{K}_{X,*}.
                     \]
                 </p>
 
                 <p>
-                    These formulas follow from the standard conditioning identities for the 
-                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> 
-                    applied to the joint above. 
-                    The posterior mean \(\boldsymbol{\mu}_{*|X}\) is a linear combination of the observed outputs \(\boldsymbol{y}\), weighted 
-                    by the kernel similarities between test and training points. The posterior covariance \(\boldsymbol{\Sigma}_{*|X}\) starts 
-                    from the prior covariance \(\boldsymbol{K}_{*,*}\) and subtracts the information gained from the observations — the more data 
-                    we observe near a test point, the smaller the posterior uncertainty.
+                    These formulas follow from the standard conditioning identities for the
+                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> applied to the
+                    joint above. The posterior mean \(\boldsymbol{\mu}_{* \mid X}\) is a linear combination of the observed outputs
+                    \(\boldsymbol{y}\), weighted by the kernel similarities between test and training points. The posterior covariance
+                    \(\boldsymbol{\Sigma}_{* \mid X}\) starts from the prior covariance \(\boldsymbol{K}_{*,*}\) and subtracts the information
+                    gained from the observations. The more data we observe near a test point, the smaller the posterior uncertainty.
                 </p>
 
                 <p>
@@ -396,13 +381,14 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Gaussian Processes in Machine Learning</h3>
                     <p>
-                        GPs occupy a unique position in the ML landscape. They provide <strong>closed-form uncertainty quantification</strong> that 
-                        is automatic and calibrated, requiring no ensembles, dropout, or approximate inference. This makes them invaluable for 
-                        <strong>Bayesian optimization</strong> (e.g., hyperparameter tuning via acquisition functions like Expected Improvement), 
-                        <strong>active learning</strong> (selecting the most informative data points to label), and <strong>safety-critical applications</strong> 
-                        where knowing what the model <em>doesn't know</em> is as important as its predictions. The kernel framework also connects GPs to 
-                        neural networks: the <strong>Neural Tangent Kernel (NTK)</strong> shows that infinitely wide neural networks converge to GPs, 
-                        providing a theoretical bridge between deep learning and nonparametric Bayesian modeling.
+                        GPs occupy a unique position in the ML landscape. They provide <strong>closed-form uncertainty quantification</strong> that
+                        is automatic and calibrated and that requires no ensembles, dropout, or approximate inference. Such uncertainty estimates
+                        make GPs invaluable for <strong>Bayesian optimization</strong> (for example, hyperparameter tuning via acquisition
+                        functions like Expected Improvement), <strong>active learning</strong> (selecting the most informative data points to
+                        label), and <strong>safety-critical applications</strong> where knowing what the model <em>does not know</em> is as
+                        important as its predictions. The kernel framework also connects GPs to neural networks. The
+                        <strong>Neural Tangent Kernel (NTK)</strong> shows that infinitely wide neural networks converge to GPs, and so provides a
+                        theoretical bridge between deep learning and nonparametric Bayesian modeling.
                     </p>
                 </div>
 
@@ -411,5 +397,5 @@ uses_python: false
        
         </div>
         
-</body>
+    </body>
 </html>
