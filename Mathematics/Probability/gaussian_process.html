@@ -92,8 +92,8 @@ uses_python: false
                         \[
                         \boldsymbol{K}_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)
                         \]
-                        is positive semi-definite for every finite set of inputs. This is precisely the condition that the resulting
-                        finite-dimensional joint distribution is a valid multivariate Gaussian.
+                        is positive semi-definite for every finite set of inputs. This is precisely the condition for every Gram matrix to be a
+                        valid covariance matrix.
                     </p>
                 </div>
 
@@ -103,15 +103,18 @@ uses_python: false
                 </p>
 
                 <p>
-                    For any finite collection of input points 
-                    \(\boldsymbol{X} = \{\boldsymbol{x}_1, \boldsymbol{x}_2, \ldots, \boldsymbol{x}_N\}\), 
-                    the corresponding function values follow a multivariate normal distribution:
+                    For any finite collection of input points
+                    \(\boldsymbol{X} = \{\boldsymbol{x}_1, \boldsymbol{x}_2, \ldots, \boldsymbol{x}_N\}\), the corresponding function values follow
+                    a multivariate normal distribution:
                     \[
-                        p(\boldsymbol{f}_X \mid \boldsymbol{X}) 
+                        p(\boldsymbol{f}_X \mid \boldsymbol{X})
                         = \mathcal{N}(\boldsymbol{f}_X \mid \boldsymbol{\mu}_X, \boldsymbol{K}_{X,X}),
                     \]
-                    where \(\boldsymbol{\mu}_X = [m(\boldsymbol{x}_1), m(\boldsymbol{x}_2), \ldots, m(\boldsymbol{x}_N)]^\top\) 
-                    and \(\boldsymbol{K}_{X,X}(i, j) = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)\).
+                    where \(\boldsymbol{\mu}_X = [m(\boldsymbol{x}_1), m(\boldsymbol{x}_2), \ldots, m(\boldsymbol{x}_N)]^\top\) and
+                    \((\boldsymbol{K}_{X,X})_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)\). When \(\boldsymbol{K}_{X,X}\) is strictly
+                    positive definite this is the multivariate normal distribution with the density above. When it is only positive semi-definite
+                    the distribution is degenerate, concentrated on a proper affine subspace, and has no density. The regression formulas below
+                    avoid this case by adding observation noise.
                 </p>
             </section>
 
@@ -119,9 +122,9 @@ uses_python: false
                 <h2>Mercer Kernels</h2>
 
                 <p>
-                    The <strong>kernel function</strong> defines the notion of <strong>similarity</strong> between function values at different
-                    input points. In a Gaussian process, the choice of kernel is crucial since it determines the smoothness, periodicity, and other
-                    structural properties of the functions drawn from the GP prior.
+                    The <strong>kernel function</strong> defines the notion of <strong>similarity</strong> between input points, and hence the
+                    covariance between the function values there. In a Gaussian process, the choice of kernel is crucial since it determines the
+                    smoothness, periodicity, and other structural properties of the functions drawn from the GP prior.
                 </p>
 
                 <p>
@@ -177,7 +180,7 @@ uses_python: false
                 <p>
                     One of the most widely used stationary kernels in practice is the <strong>radial basis function (RBF) kernel</strong> (also
                     used in <a href="../Machine_learning/intro_classification.html#rbf-approx"><strong>classification</strong></a>, where its
-                    random Fourier-feature approximation enables linear-time training):
+                    random Fourier-feature approximation enables training that scales linearly in the number of samples):
                     \[
                     \begin{align*}
                     \mathcal{K}_\text{RBF}(r ; \ell) &= \exp \left( -\frac{r^2}{2\ell^2}\right) \\\\
@@ -204,8 +207,8 @@ uses_python: false
                     =  \sigma^2 \exp \left( - \frac{1}{2} \sum_{d=1}^D \frac{1}{\ell_d^2 }r_d^2 \right)
                     \]
                     where \(\sigma^2\) is the overall variance and \(\ell_d \gt 0\) is the characteristic length scale of dimension \(d\),
-                    controlling the sensitivity of the function to that input. If a dimension \(d\) is irrelevant, we can set \(\ell_d = \infty\),
-                    effectively ignoring that input.
+                    controlling the sensitivity of the function to that input. If a dimension \(d\) is irrelevant, letting \(\ell_d \to \infty\)
+                    removes the dependence on that input entirely.
                 </p>
 
                 <p>
@@ -226,14 +229,16 @@ uses_python: false
                     \mathcal{K}_\text{Mat&eacute;rn}(r; \nu, \ell)
                     = \frac{2^{1-\nu}}{\Gamma(\nu)}\left(\frac{\sqrt{2\nu}\,r}{\ell}\right)^\nu K_\nu\!\left(\frac{\sqrt{2\nu}\,r}{\ell}\right),
                     \]
-                    where \(K_\nu\) denotes the modified Bessel function of the second kind.
+                    where \(K_\nu\) denotes the modified Bessel function of the second kind, and the value at \(r = 0\) is \(1\), the limit of the
+                    right-hand side as \(r \to 0\).
                 </p>
 
                 <p>
                     The parameter \(\nu\) controls the smoothness of the resulting functions. Specifically, the Gaussian process is \(k\)-times
-                    <em>mean-square differentiable</em> if and only if \(\nu \gt k\). Consequently, the actual sample paths of the GP are
-                    <strong>\(\lfloor \nu - \tfrac{1}{2}\rfloor\)-times continuously differentiable</strong>. Common choices (up to the variance
-                    factor \(\sigma^2\)) admit closed forms:
+                    <em>mean-square differentiable</em> if and only if \(\nu \gt k\). The sample paths themselves are almost surely
+                    \(\lceil \nu \rceil - 1\) times continuously differentiable, and not \(\lceil \nu \rceil\) times. This pathwise statement is
+                    stronger than mean-square differentiability and is stated here without proof. Common choices (up to the variance factor
+                    \(\sigma^2\)) admit closed forms:
                 </p>
 
                 <ul style="padding-left:40px;">
@@ -291,12 +296,12 @@ uses_python: false
                     y_n = f(\boldsymbol{x}_n) + \epsilon_n, \quad
                     \epsilon_n \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, \sigma_y^2),
                     \]
-                    and the noise \(\{\epsilon_n\}\) is independent of the latent function \(f\). Under this model, the covariance of the
-                    noisy observations is
+                    and the noise \(\{\epsilon_n\}\), with \(\sigma_y^2 \gt 0\), is independent of the latent function \(f\). Under this model, the
+                    covariance of the noisy observations is
                     \[
                     \begin{align*}
                     \operatorname{Cov}[y_i, y_j]
-                    &= \operatorname{Cov}[f_i, f_j] + \operatorname{Cov}[\epsilon_i, \epsilon_j] \\\\
+                    &= \operatorname{Cov}[f(\boldsymbol{x}_i), f(\boldsymbol{x}_j)] + \operatorname{Cov}[\epsilon_i, \epsilon_j] \\\\
                     &= \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j) + \sigma_y^2 \, \mathbb{1}\{i = j\},
                     \end{align*}
                     \]
@@ -362,12 +367,16 @@ uses_python: false
                 </p>
 
                 <p>
-                    These formulas follow from the standard conditioning identities for the
-                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> applied to the
-                    joint above. The posterior mean \(\boldsymbol{\mu}_{* \mid X}\) is a linear combination of the observed outputs
-                    \(\boldsymbol{y}\), weighted by the kernel similarities between test and training points. The posterior covariance
-                    \(\boldsymbol{\Sigma}_{* \mid X}\) starts from the prior covariance \(\boldsymbol{K}_{*,*}\) and subtracts the information
-                    gained from the observations. The more data we observe near a test point, the smaller the posterior uncertainty.
+                    These formulas are the conditional mean and covariance of the block \(\boldsymbol{f}_*\) of the
+                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> above, given
+                    the block \(\boldsymbol{y}\). We state this conditioning rule without proof. Here
+                    \(\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N\) is invertible because \(\boldsymbol{K}_{X,X}\) is positive semi-definite
+                    and \(\sigma_y^2 \gt 0\). The posterior mean \(\boldsymbol{\mu}_{* \mid X}\) is \(\boldsymbol{\mu}_*\) plus a linear
+                    combination of the centered observations \(\boldsymbol{y} - \boldsymbol{\mu}_X\), with weights
+                    \(\boldsymbol{K}_{X,*}^\top (\boldsymbol{K}_{X,X} + \sigma_y^2 \boldsymbol{I}_N)^{-1}\) determined by the kernel. The posterior
+                    covariance \(\boldsymbol{\Sigma}_{* \mid X}\) starts from the prior covariance \(\boldsymbol{K}_{*,*}\) and subtracts the
+                    information gained from the observations. Since the subtracted term is positive semi-definite, conditioning never increases the
+                    predictive variance, and the more data we observe near a test point, the smaller the posterior uncertainty there tends to be.
                 </p>
 
                 <p>
@@ -381,14 +390,15 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Gaussian Processes in Machine Learning</h3>
                     <p>
-                        GPs occupy a unique position in the ML landscape. They provide <strong>closed-form uncertainty quantification</strong> that
-                        is automatic and calibrated and that requires no ensembles, dropout, or approximate inference. Such uncertainty estimates
-                        make GPs invaluable for <strong>Bayesian optimization</strong> (for example, hyperparameter tuning via acquisition
-                        functions like Expected Improvement), <strong>active learning</strong> (selecting the most informative data points to
-                        label), and <strong>safety-critical applications</strong> where knowing what the model <em>does not know</em> is as
-                        important as its predictions. The kernel framework also connects GPs to neural networks. The
-                        <strong>Neural Tangent Kernel (NTK)</strong> shows that infinitely wide neural networks converge to GPs, and so provides a
-                        theoretical bridge between deep learning and nonparametric Bayesian modeling.
+                        GPs occupy a unique position in the ML landscape. They provide <strong>closed-form uncertainty quantification</strong> in
+                        regression with Gaussian noise, without ensembles, dropout, or approximate inference. Such uncertainty estimates make GPs
+                        invaluable for <strong>Bayesian optimization</strong> (for example, hyperparameter tuning via acquisition functions like
+                        Expected Improvement), <strong>active learning</strong> (selecting the most informative data points to label), and
+                        <strong>safety-critical applications</strong> where knowing what the model <em>does not know</em> is as important as its
+                        predictions. The kernel framework also connects GPs to neural networks. In the infinite-width limit a randomly initialized
+                        neural network is itself a Gaussian process. The <strong>Neural Tangent Kernel (NTK)</strong> shows that gradient-descent
+                        training of such a network reduces to kernel regression with a fixed kernel. This gives a theoretical bridge between deep
+                        learning and nonparametric Bayesian modeling.
                     </p>
                 </div>
 
