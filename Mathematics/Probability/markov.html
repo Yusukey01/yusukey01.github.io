@@ -55,10 +55,13 @@ uses_python: true
                         <li>\(\{p_i\}_{i=1}^n\) is a family of conditional probability distributions, one per vertex, of the form \(p_i(x_i \mid x_{\operatorname{pa}(i)})\).</li>
                     </ul>
                     <p>
-                        Here \(\operatorname{pa}(i) \subseteq \{1, \ldots, n\}\) denotes the <strong>parents</strong> of vertex \(i\) (the indices \(j\)
-                        such that \(X_j \to X_i\) is an edge of \(G\)), and \(X_{\operatorname{pa}(i)}\) is shorthand for the tuple of parent variables
-                        \((X_j)_{j \in \operatorname{pa}(i)}\). By convention, if \(\operatorname{pa}(i) = \varnothing\), the factor \(p_i\) reduces to
-                        the marginal \(p_i(x_i)\).
+                        Here \(\operatorname{pa}(i) \subseteq \{1, \ldots, n\}\) denotes the <strong>parents</strong> of vertex \(i\) (the indices \(j\) such
+                        that \(X_j \to X_i\) is an edge of \(G\)), and \(X_{\operatorname{pa}(i)}\) is shorthand for the tuple of parent variables
+                        \((X_j)_{j \in \operatorname{pa}(i)}\). By convention, if \(\operatorname{pa}(i) = \varnothing\), the factor \(p_i\) reduces to the
+                        marginal \(p_i(x_i)\). We assume throughout that the variables \(X_1, \ldots, X_n\) carry a joint distribution whose conditionals are
+                        these factors, so that
+                        \(p_i(x_i \mid x_{\operatorname{pa}(i)}) = P(X_i = x_i \mid X_{\operatorname{pa}(i)} = x_{\operatorname{pa}(i)})\) whenever the
+                        conditioning event has positive probability.
                     </p>
                     <p>
                         The network is said to satisfy the <strong>ordered Markov property</strong> if, after numbering the vertices in
@@ -89,7 +92,9 @@ uses_python: true
                 <div class="proof">
                     <span class="proof-title">Proof.</span>
                     <p>
-                        Assume the vertices are numbered in topological order. By the chain rule of probability,
+                        Assume the vertices are numbered in topological order. Applying the definition of
+                        <a href="basic.html#D-conditional_probability" class="ref-link"><strong>conditional probability</strong></a> repeatedly gives the
+                        chain rule of probability,
                         \[
                         P(X_1, X_2, \ldots, X_n) = \prod_{i=1}^n P(X_i \mid X_1, X_2, \ldots, X_{i-1}).
                         \]
@@ -190,8 +195,8 @@ uses_python: true
                 <p>
                     The function \(P(y_t \mid y_{t-1})\) is called the <strong>transition function</strong> (or <strong>transition kernel</strong>). The
                     latter name extends naturally to continuous state spaces, where the transition matrix introduced below is replaced by a Markov kernel
-                    between measurable spaces. The transition function satisfies the properties of a conditional distribution: \(P(y_t \mid y_{t-1}) \geq 0\)
-                    and \(\sum_{k=1}^K P(y_t = k \mid y_{t-1} = j) = 1\) for each state \(j\).
+                    between measurable spaces. In either form, the defining properties of a conditional distribution hold: \(P(y_t \mid y_{t-1}) \geq 0\) and
+                    \(\sum_{k=1}^K P(y_t = k \mid y_{t-1} = j) = 1\) for each state \(j\).
                 </p>
 
                 <p>
@@ -224,10 +229,10 @@ uses_python: true
 
                 <p>
                     Any higher-order Markov model can be converted into a first-order Markov model by redefining the state to include the past \(M\)
-                    observations. For \(M = 2\), we define \(\tilde{y}_t = (y_{t-1}, y_t)\). Then
+                    observations. For \(M = 2\), we define \(\tilde{y}_t = (y_{t-1}, y_t)\) for \(t \geq 2\). Then
                     \[
                     \begin{align*}
-                    P(\tilde{y}_{1:T}) &= P(\tilde{y}_2) \prod_{t = 3}^T P(\tilde{y}_t \mid \tilde{y}_{t-1}) \\\\
+                    P(\tilde{y}_{2:T}) &= P(\tilde{y}_2) \prod_{t = 3}^T P(\tilde{y}_t \mid \tilde{y}_{t-1}) \\\\
                                        &= P(y_1, y_2) \prod_{t = 3}^T P(y_t \mid y_{t-1}, y_{t-2}).
                     \end{align*}
                     \]
@@ -284,8 +289,8 @@ uses_python: true
                 </p>
 
                 <p>
-                    The <strong>log-likelihood</strong> of a set of sequences \(\mathcal{D} = (x_1, \ldots, x_N)\), where
-                    \(x_i = (x_{i\,1}, \ldots, x_{i \, T_{i}})\) is a sequence of length \(T_i\), is given by
+                    Assume the \(N\) sequences are independent given \(\boldsymbol{\theta}\). The <strong>log-likelihood</strong> of a set of sequences
+                    \(\mathcal{D} = (x_1, \ldots, x_N)\), where \(x_i = (x_{i\,1}, \ldots, x_{i \, T_{i}})\) is a sequence of length \(T_i\), is given by
                     \[
                     \begin{align*}
                     \log P(\mathcal{D} \mid \boldsymbol{\theta}) &= \sum_{i=1}^N \log P(x_i \mid \boldsymbol{\theta}) \\\\
@@ -315,11 +320,12 @@ uses_python: true
                     \[
                     \begin{align*}
                     &\sum_j \pi_j = 1  \\\\
-                    &\sum_k A_{jk} = 1 \text{ for each } j
+                    &\sum_k A_{jk} = 1 \text{ for each } j.
                     \end{align*}
                     \]
                     (We omit the non-negativity constraints \(\pi_j \geq 0\) and \(A_{jk} \geq 0\). They are automatically satisfied by the closed-form
-                    solutions below since the counts are non-negative.)
+                    solutions below since the counts are non-negative.) Both objectives are concave, and the constraint sets (a simplex for \(\pi\), one
+                    simplex per row for \(A\)) are convex, so any point meeting the stationarity conditions below is a global maximizer.
                 </p>
 
                 <p>
@@ -366,6 +372,11 @@ uses_python: true
                     \[
                     \hat{A}_{jk} = \frac{N_{jk}}{N_j}.
                     \]
+                </p>
+
+                <p>
+                    This last expression requires \(N_j \gt 0\). A state that is never left carries no information about its row of \(A\), and the code
+                    sample below fills that row with zeros.
                 </p>
             </section>
 
@@ -542,7 +553,8 @@ uses_python: true
                     \[
                     P(\{N_{jk}\} \mid A_{j:}) \propto \prod_{k=1}^K (A_{jk})^{N_{jk}}.
                     \]
-                    Now, with the symmetric Dirichlet prior, we have:
+                    This is the row-\(j\) factor of the indicator-power form derived above, with the combinatorial factor omitted because it does not involve
+                    \(A_{j:}\). Now, with the symmetric Dirichlet prior, we have:
                     \[
                     P(A_{j:}) \propto \prod_{k=1}^K (A_{jk})^{\alpha -1}.
                     \]
@@ -550,8 +562,8 @@ uses_python: true
                 </p>
 
                 <p>
-                    By <a href="basic.html#T-bayes_theorem" class="ref-link"><strong>Bayes' rule</strong></a>, the posterior is proportional to the product
-                    of the likelihood and the prior:
+                    By <a href="basic.html#T-bayes_theorem" class="ref-link"><strong>Bayes' rule</strong></a>, stated for events on the linked page and used
+                    here in its density form, the posterior is proportional to the product of the likelihood and the prior:
                     \[
                     \begin{align*}
                     P(A_{j:} \mid \{N_{jk}\}) &\propto \left[ \prod_{k=1}^K (A_{jk})^{N_{jk}}\right] \times \left[ \prod_{k=1}^K (A_{jk})^{\alpha-1}\right] \\\\
@@ -570,8 +582,9 @@ uses_python: true
                     live in the same parametric family, so the posterior is obtained by simply updating the hyperparameters.
                 </p>
                 <p>
-                    There are two common choices for an estimator from a posterior distribution: the posterior mean and the mode (MAP estimate). For a
-                    Dirichlet distribution, the posterior <strong>mean</strong> is given by:
+                    There are two common choices for an estimator from a posterior distribution: the posterior mean and the mode (MAP estimate). The
+                    <a href="mvn.html#T-dirichlet_moments" class="ref-link"><strong>moments of the Dirichlet distribution</strong></a> give the posterior
+                    <strong>mean</strong> at once:
                     \[
                     \begin{align*}
                     \mathbb{E}[A_{jk} \mid \{N_{jk}\}] &= \frac{N_{jk}+\alpha}{\sum_{i=1}^K (N_{ji}+\alpha)} \\\\
@@ -582,7 +595,8 @@ uses_python: true
 
                 <p>
                     The posterior mean is often used in practice because it is always defined. The <strong>mode</strong> (the "actual" MAP estimate)
-                    is given by
+                    maximizes the posterior density over the simplex, and the Lagrange computation used for the MLE above, with \(N_{jk}\) replaced by
+                    \(N_{jk} + \alpha - 1\), gives
                     \[
                     \operatorname{mode}(A_{jk}) = \frac{N_{jk}+\alpha - 1}{N_j + K (\alpha - 1)}.
                     \]
@@ -611,8 +625,13 @@ uses_python: true
                     <p>
                         The <strong>transition matrix</strong> formalism links Markov chains directly to
                         <a href="../Linear_algebra/stochastic.html#D-stochastic_matrix" class="ref-link"><strong>stochastic matrices</strong></a> in linear
-                        algebra. Here, the <strong>stationary distribution</strong> is characterized as the left eigenvector corresponding to the eigenvalue
-                        1, and it describes the long-run behavior of the system. This principle powers the <strong>PageRank</strong> algorithm.
+                        algebra. A <strong>stationary distribution</strong> is a probability row vector that \(A\) leaves unchanged, that is, a left
+                        eigenvector of \(A\) for the eigenvalue 1. The linked page states the same condition for a
+                        <a href="../Linear_algebra/stochastic.html#D-steady_state_vector" class="ref-link"><strong>steady-state vector</strong></a>,
+                        written there for the transposed matrix, whose columns rather than rows sum to 1. When the distribution of \(y_t\) converges to
+                        such a vector, the stationary distribution describes the long-run behavior of the chain, and this is the principle behind the
+                        <strong>PageRank</strong> algorithm. The conditions under which the convergence holds belong to Markov chain theory, which we do
+                        not develop here.
                     </p>
                     <p>
                         In <a href="../Machine_learning/intro_RL.html"><strong>reinforcement learning</strong></a>, Markov chains generalize to
@@ -627,7 +646,7 @@ uses_python: true
                 
             </section>
         </div>
-<script src="/js/runPythonCode.js"></script>
+        <script src="/js/runPythonCode.js"></script>
         <script src="/js/collapsible.js"></script>  
     </body>
 </html>
