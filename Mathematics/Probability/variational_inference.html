@@ -46,6 +46,9 @@ uses_python: false
                     &= \int p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) \, d\boldsymbol{z}.
                     \end{align*}
                     \]
+                    Here and throughout, \(\boldsymbol{x}\) is an observation with \(0 \lt p_{\boldsymbol{\theta}}(\boldsymbol{x}) \lt \infty\), so that the
+                    ratio is defined. This density form of Bayes' rule is the analogue of
+                    <a href="basic.html#T-bayes_theorem" class="ref-link"><strong>Bayes' theorem</strong></a> for events, and we take it for granted here.
                 </p>
 
                 <p>
@@ -54,21 +57,26 @@ uses_python: false
                     densities below are understood as densities with respect to this reference measure. The difficulty hidden in the formula is the
                     <strong>evidence</strong> \(p_{\boldsymbol{\theta}}(\boldsymbol{x})\). For conjugate exponential-family models the integral admits a closed
                     form. Outside this regime, as with neural-network likelihoods, non-conjugate priors, or discrete-continuous interactions, there is no
-                    analytic solution, and numerical quadrature scales prohibitively in the dimension of \(\boldsymbol{z}\). The posterior itself is well-defined
-                    as a <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>conditional expectation</strong></a>.
-                    What variational inference addresses is the intractability of <em>computing</em> with it.
+                    analytic solution, and numerical quadrature scales prohibitively in the dimension of \(\boldsymbol{z}\). The posterior itself is a
+                    conditional distribution. Each of its probabilities is a
+                    <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>conditional expectation</strong></a> of
+                    an indicator, and selecting these versions coherently across all sets of latent values is the question of regular conditional distributions,
+                    discussed but not developed on the linked page. What variational inference addresses is the intractability of <em>computing</em> with the
+                    posterior, not its existence.
                 </p>
 
                 <p>
                     <strong>Variational inference (VI)</strong> replaces the intractable computation with a tractable one of a different shape. We restrict
-                    attention to a family \(\mathcal{Q}\) of distributions over \(\boldsymbol{z}\) that we have decided in advance we can compute with. Typically
-                    \(\mathcal{Q}\) is a parametric family \(\{q_{\boldsymbol{\psi}}(\boldsymbol{z}) : \boldsymbol{\psi} \in \Psi\}\) indexed by
-                    <strong>variational parameters</strong> \(\boldsymbol{\psi}\). Inside this family we look for the member closest to the true posterior in the
-                    <a href="entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler divergence</strong></a>:
+                    attention to a family \(\mathcal{Q}\) of distributions over \(\boldsymbol{z}\) that we have decided in advance we can compute with.
+                    Typically \(\mathcal{Q}\) is a parametric family \(\{q_{\boldsymbol{\psi}}(\boldsymbol{z}) : \boldsymbol{\psi} \in \Psi\}\) indexed by
+                    <strong>variational parameters</strong> \(\boldsymbol{\psi}\). Inside this family we look for the member closest to the true posterior
+                    in the <a href="entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler divergence</strong></a>:
                     \[
-                    \boldsymbol{\psi}^* = \arg\min_{\boldsymbol{\psi} \in \Psi} 
+                    \boldsymbol{\psi}^* = \arg\min_{\boldsymbol{\psi} \in \Psi}
                     D_{\mathrm{KL}}\!\left( q_{\boldsymbol{\psi}}(\boldsymbol{z}) \,\|\, p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x}) \right).
                     \]
+                    The linked definition is stated for finite sample spaces. Below we use its analogue for densities,
+                    \(D_{\mathrm{KL}}(q \,\|\, p) = \int q \log (q/p) \, d\boldsymbol{z}\), with the same conventions for zeros.
                 </p>
 
                 <p>
@@ -89,9 +97,12 @@ uses_python: false
                 </p>
 
                 <p>
-                    Throughout, we adopt the absolute-continuity hypothesis \(q_{\boldsymbol{\psi}} \ll p_{\boldsymbol{\theta}}(\cdot \mid \boldsymbol{x})\),
-                    under which the KL is well-defined as an element of \([0, \infty]\). We also adopt the integrability hypothesis that this expectation is
-                    finite. Both hypotheses hold for the standard variational families used on this page.
+                    Where needed, we adopt the absolute-continuity hypothesis \(q_{\boldsymbol{\psi}} \ll p_{\boldsymbol{\theta}}(\cdot \mid \boldsymbol{x})\),
+                    under which the KL is well-defined as an element of \([0, \infty]\), together with the integrability hypothesis, namely that
+                    \(\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\) and \(\log q_{\boldsymbol{\psi}}(\boldsymbol{z})\) are
+                    \(q_{\boldsymbol{\psi}}\)-integrable. Whether they hold depends on the model as well as on the family. A Gaussian \(q_{\boldsymbol{\psi}}\),
+                    whose density is positive on the whole latent space, violates the first against a posterior confined to a bounded region. The theorems below
+                    state which of these hypotheses, if any, they use.
                 </p>
 
                 <p>
@@ -112,11 +123,11 @@ uses_python: false
 
                 <p>
                     The notation is consistent with the earlier measure-theoretic probability pages and with the advanced machine learning literature. The
-                    probability space is \((\Omega, \mathcal{F}, \mathbb{P})\), with \(\boldsymbol{x}\) and \(\boldsymbol{z}\) measurable functions on
-                    \(\Omega\) taking values in observation- and latent-spaces respectively. Lowercase letters
-                    \(p_{\boldsymbol{\theta}}, q_{\boldsymbol{\psi}}\) denote densities with respect to the reference measures on the latent and observation
-                    spaces, in line with the convention adopted at the start of this section. When the reference measure is clear from context, we follow the
-                    variational-inference literature and sometimes call these densities "distributions".
+                    probability space is \((\Omega, \mathcal{F}, \mathbb{P})\), with \(\boldsymbol{x}\) and \(\boldsymbol{z}\) measurable functions on \(\Omega\)
+                    taking values in observation- and latent-spaces respectively. Lowercase letters \(p_{\boldsymbol{\theta}}, q_{\boldsymbol{\psi}}\) denote
+                    densities with respect to the reference measures on the latent and observation spaces, extending to the observation space the convention
+                    adopted above for the latent space. When the reference measure is clear from context, we follow the variational-inference literature and
+                    sometimes call these densities "distributions".
                 </p>
 
                 <p>
@@ -182,10 +193,10 @@ uses_python: false
                             q_{\boldsymbol{\psi}}(\boldsymbol{z}) \,\big\|\, p(\boldsymbol{z})
                         \right)}_{\text{KL to prior}},
                         \]
-                        which exhibits the ELBO as a balance between data fit and regularization against the prior. The two forms agree as elements of
-                        \([-\infty, +\infty]\) for any \(q_{\boldsymbol{\psi}}\). The second form takes a finite value precisely when
-                        \(q_{\boldsymbol{\psi}} \ll p\) (the variational density is absolutely continuous with respect to the prior, so that the prior-KL term is
-                        finite), and we adopt this hypothesis whenever the prior-KL form is invoked.
+                        which exhibits the ELBO as a balance between data fit and regularization against the prior. The two forms agree whenever both terms of
+                        the second are finite, but the second form can fail to be defined even when the first is finite. The prior-KL term can be finite only
+                        when \(q_{\boldsymbol{\psi}} \ll p\) (the variational density is absolutely continuous with respect to the prior), and whenever the
+                        prior-KL form is invoked we assume that both of its terms are finite.
                     </p>
                 </div>
 
@@ -221,7 +232,7 @@ uses_python: false
                 <p>
                     The ELBO is not just any quantity associated with \(q_{\boldsymbol{\psi}}\). It is a <em>lower bound</em> on the log-evidence
                     \(\log p_{\boldsymbol{\theta}}(\boldsymbol{x})\), and the inequality holds for every \(q_{\boldsymbol{\psi}}\) in the variational family
-                    under integrability of the integrand alone. The proof is a one-step application of Jensen's inequality.
+                    under the integrability of the two logarithms alone. The proof is a one-step application of Jensen's inequality.
                 </p>
 
                 <div class="theorem" id="T-elbo_lower_bound">
@@ -237,8 +248,9 @@ uses_python: false
                         \leq
                         \log p_{\boldsymbol{\theta}}(\boldsymbol{x}).
                         \]
-                        No absolute-continuity hypothesis between \(q_{\boldsymbol{\psi}}\) and the posterior is required for the inequality itself, since the
-                        Jensen-based proof does not use one.
+                        No separate absolute-continuity hypothesis between \(q_{\boldsymbol{\psi}}\) and the posterior is imposed. As the proof shows, the
+                        integrability hypothesis already forces \(p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) \gt 0\) for
+                        \(q_{\boldsymbol{\psi}}\)-almost every \(\boldsymbol{z}\).
                     </p>
                 </div>
 
@@ -264,8 +276,12 @@ uses_python: false
                         = \log p_{\boldsymbol{\theta}}(\boldsymbol{x}).
                         \end{align*}
                         \]
-                        The inequality is <a href="entropy.html#T-jensen_inequality" class="ref-link"><strong>Jensen's inequality</strong></a> applied to the
-                        concave function \(\log\), with the expectation taken against \(q_{\boldsymbol{\psi}}\).
+                        The inequality is <a href="entropy.html#T-jensen_inequality" class="ref-link"><strong>Jensen's inequality</strong></a> applied with the
+                        convex function \(-\log\) on the interval \((0, \infty)\), with the expectation taken against \(q_{\boldsymbol{\psi}}\). The ratio takes
+                        values in this interval \(q_{\boldsymbol{\psi}}\)-almost surely, because the integrability hypothesis on
+                        \(\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\) rules out
+                        \(p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) = 0\) on a set of positive \(q_{\boldsymbol{\psi}}\)-probability, and its
+                        expectation is at most \(p_{\boldsymbol{\theta}}(\boldsymbol{x}) \lt \infty\) by the last two lines.
                     </p>
                     <p>
                         The cancellation in the third line uses the identity
@@ -275,29 +291,30 @@ uses_python: false
                         \]
                         which holds wherever \(q_{\boldsymbol{\psi}}(\boldsymbol{z}) \gt 0\). Strictly speaking, the integral on that line is taken over
                         \(\{q_{\boldsymbol{\psi}} \gt 0\}\), so it is at most
-                        \(\int p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) \, d\boldsymbol{z}\). If \(q_{\boldsymbol{\psi}}\) covers the support of
-                        the joint \(p_{\boldsymbol{\theta}}(\cdot, \boldsymbol{x})\), the two integrals coincide and the last equality holds. If not, the
-                        integral over \(\{q_{\boldsymbol{\psi}} \gt 0\}\) is strictly smaller, and the inequality
-                        \(\mathcal{L} \leq \log p_{\boldsymbol{\theta}}(\boldsymbol{x})\) is preserved, in fact strengthened. Either way, the conclusion follows.
-                        The variational families considered on this page satisfy the common-support condition in their standard configurations, so equality in
-                        the cancellation step is the typical case in practice.
+                        \(\int p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) \, d\boldsymbol{z}\). Equality holds when
+                        \(\{q_{\boldsymbol{\psi}} \gt 0\}\) contains \(\{p_{\boldsymbol{\theta}}(\boldsymbol{x}, \cdot) \gt 0\}\) up to a null set. Without this
+                        covering property the step from the third line to the fourth becomes an inequality in the same direction, which only strengthens the
+                        conclusion. A variational density that is positive everywhere, such as a Gaussian, always has the covering property.
                     </p>
                 </div>
 
                 <p>
                     The Jensen step deserves a moment of reflection. The inequality \(\mathbb{E}[\log Y] \leq \log \mathbb{E}[Y]\) is a one-direction relation,
                     and Jensen tells us nothing in general about how tight it is. The bound \(\mathcal{L} \leq \log p_{\boldsymbol{\theta}}(\boldsymbol{x})\) it
-                    produces is sharp in a precise sense. Equality holds in Jensen if and only if the ratio
+                    produces is sharp in a precise sense. Because \(-\log\) is strictly convex, equality holds in the Jensen step if and only if the ratio
                     \[
                     p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) / q_{\boldsymbol{\psi}}(\boldsymbol{z})
                     \]
-                    is \(q_{\boldsymbol{\psi}}\)-almost-everywhere constant in \(\boldsymbol{z}\), which occurs precisely when
+                    is \(q_{\boldsymbol{\psi}}\)-almost-everywhere equal to a constant \(c\), an equality case that the Jensen statement linked above does not
+                    record and that we take for granted here. The constant is then
+                    \(c = \int_{\{q_{\boldsymbol{\psi}} \gt 0\}} p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) \, d\boldsymbol{z}\), and the step
+                    governed by the covering property is an equality as well exactly when \(c = p_{\boldsymbol{\theta}}(\boldsymbol{x})\). Both steps are
+                    equalities precisely when, for almost every \(\boldsymbol{z}\),
                     \[
                     q_{\boldsymbol{\psi}}(\boldsymbol{z}) = p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x}).
                     \]
-                    In that case the ratio equals \(p_{\boldsymbol{\theta}}(\boldsymbol{x})\) for every \(\boldsymbol{z}\) in the common support. The Jensen
-                    bound therefore recovers the log-evidence exactly when the variational distribution equals the posterior. The variational family
-                    \(\mathcal{Q}\) may or may not be rich enough to meet this condition.
+                    In that case the ratio equals \(p_{\boldsymbol{\theta}}(\boldsymbol{x})\) wherever \(q_{\boldsymbol{\psi}}\) is positive, and the Jensen
+                    bound recovers the log-evidence exactly. The variational family \(\mathcal{Q}\) may or may not be rich enough to meet this condition.
                 </p>
 
                 <h3>The Exact KL Decomposition</h3>
@@ -390,13 +407,17 @@ uses_python: false
                     <strong>The Jensen bound is recovered as a corollary, under the decomposition's hypotheses.</strong><br>
                     Under the absolute-continuity hypothesis \(q_{\boldsymbol{\psi}} \ll p_{\boldsymbol{\theta}}(\cdot \mid \boldsymbol{x})\) of the
                     decomposition theorem, the KL term is non-negative by
-                    <a href="entropy.html#T-kl_non_negativity" class="ref-link"><strong>Gibbs' inequality</strong></a>, and the decomposition immediately gives
+                    <a href="entropy.html#T-kl_non_negativity" class="ref-link"><strong>Gibbs' inequality</strong></a>, which the linked page proves for finite
+                    sample spaces and which we use here in its density form without proof. The decomposition then gives
                     \[
                     \log p_{\boldsymbol{\theta}}(\boldsymbol{x}) \geq \mathcal{L}(\boldsymbol{\theta}, \boldsymbol{\psi} \mid \boldsymbol{x}),
                     \]
                     with equality if and only if \(q_{\boldsymbol{\psi}} = p_{\boldsymbol{\theta}}(\cdot \mid \boldsymbol{x})\) almost everywhere under
-                    \(q_{\boldsymbol{\psi}}\). The corollary needs stronger hypotheses than the Jensen-based proof, which used only integrability. In exchange,
-                    it gives the exact gap and shows that the bound is tight exactly when \(q_{\boldsymbol{\psi}}\) is the posterior.
+                    \(q_{\boldsymbol{\psi}}\). The corollary costs nothing beyond the hypotheses of the Jensen-based proof. The integrability hypothesis of that
+                    proof already makes \(p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\) positive for \(q_{\boldsymbol{\psi}}\)-almost every
+                    \(\boldsymbol{z}\), so every set of posterior probability zero has \(q_{\boldsymbol{\psi}}\)-probability zero, which is the
+                    absolute-continuity hypothesis. What the corollary adds is the exact gap, and with it the fact that the bound is tight exactly when
+                    \(q_{\boldsymbol{\psi}}\) is the posterior.
                 </p>
 
                 <p>
@@ -429,7 +450,7 @@ uses_python: false
                 <p>
                     The variational family \(\mathcal{Q}\) is a modeling choice that the practitioner makes before running any algorithm, and it determines both
                     the quality of the approximation and the cost of finding it. Two families are sufficiently common that they organize much of the variational
-                    literature, and we introduce them here informally, and each receives a fuller treatment in the algorithmic sections that follow.
+                    literature. We introduce them here informally, and each receives a fuller treatment in the algorithmic sections that follow.
                 </p>
 
                 <p>
@@ -457,9 +478,9 @@ uses_python: false
 
                 <p>
                     The mean-field family is historically the original variational construction and remains the workhorse of classical Bayesian VI, particularly
-                    for models with conjugate updates between blocks. Its principal weakness is that it systematically underestimates posterior variance when the
-                    true posterior has inter-block dependencies. The weakness is visible already in two dimensions, where a mean-field Gaussian cannot represent
-                    any posterior correlation between the two coordinates.
+                    for models with conjugate updates between blocks. Its principal weakness is that it tends to underestimate posterior variance when the true
+                    posterior has inter-block dependencies. The weakness is visible already in two dimensions, where a mean-field Gaussian cannot represent any
+                    posterior correlation between the two coordinates.
                 </p>
 
                 <p>
@@ -487,14 +508,15 @@ uses_python: false
                 </p>
 
                 <p>
-                    Two standard estimators address the obstacle, and they sit at opposite ends of a bias-variance trade-off. The
-                    <strong>reparameterization gradient</strong> applies when \(q_{\boldsymbol{\psi}}\) admits a sampling representation
-                    \(\boldsymbol{z} = g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon})\) with \(\boldsymbol{\epsilon}\) drawn from a fixed base distribution.
-                    It pushes the \(\boldsymbol{\psi}\)-dependence inside the expectation, where ordinary differentiation under the integral sign applies,
-                    and yields a low-variance estimator at the cost of requiring \(g_{\boldsymbol{\psi}}\) to be differentiable. The
-                    <strong>score-function estimator</strong>, also called REINFORCE, applies in full generality, including when \(\boldsymbol{z}\) is
-                    discrete or \(g_{\boldsymbol{\psi}}\) is non-differentiable. It exploits an algebraic identity that converts the gradient of the
-                    expectation into a different expectation that can be estimated by Monte Carlo. The price is high variance and a corresponding need for
+                    Two standard estimators address the obstacle. Both are unbiased, and they differ in variance and in what they require of
+                    \(q_{\boldsymbol{\psi}}\). The <strong>reparameterization gradient</strong> applies when \(q_{\boldsymbol{\psi}}\) admits a sampling
+                    representation \(\boldsymbol{z} = g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon})\) with \(\boldsymbol{\epsilon}\) drawn from a fixed base
+                    distribution. It pushes the \(\boldsymbol{\psi}\)-dependence inside the expectation, where ordinary differentiation under the integral sign
+                    applies, and yields a low-variance estimator at the cost of requiring \(g_{\boldsymbol{\psi}}\) and the log-joint to be differentiable. The
+                    <strong>score-function estimator</strong>, also called REINFORCE, applies much more widely, including when \(\boldsymbol{z}\) is discrete or
+                    \(g_{\boldsymbol{\psi}}\) is non-differentiable, provided \(\log q_{\boldsymbol{\psi}}\) is differentiable in \(\boldsymbol{\psi}\) and its
+                    support does not move with \(\boldsymbol{\psi}\). The estimator exploits an algebraic identity that converts the gradient of the expectation
+                    into a different expectation that can be estimated by Monte Carlo. The price is high variance and a corresponding need for
                     variance-reduction techniques. We develop both estimators in turn, with the rigorous justification (in each case, an application of
                     dominated convergence) explicit.
                 </p>
@@ -545,17 +567,18 @@ uses_python: false
                 <p>
                     Suppose \(q_{\boldsymbol{\psi}}\) admits a <strong>reparameterization</strong>: a fixed base distribution \(p_0\) on some space
                     \(\mathcal{E}\), typically the standard multivariate Gaussian \(\mathcal{N}(\mathbf{0}, \mathbf{I})\), and a deterministic map
-                    \(g_{\boldsymbol{\psi}} : \mathcal{E} \to \mathcal{Z}\) such that the law of \(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon})\) under
-                    \(\boldsymbol{\epsilon} \sim p_0\) coincides with \(q_{\boldsymbol{\psi}}\). The canonical example is the location-scale family for a
-                    Gaussian variational distribution. If
+                    \(g_{\boldsymbol{\psi}} : \mathcal{E} \to \mathcal{Z}\) such that the law of \(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon})\)
+                    under \(\boldsymbol{\epsilon} \sim p_0\) coincides with \(q_{\boldsymbol{\psi}}\). The canonical example is the location-scale
+                    family for a Gaussian variational distribution. If
                     \(q_{\boldsymbol{\psi}}(\boldsymbol{z}) = \mathcal{N}(\boldsymbol{z} \mid \boldsymbol{\mu}, \operatorname{diag}(\boldsymbol{\sigma}^2))\)
-                    with \(\boldsymbol{\psi} = (\boldsymbol{\mu}, \boldsymbol{\sigma})\), one takes \(p_0 = \mathcal{N}(\mathbf{0}, \mathbf{I})\) and
+                    with \(\boldsymbol{\psi} = (\boldsymbol{\mu}, \boldsymbol{\sigma})\), where \(\boldsymbol{\sigma}\) has positive entries, one
+                    takes \(p_0 = \mathcal{N}(\mathbf{0}, \mathbf{I})\) and
                     \[
                     g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}) = \boldsymbol{\mu} + \boldsymbol{\sigma} \odot \boldsymbol{\epsilon},
                     \]
                     where \(\odot\) denotes element-wise multiplication. This construction is the
-                    <a href="../Machine_learning/vae.html#D-reparameterization_trick" class="ref-link"><strong>reparameterization trick</strong></a> of
-                    variational autoencoders, and the present treatment isolates the gradient identity from any specific parametric form.
+                    <a href="../Machine_learning/vae.html#D-reparameterization_trick" class="ref-link"><strong>reparameterization trick</strong></a>
+                    of variational autoencoders, and the present treatment isolates the gradient identity from any specific parametric form.
                 </p>
 
                 <div class="theorem" id="T-reparameterization_gradient">
@@ -594,9 +617,9 @@ uses_python: false
                         \mathbb{E}_{q_{\boldsymbol{\psi}}}[h_{\boldsymbol{\psi}}(\boldsymbol{z})]
                         = \mathbb{E}_{p_0}[h_{\boldsymbol{\psi}}(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}))],
                         \]
-                        which holds because \(g_{\boldsymbol{\psi}}\) pushes \(p_0\) forward to \(q_{\boldsymbol{\psi}}\). 
-                        The right-hand side is an expectation against the fixed base measure \(p_0\), which does not depend on \(\boldsymbol{\psi}\). 
-                        The differentiability and domination hypotheses imply that the family of difference quotients
+                        which holds because \(g_{\boldsymbol{\psi}}\) pushes \(p_0\) forward to \(q_{\boldsymbol{\psi}}\). The right-hand side is an expectation
+                        against the fixed base measure \(p_0\), which does not depend on \(\boldsymbol{\psi}\). The differentiability and domination hypotheses
+                        imply that the family of difference quotients
                         \[
                         \big[h_{\boldsymbol{\psi}+t e_j}(g_{\boldsymbol{\psi}+t e_j}(\boldsymbol{\epsilon}))
                         - h_{\boldsymbol{\psi}}(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}))\big] / t
@@ -605,21 +628,21 @@ uses_python: false
                         \[
                         \partial_{\psi_j} h_{\boldsymbol{\psi}}(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}))
                         \]
-                        as \(t \to 0\), and is dominated in absolute value by \(M(\boldsymbol{\epsilon})\)
-                        (by the mean-value theorem and the domination hypothesis). The
-                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
-                        therefore licenses the interchange of the limit \(t \to 0\) and the expectation, which is exactly the differentiation 
-                        under the integral. Reading the coordinate-wise statement as a vector identity gives the claim.
+                        as \(t \to 0\), and is dominated in absolute value by \(M(\boldsymbol{\epsilon})\) (by the mean-value theorem and the domination
+                        hypothesis). The <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
+                        therefore licenses the interchange of the limit and the expectation along every sequence \(t_n \to 0\), which is exactly the
+                        differentiation under the integral. Reading the coordinate-wise statement as a vector identity, with \(\nabla_{\boldsymbol{\psi}}\) the
+                        vector of partial derivatives, gives the claim.
                     </p>
                 </div>
 
                 <p>
                     Applied to the ELBO with
                     \[
-                    h_{\boldsymbol{\psi}}(\boldsymbol{z}) 
+                    h_{\boldsymbol{\psi}}(\boldsymbol{z})
                     = \log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) - \log q_{\boldsymbol{\psi}}(\boldsymbol{z}),
                     \]
-                    the theorem gives
+                    the theorem gives, whenever its hypotheses hold for this choice of \(h_{\boldsymbol{\psi}}\),
                     \[
                     \nabla_{\boldsymbol{\psi}} \mathcal{L}(\boldsymbol{\theta}, \boldsymbol{\psi} \mid \boldsymbol{x})
                     =
@@ -631,8 +654,7 @@ uses_python: false
                     \right],
                     \]
                     and the right-hand side is amenable to Monte Carlo estimation by drawing samples
-                    \(\boldsymbol{\epsilon}^{(1)}, \ldots, \boldsymbol{\epsilon}^{(K)} \sim p_0\) and
-                    averaging the bracketed gradient.
+                    \(\boldsymbol{\epsilon}^{(1)}, \ldots, \boldsymbol{\epsilon}^{(K)} \sim p_0\) and averaging the bracketed gradient.
                 </p>
 
                 <p>
@@ -646,7 +668,8 @@ uses_python: false
                     When the family is defined only through the transform \(g_{\boldsymbol{\psi}}\), as in normalizing flows where the variational density is
                     induced by composing Jacobian-tractable diffeomorphisms with the base distribution, the closed form is unavailable and the
                     change-of-variables formula is the only route. If \(g_{\boldsymbol{\psi}} : \mathcal{E} \to \mathcal{Z}\) is a diffeomorphism onto its image
-                    with Jacobian \(\partial g_{\boldsymbol{\psi}} / \partial \boldsymbol{\epsilon}\), the densities are related by
+                    with Jacobian \(\partial g_{\boldsymbol{\psi}} / \partial \boldsymbol{\epsilon}\), the densities are related by the multivariable
+                    change-of-variables formula, which we use without proof,
                     \[
                     \log q_{\boldsymbol{\psi}}(\boldsymbol{z})
                     =
@@ -667,21 +690,23 @@ uses_python: false
                 <p>
                     The practical relevance of the formula is therefore that it lifts the reparameterization trick to families without closed-form densities.
                     Designing \(g_{\boldsymbol{\psi}}\) so that its Jacobian determinant is tractable is the central constraint on the variational family in such
-                    cases. Full-covariance Gaussians use a Cholesky factor \(\mathbf{L}\) with diagonal log-determinant \(\sum_k \log L_{kk}\), and richer
-                    families such as normalizing flows compose Jacobian-tractable maps to extend expressiveness while preserving the closed-form log-determinant.
-                    For the closed-form Gaussian case, the
+                    cases. Full-covariance Gaussians use a triangular Cholesky factor \(\mathbf{L}\) with positive diagonal, whose log-determinant is
+                    \(\sum_k \log L_{kk}\), and richer families such as normalizing flows compose Jacobian-tractable maps to extend expressiveness while
+                    preserving the closed-form log-determinant. For the closed-form Gaussian case, the
                     <a href="../Machine_learning/vae.html#D-reparameterization_trick" class="ref-link"><strong>reparameterization trick</strong></a> is developed
-                    on the variational autoencoder page, where the entropy term appears as the regularizer of the encoder.
+                    on the variational autoencoder page, where the
+                    <a href="../Machine_learning/vae.html#T-elbo_decomposition" class="ref-link"><strong>ELBO decomposition</strong></a> labels the KL to the
+                    prior as the regularization term.
                 </p>
 
                 <p>
                     A complementary technique, <strong>automatic differentiation variational inference (ADVI)</strong>, addresses the case where the latent
-                    space is a constrained subset of \(\mathbb{R}^D\) (positivity, simplex, bounded interval) by composing a fixed bijection
-                    \(T : \Theta \to \mathbb{R}^D\) with a Gaussian variational distribution on the unconstrained space. The density on \(\Theta\) is
-                    recovered by the same change-of-variables formula, and the resulting ELBO is differentiable in the variational parameters by automatic
-                    differentiation through \(T^{-1}\) and the model. ADVI is the construction underlying probabilistic programming systems such as Stan
-                    and PyMC, and is a special case of the reparameterization gradient with the bijection chosen to handle parameter constraints rather
-                    than to expand expressiveness.
+                    space \(\mathcal{Z}\) is a constrained subset of \(\mathbb{R}^D\) (positivity, simplex, bounded interval) by composing a fixed bijection
+                    \(T : \mathcal{Z} \to \mathbb{R}^D\) with a Gaussian variational distribution on the unconstrained space. The density on \(\mathcal{Z}\)
+                    is recovered by the same change-of-variables formula, and the resulting ELBO is differentiable in the variational parameters by
+                    automatic differentiation through \(T^{-1}\) and the model. ADVI is implemented in probabilistic programming systems such as Stan and
+                    PyMC, and it is a special case of the reparameterization gradient with the bijection chosen to handle parameter constraints rather than
+                    to expand expressiveness.
                 </p>
 
                 <p>
@@ -692,23 +717,25 @@ uses_python: false
                     \mapsto \log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \cdot) - \log q_{\boldsymbol{\psi}}(\cdot)
                     \]
                     is differentiable in \(\boldsymbol{\psi}\), so the gradient can be computed by ordinary automatic differentiation through the model and the
-                    variational density. This is what makes the reparameterization estimator the workhorse of variational autoencoders and, more broadly, of
-                    every modern deep generative model whose latent variables admit a location-scale or related differentiable parameterization. In the amortized
-                    setting of the variational autoencoder the variational parameters \(\boldsymbol{\psi}_n = f_{\boldsymbol{\phi}}(\boldsymbol{x}_n)\)
-                    themselves depend on the data through an inference network, and the reparameterization map becomes
-                    \(g_{\boldsymbol{\phi}}(\boldsymbol{x}, \boldsymbol{\epsilon})\). This is a special case of the present theorem in which the gradient with
-                    respect to the encoder parameters \(\boldsymbol{\phi}\) flows through both the data-dependence of \(\boldsymbol{\psi}_n\) and the
-                    deterministic transform \(g\).
+                    variational density. This is what makes the reparameterization estimator the workhorse of variational autoencoders and, more broadly, of deep
+                    generative models trained with variational objectives whose latent variables admit a location-scale or related differentiable
+                    parameterization. In the amortized setting of the variational autoencoder the variational parameters
+                    \(\boldsymbol{\psi}_n = f_{\boldsymbol{\phi}}(\boldsymbol{x}_n)\) themselves depend on the data through an inference network, and the
+                    reparameterization map becomes \(g_{\boldsymbol{\phi}}(\boldsymbol{x}, \boldsymbol{\epsilon})\). This is a special case of the present
+                    theorem in which the gradient with respect to the encoder parameters \(\boldsymbol{\phi}\) flows through both the data-dependence of
+                    \(\boldsymbol{\psi}_n\) and the deterministic transform \(g\).
                 </p>
 
                 <h3>The Score-Function (REINFORCE) Estimator</h3>
 
                 <p>
                     When \(q_{\boldsymbol{\psi}}\) does not admit a differentiable reparameterization, the reparameterization theorem is unavailable. Examples
-                    include discrete latents, implicit distributions specified only by their sampler, and mixture distributions whose component assignment is
-                    itself a random variable. One then needs an estimator that depends only on the ability to evaluate
-                    \(\log q_{\boldsymbol{\psi}}(\boldsymbol{z})\) and its \(\boldsymbol{\psi}\)-gradient. The score-function estimator delivers this by
-                    exchanging the gradient of an expectation for an expectation of a different gradient.
+                    include discrete latents and mixture distributions whose component assignment is itself a random variable. Implicit distributions, specified
+                    only by their sampler, lie outside both estimators as developed here, since each needs the log-density \(\log q_{\boldsymbol{\psi}}\). For
+                    the remaining cases one needs an estimator that requires no differentiability in \(\boldsymbol{z}\), only samples from
+                    \(q_{\boldsymbol{\psi}}\) and evaluations of the log-joint, of \(\log q_{\boldsymbol{\psi}}(\boldsymbol{z})\), and of its
+                    \(\boldsymbol{\psi}\)-gradient. The score-function estimator delivers this by exchanging the gradient of an expectation for an expectation of
+                    a different gradient.
                 </p>
 
                 <div class="theorem" id="T-score_function_estimator">
@@ -736,8 +763,8 @@ uses_python: false
                         In particular, when \(h\) is independent of \(\boldsymbol{\psi}\) the first term vanishes and the identity reduces to
                         \(\mathbb{E}_{q_{\boldsymbol{\psi}}}[h(\boldsymbol{z}) \nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}(\boldsymbol{z})]\). The
                         common-support hypothesis is essential. Without it, differentiating the integral produces additional Leibniz boundary terms. The
-                        classical pitfall is \(\boldsymbol{z} \sim \mathrm{Uniform}(0, \boldsymbol{\psi})\), where the \(\boldsymbol{\psi}\)-dependent endpoint
-                        generates a contribution that the score identity does not capture.
+                        classical pitfall is \(z \sim \mathrm{Uniform}(0, \psi)\) with scalar \(\psi \gt 0\), where the \(\psi\)-dependent endpoint generates a
+                        contribution that the score identity does not capture.
                     </p>
                 </div>
 
@@ -745,10 +772,9 @@ uses_python: false
                     <span class="proof-title">Proof.</span>
                     <p>
                         Writing the expectation as an integral and differentiating under the integral sign (justified by
-                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence</strong></a>
-                        applied to the family
-                        \(\boldsymbol{\psi} \mapsto h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z})\)
-                        with the dominating hypothesis assumed),
+                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence</strong></a> applied to the
+                        family \(\boldsymbol{\psi} \mapsto h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z})\) with the
+                        dominating hypothesis assumed),
                         \[
                         \nabla_{\boldsymbol{\psi}} \int h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z}) \, d\boldsymbol{z}
                         = \int \nabla_{\boldsymbol{\psi}}\!\left[ h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z}) \right] d\boldsymbol{z}.
@@ -766,8 +792,13 @@ uses_python: false
                         +
                         h_{\boldsymbol{\psi}}(\boldsymbol{z}) \cdot q_{\boldsymbol{\psi}}(\boldsymbol{z}) \, \nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}(\boldsymbol{z}).
                         \]
-                        Integrating against \(d\boldsymbol{z}\) and recognizing both terms as expectations
-                        under \(q_{\boldsymbol{\psi}}\) gives the claim.
+                        The domination hypothesis presupposes that
+                        \(\boldsymbol{\psi} \mapsto h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z})\) is differentiable, so
+                        \(h_{\boldsymbol{\psi}}(\boldsymbol{z})\) is differentiable in \(\boldsymbol{\psi}\) wherever
+                        \(q_{\boldsymbol{\psi}}(\boldsymbol{z}) \gt 0\). Off the common support the product vanishes for every \(\boldsymbol{\psi}\) near
+                        the parameter value of interest, so its gradient is zero there and only \(\{q_{\boldsymbol{\psi}} \gt 0\}\) contributes to the
+                        integral. Integrating against \(d\boldsymbol{z}\) and recognizing both terms as expectations under \(q_{\boldsymbol{\psi}}\)
+                        gives the claim.
                     </p>
                 </div>
 
@@ -785,7 +816,7 @@ uses_python: false
                     h_{\boldsymbol{\psi}}(\boldsymbol{z})
                     = \log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) - \log q_{\boldsymbol{\psi}}(\boldsymbol{z}),
                     \]
-                    the theorem gives
+                    the theorem gives, whenever its hypotheses hold for this choice of \(h_{\boldsymbol{\psi}}\),
                     \[
                     \nabla_{\boldsymbol{\psi}} \mathcal{L}
                     =
@@ -803,12 +834,13 @@ uses_python: false
                     \nabla_{\boldsymbol{\psi}} h_{\boldsymbol{\psi}}(\boldsymbol{z})
                     = -\nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}(\boldsymbol{z})
                     \]
-                    (only the \(\log q_{\boldsymbol{\psi}}\) term in \(h_{\boldsymbol{\psi}}\) carries \(\boldsymbol{\psi}\)-dependence), and the score has zero
-                    mean under its own distribution,
+                    (only the \(\log q_{\boldsymbol{\psi}}\) term in \(h_{\boldsymbol{\psi}}\) carries \(\boldsymbol{\psi}\)-dependence), and the
+                    score has zero mean under its own distribution,
                     \[
                     \mathbb{E}_{q_{\boldsymbol{\psi}}}[\nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}] = 0
                     \]
-                    (a consequence of differentiating \(\int q_{\boldsymbol{\psi}} d\boldsymbol{z} = 1\)), the first term contributes zero. The ELBO
+                    (the theorem applied with \(h \equiv 1\), whose domination hypothesis asks for an integrable function dominating
+                    \(\nabla_{\boldsymbol{\psi}} q_{\boldsymbol{\psi}}\) near the parameter value), the first term contributes zero. The ELBO
                     gradient is therefore
                     \[
                     \nabla_{\boldsymbol{\psi}} \mathcal{L}
@@ -819,25 +851,25 @@ uses_python: false
                     \right],
                     \]
                     and the score-function estimator of the ELBO gradient is the Monte Carlo average of this expression over samples drawn from
-                    \(q_{\boldsymbol{\psi}}\). Crucially, this formula requires only that we can sample from \(q_{\boldsymbol{\psi}}\) and evaluate its
-                    log-density and score. Neither \(q_{\boldsymbol{\psi}}\) nor the integrand needs to be differentiable in \(\boldsymbol{z}\), which is exactly
-                    the regime where reparameterization fails.
+                    \(q_{\boldsymbol{\psi}}\). Crucially, this formula requires only that we can sample from \(q_{\boldsymbol{\psi}}\), evaluate the
+                    log-joint, and evaluate the log-density of \(q_{\boldsymbol{\psi}}\) and its score. Neither \(q_{\boldsymbol{\psi}}\) nor the
+                    integrand needs to be differentiable in \(\boldsymbol{z}\), which is exactly the regime where reparameterization fails.
                 </p>
 
                 <h3>Bias, Variance, and the Choice of Estimator</h3>
 
                 <p>
-                    Both estimators are unbiased. Their expectation is the exact ELBO gradient. They differ sharply in variance, and this difference dictates the
-                    choice in practice.
+                    As noted at the start of this section, both estimators are unbiased whenever the hypotheses of their theorems hold, with expectation equal to
+                    the exact ELBO gradient. They differ sharply in variance, and this difference dictates the choice in practice.
                 </p>
 
                 <p>
                     The reparameterization estimator achieves low variance because the \(\boldsymbol{\psi}\)-dependence has been pushed into a single
                     deterministic transform \(g_{\boldsymbol{\psi}}\), and the gradient is taken pathwise. Each Monte Carlo sample evaluates the derivative of a
-                    smooth composition, with no random factors of \(\nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}\) introduced by the variance reduction.
-                    For Gaussian \(q_{\boldsymbol{\psi}}\) and smooth log-joint \(\log p_{\boldsymbol{\theta}}\), estimates from one or two samples per gradient
-                    step are typically sufficient to drive stochastic gradient descent to convergence, and every variational autoencoder trained in practice
-                    exploits this fact.
+                    smooth composition, and no factor of the score \(\nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}\) multiplies the integrand, which is
+                    the main source of variance in the score-function estimator. For Gaussian \(q_{\boldsymbol{\psi}}\) and smooth log-joint
+                    \(\log p_{\boldsymbol{\theta}}\), estimates from one or two samples per gradient step are typically sufficient to drive stochastic gradient
+                    optimization to convergence, and standard variational autoencoder training relies on this.
                 </p>
 
                 <p>
@@ -871,25 +903,30 @@ uses_python: false
                 </p>
 
                 <p>
-                    The coefficient \(c_i\) is then chosen to minimize the variance of \(\tilde{g}_i^{\mathrm{cv}}\), and a standard calculation
-                    yields the optimum
+                    The coefficient \(c_i\) is then chosen to minimize the variance of \(\tilde{g}_i^{\mathrm{cv}}\). Since
+                    \[
+                    \operatorname{Var}(\tilde{g}_i - c_i b_i)
+                    = \operatorname{Var}(\tilde{g}_i) - 2 c_i \operatorname{Cov}(\tilde{g}_i, b_i) + c_i^2 \operatorname{Var}(b_i)
+                    \]
+                    is a quadratic in \(c_i\), for \(\operatorname{Var}(b_i) \gt 0\) the optimum is
                     \[
                     c_i^*
                     =
                     \frac{\operatorname{Cov}(\tilde{g}_i(\boldsymbol{z}), \, b_i(\boldsymbol{z}))}{\operatorname{Var}(b_i(\boldsymbol{z}))},
                     \]
-                    which can be estimated online from the same Monte Carlo samples used for the gradient. Choosing \(b_i\) and \(c_i^*\) in this way can
-                    reduce variance by orders of magnitude while preserving unbiasedness. A further refinement, common in policy-gradient reinforcement
-                    learning, uses a learned function of \(\boldsymbol{z}\) as the baseline. Effective control variates are an extensive research topic that we
-                    do not pursue further here.
+                    which can be estimated from earlier iterations or from a separate batch of samples, so that the coefficient does not depend on the samples it
+                    multiplies. Choosing \(b_i\) and \(c_i^*\) in this way can reduce variance by orders of magnitude while preserving unbiasedness. A further
+                    refinement, common in policy-gradient reinforcement learning, uses a learned baseline that depends on the observation but not on the sampled
+                    \(\boldsymbol{z}\) (a function of the state rather than of the action), which keeps the zero-mean condition intact. Effective control
+                    variates are an extensive research topic that we do not pursue further here.
                 </p>
 
                 <p>
-                    The choice of estimator is therefore largely dictated by the structure of \(q_{\boldsymbol{\psi}}\). When a reparameterization is
-                    available, it is essentially always preferred. The literature on "black-box" variational inference, in which the score-function estimator
-                    is paired with control variates and applied to models for which no reparameterization is known, exists precisely to extend the
-                    variational program to the discrete and combinatorial models that the reparameterization cannot reach. The two estimators cover
-                    complementary regimes, and a practitioner whose model contains both reparameterisable and non-reparameterisable latents can apply each
+                    The choice of estimator is therefore largely dictated by the structure of \(q_{\boldsymbol{\psi}}\). When a reparameterization is available,
+                    it is usually preferred. The literature on "black-box" variational inference, in which the score-function estimator is paired with control
+                    variates and applied to models for which no reparameterization is known, was developed to extend the variational program to models without
+                    model-specific derivations, including the discrete and combinatorial models that the reparameterization cannot reach. The two estimators
+                    cover complementary regimes, and a practitioner whose model contains both reparameterizable and non-reparameterizable latents can apply each
                     estimator to the appropriate component.
                 </p>
             </section>
@@ -901,27 +938,28 @@ uses_python: false
                     The gradient-based estimators of the previous section operate within a <strong>fixed-form</strong> variational family. The practitioner
                     chooses a parametric distribution \(q_{\boldsymbol{\psi}}\), such as a Gaussian, a Gaussian mixture, or a normalizing-flow-induced density,
                     and optimizes its parameters by stochastic gradient ascent on Monte Carlo estimates of \(\nabla_{\boldsymbol{\psi}} \mathcal{L}\). The
-                    present section develops a complementary approach in which the variational family is the fully-factorized mean-field family
-                    \(q(\boldsymbol{z}) = \prod_{j=1}^{J} q_j(z_j)\) introduced in <a href="#elbo">the earlier discussion of the variational family</a>, and the
-                    functional form of each factor \(q_j\) is <em>not</em> chosen in advance but emerges from the optimization itself. This is sometimes called
-                    <strong>free-form</strong> variational inference, in contrast to the fixed-form setting of the previous section.
+                    present section develops a complementary approach in which the variational family is the mean-field family
+                    \(q(\boldsymbol{z}) = \prod_{j=1}^{J} q_j(z_j)\) introduced in <a href="#elbo">the earlier discussion of the variational family</a>, with
+                    \(z_j\) now denoting the \(j\)-th block, and the functional form of each factor \(q_j\) is <em>not</em> chosen in advance but emerges from
+                    the optimization itself. This is sometimes called <strong>free-form</strong> variational inference, in contrast to the fixed-form setting of
+                    the previous section.
                 </p>
 
                 <p>
-                    The free-form approach exchanges flexibility in the variational family for flexibility in the functional form of each factor. Under the
-                    mean-field assumption, the ELBO admits an explicit decomposition that makes coordinate-wise optimization tractable. With each \(q_j\)
-                    treated as the variational degree of freedom (rather than a finite-dimensional parameter \(\boldsymbol{\psi}_j\)), the optimal form of
-                    \(q_j^*\) holding the other factors fixed is determined by the model's log-joint via a closed-form expression. Cycling through the factors
-                    and updating each in turn yields the <strong>coordinate ascent variational inference</strong> (CAVI) algorithm. It is the most classical and
-                    historically important variational algorithm, and since the 1990s it has powered every conjugate-exponential-family Bayesian inference task
-                    addressable by mean-field VI.
+                    The free-form approach exchanges flexibility in the variational family for flexibility in the functional form of each factor. Under
+                    the mean-field assumption, the ELBO admits an explicit decomposition that makes coordinate-wise optimization tractable. With each
+                    \(q_j\) treated as the variational degree of freedom (rather than a finite-dimensional parameter \(\boldsymbol{\psi}_j\)), the
+                    optimal form of \(q_j^*\) holding the other factors fixed is determined by the model's log-joint via a closed-form expression.
+                    Cycling through the factors and updating each in turn yields the <strong>coordinate ascent variational inference</strong> (CAVI)
+                    algorithm. It is one of the most classical and historically important variational algorithms, and it remains the standard algorithm
+                    for mean-field VI in conjugate-exponential-family models.
                 </p>
 
                 <h3>The Mean-Field ELBO and the Coordinate Update</h3>
 
                 <p>
-                    Substituting the mean-field factorization \(q(\boldsymbol{z}) = \prod_j q_j(z_j)\) into the ELBO and using the additivity of entropy under
-                    product distributions, the ELBO decomposes as
+                    Substituting the mean-field factorization \(q(\boldsymbol{z}) = \prod_j q_j(z_j)\) into the ELBO and using
+                    \(\log q(\boldsymbol{z}) = \sum_j \log q_j(z_j)\) and the fact that each factor integrates to one, the ELBO decomposes as
                     \[
                     \mathcal{L}(q) = \int q(\boldsymbol{z}) \log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) \, d\boldsymbol{z} + \sum_{j=1}^{J} \mathbb{H}(q_j),
                     \]
@@ -939,7 +977,7 @@ uses_python: false
                     <span class="theorem-title">Theorem: Optimal Mean-Field Update (CAVI)</span>
                     <p>
                         Let \(q(\boldsymbol{z}) = \prod_{j=1}^{J} q_j(z_j)\) be a mean-field variational distribution, and fix all factors
-                        \(\{q_i\}_{i \neq j}\). Assume that the expected log-joint
+                        \(\{q_i\}_{i \neq j}\), each with finite entropy. Assume that the expected log-joint
                         \[
                         \mathbb{E}_{q_{-j}}[\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})]
                         \]
@@ -949,8 +987,8 @@ uses_python: false
                         \[
                         \int \exp\!\big( \mathbb{E}_{q_{-j}}[\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})] \big) \, dz_j
                         \]
-                        is finite, with the convention \(\exp(-\infty) = 0\). Then the ELBO, viewed as a functional of \(q_j\) with the other factors held fixed,
-                        is uniquely maximized by
+                        is finite and positive, with the convention \(\exp(-\infty) = 0\). Then the ELBO, viewed as a functional of \(q_j\) with the other
+                        factors held fixed, is maximized, uniquely up to almost-everywhere equality, by
                         \[
                         q_j^*(z_j) \propto \exp\!\Big( \mathbb{E}_{q_{-j}}\!\big[\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\big] \Big).
                         \]
@@ -972,15 +1010,15 @@ uses_python: false
                         \[
                         g_j(z_j) := \mathbb{E}_{q_{-j}}[\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})]
                         \]
-                        and let \(\tilde{f}_j(z_j) := \exp(g_j(z_j))\). The integrability hypothesis ensures that the normalized density
+                        and let \(\tilde{f}_j(z_j) := \exp(g_j(z_j))\). The hypothesis on the normalizing integral ensures that the normalized density
                         \(f_j(z_j) := \tilde{f}_j(z_j) / \int \tilde{f}_j(z_j') \, dz_j'\) is well-defined. Isolating the dependence of the ELBO on \(q_j\),
                         \[
                         \mathcal{L}(q) = \int q_j(z_j) \, g_j(z_j) \, dz_j - \int q_j(z_j) \log q_j(z_j) \, dz_j + C,
                         \]
-                        where \(C\) collects all terms independent of \(q_j\) (the entropies of the other factors and the integral against \(q_{-j}\) of any
-                        \(q_{-j}\)-only contributions). Substitute \(g_j(z_j) = \log f_j(z_j) + \log Z_j\), where \(Z_j = \int \tilde{f}_j(z_j') \, dz_j'\) is
-                        the (constant) normalizer. The \(\log Z_j\) term contributes another constant absorbed into \(C\), and the remaining \(q_j\)-dependent
-                        terms reorganize as
+                        where \(C = \sum_{i \neq j} \mathbb{H}(q_i)\) collects the entropies of the other factors, finite by hypothesis, the expected log-joint
+                        having been written entirely as \(\int q_j g_j \, dz_j\) by integrating over \(\boldsymbol{z}_{-j}\) first. Substitute
+                        \(g_j(z_j) = \log f_j(z_j) + \log Z_j\), where \(Z_j = \int \tilde{f}_j(z_j') \, dz_j'\) is the (constant) normalizer. The \(\log Z_j\)
+                        term joins \(C\) in a new constant \(C' = C + \log Z_j\), and the remaining \(q_j\)-dependent terms reorganize as
                         \[
                         \begin{align*}
                         \mathcal{L}(q)
@@ -988,16 +1026,22 @@ uses_python: false
                         &= -D_{\mathrm{KL}}(q_j \,\|\, f_j) + C'.
                         \end{align*}
                         \]
-                        By <a href="entropy.html#T-kl_non_negativity" class="ref-link"><strong>Gibbs' inequality</strong></a>,
+                        By <a href="entropy.html#T-kl_non_negativity" class="ref-link"><strong>Gibbs' inequality</strong></a> in its density form,
                         \(D_{\mathrm{KL}}(q_j \,\|\, f_j) \geq 0\) with equality if and only if \(q_j = f_j\) almost everywhere. Therefore the ELBO is maximized
-                        over choices of \(q_j\) precisely at \(q_j^* = f_j\), which is the claimed expression.
+                        over choices of \(q_j\) precisely when \(q_j = f_j\) almost everywhere, which is the claimed expression.
                     </p>
                 </div>
 
                 <p>
-                    Two structural features of this update deserve emphasis. First, the optimal \(q_j^*\) depends on the other factors \(q_{-j}\) only
-                    through the expected log-joint. In graphical-model language, the dependence is mediated entirely by the <em>Markov blanket</em> of node
-                    \(j\), since variables conditionally independent of \(z_j\) given its neighbors contribute additive constants to \(\log p\) that drop out
+                    Two structural features of this update deserve emphasis. First, the optimal \(q_j^*\) depends on the other factors \(q_{-j}\)
+                    only through the expected log-joint. In graphical-model language, the dependence is mediated entirely by the
+                    <em>Markov blanket</em> of node \(j\), since
+                    \[
+                    \log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})
+                    = \log p_{\boldsymbol{\theta}}(z_j \mid \boldsymbol{x}, \boldsymbol{z}_{-j})
+                    + \log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}_{-j}),
+                    \]
+                    where the first term depends on the other latents only through that blanket and the second is constant in \(z_j\) and drops out
                     of the proportionality.
                 </p>
 
@@ -1013,16 +1057,17 @@ uses_python: false
                 <p>
                     The optimal-update theorem yields an iterative algorithm. We initialize the factors \(\{q_j\}\) arbitrarily, cycle through
                     \(j = 1, \ldots, J\), updating each \(q_j\) to its optimal form given the current values of the other factors, and repeat until convergence.
-                    Each individual update increases the ELBO (or leaves it unchanged at a fixed point), so the sequence of ELBO values is monotonically
-                    non-decreasing and, since the ELBO is bounded above by the log-evidence, the sequence of ELBO values converges to a finite limit.
+                    As long as the hypotheses of the theorem hold at each update, each individual update increases the ELBO (or leaves it unchanged at a fixed
+                    point), so the sequence of ELBO values is monotonically non-decreasing. Provided the initial ELBO is finite, the sequence converges to a
+                    finite limit, since the ELBO is bounded above by the log-evidence.
                 </p>
 
                 <p>
                     We emphasize that this is convergence of the objective values, not of the iterates themselves. Monotone boundedness of
                     \(\mathcal{L}(q^{(t)})\) does not by itself guarantee that the factors \((q_1^{(t)}, \ldots, q_J^{(t)})\) converge in the space of
                     distributions. Convergence of the iterates to a stationary point requires additional regularity conditions, such as compactness of the
-                    variational parameter space, continuity of the update map, or the standard hypotheses for block coordinate ascent. These conditions hold for
-                    the conjugate-exponential models on which CAVI is typically run but are not automatic. In practice the iterates settle at a local maximum
+                    variational parameter space, continuity of the update map, or the standard hypotheses for block coordinate ascent. They are not automatic,
+                    even for the conjugate-exponential models on which CAVI is typically run. In practice the iterates are observed to settle at a local optimum
                     that depends on the initialization, since the ELBO is concave with respect to each \(q_j\) individually but generally non-concave jointly.
                 </p>
 
@@ -1049,9 +1094,9 @@ uses_python: false
                 <p>
                     The expectation in the inner loop is, in conjugate-exponential models, available in closed form as a function of the parameters of the other
                     factors \(q_{-j}\). The update therefore reduces to a finite-dimensional parameter update on each iteration, and the apparent functional
-                    optimization collapses to ordinary numerical computation. In non-conjugate models the expectation is intractable and CAVI is replaced by
-                    gradient-based methods of the previous section, or by hybrid schemes that Monte-Carlo-estimate the inner expectation while preserving the
-                    coordinate ascent structure of the outer loop.
+                    optimization collapses to ordinary numerical computation. In non-conjugate models the expectation is typically intractable and CAVI is
+                    replaced by gradient-based methods of the previous section, or by hybrid schemes that Monte-Carlo-estimate the inner expectation while
+                    preserving the coordinate ascent structure of the outer loop.
                 </p>
 
                 <h3>Bayesian Gaussian Mixture Models and Automatic Sparsity</h3>
@@ -1061,13 +1106,16 @@ uses_python: false
                     the most pedagogically important example. With a Dirichlet prior on the mixing weights, conjugate Normal-Wishart priors on the component
                     parameters, and the standard latent cluster-assignment variables, the mean-field factorization
                     \[
-                    q(\boldsymbol{z}, \boldsymbol{\theta}) = q(\boldsymbol{\theta}) \prod_n q_n(z_n)
+                    q(\boldsymbol{\pi}, \boldsymbol{\mu}, \boldsymbol{\Lambda}, z_{1:N})
+                    = q(\boldsymbol{\pi}, \boldsymbol{\mu}, \boldsymbol{\Lambda}) \prod_{n=1}^{N} q_n(z_n)
                     \]
-                    yields CAVI updates in which every factor's optimal form is itself a tractable member of the exponential family: Categorical for the
-                    cluster-assignment factors \(q_n(z_n)\), Dirichlet for the mixing-weight factor \(q(\boldsymbol{\pi})\), and Normal-Wishart for the
-                    component-parameter factors \(q(\boldsymbol{\mu}_k, \boldsymbol{\Lambda}_k)\). The update equations involve expected sufficient statistics
-                    under the other factors. We do not derive them on this page and instead highlight a single emergent phenomenon that is characteristic of the
-                    Bayesian setting and absent from gradient-based VI.
+                    treats the mixing weights \(\boldsymbol{\pi}\) and the component parameters \((\boldsymbol{\mu}_k, \boldsymbol{\Lambda}_k)\) as latent
+                    variables, part of \(\boldsymbol{z}\) in the notation of this page, rather than as fixed model parameters. It yields CAVI updates in which
+                    the factor over \((\boldsymbol{\pi}, \boldsymbol{\mu}, \boldsymbol{\Lambda})\) splits further and every factor's optimal form is itself a
+                    tractable member of the exponential family: Categorical for the cluster-assignment factors \(q_n(z_n)\), Dirichlet for the mixing-weight
+                    factor \(q(\boldsymbol{\pi})\), and Normal-Wishart for the component-parameter factors \(q(\boldsymbol{\mu}_k, \boldsymbol{\Lambda}_k)\). The
+                    update equations involve expected sufficient statistics under the other factors. We do not derive them on this page and instead highlight a
+                    single emergent phenomenon that is characteristic of the Bayesian treatment of the mixing weights.
                 </p>
 
                 <div class="insight-box">
@@ -1075,22 +1123,25 @@ uses_python: false
                     <p>
                         When the Dirichlet prior on the mixing weights is sufficiently sparse, that is, when the concentration parameter \(\alpha_0\) is small,
                         the CAVI updates for the Bayesian Gaussian mixture exhibit an "automatic sparsity" effect. Clusters with few or no assigned data points
-                        have their effective Dirichlet count driven toward zero, and the corresponding \(q_n(z_n)\) factors place vanishing probability on those
-                        clusters at every subsequent iteration. The model "kills off" unneeded components autonomously, and the number of effectively active
-                        clusters at convergence is determined by the data rather than fixed in advance.
+                        have their effective Dirichlet count \(\alpha_k = \alpha_0 + N_k\), with \(N_k\) the expected number of points assigned to cluster \(k\),
+                        reduced toward the small prior value \(\alpha_0\), and the \(q_n(z_n)\) factors place ever less probability on those clusters. The model
+                        "kills off" unneeded components autonomously, and the number of effectively active clusters at convergence is largely determined by the
+                        data and by \(\alpha_0\) rather than fixed in advance.
                     </p>
                     <p>
                         Mathematically, the effect arises from the digamma function, denoted \(\psi_{\mathrm{dig}}\) here to avoid a clash with the variational
-                        parameters \(\boldsymbol{\psi}\), which appears in the variational expectation of \(\log \pi_k\) under the Dirichlet factor. For small
-                        \(N_k\), \(\exp(\psi_{\mathrm{dig}}(N_k)) \lt N_k\) and approaches zero as \(N_k \to 0\), producing a soft-thresholding behavior
-                        reminiscent of \(\ell_1\)-regularization. The same mechanism, known as "rich-get-richer", drives the asymptotic concentration phenomena
-                        of Dirichlet process mixtures.
+                        parameters \(\boldsymbol{\psi}\), which appears in the variational expectation of \(\log \pi_k\) under the Dirichlet factor. This
+                        expectation is \(\psi_{\mathrm{dig}}(\alpha_k) - \psi_{\mathrm{dig}}(\sum_l \alpha_l)\), so the factors \(q_n(z_n)\) weight cluster \(k\)
+                        in proportion to \(\exp(\psi_{\mathrm{dig}}(\alpha_k))\) rather than to \(\alpha_k\) itself, and
+                        \(\exp(\psi_{\mathrm{dig}}(\alpha_k)) \lt \alpha_k\) for every \(\alpha_k \gt 0\). The weight behaves like \(\alpha_k - \tfrac{1}{2}\)
+                        for large \(\alpha_k\) and tends to zero as \(\alpha_k \to 0\), so components with a small effective count are down-weighted
+                        disproportionately, a soft-thresholding behavior reminiscent of \(\ell_1\)-regularization.
                     </p>
                     <p>
-                        The same effect has a less benign manifestation in modern deep generative models, where it is known as <strong>posterior
-                        collapse</strong>. A sufficiently expressive decoder can render the latent variable uninformative for reconstruction, at which point the
-                        variational posterior collapses to the prior and the latent dimension is effectively pruned. Both phenomena are instances of the same
-                        Bayesian Occam's razor encoded in the mean-field ELBO.
+                        A related phenomenon appears in modern deep generative models, where it is known as <strong>posterior collapse</strong>. A sufficiently
+                        expressive decoder can render the latent variable uninformative for reconstruction, at which point the variational posterior collapses to
+                        the prior and the latent dimension is effectively pruned. Both reflect the pull that the KL term of the ELBO exerts toward the prior,
+                        although the mechanisms differ in detail.
                     </p>
                 </div>
 
@@ -1100,45 +1151,45 @@ uses_python: false
                     The mean-field assumption is structurally restrictive in a way that cannot be remedied by clever choice of factor functional form. The family
                     \(q(\boldsymbol{z}) = \prod_j q_j(z_j)\) is, by construction, incapable of representing posterior dependence between latent variables. When
                     the true posterior \(p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x})\) exhibits strong correlation between the \(z_j\),
-                    mean-field VI returns an approximation whose marginal variances systematically <em>underestimate</em> the true posterior uncertainty. Such
-                    correlation is generic, since the data couples the latents. The asymmetry of the KL divergence is responsible. Minimizing
-                    \(D_{\mathrm{KL}}(q \,\|\, p(\cdot \mid \boldsymbol{x}))\) penalizes configurations where \(q\) places mass in regions of low posterior
-                    probability much more strongly than configurations where \(q\) misses regions of high posterior probability, which produces the
-                    well-documented mode-seeking, variance-shrinking behavior of mean-field approximations.
+                    mean-field VI returns an approximation whose marginal variances typically <em>underestimate</em> the true posterior uncertainty. Such
+                    correlation is common, since the data couples the latents. The direction of the KL divergence, combined with the factorization, is
+                    responsible. Minimizing \(D_{\mathrm{KL}}(q \,\|\, p(\cdot \mid \boldsymbol{x}))\) penalizes configurations where \(q\) places mass in
+                    regions of low posterior probability much more strongly than configurations where \(q\) misses regions of high posterior probability, which
+                    produces the well-documented mode-seeking, variance-shrinking behavior of mean-field approximations.
                 </p>
 
                 <p>
-                    These limitations motivate the directions that have dominated variational inference since the early 2010s. <strong>Structured
-                    mean-field</strong> approximations retain dependencies between blocks of latent variables and recover much of the correlation structure that
-                    fully-factorized mean-field discards. A hidden Markov sequence, for instance, can be treated as a single block while sequences are assumed
-                    independent. <strong>Richer fixed-form families</strong> for use with the gradient-based methods of the previous section include Gaussians
-                    with full or low-rank-plus-diagonal covariance, Gaussian mixtures, and the family of <strong>normalizing flows</strong>, in which a sequence
-                    of Jacobian-tractable diffeomorphisms transforms a simple base distribution into an arbitrarily expressive variational posterior.
+                    These limitations motivate several directions of research. <strong>Structured mean-field</strong> approximations retain dependencies between
+                    blocks of latent variables and recover much of the correlation structure that fully-factorized mean-field discards. A hidden Markov sequence,
+                    for instance, can be treated as a single block while sequences are assumed independent. <strong>Richer fixed-form families</strong> for use
+                    with the gradient-based methods of the previous section include Gaussians with full or low-rank-plus-diagonal covariance, Gaussian mixtures,
+                    and the family of <strong>normalizing flows</strong>, in which a sequence of Jacobian-tractable diffeomorphisms transforms a simple base
+                    distribution into a highly expressive variational posterior.
                 </p>
 
                 <p>
                     <strong>Tighter bounds</strong> than the ELBO are available when one is willing to draw multiple samples per gradient step. The
                     importance-weighted autoencoder bound (IWAE) and its descendants exploit \(K\)-sample importance averaging to reduce the gap to the
-                    log-evidence. <strong>Expectation propagation</strong> reverses the direction of the KL divergence, minimizing
-                    \(D_{\mathrm{KL}}(p(\cdot \mid \boldsymbol{x}) \,\|\, q)\) instead of \(D_{\mathrm{KL}}(q \,\|\, p(\cdot \mid \boldsymbol{x}))\), exchanging
-                    the mode-seeking behavior of standard VI for a moment-matching, variance-preserving behavior at the cost of a more delicate algorithmic
-                    implementation. We do not develop these directions here, since each is a substantial research area in its own right.
+                    log-evidence. <strong>Expectation propagation</strong> works with the reverse direction
+                    \(D_{\mathrm{KL}}(p(\cdot \mid \boldsymbol{x}) \,\|\, q)\), which it minimizes locally, one approximating factor at a time, rather than
+                    globally, exchanging the mode-seeking behavior of standard VI for a moment-matching, mass-covering behavior at the cost of a more delicate
+                    algorithmic implementation. We do not develop these directions here, since each is a substantial research area in its own right.
                 </p>
 
                 <p>
                     The broader role of variational inference in the contemporary toolkit is best understood by contrast with the alternatives. Markov chain
                     Monte Carlo, <a href="monte_carlo.html#MCMC">treated on the Monte Carlo page</a>, produces samples whose distribution converges to the true
-                    posterior in the limit of infinite computation. It sacrifices exactness in finite time and pays in autocorrelated samples and slow mixing on
-                    multimodal posteriors. Variational inference, conversely, returns a fast and deterministic approximation whose quality is bounded by the
-                    expressiveness of the variational family rather than by sampling diagnostics. Its price is asymptotic exactness, which it trades for
-                    tractability on problems where MCMC is prohibitive. The two are complementary tools, not competitors, and a working Bayesian practitioner
-                    draws on both.
+                    posterior, under suitable conditions on the chain, in the limit of infinite computation. It sacrifices exactness in finite time and pays in
+                    autocorrelated samples and slow mixing on multimodal posteriors. Variational inference, conversely, returns an approximation, typically much
+                    faster to compute, whose quality is bounded by the expressiveness of the variational family rather than by sampling diagnostics. Its price is
+                    asymptotic exactness, which it trades for tractability on problems where MCMC is prohibitive. The two are complementary tools, not
+                    competitors, and a working Bayesian practitioner draws on both.
                 </p>
 
                 <p>
                     Among gradient-based methods, the variational autoencoder page builds on the
                     <a href="../Machine_learning/vae.html#D-reparameterization_trick" class="ref-link"><strong>reparameterization trick</strong></a> and develops
-                    the amortized, deep-network specialization that drives modern deep generative modeling, and the
+                    the amortized, deep-network specialization that is central to much of modern deep generative modeling, and the
                     <a href="../Machine_learning/natural_gd.html"><strong>natural gradient</strong></a> page develops the geometry of parameter space that
                     underlies many advanced variational optimizers. The variational foundation laid on this page, namely the ELBO, its KL decomposition, and the
                     gradient and coordinate-ascent algorithms that operate on it, remains the structural backbone underneath these specializations.
