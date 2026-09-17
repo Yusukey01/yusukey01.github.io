@@ -279,9 +279,11 @@ uses_python: false
                     <span class="proof-title">Proof:</span>
                     <p>
                         An incidence is a pair \((x, e) \in V \times E\) with \(x \in e\). We count incidences in two ways. For
-                        each vertex \(x \in V\), the number of edges incident to \(x\) is, by definition, \(\deg(x)\). Summing over
-                        all vertices gives \(\sum_{x \in V} \deg(x)\). On the other hand, each edge \(e = xy \in E\) has exactly
-                        two endpoints, so it contributes \(2\) to the total count of incidences. Equating the two counts yields
+                        each vertex \(x \in V\), the edges incident to \(x\) are exactly the edges \(xy\) with \(y \in N(x)\),
+                        and \(y \mapsto xy\) is a bijection from \(N(x)\) onto them. Their number is therefore \(\deg(x)\), and
+                        summing over all vertices gives \(\sum_{x \in V} \deg(x)\). On the other hand, each edge
+                        \(e = xy \in E\) has exactly two endpoints, so it contributes \(2\) to the total count of incidences.
+                        Equating the two counts yields
                         \[
                         \sum_{x \in V} \deg(x) = 2|E|.
                         \]
@@ -291,13 +293,13 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Extension to Multigraphs</h3>
                     <p>
-                        The Handshaking Lemma extends to multigraphs (and to graphs with loops) without modification, provided
-                        each loop at a vertex \(v\) is counted as contributing \(2\) to \(\deg(v)\). Under this convention the
-                        proof above goes through unchanged. A loop at \(v\) is incident to \(v\) twice, and each parallel edge
-                        between \(u\) and \(v\) contributes one incidence to each of its endpoints. This generality is
-                        occasionally useful. Road networks with multiple direct connections call for it, as do classical
-                        formulations of Eulerian circuits, where parallel edges arise naturally (K&ouml;nigsberg's seven bridges
-                        being the historical prototype).
+                        The Handshaking Lemma extends to multigraphs (and to graphs with loops) once the degree is redefined. We
+                        let \(\deg(v)\) count the edge-ends at \(v\), so each parallel edge between \(u\) and \(v\) contributes one
+                        to each of its ends, and each loop at \(v\) contributes \(2\) to \(\deg(v)\). With incidences counted as
+                        edge-ends, every edge still has exactly two ends, and the double count in the proof above goes through
+                        verbatim. This generality is occasionally useful. Road networks with multiple direct connections call for
+                        it, as do classical formulations of Eulerian circuits, where parallel edges arise naturally
+                        (K&ouml;nigsberg's seven bridges being the historical prototype).
                     </p>
                 </div>
 
@@ -306,8 +308,9 @@ uses_python: false
                     \[
                     d(G) = \frac{1}{|V|}\sum_{x \in V}\deg(x) = \frac{2|E|}{|V|} = 2\,\varepsilon(G).
                     \]
-                    This identity connects the average degree to the edge density and returns when we take
-                    up the <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a>.
+                    This identity connects the average degree to the edge-to-vertex ratio \(\varepsilon(G)\). The same degree sum
+                    reappears in the <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a>. Its
+                    diagonal entries are the vertex degrees, so its trace equals \(\sum_{x \in V} \deg(x) = 2|E|\).
                 </p>
 
                 <div class="theorem" id="T-odd_degree_parity">
@@ -340,28 +343,32 @@ uses_python: false
 
                 <p>
                     This innocent-looking corollary has surprisingly broad consequences. It underpins parity arguments throughout
-                    graph theory, including the existence criteria for Eulerian circuits.
+                    graph theory, including the degree-parity criteria for
+                    <a href="Eulerian.html"><strong>Eulerian cycles and paths</strong></a>.
                 </p>
 
                 <div class="insight-box">
                     <h3>Insight: Vertex Degree in Graph-Based ML</h3>
                     <p>
                         Vertex degree is more than a counting tool. It is a first-order structural feature that pervades
-                        graph-based machine learning. The <strong>degree matrix</strong> \(D\), with \(D_{ii} = \deg(v_i)\),
-                        is a building block of both the
-                        <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a> \(L = D - A\)
-                        and its normalized variants used in
+                        graph-based machine learning. The <strong>degree matrix</strong> \(D\), the diagonal matrix with
+                        \(D_{ii} = \deg(v_i)\), is a building block of both the
+                        <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a> \(L = D - A\), where
+                        \(A\) is the
+                        <a href="Eulerian.html#D-adjacency_matrix" class="ref-link"><strong>adjacency matrix</strong></a>, and its
+                        normalized variants used in
                         <a href="../Machine_learning/clustering.html#sp"><strong>spectral clustering</strong></a>. In
-                        <strong>Graph Neural Networks (GNNs)</strong>, the degree appears explicitly in the normalization
-                        factor \(D^{-1/2}AD^{-1/2}\) that prevents high-degree "hub" nodes from dominating the
-                        message-passing aggregation. Even the simple degree sequence of a graph can serve as a powerful
+                        <strong>Graph Neural Networks (GNNs)</strong>, the degree appears explicitly in the symmetric
+                        normalization \(D^{-1/2}AD^{-1/2}\) that prevents high-degree "hub" nodes from dominating the
+                        message-passing aggregation. In practice a self-loop is first added at every vertex, so that no degree
+                        vanishes and \(D^{-1/2}\) exists. Even the simple degree sequence of a graph can serve as a powerful
                         feature for graph classification tasks.
                     </p>
                 </div>
 
                 <p>
-                    Degree is an example of a <em>graph invariant</em>, a quantity preserved by isomorphism. This observation leads
-                    naturally to the question: when should two graphs be considered "the same"?
+                    The degree sequence is one example of a <em>graph invariant</em>, a quantity preserved by isomorphism. This
+                    observation leads naturally to the question: when should two graphs be considered "the same"?
                 </p>
             </section>
 
@@ -410,12 +417,16 @@ uses_python: false
                     The two notions are intertwined. Every graph property \(\mathcal{P}\) gives rise to its indicator invariant
                     \(\mathbf{1}_{\mathcal{P}}\), and every invariant \(f\) partitions graphs into properties by the level sets
                     \(\{G : f(G) = c\}\). For example, containing a triangle (a
-                    <a href="#D-graph_cycle" class="ref-link"><strong>cycle</strong></a> of length 3) is a graph property. If
-                    \(G\) contains a triangle, then so does every graph isomorphic to \(G\). Familiar invariants include the
-                    number of vertices, the number of edges, and the
-                    <a href="#D-degree_sequence" class="ref-link"><strong>degree sequence</strong></a>. Invariants are the
-                    primary tool for proving that two graphs are <em>not</em> isomorphic. If any invariant differs, the graphs
-                    cannot be isomorphic.
+                    <a href="#D-graph_cycle" class="ref-link"><strong>cycle</strong></a> of length 3) is a graph property. If \(G\)
+                    contains a triangle, then so does every graph isomorphic to \(G\). Familiar invariants include the number of
+                    vertices, the number of edges, and the
+                    <a href="#D-degree_sequence" class="ref-link"><strong>degree sequence</strong></a>. The first is invariant
+                    because an isomorphism \(\varphi\) is a bijection on vertices. For the other two, the biconditional in the
+                    definition shows that \(\varphi\) maps \(N_G(x)\) bijectively onto \(N_{G'}(\varphi(x))\), so
+                    \(\deg_{G'}(\varphi(x)) = \deg_G(x)\) for every vertex \(x\). The degree multisets therefore agree, and the
+                    <a href="#T-handshaking_lemma" class="ref-link"><strong>Handshaking Lemma</strong></a> then gives
+                    \(|E(G)| = |E(G')|\). Invariants are the primary tool for proving that two graphs are <em>not</em> isomorphic.
+                    If any invariant differs, the graphs cannot be isomorphic.
                 </p>
 
                 <p>
@@ -442,8 +453,9 @@ uses_python: false
                 <div class="theorem" id="D-bipartite_graph">
                     <span class="theorem-title">Definition: Bipartite Graph</span>
                     <p>
-                        A graph \(G = (V, E)\) is <strong>bipartite</strong> if its vertex set can be partitioned into two parts
-                        \(U\) and \(W\) such that every edge has one endpoint in \(U\) and the other in \(W\). Formally,
+                        A graph \(G = (V, E)\) is <strong>bipartite</strong> if its vertex set can be partitioned into two
+                        (possibly empty) parts \(U\) and \(W\) such that every edge has one endpoint in \(U\) and the other
+                        in \(W\). Formally,
                         \[
                         E \subseteq \{\,\{u, w\} : u \in U,\, w \in W\,\}.
                         \]
@@ -488,8 +500,8 @@ uses_python: false
                             \]
                         </li>
                         <li>
-                            For non-adjacent vertices \(x, y \in V\) with \(xy \notin E\), the <strong>edge-added graph</strong>
-                            \(G + xy\) is the graph \(\bigl(V, E \cup \{xy\}\bigr)\).
+                            For distinct non-adjacent vertices \(x, y \in V\) with \(xy \notin E\), the
+                            <strong>edge-added graph</strong> \(G + xy\) is the graph \(\bigl(V, E \cup \{xy\}\bigr)\).
                         </li>
                     </ul>
                 </div>
@@ -512,8 +524,8 @@ uses_python: false
                             \]
                         </li>
                         <li>
-                            \(G'\) is a <strong>spanning subgraph</strong> of \(G\) if \(V' = V\), that is, \(G'\) has the same vertex set 
-                            as \(G\) but possibly fewer edges.
+                            \(G'\) is a <strong>spanning subgraph</strong> of \(G\) if \(G' \subseteq G\) and \(V' = V\), that is,
+                            \(G'\) has the same vertex set as \(G\) but possibly fewer edges.
                         </li>
                     </ul>
                 </div>
@@ -583,20 +595,33 @@ uses_python: false
                 <div class="theorem" id="D-connected_graph">
                     <span class="theorem-title">Definition: Connected Graph</span>
                     <p>
-                        A graph \(G = (V, E)\) is <strong>connected</strong> if for every pair of distinct vertices \(x, y \in V\)
-                        there exists a path in \(G\) from \(x\) to \(y\). Equivalently, the binary relation on \(V\) defined by
-                        "\(x \sim y\) iff there is a path from \(x\) to \(y\)" is an equivalence relation whose equivalence classes
-                        number exactly one. These classes are the <strong>connected components</strong> of \(G\).
+                        A non-empty graph \(G = (V, E)\) is <strong>connected</strong> if for every pair of distinct vertices
+                        \(x, y \in V\) there exists a path in \(G\) from \(x\) to \(y\). Equivalently, the binary relation on
+                        \(V\) defined by "\(x \sim y\) iff there is a path from \(x\) to \(y\)" is an equivalence relation
+                        whose equivalence classes number exactly one. These classes are the
+                        <strong>connected components</strong> of \(G\).
                     </p>
                 </div>
 
                 <p>
-                    The "equivalent" formulation requires a brief check. Reflexivity is the trivial path \(x = x\) of length \(0\).
-                    Symmetry holds because every path can be traversed in reverse. Transitivity follows because the concatenation
-                    of a path from \(x\) to \(y\) and a path from \(y\) to \(z\) is a walk from \(x\) to \(z\), and any walk
-                    between two vertices contains a path between them (by repeatedly shortcutting at any vertex visited more than
-                    once). Connectivity will be the standing hypothesis whenever we discuss spanning structures, traversal
-                    problems, or component-wise decompositions.
+                    The "equivalent" formulation requires a brief check, and the check uses one auxiliary notion. A
+                    <strong>walk</strong> from \(x\) to \(z\) is a sequence of vertices \(x = w_0, w_1, \ldots, w_L = z\) in which
+                    consecutive vertices are adjacent. Unlike a path, a walk may repeat vertices and edges. Its length is \(L\),
+                    and it is <strong>closed</strong> if \(w_L = w_0\). Walks are developed further, together with trails, in
+                    <a href="network_flow.html#D-graph_walk" class="ref-link"><strong>walks and trails</strong></a>. Reflexivity is
+                    the trivial path of length \(0\) at \(x\). Symmetry holds because every path can be traversed in reverse.
+                    Transitivity follows because the concatenation of a path from \(x\) to \(y\) and a path from \(y\) to \(z\) is
+                    a walk from \(x\) to \(z\), and any walk between two vertices contains a path between them (by repeatedly
+                    shortcutting at any vertex visited more than once).
+                </p>
+
+                <p>
+                    We also use the name <strong>component</strong> for the subgraph \(G[C]\) induced by an equivalence class
+                    \(C\). Each component is connected, because every vertex on a path from \(x\) to \(y\) is equivalent to
+                    \(x\), so the path stays inside the class. Every edge \(xy\) of \(G\) lies in exactly one component, since
+                    \(x\) and \(y\) are joined by a path of length \(1\). In particular, no edge joins two distinct components.
+                    Connectivity will be the standing hypothesis whenever we discuss spanning structures, traversal problems,
+                    or component-wise decompositions.
                 </p>
 
                 <div class="theorem" id="D-tree_graph">
@@ -633,9 +658,12 @@ uses_python: false
                     </p>
                     <p>
                         Because \(G\) itself is connected, \(v\) must have at least one neighbor in each component \(H_i\).
-                        Otherwise, the vertices of that component would be unreachable from the rest of \(G\) after removing \(v\),
-                        contradicting connectivity of \(G\). Hence \(\deg_G(v) \geq c\). Applying the induction hypothesis to each
-                        \(H_i\) (each of which is connected by definition), we obtain \(|E(H_i)| \geq n_i - 1\). Summing,
+                        Otherwise no edge of \(G\) would join \(H_i\) to a vertex outside it, since \(H\) has no edges between
+                        distinct components and \(v\) has no neighbor in \(H_i\). A path in \(G\) from \(v\) to a vertex of \(H_i\)
+                        would then have no edge by which to enter \(H_i\), contradicting connectivity of \(G\). Hence
+                        \(\deg_G(v) \geq c\). Each \(H_i\) is connected and has \(n_i \lt n\) vertices, so the induction hypothesis
+                        gives \(|E(H_i)| \geq n_i - 1\). Every edge of \(G\) either lies in \(H\), and hence in exactly one
+                        \(H_i\), or is one of the \(\deg_G(v)\) edges at \(v\). Summing,
                         \[
                         \begin{align*}
                         |E(G)| &= \sum_{i=1}^{c} |E(H_i)| + \deg_G(v) \\\\
@@ -692,14 +720,16 @@ uses_python: false
                         <strong>(2) \(\Rightarrow\) (3).</strong> Uniqueness of paths trivially implies connectedness. We show
                         \(|E| = n - 1\) by induction on \(n\). The case \(n = 1\) is immediate (no edges). For \(n \geq 2\),
                         observe that \(T\) must contain a vertex of degree \(1\). Pick any longest path \(x_0 x_1 \cdots x_p\) in
-                        \(T\). Its endpoint \(x_p\) cannot have a neighbor outside the path (else the path could be extended) nor a
-                        second neighbor on the path (else two distinct paths from \(x_p\) to that neighbor would exist,
-                        contradicting (2)). So \(\deg(x_p) = 1\).
+                        \(T\). Since \(T\) is connected and \(n \geq 2\), it has an edge, so \(p \geq 1\). The endpoint \(x_p\)
+                        cannot have a neighbor outside the path (else the path could be extended) nor a second neighbor on the path
+                        (else two distinct paths from \(x_p\) to that neighbor would exist, contradicting (2)). So
+                        \(\deg(x_p) = 1\).
                     </p>
                     <p>
-                        Removing \(x_p\) and its incident edge yields a graph \(T'\) on \(n - 1\) vertices satisfying (2)
-                        (uniqueness of paths is preserved under deletion of a degree-\(1\) vertex). By induction
-                        \(|E(T')| = n - 2\), hence \(|E(T)| = n - 1\).
+                        Removing \(x_p\) and its incident edge yields a graph \(T'\) on \(n - 1\) vertices. A path of \(T\) between
+                        two vertices of \(T'\) cannot pass through \(x_p\), because an inner vertex of a path has two neighbors on
+                        it. The paths of \(T'\) are therefore exactly the paths of \(T\) avoiding \(x_p\), so \(T'\) inherits both
+                        the existence and the uniqueness in (2). By induction \(|E(T')| = n - 2\), hence \(|E(T)| = n - 1\).
                     </p>
                     <p>
                         <strong>(3) \(\Rightarrow\) (4).</strong> Suppose \(T\) is connected with \(n - 1\) edges. We
@@ -725,9 +755,8 @@ uses_python: false
 
                 <p>
                     Trees are among the most ubiquitous structures in both mathematics and computer science, from parse trees in
-                    compilers to decision trees in machine learning. We will study trees in greater depth in future pages,
-                    including their role in <a href="Eulerian.html"><strong>Eulerian and Hamiltonian theory</strong></a> and
-                    spanning tree algorithms.
+                    compilers to decision trees in machine learning. We study them in greater depth, including rooted trees and
+                    spanning trees, in <a href="trees_and_enumeration.html"><strong>Trees and Enumeration</strong></a>.
                 </p>
 
                 <div class="theorem" id="T-bipartite_no_odd_cycle">
@@ -743,8 +772,8 @@ uses_python: false
                     <p>
                         <strong>(\(\Rightarrow\))</strong> Suppose \(G\) is bipartite with parts \(U, W\) and let
                         \(C = x_0 x_1 \cdots x_{k-1} x_0\) be any cycle in \(G\). Since every edge of \(C\) joins \(U\) to \(W\),
-                        the vertices \(x_0, x_1, x_2, \ldots\) alternate between the two parts. To return to \(x_0 \in U\) after
-                        \(k\) steps, we need an even number of crossings, so \(k\) is even.
+                        the vertices \(x_0, x_1, x_2, \ldots\) alternate between the two parts. Say \(x_0 \in U\). To return to
+                        \(x_0\) after \(k\) steps, we need an even number of crossings, so \(k\) is even.
                     </p>
                     <p>
                         <strong>(\(\Leftarrow\))</strong> Suppose \(G\) contains no odd cycle. Without loss of generality assume
@@ -765,8 +794,11 @@ uses_python: false
                     </p>
                     <p>
                         It remains to show that any closed walk of odd length contains an odd cycle, which then contradicts the
-                        hypothesis. We argue by induction on the length \(L\) of the closed walk. If the walk has no internal
-                        vertex repetition, it is itself a cycle, and odd length makes it an odd cycle.
+                        hypothesis. We argue by induction on the length \(L\) of the closed walk \(w_0, w_1, \ldots, w_L\) with
+                        \(w_L = w_0\). Since \(G\) has no loops, \(L \neq 1\), so the odd length \(L\) is at least \(3\). An
+                        <em>internal repetition</em> is a pair \(i \lt j\) with \(w_i = w_j\) other than \((i, j) = (0, L)\). If
+                        the walk has none, then \(w_0, \ldots, w_{L-1}\) are distinct and \(L \geq 3\), so the walk traces a cycle
+                        of odd length.
                     </p>
                     <p>
                         Otherwise, locate the first internal repetition \(w_i = w_j\) with \(i \lt j\). Splitting at this
@@ -779,17 +811,18 @@ uses_python: false
 
                 <p>
                     This characterization is the cornerstone of bipartite-graph algorithms. Testing bipartiteness reduces to a
-                    depth-first or breadth-first search that 2-colors the graph and checks for parity violations on back-edges, an
-                    \(O(|V| + |E|)\) procedure. The odd-cycle obstruction will reappear when we study Eulerian circuits, planarity,
-                    and the spectral theory of graphs.
+                    depth-first or breadth-first search that 2-colors the graph and checks every non-tree edge for a color
+                    conflict, an \(O(|V| + |E|)\) procedure. The odd-cycle obstruction reappears in the study of
+                    <a href="planar_graphs.html"><strong>planar graphs</strong></a> and of
+                    <a href="network_flow.html#random-walks"><strong>random walks on graphs</strong></a>.
                 </p>
 
                 <div class="insight-box">
                     <h3>Paths, Cycles, and Trees in CS and ML</h3>
                     <p>
                         These three structures are the foundation of algorithmic graph theory. <strong>Shortest paths</strong>
-                        (Dijkstra's algorithm, Bellman-Ford) power routing in networks and underlie the
-                        <em>graph distance metrics</em> used in node embedding methods like DeepWalk.
+                        (Dijkstra's algorithm, Bellman-Ford) power routing in networks and define the
+                        <em>shortest-path distance</em>, the basic metric on the vertex set of a connected graph.
                         <strong>Cycle detection</strong> determines whether an undirected graph is a forest (cycle-free) and
                         whether a directed graph is a DAG (directed acyclic graph). This test is critical in dependency
                         resolution, topological sorting, and the structure of Bayesian networks. <strong>Trees</strong> themselves
