@@ -36,8 +36,8 @@ uses_python: false
                     \[
                     \mathbb{E}[X \mid A] = \frac{1}{\mathbb{P}(A)} \int_A X \, d\mathbb{P},
                     \]
-                    which is a single number, the average of \(X\) restricted to the event \(A\). Given a continuous
-                    random variable \(Y\) with joint density \(p(x, y)\), one writes
+                    which is a single number, the average of \(X\) restricted to the event \(A\). Given a random
+                    variable \(Y\) such that \((X, Y)\) has a joint density \(p(x, y)\), one writes
                     \[
                     \mathbb{E}[X \mid Y = y] = \int x \, p(x \mid y) \, dx,
                     \]
@@ -76,11 +76,11 @@ uses_python: false
                     The conditional expectation also underlies, in idealised form, several core constructions of modern
                     machine learning, which <a href="#applications">the closing section</a> takes up in detail. In
                     expectation-maximisation, the E-step is exactly a conditional expectation. The Bellman equation of
-                    reinforcement learning is an instance of the tower property. The Bayesian posterior predictive
+                    reinforcement learning rests on the tower property. The Bayesian posterior predictive
                     \(p(x_{\text{new}} \mid D) = \mathbb{E}[p(x_{\text{new}} \mid \theta) \mid D]\) is a conditional
-                    expectation taken under the posterior measure, and the
-                    <a href="variational_inference.html"><strong>ELBO of variational inference</strong></a> decomposes
-                    into conditional expectations against a variational measure.
+                    expectation given the data \(D\), and the
+                    <a href="variational_inference.html"><strong>ELBO of variational inference</strong></a> replaces an
+                    intractable conditional measure by a tractable surrogate.
                 </p>
 
                 <p>
@@ -122,7 +122,7 @@ uses_python: false
 
                 <h3>The Signed Measure Associated with \(X\)</h3>
 
-                <div class="theorem">
+                <div class="theorem" id="D-signed_measure_nu_x">
                     <span class="theorem-title">Definition: The Signed Measure \(\nu_X\)</span>
                     <p>
                         Let \(X \in L^1(\Omega, \mathcal{F}, \mathbb{P})\) and let
@@ -174,7 +174,7 @@ uses_python: false
                     </p>
                     <p>
                         Since \(X \in L^1\), \(\nu_X\) takes values in \(\mathbb{R}\) (never \(\pm \infty\)), so the
-                        sign-restriction condition is vacuously satisfied.
+                        sign-restriction condition is trivially satisfied.
                     </p>
                 </div>
 
@@ -183,9 +183,10 @@ uses_python: false
                     <p>
                         The <a href="radon_nikodym.html#T-jordan_decomposition" class="ref-link"><strong>Jordan decomposition</strong></a>
                         gives \(\nu_X = \nu_X^+ - \nu_X^-\), where both parts are non-negative measures on
-                        \(\mathcal{G}\). If \(\Omega = P \sqcup N\) is a Hahn decomposition for \(\nu_X\), with
-                        \(P, N \in \mathcal{G}\), the two parts are \(\nu_X^+(A) = \nu_X(A \cap P)\) and
-                        \(\nu_X^-(A) = -\nu_X(A \cap N)\). The
+                        \(\mathcal{G}\). If \(\Omega = P \sqcup N\) is a
+                        <a href="radon_nikodym.html#T-hahn_decomposition" class="ref-link"><strong>Hahn decomposition</strong></a>
+                        for \(\nu_X\), with \(P, N \in \mathcal{G}\), the proof of the Jordan decomposition constructs
+                        the two parts as \(\nu_X^+(A) = \nu_X(A \cap P)\) and \(\nu_X^-(A) = -\nu_X(A \cap N)\). The
                         <a href="radon_nikodym.html#D-total_variation" class="ref-link"><strong>total variation</strong></a>
                         \(|\nu_X| = \nu_X^+ + \nu_X^-\) therefore satisfies
                         \[
@@ -220,10 +221,10 @@ uses_python: false
                     All three hypotheses of the Radon-Nikodym theorem are now in place. The measure
                     \(\mathbb{P}|_{\mathcal{G}}\) is finite (hence \(\sigma\)-finite) and non-negative on
                     \((\Omega, \mathcal{G})\), and \(\nu_X\) is a finite signed measure absolutely continuous with
-                    respect to it. The theorem is proved for non-negative \(\nu\) on the previous page, and the proof
-                    below applies it to the two Jordan parts of \(\nu_X\). The \(\mathcal{G}\)-measurable density so
-                    obtained represents \(\nu_X\) as an integral against \(\mathbb{P}|_{\mathcal{G}}\), and we take it
-                    as the definition of the conditional expectation.
+                    respect to it. The theorem is stated and proved for non-negative \(\nu\) only, and the proof below
+                    applies it to the two Jordan parts of \(\nu_X\). The \(\mathcal{G}\)-measurable density so obtained
+                    represents \(\nu_X\) as an integral against \(\mathbb{P}|_{\mathcal{G}}\), and we take it as the
+                    definition of the conditional expectation.
                 </p>
 
                 <h3>The Conditional Expectation</h3>
@@ -255,12 +256,19 @@ uses_python: false
                     <span class="proof-title">Proof.</span>
                     <p>
                         By the verifications above, \(\nu_X\) is a finite signed measure on \((\Omega, \mathcal{G})\)
-                        with \(\nu_X \ll \mathbb{P}|_{\mathcal{G}}\). Apply the
+                        with \(\nu_X \ll \mathbb{P}|_{\mathcal{G}}\). Both Jordan parts inherit the absolute
+                        continuity. With \(P, N\) the Hahn sets used above, if \(\mathbb{P}(A) = 0\) then
+                        \(A \cap P\) and \(A \cap N\) are \(\mathbb{P}\)-null sets of \(\mathcal{G}\), so
+                        \(\nu_X^+(A) = \nu_X(A \cap P) = 0\) and \(\nu_X^-(A) = -\nu_X(A \cap N) = 0\). Both parts
+                        are finite, hence \(\sigma\)-finite, by the finiteness verification. Apply the
                         <a href="radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>
                         separately to the Jordan parts \(\nu_X^+, \nu_X^-\) of \(\nu_X\). The resulting non-negative
                         densities \(f^+, f^-\) belong to \(L^1(\mathbb{P}|_{\mathcal{G}})\) because
-                        \(\int f^\pm \, d\mathbb{P}|_{\mathcal{G}} = \nu_X^\pm(\Omega) \lt \infty\). Set
-                        \(Y = f^+ - f^-\). Then \(Y\) is \(\mathcal{G}\)-measurable, integrable, and
+                        \(\int f^\pm \, d\mathbb{P}|_{\mathcal{G}} = \nu_X^\pm(\Omega) \lt \infty\). Being
+                        integrable, \(f^+\) and \(f^-\) are finite \(\mathbb{P}\)-a.s., and we redefine both as \(0\)
+                        on the \(\mathbb{P}\)-null set in \(\mathcal{G}\) where either is infinite. This change
+                        affects none of the integrals. Set \(Y = f^+ - f^-\). Then \(Y\) is
+                        \(\mathcal{G}\)-measurable, integrable, and
                         \[
                         \begin{align*}
                         \int_A Y \, d\mathbb{P}
@@ -270,13 +278,18 @@ uses_python: false
                         &= \int_A X \, d\mathbb{P}
                         \end{align*}
                         \]
-                        for every \(A \in \mathcal{G}\), establishing (\(\ast\)).
+                        for every \(A \in \mathcal{G}\), establishing (\(\ast\)). The first equality uses the fact,
+                        which we take as given, that a \(\mathcal{G}\)-measurable function has the same integral
+                        against \(\mathbb{P}\) and against \(\mathbb{P}|_{\mathcal{G}}\). The two measures agree on
+                        \(\mathcal{G}\), hence on \(\mathcal{G}\)-measurable simple functions, and the integral is
+                        built from these.
                     </p>
                     <p>
                         Uniqueness up to \(\mathbb{P}\)-a.s. equality can be checked directly. If \(Y'\) is another
-                        version, then \(\int_A (Y - Y') \, d\mathbb{P} = 0\) for every \(A \in \mathcal{G}\). The
-                        \(\mathcal{G}\)-measurable function \(Y - Y'\) therefore integrates to zero against every set
-                        in its own \(\sigma\)-algebra, and hence vanishes \(\mathbb{P}\)-a.s.
+                        version, then \(\int_A (Y - Y') \, d\mathbb{P} = 0\) for every \(A \in \mathcal{G}\). Taking
+                        \(A = \{Y - Y' \gt 0\} \in \mathcal{G}\) gives a strictly positive integrand on \(A\) with zero
+                        integral, which forces \(\mathbb{P}(A) = 0\). The set \(\{Y - Y' \lt 0\}\) is handled
+                        symmetrically, and hence \(Y = Y'\) \(\mathbb{P}\)-a.s.
                     </p>
                 </div>
 
@@ -286,21 +299,24 @@ uses_python: false
 
                 <p>
                     <strong>The averaging identity is the working characterisation.</strong> Although the construction
-                    goes through Radon-Nikodym, every subsequent proof on this page uses the averaging identity
-                    (\(\ast\)) directly. The pattern is invariably the same. To verify that a candidate function \(Y\)
-                    is a version of \(\mathbb{E}[X \mid \mathcal{G}]\), one shows that \(Y\) is
-                    \(\mathcal{G}\)-measurable and that \(\int_A Y \, d\mathbb{P} = \int_A X \, d\mathbb{P}\) for all
-                    \(A \in \mathcal{G}\). The a.s.-uniqueness clause then identifies \(Y\) as the conditional
-                    expectation. Radon-Nikodym is the existence engine, and the averaging identity is the daily tool.
+                    goes through Radon-Nikodym, most subsequent proofs on this page use the averaging identity
+                    (\(\ast\)) directly, and the rest build on properties proved that way. The pattern is the same each
+                    time. To verify that a candidate function \(Y\) is a version of \(\mathbb{E}[X \mid \mathcal{G}]\),
+                    one shows that \(Y\) is \(\mathcal{G}\)-measurable and that
+                    \(\int_A Y \, d\mathbb{P} = \int_A X \, d\mathbb{P}\) for all \(A \in \mathcal{G}\). The
+                    a.s.-uniqueness clause then identifies \(Y\) as the conditional expectation. Radon-Nikodym is the
+                    existence engine, and the averaging identity is the daily tool.
                 </p>
 
                 <p>
                     <strong>The values of \(\mathbb{E}[X \mid \mathcal{G}](\omega)\) are defined only up to a
                     \(\mathbb{P}\)-null set.</strong> Two versions of \(\mathbb{E}[X \mid \mathcal{G}]\) can disagree
-                    on any set \(N\) with \(\mathbb{P}(N) = 0\), and they will both be valid representatives.
-                    Statements such as "\(\mathbb{E}[X \mid \mathcal{G}](\omega_0) = c\)" for a particular
-                    \(\omega_0 \in \Omega\) are therefore not meaningful in isolation. They acquire meaning only as
-                    statements about a \(\mathbb{P}\)-positive set, or after a specific version has been fixed.
+                    on any set \(N \in \mathcal{G}\) with \(\mathbb{P}(N) = 0\), and they will both be valid
+                    representatives. A statement such as "\(\mathbb{E}[X \mid \mathcal{G}](\omega_0) = c\)" for a
+                    particular \(\omega_0 \in \Omega\) is therefore not meaningful in isolation whenever \(\omega_0\)
+                    lies in a \(\mathbb{P}\)-null set of \(\mathcal{G}\), as every point does when \(\mathcal{G}\) is
+                    generated by a continuous random variable. Such a statement acquires meaning only after a specific
+                    version has been fixed.
                 </p>
 
                 <p>
@@ -333,7 +349,7 @@ uses_python: false
                         \end{align*}
                         \]
                         on every block \(A_i\) with \(\mathbb{P}(A_i) \gt 0\). On blocks with \(\mathbb{P}(A_i) = 0\),
-                        the value is arbitrary (consistent with a.s.-uniqueness).
+                        the value may be any constant (consistent with a.s.-uniqueness).
                     </p>
                 </div>
 
@@ -342,8 +358,16 @@ uses_python: false
                     <p>
                         Define \(Y(\omega) = \mathbb{E}[X \mid A_i]\) for \(\omega \in A_i\) when
                         \(\mathbb{P}(A_i) \gt 0\), and \(Y(\omega) = 0\) otherwise. Then \(Y\) is constant on each
-                        \(A_i\) and is therefore \(\mathcal{G}\)-measurable. To verify the averaging identity, let
-                        \(A \in \mathcal{G}\). Then \(A = \bigsqcup_{i \in I} A_i\) for some index set \(I\), and
+                        \(A_i\) and is therefore \(\mathcal{G}\)-measurable. It is integrable, because
+                        \[
+                        \begin{align*}
+                        \sum_{i : \, \mathbb{P}(A_i) \gt 0} |\mathbb{E}[X \mid A_i]| \, \mathbb{P}(A_i)
+                        &\leq \sum_i \int_{A_i} |X| \, d\mathbb{P} \\\\
+                        &\leq \mathbb{E}[|X|].
+                        \end{align*}
+                        \]
+                        To verify the averaging identity, let \(A \in \mathcal{G}\). Then
+                        \(A = \bigsqcup_{i \in I} A_i\) for some countable index set \(I\), and
                         \[
                         \begin{align*}
                         \int_A Y \, d\mathbb{P}
@@ -352,9 +376,10 @@ uses_python: false
                         &= \int_A X \, d\mathbb{P},
                         \end{align*}
                         \]
-                        where the last equality discards blocks of probability zero, which contribute nothing to the
-                        integral of \(X\) either. By the a.s.-uniqueness clause of the conditional expectation, \(Y\)
-                        is a version of \(\mathbb{E}[X \mid \mathcal{G}]\).
+                        where the first and last equalities use the countable additivity verified above, applied to the
+                        integrable functions \(Y\) and \(X\). The last one also discards blocks of probability zero,
+                        which contribute nothing to the integral of \(X\) either. By the a.s.-uniqueness clause of the
+                        conditional expectation, \(Y\) is a version of \(\mathbb{E}[X \mid \mathcal{G}]\).
                     </p>
                 </div>
 
@@ -371,11 +396,14 @@ uses_python: false
                     Let \(Y\) be a real-valued random variable and consider \(\mathcal{G} = \sigma(Y)\), the
                     sub-\(\sigma\)-algebra generated by \(Y\). The conditional expectation
                     \(\mathbb{E}[X \mid \sigma(Y)]\), abbreviated \(\mathbb{E}[X \mid Y]\), is a
-                    \(\sigma(Y)\)-measurable random variable on \(\Omega\). By a measurability argument (the
-                    Doob-Dynkin lemma), \(\mathbb{E}[X \mid Y]\) takes the form \(g(Y)\) for some Borel-measurable
-                    function \(g : \mathbb{R} \to \mathbb{R}\), determined \(P_Y\)-a.s. on \(\mathbb{R}\). The function
-                    \(g\) is what one would like to call "\(y \mapsto \mathbb{E}[X \mid Y = y]\)", a deterministic
-                    forecast of \(X\) for each observed value of \(Y\).
+                    \(\sigma(Y)\)-measurable random variable on \(\Omega\). The Doob-Dynkin lemma, which we use
+                    without proof, states that every \(\sigma(Y)\)-measurable real-valued random variable has the form
+                    \(g(Y)\) for some Borel-measurable \(g : \mathbb{R} \to \mathbb{R}\). Applied to
+                    \(\mathbb{E}[X \mid Y]\), it yields such a \(g\), determined up to null sets of the
+                    <a href="measure_probability.html#D-pushforward" class="ref-link"><strong>distribution \(P_Y\)</strong></a>
+                    on \(\mathbb{R}\). The function \(g\) is what one would like to call
+                    "\(y \mapsto \mathbb{E}[X \mid Y = y]\)", a deterministic forecast of \(X\) for each observed
+                    value of \(Y\).
                 </p>
 
                 <p>
@@ -387,11 +415,38 @@ uses_python: false
                 </p>
 
                 <p>
-                    Most ML uses of the notation call for more. Bayesian inference over continuous parameters,
-                    regression as a forecast of \(X\) given \(Y = y\), and the Bellman equation evaluated at a
-                    particular state all require a coherent, simultaneously chosen function \(y \mapsto g(y)\) that
-                    defines an honest probability measure \(\mathbb{P}(\cdot \mid Y = y)\) on \((\Omega, \mathcal{F})\)
-                    for every \(y\). Given that choice, \(\mathbb{E}[X \mid Y = y]\) can be computed as an integral
+                    When \((X, Y)\) has a joint density \(p(x, y)\), the second formula of the introduction supplies a
+                    version of \(g\). Write \(p_Y(y) = \int p(x, y) \, dx\) for the marginal density and
+                    \(p(x \mid y) = p(x, y) / p_Y(y)\) where \(p_Y(y) \gt 0\). Set
+                    \(g(y) = \int x \, p(x \mid y) \, dx\) where \(p_Y(y) \gt 0\) and the integral converges
+                    absolutely, and \(g(y) = 0\) elsewhere. Every set of \(\sigma(Y)\) has the form \(\{Y \in B\}\)
+                    with \(B\) Borel, and
+                    \[
+                    \begin{align*}
+                    \int_{\{Y \in B\}} g(Y) \, d\mathbb{P}
+                    &= \int_B g(y) \, p_Y(y) \, dy \\\\
+                    &= \int_B \int x \, p(x, y) \, dx \, dy \\\\
+                    &= \int_{\{Y \in B\}} X \, d\mathbb{P}.
+                    \end{align*}
+                    \]
+                    The second equality is the definition of \(g\), together with the fact that \(p(x, y) = 0\) for
+                    almost every \(x\) wherever \(p_Y(y) = 0\). The first and third express expectations through the
+                    densities of \(Y\) and of \((X, Y)\), a standard step that we do not verify here. The third also
+                    writes the double integral as an iterated one by
+                    <a href="limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's theorem</strong></a>,
+                    legitimate because \(X\) is integrable. The same computation with \(|x|\) in place of \(x\) bounds
+                    \(\mathbb{E}[|g(Y)|]\) by \(\mathbb{E}[|X|]\). Hence \(g(Y)\) satisfies the averaging identity on
+                    \(\sigma(Y)\) and is a version of \(\mathbb{E}[X \mid Y]\).
+                </p>
+
+                <p>
+                    Most ML uses of the notation call for more. Bayesian inference over continuous parameters and the
+                    Bellman equation on a continuous state space work with a conditional <em>distribution</em> given
+                    \(Y = y\), not with a single conditional expectation. They require the versions of
+                    \(\mathbb{P}(B \mid Y = y) = \mathbb{E}[\mathbf{1}_B \mid Y = y]\) to be chosen simultaneously for
+                    all \(B \in \mathcal{F}\), so that \(B \mapsto \mathbb{P}(B \mid Y = y)\) is an honest probability
+                    measure on \((\Omega, \mathcal{F})\) for every \(y\). Given that choice,
+                    \(\mathbb{E}[X \mid Y = y]\) can be computed as an integral
                     \(\int X \, d\mathbb{P}(\cdot \mid Y = y)\) in the elementary sense.
                 </p>
 
@@ -416,10 +471,11 @@ uses_python: false
                 <h2>Properties of Conditional Expectation</h2>
 
                 <p>
-                    The averaging identity (\(\ast\)), together with the a.s.-uniqueness clause, remains the
-                    working tool throughout this section, used in the pattern described after the definition. We
-                    collect the algebraic properties first, then inequalities, then the geometric \(L^2\)
-                    characterisation, and finally the tower property, the structural identity behind martingale
+                    The averaging identity (\(\ast\)), together with the a.s.-uniqueness clause, remains the working
+                    tool for the algebraic properties, the projection theorem, and the tower property, used in the
+                    pattern described after the definition. The inequalities are then derived from the algebraic
+                    properties. We collect the algebraic properties first, then inequalities, then the geometric
+                    \(L^2\) characterisation, and finally the tower property, the structural identity behind martingale
                     theory and dynamic programming.
                 </p>
 
@@ -434,9 +490,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    When intermediate steps below pass through non-negative \(X\) (notably the Take-out rule's
-                    three-step extension), the implicit framing is that integrability is recovered at the end via the
-                    assumed \(L^1\) bound on the original \(X\).
+                    Two intermediate steps handle possibly infinite quantities before this finiteness is secured. The
+                    existence proof receives \([0, \infty]\)-valued densities from the Radon-Nikodym theorem and makes
+                    them finite by a change on a null set. In Step 3 of the take-out rule, the monotone convergence
+                    theorem delivers an identity in \([0, \infty]\), and the hypothesis \(ZX \in L^1(\mathbb{P})\)
+                    makes both sides finite.
                 </p>
 
                 <h3>Algebraic Properties</h3>
@@ -543,7 +601,8 @@ uses_python: false
                     </p>
                     <p>
                         <em>Step 3 (general).</em> First take \(X \geq 0\). Let \(Z \geq 0\) be
-                        \(\mathcal{G}\)-measurable, and choose simple \(\mathcal{G}\)-measurable \(Z_n \uparrow Z\).
+                        \(\mathcal{G}\)-measurable, and choose non-negative simple \(\mathcal{G}\)-measurable functions
+                        \(Z_n \uparrow Z\) (the standard simple-function approximation, whose existence we assume).
                         Then \(Z_n X \uparrow ZX\) \(\mathbb{P}\)-a.s., and
                         \(Z_n \cdot \mathbb{E}[X \mid \mathcal{G}] \uparrow Z \cdot \mathbb{E}[X \mid \mathcal{G}]\)
                         \(\mathbb{P}\)-a.s. (using \(\mathbb{E}[X \mid \mathcal{G}] \geq 0\) by monotonicity, since
@@ -555,13 +614,16 @@ uses_python: false
                         \int_A Z \cdot \mathbb{E}[X \mid \mathcal{G}] \, d\mathbb{P}
                         = \int_A ZX \, d\mathbb{P}.
                         \]
+                        Taking \(A = \Omega\) shows that \(Z \cdot \mathbb{E}[X \mid \mathcal{G}]\) is integrable
+                        whenever \(ZX\) is, and the identity then makes it a version of
+                        \(\mathbb{E}[ZX \mid \mathcal{G}]\).
                     </p>
                     <p>
                         For general \(X \in L^1\), decompose \(X = X^+ - X^-\) and \(Z = Z^+ - Z^-\) and apply the
                         non-negative case to each of the four products. The integrability hypothesis \(ZX \in L^1\)
-                        ensures that each piece is integrable. Linearity (already proved for conditional expectation)
-                        reassembles the four pieces. Therefore \(Z \cdot \mathbb{E}[X \mid \mathcal{G}]\) is a version
-                        of \(\mathbb{E}[ZX \mid \mathcal{G}]\).
+                        ensures that each piece is integrable, since \(|Z^\pm X^\pm| \leq |ZX|\). Linearity (already
+                        proved for conditional expectation) reassembles the four pieces. Therefore
+                        \(Z \cdot \mathbb{E}[X \mid \mathcal{G}]\) is a version of \(\mathbb{E}[ZX \mid \mathcal{G}]\).
                     </p>
                 </div>
 
@@ -579,7 +641,10 @@ uses_python: false
                     <span class="proof-title">Proof.</span>
                     <p>
                         The constant function \(\mathbb{E}[X]\) is \(\mathcal{G}\)-measurable. For
-                        \(A \in \mathcal{G}\), the independence of \(\sigma(X)\) and \(\mathcal{G}\) gives
+                        \(A \in \mathcal{G}\), the random variables \(X\) and \(\mathbf{1}_A\) are independent, because
+                        every event \(\{X \in B_1\}\) lies in \(\sigma(X)\) and every event
+                        \(\{\mathbf{1}_A \in B_2\}\) lies in \(\mathcal{G}\). By the
+                        <a href="limit_theorems_product_measures.html#T-expectation_product_independent" class="ref-link"><strong>product formula for expectations</strong></a>,
                         \(\mathbb{E}[X \mathbf{1}_A] = \mathbb{E}[X] \mathbb{E}[\mathbf{1}_A]
                         = \mathbb{E}[X] \cdot \mathbb{P}(A)\), hence
                         \[
@@ -624,10 +689,14 @@ uses_python: false
                         \]
                     </p>
                     <p>
-                        One construction takes the affine functions supporting \(\varphi\) at every rational \(x_0\).
-                        Such supporting functions exist because a convex \(\varphi\) has left and right derivatives at
-                        every point. The countability of \(\mathbb{Q}\) and the pointwise tightness of the envelope
-                        then give the supremum representation.
+                        One construction takes an affine function supporting \(\varphi\) at each rational \(x_0\). Any
+                        slope between the left and right derivatives of \(\varphi\) at \(x_0\) gives one. We rely
+                        without proof on two standard facts about a convex function on \(\mathbb{R}\). Its one-sided
+                        derivatives exist and are bounded on bounded intervals, and \(\varphi\) is continuous. Every
+                        supporting function lies below \(\varphi\), so the supremum is at most \(\varphi\). Conversely,
+                        fix \(x\) and let rationals \(q_k \to x\). The supporting function at \(q_k\), evaluated at
+                        \(x\), equals \(\varphi(q_k) + a_k (x - q_k)\), where \(a_k\) is the slope chosen at \(q_k\).
+                        The slopes \(a_k\) are bounded, so this value tends to \(\varphi(x)\) by continuity.
                     </p>
                     <p>
                         For each \(n\), apply linearity and monotonicity of conditional expectation to the affine
@@ -639,8 +708,9 @@ uses_python: false
                         &= a_n\, \mathbb{E}[X \mid \mathcal{G}] + b_n \quad \mathbb{P}\text{-a.s.}
                         \end{align*}
                         \]
-                        The exceptional null set may depend on \(n\), but the union over the countable index set is
-                        still null. Outside this single null set,
+                        Here the constant \(b_n\) is its own conditional expectation, being \(\mathcal{G}\)-measurable
+                        and satisfying (\(\ast\)) trivially. The exceptional null set may depend on \(n\), but the
+                        union over the countable index set is still null. Outside this single null set,
                         \[
                         \begin{align*}
                         \mathbb{E}[\varphi(X) \mid \mathcal{G}]
@@ -666,9 +736,11 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof.</span>
                     <p>
-                        The function \(\varphi(t) = |t|^p\) is convex on \(\mathbb{R}\) for \(p \geq 1\), and
-                        \(\varphi(X) = |X|^p \in L^1(\mathbb{P})\) by the assumption \(X \in L^p(\mathbb{P})\). Apply
-                        Jensen's inequality for conditional expectation:
+                        On a probability space \(L^p(\mathbb{P}) \subseteq L^1(\mathbb{P})\), as shown in
+                        <a href="measure_probability.html#expectation"><strong>our measure-theoretic treatment of expectation</strong></a>,
+                        so \(\mathbb{E}[X \mid \mathcal{G}]\) is defined. The function \(\varphi(t) = |t|^p\) is convex
+                        on \(\mathbb{R}\) for \(p \geq 1\), and \(\varphi(X) = |X|^p \in L^1(\mathbb{P})\) by the
+                        assumption \(X \in L^p(\mathbb{P})\). Apply Jensen's inequality for conditional expectation:
                         \[
                         \big| \mathbb{E}[X \mid \mathcal{G}] \big|^p \leq
                         \mathbb{E}[|X|^p \mid \mathcal{G}] \quad \mathbb{P}\text{-a.s.}
@@ -693,23 +765,26 @@ uses_python: false
                 <h3>The \(L^2\) Projection Characterisation</h3>
 
                 <p>
-                    The \(L^p\) contraction is sharpest at \(p = 2\), where it acquires geometric content. The space
+                    At \(p = 2\) the contraction acquires geometric content. The space
                     \(L^2(\Omega, \mathcal{G}, \mathbb{P}|_{\mathcal{G}})\) of square-integrable
                     \(\mathcal{G}\)-measurable functions sits inside \(L^2(\Omega, \mathcal{F}, \mathbb{P})\) as a
-                    closed linear subspace. Closure under \(L^2\) limits holds because \(L^2\) convergence implies a.s.
-                    convergence along a subsequence, and a pointwise a.s.-limit of \(\mathcal{G}\)-measurable functions
-                    is \(\mathcal{G}\)-measurable. Conditional expectation, restricted to \(L^2\), is precisely the
-                    orthogonal projection onto this subspace.
+                    closed linear subspace, namely the classes that have a \(\mathcal{G}\)-measurable representative.
+                    It is closed because an \(L^2\)-convergent sequence of \(\mathcal{G}\)-measurable functions has a
+                    <a href="../Calculus/lp_completeness.html#T-lp_subsequence_ae" class="ref-link"><strong>subsequence converging a.s.</strong></a>
+                    The set where this subsequence converges belongs to \(\mathcal{G}\) and has probability one, so the
+                    pointwise limit on that set, extended by \(0\) elsewhere, is a \(\mathcal{G}\)-measurable
+                    representative of the \(L^2\) limit. Conditional expectation, restricted to \(L^2\), is precisely
+                    the orthogonal projection onto this subspace.
                 </p>
 
                 <div class="theorem" id="T-ce_l2_projection">
                     <span class="theorem-title">Theorem: Conditional Expectation as \(L^2\) Projection</span>
                     <p>
-                        Let \(X \in L^2(\Omega, \mathcal{F}, \mathbb{P})\). Then \(\mathbb{E}[X \mid \mathcal{G}]\)
-                        is the orthogonal projection of \(X\) onto the closed subspace
+                        Let \(X \in L^2(\Omega, \mathcal{F}, \mathbb{P})\). Then \(\mathbb{E}[X \mid \mathcal{G}]\) is
+                        the orthogonal projection of \(X\) onto the closed subspace
                         \(L^2(\Omega, \mathcal{G}, \mathbb{P}|_{\mathcal{G}}) \subseteq L^2(\Omega, \mathcal{F}, \mathbb{P})\).
-                        Equivalently, \(\mathbb{E}[X \mid \mathcal{G}]\) is the unique
-                        \(\mathcal{G}\)-measurable square-integrable function minimising
+                        Equivalently, \(\mathbb{E}[X \mid \mathcal{G}]\) is, up to \(\mathbb{P}\)-a.s. equality, the
+                        unique \(\mathcal{G}\)-measurable square-integrable function minimising
                         \[
                         \mathbb{E}\big[ (X - Y)^2 \big] \quad \text{over } Y \in L^2(\Omega, \mathcal{G}, \mathbb{P}|_{\mathcal{G}}).
                         \]
@@ -721,9 +796,10 @@ uses_python: false
                     <p>
                         The <a href="../Calculus/dual_spaces.html#T-projection_theorem_hilbert" class="ref-link"><strong>Hilbert projection theorem</strong></a>
                         applied to the closed subspace \(M = L^2(\Omega, \mathcal{G}, \mathbb{P}|_{\mathcal{G}})\) of
-                        the Hilbert space \(L^2(\Omega, \mathcal{F}, \mathbb{P})\) produces a unique element
-                        \(P_M(X) \in M\) such that \(X - P_M(X) \perp M\). The same element is the unique minimiser of
-                        \(\|X - Y\|_{L^2}\) over \(Y \in M\). Orthogonality means
+                        the Hilbert space \(L^2(\Omega, \mathcal{F}, \mathbb{P})\), complete by
+                        <a href="../Calculus/lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz-Fischer</strong></a>,
+                        produces a unique element \(P_M(X) \in M\) such that \(X - P_M(X) \perp M\). The same element
+                        is the unique minimiser of \(\|X - Y\|_{L^2}\) over \(Y \in M\). Orthogonality means
                         \(\langle X - P_M(X), Z \rangle_{L^2} = 0\) for every \(Z \in M\), that is,
                         \[
                         \mathbb{E}\big[ (X - P_M(X)) \cdot Z \big] = 0 \quad \text{for all }
@@ -754,10 +830,13 @@ uses_python: false
                 </p>
 
                 <p>
-                    Every "best linear predictor" theorem in classical statistics (linear regression, the Wiener
-                    filter, Kalman update equations) is a finite-dimensional or Gaussian instance of this
-                    identification. The same geometric picture also makes the next property, the tower property,
-                    visually obvious, as we note after its proof.
+                    The "best linear predictor" of classical statistics (linear regression, the Wiener filter, the
+                    Kalman update) is the orthogonal projection onto a smaller subspace, the affine functions of the
+                    observations. It agrees with the conditional expectation when the variables are jointly Gaussian, a
+                    fact we do not prove here. In general it is the best approximation of the conditional expectation
+                    within that subspace, because projecting onto a subspace of \(L^2(\mathcal{G})\) factors through
+                    the projection onto \(L^2(\mathcal{G})\). The same geometric picture also makes the next property,
+                    the tower property, visually obvious, as we note after its proof.
                 </p>
 
                 <h3>The Tower Property</h3>
@@ -798,8 +877,8 @@ uses_python: false
 
                 <p>
                     The tower property is the structural identity that drives iterated conditioning. Read in the
-                    projection picture, it says that projecting onto \(L^2(\mathcal{G})\) and then onto the smaller
-                    subspace \(L^2(\mathcal{H})\) produces the same vector as projecting directly onto
+                    projection picture, for \(X \in L^2\), it says that projecting onto \(L^2(\mathcal{G})\) and then
+                    onto the smaller subspace \(L^2(\mathcal{H})\) produces the same vector as projecting directly onto
                     \(L^2(\mathcal{H})\). Read in dynamic-programming terms, it says that the value of \(X\) under
                     coarse information \(\mathcal{H}\) can be computed by first computing the value under finer
                     information \(\mathcal{G}\) and then averaging that over \(\mathcal{H}\). This is the idealised
@@ -811,11 +890,12 @@ uses_python: false
                 <h2>Conditional Expectation in Practice</h2>
 
                 <p>
-                    Each of the four ML scenarios below corresponds, in idealised form, to a conditional expectation.
-                    In each case we name the underlying probability space, identify the sub-\(\sigma\)-algebra, observe
-                    that the quantity of interest is a conditional expectation, and read off which property of the
-                    previous section is being invoked. In code, the object so identified is typically reached only
-                    through a density assumption combined with a sampling- or surrogate-based approximation.
+                    The first three ML scenarios below correspond, in idealised form, to a conditional expectation,
+                    and the fourth, variational inference, is what replaces it when the conditional measure is
+                    inaccessible. Where a conditional expectation appears, we identify the sub-\(\sigma\)-algebra
+                    and read off which property of the previous section, if any, is being invoked. In code, the
+                    object so identified is typically reached only through a density assumption combined with a
+                    sampling- or surrogate-based approximation.
                 </p>
 
                 <h3>Expectation-Maximisation</h3>
@@ -828,7 +908,9 @@ uses_python: false
                     Q(\theta \mid \theta^{(t)}) = \mathbb{E}\big[ \log p(X, Z \mid \theta) \,\big|\, X, \theta^{(t)} \big],
                     \]
                     where the conditional expectation is taken with respect to the conditional distribution of \(Z\)
-                    given the observed \(X\) under parameter \(\theta^{(t)}\). The <strong>M-step</strong> sets
+                    given the observed \(X\) under parameter \(\theta^{(t)}\). The parameter \(\theta^{(t)}\) selects
+                    the probability measure and is not a random variable. Only \(X\) is conditioned on, so
+                    \(\mathcal{G} = \sigma(X)\). The <strong>M-step</strong> sets
                     \(\theta^{(t+1)} = \arg\max_\theta Q(\theta \mid \theta^{(t)})\).
                 </p>
 
@@ -842,7 +924,7 @@ uses_python: false
 
                 <p>
                     The monotonic improvement of the marginal log-likelihood \(\ell(\theta) = \log p(X \mid \theta)\)
-                    under EM iterations follows from Jensen's inequality for conditional expectation. Write
+                    under EM iterations follows from Jensen's inequality. Write
                     \(p(z \mid x, \theta) = p(x, z \mid \theta) / p(x \mid \theta)\), so that
                     \(\log p(x \mid \theta) = \log p(x, z \mid \theta) - \log p(z \mid x, \theta)\) for every \(z\). We
                     take conditional expectations of both sides given \(X\) under \(p(\cdot \mid X, \theta^{(t)})\).
@@ -862,11 +944,18 @@ uses_python: false
 
                 <p>
                     The first bracket is non-negative for \(\theta = \theta^{(t+1)}\) by definition of the M-step. The
-                    second bracket is non-negative by Jensen's inequality applied to the convex function
-                    \(\varphi(u) = -\log u\). With
+                    second bracket is non-negative by Jensen's inequality for \(\varphi(u) = -\log u\). This
+                    \(\varphi\) is convex on \((0, \infty)\) only, so the conditional theorem of the previous section,
+                    stated for \(\varphi\) on all of \(\mathbb{R}\), does not apply verbatim. For a fixed observed
+                    value \(x\), however, the conditional expectation is an integral against the density
+                    \(p(z \mid x, \theta^{(t)})\), and the
+                    <a href="entropy.html#T-jensen_inequality" class="ref-link"><strong>elementary Jensen inequality</strong></a>
+                    on the interval \((0, \infty)\) suffices. We assume that \(p(z \mid x, \theta)\) and
+                    \(p(z \mid x, \theta^{(t)})\) are positive on the same set of \(z\), so that the ratio below takes
+                    values in \((0, \infty)\), and that the logarithms involved are integrable. With
                     \(H(\theta^{(t)} \mid \theta^{(t)}) - H(\theta \mid \theta^{(t)})
                     = \mathbb{E}\big[ -\log( p(Z \mid X, \theta) / p(Z \mid X, \theta^{(t)}) ) \,\big|\, X, \theta^{(t)} \big]\),
-                    the conditional form of the inequality gives
+                    the inequality gives
                     \[
                     \begin{align*}
                     \mathbb{E}\big[ -\log( p(Z \mid X, \theta) / p(Z \mid X, \theta^{(t)}) ) \,\big|\, X, \theta^{(t)} \big]
@@ -899,20 +988,31 @@ uses_python: false
                 <p>
                     In a Markov decision process with policy \(\pi\), the state-value function
                     \[
-                    V^\pi(s) = \mathbb{E}\Big[\, \sum_{t=0}^\infty \gamma^t R_{t+1} \,\Big|\, S_0 = s \,\Big]
+                    V_\pi(s) = \mathbb{E}\Big[\, \sum_{t=0}^\infty \gamma^t R_{t+1} \,\Big|\, S_0 = s \,\Big]
                     \]
                     is a conditional expectation of the discounted return given the initial state. The
                     <a href="../Machine_learning/intro_RL.html#T-bellman_expectation" class="ref-link"><strong>Bellman expectation equation</strong></a>
                     \[
-                    V^\pi(s) = \mathbb{E}\big[ R_1 + \gamma V^\pi(S_1) \,\big|\, S_0 = s \big]
+                    V_\pi(s) = \mathbb{E}\big[ R_1 + \gamma V_\pi(S_1) \,\big|\, S_0 = s \big]
                     \]
-                    is the tower property in disguise. Conditioning on \(S_0 = s\) factors as "condition on the first
-                    transition, then re-condition on \(S_0\)". The \(\sigma\)-algebra structure is
-                    \(\sigma(S_0) \subseteq \sigma(S_0, S_1)\), and the Bellman recursion is the identity
+                    rests on the tower property. Assume bounded rewards and \(\gamma \lt 1\), so that the discounted
+                    return \(X = \sum_t \gamma^t R_{t+1}\) is integrable, and a countable state space with
+                    \(\mathbb{P}(S_0 = s) \gt 0\), so that conditioning on \(S_0 = s\) is the elementary formula
+                    recovered in the discrete case. The \(\sigma\)-algebra structure is
+                    \(\sigma(S_0) \subseteq \sigma(S_0, S_1)\), and the tower property gives
                     \[
-                    \mathbb{E}[X \mid \sigma(S_0)] = \mathbb{E}\big[ \mathbb{E}[X \mid \sigma(S_0, S_1)] \,\big|\, \sigma(S_0) \big]
+                    \mathbb{E}[X \mid \sigma(S_0)] = \mathbb{E}\big[ \mathbb{E}[X \mid \sigma(S_0, S_1)] \,\big|\, \sigma(S_0) \big].
                     \]
-                    applied to the discounted return \(X = \sum_t \gamma^t R_{t+1}\).
+                    The inner conditional expectation equals
+                    \(\mathbb{E}[R_1 \mid \sigma(S_0, S_1)] + \gamma V_\pi(S_1)\). This step uses linearity together
+                    with the Markov property and time-homogeneity of the process. The conditional expectation, given
+                    \((S_0, S_1)\), of the discounted return from time \(1\) onward depends on \(S_1\) alone, through
+                    the same function \(V_\pi\). Both properties belong to the MDP model and do not follow from the
+                    tower property. A second use of the tower property,
+                    \[
+                    \mathbb{E}\big[ \mathbb{E}[R_1 \mid \sigma(S_0, S_1)] \,\big|\, \sigma(S_0) \big] = \mathbb{E}[R_1 \mid \sigma(S_0)],
+                    \]
+                    then yields the Bellman equation.
                 </p>
 
                 <p>
@@ -929,9 +1029,13 @@ uses_python: false
                     \[
                     p(x_{\text{new}} \mid D) = \mathbb{E}\big[ p(x_{\text{new}} \mid \theta) \,\big|\, D \big],
                     \]
-                    a conditional expectation under the posterior measure \(p(\theta \mid D)\). The formula
-                    "marginalises over uncertainty in \(\theta\)". As a probability statement, that operation is, in
-                    idealised form, the conditional expectation of this page applied with \(\mathcal{G} = \sigma(D)\).
+                    a conditional expectation given the data. In the Bayesian model, \(\theta\) is a random variable on
+                    the same probability space as \(D\) and \(X_{\text{new}}\), and \(\mathcal{G} = \sigma(D)\). The
+                    identity is, in idealised form, the tower property for \(\sigma(D) \subseteq \sigma(\theta, D)\),
+                    combined with the modelling assumption that \(X_{\text{new}}\) is conditionally independent of
+                    \(D\) given \(\theta\). That assumption replaces \(p(x_{\text{new}} \mid \theta, D)\) by
+                    \(p(x_{\text{new}} \mid \theta)\), and the outer conditioning on \(D\) "marginalises over
+                    uncertainty in \(\theta\)".
                 </p>
 
                 <p>
@@ -950,12 +1054,15 @@ uses_python: false
                     intractable posterior \(p(z \mid x)\) by a tractable surrogate \(q(z \mid x)\). The
                     <a href="variational_inference.html#D-elbo" class="ref-link"><strong>evidence lower bound</strong></a>
                     \(\mathrm{ELBO}(q) = \mathbb{E}_{q(z \mid x)}[\log p(x, z) - \log q(z \mid x)]\) is an expectation
-                    against \(q\), not against \(p(\cdot \mid x)\). The exact identity
-                    \(\log p(x) = \mathrm{ELBO}(q) + D_{\mathrm{KL}}(q \,\|\, p(\cdot \mid x))\) certifies that
-                    maximising the ELBO is equivalent to minimising the KL to the posterior. From the
-                    conditional-expectation perspective, this is a manipulation that <em>replaces the inaccessible
-                    conditional measure with a tractable one while preserving the averaging identities of this
-                    page</em>. The full development is on the variational inference page.
+                    against \(q\), not against \(p(\cdot \mid x)\). The
+                    <a href="variational_inference.html#T-elbo_kl_decomposition" class="ref-link"><strong>exact identity</strong></a>
+                    \(\log p(x) = \mathrm{ELBO}(q) + D_{\mathrm{KL}}(q \,\|\, p(\cdot \mid x))\), valid when
+                    \(q \ll p(\cdot \mid x)\) and the logarithms are \(q\)-integrable, certifies that maximising the
+                    ELBO is equivalent to minimising the KL to the posterior. From the conditional-expectation
+                    perspective, this is a manipulation that <em>replaces the inaccessible conditional measure with a
+                    tractable one</em>. The surrogate gives up the averaging identity (\(\ast\)), which only the true
+                    conditional measure satisfies, and the KL term records the discrepancy. The full development is on
+                    the variational inference page.
                 </p>
 
                 <div class="insight-box">
