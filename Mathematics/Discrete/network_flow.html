@@ -29,11 +29,11 @@ uses_python: false
                 <h2>Shortest Paths</h2>
 
                 <p>
-                    In <a href="intro_graph.html#path"><strong>Introduction to Graph Theory</strong></a>, we defined paths and 
-                    studied their combinatorial structure. We now equip our graphs with <em>weights</em> and ask a quantitative 
-                    question: among all paths connecting two vertices, which one minimizes total weight? This is the 
-                    <strong>shortest path problem</strong>, and its study reveals a fundamental dichotomy in algorithm design — 
-                    greedy selection versus dynamic programming — that pervades discrete optimization.
+                    In <a href="intro_graph.html#path"><strong>Introduction to Graph Theory</strong></a>, we defined paths and
+                    studied their combinatorial structure. We now equip our graphs with <em>weights</em> and ask a quantitative
+                    question: among all paths connecting two vertices, which one minimizes total weight? This is the
+                    <strong>shortest path problem</strong>, and its study reveals a fundamental dichotomy between greedy
+                    selection and dynamic programming that pervades discrete optimization.
                 </p>
 
                 <h3>Weighted Graphs and Distance</h3>
@@ -50,40 +50,47 @@ uses_python: false
                 <div class="theorem" id="D-graph_walk">
                     <span class="theorem-title">Definition: Walk and Trail</span>
                     <p>
-                        Let \(G = (V, E)\) be a graph (directed or undirected). A <strong>walk</strong> in \(G\) of 
-                        length \(k\) is a sequence \((v_0, v_1, \ldots, v_k)\) of vertices such that each consecutive 
-                        pair \((v_{i-1}, v_i)\) is an edge of \(G\); vertices and edges may repeat. A walk is 
-                        <strong>closed</strong> if \(v_0 = v_k\). A <strong>trail</strong> is a walk in which no 
-                        edge is repeated (vertices may still repeat).
+                        Let \(G = (V, E)\) be a graph (directed or undirected). A <strong>walk</strong> in \(G\) of length \(k\)
+                        is a sequence \((v_0, v_1, \ldots, v_k)\) of vertices such that each consecutive pair \((v_{i-1}, v_i)\)
+                        is an edge of \(G\). Vertices and edges may repeat. A walk is <strong>closed</strong> if \(v_0 = v_k\).
+                        A <strong>trail</strong> is a walk in which no edge is repeated (vertices may still repeat).
                     </p>
                     <p>
-                        Together with the notion of 
-                        <a href="intro_graph.html#D-graph_path" class="ref-link"><strong>path</strong></a> 
-                        (a walk in which no vertex is repeated), these form a strict hierarchy: 
-                        every path is a trail, and every trail is a walk. The boundary case \(k = 0\) is the trivial 
-                        walk consisting of the single vertex \(v_0\) with no edges; it is simultaneously a closed 
-                        walk, a trail, and a path of length zero.
+                        Together with the notion of
+                        <a href="intro_graph.html#D-graph_path" class="ref-link"><strong>path</strong></a> (we identify a path
+                        with its vertex sequence, which is a walk in which no vertex is repeated), these form a strict
+                        hierarchy. Every path is a trail, and every trail is a walk. The boundary case \(k = 0\) is the trivial
+                        walk consisting of the single vertex \(v_0\) with no edges. It is simultaneously a closed walk, a trail,
+                        and a path of length zero.
                     </p>
                 </div>
 
                 <p>
-                    For a directed path \(P = (v_0, v_1, \ldots, v_k)\), we define its <strong>weight</strong> as
+                    For a walk \(P = (v_0, v_1, \ldots, v_k)\) in a weighted digraph, we define its <strong>weight</strong> as
                     \[
                     w(P) = \sum_{i=0}^{k-1} w(v_i, v_{i+1}).
                     \]
-                    (In the boundary case \(k = 0\), the sum is empty and \(w(P) = 0\).)
-                    The <strong>shortest-path distance</strong> from \(s\) to \(t\) is
+                    (In the boundary case \(k = 0\), the sum is empty and \(w(P) = 0\).) The <strong>shortest-path
+                    distance</strong> from \(s\) to \(t\) is
                     \[
-                    \delta(s, t) = \begin{cases} \displaystyle\min_{P \,:\, s \leadsto t} w(P) & \text{if a path from } s \text{ to } t \text{ exists,} \\ +\infty & \text{otherwise.} \end{cases}
+                    \delta(s, t) = \begin{cases} \displaystyle\inf_{P \,:\, s \leadsto t} w(P) & \text{if a walk from } s \text{ to } t \text{ exists,} \\ +\infty & \text{otherwise,} \end{cases}
                     \]
-                    When all weights are non-negative, \(\delta\) satisfies the triangle inequality 
-                    \(\delta(s,t) \leq \delta(s,u) + \delta(u,t)\) and non-negativity \(\delta(s,t) \geq 0\), but on a 
-                    directed graph it is generally <em>not</em> symmetric: \(\delta(s,t) \neq \delta(t,s)\). Thus \(\delta\) 
-                    is a <strong>quasi-metric</strong> (or <strong>asymmetric metric</strong>) on the vertex set, not a metric 
-                    in the strict sense — recall that a 
-                    <a href="../Calculus/metric_space.html"><strong>metric</strong></a> requires symmetry by definition.
-                    When negative weights are present, \(\delta(s,t)\) may be \(-\infty\) if a <strong>negative-weight 
-                    cycle</strong> is reachable from \(s\) on a path to \(t\).
+                    where the infimum is taken over all walks \(P\) from \(s\) to \(t\).
+                </p>
+
+                <p>
+                    When all weights are non-negative, \(\delta\) satisfies the triangle inequality
+                    \(\delta(s,t) \leq \delta(s,u) + \delta(u,t)\) and non-negativity \(\delta(s,t) \geq 0\), but on a directed
+                    graph it is generally <em>not</em> symmetric: \(\delta(s,t) \neq \delta(t,s)\). With non-negative weights,
+                    the infimum is also attained by a path, since removing a cycle from a walk does not increase its weight and
+                    there are only finitely many paths. If all weights are positive, so that \(\delta(s,t) = 0\) only when
+                    \(s = t\), then \(\delta\) is a <strong>quasi-metric</strong> (or <strong>asymmetric metric</strong>) on the
+                    vertex set, possibly taking the value \(+\infty\). It is not a metric in the strict sense, since a
+                    <a href="../Calculus/metric_space.html"><strong>metric</strong></a> requires symmetry by definition. When
+                    negative weights are present, \(\delta(s,t) = -\infty\) exactly when some walk from \(s\) to \(t\) passes
+                    through a vertex of a <strong>negative-weight cycle</strong>, since going around the cycle repeatedly makes
+                    the weight arbitrarily negative. Otherwise every cycle met by such a walk can be excised without increasing
+                    the weight, so the infimum is a minimum over finitely many paths.
                 </p>
 
                 <h3>Dijkstra's Algorithm</h3>
@@ -103,24 +110,27 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof Sketch:</span>
+                    <span class="proof-title">Proof:</span>
                     <p>
-                        We prove by induction on \(|S|\) that for every vertex \(v \in S\), the recorded distance 
-                        \(d[v] = \delta(s,v)\).
+                        Every finite value \(d[v]\) is the weight of some walk from \(s\) to \(v\), so \(d[v] \geq \delta(s,v)\)
+                        at all times. We prove by induction on \(|S|\) that for every vertex \(v \in S\), the recorded distance
+                        satisfies \(d[v] = \delta(s,v)\).
                     </p>
                     <p>
-                        <strong>Base case.</strong> Initially \(S = \{s\}\) with \(d[s] = 0 = \delta(s,s)\).
+                        <strong>Base case.</strong> The first vertex extracted is \(s\), so after one step \(S = \{s\}\) with
+                        \(d[s] = 0 = \delta(s,s)\).
                     </p>
                     <p>
-                        <strong>Inductive step.</strong> Suppose the invariant holds for \(|S| = k\). The algorithm selects 
-                        \(u \notin S\) minimizing \(d[u]\). Suppose for contradiction that \(\delta(s,u) < d[u]\). Then there 
-                        exists a shortest path \(P\) from \(s\) to \(u\) with \(w(P) < d[u]\). Let \((x, y)\) be the first edge 
-                        on \(P\) with \(x \in S\) and \(y \notin S\). By the inductive hypothesis, \(d[x] = \delta(s,x)\), and 
-                        the relaxation step performed when \(x\) was added to \(S\) ensured \(d[y] \leq d[x] + w(x,y)\). 
-                        Since the prefix of \(P\) ending at \(y\) is itself a shortest path (subpath optimality), 
-                        \(d[x] + w(x,y) = \delta(s,y)\). Non-negativity of weights gives \(\delta(s,y) \leq w(P)\), 
-                        hence \(d[y] \leq w(P) < d[u]\). But then 
-                        \(u\) was not the minimum of \(d[\cdot]\) over \(V \setminus S\), a contradiction.
+                        <strong>Inductive step.</strong> Suppose the invariant holds for \(|S| = k\). The algorithm selects
+                        \(u \notin S\) minimizing \(d[u]\). Suppose for contradiction that \(\delta(s,u) \lt d[u]\). Then there
+                        exists a shortest path \(P\) from \(s\) to \(u\) (the infimum is attained, as noted above) with
+                        \(w(P) \lt d[u]\). Let \((x, y)\) be the first edge on \(P\) with \(x \in S\) and \(y \notin S\). By the
+                        inductive hypothesis, \(d[x] = \delta(s,x)\), and the relaxation step performed when \(x\) was added to
+                        \(S\) ensured \(d[y] \leq d[x] + w(x,y)\). Since the prefix of \(P\) ending at \(y\) is itself a
+                        shortest path (otherwise replacing it by a lighter walk would make \(P\) lighter, contradicting
+                        \(w(P) = \delta(s,u)\)), \(d[x] + w(x,y) = \delta(s,y)\). Non-negativity of weights gives
+                        \(\delta(s,y) \leq w(P)\), hence \(d[y] \leq w(P) \lt d[u]\). But then \(u\) was not the minimum of
+                        \(d[\cdot]\) over \(V \setminus S\), a contradiction.
                     </p>
                 </div>
 
@@ -136,7 +146,7 @@ uses_python: false
                 &emsp;&emsp;\(u \leftarrow\) Extract-Min\((Q)\);
                 &emsp;&emsp;\(S \leftarrow S \cup \{u\}\);
                 &emsp;&emsp;<strong>for each</strong> edge \((u,v) \in E\) with \(v \notin S\):
-                &emsp;&emsp;&emsp;&emsp;<strong>if</strong> \(d[u] + w(u,v) < d[v]\):
+                &emsp;&emsp;&emsp;&emsp;<strong>if</strong> \(d[u] + w(u,v) \lt d[v]\):
                 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(d[v] \leftarrow d[u] + w(u,v)\); &ensp; // relaxation
                 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Decrease-Key\((Q, v, d[v])\);
                 &emsp;&emsp;<strong>end for</strong>
@@ -156,27 +166,28 @@ uses_python: false
                 </p>
 
                 <p>
-                    The greedy strategy works precisely because non-negative weights guarantee that extending a path 
-                    can never decrease its total weight — once a vertex is finalized, no future path can improve upon it. 
-                    This <strong>monotonicity</strong> breaks when negative edges are present.
+                    The greedy strategy works precisely because non-negative weights guarantee that extending a path can never
+                    decrease its total weight. Once a vertex is finalized, no future path can improve upon it. This
+                    <strong>monotonicity</strong> breaks when negative edges are present.
                 </p>
 
                 <h3>Bellman-Ford Algorithm and Dynamic Programming</h3>
 
                 <p>
-                    The <strong>Bellman-Ford algorithm</strong> handles arbitrary real-valued weights (including negative edges) 
-                    by adopting a fundamentally different strategy: rather than greedily committing to final distances, it 
-                    iteratively <strong>relaxes</strong> all edges, allowing tentative distances to improve over \(|V|-1\) rounds.
+                    The <strong>Bellman-Ford algorithm</strong> handles arbitrary real-valued weights (including negative edges)
+                    by adopting a fundamentally different strategy. Rather than greedily committing to final distances, it
+                    iteratively <strong>relaxes</strong> all edges and lets tentative distances improve over \(|V|-1\) rounds.
                 </p>
 
                 <p>
-                    Define the subproblems: let \(d_i[v]\) be the minimum weight of any path from \(s\) to \(v\) using 
-                    at most \(i\) edges. The recurrence is
+                    For the subproblems, let \(d_i[v]\) be the minimum weight of any walk from \(s\) to \(v\) using at most
+                    \(i\) edges. The recurrence is
                     \[
-                    d_i[v] = \min\Bigl(\, d_{i-1}[v], \;\min_{(u,v) \in E} \bigl(d_{i-1}[u] + w(u,v)\bigr)\Bigr),
+                    d_i[v] = \min\Bigl(\, d_{i-1}[v], \min_{(u,v) \in E} \bigl(d_{i-1}[u] + w(u,v)\bigr)\Bigr),
                     \]
-                    with base case \(d_0[s] = 0\) and \(d_0[v] = +\infty\) for \(v \neq s\). Since any shortest path in a graph 
-                    without negative cycles has at most \(|V| - 1\) edges, we have \(\delta(s,v) = d_{|V|-1}[v]\).
+                    with base case \(d_0[s] = 0\) and \(d_0[v] = +\infty\) for \(v \neq s\). When \(\delta(s,v) \gt -\infty\), a
+                    minimum-weight walk from \(s\) to \(v\) can be taken to be a path, which has at most \(|V| - 1\) edges, so
+                    \(\delta(s,v) = d_{|V|-1}[v]\). The proof below makes this precise.
                 </p>
 
                 <div class="theorem" id="D-dynamic_programming">
@@ -187,17 +198,17 @@ uses_python: false
                         if the same subproblems are encountered repeatedly during a recursive decomposition.
                     </p>
                     <p>
-                        <strong>Dynamic programming</strong> (DP) solves optimization problems satisfying both properties 
-                        by computing and storing solutions to subproblems in a systematic order — either bottom-up (tabulation) 
-                        or top-down with memoization — ensuring each subproblem is solved exactly once.
+                        <strong>Dynamic programming</strong> (DP) solves optimization problems satisfying both properties by
+                        computing and storing solutions to subproblems in a systematic order, either bottom-up (tabulation) or
+                        top-down with memoization, so that each subproblem is solved exactly once.
                     </p>
                 </div>
 
                 <p>
-                    The Bellman-Ford recurrence is a canonical instance of DP: the optimal substructure is that a shortest 
-                    path from \(s\) to \(v\) with at most \(i\) edges is either a shortest path with at most \(i-1\) edges, or 
-                    the extension of some shortest path to a predecessor \(u\) by the edge \((u,v)\). The overlapping subproblems 
-                    arise because multiple vertices may share the same predecessors.
+                    The Bellman-Ford recurrence is a canonical instance of DP. Its optimal substructure is that a minimum-weight
+                    walk from \(s\) to \(v\) with at most \(i\) edges is either a minimum-weight walk with at most \(i-1\)
+                    edges, or the extension of some minimum-weight walk to a predecessor \(u\) by the edge \((u,v)\). The
+                    overlapping subproblems arise because multiple vertices may share the same predecessors.
                 </p>
 
                 <div class="pseudocode">
@@ -208,13 +219,13 @@ uses_python: false
                 &emsp;\(d[v] \leftarrow +\infty\) for all \(v \in V\); &ensp; \(d[s] \leftarrow 0\);
                 &emsp;<strong>for</strong> \(i = 1\) to \(|V| - 1\): &ensp; // relaxation passes
                 &emsp;&emsp;<strong>for each</strong> edge \((u,v) \in E\):
-                &emsp;&emsp;&emsp;&emsp;<strong>if</strong> \(d[u] + w(u,v) < d[v]\):
+                &emsp;&emsp;&emsp;&emsp;<strong>if</strong> \(d[u] + w(u,v) \lt d[v]\):
                 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(d[v] \leftarrow d[u] + w(u,v)\);
                 &emsp;&emsp;<strong>end for</strong>
                 &emsp;<strong>end for</strong>
                 &emsp;// negative cycle check
                 &emsp;<strong>for each</strong> edge \((u,v) \in E\):
-                &emsp;&emsp;<strong>if</strong> \(d[u] + w(u,v) < d[v]\):
+                &emsp;&emsp;<strong>if</strong> \(d[u] + w(u,v) \lt d[v]\):
                 &emsp;&emsp;&emsp;&emsp;<strong>return</strong> "negative cycle detected";
                 &emsp;<strong>end for</strong>
                 &emsp;<strong>return</strong> \(d\);
@@ -224,114 +235,115 @@ uses_python: false
                 <div class="theorem" id="T-bellman_ford_correctness">
                     <span class="theorem-title">Theorem: Bellman-Ford Correctness and Negative Cycle Detection</span>
                     <p>
-                        Let \(G = (V, E, w)\) be a weighted digraph with source \(s\). After \(|V| - 1\) iterations of 
-                        relaxing all edges, the Bellman-Ford algorithm computes \(\delta(s, v)\) for every vertex \(v\) 
-                        reachable from \(s\) without traversing a negative-weight cycle. Moreover, a negative-weight cycle 
-                        reachable from \(s\) exists if and only if some edge \((u,v)\) still satisfies 
-                        \(d[v] > d[u] + w(u,v)\) after the \((|V|-1)\)-th iteration.
+                        Let \(G = (V, E, w)\) be a weighted digraph with source \(s\). After \(|V| - 1\) iterations of relaxing
+                        all edges, the Bellman-Ford algorithm computes \(\delta(s, v)\) for every vertex \(v\) with
+                        \(\delta(s,v) \gt -\infty\), that is, every \(v\) for which no negative-weight cycle lies on a walk from
+                        \(s\) to \(v\). Moreover, a negative-weight cycle reachable from \(s\) exists if and only if some edge
+                        \((u,v)\) still satisfies \(d[v] \gt d[u] + w(u,v)\) after the \((|V|-1)\)-th iteration.
                     </p>
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof Sketch:</span>
                     <p>
-                        <strong>Correctness.</strong> We show by induction on \(i\) that after \(i\) outer 
-                        iterations, \(d[v] \leq d_i[v]\) for all \(v \in V\). The base case \(i = 0\) holds 
-                        by initialization. In iteration \(i\), every edge \((u,v) \in E\) is relaxed:
+                        <strong>Correctness.</strong> We show by induction on \(i\) that after \(i\) outer iterations,
+                        \(d[v] \leq d_i[v]\) for all \(v \in V\). The base case \(i = 0\) holds by initialization. In iteration
+                        \(i\), every edge \((u,v) \in E\) is relaxed:
                         \[
-                        d[v] \leftarrow \min\bigl(d[v],\; d[u] + w(u,v)\bigr).
+                        d[v] \leftarrow \min\bigl(d[v], d[u] + w(u,v)\bigr).
                         \]
-                        At the moment of relaxation, \(d[u] \leq d_{i-1}[u]\) — by the inductive hypothesis 
-                        after iteration \(i-1\), and because \(d\) only decreases. Combined with the previous 
-                        value of \(d[v] \leq d_{i-1}[v]\), the recurrence for \(d_i[v]\) gives 
-                        \(d[v] \leq d_i[v]\).
+                        At the moment of relaxation, \(d[u] \leq d_{i-1}[u]\), by the inductive hypothesis after iteration
+                        \(i-1\) and because \(d\) only decreases. Combined with the previous value of \(d[v] \leq d_{i-1}[v]\),
+                        the recurrence for \(d_i[v]\) gives \(d[v] \leq d_i[v]\).
                     </p>
                     <p>
-                        Since each finite \(d[v]\) is, by construction, the weight of some \(s\)-to-\(v\) 
-                        walk, we also have \(\delta(s,v) \leq d[v]\). When no negative-weight cycle is 
-                        reachable from \(s\), every shortest path has at most \(|V|-1\) edges (a longer walk 
-                        would repeat a vertex, and excising the resulting cycle — of non-negative weight — 
-                        yields a no-longer walk). Thus \(\delta(s,v) = d_{|V|-1}[v]\), and after \(|V|-1\) 
-                        iterations \(\delta(s,v) \leq d[v] \leq d_{|V|-1}[v] = \delta(s,v)\).
+                        Since each finite \(d[v]\) is, by construction, the weight of some \(s\)-to-\(v\) walk, we also have
+                        \(\delta(s,v) \leq d[v]\). Now let \(\delta(s,v) \gt -\infty\). By the characterization of \(-\infty\)
+                        values given with the definition of \(\delta\), every cycle met by a walk from \(s\) to \(v\) has
+                        non-negative weight. A walk from \(s\) to \(v\) with more than \(|V|-1\) edges repeats a vertex, and
+                        excising the resulting cycle, which has non-negative weight, yields a walk with fewer edges and no
+                        greater weight. Hence the infimum defining \(\delta(s,v)\) is attained by a walk with at most \(|V|-1\)
+                        edges, so \(\delta(s,v) = d_{|V|-1}[v]\), and after \(|V|-1\) iterations
+                        \(\delta(s,v) \leq d[v] \leq d_{|V|-1}[v] = \delta(s,v)\).
                     </p>
                     <p>
-                        <strong>Negative cycle detection.</strong> 
-                        (⟸) If no negative cycle is reachable from \(s\), then \(d[v] = \delta(s,v)\) after 
-                        \(|V|-1\) iterations, which satisfies the triangle inequality 
-                        \(d[v] \leq d[u] + w(u,v)\) for every edge — so no edge admits relaxation.
+                        <strong>Negative cycle detection.</strong> (\(\Leftarrow\)) If no negative cycle is reachable from
+                        \(s\), then \(\delta(s,v) \gt -\infty\) for every \(v\), so \(d[v] = \delta(s,v)\) after \(|V|-1\)
+                        iterations. Appending the edge \((u,v)\) to walks from \(s\) to \(u\) gives
+                        \(\delta(s,v) \leq \delta(s,u) + w(u,v)\), so \(d[v] \leq d[u] + w(u,v)\) for every edge and no
+                        edge admits relaxation.
                     </p>
                     <p>
-                        (⟹) Conversely, suppose every edge satisfies \(d[v] \leq d[u] + w(u,v)\) after 
-                        \(|V|-1\) iterations, yet a negative-weight cycle 
-                        \(C = (v_0, v_1, \ldots, v_k = v_0)\) is reachable from \(s\). Reachability and 
-                        edge-by-edge relaxation propagate finiteness, so each \(d[v_i]\) is finite. 
-                        Summing the triangle inequalities around the cycle,
+                        (\(\Rightarrow\)) Conversely, suppose every edge satisfies \(d[v] \leq d[u] + w(u,v)\) after \(|V|-1\)
+                        iterations, yet a negative-weight cycle \(C = (v_0, v_1, \ldots, v_k = v_0)\) is reachable from \(s\).
+                        Each \(v_i\) is reachable from \(s\), hence along a route of at most \(|V|-1\) edges, and therefore
+                        \(d[v_i] \leq d_{|V|-1}[v_i] \lt +\infty\). Summing the triangle inequalities around the cycle,
                         \[
-                        \sum_{i=1}^{k} d[v_i] \;\leq\; \sum_{i=1}^{k} d[v_{i-1}] 
+                        \sum_{i=1}^{k} d[v_i] \leq \sum_{i=1}^{k} d[v_{i-1}]
                         + \sum_{i=1}^{k} w(v_{i-1}, v_i).
                         \]
-                        The two \(d\)-sums cancel (since \(v_0 = v_k\) and all values are finite), 
-                        yielding \(0 \leq w(C)\) — contradicting \(w(C) < 0\). Hence some edge must 
-                        still admit relaxation.
+                        The two \(d\)-sums cancel (since \(v_0 = v_k\) and all values are finite), which leaves \(0 \leq w(C)\)
+                        and contradicts \(w(C) \lt 0\). Hence some edge must still admit relaxation.
                     </p>
                 </div>
 
                 <p>
-                    The total running time is \(O(|V| \cdot |E|)\): we perform \(|V| - 1\) passes over all \(|E|\) edges.
+                    The total running time is \(O(|V| \cdot |E|)\), since we perform \(|V| - 1\) passes over all \(|E|\) edges.
                 </p>
 
                 <div class="insight-box">
                     <h3>Negative Cycles and Currency Arbitrage</h3>
                     <p>
-                        Bellman-Ford's ability to detect negative-weight cycles has a striking application in finance. 
-                        Consider a network of currencies where each directed edge \((u,v)\) carries the exchange rate 
-                        \(r(u,v)\). Setting \(w(u,v) = -\log r(u,v)\) transforms multiplicative gains into additive 
-                        weights: a cycle \(C\) with \(\prod_{e \in C} r(e) > 1\) (a profitable round-trip) becomes a 
-                        negative-weight cycle with \(\sum_{e \in C} w(e) < 0\). Thus, Bellman-Ford on the log-transformed graph 
-                        detects <strong>arbitrage opportunities</strong> — situations where a sequence of currency 
-                        exchanges yields a net profit. The same principle applies to decentralized exchanges (DEXs) 
-                        in DeFi, where token swap rates across liquidity pools form exactly such a weighted digraph, 
-                        and arbitrage bots run variants of Bellman-Ford in real time.
+                        Bellman-Ford's ability to detect negative-weight cycles has a direct application in finance. Consider a
+                        network of currencies where each directed edge \((u,v)\) carries the exchange rate \(r(u,v)\). Setting
+                        \(w(u,v) = -\log r(u,v)\) transforms multiplicative gains into additive weights. A cycle \(C\) with
+                        \(\prod_{e \in C} r(e) \gt 1\) (a profitable round-trip) becomes a negative-weight cycle with
+                        \(\sum_{e \in C} w(e) \lt 0\). Thus, Bellman-Ford on the log-transformed graph detects
+                        <strong>arbitrage opportunities</strong>, that is, sequences of currency exchanges that yield a net
+                        profit. The same principle applies to decentralized exchanges (DEXs) in DeFi, where token swap rates
+                        across liquidity pools form exactly such a weighted digraph, and arbitrage bots run variants of
+                        Bellman-Ford in real time.
                     </p>
                 </div>
 
                 <h3>Greedy vs. Dynamic Programming</h3>
                 <p>
-                    Dijkstra and Bellman-Ford embody the two great paradigms of discrete optimization. 
-                    Dijkstra's greedy approach commits irrevocably to each vertex's distance, exploiting 
-                    the monotonicity of non-negative weights for superior runtime. Bellman-Ford's DP approach 
-                    defers commitment, exploring all possible relaxations — slower, but correct under weaker assumptions. 
-                    This trade-off between exploiting structural assumptions for speed and maintaining generality 
-                    recurs throughout algorithm design and optimization theory.
+                    Dijkstra and Bellman-Ford embody the two great paradigms of discrete optimization. Dijkstra's greedy
+                    approach commits irrevocably to each vertex's distance and exploits the monotonicity of non-negative weights
+                    for superior runtime. Bellman-Ford's DP approach defers commitment and explores all possible relaxations. It
+                    is slower, but correct under weaker assumptions. This trade-off between exploiting structural assumptions
+                    for speed and maintaining generality recurs throughout algorithm design and optimization theory.
                 </p>
 
                 <p>
-                    A natural extension of the greedy paradigm is the <strong>A* algorithm</strong>, which augments 
-                    Dijkstra's strategy with a <strong>heuristic function</strong> \(h(v)\) estimating the remaining 
-                    distance from \(v\) to the goal. Instead of extracting the vertex minimizing \(d[v]\), A* extracts 
-                    the vertex minimizing \(d[v] + h(v)\), directing the search toward the target. When \(h\) is 
-                    <em>admissible</em> (never overestimates true distance) and <em>consistent</em> (satisfies a 
-                    triangle inequality), A* retains optimality while dramatically reducing the number of vertices 
-                    explored. This makes A* the algorithm of choice for robotic path planning, autonomous navigation, 
-                    and game ML — settings where spatial heuristics provide powerful guidance that pure Dijkstra cannot exploit.
+                    A natural extension of the greedy paradigm is the <strong>A* algorithm</strong>, which augments Dijkstra's
+                    strategy with a <strong>heuristic function</strong> \(h(v)\) estimating the remaining distance from \(v\) to
+                    the goal. Instead of extracting the vertex minimizing \(d[v]\), A* extracts the vertex minimizing
+                    \(d[v] + h(v)\), directing the search toward the target. When \(h\) is <em>admissible</em> (never
+                    overestimates true distance) and <em>consistent</em> (satisfies a triangle inequality), A* retains
+                    optimality while dramatically reducing the number of vertices explored. This makes A* the algorithm of
+                    choice for robotic path planning, autonomous navigation, and game AI. In these settings, spatial heuristics
+                    provide powerful guidance that pure Dijkstra cannot exploit.
                 </p>
 
                 <div class="insight-box">
                     <h3>Shortest-Path Distances in Graph Learning</h3>
                     <p>
-                        The shortest-path distance \(\delta(u,v)\) is a fundamental feature in graph-based machine learning. 
-                        In <strong>Graph Neural Networks (GNNs)</strong>, Shortest Path Networks encode \(\delta(u,v)\) as 
-                        positional features to overcome the limited expressiveness of message-passing architectures — whose 
-                        discriminative power is fundamentally bounded by the <strong>1-Weisfeiler-Lehman (1-WL) 
-                        test</strong>, meaning standard GNNs cannot distinguish non-isomorphic graphs (or nodes) that 
-                        1-WL fails to separate. Shortest-path distances inject global structural information that breaks 
-                        through this barrier. In <strong>knowledge graph embeddings</strong>, translational models 
-                        like TransE learn vector representations where \(\mathbf{h} + \mathbf{r} \approx \mathbf{t}\) for a 
-                        triple \((h, r, t)\), implicitly encoding a notion of relational distance. The 
-                        <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian's</strong></a> commute time 
-                        — which we will develop in the random walks section below — provides a spectral relaxation of 
-                        shortest-path distance that is continuous and differentiable, making it amenable to gradient-based 
-                        optimization.
+                        The shortest-path distance \(\delta(u,v)\) is a fundamental feature in graph-based machine learning. In
+                        <strong>Graph Neural Networks (GNNs)</strong>, Shortest Path Networks encode \(\delta(u,v)\) as
+                        positional features to overcome the limited expressiveness of message-passing architectures. The
+                        discriminative power of these architectures is bounded by the <strong>1-Weisfeiler-Lehman (1-WL)
+                        test</strong>, so standard GNNs cannot distinguish non-isomorphic graphs (or nodes) that 1-WL fails to
+                        separate. Shortest-path distances inject global structural information that breaks through this barrier.
+                    </p>
+                    <p>
+                        In <strong>knowledge graph embeddings</strong>, translational models like TransE learn vector
+                        representations where \(\mathbf{h} + \mathbf{r} \approx \mathbf{t}\) for a triple \((h, r, t)\),
+                        implicitly encoding a notion of relational distance. The commute time, which the random walks section
+                        below expresses through the
+                        <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a>, provides a
+                        spectral alternative to shortest-path distance. On weighted graphs it varies smoothly with the edge
+                        weights, which makes it amenable to gradient-based optimization.
                     </p>
                 </div>
             </section>
@@ -340,10 +352,10 @@ uses_python: false
                 <h2>Maximum Flow</h2>
 
                 <p>
-                    We now pass from finding an optimal <em>single path</em> to optimizing the aggregate <em>throughput</em> 
-                    of an entire network. Where shortest paths ask "what is the cheapest route?", maximum flow asks 
-                    "how much can we push through simultaneously?" This shift — from a path problem to a network problem — 
-                    opens the door to deep connections with linear programming duality.
+                    We now pass from finding an optimal <em>single path</em> to optimizing the aggregate <em>throughput</em> of
+                    an entire network. Where shortest paths ask "what is the cheapest route?", maximum flow asks "how much can
+                    we push through simultaneously?" This shift from a path problem to a network problem opens the door to deep
+                    connections with linear programming duality.
                 </p>
 
                 <h3>Flow Networks</h3>
@@ -363,13 +375,13 @@ uses_python: false
                         A <strong>flow</strong> in a flow network \((G, c, s, t)\) is a function \(f \colon E \to \mathbb{R}_{\geq 0}\) satisfying:
                     </p>
                     <p>
-                        <strong>Capacity constraint:</strong> For every edge \(e \in E\),
+                        <strong>Capacity constraint.</strong> For every edge \(e \in E\),
                         \[
                         f(e) \leq c(e).
                         \]
                     </p>
                     <p>
-                        <strong>Conservation (Kirchhoff's law):</strong> For every vertex \(v \in V \setminus \{s, t\}\),
+                        <strong>Conservation (Kirchhoff's law).</strong> For every vertex \(v \in V \setminus \{s, t\}\),
                         \[
                         \sum_{(u,v) \in E} f(u,v) = \sum_{(v,w) \in E} f(v,w).
                         \]
@@ -383,9 +395,9 @@ uses_python: false
                 </div>
 
                 <p>
-                    The <strong>maximum flow problem</strong> asks: find a flow \(f^*\) of maximum value \(|f^*|\). This is a 
-                    linear program — the objective \(|f|\) and all constraints are linear in the flow variables — and we shall 
-                    see that its <a href="../Calculus/duality.html"><strong>dual</strong></a> yields the min-cut theorem.
+                    The <strong>maximum flow problem</strong> asks for a flow \(f^*\) of maximum value \(|f^*|\). Since the
+                    objective \(|f|\) and all constraints are linear in the flow variables, this is a linear program, and we
+                    shall see that its <a href="../Calculus/duality.html"><strong>dual</strong></a> yields the min-cut theorem.
                 </p>
 
                 <h3>Residual Graphs and Augmenting Paths</h3>
@@ -393,15 +405,15 @@ uses_python: false
                 <div class="theorem" id="D-residual_graph">
                     <span class="theorem-title">Definition: Residual Graph</span>
                     <p>
-                        We assume that \(G\) contains no <strong>antiparallel edges</strong> (i.e., if \((u,v) \in E\) then 
-                        \((v,u) \notin E\)). This is without loss of generality: any antiparallel pair can be eliminated by 
-                        inserting a dummy vertex on one of the two edges.
+                        We assume that \(G\) contains no <strong>antiparallel edges</strong> (that is, if \((u,v) \in E\) then
+                        \((v,u) \notin E\)). This is without loss of generality, since any antiparallel pair can be eliminated
+                        by inserting a dummy vertex on one of the two edges.
                     </p>
                     <p>
-                        Given a flow \(f\) in a network \((G, c, s, t)\), the <strong>residual graph</strong> 
-                        \(G_f = (V, E_f)\) has edge set
+                        Given a flow \(f\) in a network \((G, c, s, t)\), the <strong>residual graph</strong> \(G_f = (V, E_f)\)
+                        has edge set
                         \[
-                        E_f = \bigl\{(u,v) : (u,v) \in E,\; f(u,v) < c(u,v)\bigr\} \;\cup\; \bigl\{(v,u) : (u,v) \in E,\; f(u,v) > 0\bigr\}.
+                        E_f = \bigl\{(u,v) : (u,v) \in E, f(u,v) \lt c(u,v)\bigr\} \cup \bigl\{(v,u) : (u,v) \in E, f(u,v) \gt 0\bigr\}.
                         \]
                         The <strong>residual capacity</strong> is
                         \[
@@ -411,12 +423,20 @@ uses_python: false
                 </div>
 
                 <p>
-                    An <strong>augmenting path</strong> is a path from \(s\) to \(t\) in the residual graph \(G_f\). If such 
-                    a path \(P\) exists, we can increase the flow by \(\Delta = \min_{e \in P} c_f(e) > 0\) by pushing 
-                    \(\Delta\) units along \(P\). When the augmenting path traverses a <strong>backward edge</strong> 
-                    \((v,u)\) — corresponding to an original edge \((u,v)\) carrying positive flow — pushing flow along 
-                    it effectively <em>cancels</em> previously assigned flow on \((u,v)\), redirecting that capacity to 
-                    a more profitable route. This ability to "undo" earlier decisions is precisely what allows the 
+                    An <strong>augmenting path</strong> is a path from \(s\) to \(t\) in the residual graph \(G_f\). If such a
+                    path \(P\) exists, we can increase the flow by \(\Delta = \min_{e \in P} c_f(e) \gt 0\) by pushing
+                    \(\Delta\) units along \(P\). An edge \((u,v)\) of \(G_f\) with \((u,v) \in E\) is a <strong>forward
+                    edge</strong>, and an edge \((v,u)\) of \(G_f\) with \((u,v) \in E\) is a <strong>backward edge</strong>,
+                    which corresponds to an original edge \((u,v)\) carrying positive flow. Pushing means that each forward edge
+                    \((u,v)\) of \(P\) has \(f(u,v)\) increased by \(\Delta\), and each backward edge \((v,u)\) of \(P\) has
+                    \(f(u,v)\) decreased by \(\Delta\). The result is again a flow, of value \(|f| + \Delta\). Since
+                    \(\Delta \leq c_f(e)\) for every \(e \in P\), each \(f(e)\) stays in \([0, c(e)]\). At each inner vertex of
+                    \(P\), the edge of \(P\) entering it raises the net inflow by \(\Delta\) (a forward edge adds flow into the
+                    vertex, a backward edge removes flow out of it), and the edge of \(P\) leaving it lowers the net inflow by
+                    \(\Delta\), so conservation is preserved. Finally, \(P\) leaves \(s\) along its first edge and never returns
+                    to \(s\), which raises \(|f|\) by \(\Delta\). When the augmenting path traverses a backward edge \((v,u)\),
+                    pushing flow along it effectively <em>cancels</em> previously assigned flow on \((u,v)\) and redirects that
+                    capacity to a more profitable route. This ability to "undo" earlier decisions is precisely what allows the
                     method to escape locally suboptimal flow assignments and converge to a global maximum.
                 </p>
 
@@ -447,12 +467,14 @@ uses_python: false
                 </p>
 
                 <p>
-                    The Ford-Fulkerson method's termination depends on the capacity values: with 
-                    <strong>integer (or rational) capacities</strong>, each augmentation increases \(|f|\) by at 
-                    least the capacity unit, so the procedure terminates in finitely many steps; with irrational 
-                    capacities, however, examples exist where the method runs forever without converging to the 
-                    maximum flow. The Edmonds-Karp variant resolves this entirely — the BFS choice forces 
-                    termination in \(O(|V| \cdot |E|)\) augmentations regardless of capacity values.
+                    The termination of the Ford-Fulkerson method depends on the capacity values. With <strong>integer
+                    capacities</strong>, the flow stays integer-valued, so every residual capacity is an integer and each
+                    augmentation increases \(|f|\) by at least 1. Since \(|f|\) is bounded above by the capacity of any cut, as
+                    we show below, the procedure terminates after finitely many steps. <strong>Rational capacities</strong>
+                    reduce to this case after multiplying all capacities by a common denominator. With irrational capacities,
+                    however, examples exist where the method runs forever without converging to the maximum flow. The
+                    Edmonds-Karp variant resolves this entirely, since the BFS choice forces termination in \(O(|V| \cdot |E|)\)
+                    augmentations regardless of capacity values. We state the Edmonds-Karp bounds without proof.
                 </p>
 
                 <h3>The Max-Flow Min-Cut Theorem</h3>
@@ -460,46 +482,47 @@ uses_python: false
                 <div class="theorem" id="D-st_cut">
                     <span class="theorem-title">Definition: Cut</span>
                     <p>
-                        An <strong>\(s\)-\(t\) cut</strong> in a flow network \((G, c, s, t)\) is a partition \((S, T)\) of \(V\) 
-                        with \(s \in S\) and \(t \in T\). Its <strong>capacity</strong> is
+                        An <strong>\(s\)-\(t\) cut</strong> in a flow network \((G, c, s, t)\) is a partition \((S, T)\) of
+                        \(V\) with \(s \in S\) and \(t \in T\). Its <strong>capacity</strong> is
                         \[
-                        c(S, T) = \sum_{\substack{(u,v) \in E \\ u \in S,\; v \in T}} c(u,v).
+                        c(S, T) = \sum_{\substack{(u,v) \in E \\ u \in S, v \in T}} c(u,v).
                         \]
                     </p>
                 </div>
 
                 <p>
-                    For any flow \(f\) and any \(s\)-\(t\) cut \((S,T)\), the value \(|f|\) equals the 
-                    <strong>net flow across the cut</strong>. To see this, define the 
-                    <strong>net out-flow</strong> at each vertex,
+                    For any flow \(f\) and any \(s\)-\(t\) cut \((S,T)\), the value \(|f|\) equals the <strong>net flow across
+                    the cut</strong>. To see this, define the <strong>net out-flow</strong> at each vertex,
                     \[
-                    b_f(v) \;=\; \sum_{(v,w) \in E} f(v,w) \;-\; \sum_{(u,v) \in E} f(u,v).
+                    b_f(v) = \sum_{(v,w) \in E} f(v,w) - \sum_{(u,v) \in E} f(u,v).
                     \]
-                    Conservation gives \(b_f(v) = 0\) for all \(v \in V \setminus \{s, t\}\), and 
-                    \(b_f(s) = |f|\) by definition. Since \(t \notin S\), summing \(b_f\) over \(v \in S\) yields
+                    Conservation gives \(b_f(v) = 0\) for all \(v \in V \setminus \{s, t\}\), and \(b_f(s) = |f|\) by
+                    definition. Since \(t \notin S\), summing \(b_f\) over \(v \in S\) yields
                     \[
-                    \sum_{v \in S} b_f(v) \;=\; b_f(s) \;+\; \sum_{v \in S \setminus \{s\}} b_f(v) \;=\; |f|.
+                    \sum_{v \in S} b_f(v) = b_f(s) + \sum_{v \in S \setminus \{s\}} b_f(v) = |f|.
                     \]
-                    On the other hand, expanding \(\sum_{v \in S} b_f(v)\) edge-by-edge: every edge \((a,b)\) with 
-                    both endpoints in \(S\) contributes \(+f(a,b)\) (from \(a\)'s out-sum) and \(-f(a,b)\) (from 
-                    \(b\)'s in-sum), cancelling; every edge with both endpoints in \(T\) contributes nothing; 
-                    only edges crossing the cut survive:
+                </p>
+
+                <p>
+                    On the other hand, we expand \(\sum_{v \in S} b_f(v)\) edge by edge. Every edge \((a,b)\) with both
+                    endpoints in \(S\) contributes \(+f(a,b)\) (from \(a\)'s out-sum) and \(-f(a,b)\) (from \(b\)'s
+                    in-sum), and the two cancel. Every edge with both endpoints in \(T\) contributes nothing. Only edges
+                    crossing the cut survive:
                     \[
-                    |f| = \sum_{\substack{(u,v) \in E \\ u \in S,\; v \in T}} f(u,v) 
-                    \;-\; \sum_{\substack{(v,u) \in E \\ v \in T,\; u \in S}} f(v,u).
+                    |f| = \sum_{\substack{(u,v) \in E \\ u \in S, v \in T}} f(u,v)
+                    - \sum_{\substack{(v,u) \in E \\ v \in T, u \in S}} f(v,u).
                     \]
                     Combining \(f(u,v) \leq c(u,v)\) on the first sum and \(f(v,u) \geq 0\) on the second,
                     \[
-                    |f| \;\leq\; \sum_{\substack{(u,v) \in E \\ u \in S,\; v \in T}} c(u,v) \;=\; c(S,T).
+                    |f| \leq \sum_{\substack{(u,v) \in E \\ u \in S, v \in T}} c(u,v) = c(S,T).
                     \]
-                    Every flow value is bounded above by every cut capacity. The remarkable fact is that equality 
-                    is achieved.
+                    Every flow value is bounded above by every cut capacity. The next theorem shows that equality is attained.
                 </p>
 
                 <div class="theorem" id="T-max_flow_min_cut">
                     <span class="theorem-title">Theorem: Max-Flow Min-Cut (Ford & Fulkerson, 1956)</span>
                     <p>
-                        In any flow network, the following three conditions are equivalent:
+                        In any flow network, the following three conditions on a flow \(f\) are equivalent:
                     </p>
                     <p>
                         (i) \(f\) is a maximum flow.<br>
@@ -514,55 +537,65 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        <strong>(i) \(\Rightarrow\) (ii):</strong> If an augmenting path \(P\) existed in \(G_f\), then 
-                        \(\Delta = \min_{e \in P} c_f(e) > 0\) (every residual edge has strictly positive 
-                        capacity), and pushing \(\Delta\) units along \(P\) would increase \(|f|\), 
-                        contradicting maximality.
+                        <strong>(i) \(\Rightarrow\) (ii).</strong> If an augmenting path \(P\) existed in \(G_f\), then
+                        \(\Delta = \min_{e \in P} c_f(e) \gt 0\) (every residual edge has strictly positive capacity), and
+                        pushing \(\Delta\) units along \(P\) would increase \(|f|\), contradicting maximality.
                     </p>
                     <p>
-                        <strong>(ii) \(\Rightarrow\) (iii):</strong> Suppose \(G_f\) has no \(s\)-\(t\) path. Define 
-                        \(S = \{v \in V : v \text{ is reachable from } s \text{ in } G_f\}\) and \(T = V \setminus S\). 
-                        Then \(s \in S\) and \(t \in T\) (since no augmenting path exists), so \((S,T)\) is an \(s\)-\(t\) cut. 
-                        For every edge \((u,v) \in E\) with \(u \in S, v \in T\): since \(v\) is not reachable from \(s\) in 
-                        \(G_f\), the forward residual edge \((u,v)\) is absent, meaning \(f(u,v) = c(u,v)\). For every edge 
-                        \((v,u) \in E\) with \(v \in T, u \in S\): since \(u \in S\) is reachable but \(v \in T\) is not, the 
-                        backward residual edge \((u,v)\) must be absent, meaning \(f(v,u) = 0\). Therefore,
+                        <strong>(ii) \(\Rightarrow\) (iii).</strong> Suppose \(G_f\) has no \(s\)-\(t\) path. Define
+                        \(S = \{v \in V : v \text{ is reachable from } s \text{ in } G_f\}\) and \(T = V \setminus S\). Then
+                        \(s \in S\) and \(t \in T\) (since no augmenting path exists), so \((S,T)\) is an \(s\)-\(t\) cut. Let
+                        \((u,v) \in E\) with \(u \in S\) and \(v \in T\). Since \(v\) is not reachable from \(s\) in \(G_f\),
+                        the forward residual edge \((u,v)\) is absent, and hence \(f(u,v) = c(u,v)\). Now let \((v,u) \in E\)
+                        with \(v \in T\) and \(u \in S\). Since \(u \in S\) is reachable but \(v \in T\) is not, the backward
+                        residual edge \((u,v)\) must be absent, so \(f(v,u) = 0\). Therefore,
                         \[
                         |f| = \sum_{\substack{u \in S,\, v \in T \\ (u,v) \in E}} c(u,v) - 0 = c(S,T).
                         \]
                     </p>
                     <p>
-                        <strong>(iii) \(\Rightarrow\) (i):</strong> Since \(|f| \leq c(S',T')\) for every cut \((S',T')\), and 
+                        <strong>(iii) \(\Rightarrow\) (i).</strong> Since \(|f| \leq c(S',T')\) for every cut \((S',T')\), and
                         \(|f| = c(S,T)\), the flow \(f\) achieves the upper bound and must be maximal.
+                    </p>
+                    <p>
+                        <strong>Equality of the optima.</strong> The set of flows is a non-empty (it contains the zero flow),
+                        closed, and bounded subset of \(\mathbb{R}^{E}\), hence compact by the
+                        <a href="../Calculus/compactness.html#T-heine_borel" class="ref-link"><strong>Heine-Borel theorem</strong></a>,
+                        and \(|f|\) is a linear function of \(f\). By the
+                        <a href="../Calculus/compactness.html#T-extreme_value_theorem" class="ref-link"><strong>Extreme Value Theorem</strong></a>,
+                        a maximum flow \(f^*\) exists. By (i) \(\Rightarrow\) (iii), some cut \((S,T)\) satisfies
+                        \(|f^*| = c(S,T)\), and every cut has capacity at least \(|f^*|\). Hence
+                        \(\max_f |f| = \min_{(S,T)} c(S,T)\).
                     </p>
                 </div>
 
                 <div class="insight-box">
                     <h3>Duality and the Combinatorial-Continuous Bridge</h3>
                     <p>
-                        The max-flow min-cut theorem is an instance of <a href="../Calculus/duality.html"><strong>strong 
-                        duality</strong></a>. The maximum flow problem can be formulated as a linear program: maximize 
-                        \(|f|\) subject to capacity and conservation constraints. Its dual problem turns out to be the 
-                        minimum cut problem, and strong duality guarantees that their optima coincide. This is not merely a 
-                        theoretical curiosity — it reveals that combinatorial optimization on graphs and continuous optimization 
-                        in \(\mathbb{R}^n\) are often two views of the same mathematical structure. The same duality principle 
-                        underlies the <strong>min-cost flow problem</strong>, assignment problems, and the general theory of 
-                        <strong>totally unimodular matrices</strong>, where linear programming relaxations automatically yield 
-                        integer solutions.
+                        The max-flow min-cut theorem is an instance of
+                        <a href="../Calculus/duality.html"><strong>strong duality</strong></a>. The maximum flow problem can
+                        be formulated as the linear program that maximizes \(|f|\) subject to the capacity and conservation
+                        constraints. Its dual is a linear relaxation of the minimum cut problem that always has an optimal
+                        solution given by a genuine cut, and strong duality guarantees that the two optima coincide. The
+                        correspondence shows that combinatorial optimization on graphs and continuous optimization in
+                        \(\mathbb{R}^n\) are often two views of the same mathematical structure. The same duality principle
+                        underlies the <strong>min-cost flow problem</strong>, assignment problems, and the general theory of
+                        <strong>totally unimodular matrices</strong>, where linear programming relaxations automatically
+                        yield integer solutions.
                     </p>
                 </div>
 
                 <div class="insight-box">
                     <h3>Graph Cuts in Computer Vision</h3>
                     <p>
-                        In <strong>image segmentation</strong>, the max-flow min-cut framework provides an exact 
-                        solution to a natural energy minimization problem. We construct a flow network where each pixel 
-                        is a vertex, edges between adjacent pixels carry weights encoding similarity (encouraging 
-                        neighboring pixels to share a label), and edges to the source and sink encode per-pixel costs 
-                        for foreground/background assignment. The minimum cut then partitions pixels into foreground and 
-                        background, minimizing the total cost. This formulation — known as <strong>graph cuts</strong> — was 
-                        among the first methods to give globally optimal solutions for binary labeling problems in vision, 
-                        and its extensions to multi-label problems via \(\alpha\)-expansion remain widely used.
+                        In <strong>image segmentation</strong>, the max-flow min-cut framework provides an exact solution to a
+                        natural energy minimization problem. We construct a flow network where each pixel is a vertex, edges
+                        between adjacent pixels carry weights encoding similarity (encouraging neighboring pixels to share a
+                        label), and edges to the source and sink encode per-pixel costs for foreground/background assignment.
+                        The minimum cut then partitions pixels into foreground and background, minimizing the total cost. This
+                        formulation, known as <strong>graph cuts</strong>, was among the first methods to give globally optimal
+                        solutions for binary labeling problems in vision, and its extensions to multi-label problems via
+                        \(\alpha\)-expansion remain widely used.
                     </p>
                 </div>
             </section>
@@ -571,18 +604,18 @@ uses_python: false
                 <h2>Random Walks on Graphs</h2>
 
                 <p>
-                    So far, we have studied <em>deterministic</em> optimization on graphs: finding shortest paths and maximum 
-                    flows. We now introduce <em>stochastic</em> dynamics by considering a particle that traverses a graph 
-                    randomly. This probabilistic perspective connects graph theory to 
-                    <a href="../Probability/markov.html"><strong>Markov chains</strong></a> and 
-                    <a href="../Linear_algebra/graph_laplacian.html"><strong>spectral graph theory</strong></a>, revealing that 
-                    combinatorial and algebraic properties of a graph are two faces of the same coin.
+                    So far, we have studied <em>deterministic</em> optimization on graphs: finding shortest paths and maximum
+                    flows. We now introduce <em>stochastic</em> dynamics by considering a particle that traverses a graph
+                    randomly. This probabilistic perspective connects graph theory to
+                    <a href="../Probability/markov.html"><strong>Markov chains</strong></a> and
+                    <a href="../Linear_algebra/graph_laplacian.html"><strong>spectral graph theory</strong></a>, and it shows
+                    that combinatorial and algebraic properties of a graph are two faces of the same coin.
                 </p>
 
                 <p>
-                    Throughout this section we work with <strong>undirected</strong> graphs, in contrast to Sections 1 
-                    and 2 above. This is not merely a presentational choice: the closed-form stationary distribution 
-                    \(\pi_v = \deg(v)/(2m)\) and the symmetry of the graph Laplacian both rely on the undirected 
+                    Throughout this section we work with <strong>undirected</strong> graphs, in contrast to the directed graphs
+                    of the two preceding sections. The choice is not merely presentational. The closed-form stationary
+                    distribution \(\pi_v = \deg(v)/(2m)\) and the symmetry of the graph Laplacian both rely on the undirected
                     structure, where adjacency is reciprocal.
                 </p>
 
@@ -591,10 +624,10 @@ uses_python: false
                 <div class="theorem" id="D-random_walk_graph">
                     <span class="theorem-title">Definition: Random Walk on a Graph</span>
                     <p>
-                        Let \(G = (V, E)\) be a connected, undirected graph with \(n = |V|\) vertices. A <strong>simple 
-                        random walk</strong> on \(G\) is the 
-                        <a href="../Probability/markov.html"><strong>Markov chain</strong></a> \((X_0, X_1, X_2, \ldots)\) 
-                        with state space \(V\) and transition probabilities
+                        Let \(G = (V, E)\) be a connected, simple, undirected graph with \(n = |V| \geq 2\) vertices, so that
+                        every vertex has positive degree. A <strong>simple random walk</strong> on \(G\) is the
+                        <a href="../Probability/markov.html"><strong>Markov chain</strong></a> \((X_0, X_1, X_2, \ldots)\) with
+                        state space \(V\) and transition probabilities
                         \[
                         \Pr(X_{t+1} = v \mid X_t = u) = \begin{cases} \dfrac{1}{\deg(u)} & \text{if } (u,v) \in E, \\[6pt] 0 & \text{otherwise.} \end{cases}
                         \]
@@ -602,14 +635,17 @@ uses_python: false
                 </div>
 
                 <p>
-                    Let \(A\) be the adjacency matrix and \(D = \operatorname{diag}(\deg(v_1), \ldots, \deg(v_n))\) the 
-                    <a href="intro_graph.html#D-vertex_degree" class="ref-link"><strong>degree</strong></a> matrix. The <strong>transition matrix</strong> of the random walk is
+                    Let \(A\) be the adjacency matrix and \(D = \operatorname{diag}(\deg(v_1), \ldots, \deg(v_n))\) the
+                    <a href="intro_graph.html#D-vertex_degree" class="ref-link"><strong>degree</strong></a> matrix. The
+                    <strong>transition matrix</strong> of the random walk is
                     \[
                     P = D^{-1}A.
                     \]
-                    The entry \(P_{uv} = A_{uv}/\deg(u)\) is exactly the one-step transition probability from \(u\) to \(v\). 
-                    Note that \(P\) is a <a href="../Linear_algebra/stochastic.html"><strong>row-stochastic matrix</strong></a>: 
-                    each row sums to 1. After \(k\) steps, the distribution of the walker's position evolves as
+                    The entry \(P_{uv} = A_{uv}/\deg(u)\) is exactly the one-step transition probability from \(u\) to \(v\).
+                    Each row of \(P\) sums to 1, so \(P\) is a
+                    <a href="../Linear_algebra/stochastic.html"><strong>row-stochastic matrix</strong></a>. Equivalently,
+                    \(P^\top\) is stochastic in the column convention, where the columns are probability vectors. After \(k\)
+                    steps, the distribution of the walker's position evolves as
                     \[
                     \boldsymbol{\pi}^{(k)} = \boldsymbol{\pi}^{(0)} P^k,
                     \]
@@ -621,13 +657,14 @@ uses_python: false
                 <div class="theorem" id="T-random_walk_stationary">
                     <span class="theorem-title">Theorem: Stationary Distribution of a Simple Random Walk</span>
                     <p>
-                        Let \(G\) be a connected undirected graph with \(m = |E|\) edges. The distribution
+                        Let \(G\) be a connected undirected graph with at least two vertices and \(m = |E|\)
+                        edges. The distribution
                         \[
                         \pi_v = \frac{\deg(v)}{2m}, \quad v \in V
                         \]
-                        is the unique stationary distribution of the simple random walk on \(G\) (i.e., the unique 
-                        distribution satisfying \(\boldsymbol{\pi} P = \boldsymbol{\pi}\)). If, in addition, \(G\) is 
-                        <strong>non-bipartite</strong>, then the walk is <strong>aperiodic</strong>, and the distribution 
+                        is the unique stationary distribution of the simple random walk on \(G\) (that is, the unique
+                        distribution satisfying \(\boldsymbol{\pi} P = \boldsymbol{\pi}\)). If, in addition, \(G\) is
+                        <strong>non-bipartite</strong>, then the walk is <strong>aperiodic</strong>, and the distribution
                         \(\boldsymbol{\pi}^{(k)}\) converges to \(\boldsymbol{\pi}\) from any initial distribution.
                     </p>
                 </div>
@@ -635,94 +672,107 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        <strong>Stationarity.</strong> First, \(\boldsymbol{\pi}\) is indeed a probability distribution: 
-                        by the <a href="intro_graph.html#T-handshaking_lemma" class="ref-link"><strong>Handshaking Lemma</strong></a> 
-                        \(\sum_{v \in V} \deg(v) = 2m\), so \(\sum_{v} \pi_v = \sum_{v} \deg(v)/(2m) = 1\). 
-                        We verify \(\boldsymbol{\pi} P = \boldsymbol{\pi}\). For each \(v \in V\),
+                        <strong>Stationarity.</strong> First, \(\boldsymbol{\pi}\) is indeed a probability distribution. By the
+                        <a href="intro_graph.html#T-handshaking_lemma" class="ref-link"><strong>Handshaking Lemma</strong></a>,
+                        \(\sum_{v \in V} \deg(v) = 2m\), so \(\sum_{v} \pi_v = \sum_{v} \deg(v)/(2m) = 1\). We verify
+                        \(\boldsymbol{\pi} P = \boldsymbol{\pi}\). For each \(v \in V\),
                         \[
                         \begin{align*}
-                        (\boldsymbol{\pi} P)_v &= \sum_{u \in V} \pi_u \cdot P_{uv} \\
-                                               &= \sum_{u \,:\, (u,v) \in E} \frac{\deg(u)}{2m} \cdot \frac{1}{\deg(u)} \\
-                                               &= \sum_{u \,:\, (u,v) \in E} \frac{1}{2m} \\
+                        (\boldsymbol{\pi} P)_v &= \sum_{u \in V} \pi_u \cdot P_{uv} \\\\
+                                               &= \sum_{u \,:\, (u,v) \in E} \frac{\deg(u)}{2m} \cdot \frac{1}{\deg(u)} \\\\
+                                               &= \sum_{u \,:\, (u,v) \in E} \frac{1}{2m} \\\\
                                                &= \frac{\deg(v)}{2m} = \pi_v.
                         \end{align*}
                         \]
                     </p>
                     <p>
-                        <strong>Uniqueness.</strong> Since \(G\) is connected, the transition matrix \(P\) is 
-                        <strong>irreducible</strong>: any vertex \(u\) reaches any other vertex \(v\) along a 
-                        finite path in \(G\), and along this path each transition has positive probability 
-                        \(1/\deg(\cdot)\), so \((P^k)_{uv} > 0\) for some \(k \geq 0\). The standard theory of 
-                        irreducible stochastic matrices — developed in our treatment of 
-                        <a href="../Linear_algebra/stochastic.html"><strong>stochastic matrices</strong></a> 
-                        and applied to <a href="../Probability/markov.html"><strong>Markov chains</strong></a> — 
-                        guarantees that an irreducible stochastic matrix has a unique stationary distribution 
-                        (this is the classical Perron-Frobenius statement applied to nonnegative matrices). 
-                        Since we have already exhibited \(\boldsymbol{\pi}\) as one stationary distribution, 
-                        it must be the unique one.
+                        <strong>Uniqueness.</strong> Since \(G\) is connected, the transition matrix \(P\) is
+                        <strong>irreducible</strong>. Any vertex \(u\) reaches any other vertex \(v\) along a finite path in
+                        \(G\), and along this path each transition has positive probability \(1/\deg(\cdot)\), so
+                        \((P^k)_{uv} \gt 0\) for some \(k \geq 0\). To prove uniqueness, we first show that every vector
+                        \(\mathbf{f} \in \mathbb{R}^n\) with \(P\mathbf{f} = \mathbf{f}\) is constant. Choose a vertex \(v\) at
+                        which \(f\) attains its maximum. The equation \((P\mathbf{f})(v) = f(v)\) says that \(f(v)\) is the
+                        average of \(f\) over the neighbors of \(v\), and an average of numbers at most \(f(v)\) equals \(f(v)\)
+                        only if each of them equals \(f(v)\). Hence \(f\) attains its maximum at every neighbor of \(v\), and
+                        since \(G\) is connected, repeating the argument along paths shows that \(f\) is constant. Since each
+                        row of \(P\) sums to 1, the all-ones vector lies in \(\ker(P - I)\), so \(\ker(P - I)\) is spanned by
+                        it, and \(P - I\) has rank \(n - 1\). A square matrix and its transpose have the same rank, so the row
+                        vectors \(\boldsymbol{\mu}\) with \(\boldsymbol{\mu} P = \boldsymbol{\mu}\) also form a one-dimensional
+                        space. Two stationary distributions are therefore scalar multiples of each other, and since both sum to
+                        1, they coincide. In particular, \(\boldsymbol{\pi}\) is the unique stationary distribution.
                     </p>
                     <p>
-                        <strong>Convergence.</strong> If \(G\) is non-bipartite, then by the 
-                        <a href="intro_graph.html#T-bipartite_no_odd_cycle" class="ref-link"><strong>bipartite/odd-cycle equivalence</strong></a> 
-                        the graph contains an odd cycle of some length \(2\ell + 1\). Combined with the existence 
-                        of length-\(2\) closed walks (round trips on any edge — which exist since \(G\) is connected 
-                        and has at least one edge), this forces 
-                        \(\gcd\{k : P^k_{vv} > 0\} = 1\) for every vertex \(v\), so the chain is 
-                        <strong>aperiodic</strong>. The convergence \(\boldsymbol{\pi}^{(k)} \to \boldsymbol{\pi}\) 
-                        from any initial distribution is then the convergence theorem for irreducible aperiodic 
-                        Markov chains, again from the standard Perron-Frobenius theory referenced above.
+                        <strong>Convergence.</strong> If \(G\) is non-bipartite, then by the
+                        <a href="intro_graph.html#T-bipartite_no_odd_cycle" class="ref-link"><strong>bipartite/odd-cycle equivalence</strong></a>
+                        the graph contains an odd cycle of some length \(2\ell + 1\). Combined with the existence of
+                        length-\(2\) closed walks (round trips on any edge, which exist since \(G\) is connected and has at
+                        least one edge), this forces \(\gcd\{k : P^k_{vv} \gt 0\} = 1\) for every vertex \(v\) (from \(v\),
+                        walking to the odd cycle, around it, and back gives a closed walk of odd length), so the chain is
+                        <strong>aperiodic</strong>. The convergence \(\boldsymbol{\pi}^{(k)} \to \boldsymbol{\pi}\) from any
+                        initial distribution then follows from the convergence theorem for irreducible aperiodic Markov chains,
+                        which we take for granted here.
                     </p>
                 </div>
 
                 <p>
-                    The result is elegant in its simplicity: in the long run, the random walker visits each vertex in 
-                    proportion to its degree. High-degree "hub" vertices are visited more frequently — a fact that 
-                    underpins the intuition behind centrality measures in network science.
+                    Under the stationary distribution, the walker is found at each vertex with probability proportional to its
+                    degree. High-degree "hub" vertices are visited more frequently, and this fact underpins the intuition behind
+                    centrality measures in network science.
                 </p>
 
                 <h3>The Random Walk Laplacian</h3>
 
                 <p>
-                    The transition matrix is intimately connected to the 
-                    <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a>. Recall that the 
+                    The transition matrix is intimately connected to the
+                    <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian</strong></a>. Recall that the
                     (combinatorial) graph Laplacian is \(L = D - A\). The <strong>random walk Laplacian</strong> is defined as
                     \[
                     L_{\text{rw}} = D^{-1}L = I - D^{-1}A = I - P.
                     \]
-                    This operator satisfies \(L_{\text{rw}} \mathbf{f} = \mathbf{f} - P\mathbf{f}\), so its action on a 
-                    function \(\mathbf{f} \colon V \to \mathbb{R}\) measures the difference between \(\mathbf{f}\) and its 
-                    local average under the random walk:
+                    This operator satisfies \(L_{\text{rw}} \mathbf{f} = \mathbf{f} - P\mathbf{f}\), so its action on a function
+                    \(\mathbf{f} \colon V \to \mathbb{R}\) measures the difference between \(\mathbf{f}\) and its local average
+                    under the random walk:
                     \[
                     (L_{\text{rw}} \mathbf{f})(v) = f(v) - \frac{1}{\deg(v)} \sum_{u \,:\, (u,v) \in E} f(u).
                     \]
-                    A function is <strong>harmonic</strong> at \(v\) (i.e., \(L_{\text{rw}} \mathbf{f}(v) = 0\)) precisely when 
-                    its value equals the average over neighbors — the discrete analogue of the mean value property that 
-                    characterizes harmonic functions in continuous analysis.
                 </p>
 
                 <p>
-                    The eigenvalues of \(L_{\text{rw}}\) are \(0 = \mu_1 \leq \mu_2 \leq \cdots \leq \mu_n\), where 
-                    \(\mu_i = 1 - \lambda_i\) and \(1 = \lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n > -1\) are the 
-                    eigenvalues of \(P\) (the lower bound \(\lambda_n > -1\) holds because the graph is non-bipartite). 
-                    On a bipartite graph, by contrast, \(\lambda_n = -1\): the walker oscillates between the two 
-                    vertex classes with period 2, so the distribution never settles but instead alternates indefinitely — 
-                    this is the spectral signature of periodicity. 
+                    A function is <strong>harmonic</strong> at \(v\) (that is, \(L_{\text{rw}} \mathbf{f}(v) = 0\)) precisely
+                    when its value equals the average over its neighbors. This is the discrete analogue of the mean value
+                    property that characterizes harmonic functions in continuous analysis.
+                </p>
+
+                <p>
+                    The eigenvalues of \(P\) are real, since \(P = D^{-1}A\) is similar to the symmetric matrix
+                    \(D^{-1/2} A D^{-1/2}\). They have modulus at most 1 by the
+                    <a href="../Linear_algebra/stochastic.html#T-stochastic_spectral_radius" class="ref-link"><strong>spectral radius of a stochastic matrix</strong></a>
+                    applied to \(P^\top\), which has the same eigenvalues. We list them as
+                    \(1 = \lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n \geq -1\), so the eigenvalues of \(L_{\text{rw}}\)
+                    are \(\mu_i = 1 - \lambda_i\) with \(0 = \mu_1 \leq \mu_2 \leq \cdots \leq \mu_n\). The eigenvalue 1 is
+                    simple, since its eigenspace is one-dimensional by the uniqueness argument above, and the similarity to a
+                    symmetric matrix makes algebraic and geometric multiplicities agree. Moreover, and \(\lambda_n \gt -1\)
+                    exactly when \(G\) is non-bipartite. On a bipartite graph, by contrast, \(\lambda_n = -1\). A walk started
+                    at a single vertex alternates between the two vertex classes with period 2, so its distribution does not
+                    converge. This is the spectral signature of periodicity.
+                </p>
+
+                <p>
                     The rate of convergence to stationarity is controlled by
                     \[
                     \bar{\lambda} = \max\bigl(|\lambda_2|,\, |\lambda_n|\bigr),
                     \]
-                    which captures contributions from both the second-largest and the most negative eigenvalue. The 
-                    standard <strong>mixing time bound</strong> is
+                    which captures contributions from both the second-largest and the most negative eigenvalue. The standard
+                    <strong>mixing time bound</strong> is
                     \[
-                    \|\boldsymbol{\pi}^{(k)} - \boldsymbol{\pi}\|_{\text{TV}} \leq \frac{1}{2}\sqrt{\frac{1}{\pi_{\min}}}\;\bar{\lambda}^{\,k},
+                    \|\boldsymbol{\pi}^{(k)} - \boldsymbol{\pi}\|_{\text{TV}} \leq \frac{1}{2}\sqrt{\frac{1}{\pi_{\min}}}\bar{\lambda}^{\,k},
                     \]
-                    where \(\pi_{\min} = \min_v \pi_v\). The quantity \(1 - \bar{\lambda}\) is the 
-                    <strong>absolute spectral gap</strong>: a large gap means rapid mixing, while a small gap means 
-                    the walk remains trapped in local clusters for long periods. The spectral facts of this 
-                    paragraph belong to the standard theory of stochastic matrices and Markov chains; 
-                    detailed proofs are given in the dedicated treatments of 
-                    <a href="../Linear_algebra/stochastic.html"><strong>stochastic matrices</strong></a> and 
-                    <a href="../Probability/markov.html"><strong>Markov chains</strong></a>.
+                    where \(\pi_{\min} = \min_v \pi_v\) and
+                    \(\|\boldsymbol{\mu} - \boldsymbol{\nu}\|_{\text{TV}} = \frac{1}{2}\sum_{v} |\mu_v - \nu_v|\). The quantity
+                    \(1 - \bar{\lambda}\) is the <strong>absolute spectral gap</strong>. A large gap means rapid mixing, while a
+                    small gap means the walk remains trapped in local clusters for long periods. The characterization of
+                    \(\lambda_n = -1\) by bipartiteness and the mixing time bound belong to the standard theory of stochastic
+                    matrices and Markov chains, and we state them without proof.
                 </p>
 
                 <h3>Hitting Time and Commute Time</h3>
@@ -743,78 +793,82 @@ uses_python: false
                 </div>
 
                 <p>
-                    These quantities admit a spectral characterization. Since \(L_{\text{rw}} = D^{-1}L\) is generally 
-                    not symmetric, we work with the similar symmetric matrix 
-                    \(L_{\text{sym}} = D^{-1/2} L\, D^{-1/2} = I - D^{-1/2} A\, D^{-1/2}\), which shares the same 
-                    eigenvalues \(\mu_1 = 0 < \mu_2 \leq \cdots \leq \mu_n\). Let 
-                    \(\boldsymbol{\psi}_1, \ldots, \boldsymbol{\psi}_n\) be an orthonormal eigenbasis of \(L_{\text{sym}}\) 
-                    (in the standard Euclidean inner product), and define 
-                    \(\boldsymbol{\phi}_k = D^{-1/2}\boldsymbol{\psi}_k\) — these are the right eigenvectors of 
-                    \(L_{\text{rw}}\), orthonormal with respect to the \(D\)-weighted inner product 
-                    \(\langle \boldsymbol{\phi}_j, \boldsymbol{\phi}_k \rangle_D = \boldsymbol{\phi}_j^\top D\, \boldsymbol{\phi}_k = \delta_{jk}\). 
+                    These quantities admit a spectral characterization. Since \(L_{\text{rw}} = D^{-1}L\) is generally not
+                    symmetric, we work with the similar symmetric matrix
+                    \(L_{\text{sym}} = D^{-1/2} L\, D^{-1/2} = I - D^{-1/2} A\, D^{-1/2}\). It shares the eigenvalues
+                    \(\mu_1 = 0 \lt \mu_2 \leq \cdots \leq \mu_n\) of \(L_{\text{rw}}\). Let
+                    \(\boldsymbol{\psi}_1, \ldots, \boldsymbol{\psi}_n\) be an orthonormal eigenbasis of \(L_{\text{sym}}\) (in
+                    the standard Euclidean inner product), and define \(\boldsymbol{\phi}_k = D^{-1/2}\boldsymbol{\psi}_k\).
+                    These vectors are the right eigenvectors of \(L_{\text{rw}}\), orthonormal with respect to the
+                    \(D\)-weighted inner product
+                    \(\langle \boldsymbol{\phi}_j, \boldsymbol{\phi}_k \rangle_D = \boldsymbol{\phi}_j^\top D\, \boldsymbol{\phi}_k = \delta_{jk}\).
                     Under this normalization,
                     \[
                     C(u,v) = 2m \sum_{k=2}^{n} \frac{1}{\mu_k}\bigl(\phi_k(u) - \phi_k(v)\bigr)^2,
                     \]
-                    where \(m = |E|\). This is precisely the squared Euclidean distance in a spectral embedding weighted by 
-                    \(1/\mu_k\) — a direct bridge between the combinatorial notion of "distance by random traversal" and the 
-                    algebraic notion of "distance in eigenspace." This identity is the <strong>commute-time formula</strong> 
-                    (Lovász's 1993 survey on random walks); we state it without proof, as the derivation requires 
-                    the electrical-network interpretation of random walks beyond the scope of this page.
+                    where \(m = |E|\).
+                </p>
+
+                <p>
+                    The right-hand side is precisely the squared Euclidean distance in a spectral embedding weighted by
+                    \(1/\mu_k\). It forms a direct bridge between the combinatorial notion of "distance by random traversal" and
+                    the algebraic notion of "distance in eigenspace." This identity is the <strong>commute-time
+                    formula</strong>. We state it without proof, since the derivation requires the electrical-network
+                    interpretation of random walks, which is beyond the scope of this page.
                 </p>
 
                 <div class="theorem" id="T-cover_time_bound">
                     <span class="theorem-title">Proposition: Cover Time Bound</span>
                     <p>
-                        The <strong>cover time</strong> \(\text{Cov}(G)\) — the expected time for a random walk to visit every 
-                        vertex — satisfies
+                        The <strong>cover time</strong> \(\operatorname{Cov}(G)\) is the expected time for a random walk to
+                        visit every vertex, maximized over the starting vertex. For any connected graph with \(n\) vertices
+                        and \(m\) edges,
                         \[
-                        \text{Cov}(G) \leq 2m(n-1)
+                        \operatorname{Cov}(G) \leq 2m(n-1).
                         \]
-                        for any connected graph with \(n\) vertices and \(m\) edges.
                     </p>
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof Sketch:</span>
                     <p>
-                        Fix any spanning tree \(T\) of \(G\) and a depth-first traversal of \(T\) that visits all 
-                        \(n\) vertices and returns to the start, traversing each tree edge exactly twice — a closed 
-                        walk on \(T\) of length \(2(n-1)\). The cover time of \(G\) is bounded by the expected time 
-                        the random walker takes to mimic this traversal in \(G\) itself: at each step of the closed 
-                        walk, the walker must hit the next prescribed vertex along a tree edge \((u,v)\), 
-                        contributing an expected \(H(u,v)\) steps. Summing over the \(2(n-1)\) directed tree-edge 
-                        traversals pairs each undirected tree edge with both directions, contributing 
-                        \(C(u,v) = H(u,v) + H(v,u)\) per tree edge. A separate bound 
-                        (Aleliunas–Karp–Lipton–Lovász–Rackoff, 1979) establishes \(C(u,v) \leq 2m\) for any edge 
-                        \((u,v) \in E\), so summing over the \(n - 1\) tree edges gives 
-                        \(\text{Cov}(G) \leq (n-1) \cdot 2m = 2m(n-1)\).
+                        Fix any spanning tree \(T\) of \(G\) and a depth-first traversal of \(T\) that starts at the initial
+                        vertex of the walk, visits all \(n\) vertices, and returns to the start. This traversal crosses each
+                        tree edge exactly twice, so it is a closed walk on \(T\) of length \(2(n-1)\). The cover time of \(G\)
+                        is bounded by the expected time the random walker takes to mimic this traversal in \(G\) itself. At each
+                        step of the closed walk, the walker must hit the next prescribed vertex along a tree edge \((u,v)\),
+                        which takes an expected \(H(u,v)\) steps. Summing over the \(2(n-1)\) directed tree-edge traversals
+                        pairs each undirected tree edge with both directions, contributing \(C(u,v) = H(u,v) + H(v,u)\) per tree
+                        edge. A separate bound (Aleliunas-Karp-Lipton-Lov&aacute;sz-Rackoff, 1979) establishes
+                        \(C(u,v) \leq 2m\) for any edge \((u,v) \in E\), which we state without proof. Hence summing over the
+                        \(n - 1\) tree edges gives \(\operatorname{Cov}(G) \leq (n-1) \cdot 2m = 2m(n-1)\).
                     </p>
                 </div>
 
                 <div class="insight-box">
                     <h3>Random Walks, PageRank, and Graph Representation Learning</h3>
                     <p>
-                        <strong>PageRank</strong> modifies the simple random walk with a <strong>teleportation</strong> 
-                        mechanism: at each step, with probability \(\alpha\) the walker follows a random edge, and with 
-                        probability \(1 - \alpha\) it jumps to a uniformly random vertex. The transition matrix becomes 
-                        \(P_{\text{PR}} = \alpha P + (1 - \alpha)\frac{1}{n}\mathbf{1}\mathbf{1}^\top\), 
-                        where \(\mathbf{1} \in \mathbb{R}^n\) is the all-ones column vector, and its stationary 
-                        distribution ranks vertices by a blend of local connectivity and global accessibility.
+                        <strong>PageRank</strong> modifies the simple random walk with a <strong>teleportation</strong>
+                        mechanism. At each step, with probability \(\alpha\) the walker follows a random edge, and with
+                        probability \(1 - \alpha\) it jumps to a uniformly random vertex. The transition matrix becomes
+                        \(P_{\text{PR}} = \alpha P + (1 - \alpha)\frac{1}{n}\mathbf{1}\mathbf{1}^\top\), where
+                        \(\mathbf{1} \in \mathbb{R}^n\) is the all-ones column vector, and its stationary distribution ranks
+                        vertices by a blend of local connectivity and global accessibility.
                     </p>
                     <p>
-                        In <strong>graph representation learning</strong>, random walks are the engine behind embedding 
-                        algorithms. <strong>DeepWalk</strong> samples random walk sequences from a graph and feeds them to 
-                        a Word2Vec-style skip-gram model, learning vertex embeddings that capture multi-hop neighborhood 
-                        structure. <strong>Node2Vec</strong> generalizes this with biased random walks controlled by 
-                        return parameter \(p\) and in-out parameter \(q\), interpolating between breadth-first (local) 
-                        and depth-first (global) exploration. The connection to <a href="../Machine_learning/clustering.html#sp"><strong>spectral methods</strong></a> is deep: it can be shown 
-                        that the DeepWalk objective implicitly factorizes a matrix closely related to the transition matrix 
-                        \(P\), linking these seemingly heuristic methods back to the spectral theory of graph Laplacians.
+                        In <strong>graph representation learning</strong>, random walks are the engine behind embedding
+                        algorithms. <strong>DeepWalk</strong> samples random walk sequences from a graph and feeds them to
+                        a Word2Vec-style skip-gram model, learning vertex embeddings that capture multi-hop neighborhood
+                        structure. <strong>Node2Vec</strong> generalizes this with biased random walks controlled by return
+                        parameter \(p\) and in-out parameter \(q\), interpolating between breadth-first (local) and
+                        depth-first (global) exploration. The connection to
+                        <a href="../Machine_learning/clustering.html#sp"><strong>spectral methods</strong></a> is deep. The
+                        DeepWalk objective can be shown to implicitly factorize a matrix built from powers of the
+                        transition matrix \(P\), which links these seemingly heuristic methods back to the spectral theory
+                        of graph Laplacians.
                     </p>
                 </div>
             </section>
-
         </div>
-</body>
+    </body>
 </html>
