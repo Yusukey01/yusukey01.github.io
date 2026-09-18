@@ -44,7 +44,7 @@ uses_python: false
 
                 <p>
                     The catch is that we have no such laws yet. Absent them, "artificial intelligence" describes our aspirations 
-                    as much as our achievements — the term covers everything from genuinely powerful pattern-matching systems 
+                    as much as our achievements. The term covers everything from genuinely powerful pattern-matching systems 
                     to speculative claims that outrun the current science. What we can speak about precisely is a more modest 
                     and more rigorous subject: <strong>machine learning (ML)</strong>, the mathematical and algorithmic study 
                     of how systems improve at specific tasks by processing data. ML draws on well-developed frameworks such as 
@@ -66,28 +66,30 @@ uses_python: false
                 </blockquote>  
 
                 <p>
-                    Mathematically, this definition encapsulates the core loop of empirical risk minimization:
+                    A standard mathematical formalization of this definition is the optimization problem behind 
+                    <strong>empirical risk minimization</strong>, in which the objective is the average loss over the dataset:
                 </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Definition: Learning</span>
                     <p>
                         Given a <strong>hypothesis space</strong> \(\mathcal{H}\) of candidate models parameterized by \(\theta \in \Theta\), 
-                        an <strong>objective function</strong> \(J(\theta)\) measuring prediction quality (typically based on a loss function), and 
+                        an <strong>objective function</strong> \(J(\theta; \mathcal{D})\) measuring prediction quality (typically based on a loss function), and 
                         a <strong>dataset</strong> \(\mathcal{D} = \{(x_i, y_i)\}_{i=1}^{N}\), the learner seeks optimal parameters \(\theta^*\) 
                         that minimize \(J\):
                         \[
-                        \theta^* = \arg\min_{\theta \in \Theta} \; J(\theta; \mathcal{D}).
+                        \theta^* = \arg\min_{\theta \in \Theta} J(\theta; \mathcal{D}).
                         \]
                     </p>
                 </div>
 
                 <p>
-                    Every component of this formulation draws on earlier sections: the parameter space \(\Theta\) lives in a 
+                    Every component of this formulation draws on material developed earlier. The parameter space \(\Theta\) lives in a 
                     <a href="../Linear_algebra/vectorspaces.html#D-vector_space" class="ref-link"><strong>vector space</strong></a>, 
                     the optimization is driven by <a href="../Calculus/gradient.html"><strong>gradient-based methods</strong></a>, 
-                    the objective often involves a <a href="../Probability/mle.html#D-MLE" class="ref-link"><strong>likelihood or posterior</strong></a>, 
-                    and the algorithmic procedure has a well-defined 
+                    the objective is often built from a likelihood, as in 
+                    <a href="../Probability/mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation</strong></a>, 
+                    or from a posterior, and the algorithmic procedure has a well-defined 
                     <a href="../Discrete/time_complexity.html"><strong>computational complexity</strong></a>.
                 </p>
 
@@ -105,29 +107,31 @@ uses_python: false
                         diagnosis and personalized treatment.
                     </li>
                     <li><strong>Scientific discovery</strong>:<br>
-                        AI accelerates research in fields like structural biology and genomics by predicting protein structures (e.g., AlphaFold) and 
+                        AI accelerates research in fields like structural biology and genomics by predicting protein structures (for example, AlphaFold) and 
                         genetic regulatory patterns, contributing to drug discovery pipelines.
                     </li>
                 </ul>
                 
                 <p>
-                    One of the most impactful applications of deep learning today is the development of <strong>Large Language Models (LLMs)</strong>. 
-                    These models are built using deep neural networks - specifically the <a href="deep_nn.html#transformer"><strong>transformer</strong></a> architecture - and 
-                    are trained on massive text datasets. LLMs have demonstrated strong performance on language understanding, text generation, translation, 
-                    and tasks that require multi-step inference.
+                    A prominent application of deep learning today is the development of <strong>Large Language Models (LLMs)</strong>. 
+                    These models are typically built from deep neural networks with the <a href="deep_nn.html#transformer"><strong>transformer</strong></a> 
+                    architecture and are trained on massive text datasets. LLMs have demonstrated strong performance on language understanding, 
+                    text generation, translation, and tasks that require multi-step inference.
                 </p>
 
                 <p>
                     Beyond digital text processing, modern ML is increasingly extending into <strong>Physical AI</strong> and autonomous systems. 
-                    Real-world interaction is inherently stochastic — sensor noise, unobserved physical properties, and environmental variability 
-                    mean that even classical robotic systems incorporate probabilistic methods (e.g., Kalman filtering). Modern Physical AI extends 
-                    this further by treating system states as full probability distributions, enabling a system to systematically quantify its own 
-                    <strong>epistemic uncertainty</strong> and establishing a mathematical foundation for real-time safety and risk management.
+                    Real-world interaction is inherently stochastic. Sensor noise, unobserved physical properties, and environmental variability 
+                    mean that even classical robotic systems incorporate probabilistic methods such as Kalman filtering, which already 
+                    treats the system state as a probability distribution. Modern Physical AI extends this probabilistic treatment from 
+                    the state to the learned models themselves, so that a system can estimate its own <strong>epistemic uncertainty</strong>, 
+                    the uncertainty that stems from limited data and knowledge rather than from sensor noise. Such estimates offer a 
+                    principled basis for real-time safety and risk management, complementing rather than replacing classical safety mechanisms.
                 </p>
 
                 <p>
-                    With this broad motivation in hand, we now turn to the fundamental distinction that organizes the field: 
-                    the difference between <strong>supervised</strong> and <strong>unsupervised</strong> learning.
+                    With this broad motivation in hand, we now turn to the distinctions that organize the field, 
+                    beginning with the difference between <strong>supervised</strong> and <strong>unsupervised</strong> learning.
                 </p>
 
             </section>
@@ -136,45 +140,45 @@ uses_python: false
                 <h2>Learning Paradigms</h2>
 
                 <p>
-                    Machine learning encompasses various approaches, primarily distinguished by the presence or absence of 
-                    <strong>labeled data</strong>. This distinction determines the mathematical formulation of the 
-                    learning problem.
+                    Machine learning encompasses various approaches. The first distinction among them is the presence or absence of 
+                    <strong>labeled data</strong>, which determines the mathematical formulation of the learning problem.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Supervised Learning:</span>
+                    <span class="theorem-title">Definition: Supervised Learning</span>
                     <p>
                         The model is trained on a labeled dataset \(\mathcal{D} = \{(x_i, y_i)\}_{i=1}^{N}\), where each input 
-                        \(x_i \in \mathbb{R}^D\) is paired with an output label \(y_i\). The goal is to learn a mapping 
+                        \(x_i \in \mathbb{R}^D\) is paired with an output label \(y_i \in \mathcal{Y}\). The goal is to learn a mapping 
                         \(f: \mathbb{R}^D \to \mathcal{Y}\) that generalizes well to unseen data. From a probabilistic perspective, 
-                        we model the conditional distribution \(p(y \mid x; \theta)\) and optimize parameters via 
+                        we model the conditional distribution \(p(y \mid x; \theta)\) and either estimate \(\theta\) by 
                         <a href="../Probability/mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation (MLE)</strong></a> or 
-                        <a href="../Probability/bayesian.html"><strong>Bayesian inference</strong></a>. 
+                        place a posterior distribution over \(\theta\) by <a href="../Probability/bayesian.html"><strong>Bayesian inference</strong></a>. 
                         Common applications include image classification, spam detection, and medical diagnosis.
                     </p>
                 </div>
 
-                 <div class="theorem">
-                    <span class="theorem-title">Unsupervised Learning:</span>
+                <div class="theorem">
+                    <span class="theorem-title">Definition: Unsupervised Learning</span>
                     <p>
                         Here the dataset consists only of inputs \(\mathcal{D} = \{x_i\}_{i=1}^{N}\) with no target labels. The model attempts to uncover <strong>intrinsic structures</strong> or underlying patterns in two primary ways:
                         <ul style="padding-left: 20px; margin-top: 10px;">
                             <li><strong>Structural Analysis:</strong> Identifying discrete groupings (<a href="clustering.html"><strong>clustering</strong></a>) or finding low-dimensional <a href="pca.html"><strong>latent representations</strong></a> (dimensionality reduction) that capture the data's dominant variance.</li>
-                            <li><strong>Generative Modeling:</strong> Explicitly modeling the <strong>data-generating distribution</strong> \(p(x; \theta)\). This allows the system to not only understand existing data but also to synthesize new samples and quantify <strong>epistemic uncertainty</strong>—a critical capability for safety in <strong>Physical AI</strong>.</li>
+                            <li><strong>Generative Modeling:</strong> Explicitly modeling the <strong>data-generating distribution</strong> \(p(x; \theta)\). This allows the system not only to synthesize new samples but also to assess how plausible a new input is under the learned distribution, a signal used for out-of-distribution detection in <strong>Physical AI</strong>.</li>
                         </ul>
                         Applications include customer segmentation, anomaly detection, and synthetic data generation.
                     </p>
-                 </div>
+                </div>
 
                 <p>
-                    While Supervised and Unsupervised learning form the mathematical foundation of data modeling, a third major paradigm exists where data
+                    While supervised and unsupervised learning form the mathematical foundation of data modeling, a third major paradigm exists where data
                     is acquired through action:
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Reinforcement Learning (RL):</span>
+                    <span class="theorem-title">Definition: Reinforcement Learning (RL)</span>
                     <p>
-                        Unlike learning from a static dataset, an agent interacts with a dynamic environment to maximize a scalar reward signal. 
+                        Unlike learning from a static dataset, an agent interacts with a dynamic environment to maximize the expected cumulative reward 
+                        it receives as scalar signals. 
                         This is a fundamentally different formulation where the model must balance <strong>exploration</strong> of the unknown with 
                         <strong>exploitation</strong> of known rewards. In <strong>Physical AI</strong>, RL increasingly incorporates 
                         <strong>uncertainty-aware</strong> constraints, allowing robots to recognize "out-of-distribution" states and trigger 
@@ -183,38 +187,34 @@ uses_python: false
                 </div>
 
                 <p>
-                    Modern machine learning often bridges these three major paradigms (Supervised, Unsupervised, and RL) through hybrid approaches:
+                    Modern machine learning often bridges these three major paradigms (supervised, unsupervised, and reinforcement learning) 
+                    through hybrid approaches:
                 </p>
 
                 <ul style="padding-left: 40px;">
                     <li><strong>Semi-Supervised Learning (Supervised + Unsupervised):</strong><br>
-                        Combines small labeled sets with vast unlabeled data. The unlabeled data exposes the structure of the input distribution, 
-                        helping refine decision boundaries when manual labeling is prohibitively expensive.
+                        This approach combines a small labeled set with a vast pool of unlabeled data. The unlabeled data exposes the structure 
+                        of the input distribution, helping refine decision boundaries when manual labeling is prohibitively expensive.
                     </li>
                     
                     <li><strong>Self-Supervised Learning (Unsupervised as Supervised):</strong><br>
-                        The system generates its own supervisory signals from the raw input (e.g., predicting the next token, or masked words). 
+                        The system generates its own supervisory signals from the raw input (for example, by predicting the next token or masked words). 
                         Large language model pretraining is the most prominent application, allowing models to learn broadly useful representations 
                         before any task-specific fine-tuning.
                     </li>
 
                     <li><strong>RLHF (Reinforcement Learning from Human Feedback):</strong><br>
-                        A hybrid of <strong>Supervised</strong> and <strong>RL</strong> used to align models (like LLMs) with human intent. 
-                        A reward model is first trained on human-ranked data (Supervised), which then guides the RL process to fine-tune the 
-                        agent's behavior.
+                        This hybrid of <strong>supervised learning</strong> and <strong>RL</strong> is used to align models such as LLMs 
+                        with human intent. A reward model is first trained on human-ranked data (the supervised step), which then guides 
+                        the RL process to fine-tune the agent's behavior.
                     </li>
 
                     <li><strong>World Models (Generative + RL):</strong><br>
-                        In <strong>Physical AI</strong>, an agent uses <strong>Generative Modeling</strong> to learn a "mental model" of 
-                        the environment's physics from unlabeled sensory data. The agent then performs <strong>Reinforcement Learning</strong> 
-                        within this simulated internal world, improving sample efficiency and safety.
+                        In <strong>Physical AI</strong>, an agent uses <strong>generative modeling</strong> to learn a "mental model" of 
+                        the environment's physics from unlabeled sensory data. The agent then performs <strong>reinforcement learning</strong> 
+                        within this simulated internal world, and this improves sample efficiency and safety.
                     </li>
                 </ul>
-
-                <p>
-                    With these core paradigms and hybrid strategies established, we can now classify the concrete <strong>tasks</strong> that 
-                    machine learning algorithms are designed to solve.
-                </p>
 
             </section>
 
@@ -235,13 +235,15 @@ uses_python: false
                     </li>
                     &nbsp;&nbsp;Examples: Forecasting stock prices, estimating real estate values, predicting temperature changes.
                     <br>
-                    &nbsp;&nbsp;Methods: <a href="regression.html"><strong>Linear regression, polynomial regression, Ridge regression</strong></a>.
+                    &nbsp;&nbsp;Methods: <a href="regression.html"><strong>Linear regression, polynomial regression, ridge regression</strong></a>.
 
                     <li><strong>Classification</strong>:<br>
-                        Assigns inputs into predefined discrete categories \(y \in \{1, \ldots, K\}\). Models like <a href="intro_classification.html"><strong>logistic regression</strong></a> and 
-                        <a href="neural_networks.html"><strong>neural networks</strong></a> typically output a probability distribution over classes via the softmax function, connecting directly 
-                        to <a href="../Probability/mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation</strong></a>. Other geometric approaches, such as <a href="svm.html"><strong>support vector machines (SVM)</strong></a>, 
-                        optimize a decision boundary by maximizing the margin between classes.
+                        Assigns inputs to predefined discrete categories \(y \in \{1, \ldots, K\}\). Models like <a href="intro_classification.html"><strong>logistic regression</strong></a> and 
+                        <a href="neural_networks.html"><strong>neural networks</strong></a> typically output a probability distribution over classes via the 
+                        sigmoid function (two classes) or the softmax function (several classes). Minimizing the resulting cross-entropy loss is exactly 
+                        <a href="../Probability/mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation</strong></a>. 
+                        Geometric approaches such as <a href="svm.html"><strong>support vector machines (SVM)</strong></a> instead optimize 
+                        a decision boundary by maximizing the margin between classes.
                     </li>
                     &nbsp;&nbsp;Examples: Email spam detection, handwriting recognition, disease diagnosis.
                     <br>
@@ -249,7 +251,8 @@ uses_python: false
 
                     <li><strong>Clustering</strong>:<br>
                         Groups similar data points without predefined labels, effectively partitioning the input space into coherent regions. 
-                        The notion of "similarity" relies on <a href="../Calculus/metric_space.html"><strong>distance metrics</strong></a> and the 
+                        The notion of "similarity" relies on <a href="../Calculus/metric_space.html"><strong>distance metrics</strong></a> and, 
+                        for model-based methods, on the 
                         <a href="../Probability/covariance.html"><strong>covariance structure</strong></a> of the data.
                     </li>
                     &nbsp;&nbsp;Examples: Customer segmentation, document categorization, image grouping.
@@ -258,31 +261,34 @@ uses_python: false
 
                     <li><strong>Dimensionality Reduction</strong>:<br>
                         Reduces the number of input variables while preserving essential information. Mathematically, this seeks a low-dimensional subspace 
-                        (or manifold) that captures the dominant variation in the data. Linear methods accomplish this by drawing on 
-                        <a href="../Linear_algebra/eigenvectors.html"><strong>eigenvalue decomposition</strong></a>, while non-linear methods optimize deep 
-                        representation networks.
+                        (or manifold) that captures the dominant variation in the data. Linear methods such as PCA accomplish this by drawing on 
+                        <a href="../Linear_algebra/eigenvectors.html"><strong>eigenvalue decomposition</strong></a>. Kernel PCA applies the same decomposition 
+                        after an implicit non-linear feature map, and autoencoders learn non-linear representations by training a neural network.
                     </li>
                     &nbsp;&nbsp;Examples: Data visualization, noise reduction, feature extraction.
                     <br>
-                    &nbsp;&nbsp;Methods: <a href="pca.html"><strong>Principal Component Analysis (PCA), Kernel PCA, Autoencoders.</strong></a>
+                    &nbsp;&nbsp;Methods: <a href="pca.html"><strong>Principal Component Analysis (PCA), kernel PCA, autoencoders</strong></a>.
 
                     <li><strong>Generative Modeling</strong>:<br>
                         Learns the underlying data distribution to generate new, synthetic samples that share the same statistical properties as 
-                        the training set. Moving beyond deterministic dimensionality reduction, approaches like the <a href="vae.html#vae"><strong>Variational Autoencoder (VAE)</strong></a> 
-                        map data to a continuous latent distribution characterized by a mean and variance. This balances data reconstruction fidelity 
-                        with probabilistic regularization via Kullback-Leibler (KL) divergence, forcing the learned latent space to approximate a structured prior.
+                        the training set. Moving beyond deterministic dimensionality reduction, approaches like the 
+                        <a href="vae.html#vae"><strong>Variational Autoencoder (VAE)</strong></a> map data to a continuous latent distribution 
+                        characterized by a mean and variance. The training objective, the evidence lower bound (ELBO), balances data reconstruction 
+                        fidelity against probabilistic regularization via the Kullback-Leibler (KL) divergence. The regularization term pulls each 
+                        encoded latent distribution toward a structured prior.
                     </li>
                     &nbsp;&nbsp;Examples: Image synthesis, text generation, uncertainty quantification in robotic manipulation.
                     <br>
-                    &nbsp;&nbsp;Methods: <a href="vae.html#vae"><strong>VAEs</strong></a>, Generative Adversarial Networks (GANs), Diffusion Models.
+                    &nbsp;&nbsp;Methods: <a href="vae.html#vae"><strong>VAEs</strong></a>, Generative Adversarial Networks (GANs), diffusion models.
 
                     <li><strong>Policy Optimization / Control</strong>:<br> 
-                        Outputs an action \(a \in \mathcal{A}\) given a state \(s \in \mathcal{S}\). This is the task executed within the Reinforcement Learning paradigm, 
-                        vital for robotics and autonomous navigation.
+                        Outputs an action \(a \in \mathcal{A}\), or a probability distribution \(\pi(a \mid s)\) over actions, 
+                        given a state \(s \in \mathcal{S}\). 
+                        This is the task executed within the reinforcement learning paradigm, vital for robotics and autonomous navigation.
                     </li>
                     &nbsp;&nbsp;Examples: Robotics control, game playing, autonomous driving, LLM alignment via RLHF.
                     <br>
-                    &nbsp;&nbsp;<em>Methods</em>: Q-Learning, Proximal Policy Optimization (PPO).
+                    &nbsp;&nbsp;Methods: Q-learning, Proximal Policy Optimization (PPO).
                 </ul>      
 
                 <p>
@@ -292,14 +298,14 @@ uses_python: false
                 </p>
 
                 <p>
-                    It is crucial to recognize that these categories are not mutually exclusive; in practice, they frequently <strong>overlap</strong>. 
-                    For instance, a Variational Autoencoder (VAE) simultaneously performs non-linear <strong>dimensionality reduction</strong> and 
+                    These categories are not mutually exclusive. In practice, they frequently <strong>overlap</strong>. 
+                    For instance, a VAE simultaneously performs non-linear <strong>dimensionality reduction</strong> and 
                     <strong>generative modeling</strong>. Modern architectures often integrate multiple paradigms to handle complex, high-dimensional data.
                 </p>
 
                 <p>
-                    Each of these categories is explored in dedicated pages within this section. 
-                    Regardless of the specific task, all machine learning methods share a common workflow, which we outline next.
+                    Each of these categories is explored in dedicated pages within this section, and all of them share 
+                    the workflow outlined next.
                 </p>
 
             </section>
@@ -310,9 +316,9 @@ uses_python: false
                 <p>
                     Regardless of whether we are performing regression, classification, or clustering, 
                     every machine learning project follows a common pipeline. Understanding this pipeline 
-                    matters because each step introduces its own mathematical and engineering considerations 
-                    — from the statistical properties of the data to the convergence guarantees of the optimizer 
-                    to the deployment realities of distribution shift.
+                    matters because each step introduces its own mathematical and engineering considerations. 
+                    These considerations range from the statistical properties of the data to the convergence guarantees 
+                    of the optimizer and the deployment realities of distribution shift.
                 </p>
 
                 <div class="insight-box">
@@ -321,31 +327,32 @@ uses_python: false
                         <li><strong>Problem Definition.</strong><br>
                             Articulate the problem precisely and decide whether machine learning is the right tool. 
                             This means specifying the input space \(\mathcal{X}\), the output space \(\mathcal{Y}\), 
-                            and the performance criterion. ML failures often trace back to vague problem definitions: 
-                            a model can only optimize what we measure, so the choice of metric quietly determines 
-                            what behavior the system will learn — a manifestation of <strong>Goodhart's law</strong>: 
-                            when a measure becomes a target, it ceases to be a good measure.
+                            and the performance criterion. ML failures often trace back to vague problem definitions. 
+                            A model can only optimize what we measure, so the choice of metric quietly determines 
+                            what behavior the system will learn. This is a manifestation of <strong>Goodhart's law</strong>, 
+                            commonly paraphrased as the statement that when a measure becomes a target, it ceases to be a good measure.
                         </li>
 
                         <li><strong>Data Collection and Curation.</strong><br>
                             Gather data that is relevant, diverse, and representative of the deployment distribution. 
-                            For most of the 2010s the dominant strategy was simply to collect more data — bigger was 
-                            better. Since around 2023, this trend has partially reversed: 
-                            <strong>data quality has come to rival data quantity</strong> as the binding constraint 
+                            For most of the 2010s the dominant strategy was simply to collect more data on the assumption 
+                            that bigger was better. Since around 2023, this trend has partially reversed. 
+                            <strong>Data quality has come to rival data quantity</strong> as the binding constraint 
                             on model performance. Carefully curated, deduplicated, and filtered datasets routinely 
                             outperform much larger noisy ones, and licensing, provenance, and contamination have 
                             become first-class engineering concerns. The data must be sufficiently rich to capture 
-                            the underlying distribution \(p(x, y)\) we wish to model — but no richer than what we 
+                            the underlying distribution \(p(x, y)\) we wish to model, yet no richer than what we 
                             can verify and trust.
                         </li>
 
                         <li><strong>Data Preprocessing.</strong><br>
-                            Clean and prepare the data: handle missing values, encode categorical variables, 
-                            normalize features. Feature scaling, for instance, ensures that 
+                            Clean and prepare the data by handling missing values, encoding categorical variables, 
+                            and normalizing features. Feature scaling, for instance, typically speeds up 
                             <a href="../Calculus/gradient.html"><strong>gradient descent</strong></a> 
-                            converges efficiently by improving the 
+                            because it tends to improve the 
                             <a href="../Linear_algebra/symmetry.html#D-condition_number" class="ref-link"><strong>condition number</strong></a> 
-                            of the optimization landscape. For text and image data, preprocessing also includes 
+                            of the Hessian of the loss (for least squares with design matrix \(X\), the matrix \(X^\top X\)). 
+                            For text and image data, preprocessing also includes 
                             tokenization, augmentation, and standardization choices that often matter as much as 
                             the model architecture.
                         </li>
@@ -353,45 +360,44 @@ uses_python: false
                         <li><strong>Data Splitting and Contamination Control.</strong><br>
                             Divide the dataset into <strong>training</strong>, <strong>validation</strong>, 
                             and <strong>test</strong> sets. This separation is essential for estimating 
-                            generalization performance and is formalized through 
-                            <a href="regression.html"><strong>cross-validation</strong></a> techniques. 
+                            generalization performance. <a href="regression.html"><strong>Cross-validation</strong></a> 
+                            techniques refine it by rotating the validation role across several folds of the training data. 
                             In the foundation-model era, an additional concern has emerged: 
-                            <strong>contamination</strong> — the test set may overlap with the corpus on which 
-                            a pretrained model was already trained, inflating evaluation scores without genuine 
+                            <strong>contamination</strong>. The test set may overlap with the corpus on which 
+                            a pretrained model was already trained, and such overlap inflates evaluation scores without genuine
                             generalization. Modern benchmarking practice requires explicit contamination checks 
                             and, increasingly, the use of held-out or freshly constructed evaluation sets.
                         </li>
 
                         <li><strong>Model Selection.</strong><br>
                             Choose a hypothesis class \(\mathcal{H}\) appropriate to the problem. In classical ML 
-                            this means picking a model family — linear, tree-based, kernel-based, or a neural-network 
-                            architecture — and confronting the fundamental 
-                            <a href="regression.html"><strong>bias-variance tradeoff</strong></a>: more expressive 
+                            this means picking a linear, tree-based, or kernel-based model family or a neural-network 
+                            architecture, and confronting the fundamental 
+                            <a href="regression.html"><strong>bias-variance tradeoff</strong></a>. More expressive 
                             models fit training data better (lower bias) but may generalize poorly (higher variance). 
                             In modern practice, model selection often reduces to choosing among 
                             <strong>pretrained foundation models</strong> (a vision transformer, a language model, 
                             a diffusion backbone) and a transfer strategy: full fine-tuning, parameter-efficient 
-                            methods like LoRA or adapters, or zero-shot prompting. The mathematical principles — 
-                            capacity, regularization, generalization — apply equally to both regimes.
+                            methods like LoRA or adapters, or zero-shot prompting.
                         </li>
 
                         <li><strong>Training or Fine-Tuning.</strong><br>
                             Optimize the model parameters \(\theta\) by minimizing an empirical loss on the training 
                             set. For <a href="neural_networks.html"><strong>neural networks</strong></a>, this involves 
-                            <a href="autodiff.html"><strong>backpropagation</strong></a> — an efficient application 
-                            of the chain rule — combined with stochastic gradient descent or its variants 
-                            (AdamW — derived from the earlier Adam algorithm — and more recent alternatives such as Lion). When starting from a pretrained model, training is usually called 
+                            <a href="autodiff.html"><strong>backpropagation</strong></a>, an efficient application 
+                            of the chain rule, combined with stochastic gradient descent or its variants 
+                            (AdamW, which derives from the earlier Adam algorithm, and more recent alternatives such as Lion). 
+                            When starting from a pretrained model, training is usually called 
                             <strong>fine-tuning</strong> and uses smaller learning rates, fewer steps, and often 
-                            a fraction of the original parameters. Specialized training paradigms — supervised 
-                            fine-tuning (SFT), reinforcement learning from human feedback (RLHF), direct preference 
-                            optimization (DPO), and knowledge distillation — extend this basic gradient-descent loop 
-                            in domain-specific ways.
+                            updates only a fraction of the original parameters. Specialized training paradigms extend this basic 
+                            gradient-descent loop in domain-specific ways. They include supervised fine-tuning (SFT), 
+                            RLHF, direct preference optimization (DPO), and knowledge distillation.
                         </li>
 
                         <li><strong>Evaluation.</strong><br>
-                            Assess the model's performance on the validation set using metrics appropriate to the task: 
-                            accuracy, precision, recall, and F1 for classification; mean squared error for regression; 
-                            BLEU, ROUGE, and pairwise human preference for generative tasks. Beyond task accuracy, 
+                            Assess the model's performance on the validation set using metrics appropriate to the task. 
+                            Classification uses accuracy, precision, recall, and F1, regression uses mean squared error, 
+                            and generative tasks use BLEU, ROUGE, and pairwise human preference. Beyond task accuracy,
                             modern evaluation increasingly includes <strong>behavioral and safety assessments</strong>: 
                             robustness to adversarial inputs, calibration of uncertainty estimates, fairness across 
                             subgroups, and red-team probing for harmful outputs. A model that scores high on task 
@@ -399,18 +405,18 @@ uses_python: false
                         </li>
 
                         <li><strong>Hyperparameter Tuning.</strong><br>
-                            Optimize hyperparameters that govern the learning process — 
+                            Optimize the hyperparameters that govern the learning process, such as the 
                             <a href="regression.html"><strong>regularization strength \(\lambda\)</strong></a>, 
-                            learning rate, batch size, network depth, dropout rate — using grid search, random search, 
-                            or Bayesian optimization. Hyperparameter tuning sits in an outer loop around training and 
-                            is computationally expensive; principled methods (e.g., successive halving, 
-                            population-based training) can reduce the cost substantially.
+                            learning rate, batch size, network depth, and dropout rate. Standard search methods are 
+                            grid search, random search, and Bayesian optimization. Hyperparameter tuning sits in an 
+                            outer loop around training and is computationally expensive. Principled methods such as 
+                            successive halving and population-based training can reduce the cost substantially.
                         </li>
 
                         <li><strong>Testing.</strong><br>
                             Evaluate the final model on the held-out test set to obtain an unbiased estimate of 
                             generalization performance. The test set must remain untouched throughout hyperparameter 
-                            tuning and model selection — every peek at the test set during development is a small 
+                            tuning and model selection. Every peek at the test set during development is a small 
                             leak that biases the final estimate. Statistical rigor at this stage is what 
                             separates a trustworthy result from an over-tuned one.
                         </li>
@@ -419,61 +425,60 @@ uses_python: false
                             Integrate the model into a production environment and monitor its behavior continuously. 
                             In practice, the data distribution drifts over time (<strong>distribution shift</strong>), 
                             requiring periodic retraining. For safety-critical systems, this phase relies on 
-                            <strong>out-of-distribution (OOD) detection</strong>: if a model's estimated epistemic 
+                            <strong>out-of-distribution (OOD) detection</strong>. If a model's estimated epistemic 
                             uncertainty exceeds a learned threshold, the system recognizes it is operating outside 
                             its confident regime and can trigger fallback policies or immediate aborts.
                         </li>
 
                         <li><strong>Inference-Time Compute.</strong><br>
                             A relatively new addition to the pipeline, popularized by reasoning-focused models from 
-                            2024 onward (OpenAI's o1, DeepSeek's R1, and successors). Rather than fixing the amount 
-                            of compute at training time, the system spends additional compute at <em>inference</em> — 
-                            generating multiple candidate solutions, performing internal search or reflection, or 
-                            extending its chain of reasoning (chain-of-thought) — and selects the best output. This recasts model performance 
-                            as a function of three axes (training data, model parameters, and inference compute) 
-                            rather than two, and is reshaping how the community thinks about the cost-quality frontier.
+                            2024 onward (OpenAI's o1, DeepSeek's R1, and successors). Rather than spending compute 
+                            only at training time, the system spends additional compute at <em>inference</em>. 
+                            It generates multiple candidate solutions, performs internal search or reflection, or 
+                            extends its chain of reasoning (chain-of-thought), and then selects the best output. 
+                            The approach recasts model performance as a function of three axes (training data, 
+                            model parameters, and inference compute) rather than two, and is reshaping how the 
+                            community thinks about the cost-quality frontier.
                         </li>
                     </ol>
                 </div>
 
                 <p>
                     This pipeline reflects the workflow of a <strong>classical ML project</strong> built from scratch. 
-                    In foundation-model era practice, several stages — large-scale data collection, expensive 
-                    pretraining — are typically replaced by <strong>transfer from a pretrained model</strong>, and 
-                    inference-time compute has emerged as a fourth axis of optimization beyond data, parameters, 
-                    and training compute. The mathematical principles examined throughout this section — convergence, 
-                    generalization, regularization, optimization geometry — apply across both regimes.
+                    In foundation-model practice, the expensive early stages of large-scale data collection and 
+                    pretraining are typically replaced by <strong>transfer from a pretrained model</strong>. 
+                    The mathematical principles examined throughout this section apply across both regimes. 
+                    They include convergence, generalization, regularization, and optimization geometry.
                 </p>
 
                 <p>
-                    The ML pipeline is a concrete synthesis of every section in this website. 
+                    The ML pipeline brings together the material of every earlier section. 
                     <strong>Data representation</strong> relies on 
-                    <a href="../Linear_algebra/linear_algebra.html"><strong>Linear Algebra to Algebraic Foundations (Section I)</strong></a> -
-                    each data point is a vector, each dataset is a matrix, and transformations like PCA are eigenvalue problems. 
-                    <strong>Optimization</strong> is governed by <a href="../Calculus/calculus.html"><strong>Calculus to Optimization & Analysis (Section II)</strong></a> -
-                    gradient descent, convexity, and convergence rates determine whether training succeeds. 
-                    <strong>Generalization</strong> is a question of <a href="../Probability/probability.html"><strong>Probability & Statistics (Section III)</strong></a> -
-                    from the bias-variance trade-off to the law of large numbers justifying empirical risk minimization. 
+                    <a href="../Linear_algebra/linear_algebra.html"><strong>Linear Algebra to Algebraic Foundations</strong></a>. 
+                    Each data point is a vector, each dataset is a matrix, and transformations like PCA are eigenvalue problems. 
+                    <strong>Optimization</strong> is governed by <a href="../Calculus/calculus.html"><strong>Calculus to Optimization & Analysis</strong></a>. 
+                    Gradient descent, convexity, and convergence rates determine whether training succeeds. 
+                    <strong>Generalization</strong> is a question of <a href="../Probability/probability.html"><strong>Probability & Statistics</strong></a>, 
+                    which spans everything from the bias-variance tradeoff to the law of large numbers that motivates empirical risk minimization. 
                     Finally, the <strong>computational feasibility</strong> of each algorithm depends on 
-                    <a href="../Discrete/discrete_math.html"><strong>Discrete Mathematics & Algorithms (Section IV)</strong></a>. 
-                    In the pages that follow, we explore each of these connections in depth.
+                    <a href="../Discrete/discrete_math.html"><strong>Discrete Mathematics & Algorithms</strong></a>. 
+                    In the pages ahead, we explore each of these connections in depth.
                 </p>
 
                 <p>
                     Looking further ahead, these foundations converge in a recurring viewpoint that is becoming increasingly central 
-                    to modern ML: <strong>Geometric Deep Learning (GDL)</strong>. GDL is the framework that unifies Convolutional 
+                    to modern ML: <strong>Geometric Deep Learning (GDL)</strong>. GDL unifies Convolutional 
                     Neural Networks (translation symmetry), Graph Neural Networks (permutation symmetry on nodes), and equivariant 
-                    networks for 3D data (rotation/translation symmetry under 
+                    networks for 3D data (rotation and translation symmetry under 
                     <a href="../Linear_algebra/lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>Lie groups</strong></a> 
-                    such as \(SO(3)\) and \(SE(3)\)) under a single principle: <em>the architecture of a neural network should respect 
-                    the symmetries of the data it operates on</em>. The mathematical machinery this requires — Lie groups, smooth 
-                    manifolds, group representations, and the 
+                    such as \(SO(3)\) and \(SE(3)\)). The unifying principle is that <em>the architecture of a neural network should respect 
+                    the symmetries of the data it operates on</em>. Lie groups, smooth manifolds, group representations, and the 
                     <a href="../Linear_algebra/graph_laplacian.html#D-graph_laplacian_unnormalized" class="ref-link"><strong>graph Laplacian</strong></a> 
-                    — is developed across Sections I, II, and IV in preparation for the GDL viewpoint pages that follow.
+                    supply the mathematical machinery this principle requires, and the earlier sections develop them in preparation 
+                    for the GDL pages later in this section.
                 </p>
-
+                
             </section>
-
         </div>
-</body>
+    </body>
 </html>
