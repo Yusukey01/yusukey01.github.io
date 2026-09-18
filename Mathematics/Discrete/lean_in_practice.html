@@ -267,9 +267,10 @@ uses_python: false
                 <p>
                     When a tactic-mode proof has multiple subgoals open (as it will after
                     <code>constructor</code>), the convention is to focus on each subgoal in turn using the bullet
-                    symbol <code>&middot;</code>. Each bulleted block addresses one subgoal. Once that subgoal is
-                    closed, the next bullet picks up the next subgoal. Bullets are the only syntactic detail of
-                    tactic-mode proofs that the next section will require.
+                    symbol <code>&middot;</code>. Each bulleted block addresses one subgoal, and the tactics inside
+                    it are aligned with the first tactic after the bullet symbol, which is how Lean tells where the
+                    block ends. Once that subgoal is closed, the next bullet picks up the next subgoal. Bullets are
+                    the only syntactic detail of tactic-mode proofs that the next section will require.
                 </p>
             </section>
 
@@ -286,12 +287,12 @@ uses_python: false
 
                     <pre style="background: rgba(127,127,127,0.10); border: 1px solid rgba(127,127,127,0.25); padding: 14px; border-radius: 6px; overflow-x: auto; line-height: 1.5;"><code>
                         theorem triangle_inequality (x y : &#8477;) : |x + y| &le; |x| + |y| := by
-                        rw [abs_le]
-                        constructor
-                        &middot; have h1 : -|x| &le; x := neg_abs_le x
+                          rw [abs_le]
+                          constructor
+                          &middot; have h1 : -|x| &le; x := neg_abs_le x
                             have h2 : -|y| &le; y := neg_abs_le y
                             linarith
-                        &middot; have h1 : x &le; |x| := le_abs_self x
+                          &middot; have h1 : x &le; |x| := le_abs_self x
                             have h2 : y &le; |y| := le_abs_self y
                             linarith</code>
                     </pre>
@@ -301,9 +302,9 @@ uses_python: false
                         decomposition of the previous section. The rewriting along the characterization, the
                         splitting of the conjunction, the introduction of named facts, and the closing arithmetic
                         appear in the order the mathematician would perform them, with the last two repeated in
-                        each branch. The correspondence between strategic moves and tactic invocations is
-                        one-to-one. That correspondence is not an accidental feature of this particular proof but
-                        the design intent of tactic mode itself.
+                        each branch. The correspondence between strategic moves and tactic names is one-to-one.
+                        That correspondence is not an accidental feature of this particular proof but the design
+                        intent of tactic mode itself.
                     </p>
                 </div>
 
@@ -319,9 +320,9 @@ uses_python: false
                 </pre>
 
                 <p>
-                    The hypotheses appear above the horizontal turnstile <code>&#8866;</code>, the goal below. At this
-                    moment the local context contains the two real variables <code>x</code> and <code>y</code>,
-                    and the goal is the inequality we set out to prove.
+                    The hypotheses appear above the line marked by the turnstile <code>&#8866;</code>, and the goal
+                    follows the turnstile. At this moment the local context contains the two real variables
+                    <code>x</code> and <code>y</code>, and the goal is the inequality we set out to prove.
                 </p>
 
                 <h3>After <code>rw [abs_le]</code></h3>
@@ -439,23 +440,24 @@ uses_python: false
 
                     <pre style="background: rgba(127,127,127,0.10); border: 1px solid rgba(127,127,127,0.25); padding: 14px; border-radius: 6px; overflow-x: auto; line-height: 1.5;"><code>
                         theorem triangle_inequality (x y : &#8477;) : |x + y| &le; |x| + |y| := by
-                        rw [abs_le]
-                        constructor
-                        &middot; have h1 : -|x| &le; x := neg_abs_le x
+                          rw [abs_le]
+                          constructor
+                          &middot; have h1 : -|x| &le; x := neg_abs_le x
                             have h2 : -|y| &le; y := neg_abs_le y
                             sorry
-                        &middot; have h1 : x &le; |x| := le_abs_self x
+                          &middot; have h1 : x &le; |x| := le_abs_self x
                             have h2 : y &le; |y| := le_abs_self y
                             sorry</code>
                     </pre>
 
                     <p>
-                        Lean reports two warnings, one for each <code>sorry</code>, but otherwise accepts the
-                        script. The author has demonstrated, to the system and to themself, that the strategic
-                        skeleton is sound. The arithmetic steps remain to be filled in, but their place in the
-                        proof is fixed. This top-down style of proof construction, with <code>sorry</code> as a
-                        placeholder for "the rest will follow," is one of the principal ways that Lean proofs are
-                        written in practice.
+                        Lean reports a warning that the declaration uses <code>sorry</code>, but otherwise accepts
+                        the script. Each <code>sorry</code> enters the proof term as an explicit axiom, so the
+                        kernel still checks everything else and the gap stays on record. The author has
+                        demonstrated, to the system and to themself, that the strategic skeleton is sound. The
+                        arithmetic steps remain to be filled in, but their place in the proof is fixed. This
+                        top-down style of proof construction, with <code>sorry</code> as a placeholder for "the
+                        rest will follow," is one of the principal ways that Lean proofs are written in practice.
                     </p>
                 </div>
 
@@ -503,12 +505,13 @@ uses_python: false
                 <h3>mathlib as ambient context</h3>
 
                 <p>
-                    A Lean file written in isolation has no theorems available to it. A file that begins with
-                    <code>import Mathlib</code> inherits the entire library, which includes every theorem of
-                    undergraduate real analysis, linear algebra, group theory, point-set topology, and a
-                    substantial portion of graduate-level material besides. The triangle-inequality proof in the
-                    previous section rested on mathlib at every step: the equivalence <code>abs_le</code>, the
-                    lemmas <code>le_abs_self</code> and <code>neg_abs_le</code>, the decision procedure inside
+                    A Lean file that imports nothing has only the basic facts of Lean's core library, about natural
+                    numbers, lists, and logic. A file that begins with <code>import Mathlib</code> inherits the
+                    entire library, which covers most of the standard results of undergraduate real analysis,
+                    linear algebra, group theory, and point-set topology, and a substantial portion of
+                    graduate-level material besides. The triangle-inequality proof in the previous section rested
+                    on mathlib at every step: the equivalence <code>abs_le</code>, the lemmas
+                    <code>le_abs_self</code> and <code>neg_abs_le</code>, the decision procedure inside
                     <code>linarith</code>, and the definition of the absolute value itself.
                 </p>
 
@@ -543,9 +546,10 @@ uses_python: false
                     <h3>The Realistic Proof Is One Line</h3>
 
                     <p>
-                        A search of mathlib for the triangle inequality returns it as the lemma <code>abs_add_le</code>,
-                        whose statement is exactly \(\forall a\, b : \mathbb{R},\ |a + b| \leq |a| + |b|\). With this
-                        lemma in hand, the entire proof reduces to one line:
+                        A search of mathlib for the triangle inequality returns it as the lemma
+                        <code>abs_add_le</code>, whose statement, specialized to the real numbers, is
+                        \(\forall a\, b : \mathbb{R},\ |a + b| \leq |a| + |b|\). With this lemma in hand, the
+                        entire proof reduces to one line:
                     </p>
 
                     <pre style="background: rgba(127,127,127,0.10); border: 1px solid rgba(127,127,127,0.25); padding: 12px; border-radius: 6px; overflow-x: auto;"><code>
@@ -616,15 +620,15 @@ uses_python: false
                 <h3>What remains, and what does not</h3>
 
                 <p>
-                    What the kernel verified was the implication: <em>given the propositions registered in mathlib
-                    as <code>abs_le</code>, <code>le_abs_self</code>, and <code>neg_abs_le</code>, and given the
-                    soundness of <code>linarith</code>'s linear-arithmetic procedure, the assertion
-                    \(|x + y| \leq |x| + |y|\) holds for all real \(x, y\).</em> The kernel did not verify that the
-                    mathlib lemmas are themselves correctly stated, nor that they capture what the author of those
-                    lemmas intended. Those verifications happened earlier, when each lemma was added to mathlib and
-                    reviewed by the library's contributors, and they too rest, at bottom, on the same kernel. The
-                    trust chain bottoms out where the preceding page said it bottoms out: in the kernel
-                    implementation, and in the human review of specifications.
+                    What the kernel verified was a proof term deriving \(|x + y| \leq |x| + |y|\) for all real
+                    \(x, y\) from the mathlib lemmas <code>abs_le</code>, <code>le_abs_self</code>, and
+                    <code>neg_abs_le</code>, together with the term that <code>linarith</code> constructed. No
+                    trust in <code>linarith</code> is needed, since its output was checked like every other term.
+                    The proofs of the mathlib lemmas were checked by the same kernel when the library was built.
+                    What the kernel did not verify is that these lemmas, and the theorem statement itself, say what
+                    their authors intended. That question is settled by the library's contributors, who reviewed
+                    each lemma when it was added to mathlib. The trust chain bottoms out where the preceding page
+                    said it bottoms out: in the kernel implementation, and in the human review of specifications.
                 </p>
 
                 <p>
@@ -656,17 +660,18 @@ uses_python: false
                     </p>
 
                     <p>
-                        Below is the identity expanded into the level of detail at which the kernel works. The
-                        expansion has eighteen steps. None of them is wrong, and none of them is optional. Each is
-                        a single invocation of a ring axiom, a definition, or the congruence rule that allows
-                        substitution of equals into a surrounding expression. Where a lemma name from mathlib
-                        applies, it is given in parentheses.
+                        Below is the identity expanded to the granularity of individual ring laws, much closer to
+                        the level at which the kernel works. The expansion has eighteen steps. None of them is
+                        wrong, and at this granularity none can be skipped. Each is a single invocation of a ring
+                        law, of one of two basic facts about the square and the numeral 2, or of the congruence
+                        rule that allows substitution of equals into a surrounding expression. The parentheses give
+                        the corresponding mathlib lemma, or <code>congr</code> for the congruence rule.
                     </p>
 
                     <p><strong>Phase 1: Expanding the square.</strong></p>
 
                     <ol style="padding-left: 40px;">
-                        <li>Definition of the square (<code>pow_two</code>):
+                        <li>The square as a product (<code>pow_two</code>):
                             \[
                             (a + b)^2 = (a + b)(a + b).
                             \]
@@ -698,7 +703,7 @@ uses_python: false
                     <p><strong>Phase 2: Normalizing the terms.</strong></p>
 
                     <ol style="padding-left: 40px;" start="6">
-                        <li>Reverse application of the definition of the square (<code>&larr; pow_two</code>):
+                        <li>Reverse application of the same fact (<code>&larr; pow_two</code>):
                             \[
                             a \cdot a = a^2 \text{ and } b \cdot b = b^2.
                             \]
@@ -719,10 +724,10 @@ uses_python: false
                     <p><strong>Phase 3: Regrouping by associativity.</strong></p>
 
                     <p>
-                        The current expression has shape \((A + B) + (C + D)\). The target has shape
-                        \((A + (B + C)) + D\) after the middle terms have been combined. We need to move
-                        the two copies of \(a \cdot b\) next to each other, which is a matter of
-                        reassociating the additions.
+                        The current expression has shape \((A + B) + (C + D)\) with \(B = C = a \cdot b\). The
+                        final target \((a^2 + 2ab) + b^2\) has shape \((A + (B + C)) + D\) once the middle terms
+                        are combined. This phase moves the two copies of \(a \cdot b\) next to each other, reaching
+                        \(A + ((B + C) + D)\), and the last step of Phase 5 restores the outer grouping.
                     </p>
 
                     <ol style="padding-left: 40px;" start="9">
@@ -750,7 +755,7 @@ uses_python: false
 
                     <p>
                         Now the term \((a \cdot b + a \cdot b)\), which intuition calls "\(2ab\)", needs to become
-                        \(2 \cdot (a \cdot b)\). The kernel must rebuild \(2\) as \(1 + 1\) and recover the product
+                        \(2 \cdot (a \cdot b)\). The proof must rebuild \(2\) as \(1 + 1\) and recover the product
                         via reverse distributivity.
                     </p>
 
@@ -770,7 +775,7 @@ uses_python: false
                             1 \cdot (a \cdot b) + 1 \cdot (a \cdot b) = (1 + 1) \cdot (a \cdot b).
                             \]
                         </li>
-                        <li>Definition of the numeral 2 (<code>one_add_one_eq_two</code>):
+                        <li>The numeral identity (<code>one_add_one_eq_two</code>):
                             \[
                              1 + 1 = 2.
                             \]
@@ -802,30 +807,33 @@ uses_python: false
                     </ol>
 
                     <p>
-                        Eighteen steps. Every one is a primitive application of a ring axiom or a definition.
-                        Every substitution that the eye performs automatically corresponds to an explicit
-                        invocation of the congruence rule. Every primitive step the kernel sees is of one of the
-                        kinds enumerated above.
+                        Eighteen steps. Every one applies a single ring law, one of the two basic facts, or the
+                        congruence rule. Every substitution that the eye performs automatically corresponds to an
+                        explicit invocation of that rule. The term the kernel actually checks is finer still, since
+                        each lemma cited above is itself a proof term built from definitions.
                     </p>
 
                     <p>
                         Three observations follow. First, the proof at human resolution and the proof at kernel
                         resolution are not different proofs of the same identity. The strategic-level moves a
                         working mathematician names in prose compress the primitive-level steps that the kernel
-                        actually checks, and the compressions are reliable only because the underlying steps are
-                        mechanically checked. Second, every step a human treats as "obvious", including every
-                        substitution that the eye carries out without comment, corresponds to a discrete rule in
-                        the kernel's rulebook. The kernel does not have a category of "obvious". It has only the
-                        application of axioms and definitions. Third, formal verification asks for the exhaustive
-                        justification underneath the strategic compression, and is reliable in proportion to its
-                        insistence on it.
+                        actually checks, and in a proof assistant the compressions are certified only because the
+                        underlying steps are mechanically checked. Second, every step a human treats as "obvious",
+                        including every substitution that the eye carries out without comment, corresponds to a
+                        discrete rule in the kernel's rulebook. The kernel does not have a category of "obvious".
+                        Each of its steps either applies an axiom or an already checked lemma, or holds by
+                        unfolding definitions, which the kernel carries out mechanically. Third, formal
+                        verification asks for the exhaustive justification underneath the strategic compression,
+                        and is reliable in proportion to its insistence on it.
                     </p>
 
                     <p>
                         A human checks at the strategic level, a kernel checks at the primitive level, and the
-                        translation between them is mechanical. That asymmetry is what the preceding page meant by
-                        the de Bruijn criterion. The triangle inequality saw the kernel at work, and this expansion
-                        shows what the kernel was actually looking at.
+                        translation between them is mechanical. That asymmetry is what makes the de Bruijn
+                        criterion of the preceding page workable. The kernel can stay small because it only ever
+                        checks primitive steps, while the machinery that produces them may be as large as it likes.
+                        The triangle inequality saw the kernel at work, and this expansion shows what the kernel
+                        was actually looking at.
                     </p>
                 </div>
             </section>
