@@ -28,7 +28,7 @@ uses_python: false
             <section id="TM" class="section-content">
                 <h2>Turing Machines (TMs)</h2>
 
-                 <p>
+                <p>
                     We saw that <a href="intro_automata.html#D-finite_automaton" class="ref-link"><strong>finite automata</strong></a> recognize regular languages 
                     and <a href="context_free.html#D-pda" class="ref-link"><strong>pushdown automata</strong></a> recognize context-free languages, but 
                     both models have fundamental limitations. The <strong>Turing machine</strong>, introduced by Alan Turing, 
@@ -62,7 +62,7 @@ uses_python: false
                         with blank symbols (\(\sqcup\)) filling all remaining cells.</li>
                     <li>A Turing machine can both read symbols from the tape and <strong>write</strong> symbols on it.</li>
                     <li>The read-write head can <strong>move both left</strong> (L) <strong>and right</strong> (R).
-                        To store information, the machine writes it on the tape; to retrieve it later, the head
+                        To store information, the machine writes it on the tape. To retrieve it later, the head
                         moves back to where it was written.</li>
                     <li>The accept and reject states take effect <strong>immediately</strong> upon entry.
                         A computation therefore has three possible outcomes: accept, reject, or <strong>loop</strong>
@@ -78,100 +78,104 @@ uses_python: false
                 <div class="theorem" id="D-tm_computation">
                     <span class="theorem-title">Definition: TM Configuration, Computation, and Acceptance</span>
                     <p>
-                        Let \(M = (Q, \Sigma, \Gamma, \delta, q_0, q_{\mathrm{accept}}, q_{\mathrm{reject}})\) be a Turing machine.
-                        A <strong>configuration</strong> of \(M\) is a triple \((q, t, i)\) consisting of the current state
-                        \(q \in Q\), the current tape contents \(t \in \Gamma^{\mathbb{N}}\) (with all but finitely many
-                        cells equal to the blank symbol \(\sqcup\)), and the current head position \(i \in \mathbb{N}\)
-                        (using 1-indexed positions throughout, in keeping with the site convention \(\mathbb{N} = \{1, 2, 3, \ldots\}\)).
-                        We write configurations in the linear notation \(u\, q\, v\), meaning the tape contents are
-                        \(uv\) (followed by infinitely many blanks), the machine is in state \(q\), and the head is positioned
-                        on the first symbol of \(v\). For example, the configuration \(1001\, q_5\, 0110\) represents a tape
-                        containing \(10010110\), with \(M\) in state \(q_5\) and the head on the fifth symbol (the first \(0\)
-                        after the state label).
+                        Let \(M = (Q, \Sigma, \Gamma, \delta, q_0, q_{\mathrm{accept}}, q_{\mathrm{reject}})\) be a Turing machine. A
+                        <strong>configuration</strong> of \(M\) is a triple \((q, t, i)\) consisting of the current state \(q \in Q\), the
+                        current tape contents \(t \in \Gamma^{\mathbb{N}}\) (with all but finitely many cells equal to the blank symbol
+                        \(\sqcup\)), and the current head position \(i \in \mathbb{N}\). Positions are 1-indexed throughout, in keeping with
+                        our convention \(\mathbb{N} = \{1, 2, 3, \ldots\}\).
                     </p>
                     <p>
-                        Configuration \(C\) <strong>yields</strong> configuration \(C'\), written \(C \vdash C'\), if \(C'\)
-                        is obtained from \(C\) by a single application of \(\delta\) to the current state and the symbol
-                        under the head: writing the new symbol, moving the head one cell left or right (clamped at the
-                        left end of the tape), and updating the state. The relation \(\vdash\) is undefined when the current
-                        state is \(q_{\mathrm{accept}}\) or \(q_{\mathrm{reject}}\): the machine halts immediately upon
-                        entering either, regardless of the value of \(\delta\) at that configuration.
+                        We write configurations in the linear notation \(u\, q\, v\). This notation means that the tape contents are \(uv\)
+                        (followed by infinitely many blanks), the machine is in state \(q\), and the head is positioned on the first symbol of
+                        \(v\). If \(v\) is empty, the head is on the blank cell immediately to the right of \(u\). For example, the
+                        configuration \(1001\, q_5\, 0110\) represents a tape containing \(10010110\), with \(M\) in state \(q_5\) and the head
+                        on the fifth symbol (the first \(0\) after the state label).
                     </p>
                     <p>
-                        The <strong>start configuration</strong> of \(M\) on input \(w \in \Sigma^*\) is \(q_0 w\)
-                        (state \(q_0\), tape contents \(w\) followed by blanks, head on the first symbol of \(w\)).
-                        An <strong>accepting configuration</strong> is any configuration whose state is \(q_{\mathrm{accept}}\);
-                        a <strong>rejecting configuration</strong> is any whose state is \(q_{\mathrm{reject}}\). \(M\)
-                        <strong>accepts</strong> input \(w\) if there exists a finite sequence of configurations
-                        \(C_1, C_2, \ldots, C_k\) with \(C_1\) the start configuration on \(w\), \(C_i \vdash C_{i+1}\) for
-                        each \(i\), and \(C_k\) accepting. The <strong>language recognized by</strong> \(M\) is
+                        Configuration \(C\) <strong>yields</strong> configuration \(C'\), written \(C \vdash C'\), if \(C'\) is obtained from
+                        \(C\) by a single application of \(\delta\) to the current state and the symbol under the head. Such an application
+                        writes the new symbol, moves the head one cell left or right, and updates the state. A left move from the leftmost cell
+                        leaves the head in place. The relation \(\vdash\) is undefined when the current state is \(q_{\mathrm{accept}}\) or
+                        \(q_{\mathrm{reject}}\). Instead, \(M\) halts immediately upon entering either state, regardless of the value of
+                        \(\delta\) at that configuration.
+                    </p>
+                    <p>
+                        The <strong>start configuration</strong> of \(M\) on input \(w \in \Sigma^*\) is \(q_0 w\) (state \(q_0\), tape
+                        contents \(w\) followed by blanks, head on the first symbol of \(w\)). An <strong>accepting configuration</strong>
+                        is any configuration whose state is \(q_{\mathrm{accept}}\), and a <strong>rejecting configuration</strong> is any
+                        whose state is \(q_{\mathrm{reject}}\). We say that \(M\) <strong>accepts</strong> input \(w\) if there exists a
+                        finite sequence of configurations \(C_1, C_2, \ldots, C_k\) with \(C_1\) the start configuration on \(w\),
+                        \(C_i \vdash C_{i+1}\) for each index \(i \lt k\), and \(C_k\) accepting. The
+                        <strong>language recognized by</strong> \(M\) is
                         \[
                         L(M) = \{ w \in \Sigma^* \mid M \text{ accepts } w \}.
                         \]
                     </p>
                     <p>
-                        \(M\) <strong>halts</strong> on \(w\) if it reaches an accepting or rejecting configuration in
-                        finitely many steps; otherwise \(M\) <strong>loops</strong> on \(w\). \(M\) <strong>rejects</strong>
-                        \(w\) if it halts on \(w\) by reaching a rejecting configuration.
+                        The machine \(M\) <strong>halts</strong> on \(w\) if it reaches an accepting or rejecting configuration in finitely
+                        many steps, and otherwise it <strong>loops</strong> on \(w\). It <strong>rejects</strong> \(w\) if it halts on \(w\) by
+                        reaching a rejecting configuration.
                     </p>
                 </div>
 
                 <div class="theorem" id="D-turing_recognizable_decidable">
                     <span class="theorem-title">Definition: Turing-Recognizable and Turing-Decidable</span>
                     <p>
-                        A language \(L\) is <strong>Turing-recognizable</strong> (or <strong>recursively enumerable</strong>) 
-                        if some Turing machine recognizes it - that is, the machine accepts every string in \(L\), 
-                        but may loop forever on strings not in \(L\).
+                        A language \(L\) is <strong>Turing-recognizable</strong> (or <strong>recursively enumerable</strong>) if some Turing
+                        machine recognizes it. Such a machine accepts exactly the strings in \(L\). On a string not in \(L\), it may reject
+                        or loop forever.
                     </p>
                     <p>
-                        A language \(L\) is <strong>Turing-decidable</strong> (or simply <strong>decidable</strong>) if some 
-                        Turing machine decides it — that is, the machine halts on <em>every</em> input, accepting strings in 
-                        \(L\) and rejecting strings not in \(L\).
+                        A language \(L\) is <strong>Turing-decidable</strong> (or simply <strong>decidable</strong>) if some Turing
+                        machine decides it. Such a machine halts on <em>every</em> input, accepting strings in \(L\) and rejecting strings
+                        not in \(L\).
                     </p>
                 </div>
 
                 <p>
-                    Every decidable language is Turing-recognizable, but the converse does not hold - some Turing-recognizable 
-                    languages are not decidable. The distinction hinges on whether the machine is guaranteed to halt.
+                    For a language \(L\), we call a machine that recognizes \(L\) a <strong>recognizer</strong> for \(L\), and a machine that
+                    decides \(L\) a <strong>decider</strong> for \(L\). Every decidable language is Turing-recognizable, but the converse does
+                    not hold. Some Turing-recognizable languages are not decidable. The distinction hinges on whether the machine is
+                    guaranteed to halt.
                 </p>
 
                 <div class="proof">
                     <span class="proof-title">Example:</span> 
                     <p>
-                        Consider a language 
+                        Consider the language
                         \[
                         L_1 = \{0^{2^n} \mid n \geq 0\}
                         \]
-                        which generates all strings of \(0\)s whose length is a power of 2. 
+                        which consists of all strings of \(0\)s whose length is a power of 2.
                     </p>
                     <p>
-                        A Turing machine \(M_1\) must decide \(L_1\): 
+                        The following Turing machine \(M_1\) decides \(L_1\):
                     </p>
                     <p>
-                        \(M_1 = \) "On input string \(w\): "
+                        \(M_1 = \) "On input string \(w\):
                     </p>
                     <ol style="padding-left: 40px;">
                         <li>Read left to right across the tape, crossing out every other \(0\).</li>
                         <li>If in Stage 1, the tape contained a single \(0\), <strong>accept</strong>.</li>
-                        <li>If in Stage 1, the tape contained more than a single \(0\) and the number of \(0\)s was odd, <strong>reject</strong>.</li>
+                        <li>If in Stage 1, the tape contained no \(0\), or more than a single \(0\) with the number of \(0\)s odd, <strong>reject</strong>.</li>
                         <li>Return the head to the left-hand end of the tape.</li>
                         <li>Go back to Stage 1."</li>
                     </ol>
                     <p>
-                        Note: in the state diagram below, Stage 1's "crossing out every other \(0\)" is realized by
-                        first replacing the leftmost \(0\) with a blank \(\sqcup\) (which serves as the left-end marker
-                        the head later returns to in Stage 4) and then replacing every other subsequent \(0\) with an "x".
-                        The trace that follows illustrates exactly this behavior.
+                        In the state diagram below, Stage 1's "crossing out every other \(0\)" is realized in two steps. The machine first
+                        replaces the leftmost \(0\) with a blank \(\sqcup\), which serves as the left-end marker that the head returns to
+                        in Stage 4. It then replaces every other subsequent \(0\) with \(\text{x}\). The trace that follows illustrates
+                        exactly this behavior.
                     </p>
                     <p>
-                        \(Q = \{q_1, q_2, q_3, q_4, q_5, q_{\mathrm{accept}}, q_{\mathrm{reject}}\}, \, \Sigma = \{0\}, \, \Gamma = \{0, \text{ x }, \sqcup\}\), and the state diagram 
-                        is as follows: 
+                        Here \(Q = \{q_1, q_2, q_3, q_4, q_5, q_{\mathrm{accept}}, q_{\mathrm{reject}}\}\), \(\Sigma = \{0\}\), and
+                        \(\Gamma = \{0, \text{x}, \sqcup\}\). The state diagram of \(M_1\) is as follows:
                     </p>
                     <div style="text-align: center;">
                         <img src="Images/TM1.jpg" alt="TM1"  class="responsive-image">
                     </div>
                     <p>
-                        For example, if input is \(0000\), the sequence of configurations is as follows
+                        For example, if the input is \(0000\), the sequence of configurations is as follows:
                         \[
                         \begin{align*}
                         &q_1 0 0 0 0 \vdash \sqcup q_2 0 0 0 \vdash \sqcup \text{x} q_3 0 0 \vdash \sqcup \text{x} 0 q_4 0  \\\\
@@ -180,7 +184,8 @@ uses_python: false
                         &\vdash \sqcup \text{x} q_2 0 \text{x} \sqcup \vdash \sqcup \text{x} \text{x} q_3 \text{x} \sqcup \vdash \sqcup \text{x} \text{x} \text{x} q_3 \sqcup \\\\
                         &\vdash \sqcup \text{x} \text{x} q_5 \text{x} \sqcup \vdash \sqcup \text{x} q_5 \text{x} \text{x} \sqcup \vdash \sqcup q_5 \text{x} \text{x} \text{x} \sqcup \\\\
                         &\vdash q_5 \sqcup \text{x} \text{x} \text{x} \sqcup \vdash \sqcup q_2 \text{x} \text{x} \text{x} \sqcup \vdash \sqcup \text{x} q_2 \text{x} \text{x} \sqcup \\\\
-                        &\vdash \sqcup \text{x} \text{x} q_2 \text{x} \sqcup \vdash \sqcup \text{x} \text{x} \text{x} q_2 \sqcup \vdash \sqcup \text{x} \text{x} \text{x} \sqcup q_{\mathrm{accept}}.
+                        &\vdash \sqcup \text{x} \text{x} q_2 \text{x} \sqcup \vdash \sqcup \text{x} \text{x} \text{x} q_2 \sqcup \\\\
+                        &\vdash \sqcup \text{x} \text{x} \text{x} \sqcup q_{\mathrm{accept}}.
                         \end{align*}
                         \]
                     </p>
@@ -198,34 +203,35 @@ uses_python: false
                 <div class="theorem" id="D-multitape_turing_machine">
                     <span class="theorem-title">Definition: Multitape Turing Machine</span>
                     <p>
-                        A <strong>multitape Turing machine</strong> with \(k\) tapes is a Turing machine whose transition 
-                        function has the form
+                        A <strong>multitape Turing machine</strong> with \(k\) tapes is a Turing machine whose transition function has the form
                         \[
-                        \delta\colon Q \times \Gamma^k \to Q \times \Gamma^k \times \{L, R, S\}^k,
+                        \delta: Q \times \Gamma^k \to Q \times \Gamma^k \times \{L, R, S\}^k,
                         \]
-                        where \(k \geq 1\) is the number of tapes. The expression
+                        where \(k \geq 1\) is the number of tapes.
+                    </p>
+                    <p>
+                        The expression
                         \[
                         \delta(q_i, a_1, \ldots, a_k) = (q_j, b_1, \ldots, b_k, L, R, \ldots, L)
                         \]
-                        means that if the machine is in state \(q_i\) and the heads on tapes \(1\) through \(k\) are reading 
-                        symbols \(a_1\) through \(a_k\), then the machine transitions to state \(q_j\), writes \(b_1\) through 
-                        \(b_k\) on the corresponding tapes, and directs each head to move left (\(L\)), right (\(R\)), or stay 
-                        in place (\(S\)) as specified.
+                        means that if the machine is in state \(q_i\) and the heads on tapes \(1\) through \(k\) are reading symbols \(a_1\)
+                        through \(a_k\), then the machine transitions to state \(q_j\), writes \(b_1\) through \(b_k\) on the corresponding
+                        tapes, and directs each head to move left (\(L\)), right (\(R\)), or stay in place (\(S\)) as specified.
                     </p>
                 </div>
 
                 <p>
-                    Multitape Turing machines appear more powerful than the single-tape model — for instance, a two-tape 
-                    machine can recognize the language \(\{0^k 1^k \mid k \geq 0\}\) in linear time, whereas any single-tape 
-                    machine requires \(\Omega(n \log n)\) time. Yet in terms of <em>what</em> can be computed (recognizability 
-                    and decidability), the two models are equivalent.
+                    Multitape Turing machines appear more powerful than the single-tape model. For instance, a two-tape machine can decide the
+                    language \(\{0^k 1^k \mid k \geq 0\}\) in linear time, whereas no single-tape machine can decide it in \(o(n \log n)\) time
+                    (a known lower bound whose proof is beyond the scope of this page). Yet in terms of <em>what</em> can be computed
+                    (recognizability and decidability), the two models are equivalent.
                 </p>
 
                 <div class="theorem" id="T-multitape_single_tape_equivalence">
-                    <span class="theorem-title">Theorem: Multitape–Single-Tape Equivalence</span>
+                    <span class="theorem-title">Theorem: Multitape-Single-Tape Equivalence</span>
                     <p>
-                        Every multitape Turing machine has an equivalent single-tape Turing machine — that is, one that 
-                        recognizes the same language.
+                        Every multitape Turing machine has an equivalent single-tape Turing machine, that is, one that recognizes
+                        the same language.
                     </p>
                 </div>
 
@@ -243,22 +249,24 @@ uses_python: false
                         \(M\)'s tape \(i\) contains \(010\) with the head on the middle \(1\), \(S\) records \(\#0\dot{1}0\#\).
                     </p>
                     <p>
-                        On input \(w\), \(S\) first formats its tape into this representation (with \(w\) on tape 1 and the 
-                        remaining tapes blank). To simulate one step of \(M\), \(S\) scans across its tape from the leftmost 
-                        \(\#\) to the \((k+1)\)-st \(\#\) to read the symbols under all virtual heads, then makes a second pass 
-                        to update the contents and head positions according to \(M\)'s transition function. If a virtual head 
-                        moves rightward onto a delimiter \(\#\), \(S\) shifts the tape contents to the right of that delimiter 
-                        one cell further right, opening up a fresh blank cell for the head to occupy. \(S\) accepts (or rejects) 
-                        precisely when \(M\) does. Hence \(S\) recognizes the same language as \(M\).
+                        On input \(w\), \(S\) first formats its tape into this representation (with \(w\) on tape 1 and the remaining tapes
+                        blank). To simulate one step of \(M\), \(S\) scans across its tape from the leftmost \(\#\) to the \((k+1)\)-st \(\#\)
+                        to read the symbols under all virtual heads, then makes a second pass to update the contents and head positions
+                        according to \(M\)'s transition function.
+                    </p>
+                    <p>
+                        If a virtual head moves rightward onto a delimiter \(\#\), \(S\) shifts the tape contents to the right of that
+                        delimiter one cell further right. This opens up a fresh blank cell for the head to occupy. The machine \(S\) accepts
+                        (or rejects) precisely when \(M\) does. Hence \(S\) recognizes the same language as \(M\).
                     </p>
                 </div>
 
                 <p>
-                    This equivalence justifies our continued use of the single-tape model as the "standard" Turing machine: 
-                    multitape machines may be more convenient to design, but they offer no additional computational power. 
-                    However, when we turn to <em>time complexity</em>, the choice of model does matter — see 
-                    <a href="time_complexity.html#T-single_tape_multitape_simulation" class="ref-link"><strong>single-tape vs. multitape simulation</strong></a>, 
-                    which quantifies the time overhead of this simulation.
+                    This equivalence justifies our continued use of the single-tape model as the "standard" Turing machine. Multitape machines
+                    may be more convenient to design, but they offer no additional computational power. However, when we turn to
+                    <em>time complexity</em>, the choice of model does matter. The theorem on
+                    <a href="time_complexity.html#T-single_tape_multitape_simulation" class="ref-link"><strong>single-tape vs. multitape simulation</strong></a>
+                    quantifies the time overhead of this simulation.
                 </p>
             </section>
 
@@ -266,10 +274,11 @@ uses_python: false
                 <h2>Algorithms</h2>
 
                 <p>
-                    An <strong>algorithm</strong> is an effective procedure - a finite sequence of precise instructions that, given an input, 
-                    produces an output in a finite number of steps. Although algorithms have been used throughout the history of mathematics 
-                    (Euclid's algorithm for GCD dates to ~300 BCE), they were not given a precise mathematical definition until 1936, when 
-                    Alonzo Church (via the \(\lambda\)-calculus) and Alan Turing (via the Turing machine) independently formalized the concept.
+                    An <strong>algorithm</strong> is an effective procedure. By this we mean a finite sequence of precise instructions that,
+                    given an input, produces an output in a finite number of steps. Algorithms have been used throughout the history of
+                    mathematics, and Euclid's algorithm for the GCD dates to about 300 BCE. Yet the concept was not given a precise
+                    mathematical definition until 1936, when Alonzo Church (via the \(\lambda\)-calculus) and Alan Turing (via the Turing
+                    machine) independently formalized it.
                 </p>
 
                 <div class="theorem" id="T-church_turing_thesis">
@@ -279,19 +288,18 @@ uses_python: false
                         any function computable by an algorithm (in the intuitive sense) is computable by a Turing machine.
                     </p>
                     <p>
-                        This is <em>not a theorem in the formal sense</em>: it cannot be proved, because "algorithm" in the
-                        intuitive sense is not a formal concept. It is, however, universally accepted, supported by the fact
-                        that every proposed alternative model of computation — \(\lambda\)-calculus, recursive functions,
-                        register machines, cellular automata, modern programming languages — has turned out to be equivalent
-                        to the Turing machine in power.
+                        The thesis is <em>not a theorem in the formal sense</em>, and it cannot be proved, since "algorithm" in the intuitive
+                        sense is not a formal concept. It is nevertheless universally accepted. The supporting evidence is that every proposed
+                        alternative model of computation has turned out to be equivalent to the Turing machine in power. These models include
+                        the \(\lambda\)-calculus, recursive functions, register machines, cellular automata, and modern programming languages.
                     </p>
                 </div>
 
                 <p>
-                    Now we have a fundamental question: are there problems that <em>no</em> algorithm can solve? Remarkably, the answer is yes. 
-                    Studying <strong>unsolvability</strong> is valuable for two reasons. First, recognizing that a problem is algorithmically 
-                    unsolvable guides us to modify or relax it into a tractable variant. Second, understanding the absolute limits of computation 
-                    provides deep insight into the structure of problems themselves.
+                    Now we have a fundamental question: are there problems that <em>no</em> algorithm can solve? The answer is yes. Studying
+                    <strong>unsolvability</strong> is valuable for two reasons. First, recognizing that a problem is algorithmically unsolvable
+                    guides us to modify or relax it into a tractable variant. Second, understanding the absolute limits of computation provides
+                    deep insight into the structure of problems themselves.
                 </p>
  
                 <p>
@@ -306,7 +314,7 @@ uses_python: false
                         <li>Some Turing-recognizable languages are <strong>undecidable</strong>.</li>
                         <li>A language \(L\) is decidable if and only if both \(L\) and its complement
                             \(L^c = \Sigma^* \setminus L\) are Turing-recognizable. (A language whose complement
-                            is Turing-recognizable is called <strong>co-Turing-recognizable</strong>; thus the condition
+                            is Turing-recognizable is called <strong>co-Turing-recognizable</strong>. Thus the condition
                             is that \(L\) is simultaneously Turing-recognizable and co-Turing-recognizable.)</li>
                     </ol>
                     <div style="text-align: center;">
@@ -315,150 +323,162 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof Sketch.</span>
+                    <span class="proof-title">Proof sketch.</span>
                     <p>
                         We sketch each claim in turn.
                     </p>
                     <p>
                         <strong>Claim 1 (every CFL is decidable).</strong> Given a CFL \(L\) generated by a
-                        <a href="context_free.html#D-cfg" class="ref-link"><strong>context-free grammar</strong></a> \(G\),
-                        the membership question "is \(w \in L\)?" can be decided by the <em>Cocke–Younger–Kasami</em> (CYK)
-                        algorithm: assuming \(G\) has been pre-converted into Chomsky Normal Form (a static, design-time
-                        transformation, not part of the input-processing), the algorithm uses dynamic programming to build
-                        up the set of variables that can derive each substring of \(w\) and accepts iff the start variable
-                        derives \(w\) itself. The procedure halts on every input in time \(O(|w|^3)\), so the Turing machine
-                        implementing it decides \(L\).
+                        <a href="context_free.html#D-cfg" class="ref-link"><strong>context-free grammar</strong></a> \(G\), the membership
+                        question "is \(w \in L\)?" can be decided by the <em>Cocke-Younger-Kasami</em> (CYK) algorithm. We assume that \(G\)
+                        has been converted into Chomsky Normal Form beforehand. This conversion is a fixed transformation of the grammar, not
+                        part of processing the input. The algorithm uses dynamic programming to build up the set of variables that can derive
+                        each substring of \(w\), and it accepts if and only if the start variable derives \(w\) itself. The procedure halts on
+                        every input in time \(O(|w|^3)\), so the Turing machine implementing it decides \(L\).
                     </p>
                     <p>
-                        <strong>Claim 2 (some Turing-recognizable languages are undecidable).</strong> The canonical
-                        example is the <em>acceptance problem</em>
+                        <strong>Claim 2 (some Turing-recognizable languages are undecidable).</strong> The canonical example is
+                        the <em>acceptance problem</em>
                         \[
                         A_{\mathrm{TM}} = \{ \langle M, w \rangle \mid M \text{ is a Turing machine that accepts } w \}.
                         \]
-                        \(A_{\mathrm{TM}}\) is Turing-recognizable: a <strong>universal Turing machine</strong> takes
-                        \(\langle M, w \rangle\) as input, simulates \(M\) on \(w\), and accepts whenever \(M\) accepts.
-                        However \(A_{\mathrm{TM}}\) is undecidable. The proof, classically due to Turing, uses a
-                        diagonalization argument analogous to the one we develop in the next section: assuming a decider
-                        for \(A_{\mathrm{TM}}\) exists, one constructs a Turing machine that contradicts itself when run
-                        on its own description.
+                        The language \(A_{\mathrm{TM}}\) is Turing-recognizable. A <strong>universal Turing machine</strong> takes
+                        \(\langle M, w \rangle\) as input, simulates \(M\) on \(w\), and accepts whenever \(M\) accepts. However,
+                        \(A_{\mathrm{TM}}\) is undecidable. The proof, classically due to Turing, uses a diagonalization argument analogous to
+                        the one we develop in the next section. Suppose \(H\) were a decider for \(A_{\mathrm{TM}}\). Let \(D\) be the machine
+                        that, on input \(\langle M \rangle\), runs \(H\) on \(\langle M, \langle M \rangle \rangle\) and outputs the opposite
+                        answer, rejecting if \(H\) accepts and accepting if \(H\) rejects. Since \(H\) always halts, so does \(D\), and \(D\)
+                        accepts \(\langle M \rangle\) exactly when \(M\) does not accept \(\langle M \rangle\). Running \(D\) on its own
+                        description \(\langle D \rangle\) then gives that \(D\) accepts \(\langle D \rangle\) if and only if \(D\) does not
+                        accept \(\langle D \rangle\), a contradiction.
                     </p>
                     <p>
-                        <strong>Claim 3 (decidable iff Turing-recognizable and co-Turing-recognizable).</strong>
-                        (\(\Rightarrow\)) If \(L\) is decidable, a decider \(M\) for \(L\) recognizes \(L\) (so \(L\)
-                        is Turing-recognizable); swapping \(q_{\mathrm{accept}}\) and \(q_{\mathrm{reject}}\) in \(M\) yields a decider,
-                        hence recognizer, for \(L^c\). (\(\Leftarrow\)) Suppose \(M_1\) recognizes \(L\) and \(M_2\)
-                        recognizes \(L^c\). Build a new Turing machine \(M\) that, on input \(w\), simulates \(M_1\)
-                        and \(M_2\) <em>in parallel</em> step by step (advancing each machine by one step in alternation,
-                        on a shared input). Since every \(w\) lies in exactly one of \(L\)
-                        or \(L^c\), exactly one of \(M_1, M_2\) eventually accepts; \(M\) halts and accepts (resp. rejects)
-                        when \(M_1\) (resp. \(M_2\)) accepts. Thus \(M\) decides \(L\).
+                        <strong>Claim 3 (decidable if and only if Turing-recognizable and co-Turing-recognizable).</strong> (\(\Rightarrow\))
+                        If \(L\) is decidable, a decider \(M\) for \(L\) recognizes \(L\), so \(L\) is Turing-recognizable. Swapping
+                        \(q_{\mathrm{accept}}\) and \(q_{\mathrm{reject}}\) in \(M\) yields a decider, hence a recognizer, for \(L^c\).
+                        (\(\Leftarrow\)) Suppose \(M_1\) recognizes \(L\) and \(M_2\) recognizes \(L^c\). We build a new Turing machine \(M\)
+                        that, on input \(w\), simulates \(M_1\) and \(M_2\) <em>in parallel</em> step by step (advancing each machine by one
+                        step in alternation, on a shared input). Since every \(w\) lies in exactly one of \(L\) or \(L^c\), exactly one of
+                        \(M_1, M_2\) eventually accepts. The machine \(M\) halts and accepts (resp. rejects) when \(M_1\) (resp. \(M_2\))
+                        accepts. Thus \(M\) decides \(L\).
                     </p>
                 </div>
                 <p>
-                    Note: Modern computers are essentially finite versions of Turing machines (more precisely, random-access machines (RAM) with bounded memory).
-                    Any algorithm that runs on a real computer can, in principle, be translated into a Turing machine, although it may be inefficient.
+                    Modern computers are essentially finite versions of Turing machines. More precisely, they are random-access machines (RAMs)
+                    with bounded memory. Any algorithm that runs on a real computer can, in principle, be translated into a Turing machine,
+                    although the resulting machine may be inefficient.
                 </p>
-        </section>
+            </section>
 
-        <section id="unsolve" class="section-content">
-            <h2>Unsolvability</h2>
+            <section id="unsolve" class="section-content">
+                <h2>Unsolvability</h2>
 
-            <p>
-                The existence of undecidable languages still leaves open the possibility that every language is at least <em>recognizable</em>. 
-                The following theorem shows that even this weaker condition fails - there are languages beyond the reach of any Turing machine 
-                whatsoever.
-            </p>
-
-            <p>
-                The proof below uses Cantor's <strong>diagonalization method</strong>, a technique for revealing the limits
-                of any system by constructing an object that disagrees with every candidate the system can produce.
-                We first develop the method in its purest set-theoretic form.
-            </p>
-
-            <div class="theorem" id="T-cantor_power_set">
-                <span class="theorem-title">Theorem: Cantor's Theorem (Power Sets)</span>
                 <p>
-                    For any set \(X\), there is no bijection between \(X\) and its power set \(\mathcal{P}(X)\).
-                    In particular, \(\mathcal{P}(\mathbb{N})\) is uncountable.
+                    The existence of undecidable languages still leaves open the possibility that every language is at least
+                    <em>recognizable</em>. The main theorem of this section shows that even this weaker condition fails. There are languages
+                    beyond the reach of any Turing machine whatsoever.
                 </p>
-            </div>
 
-            <div class="proof">
-                <span class="proof-title">Proof.</span>
                 <p>
-                    Suppose for contradiction that \(f: X \to \mathcal{P}(X)\) is a bijection. Define the set
-                    \[
-                    D = \{ x \in X \mid x \notin f(x) \} \in \mathcal{P}(X).
-                    \]
-                    Since \(f\) is surjective, there exists \(d \in X\) with \(f(d) = D\). Now ask: is \(d \in D\)?
+                    The proof below uses Cantor's <strong>diagonalization method</strong>, a technique for revealing the limits
+                    of any system by constructing an object that disagrees with every candidate the system can produce.
+                    We first develop the method in its purest set-theoretic form.
                 </p>
-                <ul style="padding-left: 40px;">
-                    <li>If \(d \in D\), then by definition of \(D\) we have \(d \notin f(d) = D\) — contradiction.</li>
-                    <li>If \(d \notin D\), then by definition of \(D\) we have \(d \in f(d) = D\) — contradiction.</li>
-                </ul>
-                <p>
-                    Either case is contradictory, so no such bijection \(f\) exists. Taking \(X = \mathbb{N}\) gives
-                    \(\mathcal{P}(\mathbb{N})\) uncountable, since by definition a set is countable if and only if it
-                    is in bijection with \(\mathbb{N}\) (or a subset thereof).
-                </p>
-            </div>
 
-            <p>
-                We now apply the same cardinality contrast to Turing machines: there are only countably many machines
-                but, by the theorem above, uncountably many languages.
-            </p>
+                <div class="theorem" id="T-cantor_power_set">
+                    <span class="theorem-title">Theorem: Cantor's Theorem (Power Sets)</span>
+                    <p>
+                        For any set \(X\), there is no bijection between \(X\) and its power set \(\mathcal{P}(X)\).
+                        In particular, \(\mathcal{P}(\mathbb{N})\) is uncountable.
+                    </p>
+                </div>
 
-            <div class="theorem" id="T-non_turing_recognizable_languages_exist">
-                <span class="theorem-title">Theorem: Existence of Non-Recognizable Languages</span>
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Suppose for contradiction that \(f: X \to \mathcal{P}(X)\) is a bijection. Define the set
+                        \[
+                        D = \{ x \in X \mid x \notin f(x) \} \in \mathcal{P}(X).
+                        \]
+                        Since \(f\) is surjective, there exists \(d \in X\) with \(f(d) = D\). Now ask: is \(d \in D\)?
+                    </p>
+                    <ul style="padding-left: 40px;">
+                        <li>If \(d \in D\), then by definition of \(D\) we have \(d \notin f(d) = D\), a contradiction.</li>
+                        <li>If \(d \notin D\), then by definition of \(D\) we have \(d \in f(d) = D\), a contradiction.</li>
+                    </ul>
+                    <p>
+                        Either case is contradictory, so no such bijection \(f\) exists. The argument used only the surjectivity of \(f\), so
+                        in fact no map \(X \to \mathcal{P}(X)\) is surjective. Taking \(X = \mathbb{N}\) shows that \(\mathcal{P}(\mathbb{N})\)
+                        is uncountable. Indeed, by definition a set is countable if and only if it is in bijection with \(\mathbb{N}\) or with
+                        a subset of \(\mathbb{N}\). If \(g: S \to \mathcal{P}(\mathbb{N})\) were a bijection with \(S \subseteq \mathbb{N}\),
+                        then \(S\) would be nonempty, because \(\mathcal{P}(\mathbb{N})\) is nonempty. Fixing \(s_0 \in S\) and sending every
+                        element of \(\mathbb{N} \setminus S\) to \(g(s_0)\) would then extend \(g\) to a surjection
+                        \(\mathbb{N} \to \mathcal{P}(\mathbb{N})\), which is impossible.
+                    </p>
+                </div>
+
                 <p>
-                    Some languages are <strong>not</strong> Turing-recognizable.
+                    We now apply the same cardinality contrast to Turing machines. There are only countably many machines but, by the theorem
+                    above, uncountably many languages.
                 </p>
-            </div>
+
+                <div class="theorem" id="T-non_turing_recognizable_languages_exist">
+                    <span class="theorem-title">Theorem: Existence of Non-Recognizable Languages</span>
+                    <p>
+                        Some languages are <strong>not</strong> Turing-recognizable.
+                    </p>
+                </div>
             
-            <div class="proof">
-                <span class="proof-title">Proof.</span>
-                <p>
-                    First, we show that the set of all Turing machines is countable.
-                    Each Turing machine \(M\) can be encoded as a finite string \(\langle M \rangle\) over some fixed alphabet
-                    \(\Sigma\) — for instance, by serializing its 7-tuple specification with appropriate delimiters, in such
-                    a way that distinct machines produce distinct strings (i.e., the encoding is injective). The set of all
-                    strings \(\Sigma^*\) over the alphabet \(\Sigma\) can be written as
-                    \[
-                    \Sigma^* = \bigcup_{n \geq 0} \Sigma^n,
-                    \]
-                    where \(n\) is any nonnegative integer, and \(\Sigma^n\) is the set of strings of length \(n\).
-                    Since each \(\Sigma^n\) is finite and a countable union of finite sets is countable, it follows that
-                    \(\Sigma^*\) is countable. The encoding \(M \mapsto \langle M \rangle\) is injective, so the set of
-                    all Turing machines is in bijection with a subset of \(\Sigma^*\), and hence is also countable.
-                </p>
-                <p>
-                    Next, we show that the set of all languages over \(\Sigma\) is uncountable. A language over \(\Sigma\)
-                    is, by definition, any subset of \(\Sigma^*\), so the set of all languages is exactly \(\mathcal{P}(\Sigma^*)\).
-                    Since \(\Sigma^*\) is countably infinite, it is in bijection with \(\mathbb{N}\); transporting Cantor's theorem
-                    (<a href="#T-cantor_power_set" class="ref-link"><strong>above</strong></a>) along this bijection gives that
-                    \(\mathcal{P}(\Sigma^*)\) is uncountable.
-                </p>
-                <p>
-                    Therefore, since the set of all Turing machines is countable and the set of all languages is uncountable,
-                    there exist languages that cannot be recognized by any Turing machine.
-                </p>
-            </div>
+                <div class="proof">
+                    <span class="proof-title">Proof.</span>
+                    <p>
+                        Fix a nonempty finite alphabet \(\Sigma\). First, we show that the Turing machines with input alphabet \(\Sigma\) form
+                        a countable set. Renaming the states or the non-input tape symbols of a machine does not change the language it
+                        recognizes, so we count machines up to such renaming. Each such machine \(M\) can then be encoded as a finite string
+                        \(\langle M \rangle\) over some fixed finite alphabet \(\Delta\). For instance, we can serialize its 7-tuple
+                        specification with appropriate delimiters so that distinct machines produce distinct strings.
+                    </p>
+                    <p>
+                        The set \(\Delta^*\) of all strings over \(\Delta\) can be written as
+                        \[
+                        \Delta^* = \bigcup_{n \geq 0} \Delta^n,
+                        \]
+                        where \(\Delta^n\) is the set of strings of length \(n\). Each \(\Delta^n\) is finite, so listing the strings of
+                        \(\Delta^0\), then those of \(\Delta^1\), and so on, gives a list in which every string of \(\Delta^*\) appears exactly
+                        once at a finite position. Hence \(\Delta^*\) is countable. The encoding \(M \mapsto \langle M \rangle\) is injective,
+                        so the set of Turing machines with input alphabet \(\Sigma\) is in bijection with a subset of \(\Delta^*\), and hence
+                        is also countable.
+                    </p>
+                    <p>
+                        Next, we show that the set of all languages over \(\Sigma\) is uncountable. A language over \(\Sigma\) is, by
+                        definition, any subset of \(\Sigma^*\), so the set of all languages is exactly \(\mathcal{P}(\Sigma^*)\). The same
+                        listing, applied to \(\Sigma\), enumerates every string of \(\Sigma^*\) exactly once. Since \(\Sigma\) is nonempty, the
+                        list is infinite, so it puts \(\Sigma^*\) in bijection with \(\mathbb{N}\). Transporting
+                        <a href="#T-cantor_power_set" class="ref-link"><strong>Cantor's theorem</strong></a> along this bijection, we conclude
+                        that \(\mathcal{P}(\Sigma^*)\) is uncountable.
+                    </p>
+                    <p>
+                        Therefore, since each Turing machine with input alphabet \(\Sigma\) recognizes exactly one language over \(\Sigma\),
+                        the recognizable languages over \(\Sigma\) form a countable set, while the set of all languages over \(\Sigma\) is
+                        uncountable. Hence some language over \(\Sigma\) cannot be recognized by any Turing machine.
+                    </p>
+                </div>
 
-            <p>
-                This is one of the most profound results in mathematics: there exist well-defined problems that 
-                <em>no algorithm can ever solve</em>. However, many practically important problems that are 
-                undecidable or intractable in the worst case can still be addressed through 
-                <strong>approximation algorithms</strong> and <strong>heuristics</strong>, which find good 
-                (if not provably optimal) solutions in reasonable time.
-            </p>
+                <p>
+                    Combined with the <a href="#T-church_turing_thesis" class="ref-link"><strong>Church-Turing thesis</strong></a>, this
+                    theorem implies that there exist well-defined problems that <em>no algorithm can ever solve</em>. Even among the problems
+                    that can be solved, many practically important ones are intractable in the worst case. Such problems can still be addressed
+                    through <strong>approximation algorithms</strong> and <strong>heuristics</strong>, which find good (if not provably
+                    optimal) solutions in reasonable time.
+                </p>
 
-            <p>
-                Having established what is and is not computable, we next ask: among the decidable problems, 
-                how <em>efficiently</em> can they be solved? This is the subject of 
-                <a href="time_complexity.html#D-time_complexity" class="ref-link"><strong>time complexity</strong></a>.
-            </p>
+                <p>
+                    Having established what is and is not computable, we next ask: among the decidable problems, 
+                    how <em>efficiently</em> can they be solved? This is the subject of 
+                    <a href="time_complexity.html#D-time_complexity" class="ref-link"><strong>time complexity</strong></a>.
+                </p>
             
             </section>
         </div>
-</body>
+    </body>
 </html>
