@@ -46,9 +46,12 @@ uses_python: false
                 </p>
 
                 <p>
-                    While this estimator is optimal when \(X^\top X\) is well-conditioned, high-dimensional settings where \(d \gg n\) lead to
-                    ill-conditioning or singularity of \(X^\top X\). The objective surface becomes flat in some directions, and the solution becomes
-                    non-unique and highly sensitive to noise. This phenomenon is known as <strong>overfitting</strong>.
+                    This estimator is unbiased for a fixed design, since \(\mathbb{E}[\boldsymbol{\epsilon}] = \mathbf{0}\), and it is reliable when
+                    \(X^\top X\) is well-conditioned. In high-dimensional settings with \(d \gt n\), however, the \(d \times d\)
+                    matrix \(X^\top X\) has rank at most \(n\) and is singular, and even for \(d \leq n\) nearly collinear
+                    features make it ill-conditioned. The objective surface is then flat or nearly flat in some directions, so
+                    the solution is non-unique or highly sensitive to noise. Coefficients that track the noise fit the training
+                    data at the expense of new data, a failure known as <strong>overfitting</strong>.
                     Regularization addresses it by trading a small amount of bias for a substantial reduction in variance,
                     a principle we will formalize in the
                     <a href="#b-v"><strong>bias-variance decomposition</strong></a> below.
@@ -76,6 +79,28 @@ uses_python: false
                     where \(\lambda \gt 0\) is the <strong>regularization parameter</strong> controlling the strength of the penalty.
                 </p>
 
+                <p>
+                    The inverse in this formula exists because \(X^\top X + \lambda I\) is
+                    <a href="../Linear_algebra/symmetry.html#D-quadratic_form_classification" class="ref-link"><strong>positive definite</strong></a>.
+                    For \(\boldsymbol{\beta} \neq \mathbf{0}\),
+                    \[
+                    \boldsymbol{\beta}^\top (X^\top X + \lambda I)\boldsymbol{\beta}
+                    = \|X\boldsymbol{\beta}\|_2^2 + \lambda\|\boldsymbol{\beta}\|_2^2
+                    \geq \lambda\|\boldsymbol{\beta}\|_2^2 \gt 0,
+                    \]
+                    so \((X^\top X + \lambda I)\boldsymbol{\beta} = \mathbf{0}\) forces \(\boldsymbol{\beta} = \mathbf{0}\).
+                    The stationary point is also the unique global minimizer. Expanding the quadratic form below and using
+                    \((X^\top X + \lambda I)\widehat{\boldsymbol{\beta}}_{\text{ridge}} = X^\top \boldsymbol{y}\) shows that
+                    \[
+                    \begin{align*}
+                    J(\boldsymbol{\beta})
+                    &= J(\widehat{\boldsymbol{\beta}}_{\text{ridge}}) \\\\
+                    &\quad + (\boldsymbol{\beta} - \widehat{\boldsymbol{\beta}}_{\text{ridge}})^\top (X^\top X + \lambda I)(\boldsymbol{\beta} - \widehat{\boldsymbol{\beta}}_{\text{ridge}}),
+                    \end{align*}
+                    \]
+                    and the last term is positive for every \(\boldsymbol{\beta} \neq \widehat{\boldsymbol{\beta}}_{\text{ridge}}\).
+                </p>
+
                 <div class="theorem" id="T-ridge_regression_solution">
                     <span class="theorem-title">Theorem: Ridge Regression Solution</span>
                     <p>
@@ -96,7 +121,10 @@ uses_python: false
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li>As \(\lambda \to 0\), the solution approaches the least-squares solution: \(\widehat{\boldsymbol{\beta}}_{\text{ridge}} \to \widehat{\boldsymbol{\beta}}_{\text{LS}}\).</li>
+                    <li>As \(\lambda \to 0\), if \(X^\top X\) is invertible, the solution approaches the least-squares solution:
+                        \(\widehat{\boldsymbol{\beta}}_{\text{ridge}} \to \widehat{\boldsymbol{\beta}}_{\text{LS}}\). If \(X^\top X\) is singular, it approaches instead the
+                        <a href="../Linear_algebra/leastsquares.html#T-minimum_norm_least_squares" class="ref-link"><strong>minimum-norm least-squares solution</strong></a>
+                        \(X^\dagger \boldsymbol{y}\), a limit we state without proof.</li>
                     <li>As \(\lambda \to \infty\), the solution is pushed toward zero: \(\widehat{\boldsymbol{\beta}}_{\text{ridge}} \to \mathbf{0}\), leading to high bias but low variance.</li>
                 </ul>
 
@@ -126,9 +154,9 @@ uses_python: false
                 </p>
                 <p>
                     In contrast, ridge regression, by constraining the weights, may have slightly higher training error but typically generalizes
-                    better to new data. This trade-off between fitting the training data and maintaining model simplicity is known as the <strong>bias-variance tradeoff</strong>.
+                    better to new data. This tradeoff between fitting the training data and maintaining model simplicity is known as the <strong>bias-variance tradeoff</strong>.
                     Increasing the model complexity, for example by raising the polynomial degree, monotonically reduces
-                    training error, but <strong>after a certain point, the test error begins to increase.</strong>
+                    training error, but <strong>after a certain point, the test error typically begins to increase.</strong>
                     This turning point highlights the danger of <strong>overfitting</strong>.
                 </p>
             </section>
@@ -138,20 +166,21 @@ uses_python: false
                 <p>
                     To build a <strong>generalized</strong> model and select an appropriate <strong>regularization</strong> strength (\(\lambda\)),
                     we employ <strong>K-fold cross-validation (CV)</strong> on the <strong>training set</strong>. The training data is partitioned into \(K\)
-                    equal-sized folds. For each fold \(k \in \{1, \cdots, K\}\), the model is trained on the \(K - 1\) other folds and validated on the \(k\)th fold.
+                    folds of equal (or nearly equal) size. For each fold \(k \in \{1, \ldots, K\}\), the model is trained on the \(K - 1\) other folds and validated on the \(k\)th fold.
                     This process is repeated \(K\) times, so that each data point in the training set is used once for
                     validation. The average validation error is used to select the optimal hyperparameter \(\lambda\).
                     Finally, the model is evaluated on the <strong>held-out test set</strong>.
                 </p>
 
                 <p>
-                    Here, we demonstrate how k-fold CV is used to tune the regularization parameter \(\lambda \gt 0\) in Ridge Regression.
+                    Here, we demonstrate how K-fold CV is used to tune the regularization parameter \(\lambda \gt 0\) in ridge regression.
                 </p>
 
                 <p>
                     A special case of K-fold CV is <strong>Leave-One-Out Cross-Validation (LOOCV)</strong>, where the number of folds \(K\) equals the
                     number of data points in the training set. That is, the model is trained on all training data points except one, which is used for validation,
-                    and this process is repeated for each data point. Thus, LOOCV tends to produce a low-bias estimate of the validation error. However,
+                    and this process is repeated for each data point. Because each model is trained on nearly all the data, LOOCV tends to
+                    produce a low-bias estimate of the test error of a model trained on the full training set. However,
                     LOOCV is computationally expensive for large datasets. In contrast, smaller values of \(K\) (such as 5-10) offer a good tradeoff between bias,
                     variance, and computational cost, which makes them a popular choice in practice.
                 </p>
@@ -172,7 +201,8 @@ uses_python: false
                 <p>
                     Whereas <a href="../Probability/mle.html#D-MSE" class="ref-link"><strong>mean squared error</strong></a>
                     measures the discrepancy between an estimator and the parameter it estimates, here we examine the closely related
-                    discrepancy between a model's <em>predictions</em> and the true response. Both decompose into noise, bias, and variance.
+                    discrepancy between a model's <em>predictions</em> and the true response. The estimator's mean squared error splits
+                    into variance and squared bias. The prediction error carries a third term, the noise in the response itself.
                 </p>
 
                 <p>
@@ -181,7 +211,10 @@ uses_python: false
                     \boldsymbol{x}_i \sim P_X, \quad \boldsymbol{y} = X\boldsymbol{\beta} + \boldsymbol{\epsilon}, \quad \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \sigma^2 I),
                     \]
                     and write \(\mathcal{D} = \{(\boldsymbol{x}_i, y_i)\}_{i=1}^n\) for the training sample, with \(\mathbb{E}_{\mathcal{D}}\) denoting expectation
-                    over the random training set. For a fixed query point \(\boldsymbol{x} \in \mathbb{R}^d\), the prediction error decomposes as follows.
+                    over the random training set. At a fixed query point \(\boldsymbol{x} \in \mathbb{R}^d\), a fresh response is
+                    \(y = \boldsymbol{x}^\top \boldsymbol{\beta} + \epsilon_0\), where \(\epsilon_0 \sim \mathcal{N}(0, \sigma^2)\) is
+                    independent of \(\mathcal{D}\), so that \(\mathbb{E}[y \mid \boldsymbol{x}] = \boldsymbol{x}^\top \boldsymbol{\beta}\).
+                    The prediction error then decomposes as follows.
                 </p>
 
                 <div class="theorem" id="T-bias_variance_decomposition">
@@ -211,9 +244,11 @@ uses_python: false
                             + \mathbb{E}_{\mathcal{D}}\!\left[\left(\mathbb{E}[y \mid \boldsymbol{x}] - \boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}}\right)^2 \mid \boldsymbol{x}\right]
                         \end{align*}
                         \]
-                        (the cross term vanishes since \(y - \mathbb{E}[y\mid \boldsymbol{x}]\) has mean zero and is independent of \(\widehat{\boldsymbol{\beta}}_{\text{ridge}}\) given \(\boldsymbol{x}\)).
-                        The first term equals \(\sigma^2\). The second admits a further bias-variance split via the standard identity
-                        \(\mathbb{E}[(Z - c)^2] = (\mathbb{E}[Z] - c)^2 + \operatorname{Var}(Z)\), applied with
+                        (the cross term vanishes because \(y - \mathbb{E}[y \mid \boldsymbol{x}] = \epsilon_0\) has mean zero and is independent of
+                        \(\mathcal{D}\), hence of \(\widehat{\boldsymbol{\beta}}_{\text{ridge}}\)).
+                        The first term equals \(\sigma^2\). The second admits a further bias-variance split via the identity
+                        \(\mathbb{E}[(Z - c)^2] = (\mathbb{E}[Z] - c)^2 + \operatorname{Var}[Z]\), obtained by expanding
+                        \((Z - \mathbb{E}[Z] + \mathbb{E}[Z] - c)^2\), applied with
                         \(Z = \boldsymbol{x}^\top \widehat{\boldsymbol{\beta}}_{\text{ridge}}\) and \(c = \boldsymbol{x}^\top \boldsymbol{\beta}\), giving (1).
                     </p>
                 </div>
@@ -244,7 +279,9 @@ uses_python: false
                     \left(\boldsymbol{x}^\top \boldsymbol{\beta} - \frac{n}{n+\lambda}\boldsymbol{x}^\top \boldsymbol{\beta}\right)^2
                     = \frac{\lambda^2}{(n+\lambda)^2}(\boldsymbol{x}^\top \boldsymbol{\beta})^2.
                     \]
-                    The variance term is the variance of the random part:
+                    The variance term is the variance of the random part. Because the entries of \(\boldsymbol{\epsilon}\) are
+                    independent with variance \(\sigma^2\), a fixed combination \(\boldsymbol{a}^\top \boldsymbol{\epsilon}\) has variance
+                    \(\sum_i a_i^2 \sigma^2 = \boldsymbol{a}^\top (\sigma^2 I) \boldsymbol{a}\), so
                     \[
                     \begin{align*}
                     \operatorname{Var}\!\left[\frac{1}{n+\lambda}(X\boldsymbol{x})^\top \boldsymbol{\epsilon}\right]
@@ -263,8 +300,16 @@ uses_python: false
                 <p>
                     This result makes the tradeoff explicit. As \(\lambda\) increases, the bias term
                     \(\frac{\lambda^2}{(n+\lambda)^2}(\boldsymbol{x}^\top \boldsymbol{\beta})^2\) grows while the variance
-                    term \(\frac{\sigma^2 n}{(n+\lambda)^2}\|\boldsymbol{x}\|_2^2\) shrinks. The optimal \(\lambda\)
-                    balances these competing effects, and in practice is selected via
+                    term \(\frac{\sigma^2 n}{(n+\lambda)^2}\|\boldsymbol{x}\|_2^2\) shrinks. Differentiating the total error
+                    in \(\lambda\) gives
+                    \[
+                    \frac{2n\left(\lambda(\boldsymbol{x}^\top \boldsymbol{\beta})^2 - \sigma^2\|\boldsymbol{x}\|_2^2\right)}{(n+\lambda)^3},
+                    \]
+                    which is negative at \(\lambda = 0\) for every \(\boldsymbol{x} \neq \mathbf{0}\). A small positive
+                    \(\lambda\) therefore gives a smaller expected prediction error at \(\boldsymbol{x}\) than least squares.
+                    When \(\boldsymbol{x}^\top \boldsymbol{\beta} \neq 0\), the error is minimized at
+                    \(\lambda^* = \sigma^2\|\boldsymbol{x}\|_2^2 / (\boldsymbol{x}^\top \boldsymbol{\beta})^2\). This optimum
+                    depends on the unknown \(\boldsymbol{\beta}\), so in practice \(\lambda\) is selected via
                     <a href="#CV"><strong>cross-validation</strong></a>. An alternative approach to regularization replaces
                     the squared \(\ell_2\) penalty with an \(\ell_1\) penalty. That choice yields a qualitatively different
                     behavior.
@@ -284,8 +329,9 @@ uses_python: false
                         Regularization is, structurally, the imposition of a deliberate gap between the model's fit
                         and the training data. The penalty \(\lambda \|\boldsymbol{\beta}\|_2^2\) prevents the optimizer
                         from chasing every fluctuation in the noise, and so trades a controlled increase in bias for a
-                        reduction in variance. The bias term in the decomposition above is not a defect to be eliminated.
-                        It is the operational signature of a model that has generalized rather than memorized.
+                        reduction in variance. The bias term in the decomposition above is not a defect to be eliminated. The derivative computed
+                        above shows that, in the orthogonal design, some bias is worth accepting at every query point
+                        \(\boldsymbol{x} \neq \mathbf{0}\).
                     </p>
                     <p>
                         Put more sharply, under the classical bias-variance picture, a learning algorithm that
@@ -299,7 +345,7 @@ uses_python: false
                         The same need for a productive gap recurs throughout machine learning, under names
                         such as early stopping, dropout, weight decay, and the implicit regularization of stochastic
                         gradient descent. Each is a mechanism for engineering a gap that lets the model see past the
-                        noise. Generalization requires the model to be slightly wrong about the training data in order
+                        noise. In the classical picture, generalization requires the model to be slightly wrong about the training data in order
                         to be right about the underlying distribution.
                     </p>
                 </div>
@@ -309,7 +355,8 @@ uses_python: false
                 <h2>Lasso Regression</h2>
 
                 <p>
-                    Ridge regression shrinks all coefficients smoothly toward zero but never sets any exactly to zero.
+                    Ridge regression shrinks the coefficient vector toward zero as \(\lambda\) grows but, except by coincidence,
+                    sets no coefficient exactly to zero.
                     In many applications we want the model to identify and discard uninformative variables automatically,
                     particularly when most features are irrelevant. This motivates replacing the squared \(\ell_2\)
                     penalty with an \(\ell_1\) penalty.
@@ -332,14 +379,17 @@ uses_python: false
                     The key property of Lasso is that it performs <strong>automatic feature selection</strong>.
                     The \(\ell_1\) penalty drives many coefficients \(\beta_j\) to <strong>exactly zero</strong>, effectively dropping those features
                     from the model. Geometrically, this occurs because the \(\ell_1\) ball has corners, unlike the smooth \(\ell_2\) ball.
-                    The level sets of the loss function are therefore more likely to intersect the constraint region at a
+                    The ball enters because a Lasso solution \(\widehat{\boldsymbol{\beta}}_{\text{lasso}}\) also minimizes the squared
+                    loss over \(\{\boldsymbol{\beta} : \|\boldsymbol{\beta}\|_1 \leq \|\widehat{\boldsymbol{\beta}}_{\text{lasso}}\|_1\}\).
+                    A point of that ball with a smaller loss would also have a smaller penalized objective.
+                    The level sets of the loss function are therefore more likely to intersect this ball at a
                     vertex where one or more coordinates vanish.
                 </p>
 
                 <p>
-                    Unlike ridge regression, the Lasso objective is not differentiable at \(\beta_j = 0\) due to the absolute value, so
-                    there is no closed-form solution. In practice, Lasso is solved by coordinate descent or proximal gradient methods that
-                    handle the non-smoothness via the
+                    Unlike the ridge objective, the Lasso objective is not differentiable where some \(\beta_j = 0\), so its
+                    minimizer cannot be found by setting a gradient to zero, and in general no closed form exists. In practice,
+                    Lasso is solved by coordinate descent or proximal gradient methods that handle the non-smoothness via the
                     <a href="../Calculus/gradient.html#D-subdifferential" class="ref-link"><strong>subdifferential</strong></a> of the \(\ell_1\)-norm.
                 </p>
 
@@ -354,7 +404,9 @@ uses_python: false
                     \tilde{\boldsymbol{\beta}}_S = \arg \min_{\boldsymbol{\beta}_S} \sum_{i=1}^n (y_i - \boldsymbol{x}_{i,S}^\top \boldsymbol{\beta}_S)^2,
                     \]
                     setting \(\tilde{\beta}_j = 0\) for \(j \notin S\). This two-stage procedure removes the shrinkage bias that Lasso
-                    introduces on the selected coefficients.
+                    introduces on the selected coefficients. When the columns of \(X\) are linearly dependent, the Lasso
+                    minimizer need not be unique (splitting a coefficient evenly between two identical columns leaves the
+                    objective unchanged), and \(S\) then depends on which minimizer the solver returns.
                 </p>
 
                 <p>
@@ -375,8 +427,9 @@ uses_python: false
                     Ridge and Lasso regularization illustrate a core theme in machine learning: controlling model complexity
                     to achieve good generalization. In
                     <a href="intro_classification.html"><strong>the classification page</strong></a>, we move from predicting
-                    continuous values to predicting discrete categories. That page introduces logistic regression and kernel
-                    methods, which extend the linear framework into nonlinear decision boundaries.
+                    continuous values to predicting discrete categories. That page introduces logistic regression, whose decision
+                    boundaries are hyperplanes, and kernel methods, which extend the linear framework to nonlinear decision
+                    boundaries.
                 </p>
 
             </section>
