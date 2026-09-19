@@ -12,7 +12,7 @@ uses_python: false
         {% include learning_resource_schema.html topic_id=page.topic_id %}
         
         <div class="hero-section">
-            <h1 class="webpage-name"> Automatic Differentiation</h1>
+            <h1 class="webpage-name">Automatic Differentiation</h1>
         </div>
 
         {% include section_navigation.html %}
@@ -30,39 +30,45 @@ uses_python: false
                 <h2>Automatic Differentiation</h2>
 
                 <p>
-                    On the previous page on <a href="neural_networks.html#D-multilayer_perceptron" class="ref-link"><strong>neural networks</strong></a>, we introduced backpropagation as an algorithm for computing gradients 
-                    in multilayer perceptrons, exploiting the <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a> to propagate gradients 
-                    layer by layer. However, modern neural network architectures — with residual connections, attention mechanisms, and dynamic control 
-                    flow — do not fit neatly into the sequential layer abstraction. We need a more general framework.
+                    In our treatment of <a href="neural_networks.html#D-multilayer_perceptron" class="ref-link"><strong>neural networks</strong></a>, we
+                    introduced backpropagation, an algorithm that computes gradients in multilayer perceptrons by propagating them layer by layer with
+                    the <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>. However, modern architectures
+                    with residual connections, attention mechanisms, and dynamic control flow do not fit neatly into the sequential layer abstraction.
+                    We need a more general framework.
                 </p>
 
                 <p>
-                    <strong>Automatic differentiation (AD)</strong> is that framework. Rather than relying on a layer-by-layer structure, AD operates on 
-                    arbitrary <strong>computational graphs</strong>: directed acyclic graphs (DAGs) where each node represents an elementary operation 
-                    and edges encode data dependencies. Given such a graph, AD systematically applies the chain rule to compute <strong>numerically exact</strong> derivatives 
-                    - not finite-difference approximations, and not symbolic expressions that can explode in size.
+                    <strong>Automatic differentiation (AD)</strong> is that framework. Rather than relying on a layer-by-layer structure, AD operates on
+                    arbitrary <strong>computational graphs</strong>: directed acyclic graphs (DAGs) where each node represents an elementary operation
+                    and edges encode data dependencies. Given such a graph, AD systematically applies the chain rule to compute derivatives that are
+                    <strong>numerically exact</strong>, that is, exact up to floating-point rounding. The results are neither finite-difference
+                    approximations nor symbolic expressions that can explode in size.
                 </p>
 
                 <div class="theorem" id="D-automatic_differentiation">
                     <span class="theorem-title">Definition: Automatic Differentiation</span>
                     <p>
-                        Let \(f : \mathbb{R}^n \to \mathbb{R}^m\) be a function decomposed into a sequence of elementary operations represented as 
-                        a computational graph. <strong>Automatic differentiation</strong> computes the Jacobian \(J_f \in \mathbb{R}^{m \times n}\) (or 
-                        products involving it) by applying the chain rule systematically through the graph. Two modes exist:
+                        Let \(U \subseteq \mathbb{R}^n\) be open and let \(f : U \to \mathbb{R}^m\) be decomposed into a sequence of elementary
+                        operations, each differentiable at the point where it is evaluated, and represented as a computational graph.
+                        <strong>Automatic differentiation</strong> computes the
+                        <a href="../Calculus/jacobian.html#D-jacobian" class="ref-link"><strong>Jacobian</strong></a>
+                        \(J_f \in \mathbb{R}^{m \times n}\) of \(f\) at a point \(\mathbf{x} \in U\) (or products involving it) by applying the chain
+                        rule systematically through the graph. Two basic modes exist:
                     </p>
                     <ul style="padding-left: 40px;">
                         <li><strong>Forward-mode AD</strong>:<br>
-                            propagates <em>Jacobian-vector products</em> \(J_f\, \mathbf{v}\) from inputs to outputs. Cost: one forward pass per input 
-                            direction. Efficient when \(n \ll m\).
+                            propagates <em>Jacobian-vector products</em> \(J_f\, \mathbf{v}\) from inputs to outputs. Cost: one forward pass per input
+                            direction, so \(n\) passes assemble the full Jacobian. Efficient when \(n \ll m\).
                         </li>
                         <li><strong>Reverse-mode AD</strong>:<br>
-                            propagates <em>vector-Jacobian products</em> \(\mathbf{u}^\top J_f\) from outputs to inputs. Cost: one backward pass per output 
-                            direction. Efficient when \(m \ll n\).
+                            propagates <em>vector-Jacobian products</em> \(\mathbf{u}^\top J_f\) from outputs to inputs. Cost: one backward pass per
+                            output direction, so \(m\) passes assemble the full Jacobian. Efficient when \(m \ll n\).
                         </li>
                     </ul>
                     <p>
-                        Since neural network training involves a scalar loss (\(m = 1\)) with millions of parameters (\(n \gg 1\)), 
-                        reverse-mode AD — which is backpropagation in this context — computes the full gradient in a single backward pass.
+                        Since neural network training involves a scalar loss (\(m = 1\)) with millions of parameters (\(n \gg 1\)), reverse-mode AD,
+                        which is backpropagation in this context, computes the full gradient in a single backward pass, after one forward pass that
+                        records the intermediate values.
                     </p>
                 </div>
             </section>
@@ -70,10 +76,9 @@ uses_python: false
             <section id="eg" class="section-content">
                 <h2>Analytic Example of Reverse-Mode AD</h2>
                 <p>
-                    To make the process of automatic differentiation concrete, let's walk through an analytic example using a 
-                    composite scalar-valued function of two variables. We'll decompose the function into primitive operations, 
-                    represent it as a computational graph, and compute its gradients using <strong>reverse-mode automatic differentiation</strong> 
-                    (i.e., backpropagation).
+                    To make the process of automatic differentiation concrete, we walk through an analytic example using a composite scalar-valued
+                    function of two variables. We decompose the function into primitive operations, represent it as a computational graph, and compute
+                    its gradients using <strong>reverse-mode automatic differentiation</strong> (that is, backpropagation).
                 </p>
 
                 <p>
@@ -81,8 +86,8 @@ uses_python: false
                     \[
                     f(x_1, x_2) = \log \left((x_1 + x_2)^2 + \sin(x_1 x_2) \right).
                     \]
-                    Note: For this function and its derivatives to be strictly defined in the real domain, we require the input 
-                    \((x_1, x_2)\) to satisfy \((x_1 + x_2)^2 + \sin(x_1 x_2) > 0\).
+                    For this function and its derivatives to be strictly defined in the real domain, we require the input \((x_1, x_2)\) to satisfy
+                    \((x_1 + x_2)^2 + \sin(x_1 x_2) \gt 0\).
                 </p>
 
                 <p>
@@ -94,7 +99,7 @@ uses_python: false
                     &x_5 = x_1 x_2 \\\\
                     &x_6 = \sin(x_5) \\\\
                     &x_7 = x_4 + x_6 \\\\
-                    &x_8 = \log(x_7) = f \\\\
+                    &x_8 = \log(x_7) = f
                     \end{align*}
                     \]
                 </p>
@@ -131,51 +136,51 @@ uses_python: false
                       
                       <!-- Title -->
                       <text x="400" y="30" text-anchor="middle" font-size="24" font-weight="bold" fill="#333">
-                        Computational Graph for f(x₁, x₂) = log((x₁ + x₂)² + sin(x₁x₂))
+                        Computational Graph for f(x&#8321;, x&#8322;) = log((x&#8321; + x&#8322;)&sup2; + sin(x&#8321;x&#8322;))
                       </text>
                       
                       <!-- Input nodes -->
                       <g id="input-nodes">
                         <circle cx="200" cy="100" r="30" fill="url(#inputGradient)" stroke="#333" stroke-width="2"/>
-                        <text x="200" y="107" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₁</text>
+                        <text x="200" y="107" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x&#8321;</text>
                         
                         <circle cx="600" cy="100" r="30" fill="url(#inputGradient)" stroke="#333" stroke-width="2"/>
-                        <text x="600" y="107" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₂</text>
+                        <text x="600" y="107" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x&#8322;</text>
                       </g>
                       
                       <!-- Intermediate nodes -->
                       <g id="intermediate-nodes">
                         <!-- x3 = x1 + x2 -->
                         <circle cx="400" cy="200" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
-                        <text x="400" y="207" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₃</text>
-                        <text x="405" y="240" text-anchor="middle" font-size="14" fill="#333">x₁ + x₂</text>
+                        <text x="400" y="207" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x&#8323;</text>
+                        <text x="405" y="240" text-anchor="middle" font-size="14" fill="#333">x&#8321; + x&#8322;</text>
                         
                         <!-- x5 = x1 * x2 -->
                         <circle cx="400" cy="300" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
-                        <text x="400" y="307" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₅</text>
-                        <text x="400" y="345" text-anchor="middle" font-size="14" fill="#333">x₁ × x₂</text>
+                        <text x="400" y="307" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x&#8325;</text>
+                        <text x="400" y="345" text-anchor="middle" font-size="14" fill="#333">x&#8321; &times; x&#8322;</text>
                         
                         <!-- x4 = x3^2 -->
                         <circle cx="300" cy="400" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
-                        <text x="300" y="407" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₄</text>
-                        <text x="295" y="445" text-anchor="middle" font-size="14" fill="#333">x₃²</text>
+                        <text x="300" y="407" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x&#8324;</text>
+                        <text x="295" y="445" text-anchor="middle" font-size="14" fill="#333">x&#8323;&sup2;</text>
                         
                         <!-- x6 = sin(x5) -->
                         <circle cx="500" cy="400" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
-                        <text x="500" y="407" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₆</text>
-                        <text x="500" y="445" text-anchor="middle" font-size="14" fill="#333">sin(x₅)</text>
+                        <text x="500" y="407" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x&#8326;</text>
+                        <text x="500" y="445" text-anchor="middle" font-size="14" fill="#333">sin(x&#8325;)</text>
                         
                         <!-- x7 = x4 + x6 -->
                         <circle cx="400" cy="480" r="30" fill="url(#nodeGradient)" stroke="#333" stroke-width="2"/>
-                        <text x="400" y="487" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x₇</text>
-                        <text x="435" y="487" text-anchor="start" font-size="14" fill="#333">x₄ + x₆</text>
+                        <text x="400" y="487" text-anchor="middle" font-size="18" font-weight="bold" fill="white">x&#8327;</text>
+                        <text x="435" y="487" text-anchor="start" font-size="14" fill="#333">x&#8324; + x&#8326;</text>
                       </g>
                       
                       <!-- Output node -->
                       <g id="output-node">
                         <circle cx="400" cy="580" r="30" fill="url(#outputGradient)" stroke="#333" stroke-width="2"/>
-                        <text x="400" y="587" text-anchor="middle" font-size="16" font-weight="bold" fill="white">x₈ = f</text>
-                        <text x="400" y="625" text-anchor="middle" font-size="14" fill="#333">log(x₇)</text>
+                        <text x="400" y="587" text-anchor="middle" font-size="16" font-weight="bold" fill="white">x&#8328; = f</text>
+                        <text x="400" y="625" text-anchor="middle" font-size="14" fill="#333">log(x&#8327;)</text>
                       </g>
                       
                       <!-- Forward edges (black) -->
@@ -263,19 +268,19 @@ uses_python: false
                       <g id="gradient-annotations" font-size="11" fill="#e74c3c" font-weight="bold">
                         <!-- Add white rectangles behind text for better visibility -->
                        
-                        <text x="440" y="535">∂f/∂x₇ = 1/x₇</text>
+                        <text x="440" y="535">&#8706;f/&#8706;x&#8327; = 1/x&#8327;</text>
                         
                        
-                        <text x="200" y="410">∂f/∂x₄ = 1/x₇</text>
+                        <text x="200" y="410">&#8706;f/&#8706;x&#8324; = 1/x&#8327;</text>
                         
                        
-                        <text x="530" y="410">∂f/∂x₆ = 1/x₇</text>
+                        <text x="530" y="410">&#8706;f/&#8706;x&#8326; = 1/x&#8327;</text>
                         
                       
-                        <text x="285" y="210">∂f/∂x₃ = 2x₃/x₇</text>
+                        <text x="285" y="210">&#8706;f/&#8706;x&#8323; = 2x&#8323;/x&#8327;</text>
                         
                         
-                        <text x="460" y="310">∂f/∂x₅ = cos(x₅)/x₇</text>
+                        <text x="460" y="310">&#8706;f/&#8706;x&#8325; = cos(x&#8325;)/x&#8327;</text>
                       </g>
 
                     </svg>
@@ -283,11 +288,13 @@ uses_python: false
 
 
                 <p style="margin-top: 20px;">
-                    This computational graph clearly shows the DAG (Directed Acyclic Graph) structure. Notice how:
+                    This computational graph makes the DAG structure explicit. Notice the following:
                     <ul  style="padding-left: 40px;">
-                        <li>Each input variable (x₁ and x₂) has <strong>multiple outgoing edges</strong>, contributing to different intermediate computations</li>
+                        <li>Each input variable (\(x_1\) and \(x_2\)) has <strong>multiple outgoing edges</strong> and contributes to
+                            different intermediate computations
+                        </li>
                         <li>The graph flows from inputs at the top to the output at the bottom</li>
-                        <li>During backpropagation, gradients flow in the <strong>reverse direction</strong> (from f back to x₁ and x₂)</li>
+                        <li>During backpropagation, gradients flow in the <strong>reverse direction</strong> (from \(f\) back to \(x_1\) and \(x_2\))</li>
                     </ul>
                 </p>
 
@@ -310,13 +317,13 @@ uses_python: false
                                                     &=  \frac{1}{x_7}  \cdot 2 x_3\\\\
 
                     \frac{\partial f}{\partial x_5} &=  \frac{\partial f}{\partial x_6} \cdot \frac{\partial x_6}{\partial x_5} \\\\
-                                                    &=  \frac{1}{x_7} \cdot \cos(x_5)\\\\                               
+                                                    &=  \frac{1}{x_7} \cdot \cos(x_5)
                     \end{align*}
                     \]
                 </p>
 
                 <p>
-                    Notice that the input variables \(x_1\) and \(x_2\) each contribute to multiple intermediate nodes:
+                    As the graph shows, each input variable contributes to two intermediate nodes:
                 </p>
 
                 <ul style="padding-left: 40px;">
@@ -325,11 +332,11 @@ uses_python: false
                 </ul>
                 
                 <p>
-                    This means we need to <strong>sum the gradients</strong> from all paths when computing the final derivatives.
-                </p>
-
-                <p>
-                    To find the gradients with respect to the input variables, we sum contributions from all paths:
+                    To find the gradients with respect to the input variables, we therefore <strong>sum the contributions</strong> from all paths. The
+                    sum is exactly what the <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a> produces
+                    when \(f\) is viewed as a function of \((x_3, x_5)\). The row vector
+                    \(\bigl(\frac{\partial f}{\partial x_3}, \frac{\partial f}{\partial x_5}\bigr)\) multiplies the \(2 \times 2\) Jacobian of
+                    \((x_1, x_2) \mapsto (x_3, x_5)\), and each entry of the product is a sum of two terms, one per path:
                 </p>
                 
                 <p>
@@ -355,7 +362,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    Replacing the intermediate variables with their expressions in terms of \(x_1\) and \(x_2\):
+                    We now replace the intermediate variables by their expressions in terms of \(x_1\) and \(x_2\):
                 </p>
                 
                 <ul style="padding-left: 40px;">
@@ -387,12 +394,12 @@ uses_python: false
                 </ol>
 
                 <p>
-                    This process can be fully automated, making it the backbone of modern deep learning frameworks.
+                    Because each step is mechanical, the whole process can be automated.
                 </p>
 
                 <p>
-                    Note: In AD literature, the accumulated gradient \(\frac{\partial f}{\partial x_i}\) is often denoted as the 
-                    <strong>adjoint</strong> \(\bar{x}_i\).
+                    In the AD literature, the accumulated gradient \(\frac{\partial f}{\partial x_i}\) is often called the <strong>adjoint</strong> of
+                    \(x_i\) and denoted \(\bar{x}_i\).
                 </p>
             </section>
 
@@ -402,12 +409,21 @@ uses_python: false
                 <h2>Applications of AD</h2>
 
                 <p>
-                    Automatic differentiation is the computational engine behind modern deep learning frameworks. Two frameworks dominate today's ML ecosystem, with complementary design philosophies that reflect different sides of the AD abstraction:
+                    Automatic differentiation is the computational engine behind modern deep learning frameworks. Two frameworks dominate today's ML
+                    ecosystem, with complementary design philosophies that reflect different sides of the AD abstraction:
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li><strong>PyTorch</strong> — imperative, eager-execution framework with dynamic computational graphs and reverse-mode AD via <code>autograd</code>. The default choice for LLM training, NLP, and computer vision research; the framework used in our sample code below.</li>
-                    <li><strong>JAX</strong> — functional framework offering composable transformations (<code>grad</code>, <code>vmap</code>, <code>jit</code>) that map directly onto the mathematical structure of AD discussed above. Preferred for differentiable physics, scientific computing, and equivariant neural networks — domains we will revisit in our discussion of geometric deep learning.</li>
+                    <li><strong>PyTorch</strong>: an imperative, eager-execution framework with dynamic computational graphs and reverse-mode AD via
+                        <code>autograd</code>. It is the most common framework in NLP and computer vision research and is widely used for LLM training.
+                        Our sample code below uses it.
+                    </li>
+                    <li><strong>JAX</strong>: a functional framework offering composable function transformations such as <code>grad</code>,
+                        <code>vmap</code>, and <code>jit</code>. Its <code>jvp</code> and <code>vjp</code> transformations implement the two modes of AD
+                        defined above (<code>grad</code> is built on <code>vjp</code>), and they compose with <code>vmap</code> (vectorization) and
+                        <code>jit</code> (compilation). It is widely used for differentiable physics, scientific computing, and equivariant neural
+                        networks. Equivariant networks return in our discussion of geometric deep learning.
+                    </li>
                 </ul>
 
                 <p>
@@ -415,18 +431,20 @@ uses_python: false
                 </p>
 
                 <ol style="padding-left: 40px;">
-                    <li>Train neural networks by computing gradients of loss functions with respect to millions to billions of parameters (and beyond, in modern frontier models)</li>
-                    <li>Optimize black-box functions in physics simulation, robotics, and finance</li>
-                    <li>Perform end-to-end differentiation through control flow, dynamic loops, and even solver calls (e.g., differentiable physics)</li>
+                    <li>Train neural networks by computing gradients of loss functions with respect to millions to billions of parameters (and beyond,
+                        in modern frontier models)
+                    </li>
+                    <li>Optimize differentiable models and simulators in physics, robotics, and finance</li>
+                    <li>Perform end-to-end differentiation through control flow, dynamic loops, and even solver calls (for
+                        example, differentiable physics)
+                    </li>
                 </ol>
 
                 <p>
-                    The same structural pattern — attaching information to each primitive operation and letting composition
-                    rules carry it through automatically — recurs outside calculus. The Jacobian is one instance of a
-                    "structured side-information" that propagates by a composition law; the
-                    <a href="../Discrete/formal_methods.html"><strong>formal methods</strong></a>
-                    page develops another instance, where the side-information attached to each program step is a proof of
-                    correctness and the composition law is logical inference.
+                    The same structural pattern recurs outside calculus. It consists in attaching information to each primitive operation and letting
+                    composition rules carry it through automatically. The Jacobian is one instance of such "structured side-information" propagated by a
+                    composition law. The <a href="../Discrete/formal_methods.html"><strong>formal methods</strong></a> page develops another instance,
+                    in which the side-information attached to each program step is a proof of correctness and the composition law is logical inference.
                 </p>
 
             </section>
@@ -455,7 +473,7 @@ uses_python: false
                                     
                                     This demonstrates the forward and backward pass explicitly.
                                     """
-                                    print(f"Computing f({x1_val}, {x2_val}) = log((x1 + x2)² + sin(x1 * x2))")
+                                    print(f"Computing f({x1_val}, {x2_val}) = log((x1 + x2)&sup2; + sin(x1 * x2))")
                                     print("="*60)
                                     
                                     # Forward Pass - Compute function value
@@ -469,7 +487,7 @@ uses_python: false
                                     print(f"x3 = x1 + x2 = {x3}")
                                     
                                     x4 = x3**2
-                                    print(f"x4 = x3² = {x4}")
+                                    print(f"x4 = x3&sup2; = {x4}")
                                     
                                     x5 = x1 * x2
                                     print(f"x5 = x1 * x2 = {x5}")
@@ -491,25 +509,25 @@ uses_python: false
                                     
                                     # Initialize gradient
                                     df_dx8 = 1.0
-                                    print(f"∂f/∂x8 = {df_dx8}")
+                                    print(f"&#8706;f/&#8706;x8 = {df_dx8}")
                                     
                                     # x8 = log(x7)
                                     df_dx7 = df_dx8 * (1.0 / x7)
-                                    print(f"∂f/∂x7 = ∂f/∂x8 * ∂x8/∂x7 = {df_dx8} * (1/{x7}) = {df_dx7}")
+                                    print(f"&#8706;f/&#8706;x7 = &#8706;f/&#8706;x8 * &#8706;x8/&#8706;x7 = {df_dx8} * (1/{x7}) = {df_dx7}")
                                     
                                     # x7 = x4 + x6
                                     df_dx4 = df_dx7 * 1.0
                                     df_dx6 = df_dx7 * 1.0
-                                    print(f"∂f/∂x4 = ∂f/∂x7 * ∂x7/∂x4 = {df_dx7} * 1 = {df_dx4}")
-                                    print(f"∂f/∂x6 = ∂f/∂x7 * ∂x7/∂x6 = {df_dx7} * 1 = {df_dx6}")
+                                    print(f"&#8706;f/&#8706;x4 = &#8706;f/&#8706;x7 * &#8706;x7/&#8706;x4 = {df_dx7} * 1 = {df_dx4}")
+                                    print(f"&#8706;f/&#8706;x6 = &#8706;f/&#8706;x7 * &#8706;x7/&#8706;x6 = {df_dx7} * 1 = {df_dx6}")
                                     
-                                    # x4 = x3²
+                                    # x4 = x3&sup2;
                                     df_dx3 = df_dx4 * (2 * x3)
-                                    print(f"∂f/∂x3 = ∂f/∂x4 * ∂x4/∂x3 = {df_dx4} * 2*{x3} = {df_dx3}")
+                                    print(f"&#8706;f/&#8706;x3 = &#8706;f/&#8706;x4 * &#8706;x4/&#8706;x3 = {df_dx4} * 2*{x3} = {df_dx3}")
                                     
                                     # x6 = sin(x5)
                                     df_dx5 = df_dx6 * np.cos(x5)
-                                    print(f"∂f/∂x5 = ∂f/∂x6 * ∂x6/∂x5 = {df_dx6} * cos({x5}) = {df_dx5}")
+                                    print(f"&#8706;f/&#8706;x5 = &#8706;f/&#8706;x6 * &#8706;x6/&#8706;x5 = {df_dx6} * cos({x5}) = {df_dx5}")
                                     
                                     # Now accumulate gradients for x1 and x2
                                     # x3 = x1 + x2
@@ -524,12 +542,12 @@ uses_python: false
                                     df_dx1 = df_dx1_from_x3 + df_dx1_from_x5
                                     df_dx2 = df_dx2_from_x3 + df_dx2_from_x5
                                     
-                                    print(f"\n∂f/∂x1 = ∂f/∂x3 * ∂x3/∂x1 + ∂f/∂x5 * ∂x5/∂x1")
+                                    print(f"\n&#8706;f/&#8706;x1 = &#8706;f/&#8706;x3 * &#8706;x3/&#8706;x1 + &#8706;f/&#8706;x5 * &#8706;x5/&#8706;x1")
                                     print(f"       = {df_dx3} * 1 + {df_dx5} * {x2}")
                                     print(f"       = {df_dx1_from_x3} + {df_dx1_from_x5}")
                                     print(f"       = {df_dx1}")
                                     
-                                    print(f"\n∂f/∂x2 = ∂f/∂x3 * ∂x3/∂x2 + ∂f/∂x5 * ∂x5/∂x2")
+                                    print(f"\n&#8706;f/&#8706;x2 = &#8706;f/&#8706;x3 * &#8706;x3/&#8706;x2 + &#8706;f/&#8706;x5 * &#8706;x5/&#8706;x2")
                                     print(f"       = {df_dx3} * 1 + {df_dx5} * {x1}")
                                     print(f"       = {df_dx2_from_x3} + {df_dx2_from_x5}")
                                     print(f"       = {df_dx2}")
@@ -540,10 +558,10 @@ uses_python: false
                                     expected_df_dx1 = (2*(x1 + x2) + x2*np.cos(x1*x2)) / ((x1 + x2)**2 + np.sin(x1*x2))
                                     expected_df_dx2 = (2*(x1 + x2) + x1*np.cos(x1*x2)) / ((x1 + x2)**2 + np.sin(x1*x2))
                                     
-                                    print(f"Expected ∂f/∂x1 = {expected_df_dx1}")
-                                    print(f"Expected ∂f/∂x2 = {expected_df_dx2}")
-                                    print(f"Error in ∂f/∂x1: {abs(df_dx1 - expected_df_dx1)}")
-                                    print(f"Error in ∂f/∂x2: {abs(df_dx2 - expected_df_dx2)}")
+                                    print(f"Expected &#8706;f/&#8706;x1 = {expected_df_dx1}")
+                                    print(f"Expected &#8706;f/&#8706;x2 = {expected_df_dx2}")
+                                    print(f"Error in &#8706;f/&#8706;x1: {abs(df_dx1 - expected_df_dx1)}")
+                                    print(f"Error in &#8706;f/&#8706;x2: {abs(df_dx2 - expected_df_dx2)}")
                                     
                                     return f, df_dx1, df_dx2
 
@@ -568,8 +586,8 @@ uses_python: false
                                     f.backward()
                                     
                                     print(f"f({x1_val}, {x2_val}) = {f.item()}")
-                                    print(f"∂f/∂x1 = {x1.grad.item()}")
-                                    print(f"∂f/∂x2 = {x2.grad.item()}")
+                                    print(f"&#8706;f/&#8706;x1 = {x1.grad.item()}")
+                                    print(f"&#8706;f/&#8706;x2 = {x2.grad.item()}")
                                     
                                     return f.item(), x1.grad.item(), x2.grad.item()
 
@@ -597,12 +615,12 @@ uses_python: false
                                     f_minus_x2 = eval_f(x1, x2 - epsilon)
                                     numerical_df_dx2 = (f_plus_x2 - f_minus_x2) / (2 * epsilon)
                                     
-                                    print(f"Analytical ∂f/∂x1: {df_dx1}")
-                                    print(f"Numerical  ∂f/∂x1: {numerical_df_dx1}")
+                                    print(f"Analytical &#8706;f/&#8706;x1: {df_dx1}")
+                                    print(f"Numerical  &#8706;f/&#8706;x1: {numerical_df_dx1}")
                                     print(f"Difference: {abs(df_dx1 - numerical_df_dx1)}")
                                     
-                                    print(f"\nAnalytical ∂f/∂x2: {df_dx2}")
-                                    print(f"Numerical  ∂f/∂x2: {numerical_df_dx2}")
+                                    print(f"\nAnalytical &#8706;f/&#8706;x2: {df_dx2}")
+                                    print(f"Numerical  &#8706;f/&#8706;x2: {numerical_df_dx2}")
                                     print(f"Difference: {abs(df_dx2 - numerical_df_dx2)}")
 
 
@@ -625,17 +643,18 @@ uses_python: false
                 </div>
 
                 <p>
-                    With automatic differentiation providing the computational engine for gradient-based learning, we have covered the core tools of 
-                    modern ML: from <a href="regression.html"><strong>regularized regression</strong></a> through 
-                    <a href="intro_classification.html"><strong>classification</strong></a> and <a href="neural_networks.html#D-multilayer_perceptron" class="ref-link"><strong>neural networks</strong></a>. 
-                    On the upcoming page on <a href="svm.html"><strong>support vector machines</strong></a>, we return to classification from a geometric perspective, 
-                    replacing probabilistic modeling with direct margin maximization — connecting to the <a href="../Calculus/duality.html"><strong>duality theory</strong></a> 
-                    and <a href="../Calculus/constrained_opt.html"><strong>constrained optimization</strong></a> developed in our optimization pages.
+                    With automatic differentiation in place, we have covered the core tools of modern ML: from
+                    <a href="regression.html"><strong>regularized regression</strong></a> through
+                    <a href="intro_classification.html"><strong>classification</strong></a> and
+                    <a href="neural_networks.html#D-multilayer_perceptron" class="ref-link"><strong>neural networks</strong></a>.
+                    <a href="svm.html"><strong>Support vector machines</strong></a> approach classification from a geometric perspective and replace
+                    probabilistic modeling with direct margin maximization. They connect to the
+                    <a href="../Calculus/duality.html"><strong>duality theory</strong></a> and
+                    <a href="../Calculus/constrained_opt.html"><strong>constrained optimization</strong></a> developed in our optimization pages.
                 </p>
-
+                
             </section>
-
         </div>
-<script src="/js/collapsible.js"></script>
+        <script src="/js/collapsible.js"></script>
     </body>
 </html>
