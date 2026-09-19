@@ -20,7 +20,7 @@ uses_python: false
         <div class="topic-nav">
             <a href="#intro">Introduction</a>
             <a href="#demo">The Geometry of Information: Interactive GMM Manifold</a>
-            <a href="#kfac">Scaling to Deep Learning: The Kronecker-factored Approximation (K-FAC)</a>    
+            <a href="#kfac">Scaling to Deep Learning: Kronecker-Factored Approximate Curvature (K-FAC)</a>    
         </div>
 
         <div class="container">  
@@ -29,25 +29,23 @@ uses_python: false
                 <h2>Introduction</h2>
 
                 <p>
-                    Around 2025, "Physical AI" entered the industry vocabulary as a label for machine learning 
-                    systems that act on the physical world — robotics, autonomous vehicles, and embodied agents. 
-                    Whether the label survives or fades, the underlying technical problem it points to is real 
-                    and constraining: when a learned policy controls a physical actuator, the path the optimizer 
-                    takes through parameter space affects stability, sample efficiency, and energy cost during 
-                    deployment, not just final model quality.
+                    Around 2025, "Physical AI" entered the industry vocabulary as a label for machine learning systems that act on the physical
+                    world, such as robots, autonomous vehicles, and other embodied agents. Whether the label survives or fades, the underlying
+                    technical problem it points to is real and constraining. When a <a href="intro_RL.html#policy-grad">learned policy</a>
+                    controls a physical actuator, the path the optimizer takes through parameter space affects stability, sample efficiency, and
+                    energy cost during deployment, not just final model quality.
                 </p>
 
                 <p>
-                    Standard <a href="../Calculus/gradient.html#sgd"><strong>Stochastic Gradient Descent (SGD)</strong></a> 
-                    equips the parameter space with the Euclidean metric by default, treating all directions in 
-                    \(\theta\) as equally costly to move along. <strong>Information Geometry</strong> reveals that 
-                    probability distributions live on a curved <strong>statistical manifold</strong> whose natural 
-                    metric is not Euclidean but is given by the 
-                    <a href="../Probability/fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher Information Matrix (FIM)</strong></a>. 
-                    By respecting this intrinsic geometry, 
-                    <a href="../Probability/fisher_info.html#D-natural_gradient" class="ref-link"><strong>Natural Gradient Descent (NGD)</strong></a> 
-                    uses the FIM as the metric in place of the Euclidean inner product. Let's visualize how this 
-                    geometry distorts our path in a simple mixture model.
+                    Standard <a href="../Calculus/gradient.html#sgd"><strong>Stochastic Gradient Descent (SGD)</strong></a> equips the parameter
+                    space with the Euclidean metric by default, treating all directions in \(\theta\) as equally costly to move along.
+                    <strong>Information geometry</strong> reveals that probability distributions live on a curved
+                    <strong>statistical manifold</strong> whose natural metric is not Euclidean but is given by the
+                    <a href="../Probability/fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher Information Matrix (FIM)</strong></a>.
+                    By respecting this intrinsic geometry,
+                    <a href="../Probability/fisher_info.html#D-natural_gradient" class="ref-link"><strong>Natural Gradient Descent (NGD)</strong></a>
+                    uses the FIM as the metric in place of the Euclidean inner product. The demo below visualizes how this geometry reshapes the
+                    descent path in a simple mixture model.
                 </p>
 
             </section>
@@ -60,180 +58,237 @@ uses_python: false
                 <h3>The Model: A Two-Component Gaussian Mixture</h3>
 
                 <p>
-                    The entire canvas represents a two-dimensional parameter space 
+                    The entire canvas represents a two-dimensional parameter space
                     \[
-                    \Theta = \{(\mu_1, \mu_2) \in \mathbb{R}^2\}
+                    \Theta = \{(\mu_1, \mu_2) \in \mathbb{R}^2\}.
                     \]
-                    Each point on this plane specifies a one-dimensional Gaussian Mixture Model 
+                    Each point on this plane specifies a one-dimensional Gaussian Mixture Model
                     \[
                     p(x \mid \theta) = \tfrac{1}{2}\mathcal{N}(x \mid \mu_1, \sigma^2) + \tfrac{1}{2}\mathcal{N}(x \mid \mu_2, \sigma^2),
                     \]
-                    where the mixing weights are fixed at \(\tfrac{1}{2}\) and the variance \(\sigma^2\) is shared. 
-                    The glowing handle marks the <strong>target model</strong> \(\theta^* = (\mu_1^*, \mu_2^*)\) — the data-generating 
-                    distribution that defines the loss below — and the hollow dashed marker shows its <strong>swap</strong> 
-                    \((\mu_2^*, \mu_1^*)\), which specifies the <em>same</em> distribution with the component labels exchanged. 
-                    Dragging the handle traverses this parameter space; clicking anywhere else places a probe point \(\theta\), 
-                    a candidate model, and the panel reports the exact Fisher matrix and gradients computed there.
+                    where the mixing weights are fixed at \(\tfrac{1}{2}\) and the variance \(\sigma^2\) is shared.
+                </p>
+
+                <p>
+                    The glowing handle marks the <strong>target model</strong> \(\theta^* = (\mu_1^*, \mu_2^*)\), whose distribution generates
+                    the data and defines the loss below. The hollow dashed marker shows its <strong>swap</strong> \((\mu_2^*, \mu_1^*)\), which
+                    specifies the <em>same</em> distribution with the component labels exchanged. Dragging the handle moves the target through
+                    this parameter space. Clicking anywhere else places a probe point \(\theta\), a candidate model, and the panel reports the
+                    exact Fisher matrix and gradients computed there.
                 </p>
 
                 <h3>The Fisher Information Matrix as a Riemannian Metric</h3>
 
                 <p>
-                    The family of distributions \(\{p(x \mid \theta) : \theta \in \Theta\}\) forms a <strong>statistical manifold</strong> — 
-                    a <strong>smooth manifold</strong> where each point is a probability distribution. 
-                    The Fisher Information Matrix (FIM) provides the natural <strong>Riemannian metric</strong> on this manifold. 
-                    (The formal definitions of manifold structures and Riemannian metrics will be developed in our forthcoming 
-                    smooth-manifold and Riemannian-geometry pages.)
+                    Information geometry treats a parametric family of distributions as a <strong>statistical manifold</strong>, that is, a
+                    <strong>smooth manifold</strong> whose points are probability distributions, and it takes the FIM as the natural
+                    <strong>Riemannian metric</strong> on it, called the <strong>Fisher-Rao metric</strong>. For the family
+                    \(\{p(x \mid \theta) : \theta \in \Theta\}\) this picture needs two qualifications. First, \(\Theta\) covers the family
+                    twice, since \(\theta\) and its swap specify the same distribution. On either open half-plane \(\{\mu_1 \lt \mu_2\}\) or
+                    \(\{\mu_1 \gt \mu_2\}\) each distribution of the family with distinct component means appears exactly once, by the
+                    identifiability of finite Gaussian mixtures up to relabeling, which we take for granted. Second, the FIM is positive definite
+                    at every \(\theta\) off the diagonal \(\mu_1 = \mu_2\) and singular on it, as we show below. On each open half-plane the FIM
+                    is therefore a Riemannian metric, given that its entries depend smoothly on \(\theta\) (a differentiation-under-the-integral
+                    fact we take for granted), while the diagonal is a genuine singularity of the model. (The formal definitions of a
+                    <a href="../Calculus/smooth_manifolds.html#D-smooth_manifold" class="ref-link"><strong>smooth manifold</strong></a> and of a
+                    <a href="../Calculus/riemannian_metrics.html#D-riemannian_metric" class="ref-link"><strong>Riemannian metric</strong></a> are
+                    given later in the manifold series.)
                 </p>
 
                 <div class="insight-box">
                     <h3>FIM in Component Form (for the Demo)</h3>
                     <p>
-                        The <a href="../Probability/fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher Information Matrix</strong></a> 
-                        is defined abstractly as the covariance of the score function. For the GMM demo it is convenient to 
-                        write it component-wise; the score-square form on the first line equals the negative-Hessian form on 
-                        the second by the standard identity 
-                        <a href="../Probability/fisher_info.html#T-fim_hessian_form" class="ref-link"><strong>(FIM as Expected Negative Hessian)</strong></a>:
+                        The <a href="../Probability/fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher Information Matrix</strong></a>
+                        is defined abstractly as the covariance of the score function. For the GMM demo it is convenient to write it
+                        component-wise. The score-square form on the first line equals the negative-Hessian form on the second by the theorem
+                        <a href="../Probability/fisher_info.html#T-fim_hessian_form" class="ref-link"><strong>FIM as Expected Negative Hessian</strong></a>:
                         \[
                         \begin{align*}
                         F(\theta_0)_{ij} &= \mathbb{E}_{x \sim p(\cdot \mid \theta_0)}\!\left[\frac{\partial \log p(x \mid \theta)}{\partial \theta_i}\,\frac{\partial \log p(x \mid \theta)}{\partial \theta_j}\right]_{\theta = \theta_0} \\\\
-                                         &= -\,\mathbb{E}_{x \sim p(\cdot \mid \theta_0)}\!\left[\frac{\partial^2 \log p(x \mid \theta)}{\partial \theta_i \,\partial \theta_j}\right]_{\theta = \theta_0}
+                                         &= -\,\mathbb{E}_{x \sim p(\cdot \mid \theta_0)}\!\left[\frac{\partial^2 \log p(x \mid \theta)}{\partial \theta_i \,\partial \theta_j}\right]_{\theta = \theta_0}.
                         \end{align*}
                         \]
+                        The hypotheses of that theorem hold here because the support is all of \(\mathbb{R}\) for every \(\theta\) and the first
+                        two \(\theta\)-derivatives of \(p\) are dominated, locally uniformly in \(\theta\), by integrable functions.
                     </p>
                 </div>
 
                 <p>
-                    This \(2 \times 2\) matrix is <strong>positive definite</strong> (almost everywhere) and encodes how sensitively the distribution \(p(x \mid \theta)\) 
-                    changes as we perturb \(\theta\) in each direction. The FIM defines an infinitesimal distance on the manifold: 
-                    for a small displacement \(d\theta\), the squared statistical distance is 
+                    Off the diagonal this \(2 \times 2\) matrix is <strong>positive definite</strong>, and it encodes how sensitively the
+                    distribution \(p(x \mid \theta)\) changes as we perturb \(\theta\) in each direction. The FIM defines an infinitesimal
+                    distance on the manifold. For a small displacement \(d\theta\), the squared statistical distance is
                     \[
                     ds^2 = d\theta^\top F(\theta)\, d\theta.
                     \]
-                    This is precisely the <strong>second-order Taylor expansion</strong> of 
-                    the <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>KL divergence</strong></a>: 
+                </p>
+
+                <p>
+                    Up to the factor \(\tfrac{1}{2}\), this quadratic form is the <strong>second-order Taylor expansion</strong> of the
+                    <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>KL divergence</strong></a>, taken here in its
+                    density form, where the sum over outcomes becomes an integral against \(p_\theta\). The expansion is derived in the
+                    <a href="../Probability/fisher_info.html#ngd">natural gradient section</a> of the Fisher information page:
                     \[
-                    D_{\mathrm{KL}}(p_\theta \,\|\, p_{\theta + d\theta}) \approx \tfrac{1}{2}\,d\theta^\top F(\theta)\,d\theta.
+                    D_{\mathbb{KL}}(p_\theta \,\|\, p_{\theta + d\theta}) \approx \tfrac{1}{2}\,d\theta^\top F(\theta)\,d\theta.
                     \]
                 </p>
 
                 <h3>What the Ellipses Show: Local Quadratic Forms of the Metric</h3>
 
                 <p>
-                    Each ellipse in the tessellation is a <strong>confidence ellipse</strong> of the Fisher metric — the level set 
+                    Each ellipse in the tessellation is a <strong>confidence ellipse</strong> of the Fisher-Rao metric, that is, the level set
                     \[
                     \{\delta\theta : \delta\theta^\top F(\theta_0)\,\delta\theta = \varepsilon\}
                     \]
-                    of the local <a href="../Linear_algebra/symmetry.html#D-quadratic_form" class="ref-link"><strong>quadratic form</strong></a> at that grid point. 
-                    The ellipse axes are determined by the eigendecomposition 
+                    of the local <a href="../Linear_algebra/symmetry.html#D-quadratic_form" class="ref-link"><strong>quadratic form</strong></a>
+                    at that grid point. The ellipse axes are determined by the eigendecomposition
                     \[
-                    F = Q \Lambda Q^\top
-                    \] 
-                    : the eigenvectors of \(F\) give the principal directions, and the semi-axis lengths are proportional to \(1/\sqrt{\lambda_i}\), 
-                    where \(\lambda_1, \lambda_2\) are the eigenvalues. A long axis in some direction means the FIM eigenvalue is <em>small</em> along 
-                    that direction - the distribution is insensitive to parameter changes there, so a large step in parameter space produces only a small 
-                    change in KL divergence. 
-                    All ellipses are drawn at one global scale (the ellipse-scale slider), so their relative sizes are 
-                    comparable across the canvas; where the divergent axis near the singular locus exceeds its grid cell, 
-                    the ellipse is clipped to the cell and drawn dashed.
+                    F = Q \Lambda Q^\top.
+                    \]
+                    The eigenvectors of \(F\) give the principal directions, and the semi-axis lengths are proportional to
+                    \(1/\sqrt{\lambda_i}\), where \(\lambda_1, \lambda_2\) are the eigenvalues. A long axis in some direction means the FIM
+                    eigenvalue is <em>small</em> along that direction. The distribution is insensitive to parameter changes there, so a large
+                    step in parameter space produces only a small change in KL divergence.
+                </p>
+
+                <p>
+                    All ellipses are drawn at one global scale (the ellipse-scale slider), so their relative sizes are comparable across the
+                    canvas. Where the divergent axis near the singular locus exceeds its grid cell, the ellipse is clipped to the cell and drawn
+                    dashed. The ellipse field depends only on the grid point and \(\sigma\), not on the target handle.
                 </p>
 
                 <h3>The Information Singularity: When \(\mu_1 \to \mu_2\)</h3>
 
                 <p>
-                    The singular locus is visible directly on the canvas: it is the dashed diagonal \(\mu_1 = \mu_2\). 
-                    Probe near it and observe the ellipses elongating dramatically along the exchange direction \((1, -1)\). 
-                    This visualizes the <strong>information singularity</strong> of mixture models. 
-                    When \(\mu_1 \approx \mu_2\), the model reduces to 
+                    The singular locus appears directly on the canvas as the dashed diagonal \(\mu_1 = \mu_2\). Probe near it and observe the
+                    ellipses elongating dramatically along the exchange direction \((1, -1)\). This visualizes the
+                    <strong>information singularity</strong> of mixture models. When \(\mu_1 \approx \mu_2\), the model reduces to
                     \[
-                    p(x) \approx \mathcal{N}(x \mid \mu_1, \sigma^2), 
+                    p(x) \approx \mathcal{N}(x \mid \mu_1, \sigma^2),
                     \]
-                    and the two parameters become non-identifiable: swapping \(\mu_1\) and \(\mu_2\) produces the same distribution. 
-                    Formally, the FIM becomes <strong>rank-deficient</strong> (positive semi-definite but not definite) as the eigenvalue along the "exchange direction" \((\mu_1 - \mu_2)\) approaches zero 
-                    while the eigenvalue along \((\mu_1 + \mu_2)\) (the "mean shift" direction) remains bounded. 
-                    The condition number 
+                    and the exchange direction stops being visible to first order. Along the line \(\theta(t) = (\mu + t, \mu - t)\)
+                    through a diagonal point \((\mu, \mu)\), the derivative of \(p(x \mid \theta(t))\) at \(t = 0\) is
+                    \(\tfrac{1}{2}\partial_\mu \mathcal{N}(x \mid \mu, \sigma^2) - \tfrac{1}{2}\partial_\mu \mathcal{N}(x \mid \mu, \sigma^2) = 0\),
+                    so a small step along \((1, -1)\) from the diagonal changes the distribution only at second order. The label swap
+                    itself leaves the distribution unchanged everywhere, and on the diagonal it fixes \(\theta\), so the two copies of the
+                    model meet there.
+                </p>
+
+                <p>
+                    Formally, the scores are
+                    \(s_i(x) = \partial \log p(x \mid \theta)/\partial \mu_i = (x - \mu_i)\,\mathcal{N}(x \mid \mu_i, \sigma^2)/\bigl(2\sigma^2 p(x \mid \theta)\bigr)\).
+                    On the diagonal both equal \((x - \mu)/(2\sigma^2)\), so \(F = \tfrac{1}{4\sigma^2}\mathbf{1}\mathbf{1}^\top\) with
+                    \(\mathbf{1} = (1, 1)^\top\). This matrix is <strong>rank-deficient</strong> (positive semi-definite but not definite). Its
+                    eigenvalue along the exchange direction \((1, -1)\) is \(0\), and along the mean-shift direction \((1, 1)\) it is
+                    \(1/(2\sigma^2)\). Off the diagonal, \(F\) is positive definite. Indeed, \(F\) is the covariance of the score vector, so it
+                    is singular exactly when \(a s_1 + b s_2 = 0\) for some \((a, b) \neq (0, 0)\) and all \(x\) (both sides are continuous in
+                    \(x\)). Multiplying by \(2\sigma^2 p(x \mid \theta)\) and dividing by \(\mathcal{N}(x \mid \mu_2, \sigma^2)\) turns this into
+                    \(a(x - \mu_1)e^{cx + d} + b(x - \mu_2) = 0\) with \(c = (\mu_1 - \mu_2)/\sigma^2\). When \(c \neq 0\), that is, off the
+                    diagonal, letting \(x \to \pm\infty\) with the sign of \(c\) forces \(a = 0\), and then \(b = 0\). As a probe approaches the
+                    diagonal, the smaller eigenvalue tends to \(0\) (numerically, like the square of the gap \(\mu_1 - \mu_2\)) while the larger
+                    tends to \(1/(2\sigma^2)\), so the condition number
                     \[
                     \kappa(F) = \lambda_{\max}/\lambda_{\min}
-                    \] 
-                    diverges, which you can verify in the panel on the right.
+                    \]
+                    diverges, as the \(\kappa(F)\) readout in the panel reports.
                 </p>
 
                 <p>
-                    This singularity is not a numerical artifact - it reflects a genuine geometric property of the statistical manifold. 
-                    The manifold has a cusp-like structure near the identifiability boundary, 
-                    and standard Euclidean gradient descent slows catastrophically in this region 
-                    because it does not account for the degenerate geometry.
+                    This singularity is not a numerical artifact but a genuine geometric property of the model. Gradient-based learning is known
+                    to slow down sharply near such singular regions of mixture and multilayer models, where it can spend long stretches on
+                    plateaus. The Euclidean gradient does not account for the degenerate geometry there.
                 </p>
 
-                <h3>Well-Separated Regime: When \(\|\mu_1 - \mu_2\| \gg \sigma\)</h3>
+                <h3>Well-Separated Regime: When \(|\mu_1 - \mu_2| \gg \sigma\)</h3>
 
                 <p>
-                    Pull the handles far apart and observe that the ellipses become nearly <em>circular</em> - the FIM approaches a scalar 
-                    multiple of the identity
+                    Away from the diagonal, where \(|\mu_1 - \mu_2| \gg \sigma\), the ellipses become nearly <em>circular</em>, because the FIM
+                    approaches a scalar multiple of the identity
                     \[
                     F(\theta) \approx \frac{1}{2\sigma^2} I.
                     \]
-                    In this regime, the two Gaussian components have negligible overlap, and each parameter \(\mu_i\) is informed almost 
-                    exclusively by data generated from its own component. The manifold is locally flat (Euclidean), and the natural gradient 
-                    coincides with the ordinary gradient.
+                    In this regime, the two Gaussian components have negligible overlap, and each parameter \(\mu_i\) is informed almost
+                    exclusively by data generated from its own component. That component carries weight \(\tfrac{1}{2}\), so \(\mu_i\)
+                    receives half the Fisher information \(1/\sigma^2\) of a single Gaussian mean. The metric is nearly constant in this
+                    regime, and the natural gradient is approximately the ordinary gradient scaled by \(2\sigma^2\), so the two arrows point
+                    in almost the same direction.
                 </p>
 
                 <h3>Euclidean vs. Natural Gradient: The Red and Cyan Arrows</h3>
 
                 <p>
-                    The loss whose gradients are shown is itself statistical: 
-                    \(L(\theta) = D_{\mathrm{KL}}(p_{\theta^*} \,\|\, p_\theta)\), the divergence from the target 
-                    model to the candidate \(\theta\), computed by quadrature. 
-                    Click anywhere on the canvas to place a probe point. Two arrows appear:
+                    The loss whose descent directions are shown is itself statistical:
+                    \(L(\theta) = D_{\mathbb{KL}}(p_{\theta^*} \,\|\, p_\theta)\), the divergence from the target model to the candidate
+                    \(\theta\), computed by quadrature. Click anywhere on the canvas to place a probe point. Two arrows appear:
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li>The <span style="color:#ff4646; font-weight:600;">Red Arrow</span>:<br>
-                        The <strong>Euclidean (steepest-descent) gradient</strong> \(\nabla_\theta L\), computed in the standard \(\ell^2\) geometry of parameter space. 
-                        This is the direction that changes \(\theta\) most rapidly per unit Euclidean distance \(\|d\theta\|_2\). 
+                    <li>The <span style="color:#ff4646; font-weight:600;">red arrow</span>:<br>
+                        The <strong>Euclidean steepest-descent direction</strong> \(-\nabla_\theta L\), computed in the standard \(\ell^2\) geometry of
+                        parameter space. Among displacements of unit Euclidean length \(\|d\theta\|_2\), it is the direction along which \(L\)
+                        decreases fastest to first order. 
                     </li>
 
                     <li>The <span style="color:#00ffff; font-weight:600;">cyan arrow</span>:<br>
-                        The natural gradient \(\tilde{\nabla}_\theta L = F(\theta)^{-1}\nabla_\theta L\), which is the steepest-descent direction under the Fisher-Rao metric. 
-                        This is the direction that changes \(\theta\) most rapidly per unit <em>statistical distance</em> \(\sqrt{d\theta^\top F(\theta)\,d\theta}\). 
-                        Equivalently, the natural gradient solves \(\min_{d\theta}\, L(\theta + d\theta)\) subject to \(D_{\mathrm{KL}}(p_\theta \| p_{\theta+d\theta}) \leq \varepsilon\) 
-                        to first order.
+                        The <strong>natural-gradient descent direction</strong> \(-\widetilde{\nabla}_\theta L\), where
+                        \(\widetilde{\nabla}_\theta L = F(\theta)^{-1}\nabla_\theta L\) is the natural gradient at a probe \(\theta\) off the
+                        diagonal, where \(F(\theta)\) is invertible. Among displacements of unit Fisher-Rao length
+                        \(\sqrt{d\theta^\top F(\theta)\,d\theta}\), it is the direction along which \(L\) decreases fastest to first order. To see
+                        this, write \(\langle \mathbf{u}, \mathbf{v} \rangle_F = \mathbf{u}^\top F(\theta) \mathbf{v}\). Then
+                        \(\nabla_\theta L^\top d\theta = \langle F(\theta)^{-1}\nabla_\theta L, d\theta \rangle_F\), and the
+                        <a href="../Calculus/intro_analysis.html#T-Cauchy-Schwarz_Inequality" class="ref-link"><strong>Cauchy-Schwarz inequality</strong></a>
+                        for \(\langle \cdot, \cdot \rangle_F\) bounds this first-order change below by
+                        \(-\|F(\theta)^{-1}\nabla_\theta L\|_F\) on the unit sphere of \(\|\cdot\|_F\). Equality holds exactly when \(d\theta\) is a positive multiple
+                        of \(-\widetilde{\nabla}_\theta L\) (the equality case of the inequality). Since
+                        \(\tfrac{1}{2}\,d\theta^\top F(\theta)\,d\theta\) approximates \(D_{\mathbb{KL}}(p_\theta \| p_{\theta+d\theta})\) to second
+                        order, the same direction solves the linearized problem of minimizing \(L(\theta + d\theta)\) under a small KL budget.
                     </li>
                 </ul>
                
                 <p>
-                    Both arrows are normalized to the same display length so that you can compare their <em>directions</em>. 
-                    The angle \(\Delta\theta\) between them, displayed above the probe point, measures how much the manifold geometry 
-                    distorts the gradient direction at that point. In the well-separated regime this angle is near \(0°\); 
-                    near the singularity it can exceed \(45°\), showing that Euclidean descent and natural-gradient descent
-                    select substantially different directions in this regime. Whether the natural-gradient direction is
-                    operationally preferable depends on the loss landscape and the optimization objective: the
-                    information-geometric metric measures distance between distributions, which is the relevant scale for
-                    likelihood-based objectives, but is not universally the "correct" notion of distance for every learning
-                    problem. 
-                    Exactly on the singular locus the demo refuses to display a natural gradient at all: \(F\) is 
-                    numerically singular there (\(\kappa > 10^8\)), and inverting it would require an arbitrary 
-                    regularization. The refusal is the honest answer — and it is precisely the geometric content of 
-                    the singularity.
+                    Both arrows are normalized to the same display length, so the display compares only their <em>directions</em>. The angle
+                    between them, reported in the panel, measures how much the manifold geometry distorts the gradient direction at that point.
+                    It always stays below \(90^\circ\), because \(\nabla_\theta L^\top F(\theta)^{-1}\nabla_\theta L \gt 0\) whenever
+                    \(\nabla_\theta L \neq \mathbf{0}\), so the natural direction is always a descent direction. In the well-separated regime
+                    this angle is near \(0^\circ\). Near the singularity it can exceed \(45^\circ\), which shows that Euclidean descent and
+                    natural-gradient descent select substantially different directions there. Whether the natural-gradient direction is
+                    operationally preferable depends on the loss landscape and the optimization objective. The information-geometric metric
+                    measures distance between distributions, which is the relevant scale for likelihood-based objectives but not the "correct"
+                    notion of distance for every learning problem.
+                </p>
+
+                <p>
+                    On the singular locus the demo refuses to display a natural gradient at all. It treats \(F\) as numerically singular when
+                    \(\kappa(F) \gt 10^8\), which, given the quadratic decay of the smaller eigenvalue, happens only within about
+                    \(10^{-4}\sigma\) of the diagonal. Inverting \(F\) there would require an arbitrary regularization. The refusal is the honest
+                    answer, and it is precisely the geometric content of the singularity.
                 </p>
 
                 <h3>Flow Mode: Particle Trajectories Along the Natural Gradient Field</h3>
 
                 <p>
-                    Activating <strong>Flow</strong> releases particles that follow the <strong>negative natural gradient field </strong>
+                    Activating <strong>Flow</strong> releases particles that move along the <strong>negative natural gradient field</strong>
                     \[
                     -F(\theta)^{-1}\nabla L(\theta).
                     \]
-                    Each particle follows the <strong>steepest descent direction in the Fisher-Rao metric</strong> at each point — 
-                    the direction of fastest decrease in loss per unit statistical (KL) distance. This is distinct from both 
-                    Euclidean steepest descent and the manifold's geodesics, but shares with the latter the property of respecting 
-                    the underlying geometry. Observe that the particles do not converge to a single point: the loss has <strong>two global minima</strong>, 
-                    the target \(\theta^*\) and its swap \((\mu_2^*, \mu_1^*)\), because exchanging the component labels 
-                    leaves the mixture distribution unchanged — the flow makes this label symmetry directly visible. 
-                    Particles that land on the singular locus stall there, for the same reason the probe refuses: the 
-                    metric is degenerate. This is the geometric correction that Amari's natural gradient descent, K-FAC, 
-                    and the closely related Fisher-preconditioned methods exploit for faster convergence on the loss 
-                    landscapes of neural networks and mixture models.
+                    Each particle takes steps of a fixed length along this field, so it follows the
+                    <strong>steepest descent direction in the Fisher-Rao metric</strong> at each point, that is, the direction of fastest
+                    first-order decrease in loss per unit Fisher-Rao length. To second order that length is \(\sqrt{2 D_{\mathbb{KL}}}\) between
+                    neighboring distributions. The resulting flow is distinct from both Euclidean steepest descent and the manifold's geodesics,
+                    but it shares with the latter the property of respecting the underlying geometry.
+                </p>
+
+                <p>
+                    Observe that the particles do not converge to a single point. The loss has <strong>two global minima</strong>, the target
+                    \(\theta^*\) and its swap \((\mu_2^*, \mu_1^*)\), because exchanging the component labels leaves the mixture distribution
+                    unchanged. These two points are the only zeros of \(L\). A KL divergence between densities vanishes only when the densities
+                    agree (the density form of
+                    <a href="../Probability/entropy.html#T-kl_non_negativity" class="ref-link"><strong>Gibbs' inequality</strong></a>, assumed
+                    here without proof), and identifiability up to relabeling then leaves only \(\theta^*\) and its swap. The flow makes this
+                    label symmetry directly visible. Particles that enter the refusal band around the singular locus stall there because the
+                    metric is degenerate, which is also why the probe refuses. The preconditioning by \(F(\theta)^{-1}\) that shapes this flow is
+                    the geometric correction that Amari's natural gradient descent, K-FAC, and the closely related Fisher-preconditioned methods
+                    are designed to exploit. These methods have been reported to converge faster than plain gradient descent on neural networks
+                    and mixture models, although the gain depends on the problem.
                 </p>
 
                 <h3>The Controls and What They Change Geometrically</h3>
@@ -246,23 +301,22 @@ uses_python: false
                 </p>
 
                 <p>
-                    The <strong>grid density</strong> slider controls the tessellation resolution. More ellipses give a finer picture of how the 
-                    metric tensor varies across the manifold, at the cost of more computation per frame. 
-                    The <strong>ellipse scale</strong> slider uniformly scales the display size of the ellipses 
-                    without altering the underlying eigenvalues. This is a visualization aid, not a mathematical parameter.
+                    The <strong>grid density</strong> slider controls the tessellation resolution. More ellipses give a finer picture of how the
+                    metric tensor varies across parameter space, at the cost of more computation per frame. The <strong>ellipse scale</strong>
+                    slider uniformly scales the display size of the ellipses without altering the underlying eigenvalues. This is a visualization
+                    aid, not a mathematical parameter.
                 </p>
 
             </section>
 
             <section id="kfac" class="section-content">
-                <h2>Scaling to Deep Learning: The Kronecker-factored Approximation (K-FAC)</h2>
+                <h2>Scaling to Deep Learning: Kronecker-Factored Approximate Curvature (K-FAC)</h2>
 
                 <p>
-                    While the \(2 \times 2\) Fisher Information Matrix (FIM) in our demo is easy to invert, 
-                    modern neural networks have millions, or even billions, of parameters. In such cases, the FIM becomes a 
-                    gargantuan \(n \times n\) matrix, where \(n\) is the number of weights. Computing, storing, and inverting 
-                    this matrix is computationally prohibitive \(O(n^3)\), making the exact natural gradient impractical for 
-                    large-scale models.
+                    While the \(2 \times 2\) FIM in our demo is easy to invert, modern neural networks have millions, or even billions, of
+                    parameters. In such cases, the FIM becomes a gargantuan \(n \times n\) matrix, where \(n\) is the number of weights.
+                    Computing, storing, and inverting this matrix is computationally prohibitive (inversion alone costs \(O(n^3)\) operations),
+                    which makes the exact natural gradient impractical for large-scale models.
                 </p>
 
                 <p>
@@ -279,37 +333,50 @@ uses_python: false
                     </p>
                     <ol style="padding-left: 40px;">
                         <li><strong>Block-Diagonal Approximation:</strong><br>
-                            We assume that weights in different layers are independent, treating the FIM as a block-diagonal matrix 
-                            where each block corresponds to a single layer.
+                            We neglect the correlations between the gradients of different layers, setting the cross-layer blocks of the FIM to zero.
+                            The FIM then becomes block-diagonal, with one block per layer.
                         </li>
                         <li><strong>Kronecker Factorization:</strong><br>
-                            For a specific layer, the FIM block \(F_\ell\) is approximated as 
-                            the <a href="../Linear_algebra/kronecker.html#D-kronecker_product" class="ref-link"><strong>Kronecker product (\(\otimes\))</strong></a> of two 
-                            much smaller matrices:
+                            Consider a layer \(\ell\) with input activation \(\mathbf{a}\) and let \(\mathbf{g}\) be the gradient of the log-likelihood with
+                            respect to the layer's pre-activation output. The per-example gradient with respect to the weight matrix is
+                            \(\mathbf{g}\mathbf{a}^\top\), whose \(j\)th column is \(a_j \mathbf{g}\). Stacking the columns by
+                            <a href="../Linear_algebra/kronecker.html#D-vectorization" class="ref-link"><strong>vectorization</strong></a> therefore gives
+                            \(\operatorname{vec}(\mathbf{g}\mathbf{a}^\top) = \mathbf{a} \otimes \mathbf{g}\), and the transpose and mixed-product
+                            <a href="../Linear_algebra/kronecker.html#T-kronecker_properties" class="ref-link"><strong>properties of the Kronecker product</strong></a>
+                            turn the exact block into \(F_\ell = \mathbb{E}[(\mathbf{a}\mathbf{a}^\top) \otimes (\mathbf{g}\mathbf{g}^\top)]\).
+                            K-FAC approximates it by the
+                            <a href="../Linear_algebra/kronecker.html#D-kronecker_product" class="ref-link"><strong>Kronecker product (\(\otimes\))</strong></a>
+                            of two much smaller matrices:
                             \[
-                            F_\ell \approx A_{\ell-1} \otimes G_\ell
+                            F_\ell \approx A_{\ell-1} \otimes G_\ell,
                             \]
-                            where \(A_{\ell-1}\) is the covariance of the layer's inputs (activations) and \(G_\ell\) is the covariance 
-                            of the gradients with respect to the layer's outputs.
+                            where \(A_{\ell-1} = \mathbb{E}[\mathbf{a}\mathbf{a}^\top]\) is the second-moment (uncentered covariance) matrix of the
+                            layer's inputs and \(G_\ell = \mathbb{E}[\mathbf{g}\mathbf{g}^\top]\) that of the backpropagated gradients. Replacing the
+                            expectation of the product by the product of expectations would be exact if \(\mathbf{a}\) and \(\mathbf{g}\) were independent.
                         </li>
                     </ol>
                 </div>
 
                 <p>
-                    The mechanism of this factorization is the standard Kronecker-inverse identity:
+                    The mechanism of this factorization is the inverse rule among the
+                    <a href="../Linear_algebra/kronecker.html#T-kronecker_properties" class="ref-link"><strong>properties of the Kronecker product</strong></a>,
+                    valid when both factors are invertible (in practice a small multiple of the identity, called damping, is added
+                    to each factor):
                     \[
-                    (A \otimes G)^{-1} = A^{-1} \otimes G^{-1}
+                    (A \otimes G)^{-1} = A^{-1} \otimes G^{-1}.
                     \]
-                    Instead of inverting a massive \(1,000,000 \times 1,000,000\) matrix, we only need to invert two \(1,000 \times 1,000\) matrices. 
-                    This reduces the computational complexity from \(O(n^3)\) to practically manageable levels, allowing us to exploit the "natural" 
-                    path even in deep neural networks.
+                    Instead of inverting a massive \(1{,}000{,}000 \times 1{,}000{,}000\) matrix, we only need to invert two
+                    \(1{,}000 \times 1{,}000\) matrices. For a layer with \(d_{\mathrm{in}}\) inputs and \(d_{\mathrm{out}}\) outputs, so that
+                    \(n = d_{\mathrm{in}} d_{\mathrm{out}}\), the inversion cost drops from \(O(n^3)\) to
+                    \(O(d_{\mathrm{in}}^3 + d_{\mathrm{out}}^3)\), which is \(O(n^{3/2})\) when the two dimensions are comparable. This is what
+                    lets us exploit the "natural" path even in deep neural networks.
                 </p>
 
                 <h3>Further Exploration & Implementations</h3>
                 <p>
-                    K-FAC is a rapidly evolving field with numerous variations for Convolutional (CNNs), Recurrent (RNNs), and Transformer architectures. 
-                    Rather than focusing on a single implementation, we recommend referring to the foundational research and high-performance libraries 
-                    that realize these geometric insights:
+                    K-FAC has numerous variants for convolutional (CNN), recurrent (RNN), and Transformer architectures, and the area continues
+                    to evolve rapidly. Rather than focusing on a single implementation, we recommend referring to the foundational research and
+                    high-performance libraries that realize these geometric insights:
                 </p>
 
                 <ul style="padding-left: 40px;">
@@ -338,11 +405,9 @@ uses_python: false
                         </a>
                     </li>
                 </ul>
+                
             </section>
-
         </div>
-
-<script src="/js/sec5_p11_natural_gradient_visualizer.js"></script>   
-
+        <script src="/js/sec5_p11_natural_gradient_visualizer.js"></script>   
     </body>
 </html>
