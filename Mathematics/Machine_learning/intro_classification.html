@@ -101,7 +101,8 @@ uses_python: false
                     \]
                     so that \(a = s(\mathbf{x}; \boldsymbol{\theta})\) and \(f(\mathbf{x}) = \mathbb{1}\{s(\mathbf{x}; \boldsymbol{\theta}) \gt 0\}\).
                     Since \(\mathbf{w}^\top \mathbf{x}\) is the <strong>inner product</strong> between the weight vector \(\mathbf{w}\) and the feature vector \(\mathbf{x}\),
-                    \(s\) defines a <strong>linear hyperplane</strong> with <strong>normal</strong> vector \(\mathbf{w}\) and offset \(b\) from the origin.
+                    the decision boundary \(\{\mathbf{x} : \mathbf{w}^\top \mathbf{x} + b = 0\}\) is a <strong>hyperplane</strong> with <strong>normal</strong>
+                    vector \(\mathbf{w}\), at signed distance \(-b/\|\mathbf{w}\|\) from the origin.
                     The weight vector \(\mathbf{w}\) determines the orientation of the <strong>decision boundary</strong>,
                     and the bias \(b\) shifts the boundary. Moreover, the norm \(\|\mathbf{w}\|\) controls the steepness of the
                     sigmoid. A larger norm yields a sharper transition between predicted classes, reflecting
@@ -109,8 +110,10 @@ uses_python: false
                 </p>
 
                 <p>
+                    For the derivations below we absorb the bias into the weights by appending a constant feature \(1\) to
+                    each \(\mathbf{x}_n\), so that \(a_n = \mathbf{w}^\top \mathbf{x}_n\).
                     To estimate the parameters \(\mathbf{w}\), we maximize the likelihood of the observed dataset \(\mathcal{D} = \{(\mathbf{x}_n, y_n)\}_{n=1}^N\).
-                    Equivalently, we minimize the <strong>negative log-likelihood</strong> (NLL):
+                    Equivalently, treating the examples as independent, we minimize the <strong>negative log-likelihood</strong> (NLL):
                     \[
                     \begin{align*}
                     \mathrm{NLL}(\mathbf{w})
@@ -122,7 +125,9 @@ uses_python: false
                     \end{align*}
                     \]
                     where \(\mu_n = \sigma(a_n) = \sigma(\mathbf{w}^\top \mathbf{x}_n)\) is the model's predicted probability of class 1, and
-                    \(\mathbb{H}_{ce}(y_n, \mu_n)\) is the binary specialization of <a href="../Probability/entropy.html#D-cross_entropy" class="ref-link"><strong>cross entropy</strong></a> between \(y_n\) and \(\mu_n\).
+                    \(\mathbb{H}_{ce}(y_n, \mu_n) = \mathbb{H}\bigl((y_n, 1 - y_n), (\mu_n, 1 - \mu_n)\bigr)\) is the
+                    <a href="../Probability/entropy.html#D-cross_entropy" class="ref-link"><strong>cross entropy</strong></a> between the label
+                    distribution and the predicted one.
                 </p>
 
                 <p>
@@ -200,7 +205,7 @@ uses_python: false
                             &= \mu_n - y_n.
                             \end{align*}
                         \]
-                        Also, since \(a_n = \mathbf{w}^\top \mathbf{x}_n + b\),
+                        Also, since \(a_n = \mathbf{w}^\top \mathbf{x}_n\),
                         \[
                             \frac{\partial a_n}{\partial \mathbf{w}} = \mathbf{x}_n.
                         \]
@@ -241,7 +246,13 @@ uses_python: false
                     \end{align*}
                     \]
                     Thus, the Hessian \(H(\mathbf{w})\) is <a href="../Linear_algebra/symmetry.html#D-quadratic_form_classification" class="ref-link"><strong>positive semi-definite</strong></a>,
-                    confirming that the NLL is convex. This ensures that any stationary point found is a global optimum.
+                    so the NLL is convex by the
+                    <a href="../Calculus/gradient.html#T-convexity_multivariate_2nd_order" class="ref-link"><strong>second-order condition for convexity</strong></a>.
+                    Every stationary point is therefore a global minimizer: for any \(\mathbf{w}'\), the restriction
+                    \(g(t) = \mathrm{NLL}(\mathbf{w} + t(\mathbf{w}' - \mathbf{w}))\) is a differentiable function of one variable, convex as the restriction of a convex function to a line, with
+                    \(g'(0) = \nabla_{\mathbf{w}} \mathrm{NLL}(\mathbf{w})^\top (\mathbf{w}' - \mathbf{w}) = 0\), so the
+                    <a href="../Calculus/gradient.html#T-first_order_convexity" class="ref-link"><strong>first-order characterization of convexity</strong></a>
+                    gives \(g(1) \geq g(0)\).
                 </p>
 
                 <p>
@@ -251,8 +262,9 @@ uses_python: false
                     in which case the corresponding diagonal entries of \(S\) become near-zero. Adding an
                     \(\ell_2\) regularization term \(\frac{\lambda}{2}\|\mathbf{w}\|_2^2\) shifts the Hessian to a
                     strictly positive definite \(H(\mathbf{w}) + \lambda I\), restoring numerical stability and
-                    ensuring a unique solution. This is exactly what
-                    <a href="regression.html#T-ridge_regression_solution" class="ref-link"><strong>ridge regression</strong></a> does for the linear case.
+                    ensuring that a minimizer exists and is unique (the objective is now strictly convex and grows without
+                    bound as \(\|\mathbf{w}\|_2 \to \infty\)). This is the same device that
+                    <a href="regression.html#T-ridge_regression_solution" class="ref-link"><strong>ridge regression</strong></a> applies to the linear case.
                 </p>
 
             </section>
@@ -280,14 +292,14 @@ uses_python: false
 
                 <p>
                     One subtlety is worth observing. When \(\lambda = 0\) and the training data are <strong>linearly separable</strong>,
-                    the NLL has <strong>no minimizer</strong>. Indeed, for any \(\mathbf{w}\) whose decision line separates the classes,
-                    replacing \(\mathbf{w}\) by \(c\,\mathbf{w}\) and letting \(c \to \infty\) drives every term of the cross-entropy
-                    to zero, so the infimum \(0\) is approached but never attained. Gradient descent therefore never converges in
-                    \(\mathbf{w}\). The loss keeps decreasing while \(\|(w_1, w_2)\|_2\) grows without bound. Try it above. Set the
-                    label noise to \(0\) and \(\lambda = 0\), and keep pressing Train (Continue) while watching the weight-norm panel.
-                    Any \(\lambda \gt 0\) makes the objective strictly convex in \((w_1, w_2)\) with a finite minimizer, and the norm
-                    curve flattens accordingly. This failure of existence, invisible in the loss value alone, is one of the most
-                    concrete reasons regularization is not optional decoration.
+                    the NLL has <strong>no minimizer</strong>. Indeed, for any \(\mathbf{w}\) whose decision line strictly separates the
+                    classes (no point on the line), replacing \(\mathbf{w}\) by \(c\,\mathbf{w}\) and letting \(c \to \infty\) drives every
+                    term of the cross-entropy to zero, so the infimum \(0\) is approached but never attained. Gradient descent
+                    therefore cannot converge to a minimizer, since none exists. The loss keeps decreasing while
+                    \(\|(w_1, w_2)\|_2\) grows without bound. Try it above. Set the label noise to \(0\) and \(\lambda = 0\), and keep pressing Train (Continue) while watching the weight-norm panel.
+                    Any \(\lambda \gt 0\) makes the objective strictly convex in \((w_1, w_2)\) with a finite minimizer, provided both
+                    classes occur in the data, and the norm curve flattens accordingly. This failure of existence, invisible in
+                    the loss value alone, is one of the most concrete reasons regularization is not optional decoration.
                 </p>
             </section>
 
@@ -328,7 +340,7 @@ uses_python: false
                 </p>
                 <ul style="padding-left: 40px;">
                     <li>
-                    <strong>Random Fourier Features.</strong> The next section approximates RBF kernels with \(O(ND')\) cost.
+                    <strong>Random Fourier Features.</strong> The next section approximates RBF kernels at a cost that grows linearly with \(N\).
                     </li>
                     <li>
                     <strong>Representation learning.</strong> Learn \(\phi(\mathbf{x}; \boldsymbol{\theta})\) via <strong>neural networks</strong> and optimize by mini-batch SGD.
@@ -352,7 +364,7 @@ uses_python: false
                     Every shift-invariant continuous
                     <a href="../Calculus/rkhs.html#D-positive_definite_kernel" class="ref-link"><strong>positive definite kernel</strong></a>
                     on \(\mathbb{R}^D\) admits an integral representation as the
-                    Fourier transform of a finite non-negative measure. This is a foundational result of harmonic analysis.
+                    Fourier transform of a finite non-negative measure. This is Bochner's theorem, which we state without proof.
                     For the RBF kernel, the relevant measure is precisely a (rescaled) Gaussian, yielding
                     \[
                     K_{\mathrm{RBF}}(\mathbf{x}, \mathbf{x}')
@@ -362,7 +374,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    To approximate, sample \(D'\) frequencies \(\{\boldsymbol{\omega}_k\}\) and phases \(\{b_k\} \sim \mathrm{Uniform}[0, 2\pi]\),
+                    To approximate, sample \(D'\) frequencies \(\{\boldsymbol{\omega}_k\} \sim \mathcal{N}(\mathbf{0}, \sigma^{-2} I)\) and phases
+                    \(\{b_k\} \sim \mathrm{Uniform}[0, 2\pi]\), all independent,
                     then define
                     \[
                     \phi_{\mathrm{RFF}}(\mathbf{x})
@@ -372,12 +385,25 @@ uses_python: false
                 </p>
 
                 <p>
-                    One shows
+                    For each \(k\), the identity \(2\cos\alpha\cos\beta = \cos(\alpha - \beta) + \cos(\alpha + \beta)\) gives
+                    \[
+                    \begin{align*}
+                    &\mathbb{E}_{\boldsymbol{\omega}_k, b_k}\!\bigl[2\cos(\boldsymbol{\omega}_k^\top \mathbf{x} + b_k)\cos(\boldsymbol{\omega}_k^\top \mathbf{x}' + b_k)\bigr] \\\\
+                    &= \mathbb{E}_{\boldsymbol{\omega}_k}\!\bigl[\cos(\boldsymbol{\omega}_k^\top (\mathbf{x} - \mathbf{x}'))\bigr]
+                       + \mathbb{E}_{\boldsymbol{\omega}_k, b_k}\!\bigl[\cos(\boldsymbol{\omega}_k^\top (\mathbf{x} + \mathbf{x}') + 2b_k)\bigr] \\\\
+                    &= K_{\mathrm{RBF}}(\mathbf{x}, \mathbf{x}'),
+                    \end{align*}
+                    \]
+                    since \(2b_k\) ranges over two full periods and the second expectation vanishes. Hence
+                    \(\phi_{\mathrm{RFF}}(\mathbf{x})^\top \phi_{\mathrm{RFF}}(\mathbf{x}')\) is the average of \(D'\) independent unbiased
+                    estimates of \(K_{\mathrm{RBF}}(\mathbf{x}, \mathbf{x}')\), and by the
+                    <a href="../Probability/convergence.html#T-WLLN" class="ref-link"><strong>weak law of large numbers</strong></a>
+                    it converges to the kernel value as \(D'\) grows. Thus
                     \[
                     \phi_{\mathrm{RFF}}(\mathbf{x})^\top \phi_{\mathrm{RFF}}(\mathbf{x}')
                     \approx K_{\mathrm{RBF}}(\mathbf{x}, \mathbf{x}'),
                     \]
-                    so we can train a regularized <strong>linear</strong> model on these \(D'\)-dim features in \(O(ND')\) time,
+                    so we can train a regularized <strong>linear</strong> model on these \(D'\)-dim features at cost linear in \(N\),
                     avoiding the \(O(N^2)\) kernel matrix.
                 </p>
             </section>
@@ -401,7 +427,8 @@ uses_python: false
                                 {\sum_{c'=1}^C \exp(\mathbf{w}_{c'}^\top \mathbf{x} + b_{c'})},
                         \quad c = 1, \ldots, C.
                         \]
-                        When \(C = 2\), this reduces to the <a href="#D-sigmoid_function"><strong>sigmoid function</strong></a> \(\sigma(a)\) of binary logistic regression.
+                        When \(C = 2\), this reduces to the <a href="#D-sigmoid_function"><strong>sigmoid function</strong></a> \(\sigma(a)\) of binary logistic regression,
+                        with \(a = (\mathbf{w}_1 - \mathbf{w}_2)^\top \mathbf{x} + b_1 - b_2\).
                     </p>
                 </div>
 
@@ -426,7 +453,20 @@ uses_python: false
                 </p>
 
                 <p>
-                    The Hessian is block-structured but remains positive semi-definite, ensuring convexity of the multiclass NLL.
+                    The Hessian \(H\) of the NLL in \((\mathbf{w}_1, \ldots, \mathbf{w}_C)\), with the biases absorbed as before, has
+                    \(D \times D\) blocks
+                    \[
+                    \frac{\partial^2 \mathrm{NLL}}{\partial \mathbf{w}_c \, \partial \mathbf{w}_{c'}}
+                    = \frac{1}{N}\sum_{n=1}^N p_{nc}(\delta_{cc'} - p_{nc'})\,\mathbf{x}_n \mathbf{x}_n^\top,
+                    \]
+                    where \(p_{nc} = p(y_n = c \mid \mathbf{x}_n, \boldsymbol{\theta})\). For \(\mathbf{v} = (\mathbf{v}_1, \ldots, \mathbf{v}_C)\),
+                    writing \(u_{nc} = \mathbf{v}_c^\top \mathbf{x}_n\),
+                    \[
+                    \mathbf{v}^\top H \mathbf{v}
+                    = \frac{1}{N}\sum_{n=1}^N \Bigl[\sum_{c=1}^C p_{nc} u_{nc}^2 - \Bigl(\sum_{c=1}^C p_{nc} u_{nc}\Bigr)^2\Bigr] \geq 0,
+                    \]
+                    since each bracket is the variance of \(u_{n\cdot}\) under the distribution \(p_{n\cdot}\). The multiclass NLL is
+                    therefore convex.
                 </p>
 
                 <p>
