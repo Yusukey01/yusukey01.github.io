@@ -37,9 +37,9 @@ uses_python: false
                 </p>
 
                 <p>
-                    In previous sections, we explored techniques like <strong>Principal Component Analysis (PCA)</strong> and <strong>autoencoders</strong>, which 
-                    reduce the dimensionality of high-dimensional data while preserving meaningful information. These dimensionality reduction methods helped us uncover 
-                    compact representations of data, often referred to as <strong>latent features</strong>.
+                    In our treatment of <a href="pca.html"><strong>Principal Component Analysis (PCA)</strong></a> and <strong>autoencoders</strong>,
+                    we explored techniques that reduce the dimensionality of high-dimensional data while preserving meaningful information. These
+                    methods produce compact representations of data, often referred to as <strong>latent features</strong>.
                 </p>
 
                 <p>
@@ -58,7 +58,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    We assume that there are \(K\) <strong>cluster centers</strong> \(\mu_k \in \mathbb{R}^D\), for \(k = 1, \cdots, K\). 
+                    We assume that there are \(K\) <strong>cluster centers</strong> \(\mu_k \in \mathbb{R}^D\), for \(k = 1, \ldots, K\). 
                     Each data point \(x_n \in \mathbb{R}^D\) is assigned to its nearest center:
                     \[
                     z_n^* = \arg \min_k \| x_n - \mu_k \|_2^2.
@@ -66,10 +66,12 @@ uses_python: false
                 </p>
 
                 <p>
-                    Given the assignments, the cluster centers are updated as the mean of points in each cluster:
+                    Given the assignments, the center of each nonempty cluster is updated as the mean of its points:
                     \[
                     \mu_k = \frac{1}{N_k} \sum_{n : z_n =k} x_n, \,\text{where } N_k = \sum_{n=1}^N \mathbb{I}[z_n = k].
                     \]
+                    A cluster that receives no points has no mean, so its center must be re-seeded. The demo below moves it to the data point farthest
+                    from its own center.
                 </p>
 
                 <p>
@@ -93,13 +95,22 @@ uses_python: false
                                 \end{cases}
                     \]
                 </p>    
+
+                <p>
+                    Neither step can increase \(J\). The assignment step minimizes \(J\) over \(Z\) for fixed centers. The update step minimizes it
+                    over the centers for fixed assignments. For points \(x_1, \ldots, x_m\) with mean \(\bar{x}\) and any \(c\), we have
+                    \(\sum_{i} \|x_i - c\|^2 = \sum_{i} \|x_i - \bar{x}\|^2 + m \|\bar{x} - c\|^2\), so the mean is the best center, and a re-seeded
+                    empty cluster contributes nothing to \(J\). Suppose a point changes center only when some center is strictly closer. Then every
+                    assignment step that changes \(Z\) strictly decreases \(J\), so no assignment can recur. Since there are at most \(K^N\)
+                    assignments, the iteration reaches an assignment that the next assignment step reproduces, and this assignment is a fixed point.
+                </p>
             </section>
 
              <section id="vq" class="section-content">
                 <h2>Vector Quantization (VQ)</h2>
                 <p>
                     A key idea of <strong>vector quantization</strong> is to compress data by replacing each high-dimensional vector
-                    \(x_n \in \mathbb{R}^D\) with a discrete symbol \(z_n \in \{1, \cdots, K\}\). That symbol is an index into a
+                    \(x_n \in \mathbb{R}^D\) with a discrete symbol \(z_n \in \{1, \ldots, K\}\). That symbol is an index into a
                     <strong>codebook</strong> of \(K\) prototype vectors, \(\mu_k \in \mathbb{R}^D\).
                 </p> 
 
@@ -126,9 +137,9 @@ uses_python: false
                       &= \frac{1}{N} \sum_{n=1}^N \|x_n - \mu_{z_n} \|^2.
                     \end{align*}
                     \]
-                    Indeed, this is equivalent to the cost function minimized by the <strong>K-means algorithm</strong>, which can be interpreted 
-                    as a special case of vector quantization where the codebook is learned by minimizing distortion via iterative updates. VQ is 
-                    more focused on signal compression and encoding, whereas K-means is usually employed for data analysis and clustering tasks.
+                    Up to the factor \(\frac{1}{N}\), this is the distortion minimized by the <strong>K-means algorithm</strong>, which can be
+                    interpreted as a special case of vector quantization where the codebook is learned by minimizing distortion via iterative updates.
+                    VQ is more focused on signal compression and encoding, whereas K-means is usually employed for data analysis and clustering tasks.
                 </p>
                 
             </section>
@@ -136,20 +147,23 @@ uses_python: false
             <section id="sp" class="section-content">
                 <h2>Spectral Clustering</h2>
                 <p>
-                    Traditional clustering methods like K-means assume clusters are linearly separable and spherical in shape. 
-                    However, many real-world datasets exhibit complex, non-convex structures that are not well-captured by distance alone. 
-                    <strong>Spectral clustering</strong> addresses this limitation by transforming the data into a new space that reflects 
-                    the connectivity structure of the data, often represented as a <strong>graph</strong>.
+                    K-means assigns each point to its nearest center, so its clusters are the cells of a Voronoi partition. These cells are convex,
+                    and any two of them are separated by a hyperplane, so K-means works best on compact, roughly spherical clusters. However, many
+                    real-world datasets exhibit complex, non-convex structures that are not well-captured by distance alone.
+                    <strong>Spectral clustering</strong> addresses this limitation by transforming the data into a new space that reflects the
+                    connectivity structure of the data, often represented as a <strong>graph</strong>.
                 </p>
 
                 <p>
-                    The idea is to build a <strong>similarity graph</strong> where each data point is a node, and edges encode pairwise similarities. 
-                    Let \(\mathbf{W} \in \mathbb{R}^{N \times N}\) be a symmetric <strong>weight matrix</strong> for a graph such that \(w_{ij} = w_{ji} \geq 0\) measures 
-                    the similarity between points \(i\) and \(j\). The <strong>degree</strong> of node \(i\) is defined as:
+                    The idea is to build a <strong>similarity graph</strong> where each data point is a node, and edges encode pairwise similarities.
+                    Let \(\mathbf{W} \in \mathbb{R}^{N \times N}\) be a symmetric <strong>weight matrix</strong> for a graph such that
+                    \(w_{ij} = w_{ji} \geq 0\) measures the similarity between points \(i\) and \(j\), with \(w_{ii} = 0\) (no self-loops). Nodes
+                    \(i\) and \(j\) are adjacent when \(w_{ij} \gt 0\). The <strong>degree</strong> of node \(i\) is defined as:
                     \[
                     d_i = \sum_{j=1}^N w_{ij},
                     \]
-                    and we define the <strong>degree matrix</strong> \(\mathbf{D} \in \mathbb{R}^{N \times N}\) as a diagonal matrix with entries \(D_{ii} = d_i\).
+                    and we define the <strong>degree matrix</strong> \(\mathbf{D} \in \mathbb{R}^{N \times N}\) as a diagonal matrix
+                    with entries \(D_{ii} = d_i\).
                 </p>
 
                 <p>
@@ -161,7 +175,7 @@ uses_python: false
                     L_{ij} = \begin{cases}
                         d_i & \text{if } i = j \\\\
                         -w_{ij} & \text{if } i \neq j
-                    \end{cases}
+                    \end{cases}.
                     \]
                     The Laplacian is real symmetric and 
                     <a href="../Linear_algebra/graph_laplacian.html#T-laplacian_psd" class="ref-link"><strong>positive semi-definite</strong></a>, 
@@ -171,7 +185,7 @@ uses_python: false
                     \]
                     known as the 
                     <a href="../Linear_algebra/graph_laplacian.html#T-dirichlet_energy" class="ref-link"><strong>Dirichlet energy</strong></a>. 
-                    It measures the <strong>smoothness</strong> of \(\boldsymbol{f}\) on the graph: small when adjacent nodes (those with \(w_{ij} \gt 0\)) 
+                    It measures the <strong>smoothness</strong> of \(\boldsymbol{f}\) on the graph: small when adjacent nodes 
                     have similar values.
                 </p>
 
@@ -193,11 +207,10 @@ uses_python: false
                 </div>
 
                 <p>
-                    The intuition for spectral clustering is now immediate. If a graph has \(K\) well-separated clusters
-                    joined by weak inter-cluster edges, it is approximately a union of \(K\) connected components, and the
-                    bottom \(K\) eigenvectors of \(\mathbf{L}\) approximate the indicator vectors of those clusters.
-                    Spectral clustering exploits this by embedding nodes via these eigenvectors and applying K-means
-                    in the embedded space.
+                    The intuition for spectral clustering is now immediate. If a graph has \(K\) well-separated clusters joined by weak inter-cluster
+                    edges, it is approximately a union of \(K\) connected components. The eigenvectors for the \(K\) smallest eigenvalues of
+                    \(\mathbf{L}\) then span a subspace close to the span of the indicator vectors of those clusters. Spectral clustering exploits
+                    this by embedding nodes via these eigenvectors and applying K-means in the embedded space.
                 </p>
 
                 <p>
@@ -214,20 +227,21 @@ uses_python: false
                 </p>
 
                 <p>
-                    In practice, graphs often exhibit irregular structure. Nodes may have highly varying degrees, and
-                    clusters are not perfectly block-separated. The raw Laplacian
-                    \(\mathbf{L} = \mathbf{D} - \mathbf{W}\) can then be dominated by high-degree nodes, leading
-                    to unbalanced or misleading spectral embeddings. To address this, we use the 
-                    <a href="../Linear_algebra/graph_laplacian.html#D-normalized_laplacian_sym" class="ref-link"><strong>symmetric normalized Laplacian</strong></a>: 
+                    In practice, graphs often exhibit irregular structure. Nodes may have highly varying degrees, and clusters are not perfectly
+                    block-separated. The raw Laplacian \(\mathbf{L} = \mathbf{D} - \mathbf{W}\) can then be dominated by high-degree nodes, leading to
+                    unbalanced or misleading spectral embeddings. To address this, we assume that no node is isolated, so that every \(d_i \gt 0\) and
+                    \(\mathbf{D}\) is invertible, and use the
+                    <a href="../Linear_algebra/graph_laplacian.html#D-normalized_laplacian_sym" class="ref-link"><strong>symmetric normalized Laplacian</strong></a>:
                     \[
                     \begin{align*}
                     \mathbf{L}_{\text{sym}} &= \mathbf{D}^{-\frac{1}{2}} \mathbf{L} \mathbf{D}^{-\frac{1}{2}} \\\\
                                    &= \mathbf{I} - \mathbf{D}^{-\frac{1}{2}} \mathbf{W} \mathbf{D}^{-\frac{1}{2}}
                     \end{align*}
                     \]
-                    For \(\mathbf{L}_{\text{sym}}\) the analogous nullspace characterization is that the eigenspace of zero eigenvalue is spanned by 
-                    \(\mathbf{D}^{1/2} \mathbf{1}_{S_k}\) for \(k = 1, \ldots, K\), where \(\mathbf{1}_{S_k}\) are again the indicator vectors of the 
-                    connected components.
+                    For \(\mathbf{L}_{\text{sym}}\) the analogous nullspace characterization is that the eigenspace of zero eigenvalue is spanned by
+                    \(\mathbf{D}^{1/2} \mathbf{1}_{S_k}\) for \(k = 1, \ldots, K\), where \(\mathbf{1}_{S_k}\) are again the indicator vectors of the
+                    connected components. Indeed, since \(\mathbf{D}^{-1/2}\) is invertible, \(\mathbf{L}_{\text{sym}}\mathbf{x} = \mathbf{0}\) holds
+                    if and only if \(\mathbf{D}^{-1/2}\mathbf{x} \in \ker \mathbf{L}\).
                 </p>
 
                 <p>
@@ -238,8 +252,10 @@ uses_python: false
                     <span class="theorem-title">Algorithm: Spectral Clustering</span>
                     <ol style="padding-left: 40px;">
                         <li>Compute the symmetric normalized Laplacian \(\mathbf{L}_{\text{sym}} = \mathbf{I} - \mathbf{D}^{-\frac{1}{2}} \mathbf{W} \mathbf{D}^{-\frac{1}{2}}\).</li>
-                        <li>Find the smallest \(K\) eigenvectors of \(\mathbf{L}_{\text{sym}}\) and stack them column-wise into a matrix \(\mathbf{U} \in \mathbb{R}^{N \times K}\).</li>
-                        <li>Normalize each row of \(\mathbf{U}\) to have unit norm, forming a matrix \(\mathbf{T} \in \mathbb{R}^{N \times K}\): 
+                        <li>Find orthonormal eigenvectors for the \(K\) smallest eigenvalues of \(\mathbf{L}_{\text{sym}}\) and stack them column-wise into a matrix
+                            \(\mathbf{U} \in \mathbb{R}^{N \times K}\).</li>
+                        <li>Normalize each nonzero row of \(\mathbf{U}\) to have unit norm, leaving any zero row unchanged, to form a matrix
+                            \(\mathbf{T} \in \mathbb{R}^{N \times K}\): 
                             \[
                             t_{ij} = \frac{u_{ij}}{\sqrt{\sum_{l=1}^K u_{il}^2}}.
                             \]
@@ -252,31 +268,31 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Looking Ahead: From Spectral Clustering to Geometric Deep Learning</h3>
                     <p>
-                        Spectral clustering uses a small number of low-frequency Laplacian eigenvectors to partition a graph. Two natural 
+                        Spectral clustering uses a small number of low-frequency Laplacian eigenvectors to partition a graph. Two natural
                         generalizations of this idea anchor much of modern graph-based learning:
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>
                             The quality of a spectral cut is quantified by the
                             <a href="../Linear_algebra/graph_laplacian.html#T-cheeger_inequality" class="ref-link"><strong>Cheeger inequality</strong></a>,
-                            which links the second-smallest Laplacian eigenvalue to the graph's edge expansion. That eigenvalue
-                            is the <strong>spectral gap</strong>, written \(\lambda_2\) in our indexing here and often denoted
-                            \(\lambda_1\) when eigenvalues are 0-indexed. This is the quantitative 
+                            which links the second-smallest eigenvalue of the normalized Laplacian \(\mathbf{L}_{\text{sym}}\) to the
+                            graph's conductance. That eigenvalue is the <strong>spectral gap</strong> of \(\mathbf{L}_{\text{sym}}\), written
+                            \(\lambda_1^{\mathrm{norm}}\) on that page because its eigenvalues are indexed from 0. This is the quantitative 
                             bridge between "small spectral gap" and "well-defined cluster structure."
                         </li>
                         <li>
                             The Laplacian eigenbasis defines a 
                             <a href="../Linear_algebra/graph_laplacian.html#D-graph_fourier_transform" class="ref-link"><strong>graph Fourier transform</strong></a>, 
-                            extending classical Fourier analysis to functions on graphs. This is the foundational primitive for <strong>graph neural 
-                            networks (GNNs)</strong>, where Laplacian-based filters become learnable signal-processing operators rather than fixed 
+                            extending classical Fourier analysis to functions on graphs. This is the starting point of spectral
+                            <strong>graph neural networks (GNNs)</strong>, where Laplacian-based filters become learnable signal-processing operators rather than fixed 
                             spectral cuts.
                         </li>
                     </ul>
                     <p>
-                        Both threads converge in <strong>Geometric Deep Learning</strong>, the unifying framework in which
-                        neural-network architectures are designed to respect the symmetries and geometric structure of the
-                        data they operate on. Spectral clustering is the discrete, classical predecessor. GNNs and
-                        equivariant architectures are its modern, learnable descendants.
+                        Both threads converge in <a href="intro_gdl.html"><strong>Geometric Deep Learning</strong></a>, the unifying framework in
+                        which neural-network architectures are designed to respect the symmetries and geometric structure of the data they operate
+                        on. Spectral clustering uses the graph structure through fixed eigenvectors. Graph neural networks learn their graph filters
+                        from data instead.
                     </p>
                 </div>
             </section>
@@ -292,13 +308,12 @@ uses_python: false
 
                 <h3>The K-means Tab</h3>
                 <p>
-                    The <strong>Step</strong> button executes Lloyd's iteration one half-step at a time: an assignment step
-                    (each point moves to its nearest center) or an update step (each center moves to the mean of its points).
-                    The distortion \(J(M, Z)\) defined above is recorded after <em>every</em> half-step, and the curve never
-                    rises. Both half-steps can only decrease \(J\), which is exactly why the algorithm converges.
-                    Convergence itself is declared by the honest criterion. An assignment step that reproduces the
-                    previous assignment is a fixed point of the iteration, after which nothing can change. Stopping a run midway keeps
-                    the intermediate state on screen but labels it explicitly as a non-converged Lloyd iterate.
+                    The <strong>Step</strong> button executes Lloyd's iteration one half-step at a time: an assignment step (each point moves to its
+                    nearest center) or an update step (each center moves to the mean of its points). The distortion \(J(M, Z)\) defined above is
+                    recorded after <em>every</em> half-step, and the curve never rises. Neither half-step can increase \(J\), which is the core of the
+                    convergence argument in the K-means section. Convergence is declared by the exact criterion. An assignment step that reproduces
+                    the previous assignment is a fixed point of the iteration, after which nothing can change. Stopping a run midway keeps the
+                    intermediate state on screen but labels it explicitly as a non-converged Lloyd iterate.
                 </p>
                 <p>
                     <strong>Note.</strong> In random initialization, we simply pick \(K\) data points uniformly at random to
@@ -308,21 +323,22 @@ uses_python: false
                 </p>
 
                 <p>
-                    To address this, the <strong>K-means++ initialization</strong> strategy is widely used in practice.
-                    It selects initial centers more carefully by favoring points that are far apart from
-                    already chosen centers. This significantly improves the stability and performance of K-means
-                    clustering and often leads to better local optima.
+                    To address this, the <strong>K-means++ initialization</strong> strategy is widely used in practice. It selects initial centers
+                    more carefully by favoring points that are far apart from already chosen centers. This significantly improves the stability and
+                    performance of K-means clustering and often leads to better local optima. In expectation, the K-means++ centers alone already
+                    achieve a distortion within a factor of order \(\log K\) of the optimum.
                 </p>
 
                 <div class="theorem">
                     <span class="theorem-title">Algorithm: K-means++ Initialization</span>
                     <ol style="padding-left: 40px;">
                         <li>Choose the first center \(\mu_1\) uniformly at random from the dataset \(\{x_1, \ldots, x_N\}\).</li>
-                        <li>For each remaining point \(x_i\), compute its squared distance to the nearest selected center:
+                        <li>Suppose \(m\) centers \(\mu_1, \ldots, \mu_m\) have been chosen. For each data point \(x_i\), compute its squared distance
+                            to the nearest of them:
                             \[
                             D(x_i) = \min_{1 \leq j \leq m} \|x_i - \mu_j\|_2^2
                             \]
-                            where \(\mu_j\) is one of the centers already chosen.
+                            Points already chosen have \(D(x_i) = 0\) and cannot be drawn again.
                         </li>
                         <li>Choose the next center \(\mu_{m+1}\) from the data points with probability proportional to \(D(x_i)\):
                             \[
@@ -335,32 +351,29 @@ uses_python: false
                  </div>
 
                 <p>
-                    The <strong>Compare inits</strong> button makes this concrete. It runs ten restarts with each
-                    initialization and reports the mean, best, and worst final distortion. On the blob datasets with
-                    elevated noise, a typical outcome is that every k-means++ restart lands on the same optimum while
-                    random initialization averages noticeably worse. Its worst restart ends at roughly three times the
-                    best distortion, stuck with two centers inside one cloud.
+                    The <strong>Compare inits</strong> button makes this concrete. It runs ten restarts with each initialization and reports the mean,
+                    best, and worst final distortion. On the blob dataset at low noise, a typical outcome is that every K-means++ restart reaches the
+                    same optimum while random initialization averages noticeably worse. Its worst restart can end at several times the best
+                    distortion, stuck with two centers inside one cloud. At higher noise the clouds overlap, and both initializations usually agree.
                 </p>
 
                 <h3>The Spectral Tab</h3>
                 <p>
                     The pipeline is the algorithm box above, executed literally. The similarity graph uses
-                    \(w_{ij} = \exp(-\|x_i - x_j\|^2 / 2\sigma^2)\) with no self-loops, shown in the first panel with edge
-                    opacity proportional to the weight. The bottom \(K\) eigenvectors of \(\mathbf{L}_{\text{sym}}\) are
-                    computed by subspace iteration on the flipped operator \(\mathbf{M} = 2\mathbf{I} - \mathbf{L}_{\text{sym}}\),
-                    whose largest eigenvalues are exactly the smallest of \(\mathbf{L}_{\text{sym}}\) (its spectrum lies in
-                    \([0, 2]\), so no sign tricks are needed). The solver stops only on a certificate: the residual
-                    \(\|(\mathbf{I} - \mathbf{V}\mathbf{V}^\top)\mathbf{M}\mathbf{V}\|\) of the computed invariant
-                    <em>subspace</em>. The subspace, not the individual eigenvectors, is the right object to
-                    certify, because the K-means step that follows sees only the rows of \(\mathbf{T}\), and those are
-                    unchanged (up to rotation) by any orthogonal mixing of the eigenvectors.
+                    \(w_{ij} = \exp(-\|x_i - x_j\|^2 / (2\sigma^2))\) with no self-loops, shown in the first panel with edge opacity proportional to
+                    the weight. The bottom \(K\) eigenvectors of \(\mathbf{L}_{\text{sym}}\) are computed by subspace iteration on the flipped
+                    operator \(\mathbf{M} = 2\mathbf{I} - \mathbf{L}_{\text{sym}}\). Its eigenvalues are \(2 - \lambda\) for the eigenvalues
+                    \(\lambda\) of \(\mathbf{L}_{\text{sym}}\), so its largest eigenvalues correspond to the smallest of \(\mathbf{L}_{\text{sym}}\).
+                    The spectrum of \(\mathbf{L}_{\text{sym}}\) lies in \([0, 2]\), so \(\mathbf{M}\) is positive semidefinite and no sign tricks are
+                    needed. The solver stops only on a certificate: the residual \(\|(\mathbf{I} - \mathbf{V}\mathbf{V}^\top)\mathbf{M}\mathbf{V}\|\)
+                    of the computed invariant <em>subspace</em>. The subspace, not the individual eigenvectors, is the right object to certify,
+                    because the K-means step that follows sees only the rows of \(\mathbf{T}\), and those are unchanged (up to rotation) by any
+                    orthogonal mixing of the eigenvectors.
                 </p>
 
                 <p>
-                    The middle panel plots the rows of \(\mathbf{T}\). The moment the graph has \(K\) well-separated
-                    groups, these rows collapse
-                    onto \(K\) tight clumps that K-means separates trivially. That is the nullspace picture from the
-                    connectivity result above, made visible.
+                    The middle panel plots the rows of \(\mathbf{T}\). When the graph has \(K\) well-separated groups, these rows collapse onto \(K\)
+                    tight clumps that K-means separates trivially. That is the nullspace picture from the connectivity result above, made visible.
                 </p>
                 <p>
                     The width \(\sigma\) is a genuine modeling choice, and the demo does not hide its failure modes. At
@@ -373,28 +386,28 @@ uses_python: false
 
                 <h3>The Vector Quantization Tab</h3>
                 <p>
-                    Here K-means acts as an image codec, exactly as in the vector quantization section. Each pixel is a
-                    point in RGB space, the codebook is the set of cluster centers, and every pixel is replaced by its
-                    nearest codebook color. The metrics panel reports the normalized distortion
-                    \(\frac{1}{N} \sum_n \|x_n - \mu_{z_n}\|^2\). The four-color band image makes the codebook idea exact. With \(K = 4\), the learned codebook is
-                    precisely the four colors and the distortion is <em>exactly zero</em>. That is lossless compression,
-                    because the image truly lives on four prototypes. The
-                    sweep button plots distortion against \(K\) and shows it never increases.
+                    Here K-means acts as an image codec, exactly as in the vector quantization section. Each pixel is a point in RGB space, the
+                    codebook is the set of cluster centers, and every pixel is replaced by its nearest codebook color. The metrics panel reports the
+                    normalized distortion \(\frac{1}{N} \sum_n \|x_n - \mu_{z_n}\|^2\). The four-color band image makes the codebook idea exact. With
+                    \(K = 4\), the learned codebook is precisely the four colors and the distortion is <em>exactly zero</em>. That is lossless
+                    compression, because the image truly lives on four prototypes. The sweep button plots distortion against \(K\). The optimal
+                    distortion cannot increase with \(K\), since a codebook of size \(K\) is also available at size \(K + 1\) with one prototype
+                    repeated, and the computed curve decreases accordingly.
                 </p>
 
                 <h3>Experiment Suggestions</h3>
                 <ol style="padding-left: 40px;">
                     <li><strong>The headline contrast.</strong> On concentric circles, run K-means. Even with restarts it
-                        stays near 51-57% agreement with the generating rings, since no placement of two centers can
-                        separate concentric shapes. Then run spectral clustering at \(\sigma = 0.2\) and watch it recover
-                        the rings essentially perfectly.</li>
-                    <li><strong>Watch \(J\) fall twice per round.</strong> On blobs, press Step repeatedly and check that
-                        both the assignment and the update half-steps lower the distortion curve.</li>
-                    <li><strong>Initialization traps.</strong> Raise the noise on blobs and use Compare inits. The gap
-                        between the worst random restart and the k-means++ runs is the page's claim about better local
+                        stays near 50-57% agreement with the generating rings, since no placement of two centers can
+                        separate concentric shapes. Then run spectral clustering at \(\sigma = 0.2\)
+                        and watch it recover the rings, exactly for most samples.</li>
+                    <li><strong>Watch \(J\) at every half-step.</strong> On blobs, press Step repeatedly and check that neither the
+                        assignment nor the update half-step raises the distortion curve.</li>
+                    <li><strong>Initialization traps.</strong> Set the noise on blobs to zero and use Compare inits. The gap
+                        between the worst random restart and the K-means++ runs is the page's claim about better local
                         optima, in numbers.</li>
                     <li><strong>Break the graph on purpose.</strong> Set \(\sigma = 0.05\) and run spectral clustering to
-                        see an honest failure. The certificate refuses, because the graph no longer has a
+                        see a certified failure. The certificate refuses, because the graph no longer has a
                         \(K\)-component structure. Then try \(\sigma = 1\) and compare with plain K-means.</li>
                     <li><strong>Lossless at \(K = 4\).</strong> Quantize the band image with \(K = 4\) and confirm the
                         distortion is exactly zero. Then sweep \(K\) on the gradient image, where no finite codebook is
@@ -402,17 +415,12 @@ uses_python: false
                 </ol>
 
                 <p>
-                    Clustering completes our tour of the core ML toolkit: from supervised methods (<a href="regression.html"><strong>regression</strong></a>, 
-                    <a href="intro_classification.html"><strong>classification</strong></a>, <a href="svm.html"><strong>SVMs</strong></a>) through 
-                    unsupervised techniques (<a href="pca.html"><strong>PCA</strong></a>, autoencoders, and clustering). The
-                    <a href="deep_nn.html"><strong>deep neural networks</strong></a> page that follows scales up to the
-                    modern architectures that power today's state-of-the-art systems. They include convolutional
-                    networks, residual connections, attention mechanisms, and the Transformer.
+                    Clustering completes our tour of the core ML toolkit: from supervised methods (<a href="regression.html"><strong>regression</strong></a>,
+                    <a href="intro_classification.html"><strong>classification</strong></a>, <a href="svm.html"><strong>SVMs</strong></a>) through unsupervised
+                    techniques (<a href="pca.html"><strong>PCA</strong></a>, autoencoders, and clustering).
                 </p>
 
             </section>
-
-
         </div>
         <script src="/js/sec5_p8_clustering_visualizer.js"></script>  
     </body>

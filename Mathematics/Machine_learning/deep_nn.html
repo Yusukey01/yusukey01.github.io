@@ -35,37 +35,38 @@ uses_python: false
             <section id="CNN" class="section-content">
                 <h2>Convolutional Neural Networks (CNNs)</h2>
 
-                 <p>
-                    On the previous pages on <a href="neural_networks.html#D-multilayer_perceptron" class="ref-link"><strong>neural networks</strong></a> and 
-                    <a href="autodiff.html#D-automatic_differentiation" class="ref-link"><strong>automatic differentiation</strong></a>, 
-                    we introduced the multilayer perceptron, backpropagation, and the generalization of gradient computation to arbitrary computational graphs. 
-                    With these foundations in place, we now survey the major architectural innovations that have shaped modern deep learning — from 
+                <p>
+                    In our pages on <a href="neural_networks.html#D-multilayer_perceptron" class="ref-link"><strong>neural networks</strong></a> and
+                    <a href="autodiff.html#D-automatic_differentiation" class="ref-link"><strong>automatic differentiation</strong></a>, we introduced the
+                    multilayer perceptron, backpropagation, and the generalization of gradient computation to arbitrary computational graphs. With these
+                    foundations in place, we now survey the major architectural innovations that have shaped modern deep learning. The survey runs from
                     convolutional networks for spatial data to the Transformer architecture that underpins today's large language models.
                 </p>
 
                 <p>
-                    <strong>Deep neural networks (DNNs)</strong> have evolved over the past few decades from early image 
-                    classifiers to today's cutting-edge language and multimodal models, the field has progressed through a series of foundational 
-                    innovations. Broadly speaking, modern DNNs are typically <strong>feedforward networks</strong>, where information flows in a 
-                    single direction — from input to output — without any loops or recurrence. This design simplifies computations, making them 
-                    faster and more stable.
+                    Over the past few decades, <strong>deep neural networks (DNNs)</strong> have evolved from early image classifiers to today's language
+                    and multimodal models through a series of foundational innovations. Modern DNNs are typically <strong>feedforward networks</strong>, in
+                    which information flows in a single direction, from input to output, without any loops or recurrence. Without recurrence, the network
+                    is a fixed composition of layers, which simplifies both its evaluation and its differentiation.
                 </p>
 
                 <p>
-                    In the 1990s, <strong>Convolutional Neural Networks (CNNs)</strong> emerged as an architecture for processing grid-like data 
-                    such as images. A CNN uses <em>convolutional layers</em> that apply learnable filters across local spatial regions. 
-                    Mathematically, a 2D convolution operation is given by:
+                    Around 1990, <strong>Convolutional Neural Networks (CNNs)</strong> emerged as an architecture for processing grid-like data such as
+                    images. A CNN uses <em>convolutional layers</em> that apply learnable filters across local spatial regions. Mathematically, a 2D
+                    convolution operation is given by:
                     \[
                     (f * x)(i, j) = \sum_m \sum_n f(m, n) \cdot x(i - m, j - n)
                     \]
-                    where \(f\) is the filter (or kernel) and \(x\) is the input image. This operation captures local spatial patterns while 
-                    sharing parameters across the image.
+                    where \(f\) is the filter (or kernel), \(x\) is the input image, and the sums run over the support of the filter. This operation
+                    captures local spatial patterns while sharing parameters across the image. Deep learning libraries actually compute the
+                    cross-correlation \(\sum_m \sum_n f(m, n)\, x(i + m, j + n)\), which differs from the convolution only by a reflection of the filter.
+                    Since the filter is learned, the two define the same class of layers.
                 </p>
 
                 <p>
-                    Deep CNNs trained on GPUs and applied to large labeled datasets transformed computer vision, demonstrating that learned 
-                    convolutional features could vastly outperform traditional vision pipelines. A subsequent architectural milestone was the 
-                    introduction of <strong>residual connections</strong>, which enabled training networks of unprecedented depth and set the 
+                    Deep CNNs trained on GPUs and applied to large labeled datasets transformed computer vision. Learned convolutional features
+                    proved to outperform traditional vision pipelines by a wide margin. A subsequent architectural milestone was the
+                    introduction of <strong>residual connections</strong>, which enabled training networks of unprecedented depth and set the
                     stage for modern vision architectures.
                 </p>
             </section>
@@ -83,13 +84,13 @@ uses_python: false
                         \[
                         \mathbf{z}_{\ell+1} = \mathcal{F}_\ell(\mathbf{z}_\ell) + \mathbf{z}_\ell
                         \]
-                        where \(\mathcal{F}_\ell\) is a nonlinear transformation at layer \(\ell\), and the input \(\mathbf{z}_\ell\) is 
-                        added back directly via a <strong>skip connection</strong>.
+                        where \(\mathcal{F}_\ell\) is a nonlinear transformation at layer \(\ell\) whose output has the same dimension as
+                        \(\mathbf{z}_\ell\), and the input \(\mathbf{z}_\ell\) is added back directly via a <strong>skip connection</strong>.
                     </p>
                 </div>
 
                 <p>
-                    The activations at the final layer \(L\) can be expressed recursively in terms of an earlier layer \(\ell\):
+                    Unrolling this recursion expresses the activations at the final layer \(L\) in terms of any earlier layer \(\ell\):
                     \[
                     \mathbf{z}_L = \mathbf{z}_{\ell} + \sum_{i = \ell}^{L - 1} \mathcal{F}_i (\mathbf{z}_i; \boldsymbol{\theta}_i),
                     \]
@@ -97,47 +98,66 @@ uses_python: false
                 </p>
 
                 <p>
-                    This formulation mitigates the <strong>vanishing gradient problem</strong> in deep neural networks, enabling the 
-                    successful training of very deep models.
+                    This formulation mitigates the <strong>vanishing gradient problem</strong> in deep neural networks and so enables the training of
+                    very deep models.
                 </p>
 
                 <p>
-                    Applying the <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>, the gradient of the loss \(\mathcal{L}\) with respect to the parameters at layer \(\ell\) becomes (we adopt the denominator-layout convention, in which gradients of scalars are column vectors and Jacobians are written so that products read right-to-left along the computation):
+                    We adopt the denominator-layout convention. For a vector \(\mathbf{y}\) depending on a vector \(\mathbf{x}\), the derivative
+                    \(\partial \mathbf{y}/\partial \mathbf{x}\) denotes the transpose of the
+                    <a href="../Calculus/jacobian.html#D-jacobian" class="ref-link"><strong>Jacobian</strong></a> of \(\mathbf{y}\) with respect to
+                    \(\mathbf{x}\). The gradient of a scalar is then a column vector, and the
+                    <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a> reads
+                    \(\partial \mathcal{L}/\partial \mathbf{x} = (\partial \mathbf{y}/\partial \mathbf{x})\,(\partial \mathcal{L}/\partial \mathbf{y})\),
+                    with the factor nearest the loss on the right. Parameters are flattened into vectors. Since \(\boldsymbol{\theta}_{\ell}\) enters the
+                    network only through \(\mathbf{z}_{\ell+1} = \mathcal{F}_\ell(\mathbf{z}_\ell; \boldsymbol{\theta}_\ell) + \mathbf{z}_\ell\), the
+                    gradient of the loss \(\mathcal{L}\) with respect to the parameters at layer \(\ell\) is
                     \[
                     \begin{align*}
-                    \frac{\partial \mathcal{L}}{\partial \boldsymbol{\theta}_{\ell}} 
-                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\ell}} \\\\
-                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} \frac{\partial \mathbf{z}_L}{\partial \mathbf{z}_{\ell}} \\\\
-                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} 
-                                \left(\mathbf{I} + \sum_{i = \ell}^{L-1} \frac{\partial \mathcal{F}_i (\mathbf{z}_i ; \boldsymbol{\theta}_i)}{\partial \mathbf{z}_{\ell}}\right) \\\\
-                        &= \frac{\partial \mathbf{z}_{\ell}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} + \text{other terms}
+                    \frac{\partial \mathcal{L}}{\partial \boldsymbol{\theta}_{\ell}}
+                        &= \frac{\partial \mathbf{z}_{\ell+1}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{\ell+1}} \\\\
+                        &= \frac{\partial \mathbf{z}_{\ell+1}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathbf{z}_L}{\partial \mathbf{z}_{\ell+1}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} \\\\
+                        &= \frac{\partial \mathbf{z}_{\ell+1}}{\partial \boldsymbol{\theta}_{\ell}}
+                                \left(\mathbf{I} + \sum_{i = \ell+1}^{L-1} \frac{\partial \mathcal{F}_i (\mathbf{z}_i ; \boldsymbol{\theta}_i)}{\partial \mathbf{z}_{\ell+1}}\right)
+                                \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} \\\\
+                        &= \frac{\partial \mathbf{z}_{\ell+1}}{\partial \boldsymbol{\theta}_{\ell}} \frac{\partial \mathcal{L}}{\partial \mathbf{z}_{L}} + \text{other terms}
                     \end{align*}
                     \]
-                    The <em>"other terms"</em> in the gradient capture indirect paths through deeper residual blocks and reflect how updates propagate backward 
-                    through the network. These terms may diminish in magnitude in very deep networks, but they are generally not zero and play a critical role in 
-                    learning refined representations. Residual networks avoid the vanishing gradient problem not by eliminating these terms, but by ensuring they 
-                    are <strong>not the only path</strong> for gradient flow.
+                </p>
+
+                <p>
+                    Here \(\partial \mathcal{F}_i(\mathbf{z}_i; \boldsymbol{\theta}_i)/\partial \mathbf{z}_{\ell+1}\) denotes the derivative of
+                    \(\mathcal{F}_i\) as a function of \(\mathbf{z}_{\ell+1}\), through its dependence on \(\mathbf{z}_i\). The second equality applies the
+                    chain rule through \(\mathbf{z}_L\), and the third differentiates the unrolled expression for \(\mathbf{z}_L\) with \(\ell + 1\) in
+                    place of \(\ell\). The first term carries the loss gradient \(\partial \mathcal{L}/\partial \mathbf{z}_L\) back to layer \(\ell\)
+                    without passing through the Jacobians of the later blocks. The other terms capture indirect paths through deeper residual blocks. They
+                    may shrink in very deep networks but are generally nonzero. Residual connections do not remove these terms. They ensure that these
+                    terms are <strong>not the only path</strong> for gradient flow.
                 </p>
             </section>
 
             <section id="normalization" class="section-content">
                 <h2>Layer Normalization</h2>
                 <p>
-                    Let \(z_i\) be the \(i\)'th element of a tensor. For example, in 2d images, the index \(i\) has four components, 
-                    indicating batch, height, width, and channel:
+                    Let \(z_i\) be the \(i\)th element of a tensor. For example, in 2D images, the index \(i\) has four components, indicating batch,
+                    height, width, and channel:
                     \[
                     i = (i_N, i_H, i_W, i_C).
                     \]
-                    For each index \(z_i\), the mean and variance are computed by pooling statistics across other dimensions of the tensor 
-                    but not across examples in the batch:
+                </p>
+
+                <p>
+                    For each element \(z_i\), the mean and variance are computed by pooling statistics across other dimensions of the tensor but not across
+                    examples in the batch:
                     \[
                     \begin{align*}
                     &\mu_i = \frac{1}{|\mathcal{S}_i|} \sum_{k \in \mathcal{S}_i} z_k \\\\
                     &\sigma_i = \sqrt{\frac{1}{|\mathcal{S}_i|}\sum_{k \in \mathcal{S}_i} (z_k - \mu_i)^2 + \epsilon}
                     \end{align*}
                     \]
-                    where \(\mathcal{S}_i\) is the set of elements over which statistics are computed for index \(i\), 
-                    and \(\epsilon\) is a small constant for numerical stability. 
+                    where \(\mathcal{S}_i\) is the set of elements over which statistics are computed for index \(i\), and \(\epsilon\) is a small constant
+                    for numerical stability. For layer normalization, \(\mathcal{S}_i = \{k : k_N = i_N\}\) consists of all elements belonging to the same
+                    example as \(i\).
                 </p>
 
                 <p>
@@ -153,9 +173,9 @@ uses_python: false
                 </p>
 
                 <p>
-                    Unlike <strong>batch normalization</strong>, which pools across the batch dimension, <strong>layer normalization</strong> pools only 
-                    over feature dimensions for each input example. This makes it especially effective in settings where batch-level statistics are 
-                    unstable or unavailable - such as in autoregressive models, small batch sizes, or variable-length sequences.
+                    Unlike <strong>batch normalization</strong>, which pools across the batch dimension, <strong>layer normalization</strong> pools only
+                    over feature dimensions for each input example. This makes it especially effective in settings where batch-level statistics are
+                    unstable or unavailable, as in autoregressive models, with small batch sizes, or with variable-length sequences.
                 </p>
             </section>
 
@@ -163,12 +183,11 @@ uses_python: false
             <section id="attention" class="section-content">
                 <h2>Attention Mechanisms</h2>
                 <p>
-                    Recurrent architectures process sequences step-by-step, which limits parallelism and makes modeling 
-                    long-range dependencies challenging. For example, imagine reading a sentence and trying to understand 
-                    what each word refers to. When processing the word "it," you automatically look back at previous words 
-                    to determine its meaning. <strong>Attention mechanisms</strong> formalize this intuitive process by computing 
-                    a weighted sum of all input feature vectors, enabling the model to dynamically focus on the most relevant 
-                    parts of the sequence regardless of distance.
+                    Recurrent architectures process sequences step by step, which limits parallelism and makes modeling long-range dependencies
+                    challenging. For example, consider a reader trying to understand what each word in a sentence refers to. On reaching the word "it," the
+                    reader looks back at previous words to determine its meaning. <strong>Attention mechanisms</strong> formalize this process by computing
+                    a weighted sum of all input feature vectors. The weights let the model focus dynamically on the most relevant parts of the sequence,
+                    regardless of distance.
                 </p>
 
                 <p>
@@ -181,64 +200,72 @@ uses_python: false
                 </p>
 
                 <p>
-                    This formulation uses the same set of weights \(\mathbf{W}\) for every input position. To allow more flexibility, 
-                    we can instead make the weights input-dependent. That is, we can allow:
+                    This formulation uses the same set of weights \(\mathbf{W}\) for every input position. To allow more flexibility, we can instead make
+                    the weights depend on the input:
                     \[
                     \mathbf{Z} = \varphi (\mathbf{X}\mathbf{W}(\mathbf{X})),
                     \]
-                    where the transformation matrix \(\mathbf{W}(\mathbf{X})\) varies depending on the input itself.
-                    This allows the model to dynamically adjust its computations based on the input context.
-                    Such input-dependent multiplicative interactions are central to <strong>attention mechanisms</strong>.
+                    where the transformation matrix \(\mathbf{W}(\mathbf{X})\) is itself computed from the input, so the model adapts its computation to
+                    the context. Such input-dependent multiplicative interactions are central to attention mechanisms.
                 </p>
 
                 <p>
-                    In more general settings, the input-dependent transformation matrix can be computed from separate sets of learned representations called 
-                    queries, keys, and values. This leads to a broader formulation of attention:
+                    In more general settings, the input-dependent matrix is computed from separate sets of learned representations called queries, keys,
+                    and values. This leads to a broader formulation of attention:
                     \[
-                    \mathbf{Z} = \varphi (\mathbf{V}\mathbf{W}(\mathbf{Q}, \mathbf{K}))
+                    \mathbf{Z} = \mathbf{W}(\mathbf{Q}, \mathbf{K})\,\mathbf{V}
                     \]
                     where:
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li>\(\mathbf{Q} \in \mathbb{R}^{m \times q}\) is a set of <strong>queries</strong></li>
-                    <li>\(\mathbf{K} \in \mathbb{R}^{m \times q}\) is a set of <strong>keys</strong></li>
+                    <li>\(\mathbf{Q} \in \mathbb{R}^{m \times d}\) is a set of <strong>queries</strong></li>
+                    <li>\(\mathbf{K} \in \mathbb{R}^{m \times d}\) is a set of <strong>keys</strong></li>
                     <li>\(\mathbf{V} \in \mathbb{R}^{m \times v}\) is a set of <strong>values</strong></li>
                 </ul>
 
                 <p>
-                    The transformation matrix \(\mathbf{W}(\mathbf{Q}, \mathbf{K})\) represents a learned or computed relationship between queries and keys.
-                    Note: In practice, these matrices are often obtained by applying learned linear projections to the input sequence.
+                    The matrix \(\mathbf{W}(\mathbf{Q}, \mathbf{K}) \in \mathbb{R}^{m \times m}\) is a function of the queries and keys. It multiplies
+                    \(\mathbf{V}\) from the left, so it mixes the value vectors, the rows of \(\mathbf{V}\), across positions, whereas
+                    \(\mathbf{W}(\mathbf{X})\) above mixed the features within each position. The nonlinearity now sits inside
+                    \(\mathbf{W}(\mathbf{Q}, \mathbf{K})\), in the softmax introduced below. In practice, \(\mathbf{Q}\), \(\mathbf{K}\), and
+                    \(\mathbf{V}\) are often obtained by applying learned linear projections to the input sequence.
                 </p>
 
                 
                 <p>
-                    In attention, the core idea is to compute each output vector \(\mathbf{z}_j\) as a weighted sum over all value vectors \(\mathbf{v}_i\), 
-                    where the weights \(\alpha_{ij}\) are determined by a similarity between the query \(\mathbf{q}_j\) and each key \(\mathbf{k}_i\):
+                    In attention, the core idea is to compute each output vector \(\mathbf{z}_j\) as a weighted sum over all value vectors
+                    \(\mathbf{v}_i\), where the weights \(\alpha_{ij}\) are determined by a similarity between the query \(\mathbf{q}_j\) and
+                    each key \(\mathbf{k}_i\):
                     \[
                     \mathbf{z}_j = \sum_{i}\alpha_{ij}\mathbf{v}_i
                     \]
-                    where \(0 \leq \alpha_{ij} \leq 1\) and \(\sum_i \alpha_{ij} = 1\). This allows the model to selectively attend to relevant parts of the input.
+                    where \(0 \leq \alpha_{ij} \leq 1\) and \(\sum_i \alpha_{ij} = 1\). In matrix form,
+                    \(\mathbf{Z} = \mathbf{W}(\mathbf{Q}, \mathbf{K})\,\mathbf{V}\) with \(\mathbf{W}(\mathbf{Q}, \mathbf{K})_{ji} = \alpha_{ij}\). The
+                    model can thus attend selectively to the relevant parts of the input.
                 </p>
                 
                 <p>
-                    A common similarity function is the 
-                    <a href="../Linear_algebra/orthogonality.html#D-inner_product" class="ref-link"><strong>inner product</strong></a> 
-                    between query and key vectors. If 
-                    \(\mathbf{q}, \mathbf{k} \in \mathbb{R}^d\) are independent random variables with components that have zero mean and unit variance, 
-                    then their inner product \(\mathbf{q}^\top \mathbf{k}\) has zero mean and variance \(d\). 
-                    To prevent large variance from pushing the softmax into saturation regions where gradients vanish, we normalize it by \(\sqrt{d}\):
+                    A common similarity function is the
+                    <a href="../Linear_algebra/orthogonality.html#D-inner_product" class="ref-link"><strong>inner product</strong></a> between query and
+                    key vectors. If \(\mathbf{q}, \mathbf{k} \in \mathbb{R}^d\) are independent random vectors whose components are independent with zero
+                    mean and unit variance, then their inner product \(\mathbf{q}^\top \mathbf{k} = \sum_{l=1}^{d} q_l k_l\) is a sum of \(d\) uncorrelated
+                    terms of variance 1. The inner product therefore has zero mean and variance \(d\). To prevent large variance from pushing the softmax
+                    into saturation regions where gradients vanish, we normalize it by \(\sqrt{d}\):
                     \[
                     a(\mathbf{q}, \mathbf{k}) = \frac{\mathbf{q}^\top \mathbf{k}}{\sqrt{d}}.
                     \]
-                    This is known as <strong>scaled dot-product attention score</strong>, where the scale factor 
-                    \(\frac{1}{\sqrt{d}}\) normalizes the variance so that it remains stable (i.e., \(= 1\)) as the dimension \(d\) increases.  
-                    This is used to compute <strong>attention weights</strong> \(\alpha_{ij}\) after applying the 
-                    <a href="intro_classification.html#D-softmax_function" class="ref-link"><strong>softmax function</strong></a>.
                 </p>
 
                 <p>
-                    In practice, we compute attention over minibatches of \(n\) query vectors.
+                    The quantity \(a(\mathbf{q}, \mathbf{k})\) is the <strong>scaled dot-product attention score</strong>. Under the assumptions above, the
+                    scale factor \(\frac{1}{\sqrt{d}}\) keeps the variance of the score equal to 1 for every dimension \(d\). Applying the
+                    <a href="intro_classification.html#D-softmax_function" class="ref-link"><strong>softmax function</strong></a> to these scores yields
+                    the <strong>attention weights</strong> \(\alpha_{ij}\).
+                </p>
+
+                <p>
+                    Stacking \(n\) query vectors into a matrix, we compute attention for all of them at once.
                 </p>
 
                 <div class="theorem" id="D-scaled_dot_product_attention">
@@ -247,31 +274,36 @@ uses_python: false
                         Given queries \(\mathbf{Q} \in \mathbb{R}^{n \times d}\), keys \(\mathbf{K} \in \mathbb{R}^{m \times d}\), and 
                         values \(\mathbf{V} \in \mathbb{R}^{m \times v}\):
                         \[
-                        \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) 
-                        = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}}\right)\mathbf{V} \in \mathbb{R}^{n \times v}
+                        \operatorname{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) 
+                        = \operatorname{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}}\right)\mathbf{V} \in \mathbb{R}^{n \times v}
                         \]
                         where the softmax is applied row-wise, normalizing each row of the \(n \times m\) similarity matrix.
                     </p>
                 </div>
 
-           </section>
+            </section>
 
             <section id="self" class="section-content">  
                 <h2>Self-Attention</h2>  
-                <p>  
-                    <strong>Self-attention</strong> is a mechanism that allows each position \(i\) in a sequence to attend to all other positions 
-                    in the same sequence. Given a sequence of input tokens \(\mathbf{x}_1, \cdots, \mathbf{x}_n \in \mathbb{R}^d\),
-                    a sequence of outputs is given by:
+                <p>
+                    <strong>Self-attention</strong> is a mechanism that allows each position \(i\) in a sequence to attend to all positions in the same
+                    sequence, including itself. Given a sequence of input tokens \(\mathbf{x}_1, \ldots, \mathbf{x}_n \in \mathbb{R}^d\), a sequence of
+                    outputs is given by:
                     \[
-                    \mathbf{y}_i = \text{Attention}(\mathbf{q}_i, (\mathbf{x}_1, \mathbf{x}_1), \cdots, (\mathbf{x}_n, \mathbf{x}_n )) \in \mathbb{R}^d
+                    \mathbf{y}_i = \operatorname{Attention}(\mathbf{x}_i, (\mathbf{x}_1, \mathbf{x}_1), \ldots, (\mathbf{x}_n, \mathbf{x}_n)) \in \mathbb{R}^d
                     \]
-                    where the query is \(q_i\) and the keys and values are \(\mathbf{x}_1, \cdots \mathbf{x}_n\).
+                    where the query is \(\mathbf{x}_i\) and each pair \((\mathbf{x}_j, \mathbf{x}_j)\) supplies a key and a value. Stacking the tokens as
+                    the rows of \(\mathbf{X} \in \mathbb{R}^{n \times d}\), the outputs \(\mathbf{y}_i\) are the rows of
+                    \(\operatorname{Attention}(\mathbf{X}, \mathbf{X}, \mathbf{X})\) in the notation of the definition above. Transformers first pass the
+                    queries, keys, and values through learned projections, as in multi-head attention below.
                 </p>
 
                 <p>
-                    This mechanism captures contextual relationships between tokens by allowing information to flow from any position to any other in a single layer.
-                    During training, all the outputs are known. Thus the model can evaluate \(\mathbf{y}_i\) <strong>in parallel</strong>, which 
-                    overcomes the sequential bottleneck of past DNNs. 
+                    This mechanism captures contextual relationships between tokens by allowing information to flow from any position to any other in a
+                    single layer. Each output \(\mathbf{y}_i\) depends only on the inputs \(\mathbf{x}_1, \ldots, \mathbf{x}_n\) and not on the other
+                    outputs, so all outputs can be evaluated <strong>in parallel</strong>. When a model with a causal mask is trained to predict each token
+                    of a known target sequence from the tokens before it, this parallelism extends over the whole sequence, which removes the sequential
+                    bottleneck of recurrent networks.
                 </p>
 
             </section>  
@@ -289,9 +321,9 @@ uses_python: false
                     <p>
                         Given input \(\mathbf{X} \in \mathbb{R}^{n \times d}\), each head \(i \in \{1,\ldots,h\}\) computes:
                         \[
-                        \text{head}_i = \text{Attention}\!\left(
-                            \mathbf{X}\mathbf{W}_i^{(q)},\;
-                            \mathbf{X}\mathbf{W}_i^{(k)},\;
+                        \mathrm{head}_i = \operatorname{Attention}\!\left(
+                            \mathbf{X}\mathbf{W}_i^{(q)},
+                            \mathbf{X}\mathbf{W}_i^{(k)},
                             \mathbf{X}\mathbf{W}_i^{(v)}
                         \right) \in \mathbb{R}^{n \times d_v}
                         \]
@@ -301,38 +333,40 @@ uses_python: false
                         \(\mathbf{W}_i^{(v)} \in \mathbb{R}^{d \times d_v}\). 
                         The outputs are concatenated and projected:
                         \[
-                        \text{MHA}(\mathbf{X}) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h)\,\mathbf{W}_o
+                        \operatorname{MHA}(\mathbf{X}) = \operatorname{Concat}(\mathrm{head}_1, \ldots, \mathrm{head}_h)\,\mathbf{W}_o
                         \]
                         where \(\mathbf{W}_o \in \mathbb{R}^{hd_v \times d}\). A common choice is \(d_k = d_v = d/h\).
                     </p>
                 </div>
 
                 <p>
-                    The query and key projections share dimension \(d_k\) so that their inner product is well-defined; the value 
-                    projection dimension \(d_v\) may differ. With \(h\) heads and \(d_k = d_v = d/h\), the total computational cost is 
-                    comparable to single-head attention.
+                    The query and key projections share dimension \(d_k\) so that their inner product is well-defined. The value projection dimension
+                    \(d_v\) may differ. Inside each head, the attention scores are scaled by \(1/\sqrt{d_k}\). With \(h\) heads and \(d_k = d_v = d/h\),
+                    the total computational cost is comparable to that of single-head attention with full dimension \(d\).
                 </p>
 
                 <p>
-                    By using multiple heads, the model can attend to information from different representation subspaces and capture a richer set of relationships in the data. 
-                    Each head may focus on different positions or interaction patterns, improving both performance and interpretability.
+                    By using multiple heads, the model can attend to information from different representation subspaces and capture a richer set of
+                    relationships in the data. Each head may focus on different positions or interaction patterns. Such specialization of heads is often
+                    observed in trained models, and it is the usual explanation for the empirical benefit of multiple heads.
                 </p>
             </section>
 
             
             <section id="position" class="section-content"> 
                 <h2>Positional Encoding</h2> 
-                <p> 
-                    Standard self-attention is permutation-equivariant: reordering the input tokens simply reorders 
-                    the outputs in the same way, so the mechanism itself carries no information about token order. To address this, <strong>positional encoding</strong> is added to the input embeddings to inject information about 
-                    the position of each token. A widely used method is to define fixed, deterministic positional encodings using 
-                    sine and cosine functions of varying frequencies. 
-                </p> 
+                <p>
+                    Standard self-attention is permutation-equivariant. Reordering the input tokens simply reorders the outputs in the same way, so the
+                    mechanism itself carries no information about token order. To address this, <strong>positional encoding</strong> is added to the input
+                    embeddings to inject information about the position of each token. A widely used method is to define fixed, deterministic positional
+                    encodings using sine and cosine functions of varying frequencies.
+                </p>
 
                 <div class="theorem" id="D-sinusoidal_positional_encoding">
                     <span class="theorem-title">Definition: Sinusoidal Positional Encoding</span>
                     <p>
-                        The positional encoding vector for position \(i\) and dimension \(j\) is defined as:
+                        For position \(i\) and \(j \in \{0, 1, \ldots, d/2 - 1\}\), the components \(2j\) and \(2j+1\) of the positional encoding vector
+                        \(\mathbf{p}_i \in \mathbb{R}^d\) are defined as:
                         \[
                         p_{i,\,2j} = \sin\!\left(\frac{i}{C^{2j/d}}\right)
                         \]
@@ -343,68 +377,77 @@ uses_python: false
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>\(i\) is the position index in the sequence, starting from 0,</li>
-                        <li>\(j\) is the dimension index in the positional encoding vector,</li>
-                        <li>\(d\) is the total dimension of the model (e.g., 512),</li>
+                        <li>\(j\) indexes the sine-cosine pairs, so that components \(2j\) and \(2j+1\) share one frequency,</li>
+                        <li>\(d\) is the total dimension of the model, assumed even (for example, 512),</li>
                         <li>\(C\) is a constant (usually set to 10,000) to control the frequency scale.</li>
                     </ul>
                 </div>
 
-                <p> 
-                    This formulation ensures that each dimension of the positional encoding corresponds to a sinusoid of a 
-                    different frequency. As a result, any two positions will have a unique positional encoding vector, and the 
-                    relative position between tokens can be represented as a linear function of the encodings. 
-                </p> 
+                <p>
+                    This formulation assigns to each sine-cosine pair \((2j, 2j+1)\) its own frequency \(\omega_j = C^{-2j/d}\). Distinct positions receive
+                    distinct encoding vectors. Already the pair \(j = 0\) gives \((\sin i, \cos i)\), which determines \(i\) modulo \(2\pi\), and distinct
+                    integers are never congruent modulo \(2\pi\) because \(\pi\) is irrational. Moreover, a shift by \(k\) positions acts linearly on the
+                    encodings. By the addition formulas for sine and cosine, each pair rotates by the angle \(\omega_j k\):
+                    \[
+                    \begin{bmatrix} p_{i+k,\,2j} \\ p_{i+k,\,2j+1} \end{bmatrix}
+                    = \begin{bmatrix} \cos(\omega_j k) & \sin(\omega_j k) \\ -\sin(\omega_j k) & \cos(\omega_j k) \end{bmatrix}
+                    \begin{bmatrix} p_{i,\,2j} \\ p_{i,\,2j+1} \end{bmatrix},
+                    \]
+                    so \(\mathbf{p}_{i+k} = \mathbf{M}_k \mathbf{p}_i\) for a block-diagonal matrix \(\mathbf{M}_k\) that depends on \(k\) but
+                    not on \(i\).
+                </p>
 
-                <p> 
-                    <strong>Example:</strong> Suppose the model dimension is \( d = 4 \), and we compute the positional encoding for 
-                    position \( i = 2 \). Then we compute each component of the encoding as:
+                <p>
+                    <strong>Example.</strong> Suppose the model dimension is \(d = 4\) and \(C = 10{,}000\), and we compute the positional encoding for
+                    position \(i = 2\). Its components are:
                     \[ 
                     \begin{align*}
-                    &p_{2,0} = \sin \left( \frac{2}{10,000^{0/4}} \right) = \sin(2) \\\\      
-                    &p_{2,1} = \cos \left( \frac{2}{10,000^{0/4}} \right) = \cos(2) \\\\
-                    &p_{2,2} = \sin \left( \frac{2}{10,000^{2/4}} \right) = \sin \left( \frac{2}{100} \right) \\\\
-                    &p_{2,3} = \cos \left( \frac{2}{10,000^{2/4}} \right) = \cos \left( \frac{2}{100} \right) 
+                    &p_{2,0} = \sin \left( \frac{2}{10{,}000^{0/4}} \right) = \sin(2) \\\\      
+                    &p_{2,1} = \cos \left( \frac{2}{10{,}000^{0/4}} \right) = \cos(2) \\\\
+                    &p_{2,2} = \sin \left( \frac{2}{10{,}000^{2/4}} \right) = \sin \left( \frac{2}{100} \right) \\\\
+                    &p_{2,3} = \cos \left( \frac{2}{10{,}000^{2/4}} \right) = \cos \left( \frac{2}{100} \right) 
                     \end{align*}
                     \] 
-                </p> 
+                </p>
 
-                <p> 
-                    This results in the positional encoding vector for position 2 as: 
+                <p>
+                    The positional encoding vector for position 2 is therefore
                     \[ 
                     \mathbf{p}_2 = \left[ \sin(2),\ \cos(2),\ \sin(0.02),\ \cos(0.02) \right].
                     \]
-                </p> 
+                </p>
 
-                <p> 
-                    These encodings are added element-wise to the token embeddings at each position, allowing the model to 
-                    incorporate position information without relying on recurrence or convolution.
-                    Moreover, the use of periodic functions enables the model to potentially generalize to sequences longer 
-                    than those seen during training. 
-                </p> 
+                <p>
+                    These encodings are added element-wise to the token embeddings at each position. The model thus incorporates position information
+                    without relying on recurrence or convolution. Moreover, the use of periodic functions enables the model to potentially generalize to
+                    sequences longer than those seen during training.
+                </p>
             </section>
 
             <section id="transformer" class="section-content">
                 <h2>Transformers</h2>
-                <p> 
-                    The <strong>Transformer</strong> architecture replaces recurrence and convolution with 
-                    a mechanism based entirely on self-attention. In both the encoder and decoder, the core components are multi-head self-attention 
-                    layers, feedforward networks, residual connections, and layer normalization. The design enables full parallelization across 
-                    sequence positions during training, and allows the model to capture long-range dependencies through direct pairwise interactions 
-                    between tokens. By using learned attention weights that vary depending on the input, the model dynamically determines which parts 
-                    of the sequence to emphasize at each layer.
+                <p>
+                    The <strong>Transformer</strong> architecture replaces recurrence and convolution with a mechanism based entirely on attention. In both
+                    the encoder and decoder, the core components are multi-head self-attention layers, feedforward networks, residual connections, and
+                    layer normalization. The decoder adds a cross-attention step, in which its queries attend to the encoder output. In the decoder, a
+                    causal mask restricts each position to attend only to itself and earlier positions. The original design applies layer normalization
+                    after each residual connection, as in the pseudocode below, whereas many later models apply it to the input of each sublayer. The
+                    design enables full parallelization across sequence positions during training, and allows the model to capture long-range dependencies
+                    through direct pairwise interactions between tokens. By using learned attention weights that vary depending on the input, the model
+                    dynamically determines which parts of the sequence to emphasize at each layer.
                 </p>
 
                 <p>
-                    Transformer-based models form the basis of many state-of-the-art systems across domains such as text, vision, and multimodal learning. 
-                    In particular, modern <strong>large language models (LLMs)</strong> are built on stacked Transformer decoder blocks trained on massive 
-                    text corpora, leveraging the scalability and expressiveness of the Transformer to generate coherent and context-aware output across a 
-                    wide range of tasks.
+                    Transformer-based models form the basis of many state-of-the-art systems across domains such as text, vision, and multimodal learning.
+                    In particular, modern <strong>large language models (LLMs)</strong> are built on stacked Transformer decoder blocks trained on massive
+                    text corpora. These decoder-only models have no encoder, so their blocks omit the cross-attention step of the DecoderBlock below. They
+                    exploit the scalability and expressiveness of the Transformer to generate coherent, context-aware output across a wide range of tasks.
                 </p>
 
                 <div class="pseudocode">
                     <span class="pseudocode-title">Transformer Encoder & Decoder</span>
                     <strong>EncoderBlock(X)</strong>
-                    &emsp;&emsp;Z = LayerNorm(MHA(Q =X, K = X, V = X) + X)
+                    &emsp;&emsp;Z = LayerNorm(MHA(Q = X, K = X, V = X) + X)
                     &emsp;&emsp;E = LayerNorm(FeedForward(Z) + Z)
                     &emsp;&emsp;<strong>return</strong> E
                     <br>
@@ -415,7 +458,7 @@ uses_python: false
                     &emsp;&emsp;<strong>return</strong> E
                     <br>
                     <strong>DecoderBlock(Y, E)</strong>
-                    &emsp;&emsp;Z = LayerNorm(MHA(Q =Y, K = Y, V = Y) + Y) // Causal mask
+                    &emsp;&emsp;Z = LayerNorm(MHA(Q = Y, K = Y, V = Y) + Y) // Causal mask
                     &emsp;&emsp;Z' = LayerNorm(MHA(Q = Z, K = E, V = E) + Z)
                     &emsp;&emsp;D = LayerNorm(FeedForward(Z') + Z')
                     &emsp;&emsp;<strong>return</strong> D
@@ -428,17 +471,17 @@ uses_python: false
                 </div>
 
                 <p>
-                     Note:
+                    The pseudocode uses the following components:
                 </p>
                    
                 <ul style="padding-left: 40px;">
-                    <li><strong>MHA(...)</strong> : the Multi-head self-attention. Each token attends to every other token.</li>
-                    <li><strong>+ (...)</strong> : residual connection. The input is added back to the output of attention. </li>
-                    <li><strong>LayerNorm(...)</strong> : Layer normalization, which is applied after the residual connection to stabilize training.</li>
-                    <li><strong>FeedForward(...)</strong> : A position-wise fully connected feedforward network is applied to each token vector independently.</li>
-                    <li><strong>Embed(...)</strong> : Each token is mapped to a high-dimensional embedding vector.</li>
-                    <li><strong>POS(...)</strong> : Positional encoding is added to embeddings to inject token order information.</li>
-                    <li><strong>N</strong>: the number of copies of the block</li>
+                    <li><strong>MHA(...)</strong>: multi-head attention, which is self-attention when Q, K, and V are the same sequence and cross-attention otherwise.</li>
+                    <li><strong>+ (...)</strong>: the residual connection, which adds the input of a sublayer back to its output.</li>
+                    <li><strong>LayerNorm(...)</strong>: layer normalization after the residual connection (post-norm).</li>
+                    <li><strong>FeedForward(...)</strong>: a position-wise fully connected feedforward network, applied to each token vector independently.</li>
+                    <li><strong>Embed(...)</strong>: the map sending each token to a high-dimensional embedding vector.</li>
+                    <li><strong>POS(...)</strong>: the positional encoding, added to the embeddings to inject token order information.</li>
+                    <li><strong>N</strong>: the number of copies of the block.</li>
                 </ul>
                 
             </section>
@@ -449,22 +492,21 @@ uses_python: false
                 <div class="insight-box">
                     <h3>From Discrete Permutations to Continuous Lie Groups</h3>
                     <p>
-                        A pattern recurs across the architectures we have surveyed: each is built around a 
-                        <em>symmetry</em> of the input domain. Convolutional networks are translation-equivariant — their 
-                        convolutional layers commute with shifts of the input image. Self-attention is permutation-equivariant — reordering the input tokens 
-                        reorders the outputs in exactly the same way, \(f(P\mathbf{X}) = P\,f(\mathbf{X})\) — which is precisely why 
-                        positional encoding must be added back to inject ordering information.
+                        A pattern recurs across the architectures we have surveyed. Each is built around a <em>symmetry</em> of the input domain.
+                        Convolutional layers are translation-equivariant, in the sense that they commute with shifts of the input image (exactly so for
+                        stride one on an unbounded or periodic grid). Self-attention is permutation-equivariant. A self-attention layer \(f\), applied to a
+                        matrix \(\mathbf{X}\) whose rows are the tokens, satisfies \(f(P\mathbf{X}) = P\,f(\mathbf{X})\) for every permutation matrix
+                        \(P\), and this is precisely why positional encoding must be added to inject ordering information.
                     </p>
                     <p>
-                        This perspective generalizes far beyond CNNs and Transformers. Architectures designed for graphs respect 
-                        permutation symmetry of the node ordering; networks processing 3D data such as molecules or point clouds are 
-                        designed to be equivariant under the rotation group \(SO(3)\) or the rigid-body group \(SE(3)\). The 
-                        mathematical machinery for constructing such equivariant layers is the
-                        <a href="../Linear_algebra/lie_groups.html"><strong>Lie group</strong></a> /
-                        <a href="../Linear_algebra/lie_algebras.html"><strong>Lie algebra</strong></a>
-                        correspondence — the continuous limit of the discrete symmetries we first encountered in
-                        <a href="../Linear_algebra/dihedral_group.html"><strong>dihedral groups</strong></a>. 
-                        We will develop these threads in our discussion of geometric deep learning.
+                        This perspective generalizes far beyond CNNs and Transformers. Architectures designed for graphs respect permutation
+                        symmetry of the node ordering. Networks processing 3D data such as molecules or point clouds are designed to be equivariant
+                        under the rotation group \(SO(3)\) or the rigid-body group \(SE(3)\). The mathematical machinery for constructing such
+                        equivariant layers comes from <a href="../Linear_algebra/lie_groups.html"><strong>Lie groups</strong></a> and
+                        <a href="../Linear_algebra/lie_algebras.html"><strong>Lie algebras</strong></a>, the continuous counterparts of the
+                        discrete symmetries we first encountered in
+                        <a href="../Linear_algebra/dihedral_group.html"><strong>dihedral groups</strong></a>, and from their representations. We
+                        will develop these threads in our discussion of <a href="intro_gdl.html"><strong>geometric deep learning</strong></a>.
                     </p>
                 </div>
             </section>
@@ -472,30 +514,22 @@ uses_python: false
             <section id="demo" class="section-content section-wide">
                 <h2>Demo: One Decoder Block, Computed Exactly</h2>
                 <p>
-                    The demo below runs a single decoder block — embedding, positional encoding, masked self-attention, 
-                    residual connections, layer normalization, a feed-forward network, and the output softmax — as an 
-                    <strong>exact computation</strong> at toy dimension (\(d_{\text{model}} = 8\), two heads). Every matrix 
-                    displayed is the actual result of the forward pass on the current sequence: attention rows sum to 
-                    exactly 1, each normalized row has mean \(0\) and variance \(v/(v+\epsilon)\) as the layer-norm 
-                    formula dictates, and the greedy prediction is the true argmax of the computed distribution. The 
-                    weights are untrained random draws, so the demo illustrates the architecture's mechanics rather than 
-                    a trained model's knowledge.
+                    The demo below runs a single decoder block as an <strong>exact computation</strong> at toy dimension (\(d_{\text{model}} = 8\), two
+                    heads). As in a large language model, the block has no cross-attention step. The computation runs through embedding, positional
+                    encoding, masked self-attention, residual connections, layer normalization, a feedforward network, and the output softmax. Every matrix
+                    displayed is the actual result of the forward pass on the current sequence. In particular, attention rows sum to exactly 1, and the
+                    greedy prediction is the true argmax of the computed distribution. Layer normalization acts on each token row over its features, with
+                    \(\gamma = 1\) and \(\beta = 0\). Each normalized row therefore has mean \(0\) and variance \(v/(v+\epsilon)\) as the layer-norm
+                    formula dictates, where \(v\) is the variance of the row before normalization. The weights are untrained random draws, so the demo
+                    illustrates the architecture's mechanics rather than a trained model's knowledge.
                 </p>
                 <p>
-                    The final step verifies the symmetry principle of the previous section numerically: for the block 
-                    \(f\) without positional encoding and without the causal mask, the permutation equivariance identity 
-                    \(f(P\mathbf{X}) = P\,f(\mathbf{X})\) holds to machine precision, while adding either positional 
-                    encoding or the mask breaks it by a measurable amount — the mechanism by which order enters an 
-                    otherwise order-blind architecture.
+                    The final step verifies the symmetry principle of the previous section numerically. For the block \(f\) without positional encoding and
+                    without the causal mask, the permutation equivariance identity \(f(P\mathbf{X}) = P\,f(\mathbf{X})\) holds to machine precision. Adding
+                    either positional encoding or the mask breaks it by a measurable amount. In this block, order enters an otherwise order-blind
+                    architecture only through these two mechanisms.
                 </p>
                 <div id="transformer_demo"></div>
-
-                <p>
-                    The Transformer architecture provides the computational backbone for modern ML systems, from language models to vision transformers. 
-                    On the upcoming page on <a href="intro_RL.html"><strong>reinforcement learning</strong></a>, we explore a fundamentally 
-                    different learning paradigm — where an agent learns through interaction with an environment, guided by reward signals rather 
-                    than labeled examples.
-                </p>
             </section>
 
         </div>
