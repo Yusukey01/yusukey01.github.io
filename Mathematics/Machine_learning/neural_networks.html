@@ -31,58 +31,26 @@ uses_python: false
                 <h2>Multilayer Perceptron (MLP)</h2>
 
                 <p>
-                    On the <a href="intro_classification.html"><strong>classification page</strong></a>, we saw that logistic regression defines a <em>linear</em> decision boundary 
-                    and that the kernel trick can extend this to nonlinear settings — but requires choosing a fixed feature map. Neural networks take a fundamentally 
-                    different approach: they <em>learn</em> the feature representation jointly with the classifier by composing many simple, differentiable transformations. 
-                    The resulting gradients are computed via the <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>, which we formalize in 
-                    this page as the backpropagation algorithm.
+                    On the <a href="intro_classification.html"><strong>classification page</strong></a>, we saw that logistic regression defines a
+                    <em>linear</em> decision boundary and that the kernel trick can extend this to nonlinear settings. That extension, however,
+                    requires choosing a fixed feature map.
+                    Neural networks take a fundamentally different approach. They <em>learn</em> the feature representation jointly with the classifier
+                    by composing many simple, differentiable transformations. The resulting gradients are computed via the
+                    <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a>,
+                    which we formalize on this page as the backpropagation algorithm.
                 </p>
 
                 <p> 
-                    The key idea of <strong>deep neural networks (DNNs)</strong> is "composing" a vast number of simple functions to make a huge complex function.
+                    The key idea of <strong>deep neural networks (DNNs)</strong> is to compose a vast number of simple functions into a single complex function.
                     We focus on a specific type of DNN known as the <strong>multilayer perceptron (MLP)</strong>, also referred to as a <strong>feedforward neural network (FFNN)</strong>.
                 </p>
 
                 <p>
-                    An MLP defines a composite function of the form: 
-                    \[
-                    f(\mathbf{x} ; \boldsymbol{\theta}) = f_L (f_{L-1}(\cdots(f_1(\mathbf{x}))\cdots))
-                    \]
-                
-                    where each component function \( f_\ell(\mathbf{x}) = f(\mathbf{x}; \boldsymbol{\theta}_\ell) \) represents the transformation at 
-                    <strong>layer</strong> \( \ell \,\), \( \mathbf{x} \in \mathbb{R}^D \) is an input vector with \( D \) features, and 
-                    \(\boldsymbol{\theta}\) is a collection of parameters (weights and biases):
-                    \[
-                    \boldsymbol{\theta} = \{ \boldsymbol{\theta}_\ell \}_{\ell=1}^L \text{, where } \boldsymbol{\theta}_\ell = \{ W^{(\ell)}, \mathbf{b}^{(\ell)} \}.
-                    \]
+                    Each layer consists of two operations: an <strong>affine transformation</strong> followed by an <strong>activation function</strong>.
+                    In a hidden layer, the activation is a <strong>nonlinear</strong> function \( g_\ell : \mathbb{R} \to \mathbb{R}\) applied elementwise.
+                    Such a function is <strong>differentiable</strong> except possibly at finitely many points (the ReLU below has a single kink at \(0\)).
+                    An MLP consists of an <strong>input layer</strong>, one or more <strong>hidden layers</strong>, and an <strong>output layer</strong>.
                 </p>
-
-                <p>
-                     Each layer is assumed to be <strong>differentiable</strong> and consists of two operations: an <strong>affine transformation</strong> followed 
-                     by a <strong>non-linear differentiable activation function</strong> \( g_\ell : \mathbb{R} \to \mathbb{R}\). An MLP consists of an <strong>input layer</strong>, 
-                     one or more <strong>hidden layers</strong>, and an <strong>output layer</strong>.
-                </p>
-
-                <p>
-                    We define the hidden units \(\mathbf{z}^{(\ell)}\) at each layer \(\ell\) passing elementwise through the activation:
-                    \[
-                    \mathbf{z}^{(\ell)} = g_{\ell}\!\left(\mathbf{b}^{(\ell)} + W^{(\ell)} \mathbf{z}^{(\ell-1)}\right) = g_{\ell}\!\left(\mathbf{a}^{(\ell)}\right)
-                    \]
-                    where \(\mathbf{a}^{(\ell)}\) is called the <strong>pre-activations</strong>, and the output of the network is denoted by
-                    \(\hat{\mathbf{y}} = h_{\boldsymbol{\theta}}(\mathbf{x}) = g_L(\mathbf{a}^{(L)})\).
-                </p>
-
-                 <p>
-                    <strong>Note:</strong> Input data is typically stored as an \( N \times D \) <strong>design matrix</strong>, where each 
-                    row corresponds to a data point and each column to a feature. This is referred to as <strong>structured data</strong> or 
-                    <strong>tabular data</strong>. In contrast, for <strong>unstructured data</strong> such as images or text, different architectures 
-                    are used:
-                </p>
-
-                <ul style="padding-left: 40px;">
-                    <li><strong>Convolutional Neural Networks (CNNs)</strong> for images</li>
-                    <li><strong>Recurrent Neural Networks (RNNs)</strong> and <strong>Transformers</strong> for sequential data (e.g. text)</li>
-                </ul>
 
                 <div class="theorem" id="D-multilayer_perceptron">
                     <span class="theorem-title">Definition: Multilayer Perceptron</span>
@@ -96,39 +64,67 @@ uses_python: false
                         \mathbf{z}^{(\ell)} = g_\ell\!\left(W^{(\ell)} \mathbf{z}^{(\ell-1)} + \mathbf{b}^{(\ell)}\right),
                         \]
                         with \(\mathbf{z}^{(0)} = \mathbf{x}\), weight matrices \(W^{(\ell)} \in \mathbb{R}^{d_\ell \times d_{\ell-1}}\), bias vectors 
-                        \(\mathbf{b}^{(\ell)} \in \mathbb{R}^{d_\ell}\), and nonlinear activation functions \(g_\ell\). The output layer 
-                        uses an activation appropriate to the task (<a href="intro_classification.html#D-sigmoid_function" class="ref-link"><strong>sigmoid</strong></a> for binary classification, 
+                        \(\mathbf{b}^{(\ell)} \in \mathbb{R}^{d_\ell}\), and activation functions \(g_\ell\), nonlinear for \(\ell \lt L\).
+                        The output layer uses an activation appropriate to the task
+                        (<a href="intro_classification.html#D-sigmoid_function" class="ref-link"><strong>sigmoid</strong></a> for binary classification, 
                         <a href="intro_classification.html#D-softmax_function" class="ref-link"><strong>softmax</strong></a> for multiclass, identity for regression).
                     </p>
                 </div>
 
                 <p>
-                    In particular, modern <strong>Large Language Models (LLMs)</strong> are built upon the <a href="deep_nn.html#transformer"><strong>Transformer architecture</strong></a>. 
-                    The Transformer's <strong>Self-Attention mechanism</strong> has largely replaced <strong>RNNs</strong> in natural language processing 
-                    because it allows for global dependencies to be modeled in parallel, bypassing the sequential bottleneck and vanishing gradient issues 
-                    inherent in recurrent designs.
+                    We call \(\mathbf{a}^{(\ell)} = W^{(\ell)} \mathbf{z}^{(\ell-1)} + \mathbf{b}^{(\ell)}\) the <strong>pre-activations</strong> of layer \(\ell\)
+                    and \(\mathbf{z}^{(\ell)} = g_\ell(\mathbf{a}^{(\ell)})\) its <strong>activations</strong>, which for \(\ell \lt L\) are called
+                    <strong>hidden units</strong>. Every \(g_\ell\) acts elementwise except a softmax output activation, which couples the coordinates of
+                    \(\mathbf{a}^{(L)}\). For an input \(\mathbf{x} \in \mathbb{R}^D\) with \(D\) features we have \(d_0 = D\). The output of the network
+                    is denoted by \(\hat{\mathbf{y}} = h_{\boldsymbol{\theta}}(\mathbf{x}) = \mathbf{z}^{(L)}\), and the parameters (weights and biases) are collected as
+                    \[
+                    \boldsymbol{\theta} = \{ \boldsymbol{\theta}_\ell \}_{\ell=1}^L, \quad \boldsymbol{\theta}_\ell = \{ W^{(\ell)}, \mathbf{b}^{(\ell)} \}.
+                    \]
+                </p>
+
+                <p>
+                    <strong>Note.</strong> Input data is typically stored as an \( N \times D \) <strong>design matrix</strong>, where each
+                    row corresponds to a data point and each column to a feature. This is referred to as <strong>structured data</strong> or
+                    <strong>tabular data</strong>. In contrast, for <strong>unstructured data</strong> such as images or text, different architectures
+                    are used:
+                </p>
+
+                <ul style="padding-left: 40px;">
+                    <li><strong>Convolutional Neural Networks (CNNs)</strong> for images</li>
+                    <li><strong>Recurrent Neural Networks (RNNs)</strong> and <strong>Transformers</strong> for sequential data (for example, text)</li>
+                </ul>
+
+                <p>
+                    In particular, modern <strong>large language models (LLMs)</strong> are built upon the
+                    <a href="deep_nn.html#transformer"><strong>Transformer architecture</strong></a>.
+                    The Transformer's <strong>self-attention mechanism</strong> has largely replaced <strong>RNNs</strong> in natural language processing
+                    because it models global dependencies in parallel. It thereby bypasses the sequential bottleneck of recurrent designs
+                    and connects every pair of positions directly, instead of through the long chains of multiplications along which
+                    gradients vanish in a recurrent network.
                 </p>
 
                 <div class="insight-box">
                     <h3>Are RNNs Outdated?</h3>
                     <p>
-                        Although Transformers dominate high-compute tasks, "Recurrent" logic remains essential. Modern <strong>State Space Models (SSMs)</strong>
+                        Although Transformers dominate high-compute tasks, recurrent computation remains essential. Modern <strong>State Space Models (SSMs)</strong>
                         have revitalized this field by leveraging hardware-aware parallel algorithms for training while maintaining the 
                         efficient inference characteristic of RNNs.
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>
                             <strong>Inference Efficiency:</strong><br>
-                            Standard Transformers suffer from \(O(L^2)\) computational complexity. In contrast, SSMs maintain <strong>linear complexity</strong> 
-                            \(O(L)\) and constant \(O(1)\) memory overhead per step during inference. This makes them ideal for <strong>embedded devices</strong> 
+                            Standard self-attention costs \(O(T^2)\) time in the sequence length \(T\), and the memory it keeps for past tokens during
+                            generation grows linearly with \(T\). In contrast, SSMs process a sequence in <strong>linear time</strong> \(O(T)\), with constant
+                            \(O(1)\) time and memory per step during inference. This makes them well suited to <strong>embedded devices</strong>
                             and <strong>real-time control systems</strong> where memory bandwidth is a bottleneck.
                         </li>
                         <li>
                             <strong>Infinite Horizons and State Compression:</strong><br>
-                            By updating a fixed-size latent state, recurrent systems can theoretically process continuous data streams indefinitely 
-                            without the quadratic memory growth. However, it is important to note that while the <strong>physical context window</strong> 
-                            is effectively infinite, the <strong>information density</strong> is constrained by the fixed state size, meaning the model 
-                            must selectively forget or compress older information as the sequence progresses.
+                            By updating a fixed-size latent state, recurrent systems can theoretically process continuous data streams indefinitely
+                            without the memory growth of attention over an ever-longer context. The <strong>physical context window</strong> is effectively
+                            unbounded, but the
+                            <strong>information density</strong> is constrained by the fixed state size. The model must therefore selectively forget
+                            or compress older information as the sequence progresses.
                         </li>
                     </ul>
                 </div>
@@ -139,13 +135,18 @@ uses_python: false
                 <h2>Activation Functions</h2>
 
                 <p>
-                    Without a <strong>non-linear</strong> activation function, a neural network composed of multiple layers would reduce to a 
+                    Without a <strong>nonlinear</strong> activation function, a neural network composed of multiple layers would reduce to a
                     single affine transformation. For example, a two-layer linear network computes:
                     \[
-                    f(\mathbf{x} ; \boldsymbol{\theta}) = W^{(2)}(W^{(1)} \mathbf{x} + \mathbf{b}^{(1)}) + \mathbf{b}^{(2)} = (W^{(2)}W^{(1)})\mathbf{x} + (W^{(2)} \mathbf{b}^{(1)} + \mathbf{b}^{(2)}) = \tilde{W}\mathbf{x} + \tilde{\mathbf{b}}.
+                    \begin{align*}
+                    f(\mathbf{x} ; \boldsymbol{\theta})
+                    &= W^{(2)}(W^{(1)} \mathbf{x} + \mathbf{b}^{(1)}) + \mathbf{b}^{(2)} \\\\
+                    &= (W^{(2)}W^{(1)})\mathbf{x} + (W^{(2)} \mathbf{b}^{(1)} + \mathbf{b}^{(2)}) \\\\
+                    &= \tilde{W}\mathbf{x} + \tilde{\mathbf{b}}.
+                    \end{align*}
                     \]
-                    This composition remains an <strong>affine</strong> transformation of \( \mathbf{x} \), and therefore is incapable of representing non-linear decision boundaries. 
-                    Non-linear activation functions are necessary to break this linearity.
+                    This composition remains an <strong>affine</strong> transformation of \( \mathbf{x} \), and therefore is incapable of representing nonlinear decision boundaries.
+                    Nonlinear activation functions are necessary to break this linearity.
                 </p>
 
                 <p>
@@ -154,29 +155,37 @@ uses_python: false
                     \sigma(a) = \frac{1}{1+e^{-a}}.
                     \]
                     However, sigmoid functions saturate for large positive or negative inputs: \( \sigma(a) \to 1 \) as \( a \to +\infty \), and \( \sigma(a) \to 0 \) as \( a \to -\infty \). 
-                    In these regions, the gradient \(\sigma'(a) = \sigma(a)(1-\sigma(a))\) becomes very small (approaching zero), leading to the <strong>vanishing gradient problem</strong>. 
-                    During backpropagation, gradients are multiplied layer by layer, so very small gradients in deeper layers become exponentially smaller as they propagate backward, making 
-                    learning slow or unstable in deep networks.
+                    In these regions, the gradient \(\sigma'(a) = \sigma(a)(1-\sigma(a))\) becomes very small (approaching zero). This small derivative is the source
+                    of the <strong>vanishing gradient problem</strong>.
+                </p>
 
+                <p>
+                    Even away from saturation, \(\sigma'(a) \leq \tfrac{1}{4}\) for every \(a\), since \(s(1-s) \leq \tfrac{1}{4}\) for \(s \in (0,1)\).
+                    During backpropagation, each sigmoid layer contributes such a factor, multiplied together with the transposed weight matrix of that
+                    layer, so the gradients reaching the early layers can shrink exponentially with depth. Learning therefore becomes slow or unstable in deep networks.
                 </p>
                 <p>
                     To address this, modern networks often use the <strong>Rectified Linear Unit (ReLU)</strong>:
                     \[
-                    g(a) = \max(0, a) = a \mathbb{I}(a>0)
+                    g(a) = \max(0, a) = a \mathbb{I}(a \gt 0),
                     \]
-                    ReLU's derivative is 1 for positive inputs and 0 for negative inputs, avoiding the exponential decay of gradients that occurs with sigmoid functions. 
-                    ReLU introduces non-linearity while preserving gradient magnitude for positive inputs. It is computationally simple and helps maintain gradient flow 
-                    during training, which is why it is now a standard choice in modern neural network architectures.
+                    where \(\mathbb{I}(a \gt 0)\) equals \(1\) if \(a \gt 0\) and \(0\) otherwise. Because ReLU's derivative is 1 for positive inputs and 0 for
+                    negative inputs, an active unit passes gradients backward without the factor of at most \(\tfrac{1}{4}\) that each sigmoid layer contributes.
+                    ReLU is nonlinear yet piecewise linear and computationally simple, and it helps maintain gradient flow during training, which is why it is
+                    now a standard choice in modern neural network architectures.
                 </p>
                 
                 <p>
-                    <strong>Note:</strong> Strictly speaking, the ReLU function is not differentiable at \( a = 0 \). In practice, optimization algorithms rely on the 
-                    concept of <strong>subgradients</strong>, explicitly assigning a derivative of \( 0 \) (or sometimes \( 1 \)) at exactly \( a = 0 \).
+                    <strong>Note.</strong> Strictly speaking, the ReLU function is not differentiable at \( a = 0 \). Because ReLU is convex, its
+                    <a href="../Calculus/gradient.html#D-subgradient" class="ref-link"><strong>subgradients</strong></a> at \( 0 \) are exactly the numbers
+                    \(s \in [0, 1]\), since the inequality \(\max(0, z) \geq s z\) holds for all \(z \in \mathbb{R}\) precisely when \(0 \leq s \leq 1\).
+                    In practice, implementations assign one of these values as the derivative at exactly \( a = 0 \), most commonly \( 0 \) (sometimes \( 1 \)).
                 </p>
 
                 <p>
-                    <strong>Note:</strong> While ReLU solves the vanishing gradient problem, it can suffer from the "dying ReLU" problem where neurons become inactive 
-                    (always output zero) and stop learning. This occurs when neurons consistently receive negative inputs, causing their gradients to be permanently zero.
+                    <strong>Note.</strong> While ReLU mitigates the vanishing gradient problem, it can suffer from the "dying ReLU" problem, in which neurons become
+                    inactive (always output zero) and stop learning. This occurs when a neuron's pre-activation is negative on every training input.
+                    The ReLU derivative is then \(0\) on every example, so the loss gradient never updates the weights and bias feeding into that neuron.
                 </p>
             </section>
 
@@ -184,17 +193,27 @@ uses_python: false
                 <h2>Learning in Neural Networks</h2>
 
                 <p> 
-                    Training the network is finding parameters \( \boldsymbol{\theta} = \{ \boldsymbol{\theta}_\ell \}_{\ell=1}^L \), where 
-                    \( \boldsymbol{\theta}_\ell = \{ W^{(\ell)}, \mathbf{b}^{(\ell)} \} \) that minimize the empirical risk (average loss over all training data):
+                    Training the network means finding parameters \( \boldsymbol{\theta} \) that minimize the empirical risk, the average loss
+                    over the training pairs \((\mathbf{x}_i, y_i)\), \(i = 1, \ldots, N\):
                     \[
-                    J(\boldsymbol{\theta}) = \frac{1}{N} \sum_i \mathcal{L}(y_i, \hat{y}_i)
+                    J(\boldsymbol{\theta}) = \frac{1}{N} \sum_{i=1}^N \mathcal{L}(y_i, \hat{\mathbf{y}}_i),
                     \]
-                    where \(\hat{y}_i = h_{\boldsymbol{\theta}}(\mathbf{x}_i)\) is the network's prediction.
+                    where \(\hat{\mathbf{y}}_i = h_{\boldsymbol{\theta}}(\mathbf{x}_i)\) is the network's prediction.
                 </p>
                 <p>
-                    For binary classification, the standard loss is
-                    <a href="../Probability/entropy.html#D-cross_entropy" class="ref-link"><strong>binary cross-entropy</strong></a>,
-                    which specializes the cross-entropy \(\mathbb{H}(p, q)\) to two-class targets \(y \in \{0, 1\}\) with predicted probability \(\hat{y} \in (0, 1)\).
+                    For binary classification, the network has a single sigmoid output unit, so \(\hat{\mathbf{y}}\) is a scalar \(\hat{y} \in (0, 1)\),
+                    the predicted probability of class \(1\). The standard loss is then
+                    <a href="../Probability/entropy.html#D-cross_entropy" class="ref-link"><strong>binary cross-entropy</strong></a>, the cross-entropy
+                    between the label distribution \((y, 1 - y)\) and the predicted distribution \((\hat{y}, 1 - \hat{y})\) for a target \(y \in \{0, 1\}\):
+                    \[
+                    \begin{align*}
+                    \mathcal{L}(y, \hat{y})
+                    &= \mathbb{H}\bigl((y, 1 - y), (\hat{y}, 1 - \hat{y})\bigr) \\\\
+                    &= -y \log \hat{y} - (1 - y) \log(1 - \hat{y}).
+                    \end{align*}
+                    \]
+                    This is the same loss that logistic regression minimizes on the <a href="intro_classification.html"><strong>classification page</strong></a>,
+                    now with \(\hat{y}\) produced by a whole network.
                 </p>
                 <p>
                     Optimization is performed by a <a href="../Calculus/gradient.html"><strong>gradient-based optimization method</strong></a>, which 
@@ -202,20 +221,22 @@ uses_python: false
                     \[
                     \boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \alpha \nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta})
                     \]
-                    where \(\alpha\) is the learning rate. In practice, computing the full-batch gradient at every step is prohibitive when \(N\) is large; 
-                    our demo therefore employs <a href="../Calculus/gradient.html#sgd"><strong>mini-batch stochastic gradient descent</strong></a>, 
-                    which uses a small random subset of the data per iteration as an unbiased, lower-variance estimator of the full gradient.
+                    where \(\alpha\) is the learning rate. In practice, computing the full-batch gradient at every step is prohibitive when \(N\) is large,
+                    so training uses <a href="../Calculus/gradient.html#sgd"><strong>mini-batch stochastic gradient descent</strong></a>, and our demo does the
+                    same. Each iteration averages the gradient over a small random subset of the data. This average is an unbiased estimator of the full
+                    gradient, with lower variance than a single-example gradient.
                 </p>
 
                 <p>
-                    The gradients are computed efficiently by the <strong>backpropagation</strong> algorithm — an efficient application of the 
-                    <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a> starting from the gradient of the loss with respect to the 
-                    output and working backwards. The algorithm computes all gradients in just two passes through the network:
+                    The gradients are computed efficiently by the <strong>backpropagation</strong> algorithm, which applies the
+                    <a href="../Calculus/jacobian.html#T-chain_rule" class="ref-link"><strong>chain rule</strong></a> starting from the gradient of the loss
+                    with respect to the output and working backward. For a single training pair,
+                    the algorithm computes the gradients of \(\mathcal{L}\) with respect to all parameters in just two passes through the network:
                 </p>
                 
                 <div class="pseudocode">
                     <span class="pseudocode-title">Algorithm: BACKPROPAGATION</span>
-                    <strong>Consider an MLP with L layers and a loss function \(\mathcal{L}\)</strong>
+                    <strong>Consider an MLP with \(L\) layers and a loss function \(\mathcal{L}\)</strong>
                     <strong>Input:</strong> Data point \((\mathbf{x}, y)\)
                     <strong>// Forward Pass</strong>
                     &emsp;\(\mathbf{z}^{(0)} = \mathbf{x}\); 
@@ -228,21 +249,45 @@ uses_python: false
                     <strong>// Backward Pass</strong>
                     &emsp;\(\mathbf{u}^{(L)} = \nabla_{\hat{\mathbf{y}}} \mathcal{L}\); // Gradient of the loss wrt the network output
                     &emsp;<strong>for \(\ell = L : 1\) do</strong>
-                    &emsp;&emsp;&emsp; \(\boldsymbol{\delta}^{(\ell)} = \mathbf{u}^{(\ell)} \odot g_\ell'(\mathbf{a}^{(\ell)})\); // Element-wise multiplication
+                    &emsp;&emsp;&emsp; \(\boldsymbol{\delta}^{(\ell)} = \mathbf{u}^{(\ell)} \odot g_\ell'(\mathbf{a}^{(\ell)})\); // Elementwise multiplication
                     &emsp;&emsp;&emsp; \(\nabla_{W^{(\ell)}} \mathcal{L} = \boldsymbol{\delta}^{(\ell)} (\mathbf{z}^{(\ell-1)})^\top\);
                     &emsp;&emsp;&emsp; \(\nabla_{\mathbf{b}^{(\ell)}} \mathcal{L} = \boldsymbol{\delta}^{(\ell)}\);
                     &emsp;&emsp;&emsp; \(\mathbf{u}^{(\ell-1)} = (W^{(\ell)})^\top \boldsymbol{\delta}^{(\ell)}\); // Gradient wrt the input of the current layer
-                    <strong>Output:</strong> \(\{\nabla_{W^{(\ell)}} \mathcal{L},\; \nabla_{\mathbf{b}^{(\ell)}} \mathcal{L}\}_{\ell=1}^L\)
+                    <strong>Output:</strong> \(\{\nabla_{W^{(\ell)}} \mathcal{L}, \nabla_{\mathbf{b}^{(\ell)}} \mathcal{L}\}_{\ell=1}^L\)
                 </div>
-              
+
+                <p>
+                    The gradient of \(J\), or of a mini-batch average, is the corresponding average of these per-example gradients. The step
+                    \(\boldsymbol{\delta}^{(\ell)} = \mathbf{u}^{(\ell)} \odot g_\ell'(\mathbf{a}^{(\ell)})\) is the chain rule for an elementwise
+                    activation, whose Jacobian is the diagonal matrix \(\operatorname{diag}(g_\ell'(\mathbf{a}^{(\ell)}))\). For ReLU, the value
+                    of \(g_\ell'\) at \(0\) is fixed by the convention in the note on subgradients.
+                </p>
+
+                <p>
+                    A softmax output layer is not elementwise, and there \(\boldsymbol{\delta}^{(L)}\) must be computed with the full softmax
+                    Jacobian. For the pairings used in practice, sigmoid with binary cross-entropy and softmax with cross-entropy, both collapse to
+                    \[
+                    \boldsymbol{\delta}^{(L)} = \hat{\mathbf{y}} - \mathbf{y},
+                    \]
+                    where \(\mathbf{y}\) is the one-hot target (the scalar \(y\) in the binary case). This is the same residual, prediction minus
+                    target, that weights each example in the logistic regression gradient on the classification page.
+                </p>
+
+                <p>
+                    With the architecture and training procedure of neural networks established, a natural question arises: how exactly are the gradients
+                    \(\nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta})\) computed for arbitrary computational graphs? Our treatment of
+                    <a href="autodiff.html"><strong>automatic differentiation</strong></a> generalizes backpropagation beyond sequential layers to the full
+                    framework of reverse-mode automatic differentiation on directed acyclic graphs.
+                </p>
+
             </section>
 
             <section id="demo" class="section-content section-wide">
                 <h2>Neural Networks Demo</h2>
                 <div id="neural_network_visualizer"></div>
                 <p>
-                    This interactive demo showcases how a simple neural network can learn to classify non-linear patterns. 
-                    You can generate datasets, tweak model parameters, and visualize the training process in real time. 
+                    This interactive demo showcases how a simple neural network can learn to classify nonlinear patterns.
+                    Datasets can be generated, model parameters adjusted, and the training process visualized in real time.
                     On load, the demo verifies its own gradient computations against finite differences and refuses to render if any check fails.
                 </p>
 
@@ -254,31 +299,33 @@ uses_python: false
                         <li>1 output unit with sigmoid activation for binary classification</li>
                     </ul>
                     </li>
-                    <li><strong>Forward Pass:</strong> 
-                        The network computes predictions by applying matrix operations and non-linear activations. Selecting a 
+                    <li><strong>Forward Pass.</strong>
+                        The network computes predictions by applying matrix operations and nonlinear activations. Selecting a
                         demo point shows a step-by-step computation.
                     </li>
-                    <li><strong>Training:</strong>
-                        The network is trained using <strong>mini-batch gradient descent with backpropagation</strong> to minimize 
-                        binary cross-entropy loss. Each iteration uses a randomly sampled mini-batch of the training data to 
-                        update weights; the batch size is adjustable, all the way up to full-batch gradient descent.
+                    <li><strong>Training.</strong>
+                        The network is trained using <strong>mini-batch gradient descent with backpropagation</strong> to minimize
+                        binary cross-entropy loss. Each iteration uses a randomly sampled mini-batch of the training data to
+                        update weights. The batch size is adjustable, all the way up to full-batch gradient descent.
                     <ul style="padding-left: 40px;">
                         <li>Cheaper per update than full-batch gradient descent</li>
-                        <li>The gradient noise it introduces can help escape flat regions and saddle points — set the batch size to 70 (full batch) to compare</li>
+                        <li>The gradient noise it introduces can help escape flat regions and saddle points (compare with a batch size of 70, the full batch)</li>
                         <li>More closely mirrors how real-world neural networks are trained</li>
                     </ul>
                     </li>
                     <li><strong>Regularization &amp; Failure Modes:</strong>
                     <ul style="padding-left: 40px;">
-                        <li>\(\ell_2\) regularization (λ) discourages large weights; combine it with label noise to watch the train/test accuracy gap open and close</li>
-                        <li>The demo applies exactly the hyperparameters you set — no hidden learning-rate adjustment, gradient clipping, or early stopping. If the learning rate is too large, training visibly fails, and that failure is part of the lesson.</li>
+                        <li>\(\ell_2\) regularization (\(\lambda\)) discourages large weights. Paired with label noise, it shows the train/test accuracy gap
+                            opening and closing.</li>
+                        <li>The demo applies exactly the hyperparameters chosen in the controls, with no hidden learning-rate adjustment, gradient clipping,
+                            or early stopping. If the learning rate is too large, training visibly fails, and that failure is part of the lesson.</li>
                     </ul>
                     </li>
                     <li><strong>Visualizations:</strong>
                     <ul style="padding-left: 40px;">
                         <li>Color-coded data points for training (circles) and test (squares) sets</li>
-                        <li>Decision boundary (green) shows where prediction = 0.5</li>
-                        <li>Background shading shows the predicted probability — deeper color means higher model confidence</li>
+                        <li>Decision boundary (green) shows where the predicted probability equals \(0.5\)</li>
+                        <li>Background shading shows the predicted probability, with deeper color meaning higher model confidence</li>
                         <li>Training curves track train and test loss across iterations</li>
                         <li>Dynamic network graph and forward pass breakdown</li>
                     </ul>
@@ -287,12 +334,13 @@ uses_python: false
                 
                 <h3>Try Adjusting:</h3>
                 <ul style="padding-left: 40px;">
-                    <li><strong>Hidden Units:</strong> More neurons allow for more complex decision boundaries</li>
-                    <li><strong>Label Noise:</strong> Flips a fraction of the labels; with noise present, the gap between train and test accuracy makes overfitting visible</li>
-                    <li><strong>Regularization (λ):</strong> Helps prevent overfitting by discouraging large weights</li>
-                    <li><strong>Learning Rate:</strong> Controls how quickly the model updates — too large and training visibly diverges</li>
-                    <li><strong>Batch Size:</strong> Small batches give noisy but frequent updates; 70 corresponds to full-batch gradient descent</li>
-                    <li><strong>Iterations per Run:</strong> How many SGD steps each press of Train performs; Train (Continue) accumulates further steps</li>
+                    <li><strong>Hidden Units.</strong> More neurons allow for more complex decision boundaries.</li>
+                    <li><strong>Label Noise.</strong> A chosen fraction of the labels is flipped. With noise present, the gap between train and test
+                        accuracy makes overfitting visible.</li>
+                    <li><strong>Regularization (\(\lambda\)).</strong> Larger values of \(\lambda\) help prevent overfitting.</li>
+                    <li><strong>Learning Rate.</strong> The step size controls how quickly the model updates. An overly large step makes training diverge.</li>
+                    <li><strong>Batch Size.</strong> Small batches give noisy but frequent updates. A batch size of 70 corresponds to full-batch gradient descent.</li>
+                    <li><strong>Iterations per Run.</strong> Each press of Train performs this many SGD steps, and Train (Continue) accumulates further steps.</li>
                 </ul>
             </section>
 
@@ -300,39 +348,30 @@ uses_python: false
                 <h2>Development of Deep Learning</h2>
 
                 <p>
-                    The modern revolution in deep learning has been driven not only by algorithmic advances, but also by dramatic improvements in 
-                    hardware—especially the rise of <strong>graphics processing units (GPUs)</strong>. Originally designed to accelerate 
+                    The modern revolution in deep learning has been driven not only by algorithmic advances, but also by dramatic improvements in
+                    hardware. The most consequential of these was the rise of <strong>graphics processing units (GPUs)</strong>. Originally designed to accelerate
                     <strong>matrix-vector computations</strong> for real-time rendering in video games, GPUs turned out to be ideally suited for 
                     the linear algebra operations at the heart of neural networks.
                 </p>
 
                 <p>
-                    In the early 2010s, researchers discovered that GPUs could speed up deep learning training by orders of magnitude compared to 
-                    traditional CPUs. This enabled the training of large neural networks on <strong>large labeled datasets</strong>, like ImageNet, 
-                    which led to breakthroughs in computer vision, <strong>speech recognition</strong> (converting spoken language to text), and broader 
-                    <strong>natural language processing (NLP)</strong> tasks such as translation, summarization, and question answering. Today, GPUs are 
-                    a core component in ML research and development, alongside other fields such as scientific computing, complex simulations, and even 
+                    Around 2010, researchers showed that GPUs could speed up deep learning training by orders of magnitude compared to
+                    traditional CPUs. This enabled the training of large neural networks on <strong>large labeled datasets</strong> such as ImageNet.
+                    The resulting models led to breakthroughs in computer vision, <strong>speech recognition</strong> (converting spoken language to text),
+                    and broader <strong>natural language processing (NLP)</strong> tasks including translation, summarization, and question answering.
+                    Today, GPUs are a core component of ML research and development, as well as of scientific computing, complex simulations, and even
                     cryptocurrency mining.
                 </p>
 
                 <p>
-                    Zooming out further, GPUs themselves rely on foundational advances in <strong>semiconductor</strong> technology. Semiconductors are 
-                    materials whose conductivity can be precisely controlled, making them the backbone of all modern electronics — from GPUs and CPUs to 
-                    memory chips and mobile devices. By using advanced fabrication techniques and nanometer-scale engineering, manufacturers can pack 
-                    billions of <strong>transistors</strong> onto a single chip. This density of computation enables the incredible power of today's 
-                    hardware and fuels the era of <strong>foundation models</strong>, including <strong>large language models (LLMs)</strong>.
+                    At a still more basic level, GPUs themselves rely on foundational advances in <strong>semiconductor</strong> technology. Semiconductors are
+                    materials whose conductivity can be precisely controlled. This controllability makes them the backbone of all modern electronics, from GPUs
+                    and CPUs to memory chips and mobile devices. By using advanced fabrication techniques and nanometer-scale engineering, manufacturers can pack
+                    billions of <strong>transistors</strong> onto a single chip. This density of computation underlies the power of today's hardware and the
+                    era of <strong>foundation models</strong>, including <strong>LLMs</strong>.
                 </p>
-
-                <p>
-                    With the architecture and training procedure of neural networks established, a natural question arises: how exactly are the gradients 
-                    \(\nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta})\) computed for arbitrary computational graphs? On the next page on <a href="autodiff.html"><strong>automatic 
-                    differentiation</strong></a>, we generalize backpropagation beyond sequential layers to the full framework of reverse-mode automatic 
-                    differentiation on directed acyclic graphs.
-                </p>
-
             </section>
-
         </div>
-<script src="/js/sec5_p4_intro_nn.js"></script>
+        <script src="/js/sec5_p4_intro_nn.js"></script>
     </body>
 </html>
