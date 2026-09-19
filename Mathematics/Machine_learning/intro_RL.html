@@ -37,23 +37,28 @@ uses_python: false
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
 
-                <p> 
-                    So far, we have studied supervised learning and unsupervised learning. We now turn to a third paradigm. 
-                    <strong>Reinforcement Learning (RL)</strong> is a machine learning framework in which an <strong>agent</strong> interacts 
-                    with an environment to learn a behavior that maximizes a scalar <strong>reward</strong> signal over time. 
-                    Formally, the environment is typically modeled as a <strong>Markov Decision Process (MDP)</strong>, defined by a tuple 
-                    \[
-                    (\mathcal{S}, \mathcal{A}, \mathcal{T}, r, \gamma)
-                    \]
-                    where \(\mathcal{S}\) is the state space, \(\mathcal{A}\) is the action space, \(\mathcal{T}\) is the transition kernel 
-                    (a conditional distribution \(\mathcal{T}(s' \mid s, a)\)), \(r\) is the reward function, and \(\gamma\) is the discount factor. 
-                    We give a more detailed probabilistic formulation, separating the stochastic reward kernel from the expected reward function 
-                    and including the initial state distribution explicitly, in the MDP definition below.
+                <p>
+                    So far, we have studied supervised learning and unsupervised learning. We now turn to a third paradigm.
+                    <strong>Reinforcement Learning (RL)</strong> is a machine learning framework in which an <strong>agent</strong> interacts
+                    with an environment to learn a behavior that maximizes a scalar <strong>reward</strong> signal over time.
                 </p>
 
                 <p>
-                    At each time step, the agent observes a state \(s_t \in \mathcal{S}\) and selects an action \(a_t \in \mathcal{A}\); 
-                    the environment then transitions to a new state \(s_{t+1}\) according to the transition dynamics \(\mathcal{T}(s_{t+1} \mid s_t, a_t)\) 
+                    Formally, the environment is typically modeled as a <strong>Markov Decision Process (MDP)</strong>, defined by a tuple
+                    \[
+                    (\mathcal{S}, \mathcal{A}, \mathcal{T}, r, \gamma)
+                    \]
+                    where \(\mathcal{S}\) is the state space, \(\mathcal{A}\) is the action space, \(\mathcal{T}\) is the transition kernel
+                    (a conditional distribution \(\mathcal{T}(s' \mid s, a)\)), \(r\) is the reward function, and \(\gamma\) is the discount factor.
+                    The MDP definition below gives a more detailed probabilistic formulation. It writes the transition kernel as
+                    \(p_T\), separates the stochastic reward kernel \(p_R\) from the expected reward function \(R\), and includes the
+                    initial state distribution explicitly. The discount factor \(\gamma\) is then treated as part of the objective
+                    rather than of the environment.
+                </p>
+
+                <p>
+                    At each time step, the agent observes a state \(s_t \in \mathcal{S}\) and selects an action \(a_t \in \mathcal{A}\).
+                    The environment then transitions to a new state \(s_{t+1}\) according to the transition dynamics \(\mathcal{T}(s_{t+1} \mid s_t, a_t)\)
                     and emits a reward \(r_t\). 
                     The goal of the agent is to learn a <strong>policy</strong> \(\pi(a \mid s)\) that maximizes the expected cumulative reward:
                     \[
@@ -73,9 +78,9 @@ uses_python: false
                 
               
                 <p>
-                    In RL, learning is typically driven by trial-and-error interaction rather than labeled examples (the offline / batch RL setting, 
-                    where an agent learns from a fixed pre-collected dataset, is a notable exception). Unlike supervised learning, there are no correct labels for each input, 
-                    and unlike unsupervised learning, the objective is not to model data structure but to learn a policy that maximizes expected cumulative reward over time.
+                    In RL, learning is typically driven by trial-and-error interaction rather than by labeled examples, and the objective
+                    is a policy that maximizes expected cumulative reward rather than a model of the data. The offline (or batch) setting,
+                    in which an agent learns from a fixed pre-collected dataset instead of interacting, is a notable exception.
                 </p>
 
                 <p>
@@ -86,10 +91,9 @@ uses_python: false
                 </p>
 
                 <p>
-                    The diversity of RL applications has led to a rich classification of algorithms, each designed to address different aspects of 
-                    the learning problem. Understanding this classification is crucial for selecting appropriate methods and comprehending the 
-                    relationships between different approaches.
-                </p>     
+                    The diversity of RL applications has led to a rich classification of algorithms, each designed for a different aspect
+                    of the learning problem.
+                </p>
 
             </section>
 
@@ -102,7 +106,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    <strong>Model-based RL</strong> methods learn an explicit model of the environment from data, including:
+                    <strong>Model-based RL</strong> methods estimate the following from data:
                 </p>
 
                 <ul style="padding-left: 40px;">
@@ -113,9 +117,9 @@ uses_python: false
                 <p>
                     Once learned, the agent uses <strong>planning</strong> algorithms to compute an optimal policy \(\pi_*\). 
                     Classical planning is based on dynamic programming such as <strong>value iteration (VI)</strong> and <strong>policy iteration (PI)</strong>. 
-                    The main advantage is <strong>environment-sample efficiency</strong> — the agent can simulate many trajectories using the learned model without additional 
-                    environment interaction. However, model learning introduces <strong>model bias</strong>: if the learned model is inaccurate, the agent 
-                    may perform well in simulation but poorly in the real environment.
+                    The main advantage is <strong>environment-sample efficiency</strong>. The agent can simulate many trajectories using the learned
+                    model without additional environment interaction. However, model learning introduces <strong>model bias</strong>. If the learned
+                    model is inaccurate, the agent may perform well in simulation but poorly in the real environment.
                 </p>
 
                 <p>
@@ -126,22 +130,25 @@ uses_python: false
 
                 <h3>Value-Based vs Policy-Based</h3>
                 <p>
-                    This taxonomy classifies algorithms based on <strong>what they learn</strong> in the model-free RL.
+                    This taxonomy classifies algorithms based on <strong>what they learn</strong> within model-free RL.
                 </p>
 
                 <p>
                     <strong>Value-based methods</strong> learn the optimal action-value function \(Q_*\) (or its approximator \(Q_w\), 
                     typically a neural network trained iteratively) from experience, and then act greedily with respect to it: 
-                    \(\pi_*(s) = \arg\max_a Q_*(s, a)\). Given a transition \((s, a, r, s')\), we define the 
+                    \(\pi_*(s) \in \arg\max_a Q_*(s, a)\). Given a transition \((s, a, r, s')\), we define the 
                     <strong>temporal difference</strong> (or <strong>TD error</strong>) as
                     \[
                     r + \gamma \max_{a'} Q_w(s', a') - Q_w(s, a),
                     \]
-                    whose expectation is the Bellman optimality residual evaluated at \((s, a)\); when \(Q_w = Q_*\), the TD error 
-                    is zero on average by Bellman's optimality equation, so a non-zero expected TD error provides a learning signal. 
-                    Examples include <strong>Q-learning</strong>, <strong>SARSA</strong>, and <strong>Deep Q-Networks (DQN)</strong>; 
-                    these methods differ in their bootstrap target — for instance, SARSA replaces the \(\max_{a'}\) above with the 
-                    actually-taken next action \(a'\) — and the precise update rules are given in the TD-learning sections below.
+                    whose conditional expectation given \((s, a)\) is the Bellman optimality residual at \((s, a)\). When \(Q_w = Q_*\), the TD error
+                    is zero on average by Bellman's optimality equation, so a non-zero expected TD error provides a learning signal.
+                </p>
+
+                <p>
+                    Examples include <strong>Q-learning</strong>, <strong>SARSA</strong>, and <strong>Deep Q-Networks (DQN)</strong>.
+                    These methods differ in their bootstrap target. For instance, SARSA replaces the \(\max_{a'}\) above with the
+                    actually-taken next action \(a'\). The precise update rules are given in the TD-learning sections below.
                 </p>
 
                 <p>
@@ -165,20 +172,22 @@ uses_python: false
                 </p>
 
                 <p>
-                    <strong>On-policy methods</strong> learn the Q-function from data generated by the current policy that is being improved. 
+                    <strong>On-policy methods</strong> learn from data generated by the current policy that is being improved.
                     The agent explores the environment and makes updates to its policy based on the actions it has taken.
                     <br>
-                    (e.g., <strong>SARSA</strong>, <strong>REINFORCE</strong>, <strong>A2C</strong>, and <strong>PPO</strong>.)
+                    (for example, <strong>SARSA</strong>, <strong>REINFORCE</strong>, <strong>A2C</strong>, and <strong>PPO</strong>.)
                 </p>
 
                 <p>
                     <strong>Off-policy methods</strong> learn from data generated by a different policy than the one being 
                     improved. This allows the agent to reuse old data or learn from data collected by other agents. The policy used to 
                     collect data is called the behavioral policy, and the policy being learned is called the target policy. 
-                    They offer higher <strong>sample efficiency</strong> than on-policy methods, but require handling distribution 
-                    mismatch (typically via importance-sampling corrections).
+                    Off-policy methods typically offer higher <strong>sample efficiency</strong> than on-policy methods. Some of them must
+                    correct for the mismatch between the behavioral and target distributions, for example with importance-sampling weights
+                    in off-policy policy-gradient estimators. One-step Q-learning needs no such correction, because its target does not
+                    depend on the behavioral policy.
                     <br>
-                    (e.g., <strong>Q-learning</strong>, <strong>DQN</strong>, <strong>DDPG</strong>, and <strong>SAC</strong>.)
+                    (for example, <strong>Q-learning</strong>, <strong>DQN</strong>, <strong>DDPG</strong>, and <strong>SAC</strong>.)
                 </p>
 
             </section>
@@ -190,13 +199,13 @@ uses_python: false
                     balance between:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li><strong>Exploitation</strong>: Choosing actions that yield high rewards based on current knowledge</li>
-                    <li><strong>Exploration</strong>: Trying new actions to potentially discover better strategies</li>
+                    <li><strong>Exploitation.</strong> Choosing actions that yield high rewards based on current knowledge.</li>
+                    <li><strong>Exploration.</strong> Trying new actions to potentially discover better strategies.</li>
                 </ul>
 
                 <p>
                     All strategies in this section assume access to action-value estimates \(Q(s, a)\), the action-value function 
-                    formally defined in the Value Functions section below; here we use it operationally as "the agent's current estimate 
+                    formally defined in the Value Functions section below. Here we use it operationally as "the agent's current estimate 
                     of how good action \(a\) is in state \(s\)."
                 </p>
 
@@ -211,7 +220,7 @@ uses_python: false
                     \]
                     where \(\varepsilon \in [0,1]\) controls the exploration rate. Often \(\varepsilon\) is decayed over time. 
                     Note that the random branch samples uniformly from <em>all</em> actions (including the greedy one), 
-                    so the greedy action is selected with total probability \(1 - \varepsilon + \varepsilon / |\mathcal{A}|\).
+                    so, when the greedy action is unique, it is selected with total probability \(1 - \varepsilon + \varepsilon / |\mathcal{A}|\).
                 </p>
 
                 <h3>Softmax Action Selection</h3>
@@ -220,14 +229,14 @@ uses_python: false
                     \[
                     P(a_t = a \mid s_t) = \frac{\exp(Q(s_t, a)/\tau)}{\sum_{a'} \exp(Q(s_t, a')/\tau)}
                     \]
-                    where \(\tau > 0\) is the temperature parameter. Higher temperatures lead to more exploration.
+                    where \(\tau \gt 0\) is the temperature parameter. Higher temperatures lead to more exploration.
                 </p>
 
                 <h3>Optimistic Initialization</h3>
                 <p>
                     Initializing Q-values optimistically (higher than realistic values) encourages exploration 
                     of all actions early in learning, as the agent will be "disappointed" by actual rewards 
-                    and try other actions. This technique is most effective in the tabular setting; with neural-network 
+                    and try other actions. This technique is most effective in the tabular setting. With neural-network 
                     function approximators, the notion of a uniform "optimistic" initialization is harder to enforce, 
                     and the trick does not transfer cleanly to deep RL.
                 </p>
@@ -243,7 +252,7 @@ uses_python: false
                 <h2>Markov Decision Process (MDP)</h2>
 
                 <p>
-                    Before diving into the details of RL algorithms, this section presents a detailed probabilistic formulation 
+                    Before we turn to RL algorithms, this section presents a detailed probabilistic formulation 
                     of Markov Decision Processes (MDPs), where both transitions and rewards are modeled as random variables. 
                     This perspective extends the classical deterministic view and is particularly useful for analyzing trajectory 
                     distributions and gradient-based learning methods used in modern reinforcement learning.
@@ -251,7 +260,7 @@ uses_python: false
 
                 <p>
                     An agent sequentially interacts with an initially unknown environment to obtain a <strong>trajectory</strong> 
-                    or multiple trajectories. A trajectory of length \(T\) (i.e., consisting of \(T\) transitions) is defined as:
+                    or multiple trajectories. A trajectory of length \(T\) (that is, consisting of \(T\) transitions) is defined as:
                     \[
                     \boldsymbol{\tau} = (s_0, a_0, r_0, s_1, a_1, r_1, s_2, \ldots, a_{T-1}, r_{T-1}, s_T),
                     \]
@@ -259,8 +268,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    The objective is to optimize the agent's action-selection policy so that the expected discounted cumulative reward
-                    is maximized:
+                    The objective is to optimize the agent's action-selection policy so as to maximize the expectation
+                    \(\mathbb{E}[G_0]\) of the discounted cumulative reward
                     \[
                     G_0 = \sum_{t = 0}^{T -1} \gamma^t r_t,
                     \]
@@ -308,12 +317,15 @@ uses_python: false
                 </ul>
 
                 <p>
-                    The transition kernel \(p_T(s_{t+1} \mid s_t, a_t)\) depends only on the current state and action, not on prior history; 
-                    this is the <a href="../Probability/markov.html#D-first_order_markov_property" class="ref-link"><strong>first-order Markov property</strong></a> 
-                    in its state-action form, and it is what makes the trajectory distribution factorize cleanly.
+                    The transition kernel \(p_T(s_{t+1} \mid s_t, a_t)\) depends only on the current state and action, not on prior history.
+                    This is the <a href="../Probability/markov.html#D-first_order_markov_property" class="ref-link"><strong>first-order Markov property</strong></a> 
+                    in its state-action form, and it makes the trajectory distribution factorize cleanly.
                     In continuous time the same idea, sharpened to hold at random stopping times, becomes the 
                     <a href="../Probability/strong_markov_property.html">strong Markov property of It&ocirc; diffusions</a>, 
                     developed rigorously in the probability section.
+                </p>
+
+                <p>
                     Under policy \(\pi\), the joint distribution of a trajectory \(\boldsymbol{\tau}\) of length \(T\) is given by:
                     \[
                     p(\boldsymbol{\tau}) = p_0(s_0) \prod_{t = 0}^{T -1} 
@@ -334,8 +346,9 @@ uses_python: false
                 <p>
                     While classical RL literature often starts with a deterministic reward function \(r(s, a)\) as a primitive, 
                     our probabilistic formulation derives \(R(s, a)\) by taking the expectation under the stochastic reward kernel \(p_R\). 
-                    This explicit modeling of reward stochasticity is particularly useful for gradient-based RL methods, where trajectory 
-                    likelihoods must be modeled explicitly.
+                    Writing the trajectory distribution out in full is also useful for gradient-based RL methods. The environment
+                    factors \(p_0\), \(p_T\), and \(p_R\) do not depend on the policy, which is why only policy terms survive in the
+                    policy gradient derived below.
                 </p>
             </section>
 
@@ -366,6 +379,11 @@ uses_python: false
                     <strong>Convention.</strong> Throughout this section, the subscript on \(\mathbb{E}\) names the distribution being averaged over: 
                     \(\mathbb{E}_\pi[\,\cdot\,]\) abbreviates expectation over full trajectories generated by \(\pi\), 
                     while \(\mathbb{E}_{\pi(a \mid s)}[\,\cdot\,]\) is expectation over the action variable alone, drawn from \(\pi(\cdot \mid s)\).
+                    For the exact results on this page (the Bellman equations, the dynamic-programming analysis, and the policy
+                    gradient theorem) we also make three standing assumptions: \(\mathcal{S}\) and \(\mathcal{A}\) are finite, rewards are
+                    bounded, and \(\gamma \in [0, 1)\). An episodic task fits this setting by treating its terminal state as absorbing
+                    with zero reward, so the return of an episode that ends at time \(T\) is the finite sum in the definition of the
+                    return. These assumptions make every value function below well defined and bounded.
                 </p>
 
                 <div class="theorem" id="D-value_function">
@@ -404,13 +422,14 @@ uses_python: false
                         \[
                         A_{\pi}(s, a) = Q_{\pi}(s, a) - V_{\pi}(s).
                         \]
-                        This measures how much better action \(a\) is in state \(s\) compared to the action that would be taken on average under \(\pi\).
+                        This measures how much better action \(a\) is in state \(s\) than the average value of actions drawn from
+                        \(\pi(\cdot \mid s)\).
                     </p>
                 </div>
 
                 <p>
-                    The discount factor \(\gamma\) ensures the return remains finite even for infinite-horizon problems and gives higher weight 
-                    to short-term rewards, thereby encouraging the agent to achieve goals sooner.
+                    Under the standing assumptions the discount factor keeps the return finite even for infinite-horizon problems. It also gives
+                    higher weight to short-term rewards, thereby encouraging the agent to achieve goals sooner.
                 </p>
 
                 <p>
@@ -418,13 +437,17 @@ uses_python: false
                     \[
                     \forall s \in \mathcal{S}, \quad V_{\pi_*}(s) \geq V_{\pi}(s), \quad \forall \pi.
                     \]
+                </p>
+
+                <p>
                     Although multiple optimal policies may exist, their value functions are the same: \(V_*(s) = V_{\pi_*}(s)\) and \(Q_*(s, a) = Q_{\pi_*}(s, a)\). 
-                    Moreover, when the action space \(\mathcal{A}\) is finite, the maximum in the Bellman optimality equation (stated immediately below) 
+                    Moreover, since the action space \(\mathcal{A}\) is finite, the maximum in the Bellman optimality equation (stated immediately below) 
                     is attained at every state, so selecting any maximizer 
                     \[
                     \pi_*(s) \in \arg\max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right]
                     \]
-                    yields a deterministic optimal policy.
+                    yields a deterministic optimal policy. Indeed, \(V_*\) then solves the Bellman expectation equation of this policy,
+                    whose solution is unique by the policy-evaluation analysis below, so the policy's value function is \(V_*\).
                 </p>
 
                 <div class="theorem" id="T-bellman_optimality">
@@ -436,17 +459,23 @@ uses_python: false
                         Q_*(s, a) &= R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ \max_{a'} Q_*(s', a') \right]
                         \end{align*}
                         \]
-                        The optimal value functions \(V_*\) and \(Q_*\) are the unique fixed points of these equations; 
-                        the right-hand side defines a \(\gamma\)-contraction in the supremum norm, and uniqueness follows from the 
-                        Banach Fixed-Point Theorem (used explicitly in the value-iteration analysis below).
+                        Under the standing assumptions above, the optimal value functions \(V_*\) and \(Q_*\) are the unique fixed
+                        points of these equations. The right-hand side defines a \(\gamma\)-contraction in the supremum norm, and
+                        uniqueness follows from the Banach Fixed-Point Theorem (used explicitly in the value-iteration analysis below).
                     </p>
                 </div>
 
                 <p>
-                    The optimal policy can then be derived by:
+                    We state these equations without proof. The uniqueness part is the contraction argument carried out for value
+                    iteration below, and the fact that \(V_*\) and \(Q_*\) satisfy them rests on Bellman's principle of optimality (discussed
+                    below), which we also take as given.
+                </p>
+
+                <p>
+                    An optimal policy can then be derived by:
                     \[
                     \begin{align*}
-                    \pi_*(s) &= \arg \max_a Q_*(s, a) \\\\
+                    \pi_*(s) &\in \arg \max_a Q_*(s, a) \\\\
                             &= \arg \max_a \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_*(s') \right] \right].
                     \end{align*}
                     \]
@@ -455,11 +484,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    Both Bellman optimality and Bellman expectation equations follow the same recursive structure: the value of a state 
-                    equals the immediate reward plus the discounted value of successor states. They differ only in how the action is chosen — 
-                    by maximization, \(\max_a[\,\cdot\,]\), in the optimality equations (giving the value of acting optimally), 
-                    or by sampling from \(\pi\), \(\mathbb{E}_{\pi(a \mid s)}[\,\cdot\,]\), in the expectation equations 
-                    (giving the value of following the fixed policy \(\pi\)).
+                    Both Bellman optimality and Bellman expectation equations follow the same recursive structure. The value of a state
+                    equals the immediate reward plus the discounted value of successor states. The two families differ only in how the
+                    action is chosen. The optimality equations maximize over it, \(\max_a[\,\cdot\,]\), which gives the value of acting
+                    optimally. In the expectation equations, the action is averaged over \(\pi\), \(\mathbb{E}_{\pi(a \mid s)}[\,\cdot\,]\),
+                    and the result is the value of following the fixed policy \(\pi\).
                 </p>
 
                 <div class="theorem" id="T-bellman_expectation">
@@ -484,7 +513,7 @@ uses_python: false
                 <p>
                     <strong>Dynamic programming (DP)</strong> is a technique for solving optimization problems by breaking them down into 
                     simpler subproblems and storing the results to avoid redundant computations. In the context of reinforcement learning, DP methods 
-                    solve MDPs exactly when the complete model (transition probabilities and rewards) is known.
+                    solve MDPs when the complete model (transition probabilities and rewards) is known.
                 </p>
 
                 <p>
@@ -506,8 +535,8 @@ uses_python: false
                     \[
                     V_{k+1}(s) = \max_a \left[ R(s, a) + \gamma \sum_{s'} p_T(s' \mid s, a) V_k (s') \right].
                     \]
-                    This is called a <strong>Bellman backup</strong>. Each iteration is a \(\gamma\)-contraction mapping 
-                    in the \(\ell_\infty\) norm, satisfying:
+                    This is called a <strong>Bellman backup</strong>. The backup operator is a \(\gamma\)-contraction in the
+                    \(\ell_\infty\) norm, and in particular each iterate satisfies
                     \[
                     \| V_{k+1} - V_* \|_\infty \leq \gamma \| V_k - V_* \|_\infty
                     \]
@@ -530,20 +559,28 @@ uses_python: false
                         \end{align*}
                         \]
                         where the last step uses \(\sum_{s'} p_T(s'\mid s, a) = 1\) and \(|V_k(s') - V_*(s')| \leq \|V_k - V_*\|_\infty\). 
-                        Taking \(\max_s\) on the left gives the claim.
+                        Taking \(\max_s\) on the left gives the claim. The same computation with \(V_k\) and \(V_*\) replaced by any two
+                        functions \(U, W : \mathcal{S} \to \mathbb{R}\) shows that the backup operator contracts every pair
+                        of functions by the factor \(\gamma\).
                     </p>
                 </div>
 
                 <p>
-                    Because \( 0 \leq \gamma < 1 \), 
-                    the <a href="../Calculus/completeness.html#T-banach_fixed_point" class="ref-link"><strong>Banach Fixed-Point Theorem</strong></a> guarantees that 
-                    \(V_k\) converges to the unique optimal value function \(V_*\) as \(k \to \infty\).
+                    Because \( 0 \leq \gamma \lt 1 \) and \(\mathbb{R}^{|\mathcal{S}|}\) is
+                    <a href="../Calculus/bounded_linear_operators.html#T-finite_dim_subspace_closed" class="ref-link"><strong>complete</strong></a>
+                    under \(\| \cdot \|_\infty\),
+                    the <a href="../Calculus/completeness.html#T-banach_fixed_point" class="ref-link"><strong>Banach Fixed-Point Theorem</strong></a> guarantees
+                    that the backup operator has a unique fixed point, which is \(V_*\) by Bellman's optimality equation, and that
+                    \(V_k\) converges to it as \(k \to \infty\). The inequality above gives the rate
+                    \(\| V_k - V_* \|_\infty \leq \gamma^k \| V_0 - V_* \|_\infty\).
                 </p>
 
                 <p>
-                    For all possible states \(s\), value iteration computes \(V_*(s)\) and \(\pi_*(s)\), averaging over all possible 
+                    For all possible states \(s\), value iteration approximates \(V_*(s)\) and \(\pi_*(s)\), averaging over all possible 
                     next states \(s'\) at each iteration. (Note: If we need the value and policy for only certain starting states, other methods can be used such as 
                     real-time dynamic programming). 
+                    The pseudocode below overwrites \(V(s)\) in place, a form of <strong>asynchronous value iteration</strong>.
+                    This variant also converges to \(V_*\), which we state without proof.
                 </p>
 
                 <div class="pseudocode">
@@ -558,7 +595,7 @@ uses_python: false
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(V^{\text{old}}(s) \leftarrow V(s)\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(V(s) \leftarrow \max_a \left[R(s,a) + \gamma \sum_{s'} p_T(s'|s,a) V(s')\right]\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(\Delta \leftarrow \max(\Delta, |V^{\text{old}}(s) - V(s)|)\)
-                    &emsp;&emsp;<strong>until</strong> \(\Delta < \theta\) (small threshold)
+                    &emsp;&emsp;<strong>until</strong> \(\Delta \lt \theta\) (small threshold)
                     &emsp;&emsp;// Extract optimal policy
                     &emsp;&emsp;<strong>for each</strong> \(s \in \mathcal{S}\):
                     &emsp;&emsp;&emsp;&emsp;\(\pi_*(s) \leftarrow \arg\max_a \left[R(s,a) + \gamma \sum_{s'} p_T(s'|s,a) V(s')\right]\)
@@ -576,21 +613,27 @@ uses_python: false
                     \[
                     \mathbf{v} = \mathbf{r} + \gamma \mathbf{T}\mathbf{v}.
                     \]
-                    Theoretically, the exact solution is \(\mathbf{v} = (\mathbf{I} - \gamma \mathbf{T})^{-1} \mathbf{r}\). 
-                    Since \(\mathbf{T}\) is a row-stochastic matrix, all of its eigenvalues lie in the closed unit disk, so the 
-                    spectral radius \(\rho(\gamma \mathbf{T}) = \gamma \rho(\mathbf{T}) \leq \gamma < 1\). This guarantees that 
-                    \(\mathbf{I} - \gamma \mathbf{T}\) is non-singular and that the <strong>Neumann series</strong> 
-                    \(\sum_{k=0}^{\infty} (\gamma \mathbf{T})^k = (\mathbf{I} - \gamma \mathbf{T})^{-1}\) converges. 
-                    In practice, we solve this iteratively using the update \(\mathbf{v}_{k+1} = \mathbf{r} + \gamma \mathbf{T} \mathbf{v}_k\). 
-                    Once \(V_{\pi}\) is evaluated, we proceed to <strong>policy improvement</strong> to find a superior policy \(\pi'\).
                 </p>
 
                 <p>
-                    Now we move on to the <strong>policy improvement</strong> step:
+                    Theoretically, the exact solution is \(\mathbf{v} = (\mathbf{I} - \gamma \mathbf{T})^{-1} \mathbf{r}\). 
+                    Since \(\mathbf{T}\) is a row-stochastic matrix, its maximum absolute row sum is \(1\), which bounds every eigenvalue
+                    in modulus, so the spectral radius \(\rho(\gamma \mathbf{T}) = \gamma \rho(\mathbf{T}) \leq \gamma \lt 1\). This guarantees that 
+                    \(\mathbf{I} - \gamma \mathbf{T}\) is non-singular and that the <strong>Neumann series</strong> 
+                    \(\sum_{k=0}^{\infty} (\gamma \mathbf{T})^k = (\mathbf{I} - \gamma \mathbf{T})^{-1}\) converges. 
+                    In practice, we solve this iteratively using the update \(\mathbf{v}_{k+1} = \mathbf{r} + \gamma \mathbf{T} \mathbf{v}_k\). 
+                </p>
+
+                <p>
+                    Once \(V_{\pi}\) is evaluated, the <strong>policy improvement</strong> step sets
                     \[
-                      \pi'(s) = \arg \max_a \left\{ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} [V_{\pi}(s')] \right\}
+                      \pi'(s) \in \arg \max_a \left\{ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} [V_{\pi}(s')] \right\}
                     \]
-                    This guarantees \(V_{\pi'} \geq V_{\pi}\) componentwise. To see this, write \(\mathbf{r}', \mathbf{T}'\) for the 
+                    This guarantees \(V_{\pi'} \geq V_{\pi}\) componentwise.
+                </p>
+
+                <p>
+                    To see why, write \(\mathbf{r}', \mathbf{T}'\) for the 
                     reward vector and transition matrix induced by \(\pi'\) (analogous to \(\mathbf{r}, \mathbf{T}\) for \(\pi\)). 
                     By the definition of \(\pi'\) as the greedy improvement, 
                     \(\mathbf{r}' + \gamma \mathbf{T}' \mathbf{v} \geq \mathbf{r} + \gamma \mathbf{T} \mathbf{v} = \mathbf{v}\) 
@@ -603,9 +646,9 @@ uses_python: false
                                 &\leq \cdots \leq \sum_{k=0}^{n-1} (\gamma \mathbf{T}')^k \mathbf{r}' + (\gamma \mathbf{T}')^n \mathbf{v}.
                     \end{align*}
                     \]
-                    Letting \(n \to \infty\): the partial sum converges to \((\mathbf{I} - \gamma \mathbf{T}')^{-1}\mathbf{r}' = \mathbf{v}'\) 
-                    by the Neumann-series argument above (since \(\rho(\gamma \mathbf{T}') < 1\)), and the residual \((\gamma \mathbf{T}')^n \mathbf{v} \to \mathbf{0}\) 
-                    for the same reason. Therefore \(\mathbf{v} \leq \mathbf{v}'\), i.e., \(V_{\pi} \leq V_{\pi'}\) componentwise.
+                    Let \(n \to \infty\). The partial sum converges to \((\mathbf{I} - \gamma \mathbf{T}')^{-1}\mathbf{r}' = \mathbf{v}'\) 
+                    by the Neumann-series argument above (since \(\rho(\gamma \mathbf{T}') \lt 1\)), and the residual \((\gamma \mathbf{T}')^n \mathbf{v} \to \mathbf{0}\) 
+                    for the same reason. Therefore \(\mathbf{v} \leq \mathbf{v}'\), that is, \(V_{\pi} \leq V_{\pi'}\) componentwise.
                 </p>
 
                 <div class="pseudocode">
@@ -623,62 +666,69 @@ uses_python: false
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(V_{\pi}^{\text{old}}(s) \leftarrow V_{\pi}(s)\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(V_{\pi}(s) \leftarrow \sum_a \pi(a|s) \left[R(s,a) + \gamma \sum_{s'} p_T(s'|s,a) V_{\pi}(s')\right]\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(\Delta \leftarrow \max(\Delta, |V_{\pi}^{\text{old}}(s) - V_{\pi}(s)|)\)
-                    &emsp;&emsp;&emsp;&emsp;<strong>until</strong> \(\Delta < \theta\) (small threshold)
+                    &emsp;&emsp;&emsp;&emsp;<strong>until</strong> \(\Delta \lt \theta\) (small threshold)
                     &emsp;&emsp;&emsp;&emsp;// Policy Improvement
                     &emsp;&emsp;&emsp;&emsp;\(\text{policy-stable} \leftarrow \text{true}\)
                     &emsp;&emsp;&emsp;&emsp;<strong>for each</strong> \(s \in \mathcal{S}\):
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(\text{old-action} \leftarrow \pi(s)\)
-                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(\pi(s) \leftarrow \arg\max_a \left[R(s,a) + \gamma \sum_{s'} p_T(s'|s,a) V_{\pi}(s')\right]\)
-                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<strong>if</strong> \(\text{old-action} \neq \pi(s)\) <strong>then</strong> \(\text{policy-stable} \leftarrow \text{false}\)
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<strong>if</strong> \(\text{old-action} \notin \arg\max_a \left[R(s,a) + \gamma \sum_{s'} p_T(s'|s,a) V_{\pi}(s')\right]\) <strong>then</strong>
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(\pi(s) \leftarrow\) an element of this \(\arg\max\)
+                    &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;\(\text{policy-stable} \leftarrow \text{false}\)
                     &emsp;&emsp;<strong>until</strong> \(\text{policy-stable} = \text{true}\)
                     <strong>end</strong>
                 </div>
 
                 <p>
-                    In policy iteration algorithm, starting from an initial policy, we alternate between policy evaluation step and 
-                    policy improvement step. Since there are at most \(|\mathcal{A}|^{|\mathcal{S}|}\) deterministic policies (assuming finite \(\mathcal{S}\) and \(\mathcal{A}\)), 
-                    and every iteration either leaves the policy unchanged — in which case Bellman optimality holds at every state and the policy is optimal — 
-                    or strictly improves it, the algorithm must converge in a finite number of iterations.
+                    In the policy iteration algorithm, starting from an initial policy, we alternate between the policy evaluation step
+                    and the policy improvement step. Assume \(\mathcal{S}\) and \(\mathcal{A}\) are finite. There are at most
+                    \(|\mathcal{A}|^{|\mathcal{S}|}\) deterministic policies. Suppose ties in the \(\arg\max\) are broken consistently, as the
+                    pseudocode does by keeping the current action whenever it is among the maximizers. Then every iteration either strictly improves
+                    the policy or leaves it unchanged, so the algorithm terminates after finitely many iterations. When the policy is
+                    unchanged, Bellman optimality holds at every state, so the final policy is optimal. These guarantees assume exact
+                    policy evaluation. The pseudocode stops evaluating at the threshold \(\theta\), so they hold only approximately there.
                 </p>
 
             </section>
 
-             <section id="MC" class="section-content">
+            <section id="MC" class="section-content">
                 <h2>Monte Carlo Control</h2>         
                 <p>
                     Having established the theoretical foundations of MDPs and dynamic programming, we now turn to <strong>model-free methods</strong> that 
                     learn directly from experience. We begin with <strong>Monte Carlo (MC) control</strong>, a fundamental <strong>value-based method</strong> 
                     that estimates value functions by sampling complete episodes and using actual returns. The averaging of sampled returns 
                     is an instance of the general <a href="../Probability/monte_carlo.html#D-monte_carlo_estimator" class="ref-link"><strong>Monte Carlo estimator</strong></a>, 
-                    and its convergence is guaranteed by 
+                    and, for a fixed policy, its convergence is guaranteed by 
                     <a href="../Probability/monte_carlo.html#T-monte_carlo_consistency" class="ref-link"><strong>Monte Carlo consistency</strong></a> 
                     (an application of the strong law of large numbers).
                 </p>
 
                 <p>
-                    Monte Carlo control implements <strong>generalized policy iteration (GPI)</strong> — a unifying name for any scheme 
-                    that interleaves policy evaluation and policy improvement at any granularity (also called 
-                    <em>generalized policy improvement</em> in some texts). At iteration \(k\), with current policy \(\pi_k\), the three steps are:
+                    Monte Carlo control implements <strong>generalized policy iteration (GPI)</strong>. GPI is a unifying name for any scheme 
+                    that interleaves policy evaluation and policy improvement at any granularity (also called
+                    <em>generalized policy improvement</em> in some texts). At iteration \(k\), with current policy \(\pi_k\), the
+                    three steps are:
                 </p>
 
                 <ol style="padding-left: 40px;">
-                    <li><strong>Rollout</strong>: starting from state \(s\), take action \(a\), and sample the rest of the trajectory by following 
+                    <li><strong>Rollout.</strong> Starting from state \(s\), take action \(a\), and sample the rest of the trajectory by following 
                         policy \(\pi_k\) until a terminal state is reached.</li>
-                    <li><strong>MC Q-estimate</strong>: compute the realized return \(G_0 = \sum_{t=0}^{T-1} \gamma^t r_t\) from this rollout and 
-                        average it (over many such rollouts) into the running estimate \(\hat{Q}_{\pi_k}(s, a)\). Steps 1 and 2 together perform 
+                    <li><strong>MC Q-estimate.</strong> Compute the realized return \(G_0 = \sum_{t=0}^{T-1} \gamma^t r_t\) from this rollout and 
+                        average it (over many such rollouts) into the running estimate \(Q_k(s, a)\) of \(Q_{\pi_k}(s, a)\). Steps 1 and 2 together perform 
                         policy evaluation.</li>
-                    <li><strong>Policy improvement</strong>: update the policy greedily with respect to the current Q-estimate,
+                    <li><strong>Policy improvement.</strong> Update the policy greedily with respect to the current Q-estimate,
                         \[
-                        \pi_{k+1}(s) = \arg \max_{a} Q_k (s, a),
+                        \pi_{k+1}(s) \in \arg \max_{a} Q_k (s, a),
                         \]
                         where \(Q_k\) is the MC estimate of \(Q_{\pi_k}\) accumulated so far.
                     </li>
                 </ol>
 
                 <p>
-                    To achieve convergence to the optimal policy while maintaining adequate exploration, 
-                    we can use an <a href="#exploration"><strong>\(\varepsilon\)-greedy policy</strong></a> that balances exploitation of current 
-                    knowledge with exploration of potentially better actions.
+                    To keep exploring every action, the rollouts can follow an
+                    <a href="#exploration"><strong>\(\varepsilon\)-greedy policy</strong></a> built from the current Q-estimate.
+                    With a fixed \(\varepsilon\), the method can at best find the best policy among \(\varepsilon\)-greedy ones.
+                    Letting \(\varepsilon\) decay to zero while every state-action pair is still visited infinitely often (the GLIE
+                    condition discussed with SARSA below) is the standard way to target \(\pi_*\) itself.
                 </p>
 
                 <p>
@@ -686,23 +736,22 @@ uses_python: false
                     methods are not efficient for value-based RL because they require unrolling complete trajectories whose returns 
                     are sums of random rewards generated by stochastic state transitions, leading to <strong>high variance</strong> 
                     in value estimates. Moreover, MC methods are most natural for episodic tasks (or for continuing tasks via finite-horizon 
-                    truncation), since they need a complete trajectory to form each update; this makes them unsuitable for step-by-step online updates.
+                    truncation), since they need a complete trajectory to form each update. This makes them unsuitable for step-by-step online updates.
                 </p>
 
                 <p>
-                    To address these limitations, we now turn to a more efficient approach that uses <strong>bootstrapping</strong> — updating 
-                    estimates based on other estimates rather than waiting for final outcomes. Note that this concept of bootstrapping 
-                    in reinforcement learning is distinct from statistical bootstrapping used in other areas of machine learning.
+                    To address these limitations, we now turn to <strong>bootstrapping</strong>, which updates estimates from other
+                    estimates. This sense of the word is distinct from the statistical bootstrap used in other areas of machine learning.
                 </p>
-             </section>
+            </section>
 
             <section id="td-learning" class="section-content">
                 <h2>Temporal Difference Learning</h2>         
 
                 <p>
                     <strong>Temporal Difference (TD) learning</strong> methods address the limitations of Monte Carlo methods through 
-                    <strong>bootstrapping</strong> — updating value estimates using single-step transitions plus current estimates 
-                    of successor states rather than waiting for complete returns. In other words, TD methods incrementally reduce the 
+                    <strong>bootstrapping</strong>. Each update uses a single transition plus the current estimate of the successor state,
+                    rather than waiting for a complete return. In other words, TD methods incrementally reduce the
                     Bellman expectation residual for sampled states by learning from individual transitions rather than complete trajectories. 
                 </p>
 
@@ -713,23 +762,25 @@ uses_python: false
                     \[
                     V_{\pi}(s) = \mathbb{E}_{\pi(a \mid s)} \left[ R(s, a) + \gamma \, \mathbb{E}_{p_T(s' \mid s, a)} \left[ V_{\pi}(s') \right] \right],
                     \]
-                    obtained by replacing the two expectations with a single observed transition \((s_t, a_t, r_t, s_{t+1})\) drawn from the agent's actual interaction. 
+                    obtained by replacing the expectations with a single observed transition \((s_t, a_t, r_t, s_{t+1})\) drawn from the agent's actual interaction. 
                     The TD update then adjusts the current estimate \(V(s_t)\) toward this target. This establishes TD learning as a method 
                     for solving the Bellman equations through successive approximation, without requiring knowledge of 
                     transition probabilities.
                 </p>
 
                 <p>
-                    Under appropriate conditions — bounded rewards, finite state space, and a learning-rate schedule \(\{\alpha_t\}\) satisfying the 
-                    Robbins-Monro conditions \(\sum_{t=0}^{\infty} \alpha_t = \infty\) and \(\sum_{t=0}^{\infty} \alpha_t^2 < \infty\) — 
-                    tabular TD(0) converges to the true value function \(V_{\pi}(s)\) for the policy being followed.
+                    Tabular TD(0) converges with probability \(1\) to the true value function \(V_{\pi}(s)\) of the policy being followed
+                    under appropriate conditions: bounded rewards, a finite state space whose states are all visited infinitely often,
+                    and a learning-rate schedule \(\{\alpha_t\}\) satisfying the Robbins-Monro conditions
+                    \(\sum_{t=0}^{\infty} \alpha_t = \infty\) and \(\sum_{t=0}^{\infty} \alpha_t^2 \lt \infty\).
+                    We state this stochastic-approximation result without proof.
                 </p>
 
                 <h3>TD(0): One-Step Temporal Difference</h3>
                 <p>
                     The simplest TD method, <strong>TD(0)</strong>, updates value estimates after each single step. Suppose the agent learns 
                     the value function \(V_\pi\) for a fixed policy \(\pi\). 
-                    Given a state transition \((s_t, a_t, r_t, s_{t+1})\) where \(a_t \sim \pi(s_t)\), we update the estimate \(V(s_t)\) as follows:
+                    Given a state transition \((s_t, a_t, r_t, s_{t+1})\) where \(a_t \sim \pi(\cdot \mid s_t)\), we update the estimate \(V(s_t)\) as follows:
                 </p>
 
                 <div class="insight-box">
@@ -741,7 +792,8 @@ uses_python: false
                         where:
                     </p>
                     <ul style="padding-left: 40px;">
-                        <li>\(\alpha \in (0,1]\) is the learning rate,</li>
+                        <li>\(\alpha \in (0,1]\) is the learning rate (the convergence result above uses a decaying schedule
+                            \(\alpha_t\) instead of a constant),</li>
                         <li>\(\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)\) is the <strong>TD error</strong>,</li>
                         <li>\(r_t + \gamma V(s_{t+1})\) is the <strong>TD target</strong>.</li>
                     </ul>
@@ -754,18 +806,22 @@ uses_python: false
                     \[
                     G_{t:t+n} = r_t + \gamma r_{t+1} + \cdots + \gamma^{n-1} r_{t+n-1} + \gamma^n V(s_{t+n})
                     \]
-                    The corresponding n-step TD update becomes:
+                    If the episode ends at a time \(T \leq t + n\), the sum stops at \(r_{T-1}\) and the bootstrap term is dropped,
+                    so \(G_{t:t+n} = G_t\). The corresponding n-step TD update becomes:
                     \[
                     V(s_t) \leftarrow V(s_t) + \alpha [G_{t:t+n} - V(s_t)]
                     \]
-                    This provides a spectrum of methods: \(n=1\) recovers TD(0) (with target \(G_{t:t+1} = r_t + \gamma V(s_{t+1})\)), 
-                    and as \(n\) increases toward the episode length, the method approaches Monte Carlo behavior by using longer actual return sequences.
+                </p>
+
+                <p>
+                    Varying \(n\) provides a spectrum of methods. The case \(n=1\) recovers TD(0), with target \(G_{t:t+1} = r_t + \gamma V(s_{t+1})\).
+                    As \(n\) increases toward the episode length, the method approaches Monte Carlo behavior by using longer actual return sequences.
                 </p>
 
                 <h3>TD(\(\lambda\)) and \(\lambda\)-returns</h3>
                 <p>
                     Rather than using a fixed n-step lookahead, <strong>TD(\(\lambda\))</strong> methods use a weighted average of all n-step returns. 
-                    The <strong>λ-return</strong> is defined as:
+                    The <strong>\(\lambda\)-return</strong> is defined as:
                     \[
                     G_t^{\lambda} = (1-\lambda) \sum_{n=1}^{\infty} \lambda^{n-1} G_{t:t+n}
                     \]
@@ -778,22 +834,22 @@ uses_python: false
                 
                 <ul style="padding-left: 40px;">
                     <li>When \(\lambda = 0\): Only the 1-step return is used, reducing to TD(0)</li>
-                    <li>When \(\lambda = 1\): For episodic tasks, this gives Monte Carlo behavior through full credit assignment</li>
-                    <li>For \(0 < \lambda < 1\): Creates a weighted blend that emphasizes shorter-term returns but includes longer-term effects</li>
+                    <li>When \(\lambda = 1\): For episodic tasks, \(G_t^{\lambda} \to G_t\) as \(\lambda \to 1\) by the convention above,
+                        and \(G_t^{1}\) is taken to be \(G_t\). This gives Monte Carlo behavior</li>
+                    <li>For \(0 \lt \lambda \lt 1\): Creates a weighted blend that emphasizes shorter-term returns but includes longer-term effects</li>
                 </ul>
 
                 <p>
-                    Note that TD(λ) with \(\lambda = 1\) achieves Monte Carlo-equivalent behavior through a different mechanism than 
-                    n-step TD with large n. While n-step methods extend the lookahead horizon, TD(λ) uses eligibility traces to 
-                    distribute credit backward through time, allowing for online updates even in continuing tasks.
+                    Note that TD(\(\lambda\)) with \(\lambda = 1\) achieves Monte Carlo-equivalent behavior through a different mechanism than
+                    n-step TD with large \(n\). While n-step methods extend the lookahead horizon, TD(\(\lambda\)) is usually implemented with
+                    <strong>eligibility traces</strong>, a backward-view mechanism not developed on this page. The traces distribute credit
+                    backward through time and allow online updates even in continuing tasks.
                 </p>
 
                 <p>
                     The \(\lambda\)-return provides a principled way to interpolate between the low variance but biased estimates of TD(0) 
                     and the high variance but unbiased estimates of Monte Carlo methods. <strong>TD(0) is thus a special case</strong> 
-                    of the more general TD(\(\lambda\)) framework. Importantly, both n-step TD and TD(\(\lambda\)) can achieve Monte Carlo behavior, 
-                    but through different parameterizations: n-step methods by extending the lookahead horizon (large n), 
-                    and TD(λ) methods through the weighting parameter (\(\lambda = 1\)).
+                    of the more general TD(\(\lambda\)) framework.
                 </p>
 
                 <h3>Function Approximation</h3>
@@ -812,10 +868,10 @@ uses_python: false
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li><strong>Online learning</strong>: Updates occur after each time step, enabling continuous learning without waiting for episode completion.</li>
-                    <li><strong>Computational efficiency</strong>: No need to store or process entire episode returns.</li>
-                    <li><strong>Lower variance</strong>: TD(0) has lower variance due to bootstrapping, though this comes at the cost of introducing bias.</li>
-                    <li><strong>Applicability to continuing tasks</strong>: Can learn in non-episodic environments where episodes never terminate.</li>
+                    <li><strong>Online learning.</strong> Updates occur after each time step, enabling continuous learning without waiting for episode completion.</li>
+                    <li><strong>Computational efficiency.</strong> No need to store or process entire episode returns.</li>
+                    <li><strong>Lower variance.</strong> TD(0) has lower variance due to bootstrapping, though this comes at the cost of introducing bias.</li>
+                    <li><strong>Applicability to continuing tasks.</strong> Can learn in non-episodic environments where episodes never terminate.</li>
                 </ul>
                 
             </section>
@@ -823,17 +879,15 @@ uses_python: false
             <section id="TD_Con" class="section-content">
                 <h2>TD Control Methods: Q-Learning & SARSA</h2>
 
-                 <p>
-                    Having established the theoretical foundations of temporal difference learning, we now turn to specific 
-                    <strong>TD control algorithms</strong> that learn optimal policies by estimating action-value functions. 
-                    While the previous section focused on TD methods for policy evaluation (learning \(V_\pi\)), these methods 
-                    extend TD learning to the control problem by learning Q-functions and deriving policies from them.
+                <p>
+                    The previous section used TD learning for policy evaluation (learning \(V_\pi\)). <strong>TD control algorithms</strong>
+                    extend it to the control problem by estimating action-value functions and deriving policies from them.
                 </p>
 
                 <p>
                     Both Q-learning and SARSA are temporal difference methods that bootstrap using single-step transitions, 
-                    but they differ fundamentally in their approach to policy learning: one learns the optimal Q-function directly 
-                    (off-policy), while the other learns the Q-function of the policy it follows (on-policy).
+                    but they differ fundamentally in their approach to policy learning. Q-learning learns the optimal Q-function directly
+                    (off-policy), while SARSA learns the Q-function of the policy it follows (on-policy).
                 </p>
 
                 <h3>SARSA (On-Policy TD Control)</h3>
@@ -847,18 +901,18 @@ uses_python: false
                         \[
                         Q(s, a) \leftarrow Q(s, a) + \alpha\left[r + \gamma Q(s', a') - Q(s, a)\right]
                         \]
-                        where \(a' \sim \pi(s')\) is the action that the agent will take in state \(s'\). This makes SARSA <strong>on-policy</strong>.
+                        where \(a' \sim \pi(\cdot \mid s')\) is the action that the agent will take in state \(s'\). This makes SARSA <strong>on-policy</strong>.
                     </p>
                 </div>
                 <p>
-                    Note: SARSA is named after the transition tuple \((s, a, r, s', a')\).
+                    SARSA is named after the transition tuple \((s, a, r, s', a')\).
                 </p>
 
 
 
                 <h3>Q-Learning (Off-Policy TD Control)</h3>
                 <p>
-                    Instead of the sampled next action \(a' \sim \pi(s')\) in SARSA, Q-learning uses the greedy action in \(s'\):
+                    Instead of the sampled next action \(a' \sim \pi(\cdot \mid s')\) in SARSA, Q-learning uses the greedy action in \(s'\):
                 </p>
                 <div class="insight-box">
                     <h3>Q-Learning Update</h3>
@@ -866,22 +920,25 @@ uses_python: false
                         \[
                         Q(s, a) \leftarrow Q(s, a) + \alpha\left[r + \gamma \max_b Q(s', b) - Q(s, a)\right]
                         \]
-                        The max operator \(\max_b Q(s', b)\) makes this <strong>off-policy</strong>: 
-                        the update targets the optimal Q-function regardless of the behavioral policy.
+                        The max operator \(\max_b Q(s', b)\) makes this <strong>off-policy</strong>.
+                        The update targets the optimal Q-function regardless of the behavioral policy.
                     </p>
                 </div>
 
                 <h3>Key Differences</h3>
 
                 <ul style="padding-left: 40px;">
-                    <li><strong>Convergence</strong>: Q-learning provably converges to the optimal action-value function \(Q_*\) in the tabular case, 
+                    <li><strong>Convergence.</strong> Q-learning provably converges to the optimal action-value function \(Q_*\) in the tabular case, 
                         provided every state-action pair is visited infinitely often and the learning rates satisfy the Robbins-Monro conditions. 
-                        SARSA, viewed as pure policy evaluation, converges to \(Q_\pi\) for the policy \(\pi\) being followed; when combined with a 
-                        <strong>GLIE</strong> (Greedy in the Limit with Infinite Exploration) policy — for example, \(\varepsilon\)-greedy with 
-                        \(\varepsilon \to 0\) — SARSA also converges to \(Q_*\) and the optimal policy \(\pi_*\).</li>
-                    <li><strong>Policy dependence</strong>: SARSA accounts for the actual exploration policy in its updates, while Q-learning's target 
+                        SARSA, viewed as pure policy evaluation, converges to \(Q_\pi\) for the policy \(\pi\) being followed. When combined
+                        with a <strong>GLIE</strong> (Greedy in the Limit with Infinite Exploration) policy, such as \(\varepsilon\)-greedy
+                        with \(\varepsilon\) at each state decaying as \(c/n\), where \(0 \lt c \lt 1\) and \(n\) is the number of visits to that
+                        state, SARSA also converges to \(Q_*\) and the optimal policy \(\pi_*\).</li>
+                    <li><strong>Policy dependence.</strong> SARSA accounts for the actual exploration policy in its updates, while Q-learning's target 
                         \(\max_b Q(s', b)\) ignores the behavioral policy entirely.</li>
-                    <li><strong>Behavioral differences</strong>: In some environments, SARSA may learn different policies than Q-learning because it considers the exploration policy's actual behavior, while Q-learning optimizes assuming greedy action selection.</li>
+                    <li><strong>Behavioral differences.</strong> In some environments, SARSA may learn different policies than
+                        Q-learning because it considers the exploration policy's actual behavior, while Q-learning optimizes assuming
+                        greedy action selection.</li>
                 </ul>
 
                 <p>
@@ -911,7 +968,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    Let \(\pi_{\boldsymbol{\theta}}\) be parameterized by \(\boldsymbol{\theta}\). We compute the gradient of the objective with respect to \(\boldsymbol{\theta}\). 
+                    Let \(\pi_{\boldsymbol{\theta}}\) be parameterized by \(\boldsymbol{\theta}\). Differentiating the objective with
+                    respect to \(\boldsymbol{\theta}\) gives
                     \[
                     \begin{align*}
                     \nabla_{\boldsymbol{\theta}} J(\pi_{\boldsymbol{\theta}}) 
@@ -921,7 +979,7 @@ uses_python: false
                                      
                     \end{align*}
                     \]
-                    Here, since \(R(s_0, a_0)\) does not depend on \(\boldsymbol{\theta}\),
+                    Here, since \(R(s_0, a_0)\) does not depend on \(\boldsymbol{\theta}\), we have
                     \[
                     \begin{align*}
                     \nabla_{\boldsymbol{\theta}}Q_{\pi_{\boldsymbol{\theta}}}(s_0, a_0) 
@@ -932,15 +990,18 @@ uses_python: false
                 </p>
 
                 <p>
-                    Substituting this back and unrolling the recursion across all timesteps — where each level of recursion contributes a factor of \(\gamma\) 
-                    and shifts the state distribution one step forward under \(\pi_{\boldsymbol{\theta}}\) — and then collapsing the resulting infinite sum 
-                    using the discounted state-visitation distribution \(p_{\pi_{\boldsymbol{\theta}}}^\infty\), we obtain the <strong>policy gradient theorem</strong>: 
+                    We sketch the remaining step. Substituting this back, we unroll the recursion across all timesteps. Each level of
+                    recursion contributes a factor of \(\gamma\) and shifts the state distribution one step forward under
+                    \(\pi_{\boldsymbol{\theta}}\). Collapsing the resulting infinite sum with the discounted state-visitation distribution
+                    \(p_{\pi_{\boldsymbol{\theta}}}^\infty\), we obtain the <strong>policy gradient theorem</strong>:
                 </p>
 
                 <div class="theorem" id="T-policy_gradient_theorem">
                     <span class="theorem-title">Theorem: Policy Gradient Theorem</span>
                     <p>
-                        For a parameterized policy \(\pi_{\boldsymbol{\theta}}\), the gradient of the expected return is:
+                        Let \(\mathcal{S}\) and \(\mathcal{A}\) be finite, let the rewards be bounded and \(\gamma \in [0, 1)\), and let
+                        \(\pi_{\boldsymbol{\theta}}(a \mid s)\) be positive and differentiable in \(\boldsymbol{\theta}\) for every \((s, a)\).
+                        Then the gradient of the expected return is:
                         \[
                         \begin{align*}
                         \nabla_{\boldsymbol{\theta}}J(\pi_{\boldsymbol{\theta}}) 
@@ -963,8 +1024,7 @@ uses_python: false
                     converting the gradient of a probability into an expectation under that probability. The quantity 
                     \(\nabla_{\boldsymbol{\theta}} \log \pi_{\boldsymbol{\theta}}(a \mid s)\) is precisely the conditional 
                     <a href="../Probability/fisher_info.html#D-score_function" class="ref-link"><strong>score function</strong></a> 
-                    of the policy distribution, which makes the policy gradient an instance of score-function estimation 
-                    (and connects directly to the Fisher-information geometry discussed below).
+                    of the policy distribution, which makes the policy gradient an instance of score-function estimation.
                 </p>
 
                 <p>
@@ -982,8 +1042,9 @@ uses_python: false
                     A common choice is \(b(s) = V_{\pi_{\boldsymbol{\theta}}}(s)\), which makes the multiplier the 
                     <a href="#D-advantage_function" class="ref-link"><strong>advantage function</strong></a> 
                     \(A_{\pi_{\boldsymbol{\theta}}}(s, a) = Q_{\pi_{\boldsymbol{\theta}}}(s, a) - V_{\pi_{\boldsymbol{\theta}}}(s)\). 
-                    Intuitively, this re-centers each action's value relative to the policy's average performance at that state, 
-                    sharply reducing variance whenever the policy already concentrates on near-optimal actions.
+                    Intuitively, this re-centers each action's value relative to the policy's average performance at that state.
+                    In practice this choice often reduces variance substantially, although \(V_{\pi_{\boldsymbol{\theta}}}\) is not in
+                    general the variance-minimizing baseline.
                 </p>
 
                 <p>
@@ -999,6 +1060,7 @@ uses_python: false
                     \[
                     G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots + \gamma^{T-t-1} r_{T-1}.
                     \]     
+                    The factor \(\gamma^t\) comes from the discount on the state at time \(t\) in \(p_{\pi_{\boldsymbol{\theta}}}^\infty\).
                     Here, using a baseline in the gradient estimate, we obtain the REINFORCE update rule: 
                     \[
                     \boldsymbol{\theta} \leftarrow \boldsymbol{\theta} + \alpha \sum_{t = 0}^{T -1} \gamma^t (G_t - b(s_t)) \nabla_{\boldsymbol{\theta}} \log \pi_{\boldsymbol{\theta}} (a_t \mid s_t).
@@ -1006,13 +1068,13 @@ uses_python: false
                 </p>
 
                 <div class="pseudocode">
-                    <span class="pseudocode-title">REINFORCE</span>
+                    <span class="pseudocode-title">REINFORCE (with baseline)</span>
                     <strong>begin</strong>
                     &emsp;&emsp;Set initial policy parameters \(\boldsymbol{\theta}\), and baseline parameters \(\mathbf{w}\)
                     &emsp;&emsp;<strong>repeat:</strong>
-                    &emsp;&emsp;&emsp;&emsp;Sample an episode \(\tau = (s_0, a_0, r_0, s_1, \cdots, s_T)\) using the policy \(\pi_{\boldsymbol{\theta}}\)
-                    &emsp;&emsp;&emsp;&emsp;Compute \(G_t\) for all \(t \in \{0, 1, \cdots, T-1\}\)
-                    &emsp;&emsp;&emsp;&emsp;<strong>for</strong> \(t = 0, 1, \cdots, T-1\) <strong>do</strong>
+                    &emsp;&emsp;&emsp;&emsp;Sample an episode \(\tau = (s_0, a_0, r_0, s_1, \ldots, s_T)\) using the policy \(\pi_{\boldsymbol{\theta}}\)
+                    &emsp;&emsp;&emsp;&emsp;Compute \(G_t\) for all \(t \in \{0, 1, \ldots, T-1\}\)
+                    &emsp;&emsp;&emsp;&emsp;<strong>for</strong> \(t = 0, 1, \ldots, T-1\) <strong>do</strong>
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\delta = G_t - V_\mathbf{w}(s_t)\) 
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\mathbf{w} \leftarrow \mathbf{w} + \alpha_{\mathbf{w}} \delta \nabla_{\mathbf{w}}V_{\mathbf{w}}(s_t)\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\boldsymbol{\theta} \leftarrow \boldsymbol{\theta} + \alpha_{\boldsymbol{\theta}} \gamma^t \delta \nabla_{\boldsymbol{\theta}} \log \pi_{\boldsymbol{\theta}}(a_t \mid s_t) \)
@@ -1051,21 +1113,25 @@ uses_python: false
                     \[
                     \boldsymbol{\theta} \leftarrow \boldsymbol{\theta} + \alpha \sum_{t=0}^{T-1} \gamma^t (G_{t:t+1} - V_{\mathbf{w}}(s_t))\nabla_{\boldsymbol{\theta}} \log \pi_{\boldsymbol{\theta}}(a_t \mid s_t).
                     \]
+                </p>
+
+                <p>
                     Here, the increment \(r_t + \gamma V_{\mathbf{w}}(s_{t+1}) - V_{\mathbf{w}}(s_t)\) is a single-sample approximation to the 
                     <a href="#D-advantage_function" class="ref-link"><strong>advantage function</strong></a>
                     \[
                     A_{\pi_{\boldsymbol{\theta}}}(s_t, a_t) = Q_{\pi_{\boldsymbol{\theta}}}(s_t, a_t) - V_{\pi_{\boldsymbol{\theta}}}(s_t),
                     \]
-                    so this method is called the <strong>advantage actor-critic</strong> (or <strong>A2C</strong>). 
+                    and its conditional expectation given \((s_t, a_t)\) equals this advantage when \(V_{\mathbf{w}} = V_{\pi_{\boldsymbol{\theta}}}\).
+                    This method is therefore called the <strong>advantage actor-critic</strong> (or <strong>A2C</strong>).
                 </p>
 
                  <div class="pseudocode">
-                    <span class="pseudocode-title">A2C(Advantage Actor Critic)</span>
+                    <span class="pseudocode-title">A2C (Advantage Actor-Critic)</span>
                     <strong>begin</strong>
                     &emsp;&emsp;Set initial actor parameters \(\boldsymbol{\theta}\), and critic parameters \(\mathbf{w}\)
                     &emsp;&emsp;<strong>repeat:</strong>
                     &emsp;&emsp;&emsp;&emsp;Sample starting state \(s_0\) of a new episode
-                    &emsp;&emsp;&emsp;&emsp;<strong>for</strong> \(t = 0, 1, \cdots\) <strong>do</strong>
+                    &emsp;&emsp;&emsp;&emsp;<strong>for</strong> \(t = 0, 1, \ldots\) <strong>do</strong>
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Sample action \(a_t \sim \pi_{\boldsymbol{\theta}}(\cdot \mid s_t)\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; Observe next state \(s_{t+1}\) and reward \(r_t\)
                     &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; \(\delta = r_t + \gamma V_\mathbf{w}(s_{t+1}) - V_\mathbf{w}(s_t)\) 
@@ -1076,7 +1142,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    Note that the \(n\)-step advantage estimate can be expressed as: 
+                    Note that the n-step advantage estimate can be expressed as: 
                     \[
                     A_{\pi_{\boldsymbol{\theta}}}^{(n)}(s_t, a_t) = G_{t:t+n} - V_{\mathbf{w}}(s_t)
                     \]
@@ -1088,36 +1154,24 @@ uses_python: false
                 </p>
 
                 <p>
-                    Actor-critic methods offer several key advantages:
+                    Actor-critic methods have three main advantages:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li><strong>Reduced variance</strong>: Lower variance than pure policy gradient methods like REINFORCE through value function baselines</li>
-                    <li><strong>Sample efficiency</strong>: More efficient learning through bootstrapping compared to Monte Carlo methods</li>
-                    <li><strong>Broad applicability</strong>: Can handle both discrete and continuous action spaces with online learning capability</li>
+                    <li><strong>Reduced variance.</strong> Lower variance than REINFORCE, thanks to the value-function baseline.</li>
+                    <li><strong>Sample efficiency.</strong> More efficient learning through bootstrapping compared to Monte Carlo methods.</li>
+                    <li><strong>Broad applicability.</strong> Can handle both discrete and continuous action spaces with online learning capability.</li>
                 </ul>
 
                 <p>
-                    Among the many extensions of A2C developed in the deep reinforcement learning literature, 
-                    <strong>Proximal Policy Optimization</strong> (PPO) deserves special mention: by clipping the policy update at each step to keep 
-                    the new policy within a trust region around the old one, PPO substantially improves training stability while remaining 
-                    simple to implement. As of the mid-2020s, PPO has become the de facto standard on-policy algorithm in continuous-control 
-                    benchmarks and, notably, in <strong>reinforcement learning from human feedback</strong> (RLHF) used to align large language models.
-                </p>
-
-                <p>
-                    Standard policy gradient methods optimize \(J(\pi_{\boldsymbol{\theta}})\) using the Euclidean gradient \(\nabla_{\boldsymbol{\theta}} J\), 
-                    which assumes an isotropic parameter space. However, the parameter space of a stochastic policy is 
-                    actually a <strong>statistical manifold</strong>, where Euclidean steps can be poorly scaled if the 
-                    curvature of the distribution family varies across directions. In our 
-                    <a href="natural_gd.html"><strong>natural gradient descent</strong></a> page, 
-                    we introduce the <a href="../Probability/fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher information matrix</strong></a> 
-                    as the Riemannian metric on this space, 
-                    demonstrating how natural gradients enable more stable and efficient optimization by accounting for 
-                    the underlying geometry of the policy distribution.
+                    Among the many actor-critic methods developed in the deep reinforcement learning literature,
+                    <strong>Proximal Policy Optimization</strong> (PPO) deserves special mention. PPO clips the probability ratio between
+                    the new and old policies in its surrogate objective, which discourages updates that move far from the old policy.
+                    This cheap stand-in for the trust region of TRPO substantially improves training stability while remaining simple to
+                    implement. PPO became a standard baseline in continuous-control benchmarks and was the reinforcement-learning
+                    algorithm used in the original RLHF pipelines for large language models.
                 </p>
 
             </section>
-
         </div>
-</body>
+    </body>
 </html>
