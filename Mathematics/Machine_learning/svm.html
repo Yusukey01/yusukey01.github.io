@@ -30,7 +30,7 @@ uses_python: false
 
                 <p>
                     So far in both regression and classification, we have used <strong>probabilistic predictors</strong> that model \(p(y \mid \mathbf{x})\) 
-                    and optimize via maximum likelihood. Here, we take a fundamentally different, geometric approach. Rather than modeling
+                    and fit them by maximum likelihood, possibly with a penalty. Here, we take a fundamentally different, geometric approach. Rather than modeling
                     probabilities, we seek the hyperplane that separates the classes with the <strong>largest possible margin</strong>. This formulation leads 
                     naturally to a <a href="../Calculus/constrained_opt.html#D-constrained_opt_problem" class="ref-link"><strong>constrained optimization problem</strong></a> whose 
                     <a href="../Calculus/duality.html#D-dual_problem" class="ref-link"><strong>dual formulation</strong></a> enables the kernel trick.
@@ -45,11 +45,14 @@ uses_python: false
                 </p>
 
                 <p>
-                    In binary classification with labels \(\tilde{y} \in \{-1, +1\}\), the prediction is \(h(\mathbf{x}) = \operatorname{sign}(f(\mathbf{x}))\), and the decision boundary (hyperplane) is defined by
+                    In binary classification with labels \(\tilde{y} \in \{-1, +1\}\) (that is, \(\tilde{y} = 2y - 1\) in terms of the labels
+                    \(y \in \{0, 1\}\) of logistic regression), we use for inputs \(\mathbf{x} \in \mathbb{R}^D\) the affine score
                     \[
-                    f(\mathbf{x}) = \mathbf{w}^\top \mathbf{x} + b. \tag{1}
+                    f(\mathbf{x}) = \mathbf{w}^\top \mathbf{x} + b, \quad \mathbf{w} \neq \mathbf{0}, \tag{1}
                     \]
-                    To obtain a robust solution, we would like to <strong>maximize the margin between data points and the decision boundary</strong>.
+                    predict \(h(\mathbf{x}) = \operatorname{sign}(f(\mathbf{x}))\), and take the decision boundary to be the hyperplane
+                    \(H = \{\mathbf{x} : f(\mathbf{x}) = 0\}\). To obtain a robust solution, we would like to
+                    <strong>maximize the margin between data points and the decision boundary</strong>.
                 </p>
 
                 <div style="text-align: center;">
@@ -57,13 +60,16 @@ uses_python: false
                 </div>
 
                 <p>
-                    To express the distance of the closest point to the decision boundary, we decompose any point \(\mathbf{x}\) as its 
-                    <a href="../Linear_algebra/orthogonality.html#T-orthogonal_decomposition" class="ref-link"><strong>orthogonal projection</strong></a> 
-                    onto the hyperplane \(H = \{\mathbf{x} : f(\mathbf{x}) = 0\}\) plus a signed normal component:
+                    To express the distance of a point to the decision boundary, fix any \(\mathbf{x}_0 \in H\). Then
+                    \(H = \mathbf{x}_0 + W\), where \(W = \{\mathbf{v} : \mathbf{w}^\top \mathbf{v} = 0\}\) is a subspace of dimension \(D - 1\) whose
+                    orthogonal complement is the line spanned by \(\mathbf{w}\). Applying the
+                    <a href="../Linear_algebra/orthogonality.html#T-orthogonal_decomposition" class="ref-link"><strong>orthogonal decomposition</strong></a>
+                    to \(\mathbf{x} - \mathbf{x}_0\) relative to \(W\), we write any point \(\mathbf{x}\) as a point of \(H\) plus a signed normal component:
                     \[
                     \mathbf{x} = \operatorname{proj}_H \mathbf{x} + r \frac{\mathbf{w}}{\|\mathbf{w}\|}, \tag{2}
                     \]
-                    where \(r\) is the signed distance from \(\mathbf{x}\) to \(H\), and \(\mathbf{w}/\|\mathbf{w}\|\) is the unit normal vector to \(H\).
+                    where \(\operatorname{proj}_H \mathbf{x} = \mathbf{x}_0 + \operatorname{proj}_W (\mathbf{x} - \mathbf{x}_0) \in H\), \(r\) is the
+                    signed distance from \(\mathbf{x}\) to \(H\), and \(\mathbf{w}/\|\mathbf{w}\|\) is the unit normal vector to \(H\).
                 </p>
 
                 <p>
@@ -93,11 +99,15 @@ uses_python: false
                 </p>
 
                 <p>
-                    Note that \(\max \frac{1}{\|\mathbf{w}\|}\) is equivalent to \(\min \|\mathbf{w}\|^2\). Thus our objective becomes:
+                    We assume that the training data are <strong>linearly separable</strong>, so that some \((\mathbf{w}, b)\) classifies every
+                    point correctly. The normalization then reads \(\min_n \tilde{y}_n f(\mathbf{x}_n) = 1\), and maximizing \(\frac{1}{\|\mathbf{w}\|}\)
+                    is equivalent to minimizing \(\|\mathbf{w}\|^2\). Relaxing the normalization to \(\tilde{y}_n f(\mathbf{x}_n) \geq 1\) for all \(n\)
+                    does not change the optimum. If every one of these constraints held strictly at a minimizer, dividing \((\mathbf{w}, b)\) by
+                    \(\min_n \tilde{y}_n f(\mathbf{x}_n) \gt 1\) would keep it feasible and decrease \(\|\mathbf{w}\|\). Thus our objective becomes:
                 </p>
 
                 <div class="theorem" id="T-svm_primal_hard">
-                    <span class="theorem-title">Hard-Margin SVM (Primal)</span>
+                    <span class="theorem-title">Definition: Hard-Margin SVM (Primal)</span>
                     <p>
                         \[
                         \min_{\mathbf{w},\, b} \frac{1}{2}\|\mathbf{w}\|^2 
@@ -111,8 +121,9 @@ uses_python: false
                 </div>
                     
                 <p>
-                    This constrained optimization problem, known as the <strong>primal problem</strong>, is difficult to solve directly. Since the 
-                    objective is convex and the inequality constraints are linear, Slater's condition is automatically satisfied, so
+                    This constrained optimization problem is known as the <strong>primal problem</strong>. Rather than solving it directly, we pass
+                    to its dual. Scaling any feasible \((\mathbf{w}, b)\) by \(2\) gives \(\tilde{y}_n(\mathbf{w}^\top \mathbf{x}_n + b) \geq 2 \gt 1\) for
+                    every \(n\), so Slater's condition holds. Since the objective is convex and the constraints are affine,
                     <a href="../Calculus/duality.html#T-strong_duality_slater" class="ref-link"><strong>strong duality</strong></a> holds and the problem
                     can equivalently be solved via its <a href="../Calculus/duality.html#D-dual_problem" class="ref-link"><strong>dual</strong></a>.
                     The dual is often computationally more convenient, and it is the form in which the kernel trick applies.
@@ -123,38 +134,39 @@ uses_python: false
                     \[
                     \mathcal{L}(\mathbf{w}, b, \boldsymbol{\alpha}) = \frac{1}{2}\mathbf{w}^\top \mathbf{w} - \sum_{n=1}^N \alpha_n \!\left(\tilde{y}_n (\mathbf{w}^\top \mathbf{x}_n + b) - 1\right). \tag{3}
                     \]
-                    A primal-dual optimum \((\hat{\mathbf{w}}, \hat{b}, \hat{\boldsymbol{\alpha}})\) satisfies
-                    \[
-                    (\hat{\mathbf{w}}, \hat{b}, \hat{\boldsymbol{\alpha}}) = \min_{\mathbf{w}, b} \max_{\boldsymbol{\alpha} \geq \mathbf{0}} \mathcal{L}(\mathbf{w}, b, \boldsymbol{\alpha}).
-                    \]
-                    Taking derivatives with respect to \(\mathbf{w}\) and \(b\) and setting them to zero (the stationarity condition):
+                    The dual objective at \(\boldsymbol{\alpha} \geq \mathbf{0}\) is the
+                    <a href="../Calculus/duality.html#D-lagrange_dual_function" class="ref-link"><strong>Lagrange dual function</strong></a>
+                    \(\inf_{\mathbf{w}, b} \mathcal{L}(\mathbf{w}, b, \boldsymbol{\alpha})\). Since \(\mathcal{L}\) is linear in \(b\) with coefficient
+                    \(-\sum_n \alpha_n \tilde{y}_n\), this infimum is \(-\infty\) unless \(\sum_n \alpha_n \tilde{y}_n = 0\), which therefore becomes a
+                    constraint of the dual. Under that constraint, \(\mathcal{L}\) is a strictly convex quadratic in \(\mathbf{w}\), minimized where its
+                    gradient vanishes. Together, the two conditions are the stationarity conditions
                     \[
                     \begin{align*}
                     \nabla_{\mathbf{w}} \mathcal{L}  &= \mathbf{w} - \sum_{n=1}^N \alpha_n \tilde{y}_n \mathbf{x}_n = \mathbf{0}, \\\\
                     \frac{\partial \mathcal{L}}{\partial b} &= -\sum_{n=1}^N \alpha_n \tilde{y}_n = 0,
                     \end{align*}
                     \]
-                    which gives
+                    which give
                     \[
                     \begin{align*}
-                    \hat{\mathbf{w}} &= \sum_{n=1}^N \hat{\alpha}_n \tilde{y}_n \mathbf{x}_n, \\\\
-                    0 &= \sum_{n=1}^N \hat{\alpha}_n \tilde{y}_n.
+                    \mathbf{w} &= \sum_{n=1}^N \alpha_n \tilde{y}_n \mathbf{x}_n, \\\\
+                    0 &= \sum_{n=1}^N \alpha_n \tilde{y}_n.
                     \end{align*}
                     \]
-                    Substituting these into the Lagrangian (3):
+                    Substituting these into the Lagrangian (3), for any \(b\):
                     \[
                     \begin{align*}
-                    \mathcal{L}(\hat{\mathbf{w}}, \hat{b}, \boldsymbol{\alpha}) 
-                        &= \frac{1}{2}\hat{\mathbf{w}}^\top \hat{\mathbf{w}} - \sum_{n=1}^N \alpha_n \tilde{y}_n \hat{\mathbf{w}}^\top \mathbf{x}_n
-                           - \hat{b} \sum_{n=1}^N \alpha_n \tilde{y}_n + \sum_{n=1}^N \alpha_n \\\\
-                        &= \frac{1}{2}\hat{\mathbf{w}}^\top \hat{\mathbf{w}} - \hat{\mathbf{w}}^\top \hat{\mathbf{w}} - 0 + \sum_{n=1}^N \alpha_n \\\\
+                    \inf_{\mathbf{w}, b} \mathcal{L}(\mathbf{w}, b, \boldsymbol{\alpha}) 
+                        &= \frac{1}{2}\mathbf{w}^\top \mathbf{w} - \sum_{n=1}^N \alpha_n \tilde{y}_n \mathbf{w}^\top \mathbf{x}_n
+                           - b \sum_{n=1}^N \alpha_n \tilde{y}_n + \sum_{n=1}^N \alpha_n \\\\
+                        &= \frac{1}{2}\mathbf{w}^\top \mathbf{w} - \mathbf{w}^\top \mathbf{w} - 0 + \sum_{n=1}^N \alpha_n \\\\
                         &= \sum_{n=1}^N \alpha_n - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathbf{x}_i^\top \mathbf{x}_j.
                     \end{align*}
                     \]
                 </p>
 
                 <div class="theorem" id="T-svm_dual_hard">
-                    <span class="theorem-title">Hard-Margin SVM (Dual)</span>
+                    <span class="theorem-title">Theorem: Hard-Margin SVM (Dual)</span>
                     <p>
                         \[
                         \max_{\boldsymbol{\alpha}} \sum_{n=1}^N \alpha_n - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathbf{x}_i^\top \mathbf{x}_j
@@ -166,7 +178,8 @@ uses_python: false
                         The primal-dual solution must satisfy the <a href="../Calculus/constrained_opt.html#T-kkt_conditions" class="ref-link"><strong>KKT conditions</strong></a>:
                         \[
                         \begin{align*}
-                        \mathbf{w} - \sum_{n=1}^N \alpha_n \tilde{y}_n \mathbf{x}_n &= \mathbf{0}, \quad \sum_{n=1}^N \alpha_n \tilde{y}_n = 0 &&\text{(stationarity)} \\\\
+                        \mathbf{w} - \sum_{n=1}^N \alpha_n \tilde{y}_n \mathbf{x}_n &= \mathbf{0} &&\text{(stationarity in } \mathbf{w}) \\\\
+                        \sum_{n=1}^N \alpha_n \tilde{y}_n &= 0 &&\text{(stationarity in } b) \\\\
                         \tilde{y}_n f(\mathbf{x}_n) - 1 &\geq 0 &&\text{(primal feasibility)} \\\\
                         \alpha_n &\geq 0 &&\text{(dual feasibility)} \\\\
                         \alpha_n (\tilde{y}_n f(\mathbf{x}_n) - 1) &= 0 &&\text{(complementary slackness)}
@@ -174,6 +187,26 @@ uses_python: false
                         \]
                     </p>
                 </div>
+
+                <p>
+                    The KKT conditions follow from strong duality. Both optima are attained. The dual optimum is attained by the strong duality
+                    theorem, since the primal optimal value is at least \(0\). The primal optimum is attained because the primal is a feasible convex
+                    quadratic program whose objective grows without bound in \(\mathbf{w}\), and for fixed \(\mathbf{w}\) the constraints confine \(b\) to a
+                    bounded interval once both classes are present. For a primal optimum \((\hat{\mathbf{w}}, \hat{b})\) and a dual optimum \(\hat{\boldsymbol{\alpha}}\),
+                    \[
+                    \begin{align*}
+                    \tfrac{1}{2}\|\hat{\mathbf{w}}\|^2
+                    &= \inf_{\mathbf{w}, b} \mathcal{L}(\mathbf{w}, b, \hat{\boldsymbol{\alpha}}) \\\\
+                    &\leq \mathcal{L}(\hat{\mathbf{w}}, \hat{b}, \hat{\boldsymbol{\alpha}}) \\\\
+                    &\leq \tfrac{1}{2}\|\hat{\mathbf{w}}\|^2,
+                    \end{align*}
+                    \]
+                    where the first equality is strong duality and the last step uses \(\hat{\boldsymbol{\alpha}} \geq \mathbf{0}\) and primal feasibility.
+                    Both inequalities are therefore equalities. The first makes \((\hat{\mathbf{w}}, \hat{b})\) a minimizer of the convex function
+                    \(\mathcal{L}(\cdot, \cdot, \hat{\boldsymbol{\alpha}})\), which is stationarity. The second says that
+                    \(\sum_n \hat{\alpha}_n (\tilde{y}_n f(\mathbf{x}_n) - 1) = 0\), a sum of nonnegative terms, so each term vanishes, which is
+                    complementary slackness.
+                </p>
 
                 <p>
                     Complementary slackness implies that, for each data point, either
@@ -195,14 +228,19 @@ uses_python: false
                         &= \sum_{n \in \mathcal{S}} \hat{\alpha}_n \tilde{y}_n\, \mathbf{x}_n^\top \mathbf{x} + \hat{b}.
                     \end{align*}
                     \]
-                    By the <a href="intro_classification.html#kernel"><strong>kernel trick</strong></a>, the inner product can be replaced with a 
-                    <a href="../Calculus/rkhs.html#D-positive_definite_kernel" class="ref-link"><strong>positive definite kernel</strong></a> 
-                    \(\mathcal{K}(\mathbf{x}, \mathbf{x}') = \langle \phi(\mathbf{x}), \phi(\mathbf{x}') \rangle\). The kernel implicitly maps
-                    inputs to a higher- (or infinite-) dimensional feature space without ever computing \(\phi\) explicitly.
+                    By the <a href="intro_classification.html#kernel"><strong>kernel trick</strong></a>, every inner product \(\mathbf{x}_i^\top \mathbf{x}_j\)
+                    in the dual objective and in this expansion can be replaced with a
+                    <a href="../Calculus/rkhs.html#D-positive_definite_kernel" class="ref-link"><strong>positive definite kernel</strong></a>
+                    \(\mathcal{K}(\mathbf{x}, \mathbf{x}')\). For every such kernel, the
+                    <a href="../Calculus/rkhs.html#T-moore_aronszajn" class="ref-link"><strong>Moore-Aronszajn theorem</strong></a> supplies a Hilbert space
+                    of functions in which \(\phi(\mathbf{x}) = \mathcal{K}(\cdot, \mathbf{x})\) satisfies
+                    \(\mathcal{K}(\mathbf{x}, \mathbf{x}') = \langle \phi(\mathbf{x}), \phi(\mathbf{x}') \rangle\), so the kernelized SVM is the linear
+                    SVM run on the features \(\phi(\mathbf{x}_n)\). The kernel implicitly maps inputs to a higher- (or infinite-) dimensional feature
+                    space without ever computing \(\phi\) explicitly.
                 </p>
 
                 <div class="theorem" id="T-svm_kernel_prediction">
-                    <span class="theorem-title">SVM Prediction (Kernel Form)</span>
+                    <span class="theorem-title">Proposition: SVM Prediction (Kernel Form)</span>
                     <p>
                         \[
                         f(\mathbf{x}) = \sum_{n \in \mathcal{S}} \hat{\alpha}_n \tilde{y}_n \mathcal{K}(\mathbf{x}_n, \mathbf{x}) + \hat{b},
@@ -221,6 +259,13 @@ uses_python: false
                     </p>
                 </div>
 
+                <p>
+                    The average for \(\hat{b}\) uses \(\tilde{y}_n f(\mathbf{x}_n) = 1\), equivalently \(\hat{b} = \tilde{y}_n - \hat{\mathbf{w}}^\top \mathbf{x}_n\)
+                    since \(\tilde{y}_n^2 = 1\), at every support vector. The set \(\mathcal{S}\) is nonempty whenever the training data contain both labels, because
+                    \(\hat{\mathbf{w}} = \mathbf{0}\) is then infeasible. In the soft-margin problem below, the equality holds only on part of
+                    \(\mathcal{S}\), and the demo section returns to this point.
+                </p>
+
             </section>
             
             <section id="smc" class="section-content">
@@ -237,16 +282,16 @@ uses_python: false
                 </p>
 
                 <div class="theorem" id="T-svm_primal_soft">
-                    <span class="theorem-title">Soft-Margin SVM (Primal)</span>
+                    <span class="theorem-title">Definition: Soft-Margin SVM (Primal)</span>
                     <p>
                         \[
                         \min_{\mathbf{w},\, b,\, \boldsymbol{\xi}} \frac{1}{2}\|\mathbf{w}\|^2 + C\sum_{n=1}^N \xi_n
                         \]
                         subject to
                         \[
-                        \xi_n \geq 0, \quad \tilde{y}_n(\mathbf{w}^\top \mathbf{x}_n + b) \geq 1 - \xi_n,
+                        \xi_n \geq 0, \quad \tilde{y}_n(\mathbf{w}^\top \mathbf{x}_n + b) \geq 1 - \xi_n, \quad n = 1, \ldots, N,
                         \]
-                        where \(C \gt 0\) is a hyperparameter that controls how many data points are allowed to violate the margin.
+                        where \(C \gt 0\) is a hyperparameter that trades the width of the margin against the total slack.
                     </p>
                 </div>
 
@@ -277,8 +322,8 @@ uses_python: false
                     we obtain the <strong>box constraint</strong> \(0 \leq \alpha_n \leq C\). 
                 </p>
                 <p>
-                    Substituting the first two conditions back into the Lagrangian eliminates the primal variables and yields the same dual objective 
-                    as the hard-margin case:
+                    Substituting the three conditions back into the Lagrangian eliminates the primal variables (the third makes the coefficient
+                    \(C - \alpha_n - \mu_n\) of each \(\xi_n\) vanish) and yields the same dual objective as the hard-margin case:
                     \[
                     \mathcal{L}(\boldsymbol{\alpha}) = \sum_{i=1}^N \alpha_i - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathbf{x}_i^\top \mathbf{x}_j,
                     \]
@@ -287,7 +332,9 @@ uses_python: false
                     0 \leq \alpha_n \leq C, \quad
                     \sum_{n=1}^N \alpha_n \tilde{y}_n = 0.
                     \]
-                    These constraints partition the training points into three cases. Complementary slackness for \(\alpha_n\) and
+                    The soft-margin problem is always strictly feasible (take \(\mathbf{w} = \mathbf{0}\), \(b = 0\), and \(\xi_n = 2\)), so the argument
+                    given for the hard-margin case again yields strong duality and the KKT conditions at the optimum. These conditions partition the
+                    training points into three cases. Complementary slackness for \(\alpha_n\) and
                     \(\mu_n\), combined with \(C - \alpha_n - \mu_n = 0\), pins down both the slack and the position of each
                     point: 
                 </p>
@@ -315,7 +362,7 @@ uses_python: false
                 <h2>SVM Demo: Solving the Dual QP</h2>
                 <div id="svm_visualizer"></div>
                 <p>
-                    This demo solves the soft-margin dual problem derived above. The solution is exact, not approximate. Pressing
+                    This demo solves the soft-margin dual problem derived above directly, rather than a surrogate of it. Pressing
                     <strong>Solve</strong> starts from \(\boldsymbol{\alpha} = \mathbf{0}\) and maximizes
                     \[
                     \sum_{n=1}^N \alpha_n - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j \tilde{y}_i \tilde{y}_j \, \mathcal{K}(\mathbf{x}_i, \mathbf{x}_j)
@@ -372,7 +419,7 @@ uses_python: false
 
                 <h3>The Three Cases and the Bias</h3>
                 <p>
-                    The KKT panel counts the partition established for the soft-margin problem: \(\alpha_n = 0\) (outside the
+                    The KKT panel counts the partition established for the soft-margin problem: \(\alpha_n = 0\) (on or outside the
                     margin), \(0 \lt \alpha_n \lt C\) (on the margin), and \(\alpha_n = C\), split by whether \(\xi_n \leq 1\)
                     (not misclassified) or \(\xi_n \gt 1\) (misclassified). It also reports the largest KKT violation
                     over all training points and the residual of \(\sum_n \alpha_n \tilde{y}_n\), so the optimality claim can be
@@ -390,15 +437,16 @@ uses_python: false
 
                 <h3>Experiment Suggestions</h3>
                 <ol style="padding-left: 40px;">
-                    <li><strong>Sweep \(C\) on the linear pattern</strong> (with some label noise). The margin \(2/\|\mathbf{w}\|\) shrinks
-                        monotonically as \(C\) grows, and the bound support vectors thin out. Small \(C\) buys a wide margin at the
-                        price of many margin violations. That trade-off is written directly into the primal objective.</li>
+                    <li><strong>Sweep \(C\) on the linear pattern</strong> (with some label noise). The margin \(2/\|\mathbf{w}\|\) never widens
+                        as \(C\) grows, since comparing the primal objectives at two values of \(C\), each evaluated at the other's optimum, shows that
+                        the optimal \(\|\mathbf{w}\|\) is nondecreasing in \(C\). The bound support vectors typically thin out. Small \(C\) buys a wide
+                        margin at the price of many margin violations. That trade-off is written directly into the primal objective.</li>
                     <li><strong>Give the linear kernel circular data.</strong> Test accuracy collapses to chance or below. No half-plane
                         separates an annulus from a disk. Switch to the RBF kernel and the same solver, on the same data, recovers
                         the circle.</li>
                     <li><strong>Sweep \(\gamma\) at fixed \(C\)</strong> on circular data. Small \(\gamma\) underfits (the boundary is too
                         smooth to close around the inner disk), moderate \(\gamma\) generalizes best, and large \(\gamma\) overfits.
-                        The support-vector count traces a U-shape across the sweep.</li>
+                        The support-vector count typically traces a U-shape across the sweep.</li>
                     <li><strong>Force overfitting</strong> with large \(\gamma\), large \(C\), and heavy noise. Training accuracy reaches
                         100% while test accuracy drops. The boundary contorts around individual mislabeled points, and each such
                         point is held by its own support vectors.</li>
@@ -408,16 +456,15 @@ uses_python: false
                 </ol>
 
                 <p>
-                    SVMs demonstrate how maximizing the margin, a purely geometric intuition, leads to strong generalization guarantees,
-                    particularly in high-dimensional spaces with limited data. In <a href="pca.html"><strong>PCA &amp; Autoencoders</strong></a>,
+                    Maximizing the margin, a purely geometric criterion, is also the basis of the generalization guarantees for SVMs, which are
+                    beyond the scope of this page. In <a href="pca.html"><strong>PCA &amp; Autoencoders</strong></a>,
                     we shift from supervised to <strong>unsupervised learning</strong> and ask how to discover low-dimensional
                     structure in data without any labels. That question connects
                     <a href="../Linear_algebra/eigenvectors.html"><strong>eigenvalue decomposition</strong></a> to neural
                     network-based representation learning.
                 </p>
             </section>
-
         </div>
-    <script src="/js/sec5_p6_svm_visualizer.js"></script> 
+        <script src="/js/sec5_p6_svm_visualizer.js"></script> 
     </body>
 </html>
