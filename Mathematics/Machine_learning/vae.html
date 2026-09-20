@@ -29,37 +29,37 @@ uses_python: false
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
                 <p>
-                    A central challenge in machine learning systems that interact with the physical world — 
-                    robotics, autonomous vehicles, embodied agents that the industry has lately taken to 
-                    calling "Physical AI" — is uncertainty. Real-world interaction is inherently stochastic: 
-                    sensor noise, unobserved physical properties, and environmental variability all conspire 
-                    against deterministic models. Even classical robotic systems handle this with probabilistic 
-                    methods (Kalman filtering being the canonical example); modern approaches push further by 
-                    treating system states as full probability distributions rather than point estimates.
+                    A central challenge in machine learning systems that interact with the physical world is uncertainty. Examples include robotics,
+                    autonomous vehicles, and the embodied agents that the industry has lately taken to calling "Physical AI". Real-world interaction
+                    is inherently stochastic. Sensor noise, unobserved physical properties, and environmental variability all conspire against
+                    deterministic models. Even classical robotic systems handle this stochasticity with probabilistic methods, Kalman filtering
+                    being the canonical example. Modern approaches push further by treating system states as full probability distributions rather
+                    than point estimates.
                 </p>
                 
                 <p>
-                    The <strong>Variational Autoencoder (VAE)</strong> is one such approach. It synthesizes 
-                    ideas from information theory and Bayesian inference into a model that learns a continuous 
-                    latent distribution characterized by a mean (\(\mu\)) and a variance (\(\sigma^2\)), providing 
-                    a quantitative handle on what a learned system knows and what it does not.
+                    The <strong>Variational Autoencoder (VAE)</strong> is one such approach. It synthesizes ideas from information theory and Bayesian
+                    inference into a model that learns a continuous latent distribution characterized by a mean (\(\mu\)) and a variance
+                    (\(\sigma^2\)). The variance of this latent distribution quantifies how uncertain the model is about the latent representation of
+                    a given input.
                 </p>
             </section>
 
             <section id="vi" class="section-content">
                 <h2>Variational Inference</h2>
                 <p>
-                    In <a href="../Probability/bayesian.html"><strong>Bayesian statistics</strong></a>, <a href="../Probability/variational_inference.html"><strong>Variational Inference (VI)</strong></a> 
-                    transforms the problem of posterior inference - which typically involves solving high-dimensional, intractable integrals - 
-                    into a <a href="../Calculus/constrained_opt.html#D-constrained_opt_problem" class="ref-link"><strong>constrained optimization problem</strong></a>. 
+                    In <a href="../Probability/bayesian.html"><strong>Bayesian statistics</strong></a>,
+                    <a href="../Probability/variational_inference.html"><strong>Variational Inference (VI)</strong></a> transforms the problem of
+                    posterior inference, which typically involves high-dimensional intractable integrals, into a
+                    <a href="../Calculus/constrained_opt.html#D-constrained_opt_problem" class="ref-link"><strong>constrained optimization problem</strong></a>.
                 </p>
 
                 <p>
-                    While deterministic control algorithms rely on <strong>point-estimates</strong> (e.g., "the center of mass is exactly 
-                    at coordinates \(\mathbf{r}\)"), VI treats the state as a <strong>probability distribution</strong>. The structural shift 
-                    is this: instead of seeking a single value, we search for the parameters of a distribution 
-                    \(q_{\boldsymbol{\theta}}(\mathbf{z})\) that minimize the <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler (KL) divergence</strong></a> 
-                    from the true, unknown posterior \(p(\mathbf{z} \mid \mathbf{x})\).
+                    While deterministic control algorithms rely on <strong>point-estimates</strong> (for example, "the center of mass is exactly at
+                    coordinates \(\mathbf{r}\)"), VI treats the state as a <strong>probability distribution</strong>. Instead of seeking a single
+                    value, we search for the parameters of a distribution \(q_{\boldsymbol{\psi}}(\boldsymbol{z})\) that minimize the
+                    <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler (KL) divergence</strong></a> from
+                    the true, unknown posterior \(p(\boldsymbol{z} \mid \boldsymbol{x})\).
                 </p>
 
                 <p>
@@ -70,27 +70,27 @@ uses_python: false
                 </p>
 
                 <p>
-                    For a robot, this approximation is one ingredient in uncertainty-aware control: the
-                    posterior variance — the "spread" of the distribution — provides a quantitative
-                    signal that can inform decisions such as whether to proceed with an action or trigger
-                    a fallback. The relation between this spread and <strong>epistemic uncertainty</strong>
-                    (uncertainty due to limited model knowledge, as distinct from <strong>aleatoric
-                    uncertainty</strong> inherent in the observation noise) is not automatic, and such a
-                    signal complements rather than replaces classical safety mechanisms. We return to the
-                    reliability of this reading, and its limits, in the demo section below.
+                    For a robot, this approximation is one ingredient in uncertainty-aware control. The posterior variance measures the spread of the
+                    distribution and provides a quantitative signal that can inform decisions such as whether to proceed with an action or trigger a
+                    fallback. The relation between this spread and <strong>epistemic uncertainty</strong> (uncertainty due to limited model knowledge,
+                    as distinct from <strong>aleatoric uncertainty</strong> inherent in the observation noise) is not automatic. Such a signal
+                    complements rather than replaces classical safety mechanisms. We return to the reliability of this reading, and its limits, in the
+                    demo section below.
                 </p>
 
                 <p>
-                    The variational framework introduced here rests on measure-theoretic foundations that
-                    are developed across our probability section. Speaking of densities \(q(\boldsymbol{z})\) and
-                    \(p(\boldsymbol{z} \mid \boldsymbol{x})\) with respect to a common dominating measure is
-                    licensed by the <a href="../Probability/radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>,
-                    and conditional expectation — defined rigorously as a Radon-Nikodym derivative — provides
-                    the abstract object that the densities and ELBO decomposition below approximate. In practice
-                    we work directly with explicit Gaussian densities, Monte Carlo samples, and reparameterized
-                    gradients; the measure-theoretic construction is not a layer that the code instantiates,
-                    but the guarantee that these computations approximate a well-defined object, with the
-                    VAE's amortized inference a special case of the broader variational principle.
+                    The variational framework introduced here rests on measure-theoretic foundations that are developed across our probability
+                    section. The <a href="../Probability/radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>
+                    licenses speaking of densities \(q(\boldsymbol{z})\) and \(p(\boldsymbol{z} \mid \boldsymbol{x})\) with respect to a common
+                    dominating measure. <a href="../Probability/conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>Conditional expectation</strong></a>,
+                    defined rigorously as a Radon-Nikodym derivative, is what gives the posterior \(p(\boldsymbol{z} \mid \boldsymbol{x})\) its
+                    meaning, and it is this posterior that the variational distributions below approximate.
+                </p>
+
+                <p>
+                    In practice we work directly with explicit Gaussian densities, Monte Carlo samples, and reparameterized gradients. The
+                    measure-theoretic construction is not a layer that the code instantiates. Rather, it guarantees that these computations
+                    approximate a well-defined object, and the VAE's amortized inference is a special case of the broader variational principle.
                 </p>
 
             </section>
@@ -101,15 +101,18 @@ uses_python: false
 
                 <h3>From Factor Analysis to Nonlinear Generative Models</h3>
                 <p>
-                    In classical <strong>factor analysis (FA)</strong>, we model the observed data \(\boldsymbol{x} \in \mathbb{R}^D\) as a 
-                    linear function of a latent variable \(\boldsymbol{z} \in \mathbb{R}^K\) with \(K \ll D\):
+                    In classical <strong>factor analysis (FA)</strong>, we model centered observed data \(\boldsymbol{x} \in \mathbb{R}^D\) through a
+                    latent variable \(\boldsymbol{z} \in \mathbb{R}^K\) with \(K \ll D\), drawn from the standard Gaussian prior
+                    \(p(\boldsymbol{z}) = \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\), and a linear-Gaussian likelihood:
                     \[
                     p(\boldsymbol{x} \mid \boldsymbol{z}) = \mathcal{N}(\boldsymbol{x} \mid \boldsymbol{Wz}, \sigma^2 \boldsymbol{I})
                     \]
-                    where \(\boldsymbol{W} \in \mathbb{R}^{D \times K}\) is the factor loading matrix. The linearity of \(\boldsymbol{W}\) 
-                    makes posterior inference tractable: given an observation \(\boldsymbol{x}\), the posterior 
-                    \(p(\boldsymbol{z} \mid \boldsymbol{x})\) is Gaussian in closed form. However, this linearity also limits the model's 
-                    expressiveness - real-world data distributions are rarely well-captured by linear mappings.
+                    where \(\boldsymbol{W} \in \mathbb{R}^{D \times K}\) is the factor loading matrix. General factor analysis allows an arbitrary
+                    diagonal noise covariance. The isotropic choice \(\sigma^2 \boldsymbol{I}\) shown here is the special case known as probabilistic
+                    PCA, and it is the noise model that the VAE decoder below inherits. Because the prior is Gaussian and the likelihood is Gaussian
+                    with mean linear in \(\boldsymbol{z}\), posterior inference is tractable. Given an observation \(\boldsymbol{x}\), the posterior
+                    \(p(\boldsymbol{z} \mid \boldsymbol{x})\) is Gaussian in closed form. However, this linearity also limits the model's
+                    expressiveness, since real-world data distributions are rarely well-captured by linear mappings.
                 </p>
                 <p>
                     The <strong>Variational Autoencoder (VAE)</strong> extends factor analysis by replacing the linear mapping 
@@ -120,36 +123,36 @@ uses_python: false
                     where \(f_d(\cdot\,; \boldsymbol{\theta})\) is a <strong>decoder network</strong> with parameters \(\boldsymbol{\theta}\).
                 </p>
                 <p>
-                    This nonlinear generative model can represent far richer data distributions, but it comes at a cost: 
-                    the posterior \(p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x})\) is no longer analytically tractable, 
-                    because computing it requires the marginal likelihood
+                    This nonlinear generative model can represent far richer data distributions, but it comes at a cost. The posterior
+                    \(p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x})\) is no longer analytically tractable. By Bayes' rule,
                     \[
-                    p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x}) = \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z})\, p(\boldsymbol{z})}{p_{\boldsymbol{\theta}}(\boldsymbol{x})}
-                    \quad \text{where} \quad 
-                    p_{\boldsymbol{\theta}}(\boldsymbol{x}) = \int p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z})\, p(\boldsymbol{z})\, d\boldsymbol{z}
+                    \begin{align*}
+                    p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x}) &= \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z})\, p(\boldsymbol{z})}{p_{\boldsymbol{\theta}}(\boldsymbol{x})}, \\\\
+                    p_{\boldsymbol{\theta}}(\boldsymbol{x}) &= \int p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z})\, p(\boldsymbol{z})\, d\boldsymbol{z},
+                    \end{align*}
                     \]
-                    which involves an intractable integral over the latent space when \(f_d\) is a deep network. This intractability is the central challenge that motivates the variational approach.
+                    and the integral over the latent space that defines the marginal likelihood \(p_{\boldsymbol{\theta}}(\boldsymbol{x})\) is
+                    intractable when \(f_d\) is a deep network. This intractability is the central challenge that motivates the variational approach.
                 </p>
 
                 <h3>Amortized Variational Inference</h3>
                 <p>
-                    Since the true posterior is intractable, we introduce an <strong>approximate posterior</strong> - a 
-                    <strong>recognition network</strong> (also called the <strong>inference network</strong> or <strong>encoder</strong>) - 
-                    that is trained simultaneously with the generative model. We restrict the approximate posterior to a tractable family: 
-                    a Gaussian with diagonal covariance, yielding
+                    We therefore introduce an <strong>approximate posterior</strong> computed by a <strong>recognition network</strong> (also called
+                    the <strong>inference network</strong> or <strong>encoder</strong>) that is trained simultaneously with the generative model. We
+                    restrict the approximate posterior to a tractable family: a Gaussian with diagonal covariance, yielding
                     \[
-                    q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x}) 
-                    = \mathcal{N}\!\left(\boldsymbol{z} \;\middle|\; f_{e,\mu} (\boldsymbol{x} ; \boldsymbol{\phi}), \, \operatorname{diag}\!\left(f_{e,\sigma}(\boldsymbol{x};\boldsymbol{\phi})\right)\right)
+                    q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x})
+                    = \mathcal{N}\!\left(\boldsymbol{z} \,\middle|\, f_{e,\mu} (\boldsymbol{x} ; \boldsymbol{\phi}), \, \operatorname{diag}\!\left(f_{e,\sigma}(\boldsymbol{x};\boldsymbol{\phi})\right)^{2}\right)
                     \]
-                    where \(f_{e,\mu}\) and \(f_{e,\sigma}\) are the encoder's output heads that produce the mean vector and the 
-                    diagonal covariance respectively, and \(\boldsymbol{\phi}\) denotes all encoder parameters.
+                    where \(f_{e,\mu}\) and \(f_{e,\sigma}\) are the encoder's output heads that produce the mean vector and the vector of positive
+                    standard deviations respectively, and \(\boldsymbol{\phi}\) denotes all encoder parameters.
                 </p>
                 <p>
-                    This approach is called <strong>amortized inference</strong>: rather than running a separate optimization procedure 
-                    to compute the posterior for each individual data point (as in classical variational inference), we train a single 
-                    neural network that directly maps any input \(\boldsymbol{x}\) to the parameters of its approximate posterior. 
-                    The cost of inference at test time is thus reduced to a single forward pass through the encoder, with the computational 
-                    investment "amortized" across the entire training set.
+                    This approach is called <strong>amortized inference</strong>. Rather than running a separate optimization procedure to
+                    compute the posterior for each individual data point (as in classical variational inference), we train a single neural
+                    network that directly maps any input \(\boldsymbol{x}\) to the parameters of its approximate posterior. The cost of inference
+                    at test time is thus reduced to a single forward pass through the encoder, with the computational investment "amortized"
+                    across the entire training set.
                 </p>
 
                 <h3>The Evidence Lower Bound (ELBO)</h3>
@@ -172,21 +175,37 @@ uses_python: false
                 </div>
 
                 <p>
-                    To see that this is indeed a lower bound on the log-evidence, apply <a href="../Probability/entropy.html#T-jensen_inequality" class="ref-link"><strong>Jensen's inequality</strong></a>. 
-                    Since \(\log\) is concave, moving it outside the expectation can only increase the value:
+                    To see that this is indeed a lower bound on the log-evidence, assume that
+                    \(\log p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\) and
+                    \(\log q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\) are integrable under
+                    \(q_{\boldsymbol{\phi}}(\cdot \mid \boldsymbol{x})\), so that the ELBO is finite. This forces
+                    \(p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) \gt 0\) for \(q_{\boldsymbol{\phi}}\)-almost every \(\boldsymbol{z}\),
+                    so the ratio
+                    \(p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z}) / q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\) is
+                    positive almost surely. Applying
+                    <a href="../Probability/entropy.html#T-jensen_inequality" class="ref-link"><strong>Jensen's inequality</strong></a> to the convex
+                    function \(-\log\), which amounts to moving the concave \(\log\) outside the expectation, we obtain
                     \[
                     \begin{align*}
                     L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x})
                     &= \int q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \log \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})}{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}\, d\boldsymbol{z} \\\\
                     &\leq \log \int q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \frac{p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})}{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}\, d\boldsymbol{z} \\\\
-                    &= \log \int p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\, d\boldsymbol{z} \\\\
+                    &\leq \log \int p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\, d\boldsymbol{z} \\\\
                     &= \log p_{\boldsymbol{\theta}}(\boldsymbol{x}).
                     \end{align*}
                     \]
-                    That is, \(L(\boldsymbol{\theta}, \boldsymbol{\phi} \mid \boldsymbol{x}) \leq \log p_{\boldsymbol{\theta}}(\boldsymbol{x})\) 
-                    for any choice of \(q_{\boldsymbol{\phi}}\). Maximizing the ELBO with respect to both \(\boldsymbol{\theta}\) and 
-                    \(\boldsymbol{\phi}\) therefore simultaneously pushes up the log-likelihood and tightens the bound by making 
-                    \(q_{\boldsymbol{\phi}}\) a better approximation to the true posterior.
+                    The third step can only increase the integral, since the integrand equals
+                    \(p_{\boldsymbol{\theta}}(\boldsymbol{x}, \boldsymbol{z})\) where \(q_{\boldsymbol{\phi}} \gt 0\) and vanishes elsewhere. That
+                    is, \(L(\boldsymbol{\theta}, \boldsymbol{\phi} \mid \boldsymbol{x}) \leq \log p_{\boldsymbol{\theta}}(\boldsymbol{x})\) for
+                    every \(q_{\boldsymbol{\phi}}\) satisfying the integrability assumption. Maximizing the ELBO with respect to
+                    \(\boldsymbol{\phi}\) tightens the bound. Whenever \(q_{\boldsymbol{\phi}}(\cdot \mid \boldsymbol{x})\) is absolutely
+                    continuous with respect to the posterior, the
+                    <a href="../Probability/variational_inference.html#T-elbo_kl_decomposition" class="ref-link"><strong>ELBO-KL decomposition</strong></a>
+                    identifies the gap
+                    \(\log p_{\boldsymbol{\theta}}(\boldsymbol{x}) - L(\boldsymbol{\theta}, \boldsymbol{\phi} \mid \boldsymbol{x})\) as
+                    \(D_{\mathbb{KL}}\!\left(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \,\|\, p_{\boldsymbol{\theta}}(\boldsymbol{z} \mid \boldsymbol{x})\right)\).
+                    Maximization with respect to \(\boldsymbol{\theta}\), by contrast, raises this lower bound on the log-likelihood rather than
+                    the log-likelihood itself.
                 </p>
 
                 <h3>ELBO Decomposition: Reconstruction + Regularization</h3>
@@ -199,10 +218,11 @@ uses_python: false
                 <div class="theorem" id="T-elbo_decomposition">
                     <span class="theorem-title">Theorem: ELBO Decomposition</span>
                     <p>
+                        Assume that both terms on the right-hand side are finite. Then
                         \[
-                        L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) 
+                        L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x})
                         = \underbrace{\mathbb{E}_{q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x})} \left[\log p_{\boldsymbol{\theta}} (\boldsymbol{x} \mid \boldsymbol{z})\right]}_{\text{reconstruction}}
-                            \;-\; \underbrace{D_{\mathbb{KL}}\!\left(q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x}) \,\|\, p(\boldsymbol{z})\right)}_{\text{regularization}}
+                            - \underbrace{D_{\mathbb{KL}}\!\left(q_{\boldsymbol{\phi}} (\boldsymbol{z} \mid \boldsymbol{x}) \,\|\, p(\boldsymbol{z})\right)}_{\text{regularization}}.
                         \]
                     </p>
                 </div>
@@ -225,32 +245,32 @@ uses_python: false
                 </div>
 
                 <p>
-                    The first term is the <strong>expected reconstruction log-likelihood</strong>: it encourages the decoder to reconstruct 
-                    the input \(\boldsymbol{x}\) from latent samples \(\boldsymbol{z} \sim q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\). 
-                    The second term is the <strong>KL divergence</strong> between the approximate posterior and the prior 
-                    \(p(\boldsymbol{z}) = \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\), which regularizes the latent space by penalizing 
-                    approximate posteriors that deviate from the prior. This regularization is what gives the VAE its structured, 
-                    continuous latent space - without it, the encoder could collapse each data point to an isolated delta function, 
-                    losing the ability to generate new data by sampling from \(p(\boldsymbol{z})\).
+                    The first term is the <strong>expected reconstruction log-likelihood</strong>. It encourages the decoder to reconstruct the input
+                    \(\boldsymbol{x}\) from latent samples \(\boldsymbol{z} \sim q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\). The
+                    second term is the <strong>KL divergence</strong> between the approximate posterior and the prior
+                    \(p(\boldsymbol{z}) = \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\), which regularizes the latent space by penalizing approximate
+                    posteriors that deviate from the prior. This regularization is what gives the VAE its structured, continuous latent space. Without
+                    it, the encoder could collapse each data point to an isolated delta function, and the model would lose the ability to generate new
+                    data by sampling from \(p(\boldsymbol{z})\).
                 </p>
 
                 <h3>The Reparameterization Trick</h3>
                 <p>
-                    To train the VAE end-to-end via gradient-based optimization, we need to differentiate the ELBO with respect to 
-                    both \(\boldsymbol{\theta}\) and \(\boldsymbol{\phi}\). The gradient with respect to the decoder parameters 
-                    \(\boldsymbol{\theta}\) poses no difficulty, since \(\boldsymbol{\theta}\) appears only inside the expectation. 
-                    However, differentiating with respect to the encoder parameters \(\boldsymbol{\phi}\) is problematic: the expectation 
-                    \(\mathbb{E}_{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}[\cdot]\) is taken with respect to a distribution 
-                    that itself depends on \(\boldsymbol{\phi}\), so we cannot simply interchange the gradient and the expectation.
+                    To train the VAE end-to-end via gradient-based optimization, we need to differentiate the ELBO with respect to both
+                    \(\boldsymbol{\theta}\) and \(\boldsymbol{\phi}\). The gradient with respect to the decoder parameters \(\boldsymbol{\theta}\)
+                    requires no reparameterization, since the sampling distribution \(q_{\boldsymbol{\phi}}\) does not depend on
+                    \(\boldsymbol{\theta}\). However, differentiating with respect to the encoder parameters \(\boldsymbol{\phi}\) is problematic. The
+                    expectation \(\mathbb{E}_{q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})}[\cdot]\) is taken with respect to a
+                    distribution that itself depends on \(\boldsymbol{\phi}\), so we cannot simply interchange the gradient and the expectation.
                 </p>
                 <p>
-                    The <strong>reparameterization trick</strong> resolves this by expressing the stochastic latent variable 
-                    \(\boldsymbol{z}\) as a deterministic, differentiable transformation of a parameter-free noise variable. 
-                    Since the encoder outputs a diagonal Gaussian, we write
+                    The <strong>reparameterization trick</strong> resolves this by expressing the stochastic latent variable \(\boldsymbol{z}\) as a
+                    deterministic, differentiable transformation of a parameter-free noise variable. Since the encoder outputs a diagonal Gaussian,
+                    the trick takes the following form.
                 </p>
 
                 <div class="theorem" id="D-reparameterization_trick">
-                    <span class="theorem-title">Reparameterization Trick:</span>
+                    <span class="theorem-title">Definition: Reparameterization Trick</span>
                     <p>
                         Sample \(\boldsymbol{z}\) from \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\) via
                         \[
@@ -273,48 +293,49 @@ uses_python: false
                     \]
                 </p>
                 <p>
-                    The key observation is that the expectation is now taken with respect to the fixed distribution 
-                    \(\mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\), which does not depend on \(\boldsymbol{\phi}\). This means we 
-                    can interchange the gradient and the expectation: 
-                    \(\nabla_{\boldsymbol{\phi}} \mathbb{E}_{\boldsymbol{\epsilon}}[\cdot] = \mathbb{E}_{\boldsymbol{\epsilon}}[\nabla_{\boldsymbol{\phi}}(\cdot)]\), 
-                    and estimate the gradient via Monte Carlo sampling of \(\boldsymbol{\epsilon}\). In practice, even a single sample 
-                    per data point provides a sufficiently low-variance gradient estimate for stochastic gradient descent.
+                    The key observation is that the expectation is now taken with respect to the fixed distribution
+                    \(\mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\), which does not depend on \(\boldsymbol{\phi}\). Under the domination hypothesis
+                    of the <a href="../Probability/variational_inference.html#T-reparameterization_gradient" class="ref-link"><strong>reparameterization gradient theorem</strong></a>,
+                    we can therefore interchange the gradient and the expectation:
+                    \(\nabla_{\boldsymbol{\phi}} \mathbb{E}_{\boldsymbol{\epsilon}}[\cdot] = \mathbb{E}_{\boldsymbol{\epsilon}}[\nabla_{\boldsymbol{\phi}}(\cdot)]\),
+                    and estimate the gradient via Monte Carlo sampling of \(\boldsymbol{\epsilon}\). In practice, a single sample per data point is
+                    commonly used, and with minibatch averaging it typically yields a gradient estimate adequate for stochastic gradient descent.
                 </p>
                 <p>
                     The full VAE training objective over a dataset \(\mathcal{D}\) is therefore
                     \[
-                    \min_{\boldsymbol{\theta}, \, \boldsymbol{\phi}} \;-\, \mathbb{E}_{\boldsymbol{x} \sim \mathcal{D}} \left[ L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) \right]
+                    \min_{\boldsymbol{\theta}, \, \boldsymbol{\phi}} -\, \mathbb{E}_{\boldsymbol{x} \sim \mathcal{D}} \left[ L(\boldsymbol{\theta}, \, \boldsymbol{\phi}\mid \boldsymbol{x}) \right]
                     \]
                     which is optimized end-to-end by stochastic gradient descent.
                 </p>
 
                 <h3>Putting It All Together</h3>
                 <p>
-                    The components developed above - the nonlinear generative model, the amortized inference network, the ELBO objective, 
-                    and the reparameterization trick - collectively define the Variational Autoencoder.
+                    Together, the nonlinear generative model, the amortized inference network, the ELBO objective, and the reparameterization trick
+                    define the Variational Autoencoder.
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Variational Autoencoder (VAE):</span>
+                    <span class="theorem-title">Definition: Variational Autoencoder (VAE)</span>
                     <p>
                         A VAE is a latent variable model consisting of:
                     </p>
                     <ol style="padding-left: 40px;">
                         <li>A <strong>prior</strong> over the latent space: \(p(\boldsymbol{z}) = \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\)</li>
                         <li>A <strong>decoder</strong> (generative model): \(p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z}) = \mathcal{N}(\boldsymbol{x} \mid f_d(\boldsymbol{z}; \boldsymbol{\theta}), \, \sigma^2 \boldsymbol{I})\)</li>
-                        <li>An <strong>encoder</strong> (inference network): \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) = \mathcal{N}\!\left(\boldsymbol{z} \mid f_{e,\mu}(\boldsymbol{x}; \boldsymbol{\phi}), \, \operatorname{diag}(f_{e,\sigma}(\boldsymbol{x}; \boldsymbol{\phi}))\right)\)</li>
+                        <li>An <strong>encoder</strong> (inference network): \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) = \mathcal{N}\!\left(\boldsymbol{z} \mid f_{e,\mu}(\boldsymbol{x}; \boldsymbol{\phi}), \, \operatorname{diag}(f_{e,\sigma}(\boldsymbol{x}; \boldsymbol{\phi}))^{2}\right)\)</li>
                     </ol>
                     <p>
                         The parameters \(\boldsymbol{\theta}\) and \(\boldsymbol{\phi}\) are trained jointly by maximizing the ELBO
                         \[
-                        \max_{\boldsymbol{\theta}, \, \boldsymbol{\phi}} \; \mathbb{E}_{\boldsymbol{x} \sim \mathcal{D}} \left[ 
+                        \max_{\boldsymbol{\theta}, \, \boldsymbol{\phi}} \mathbb{E}_{\boldsymbol{x} \sim \mathcal{D}} \left[
                             \mathbb{E}_{\boldsymbol{\epsilon} \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{I})}
                             \!\left[\log p_{\boldsymbol{\theta}}\!\left(\boldsymbol{x} \mid \boldsymbol{z} = \mu_{\boldsymbol{\phi}}(\boldsymbol{x}) + \sigma_{\boldsymbol{\phi}}(\boldsymbol{x}) \odot \boldsymbol{\epsilon}\right)\right]
                             - D_{\mathbb{KL}}\!\left(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x}) \,\|\, p(\boldsymbol{z})\right)
                         \right]
                         \]
-                        where gradients with respect to both \(\boldsymbol{\theta}\) and \(\boldsymbol{\phi}\) are computed via 
-                        backpropagation through the reparameterized sampling step.
+                        where gradients with respect to both \(\boldsymbol{\theta}\) and \(\boldsymbol{\phi}\) are computed via backpropagation
+                        through the reparameterized sampling step.
                     </p>
                 </div>
              
@@ -325,10 +346,11 @@ uses_python: false
 
                 <h3>Overview</h3>
                 <p>
-                    This simulation demonstrates how a <strong>Variational Autoencoder (VAE)</strong> can be used as a real-time safety monitor during 
-                    robotic manipulation. A 2-link planar arm attempts to lift a box with an off-center mass. The VAE's posterior distribution 
-                    \(q(\mathbf{z} \mid \mathbf{x})\) encodes the robot's internal uncertainty about the physical state of the grasp. When this uncertainty exceeds a 
-                    learned threshold, the system aborts the lift to prevent a catastrophic drop.
+                    This simulation shows how the posterior of a <strong>Variational Autoencoder (VAE)</strong> could serve as a real-time safety
+                    monitor during robotic manipulation. A 2-link arm on a rotating base attempts to lift a box with an off-center mass. The posterior
+                    \(q(\mathbf{z} \mid \mathbf{x})\), produced here by a hand-designed stand-in for a trained encoder, plays the role of the robot's
+                    internal uncertainty about the physical state of the grasp. When this uncertainty exceeds a user-set threshold, the system aborts
+                    the lift to prevent a catastrophic drop.
                 </p>
 
                  <div id="simulation-container"></div>
@@ -341,12 +363,10 @@ uses_python: false
                 </p>
                 
                 <p>
-                    A rigid box of adjustable mass \(m\) sits on the ground plane. Its <strong>center of mass (CoM)</strong> 
-                    is offset from its geometric center by a user-controlled displacement \(\mathbf{c} = (c_x, c_y, c_z)\), 
-                    where the \(y\)-axis is vertical, matching the torque formula below. 
-                    This offset serves as the primary source of <strong>epistemic uncertainty</strong>: the robot 
-                    cannot directly observe the true CoM location and must infer the resulting torque anomalies 
-                    from sensor feedback during the initial lift phase.
+                    A rigid box of adjustable mass \(m\) sits on the ground plane. Its <strong>center of mass (CoM)</strong> is offset from its
+                    geometric center by a user-controlled displacement \(\mathbf{c} = (c_x, c_y, c_z)\), where the \(y\)-axis is vertical, matching
+                    the torque formula below. This offset is the hidden physical quantity behind the demo's uncertainty signal. The robot cannot
+                    directly observe the true CoM location and must instead respond to the torque it measures during the initial lift phase.
                 </p>
 
                 <h3>Torque as Sensory Input</h3>
@@ -360,16 +380,16 @@ uses_python: false
                     \]
                 </p>
                 <p>
-                    where \(\mathbf{r}_{\text{CoM}}\) is the world-space CoM position and \(\mathbf{r}_{\text{grip}}\) is the grip point.
-                    In this demo the torque vector serves as the input feature on which the encoder is defined; in a deployed
-                    robotic system the input would typically be a higher-dimensional sensor stream (force-torque sensor readings,
-                    joint encoder readings, vision) processed by a learned encoder rather than the closed-form mapping below.
-                    The torque vector is displayed as a green arrow on the box during the lift.
+                    where \(\mathbf{r}_{\text{CoM}}\) is the world-space CoM position and \(\mathbf{r}_{\text{grip}}\) is the grip point. In this
+                    demo the torque vector serves as the input feature on which the encoder is defined. In a deployed robotic system the input
+                    would typically be a higher-dimensional sensor stream (force-torque sensor readings, joint encoder readings, vision) processed
+                    by a learned encoder rather than the closed-form mapping below. The torque vector is displayed as a green arrow on the box
+                    during the lift.
                 </p>
 
                 <h3>Rotational Dynamics</h3>
                 <p>
-                    The torque drives the box's rotational dynamics via the damped Euler equation:
+                    The torque drives the box's rotational dynamics via a damped rotational equation of motion:
                 </p>
                 <p>
                     \[
@@ -377,12 +397,12 @@ uses_python: false
                     \]
                 </p>
                 <p>
-                    where \(I\) is the moment of inertia, \(\boldsymbol{\omega}\) is the angular velocity, and \(C_d\) is the damping coefficient. 
-                    This produces the visible tilt of the box during lifting. Higher mass or larger CoM offset leads to larger torques, faster rotation, 
-                    and more pronounced tilt - all signals that feed into the VAE. 
-                    For on-screen legibility the integrated orientation is rendered through a fixed visualization gain 
-                    (each frame's rotation increment is \(\|\boldsymbol{\omega}\|\,\Delta t \cdot k_{\text{display}}\) with 
-                    \(k_{\text{display}} = 0.008\)); the dynamics above are integrated as stated, and the gain rescales 
+                    where \(I\) is a scalar moment of inertia (the demo treats the inertia as isotropic, so the gyroscopic term of Euler's rigid-body
+                    equations vanishes), \(\boldsymbol{\omega}\) is the angular velocity, and \(C_d\) is the damping coefficient. This produces the
+                    visible tilt of the box during lifting. Higher mass or a larger horizontal CoM offset leads to larger torques, faster rotation,
+                    and more pronounced tilt. Of these, only the torque feeds into the encoder. For on-screen legibility, the integrated orientation
+                    is rendered through a fixed visualization gain \(k_{\text{display}} = 0.008\), so each frame's rotation increment is
+                    \(\|\boldsymbol{\omega}\|\,\Delta t \cdot k_{\text{display}}\). The dynamics above are integrated as stated, and the gain rescales
                     only what is drawn.
                 </p>
 
@@ -393,7 +413,7 @@ uses_python: false
                 </p>
                 <p>
                     \[
-                     q(\mathbf{z} \mid \mathbf{x}) = \mathcal{N}(\mathbf{z};\; \boldsymbol{\mu}(\mathbf{x}),\; \sigma(\mathbf{x})^2 \mathbf{I})
+                     q(\mathbf{z} \mid \mathbf{x}) = \mathcal{N}(\mathbf{z} \mid \boldsymbol{\mu}(\mathbf{x}), \sigma(\mathbf{x})^2 \mathbf{I}).
                     \]
                 </p>
                 <p>
@@ -402,19 +422,15 @@ uses_python: false
                     the qualitative behavior of an uncertainty-aware encoder is visible at a glance:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li>\(\boldsymbol{\mu} = (0.07\,\tau_x,\; 0.07\,\tau_z)\) - the posterior mean shifts proportionally to the horizontal torque components</li>
-                    <li>\(\sigma = 0.011\,\|\boldsymbol{\tau}\|\) - the posterior spread grows with the torque magnitude</li>
+                    <li>\(\boldsymbol{\mu} = (0.07\,\tau_x, 0.07\,\tau_z)\): the posterior mean shifts proportionally to the horizontal torque components</li>
+                    <li>\(\sigma = 0.011\,\|\boldsymbol{\tau}\|\): the posterior spread grows with the torque magnitude</li>
                 </ul>
                 <p>
-                    Under this hand-designed mapping, \(\sigma\) is by construction monotone in
-                    \(\|\boldsymbol{\tau}\|\), and we use it in this demo as a stand-in for an
-                    uncertainty signal: when the torque is small (CoM near grip axis), \(\sigma\) is small;
-                    when the torque is large (CoM far off-center), \(\sigma\) is large. In a learned VAE
-                    encoder the relationship between input features and posterior spread would emerge from
-                    training rather than being prescribed; the qualitative dynamics shown in the simulation
-                    are intended to convey how such a learned signal could be consumed by downstream
-                    safety logic, not to claim that this fixed mapping is itself a learned uncertainty
-                    estimate.
+                    Under this hand-designed mapping, \(\sigma\) is by construction monotone in \(\|\boldsymbol{\tau}\|\), and we use it in this demo
+                    as a stand-in for an uncertainty signal. When the torque is small (CoM near the grip axis), \(\sigma\) is small. When the torque
+                    is large (CoM far off-center), \(\sigma\) is large. In a learned VAE encoder the relationship between input features and posterior
+                    spread would emerge from training rather than being prescribed. The simulation is intended to convey how subsequent safety logic
+                    could use such a learned signal, not to claim that this fixed mapping is itself a learned uncertainty estimate.
                 </p>
 
                 <h3>The Latent Space Visualization</h3>
@@ -422,51 +438,54 @@ uses_python: false
                     The top-right canvas shows the 2D latent space in real time:
                 </p>
                 <ul style="padding-left: 40px;">
-                    <li><strong style="color:#64b4ff;">Blue dot</strong> at the origin - the prior \(p(\mathbf{z}) = \mathcal{N}(\mathbf{0}, \mathbf{I})\)</li>
-                    <li><strong style="color:#ff9800;">Orange dot</strong> - the posterior mean \(\boldsymbol{\mu}\), which drifts as torque changes</li>
-                    <li><strong style="color:#ff9800;">Orange circle</strong> - the 1 \(\sigma\)  contour of the posterior distribution</li>
-                    <li><strong style="color:#ffa726;">Orange scatter points</strong> - stochastic samples \(\mathbf{z}^{(i)} \sim q(\mathbf{z} \mid \mathbf{x})\), visualized as ghost arms in 3D</li>
-                    <li><strong style="color:#ff5252;">Red dashed circle</strong> - the abort threshold on \(\sigma\) </li>
+                    <li><strong style="color:#64b4ff;">Blue dot</strong> at the origin: the prior \(p(\mathbf{z}) = \mathcal{N}(\mathbf{0}, \mathbf{I})\)</li>
+                    <li><strong style="color:#ff9800;">Orange dot</strong>: the posterior mean \(\boldsymbol{\mu}\), which drifts as torque changes</li>
+                    <li><strong style="color:#ff9800;">Orange circle</strong>: the \(1\sigma\) contour of the posterior distribution</li>
+                    <li><strong style="color:#ffa726;">Orange scatter points</strong>: \(\mathbf{z}^{(i)} = \boldsymbol{\mu} + \sigma\,\boldsymbol{\epsilon}^{(i)}\), reparameterized points whose noise is smoothed over time (see the ghost-arm formula below), visualized as ghost arms in 3D</li>
+                    <li><strong style="color:#ff5252;">Red dashed circle</strong>: the abort threshold on \(\sigma\)</li>
                 </ul>
                 <p>
-                    The display uses <strong>dynamic scaling</strong>: both the \(\sigma\)  circle and the threshold circle always fit 
-                    within the canvas, preserving their true ratio. When the lift fails, the orange circle is visibly larger than the 
-                    red circle, making the safety violation immediately apparent.
+                    The display uses <strong>dynamic scaling</strong>. Both the \(\sigma\) circle and the threshold circle always fit within the
+                    canvas, and their true ratio is preserved. When the lift fails, the orange circle is visibly larger than the red circle, so the
+                    safety violation is immediately apparent.
                 </p>
 
                 <h3>KL Divergence</h3>
                 <p>
-                    The telemetry panel reports the KL divergence, which acts as a regularizer by measuring the distance between 
-                    the approximate posterior \(q_{\boldsymbol{\phi}}(\mathbf{z} \mid \mathbf{x})\) and the prior \(p(\mathbf{z}) = \mathcal{N}(\mathbf{0}, \mathbf{I})\). 
-                    The <strong>general closed-form expression</strong> for a \(K\)-dimensional Gaussian with diagonal covariance is:
+                    The telemetry panel reports the KL divergence, which serves as the regularizer in the ELBO by measuring how far the approximate
+                    posterior \(q_{\boldsymbol{\phi}}(\mathbf{z} \mid \mathbf{x})\) diverges from the prior
+                    \(p(\mathbf{z}) = \mathcal{N}(\mathbf{0}, \mathbf{I})\). The <strong>general closed-form expression</strong> for a
+                    \(K\)-dimensional Gaussian with diagonal covariance is:
                     \[
-                    D_{\mathbb{KL}}\!\left[\,q(\mathbf{z} \mid \mathbf{x})\;\|\;p(\mathbf{z})\,\right] = \frac{1}{2} \sum_{j=1}^{K} \left( \mu_j^2 + \sigma_j^2 - \ln \sigma_j^2 - 1 \right)
+                    D_{\mathbb{KL}}\!\left(q(\mathbf{z} \mid \mathbf{x}) \,\|\, p(\mathbf{z})\right) = \frac{1}{2} \sum_{j=1}^{K} \left( \mu_j^2 + \sigma_j^2 - \log \sigma_j^2 - 1 \right).
                     \]
                 </p>
                 <p>
-                    In this specific simulation, where our latent space is 2-dimensional (\(K=2\)) and uses isotropic variance (\(\sigma_1^2 = \sigma_2^2 = \sigma^2\)), 
-                    this simplifies to the formula used in our telemetry engine:
+                    In this specific simulation, where our latent space is 2-dimensional (\(K=2\)) and uses isotropic variance
+                    (\(\sigma_1^2 = \sigma_2^2 = \sigma^2\)), this simplifies to the formula used in our telemetry engine:
                     \[
                     \begin{align*}
-                    D_{\mathbb{KL}} &= \frac{1}{2} \left[ (\mu_1^2 + \sigma^2 - \ln \sigma^2 - 1) + (\mu_2^2 + \sigma^2 - \ln \sigma^2 - 1) \right] \\\\
-                    &= \frac{1}{2} \left[ (\mu_1^2 + \mu_2^2) + 2\sigma^2 - 2\ln \sigma^2 - 2 \right] \\\\
-                    &= \frac{1}{2} \left( \|\boldsymbol{\mu}\|^2 + 2\sigma^2 - 2\ln \sigma^2 - 2 \right)
+                    D_{\mathbb{KL}} &= \frac{1}{2} \left[ (\mu_1^2 + \sigma^2 - \log \sigma^2 - 1) + (\mu_2^2 + \sigma^2 - \log \sigma^2 - 1) \right] \\\\
+                    &= \frac{1}{2} \left[ (\mu_1^2 + \mu_2^2) + 2\sigma^2 - 2\log \sigma^2 - 2 \right] \\\\
+                    &= \frac{1}{2} \left( \|\boldsymbol{\mu}\|^2 + 2\sigma^2 - 2\log \sigma^2 - 2 \right).
                     \end{align*}
                     \]
                 </p>
 
                 <p>
-                    One boundary case deserves disclosure: as \(\sigma \to 0\) the KL divergence diverges (an infinitely 
-                    confident posterior is infinitely far from the prior), so the telemetry evaluates the formula with 
-                    \(\sigma\) floored at \(0.05\). The floor engages only when the torque is nearly zero. 
-                    This quantity measures the "information gain" or surprise from the sensory input. A large KL divergence indicates that the 
-                    physical interaction has pushed the robot's belief significantly away from its prior expectations - a sign of an unusual 
-                    or difficult grasp configuration.
+                    One boundary case deserves disclosure. As \(\sigma \to 0\) the KL divergence diverges (an infinitely confident posterior is
+                    infinitely far from the prior), so the telemetry evaluates the formula with \(\sigma\) floored at \(0.05\). The floor engages only
+                    when the torque is nearly zero.
+                </p>
+                <p>
+                    The KL divergence measures the "information gain" or surprise from the sensory input. A large value indicates that the
+                    physical interaction has pushed the robot's belief significantly away from its prior expectations, which signals an unusual or
+                    difficult grasp configuration.
                 </p>
 
                 <h3>Ghost Arms: Sampling Uncertainty</h3>
                 <p>
-                    The five semi-transparent <strong>ghost arms</strong> visualize samples from the posterior. Each ghost arm \(i\) receives a 
+                    The five semi-transparent <strong>ghost arms</strong> visualize the spread of the posterior. Each ghost arm \(i\) receives a
                     perturbed end-effector target:
                 </p>
                 <p>
@@ -475,12 +494,13 @@ uses_python: false
                     \]
                 </p>
                 <p>
-                    where \(\boldsymbol{\epsilon}^{(i)} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\) are smoothed Gaussian samples 
-                    (using exponential moving average with \(\alpha = 0.92\) for visual stability), the 2D latent is mapped to 
-                    the horizontal plane (\(z_1 \to x\), \(z_2 \to z\); the vertical component is unperturbed), and the display 
-                    scales are \((s_{\mu}, s_{\sigma}) = (12, 18)\). When \(\sigma\) is small, the ghosts cluster 
-                    tightly around the primary arm. When \(\sigma\) is large, they splay outward, creating a visual "cloud of possible robot states" 
-                    that communicates the degree of uncertainty.
+                    where each \(\boldsymbol{\epsilon}^{(i)}\) is an exponential moving average, with \(\alpha = 0.92\), of fresh
+                    \(\mathcal{N}(\mathbf{0}, \mathbf{I})\) draws, which keeps the ghosts visually stable. The smoothing shrinks the stationary
+                    standard deviation of each coordinate from \(1\) to \(\sqrt{(1-\alpha)/(1+\alpha)} \approx 0.20\), so the ghosts convey the
+                    direction and scale of the spread rather than exact posterior samples. The 2D latent is mapped to the horizontal plane
+                    (\(z_1 \to x\), \(z_2 \to z\), with the vertical component unperturbed), and the display scales are
+                    \((s_{\mu}, s_{\sigma}) = (12, 18)\). When \(\sigma\) is small, the ghosts cluster tightly around the primary arm. When \(\sigma\)
+                    is large, they splay outward into a visual "cloud of possible robot states" that communicates the degree of uncertainty.
                 </p>
 
                 <h3>The Safety Decision</h3>
@@ -491,47 +511,44 @@ uses_python: false
                     <li><strong>APPROACH</strong> &rarr; Arm moves from home to hover above the box</li>
                     <li><strong>DESCEND</strong> &rarr; Arm lowers to grasp height</li>
                     <li><strong>GRASP</strong> &rarr; Fingers close on the box</li>
-                    <li><strong>PRE_LIFT</strong> &rarr; Small test lift (5 units). During this phase, the system assesses \(\sigma\) for 0.5 seconds. If \(\sigma > \sigma_{\text{thr}}\), the lift is aborted immediately.</li>
-                    <li><strong>LIFT_OK</strong> &rarr; Full lift if \(\sigma\) stayed below threshold. Continuous safety monitoring continues; an abort can still trigger if \(\sigma\) spikes during the lift.</li>
+                    <li><strong>PRE_LIFT</strong> &rarr; Small test lift (5 units). During this phase, the system assesses \(\sigma\) for 0.5 seconds. If \(\sigma \gt \sigma_{\text{thr}}\), the lift is aborted immediately.</li>
+                    <li><strong>LIFT_OK</strong> &rarr; Full lift if \(\sigma\) stayed below threshold. Continuous safety monitoring continues. An abort can still trigger if \(\sigma\) spikes during the lift.</li>
                     <li><strong>ABORT</strong> &rarr; Three-phase emergency: lower the box, release grip, return home.</li>
                 </ol>
                 <p>
-                    The critical decision in this demo is the comparison \(\sigma \lessgtr \sigma_{\text{thr}}\). This
-                    is a pedagogical analogy to a class of <strong>out-of-distribution (OOD) detection</strong>
-                    heuristics in which a learned uncertainty score gates further action — if the score
-                    exceeds a threshold, the system flags the observation as untrusted.
+                    The critical decision in this demo is the comparison \(\sigma \lessgtr \sigma_{\text{thr}}\). This is a pedagogical analogy to a
+                    class of <strong>out-of-distribution (OOD) detection</strong> heuristics in which a learned uncertainty score gates further
+                    action. If the score exceeds a threshold, the system flags the observation as untrusted.
                 </p>
                 <p>
-                    We caution that
-                    the actual reliability of generative-model latent variances or likelihoods as OOD
-                    detectors is an active research debate, and not a settled solved problem: deep
-                    generative models (including VAEs and normalizing flows) have been shown to assign
-                    higher likelihoods to clearly out-of-distribution inputs than to in-distribution ones
-                    in published experiments (Nalisnick et al., 2019, "Do Deep Generative Models Know What
-                    They Don't Know?"). The simulation here is best read as a clean illustration of how an
-                    uncertainty signal can be wired into a control state machine, not as evidence that
-                    posterior-spread thresholding is a deployment-ready OOD method.
+                    We caution that the reliability of generative-model latent variances or likelihoods as OOD detectors is an open research
+                    question rather than a settled problem. In published experiments, deep generative models (including VAEs and normalizing flows)
+                    have assigned higher likelihoods to clearly out-of-distribution inputs than to in-distribution ones (Nalisnick et al., 2019, "Do
+                    Deep Generative Models Know What They Don't Know?"). The simulation here is best read as a clean illustration of how an
+                    uncertainty signal can be wired into a control state machine, not as evidence that posterior-spread thresholding is a
+                    deployment-ready OOD method.
                 </p>
 
                 <h3>What the Parameters Control</h3>
                 <p>
-                    <strong>CoM Offset</strong> \((c_x, c_y, c_z)\): Shifts the center of mass away from the box's 
-                    geometric center. Larger offsets produce larger torques, higher \(\sigma\) and a higher likelihood of abort. This simulates 
-                    real-world scenarios where the load distribution inside a package is unknown.
+                    <strong>CoM Offset</strong> \((c_x, c_y, c_z)\): Shifts the center of mass away from the box's geometric center. Larger
+                    horizontal offsets \((c_x, c_z)\) produce larger torques, higher \(\sigma\) and a higher likelihood of abort. This simulates
+                    real-world scenarios where the load distribution inside a package is unknown. The vertical component \(c_y\) does not enter the
+                    torque formula above.
                 </p>
                 <p>
-                    <strong>Box Mass</strong>: Scales the gravitational force \(mg\), amplifying the torque for a given CoM offset. Heavy objects 
-                    are harder to lift safely. The "Grip Force" telemetry shows the commanded force \(1.6\,mg\) (a fixed 
-                    safety factor); it is a display quantity, not a simulated contact model.
+                    <strong>Box Mass</strong>: Scales the gravitational force \(mg\), amplifying the torque for a given CoM offset. Heavy objects are
+                    harder to lift safely. The "Grip Force" telemetry shows the commanded force \(1.6\,mg\) (a fixed safety factor). This force is a
+                    display quantity, not a simulated contact model.
                 </p>
                 <p>
-                    <strong>\(\sigma\) Threshold</strong>: The abort boundary. Lowering it makes the robot more cautious (aborting earlier); 
-                    raising it makes the robot more risk-tolerant. This models the engineering trade-off between safety and task completion 
+                    <strong>\(\sigma\) Threshold</strong>: The abort boundary. Lowering it makes the robot more cautious (aborting earlier),
+                    while raising it makes the robot more risk-tolerant. This models the engineering trade-off between safety and task completion
                     in autonomous systems.
                 </p>
                 <p>
-                    <strong>Damping</strong> \(C_d\): Controls how quickly the box's rotational oscillation decays. High damping suppresses 
-                    wobble; low damping allows the box to swing more freely, producing a more dynamic and potentially uncertain lift.
+                    <strong>Damping</strong> \(C_d\): Controls how quickly the box's rotational oscillation decays. High damping suppresses wobble,
+                    whereas low damping allows the box to swing more freely and produces a more dynamic and potentially uncertain lift.
                 </p>
 
                 <h3>Key Takeaways</h3>
@@ -540,27 +557,24 @@ uses_python: false
                 </p>
                 <p>
                     <strong>1. Uncertainty quantification through latent representations:</strong><br>
-                    The VAE does not output a single point estimate of the physical state - it outputs a <em>distribution</em>. 
-                    The spread of this distribution (\(\sigma\)) serves as a quantitative uncertainty signal derived from sensory feedback.
+                    The VAE does not output a single point estimate of the physical state. It outputs a <em>distribution</em>. The spread of this
+                    distribution (\(\sigma\)) serves as a quantitative uncertainty signal derived from sensory feedback.
                 </p>
                 <p>
                     <strong>2. Safety-critical decision-making under uncertainty:</strong><br>
-                    Rather than blindly executing a motion plan, the robot uses its uncertainty estimate as a gating signal. When \(\sigma\) exceeds 
-                    the threshold, the system recognizes that it is operating outside its confident regime and aborts. The same pattern appears 
-                    throughout uncertainty-aware reinforcement learning and Bayesian safe control.
+                    Rather than blindly executing a motion plan, the robot uses its uncertainty estimate as a gating signal. When \(\sigma\) exceeds
+                    the threshold, the system recognizes that it is operating outside its confident regime and aborts. A similar gating pattern
+                    appears in uncertainty-aware reinforcement learning and Bayesian safe control.
                 </p>
                 <p>
                     <strong>3. The connection between physics and information:</strong><br>
-                    The torque - a purely physical quantity governed by Newton's laws - becomes the input to a probabilistic inference engine. 
-                    The KL divergence between posterior and prior quantifies how much information the robot has gained (or how surprised it is) 
-                    from the physical interaction.
+                    The torque, a purely physical quantity governed by Newton's laws, becomes the input to a probabilistic inference engine. The
+                    KL divergence between posterior and prior quantifies how much information the robot has gained (or how surprised it is) from
+                    the physical interaction.
                 </p>
 
             </section>
-
         </div>
-
-<script src="/js/sec5_p12_vae_uncertainty.js"></script>
-
+        <script src="/js/sec5_p12_vae_uncertainty.js"></script>
     </body>
 </html>
