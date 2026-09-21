@@ -30,32 +30,31 @@ uses_python: false
             <section id="intro" class="section-content">
                 <h2>Introduction</h2>
                 <p>
-                    By the mid-2020s, the most prominent generative models (Stable Diffusion for images, DALL-E from version 2 onward,
-                    Sora and Veo for video) share a common mathematical framework known as <strong>diffusion</strong>.
-                    The idea is unusual at first glance. To generate, one starts from pure noise and gradually <em>denoises</em>
-                    it into a sample, reversing a process that incrementally adds Gaussian noise to data. This page develops the
+                    A <strong>diffusion model</strong> rests on an idea that is unusual at first glance. To generate, one starts from pure noise and
+                    gradually <em>denoises</em> it into a sample, reversing a process that incrementally adds Gaussian noise to data. Nothing in the
+                    construction is specific to images, and it applies to any data represented as vectors in \(\mathbb{R}^d\). This page develops the
                     mathematics behind that picture.
                 </p>
 
                 <p>
                     Two curriculum threads converge here. The first comes from our treatment of the
-                    <a href="vae.html"><strong>variational autoencoder</strong></a>, where we built a generative model around a
-                    learned encoder \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\), a decoder
+                    <a href="vae.html"><strong>variational autoencoder</strong></a>, where we built a generative model around a learned encoder
+                    \(q_{\boldsymbol{\phi}}(\boldsymbol{z} \mid \boldsymbol{x})\), a decoder
                     \(p_{\boldsymbol{\theta}}(\boldsymbol{x} \mid \boldsymbol{z})\), and the
-                    <a href="../Probability/variational_inference.html#D-elbo" class="ref-link"><strong>evidence lower bound</strong></a>
-                    as the training objective. The diffusion model inherits the ELBO formalism but rearranges the architecture
-                    in a striking way. The analogue of the encoder is a <em>fixed, non-learned</em> Markov chain that progressively
-                    corrupts data into noise, while the analogue of the decoder is a learned Markov chain that reverses the corruption.
-                    Encoder learning, the central computational difficulty of the VAE, is absent by design.
+                    <a href="../Probability/variational_inference.html#D-elbo" class="ref-link"><strong>evidence lower bound</strong></a> as the
+                    training objective. The diffusion model inherits the ELBO formalism but rearranges the architecture. The analogue of the encoder
+                    is a <em>fixed, non-learned</em> Markov chain that progressively corrupts data into noise, while the analogue of the decoder is
+                    a learned Markov chain that reverses the corruption. Encoder learning, the central computational difficulty of the VAE, is
+                    absent by design.
                 </p>
 
                 <p>
-                    The second thread is more subtle and was deliberately seeded earlier in the curriculum.
-                    Our <a href="pca.html#T-denoising_score_estimation" class="ref-link"><strong>page on PCA and autoencoders</strong></a>
-                    introduced the <em>denoising autoencoder</em> and stated, as a result taken on faith, that such a network implicitly
-                    learns the <strong>score function</strong> \(\nabla_{\mathbf{x}} \log p(\mathbf{x})\), the gradient of the log-density
-                    with respect to the data itself. The score-matching theory justifying this claim was deferred at the time. The diffusion
-                    model is where that deferred thread is recovered, once we reach the reverse process.
+                    The second thread is more subtle and was deliberately seeded earlier in the curriculum. Our
+                    <a href="pca.html#T-denoising_score_estimation" class="ref-link"><strong>page on PCA and autoencoders</strong></a> introduced the
+                    <em>denoising autoencoder</em> and stated, as a result taken on faith, that such a network implicitly learns the
+                    <strong>score function</strong> \(\nabla_{\mathbf{x}} \log p(\mathbf{x})\), the gradient of the log-density with respect to the
+                    data itself. The score-matching theory justifying this claim was deferred at the time. The diffusion model is where that thread is
+                    recovered, once we reach the reverse process.
                 </p>
 
                 <p>
@@ -68,26 +67,23 @@ uses_python: false
                         fixed Markov chain that maps data to noise) and derive its closed-form marginals.
                     </li>
                     <li>
-                        We then construct the
-                        <strong>reverse process and its loss</strong>, decomposing the negative ELBO into a sum of Kullback-Leibler terms,
-                        arriving at the simplified noise-prediction objective of Ho, Jain, and Abbeel's <em>denoising diffusion probabilistic
-                        models</em> (DDPM, 2020), and connecting this objective to the score function.
+                        We then construct the <strong>reverse process and its loss</strong>. We decompose the negative ELBO into a sum of
+                        Kullback-Leibler terms, arrive at the simplified noise-prediction objective of Ho, Jain, and Abbeel's
+                        <em>denoising diffusion probabilistic models</em> (DDPM, 2020), and connect this objective to the score function.
                     </li>
                     <li>
-                        We close with <strong>sampling</strong>, covering the ancestral sampler of DDPM, the deterministic accelerated sampler of Song, Meng, and Ermon's <em>denoising diffusion
-                        implicit models</em> (DDIM, 2021), and the classifier-free guidance mechanism that powers conditional generation
-                        in modern text-to-image systems.
+                        We close with <strong>sampling</strong>, covering the ancestral sampler of DDPM, the deterministic accelerated DDIM sampler,
+                        and the classifier-free guidance mechanism for conditional generation.
                     </li>
                 </ol>
 
                 <p>
-                    One scope note. A continuous-time formulation of diffusion exists and is mathematically rich. Taking the number of
-                    steps to infinity turns the discrete forward chain into a stochastic differential equation, the <strong>variance-preserving SDE</strong>,
-                    Anderson's 1982 reversal theorem yields a corresponding reverse SDE, and the deterministic DDIM sampler corresponds
-                    in this limit to a so-called probability-flow ODE.
-                    A rigorous treatment requires Brownian motion and It&ocirc; calculus, which the stochastic-analysis pages of the
-                    probability section now develop in full. We mention the continuous-time picture in passing
-                    where it illuminates the discrete-time mathematics, and the formal development lives in the
+                    A continuous-time formulation of diffusion exists and is mathematically rich. Taking the number of steps to infinity turns the
+                    discrete forward chain into a stochastic differential equation, the <strong>variance-preserving SDE</strong>. Anderson's 1982
+                    reversal theorem yields a corresponding reverse SDE, and the deterministic DDIM sampler corresponds in this limit to a so-called
+                    probability-flow ODE. A rigorous treatment requires Brownian motion and It&ocirc; calculus, which the stochastic-analysis pages of
+                    the probability section now develop in full. We mention the continuous-time picture in passing where it illuminates the
+                    discrete-time mathematics, and the formal development lives in the
                     <a href="../Probability/fokker_planck.html">study of the Fokker-Planck equation</a>.
                 </p>
             </section>
@@ -96,12 +92,12 @@ uses_python: false
                 <h2>The Forward Diffusion Process</h2>
 
                 <p>
-                    The forward process is the simpler of the two halves of a diffusion model. It is fixed, requires no training,
-                    and is specified by a single design choice, the rate at which Gaussian noise is added to the data at each step.
-                    Let \(\mathbf{x}_0 \in \mathbb{R}^d\) denote a data sample drawn from an unknown data distribution \(q(\mathbf{x}_0)\),
-                    and let \(T\) denote the total number of diffusion steps. We choose a sequence of small positive numbers
-                    \(\{\beta_t\}_{t=1}^T \subset (0, 1)\), called the <strong>noise schedule</strong>,
-                    and define a Markov chain \(\mathbf{x}_0 \to \mathbf{x}_1 \to \cdots \to \mathbf{x}_T\) by the following transition.
+                    The forward process is the simpler of the two halves of a diffusion model. It is fixed, requires no training, and is specified
+                    by a single design choice, the rate at which Gaussian noise is added to the data at each step. Let
+                    \(\mathbf{x}_0 \in \mathbb{R}^d\) denote a data sample drawn from an unknown data distribution \(q_0(\mathbf{x}_0)\), and let
+                    \(T\) denote the total number of diffusion steps. We choose a sequence of small positive numbers
+                    \(\{\beta_t\}_{t=1}^T \subset (0, 1)\), called the <strong>noise schedule</strong>, and define a Markov chain
+                    \(\mathbf{x}_0 \to \mathbf{x}_1 \to \cdots \to \mathbf{x}_T\) by the following transition.
                 </p>
 
                 <div class="theorem" id="D-forward_diffusion_kernel">
@@ -125,7 +121,7 @@ uses_python: false
                         <strong>The chain is
                         <a href="../Probability/markov.html#D-first_order_markov_property" class="ref-link">first-order Markov</a>.</strong>
                         Each \(\mathbf{x}_t\) depends only on its immediate predecessor \(\mathbf{x}_{t-1}\), so the joint conditional
-                        distribution factorises as
+                        distribution factorizes as
                         \[
                         q(\mathbf{x}_{1:T} \mid \mathbf{x}_0) = \prod_{t=1}^{T} q(\mathbf{x}_t \mid \mathbf{x}_{t-1}).
                         \]
@@ -136,16 +132,18 @@ uses_python: false
                         closed-form functions of \(\mathbf{x}_{t-1}\).
                     </li>
                     <li>
-                        <strong>The scaling \(\sqrt{1 - \beta_t}\) on the mean is not arbitrary.</strong>
-                        It is chosen so that, if \(\mathbf{x}_{t-1}\) has identity covariance, then \(\mathbf{x}_t\) does too:
-                        \(\operatorname{Cov}(\mathbf{x}_t) = (1-\beta_t)\mathbf{I} + \beta_t \mathbf{I} = \mathbf{I}\).
-                        If the data is preprocessed to have approximately identity covariance (a standard normalisation in practice), the
-                        marginal covariance of \(\mathbf{x}_t\) then remains close to the identity throughout the chain.
+                        <strong>The scaling \(\sqrt{1 - \beta_t}\) on the mean is not arbitrary.</strong> It is chosen so that, if
+                        \(\mathbf{x}_{t-1}\) has identity covariance, then \(\mathbf{x}_t\) does too:
+                        \(\operatorname{Cov}(\mathbf{x}_t) = (1-\beta_t)\mathbf{I} + \beta_t \mathbf{I} = \mathbf{I}\). For general data,
+                        independence of the injected noise gives
+                        \(\operatorname{Cov}(\mathbf{x}_t) = \bar{\alpha}_t \operatorname{Cov}(\mathbf{x}_0) + (1 - \bar{\alpha}_t)\mathbf{I}\),
+                        with \(\bar{\alpha}_t\) as defined below, so the marginal covariance moves from that of the data toward the identity
+                        along the chain.
                     </li>
                 </ol>
 
                 <p>
-                    Schedules with this property are called <strong>variance-preserving</strong>, and the form above is the variance-preserving
+                    Forward kernels with this scaling are called <strong>variance-preserving</strong>, and the form above is the variance-preserving
                     construction of Ho, Jain, and Abbeel.
                 </p>
 
@@ -171,23 +169,34 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof sketch:</span>
+                    <span class="proof-title">Proof:</span>
                     <p>
-                        Induction on \(t\). The base case \(t = 1\) is the kernel itself with \(\bar{\alpha}_1 = \alpha_1 = 1 - \beta_1\).
-                        For the inductive step, suppose \(q(\mathbf{x}_{t-1} \mid \mathbf{x}_0) = \mathcal{N}(\mathbf{x}_{t-1};\, \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0,\, (1-\bar{\alpha}_{t-1})\mathbf{I})\).
-                        Sample using the
-                        <a href="vae.html#D-reparameterization_trick" class="ref-link"><strong>reparameterization trick</strong></a>:
+                        We argue by induction on \(t\). The base case \(t = 1\) is the kernel itself with
+                        \(\bar{\alpha}_1 = \alpha_1 = 1 - \beta_1\). For the inductive step, suppose
+                        \(q(\mathbf{x}_{t-1} \mid \mathbf{x}_0) = \mathcal{N}(\mathbf{x}_{t-1};\, \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0,\, (1-\bar{\alpha}_{t-1})\mathbf{I})\).
+                        By the <a href="vae.html#D-reparameterization_trick" class="ref-link"><strong>reparameterization trick</strong></a>,
+                        we can write
                         \[
                         \mathbf{x}_{t-1} = \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_{t-1}}\,\boldsymbol{\varepsilon}_{t-1}, \quad \boldsymbol{\varepsilon}_{t-1} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}),
                         \]
-                        and similarly \(\mathbf{x}_t = \sqrt{\alpha_t}\,\mathbf{x}_{t-1} + \sqrt{\beta_t}\,\boldsymbol{\varepsilon}_t\) with \(\boldsymbol{\varepsilon}_t \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\) independent of \(\boldsymbol{\varepsilon}_{t-1}\).
-                        Substituting,
+                        and similarly \(\mathbf{x}_t = \sqrt{\alpha_t}\,\mathbf{x}_{t-1} + \sqrt{\beta_t}\,\boldsymbol{\varepsilon}_t\)
+                        with \(\boldsymbol{\varepsilon}_t \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\) independent of
+                        \(\boldsymbol{\varepsilon}_{t-1}\). Substituting,
                         \[
                         \mathbf{x}_t = \sqrt{\alpha_t \bar{\alpha}_{t-1}}\,\mathbf{x}_0 + \sqrt{\alpha_t (1 - \bar{\alpha}_{t-1})}\,\boldsymbol{\varepsilon}_{t-1} + \sqrt{\beta_t}\,\boldsymbol{\varepsilon}_t.
                         \]
-                        The last two terms are independent zero-mean Gaussians, so their sum is Gaussian with variance
-                        \(\alpha_t(1 - \bar{\alpha}_{t-1}) + \beta_t = \alpha_t - \alpha_t \bar{\alpha}_{t-1} + (1 - \alpha_t) = 1 - \bar{\alpha}_t\).
-                        Since \(\alpha_t \bar{\alpha}_{t-1} = \bar{\alpha}_t\) by definition, we obtain
+                    </p>
+                    <p>
+                        The last two terms are independent zero-mean Gaussians, so their sum is Gaussian. Using
+                        \(\alpha_t \bar{\alpha}_{t-1} = \bar{\alpha}_t\), which holds by definition, its variance is
+                        \[
+                        \begin{align*}
+                        \alpha_t(1 - \bar{\alpha}_{t-1}) + \beta_t
+                        &= \alpha_t - \alpha_t \bar{\alpha}_{t-1} + (1 - \alpha_t) \\\\
+                        &= 1 - \bar{\alpha}_t,
+                        \end{align*}
+                        \]
+                        and the coefficient of \(\mathbf{x}_0\) is \(\sqrt{\alpha_t \bar{\alpha}_{t-1}} = \sqrt{\bar{\alpha}_t}\). Hence
                         \[
                         \mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon}, \quad \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}),
                         \]
@@ -196,27 +205,27 @@ uses_python: false
                 </div>
 
                 <p>
-                    The identity at the end of the proof deserves its own line: any noisy sample at time \(t\) is produced in one shot
-                    from the clean data as
+                    The identity at the end of the proof deserves its own line. Any noisy sample at time \(t\) is produced in one shot from the
+                    clean data as
                     \[
                     \mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},
                     \quad \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}).
                     \]
-                    This one-shot reparameterization is the central computational identity of training: rather than simulating the chain
-                    step by step, the trainer samples \(t\) uniformly and \(\boldsymbol{\varepsilon}\) from a standard Gaussian, and
-                    produces a noisy sample directly.
+                    This one-shot reparameterization is the central computational identity of training. Rather than simulating the chain step
+                    by step, the trainer samples \(t\) uniformly and \(\boldsymbol{\varepsilon}\) from a standard Gaussian, and produces a
+                    noisy sample directly.
                 </p>
 
                 <h3>The Endpoint and the Choice of Schedule</h3>
 
                 <p>
-                    The schedule \(\{\beta_t\}\) is chosen so that \(\bar{\alpha}_T\) is very close to zero. From the closed-form marginal,
-                    this forces \(q(\mathbf{x}_T \mid \mathbf{x}_0) \approx \mathcal{N}(\mathbf{0}, \mathbf{I})\), and the dependence on \(\mathbf{x}_0\)
-                    is washed out. The two schedules most commonly used in practice are the <strong>linear schedule</strong>,
-                    which interpolates \(\beta_t\) linearly between small endpoints (Ho, Jain, and Abbeel, 2020),
-                    and the <strong>cosine schedule</strong>, which keeps \(\bar{\alpha}_t\) close to one for longer at small \(t\)
-                    and produces visibly better samples on image data (Nichol and Dhariwal, 2021). The choice of \(T\) is typically a few
-                    hundred to a few thousand. The schedule and \(T\) are hyperparameters of the model, not learned quantities.
+                    The schedule \(\{\beta_t\}\) is chosen so that \(\bar{\alpha}_T\) is very close to zero. From the closed-form marginal, this forces
+                    \(q(\mathbf{x}_T \mid \mathbf{x}_0) \approx \mathcal{N}(\mathbf{0}, \mathbf{I})\), and the dependence on \(\mathbf{x}_0\) is washed
+                    out. Two schedules are most common in practice. The <strong>linear schedule</strong> interpolates \(\beta_t\) linearly between
+                    small endpoints (Ho, Jain, and Abbeel, 2020). The <strong>cosine schedule</strong> keeps \(\bar{\alpha}_t\) close to one for longer
+                    at small \(t\) and so destroys information less abruptly, which improved results on lower-resolution images (Nichol and Dhariwal,
+                    2021). Typical values of \(T\) range from a few hundred to a few thousand. The schedule and \(T\) are hyperparameters of the model,
+                    not learned quantities.
                 </p>
             </section>
 
@@ -226,14 +235,14 @@ uses_python: false
                 <h3>The Reverse Posterior</h3>
 
                 <p>
-                    To generate samples, we would like to run the chain backwards, starting from \(\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\)
-                    and successively sampling from \(q(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) until we recover \(\mathbf{x}_0\). The obstruction is that
-                    this reverse transition is not directly computable. Writing it as
+                    To generate samples, we would like to run the chain backwards, starting from
+                    \(\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\) and successively sampling from \(q(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\)
+                    until we recover \(\mathbf{x}_0\). The obstruction is that this reverse transition is not directly computable. Writing it as
                     \[
                     q(\mathbf{x}_{t-1} \mid \mathbf{x}_t) = \frac{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\, q(\mathbf{x}_{t-1})}{q(\mathbf{x}_t)},
                     \]
                     we see that both \(q(\mathbf{x}_{t-1})\) and \(q(\mathbf{x}_t)\) require integrating the forward chain against the unknown data
-                    distribution \(q(\mathbf{x}_0)\), and so are inaccessible.
+                    distribution \(q_0(\mathbf{x}_0)\), and so are inaccessible.
                 </p>
 
                 <p>
@@ -244,18 +253,31 @@ uses_python: false
                 </p>
 
                 <p>
-                    The derivation begins from Bayes' rule together with the Markov property of the forward chain. Because
-                    \(\mathbf{x}_t\) depends on \(\mathbf{x}_{t-1}\) only through the forward kernel and not through \(\mathbf{x}_0\),
-                    we have \(q(\mathbf{x}_t \mid \mathbf{x}_{t-1}, \mathbf{x}_0) = q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\). Bayes' rule then gives
+                    The derivation begins from Bayes' rule together with the Markov property of the forward chain. Because \(\mathbf{x}_t\) depends on
+                    \(\mathbf{x}_{t-1}\) only through the forward kernel and not through \(\mathbf{x}_0\), we have
+                    \(q(\mathbf{x}_t \mid \mathbf{x}_{t-1}, \mathbf{x}_0) = q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\). Bayes' rule then gives
                     \[
                     q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)
                     = \frac{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\, q(\mathbf{x}_{t-1} \mid \mathbf{x}_0)}{q(\mathbf{x}_t \mid \mathbf{x}_0)}.
                     \]
-                    Every quantity on the right is a Gaussian whose mean and variance we already know. The numerator is a product of two
-                    Gaussians in \(\mathbf{x}_{t-1}\). The denominator is independent of \(\mathbf{x}_{t-1}\) and serves only as a normalising
-                    constant. Standard conditioning identities for the
+                </p>
+
+                <p>
+                    Every quantity on the right is a Gaussian whose mean and variance we already know. The denominator is independent of
+                    \(\mathbf{x}_{t-1}\) and serves only as a normalizing constant. The numerator is a product of two Gaussian densities in
+                    \(\mathbf{x}_{t-1}\), so for \(t \geq 2\) its logarithm is, up to terms free of \(\mathbf{x}_{t-1}\),
+                    \[
+                    -\frac{1}{2} \left( \frac{\left\| \mathbf{x}_t - \sqrt{\alpha_t}\,\mathbf{x}_{t-1} \right\|^2}{\beta_t}
+                    + \frac{\left\| \mathbf{x}_{t-1} - \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0 \right\|^2}{1 - \bar{\alpha}_{t-1}} \right).
+                    \]
+                    This is a quadratic in \(\mathbf{x}_{t-1}\) whose coefficient matrix is
+                    \[
+                    \left( \frac{\alpha_t}{\beta_t} + \frac{1}{1 - \bar{\alpha}_{t-1}} \right) \mathbf{I} = \frac{1 - \bar{\alpha}_t}{\beta_t (1 - \bar{\alpha}_{t-1})}\,\mathbf{I},
+                    \]
+                    where we used \(\alpha_t (1 - \bar{\alpha}_{t-1}) + \beta_t = 1 - \bar{\alpha}_t\). Completing the square therefore yields a
                     <a href="../Probability/mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a>
-                    then yield a Gaussian in closed form.
+                    whose covariance is the inverse of this matrix and whose mean is that covariance applied to the linear coefficient
+                    \(\sqrt{\alpha_t}\,\mathbf{x}_t / \beta_t + \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0 / (1 - \bar{\alpha}_{t-1})\).
                 </p>
 
                 <div class="theorem" id="D-reverse_posterior">
@@ -268,22 +290,23 @@ uses_python: false
                         \]
                         with mean and variance
                         \[
+                        \begin{align*}
                         \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0)
-                        = \frac{\sqrt{\bar{\alpha}_{t-1}}\,\beta_t}{1 - \bar{\alpha}_t}\,\mathbf{x}_0
-                            + \frac{\sqrt{\alpha_t}\,(1 - \bar{\alpha}_{t-1})}{1 - \bar{\alpha}_t}\,\mathbf{x}_t,
-                        \quad
-                        \tilde{\beta}_t = \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t}\,\beta_t.
+                        &= \frac{\sqrt{\bar{\alpha}_{t-1}}\,\beta_t}{1 - \bar{\alpha}_t}\,\mathbf{x}_0
+                            + \frac{\sqrt{\alpha_t}\,(1 - \bar{\alpha}_{t-1})}{1 - \bar{\alpha}_t}\,\mathbf{x}_t, \\\\
+                        \tilde{\beta}_t &= \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t}\,\beta_t.
+                        \end{align*}
                         \]
                     </p>
                 </div>
 
                 <p>
-                    Two remarks. First, the mean \(\tilde{\boldsymbol{\mu}}_t\) is a convex combination of \(\mathbf{x}_0\) and \(\mathbf{x}_t\).
-                    Both contributions are necessary because \(\mathbf{x}_{t-1}\) lies between them along the chain. Second, the variance
+                    First, the mean \(\tilde{\boldsymbol{\mu}}_t\) is a linear combination of \(\mathbf{x}_0\) and \(\mathbf{x}_t\) with positive
+                    coefficients. Both contributions are necessary because \(\mathbf{x}_{t-1}\) lies between them along the chain. Second, the variance
                     \(\tilde{\beta}_t\) depends only on the schedule, not on \(\mathbf{x}_0\) or \(\mathbf{x}_t\), a consequence of the linear-Gaussian
-                    structure that we will exploit when matching this distribution against a learned reverse kernel. This distribution is the
-                    per-step target that the learned model \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) is asked to
-                    approximate, as the next subsection makes precise.
+                    structure that we will exploit when matching this distribution against a learned reverse kernel. This distribution is the per-step
+                    target that the learned model \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) is asked to approximate, as the next
+                    subsection makes precise.
                 </p>
 
                 <h3>The Evidence Lower Bound</h3>
@@ -295,35 +318,41 @@ uses_python: false
                 </p>
 
                 <p>
-                    Following the convention of the diffusion literature, we work with the negative ELBO, written as a variational
-                    upper bound on the negative log-likelihood:
+                    Following the convention of the diffusion literature, we work with the negative ELBO, written as a variational upper bound on
+                    the negative log-likelihood:
                     \[
-                    -\log p_{\boldsymbol{\theta}}(\mathbf{x}_0) \leq \mathbb{E}_{q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)}\!\left[ -\log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T})}{q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)} \right] =: \mathcal{L}(\mathbf{x}_0).
+                    \begin{align*}
+                    -\log p_{\boldsymbol{\theta}}(\mathbf{x}_0)
+                    &\leq \mathbb{E}_{q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)}\!\left[ -\log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T})}{q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)} \right] \\\\
+                    &=: \mathcal{L}(\mathbf{x}_0).
+                    \end{align*}
                     \]
-                    The inequality is the standard Jensen bound applied with the latent sequence
-                    \((\mathbf{x}_1, \ldots, \mathbf{x}_T)\) playing the role of the latents and \(q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)\)
-                    playing the role of the variational distribution. Minimising \(\mathcal{L}(\mathbf{x}_0)\) tightens the bound and increases
-                    the model log-likelihood.
+                    The inequality is the standard Jensen bound applied with the latent sequence \((\mathbf{x}_1, \ldots, \mathbf{x}_T)\) playing the
+                    role of the latents and \(q(\mathbf{x}_{1:T} \mid \mathbf{x}_0)\) playing the role of the variational distribution. Minimizing
+                    \(\mathcal{L}(\mathbf{x}_0)\) over \(\boldsymbol{\theta}\) therefore lowers a bound on
+                    \(-\log p_{\boldsymbol{\theta}}(\mathbf{x}_0)\), not that quantity itself.
                 </p>
 
                 <p>
-                    The integrand factorises along the chain. The reverse model
+                    The integrand factorizes along the chain. The reverse model
                     \(p_{\boldsymbol{\theta}}(\mathbf{x}_{0:T}) = p(\mathbf{x}_T) \prod_{t=1}^T p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\)
-                    uses the standard Gaussian prior \(p(\mathbf{x}_T) = \mathcal{N}(\mathbf{0}, \mathbf{I})\), and the forward joint
-                    factorises as \(q(\mathbf{x}_{1:T} \mid \mathbf{x}_0) = \prod_{t=1}^T q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\).
-                    Substituting,
+                    uses the standard Gaussian prior \(p(\mathbf{x}_T) = \mathcal{N}(\mathbf{0}, \mathbf{I})\), and the forward joint factorizes as
+                    \(q(\mathbf{x}_{1:T} \mid \mathbf{x}_0) = \prod_{t=1}^T q(\mathbf{x}_t \mid \mathbf{x}_{t-1})\). Substituting,
                     \[
                     \mathcal{L}(\mathbf{x}_0) = \mathbb{E}_q\!\left[ -\log p(\mathbf{x}_T) - \sum_{t=1}^{T} \log \frac{p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)}{q(\mathbf{x}_t \mid \mathbf{x}_{t-1})} \right].
                     \]
                 </p>
 
                 <p>
-                    The summand mixes forward and reverse transitions, which makes direct identification with the reverse posterior of
-                    the previous subsection awkward. The crucial step is to rewrite each forward transition using Bayes' rule together with
-                    the Markov property, exactly as in the reverse-posterior derivation. For \(t \geq 2\),
+                    The summand mixes forward and reverse transitions, which makes direct identification with the reverse posterior of the previous
+                    subsection awkward. The crucial step is to rewrite each forward transition using Bayes' rule together with the Markov property,
+                    exactly as in the reverse-posterior derivation. For \(t \geq 2\),
                     \[
-                    q(\mathbf{x}_t \mid \mathbf{x}_{t-1}) = q(\mathbf{x}_t \mid \mathbf{x}_{t-1}, \mathbf{x}_0)
-                    = \frac{q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)\, q(\mathbf{x}_t \mid \mathbf{x}_0)}{q(\mathbf{x}_{t-1} \mid \mathbf{x}_0)}.
+                    \begin{align*}
+                    q(\mathbf{x}_t \mid \mathbf{x}_{t-1})
+                    &= q(\mathbf{x}_t \mid \mathbf{x}_{t-1}, \mathbf{x}_0) \\\\
+                    &= \frac{q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)\, q(\mathbf{x}_t \mid \mathbf{x}_0)}{q(\mathbf{x}_{t-1} \mid \mathbf{x}_0)}.
+                    \end{align*}
                     \]
                     The first equality is the Markov property. The second is Bayes' rule. The case \(t = 1\) is left untouched, since
                     \(q(\mathbf{x}_1 \mid \mathbf{x}_0)\) already conditions on \(\mathbf{x}_0\) and no rewriting is needed.
@@ -377,11 +406,11 @@ uses_python: false
                         and contains no learnable parameters, so it is typically ignored during training.
                     </li>
                     <li>
-                        The <strong>diffusion terms</strong>
-                        \(\mathcal{L}_{t-1}\) for \(t = 2, \ldots, T\) carry the entire training signal. Each one asks the learned reverse kernel
-                        \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) to match the reverse posterior
+                        The <strong>diffusion terms</strong> \(\mathcal{L}_{t-1}\) for \(t = 2, \ldots, T\) carry the entire training signal. Each one
+                        asks the learned reverse kernel \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t)\) to match the reverse posterior
                         \(q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)\) in
-                        <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler divergence</strong></a>.
+                        <a href="../Probability/entropy.html#D-kl_divergence" class="ref-link"><strong>Kullback-Leibler divergence</strong></a>, used
+                        here in its continuous form, with the sum over outcomes replaced by an integral of densities.
                     </li>
                     <li>
                         The <strong>reconstruction term</strong> \(\mathcal{L}_0\) handles the final step \(\mathbf{x}_1 \to \mathbf{x}_0\),
@@ -400,34 +429,34 @@ uses_python: false
                 <h3>Noise Prediction and the DDPM Loss</h3>
 
                 <p>
-                    The decomposition above leaves us with diffusion terms
-                    \(\mathcal{L}_{t-1} = \mathbb{E}\!\left[ D_{\mathbb{KL}}( q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0) \,\|\, p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) ) \right]\)
-                    that need to be turned into something a network can be trained against. The key step is to choose the functional form of the
-                    learned reverse kernel so that this Kullback-Leibler divergence becomes a closed-form expression in the network outputs.
+                    The decomposition above leaves us with the diffusion terms \(\mathcal{L}_{t-1}\), each of which must be turned into something a
+                    network can be trained against. The key step is to choose the functional form of the learned reverse kernel so that the
+                    Kullback-Leibler divergence inside \(\mathcal{L}_{t-1}\) becomes a closed-form expression in the network outputs.
                 </p>
 
                 <p>
                     We take \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) = \mathcal{N}(\mathbf{x}_{t-1};\, \boldsymbol{\mu}_{\boldsymbol{\theta}}(\mathbf{x}_t, t),\, \sigma_t^2 \mathbf{I})\),
-                    with the variance fixed by hand to a schedule-dependent constant \(\sigma_t^2\); only the mean
-                    \(\boldsymbol{\mu}_{\boldsymbol{\theta}}\) is learned. Typical choices are \(\sigma_t^2 = \beta_t\) or the
-                    reverse-posterior variance \(\tilde{\beta}_t\), both used in the literature; we revisit the question when we discuss sampling.
+                    with the variance fixed by hand to a schedule-dependent constant \(\sigma_t^2\). Only the mean
+                    \(\boldsymbol{\mu}_{\boldsymbol{\theta}}\) is learned. Typical choices are \(\sigma_t^2 = \beta_t\) or the reverse-posterior
+                    variance \(\tilde{\beta}_t\), both used in the literature. We revisit the question when we discuss sampling.
                 </p>
 
                 <p>
-                    With this choice, both kernels in the KL are Gaussians
-                    with the same covariance, and the divergence reduces to a squared distance between means:
+                    With this choice, both kernels in the KL are isotropic Gaussians, and the divergence reduces to a squared distance between means
+                    plus a term \(C_t\) that does not depend on \(\boldsymbol{\theta}\):
                     \[
                     D_{\mathbb{KL}}\!\left( q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0) \,\|\, p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) \right)
-                    = \frac{1}{2 \sigma_t^2} \left\| \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0) - \boldsymbol{\mu}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) \right\|^2.
+                    = \frac{1}{2 \sigma_t^2} \left\| \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0) - \boldsymbol{\mu}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) \right\|^2 + C_t.
                     \]
+                    The term \(C_t\) vanishes when \(\sigma_t^2 = \tilde{\beta}_t\).
                 </p>
 
                 <p>
-                    A direct parameterization of \(\boldsymbol{\mu}_{\boldsymbol{\theta}}\) as a free neural network output is possible but turns
-                    out to be suboptimal. The cleaner approach is to exploit the structure of the reverse posterior mean. Recall the one-shot
+                    A direct parameterization of \(\boldsymbol{\mu}_{\boldsymbol{\theta}}\) as a free neural network output is possible but was found
+                    to perform worse in practice. The cleaner approach is to exploit the structure of the reverse posterior mean. Recall the one-shot
                     reparameterization \(\mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon}\).
                     Solving for \(\mathbf{x}_0\) and substituting into the expression for \(\tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0)\)
-                    derived above (the algebra simplifies neatly because the two coefficients combine through the identity
+                    derived above (the algebra simplifies neatly because the two coefficients combine through the same identity
                     \(\beta_t + \alpha_t (1 - \bar{\alpha}_{t-1}) = 1 - \bar{\alpha}_t\)) yields
                     \[
                     \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0)
@@ -450,16 +479,16 @@ uses_python: false
                     The two means differ only through \(\boldsymbol{\varepsilon} - \boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\), and substituting
                     into the squared-distance form of the KL gives the diffusion term
                     \[
-                    \mathcal{L}_{t-1} = \mathbb{E}_{\mathbf{x}_0,\,\boldsymbol{\varepsilon}}\!\left[ \frac{\beta_t^2}{2 \sigma_t^2 \alpha_t (1 - \bar{\alpha}_t)} \,\left\| \boldsymbol{\varepsilon} - \boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\!\left(\sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},\, t \right) \right\|^2 \right],
+                    \mathcal{L}_{t-1} = \mathbb{E}_{\boldsymbol{\varepsilon}}\!\left[ \frac{\beta_t^2}{2 \sigma_t^2 \alpha_t (1 - \bar{\alpha}_t)} \,\left\| \boldsymbol{\varepsilon} - \boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\!\left(\sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},\, t \right) \right\|^2 \right] + C_t,
                     \]
-                    with the expectation over \(\mathbf{x}_0 \sim q_0\) and \(\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\).
-                    Training the diffusion model has reduced to a regression problem. Given a noisy sample and a time index, predict the noise.
+                    with the expectation over \(\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\) at fixed \(\mathbf{x}_0\), as in
+                    the decomposition. Training the diffusion model has reduced to a regression problem. Given a noisy sample and a time index,
+                    predict the noise.
                 </p>
 
                 <p>
-                    The time-dependent weight in front of the squared error, call it \(\lambda_t\), is what a faithful derivation of the
-                    variational bound produces; the objective actually used in practice discards it, for reasons recorded in modification
-                    (iii) below.
+                    The time-dependent weight in front of the squared error, call it \(\lambda_t\), is what a faithful derivation of the variational
+                    bound produces. The objective actually used in practice discards it, for reasons recorded in modification (iii) below.
                 </p>
 
                 <div class="theorem" id="T-ddpm_simple_loss">
@@ -470,8 +499,9 @@ uses_python: false
                         \mathcal{L}_{\text{simple}}(\boldsymbol{\theta})
                         = \mathbb{E}_{t,\,\mathbf{x}_0,\,\boldsymbol{\varepsilon}}\!\left[ \left\| \boldsymbol{\varepsilon} - \boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\!\left( \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon},\, t \right) \right\|^2 \right],
                         \]
-                        where \(t \sim \mathrm{Unif}\{1, \ldots, T\}\), \(\mathbf{x}_0 \sim q_0\), and \(\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\).
-                        This objective is obtained from the full negative ELBO by three modifications.
+                        where \(t \sim \mathrm{Unif}\{1, \ldots, T\}\), \(\mathbf{x}_0 \sim q_0\), and
+                        \(\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\). This objective is obtained from the full negative ELBO,
+                        averaged over \(\mathbf{x}_0 \sim q_0\), by three modifications.
                     </p>
                     <p>
                         <strong>(i) Dropping the prior term.</strong> The prior term \(\mathcal{L}_T = D_{\mathbb{KL}}(q(\mathbf{x}_T \mid \mathbf{x}_0) \,\|\, p(\mathbf{x}_T))\)
@@ -481,19 +511,20 @@ uses_python: false
                     <p>
                         <strong>(ii) Folding the reconstruction term into the same form.</strong> The reconstruction term
                         \(\mathcal{L}_0 = -\mathbb{E}_{q(\mathbf{x}_1 \mid \mathbf{x}_0)}[\log p_{\boldsymbol{\theta}}(\mathbf{x}_0 \mid \mathbf{x}_1)]\)
-                        has a different functional form from the diffusion terms \(\mathcal{L}_{t-1}\) for \(t \geq 2\). Treating \(\mathbf{x}_0\)
-                        as continuous and modeling \(p_{\boldsymbol{\theta}}(\mathbf{x}_0 \mid \mathbf{x}_1)\) as a Gaussian with the same
-                        noise-prediction parameterization evaluated at \(t = 1\), the reconstruction term reduces (up to a constant) to a
-                        \(t = 1\) instance of the squared-error term inside the expectation. The sum over diffusion terms can therefore be
-                        extended from \(t = 2, \ldots, T\) to \(t = 1, \ldots, T\), absorbing the reconstruction term into the diffusion sum.
-                        (For genuinely discrete data such as image pixels, a separate discretised decoder is needed at \(t = 1\).
-                        The loss above continues to give the correct gradient signal for the rest of the chain.)
+                        has a different functional form from the diffusion terms \(\mathcal{L}_{t-1}\) for \(t \geq 2\). Treating \(\mathbf{x}_0\) as
+                        continuous and modeling \(p_{\boldsymbol{\theta}}(\mathbf{x}_0 \mid \mathbf{x}_1)\) as a Gaussian with the same
+                        noise-prediction parameterization evaluated at \(t = 1\), the reconstruction term reduces (up to a constant) to a \(t = 1\)
+                        instance of the squared-error term inside the expectation. The sum over diffusion terms can therefore be extended from
+                        \(t = 2, \ldots, T\) to \(t = 1, \ldots, T\), and the extended sum absorbs the reconstruction term. (For genuinely discrete
+                        data such as image pixels, a separate discretized decoder is needed at \(t = 1\). The loss above continues to give the correct
+                        gradient signal for the rest of the chain.)
                     </p>
                     <p>
                         <strong>(iii) Setting the time-dependent weight to one.</strong> The principled per-step weight
-                        \(\lambda_t = \beta_t^2 / (2 \sigma_t^2 \alpha_t (1 - \bar{\alpha}_t))\) is replaced by \(\lambda_t = 1\). This is an
-                        empirical choice. The resulting objective is no longer a tight variational bound on \(-\log p_{\boldsymbol{\theta}}(\mathbf{x}_0)\),
-                        but it weights all noise levels equally and was found by Ho, Jain, and Abbeel to produce visibly better samples.
+                        \(\lambda_t = \beta_t^2 / (2 \sigma_t^2 \alpha_t (1 - \bar{\alpha}_t))\) is replaced by \(\lambda_t = 1\). This is an empirical
+                        choice. The \(\boldsymbol{\theta}\)-independent constants \(C_t\) are dropped as well, for the same reason as the prior term.
+                        The resulting objective is no longer, in general, a variational bound on \(-\log p_{\boldsymbol{\theta}}(\mathbf{x}_0)\), but
+                        it weights all noise levels equally and was found by Ho, Jain, and Abbeel to produce visibly better samples.
                     </p>
                 </div>
 
@@ -510,78 +541,100 @@ uses_python: false
                 </div>
 
                 <p>
-                    The architecture of \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) depends on the data modality. For images, the standard
-                    choice is a U-Net with skip connections between matching resolution levels and a small time embedding injected into each
-                    block. Recent large-scale systems replace the U-Net with a transformer (the diffusion transformer, or DiT). The point is that
-                    \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) is just a neural network that maps a tensor and a scalar time index to a
-                    tensor of the same shape as the input. From the perspective of training, all the structural insight of the diffusion model
-                    lives in the loss above, not in the network architecture.
+                    The architecture of \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) depends on the data modality. For images, a common choice is
+                    a U-Net with skip connections between matching resolution levels and a small time embedding injected into each block. A transformer
+                    backbone (the diffusion transformer, or DiT) is another. The point is that \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) is
+                    just a neural network that maps a tensor and a scalar time index to a tensor of the same shape as the input. From the perspective
+                    of training, all the structural insight of the diffusion model lives in the loss above, not in the network architecture.
                 </p>
 
                 <h3>The Score-Matching Perspective</h3>
 
                 <p>
-                    The term <em>score function</em> has appeared earlier in our curriculum in a different sense. In the classical
-                    statistical setting that goes back to Fisher, the
-                    <a href="../Probability/fisher_info.html#D-score_function" class="ref-link"><strong>score function</strong></a>
-                    is the gradient of the log-likelihood with respect to the <em>parameters</em> of a model,
-                    \(s(\boldsymbol{\theta}) = \nabla_{\boldsymbol{\theta}} \log p(\mathbf{x} \mid \boldsymbol{\theta})\).
-                    This is the quantity that underlies the Fisher information matrix and
-                    <a href="natural_gd.html"><strong>natural gradient descent</strong></a>.
-                    The diffusion-model literature, following the score-matching framework of Hyv&auml;rinen (2005), uses the same term for a
-                    formally different quantity, the gradient of the log-density with respect to the <em>data</em> itself.
-                    Both are gradients of log-densities, but they live in different spaces and serve different purposes. The parameter gradient
-                    is for inference and optimisation, while the data gradient describes the geometry of the distribution at a point in sample space.
-                    Throughout this subsection, <em>score function</em> refers exclusively to the data-gradient version.
+                    The term <em>score function</em> has appeared before in a different sense. In the classical statistical setting that goes back to
+                    Fisher, the <a href="../Probability/fisher_info.html#D-score_function" class="ref-link"><strong>score function</strong></a> is the
+                    gradient of the log-likelihood with respect to the <em>parameters</em> of a model,
+                    \(s(\boldsymbol{\theta}) = \nabla_{\boldsymbol{\theta}} \log p(\mathbf{x} \mid \boldsymbol{\theta})\). This is the quantity that
+                    underlies the Fisher information matrix and <a href="natural_gd.html"><strong>natural gradient descent</strong></a>.
+                </p>
+
+                <p>
+                    The diffusion-model literature, following the score-matching framework of Hyv&auml;rinen (2005), uses the same term for a formally
+                    different quantity, a gradient taken with respect to the <em>data</em> instead. Both are gradients of log-densities, but they live
+                    in different spaces and serve different purposes. The parameter gradient is for inference and optimization, while the data gradient
+                    describes the geometry of the distribution at a point in sample space. Throughout this subsection, <em>score function</em> refers
+                    exclusively to the data-gradient version.
                 </p>
 
                 <div class="theorem" id="D-score_function_data_gradient">
                     <span class="theorem-title">Definition: Score Function (Data Gradient)</span>
                     <p>
-                        Let \(p\) be a differentiable probability density on \(\mathbb{R}^d\). The <strong>score function</strong> of \(p\) is the
-                        gradient of the log-density with respect to the data argument,
+                        Let \(p\) be a strictly positive, differentiable probability density on \(\mathbb{R}^d\). The <strong>score function</strong>
+                        of \(p\) is the gradient of the log-density with respect to the data argument,
                         \[
                         \mathbf{s}(\mathbf{x}) := \nabla_{\mathbf{x}} \log p(\mathbf{x}).
                         \]
-                        Geometrically, \(\mathbf{s}(\mathbf{x})\) is a vector field on \(\mathbb{R}^d\) that points, at every \(\mathbf{x}\),
-                        in the direction of steepest ascent of the probability density.
+                        Geometrically, \(\mathbf{s}(\mathbf{x})\) is a vector field on \(\mathbb{R}^d\) that points, at every \(\mathbf{x}\), in the
+                        direction of steepest ascent of the probability density.
                     </p>
                 </div>
 
                 <p>
                     We now connect this object to the diffusion model. The forward chain provides a family of marginal distributions
                     \(q_t(\mathbf{x}_t) := \int q(\mathbf{x}_t \mid \mathbf{x}_0)\, q_0(\mathbf{x}_0)\, d\mathbf{x}_0\), one for each time index \(t\),
-                    that interpolate between the data distribution at \(t = 0\) and standard Gaussian noise at \(t = T\).
-                    Each \(q_t\) has its own score function \(\mathbf{s}_t(\mathbf{x}_t) = \nabla_{\mathbf{x}_t} \log q_t(\mathbf{x}_t)\),
-                    and the diffusion model turns out to be implicitly estimating all of them at once.
+                    that interpolate between the data distribution at \(t = 0\) and approximately standard Gaussian noise at \(t = T\). For
+                    \(t \geq 1\), each \(q_t\) is a Gaussian smoothing of the data distribution, hence strictly positive and differentiable, with its
+                    own score function \(\mathbf{s}_t(\mathbf{x}_t) = \nabla_{\mathbf{x}_t} \log q_t(\mathbf{x}_t)\), and the diffusion model turns out
+                    to be implicitly estimating all of them at once.
                 </p>
 
                 <p>
-                    The mechanism is a direct calculation. The conditional forward kernel \(q(\mathbf{x}_t \mid \mathbf{x}_0) = \mathcal{N}(\mathbf{x}_t;\, \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0,\, (1 - \bar{\alpha}_t)\mathbf{I})\)
+                    The mechanism is a direct calculation. The conditional forward kernel
+                    \(q(\mathbf{x}_t \mid \mathbf{x}_0) = \mathcal{N}(\mathbf{x}_t;\, \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0,\, (1 - \bar{\alpha}_t)\mathbf{I})\)
                     has, as a Gaussian in \(\mathbf{x}_t\), the score
                     \[
                     \nabla_{\mathbf{x}_t} \log q(\mathbf{x}_t \mid \mathbf{x}_0)
                     = -\,\frac{\mathbf{x}_t - \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0}{1 - \bar{\alpha}_t}.
                     \]
                     Substituting the reparameterization
-                    \(\mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon}\) gives the
-                    key identity
+                    \(\mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\,\boldsymbol{\varepsilon}\) gives the key identity
                     \[
                     \nabla_{\mathbf{x}_t} \log q(\mathbf{x}_t \mid \mathbf{x}_0)
                     = -\,\frac{\boldsymbol{\varepsilon}}{\sqrt{1 - \bar{\alpha}_t}}.
                     \]
-                    The conditional score is, up to a negative scaling, exactly the Gaussian noise that produced \(\mathbf{x}_t\) from \(\mathbf{x}_0\).
                 </p>
 
                 <p>
-                    A theorem due to Vincent (2011), known as <strong>denoising score matching</strong>, extends this from the conditional to the
-                    marginal. A network trained to predict the noise on samples drawn from the forward chain learns, in expectation over \(\mathbf{x}_0\),
-                    the score of the marginal \(q_t\). Writing \(\sigma_t := \sqrt{1 - \bar{\alpha}_t}\), the noise-prediction network
-                    \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) and the score network \(\mathbf{s}_{\boldsymbol{\theta}}\) are linked by the
-                    parameterization
+                    The conditional score is, up to a negative scaling, exactly the Gaussian noise that produced \(\mathbf{x}_t\) from
+                    \(\mathbf{x}_0\). A theorem due to Vincent (2011), known as <strong>denoising score matching</strong>, extends this from
+                    the conditional to the marginal. A network trained to predict the noise on samples drawn from the forward chain learns the
+                    score of the marginal \(q_t\). Writing \(\sigma_t := \sqrt{1 - \bar{\alpha}_t}\), the noise-prediction network
+                    \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) and the score network \(\mathbf{s}_{\boldsymbol{\theta}}\) are linked
+                    by the parameterization
                     \[
                     \mathbf{s}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) = -\,\frac{\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)}{\sigma_t}.
                     \]
+                </p>
+
+                <p>
+                    The argument takes two steps. Assume the data distribution permits differentiating
+                    \(q_t(\mathbf{x}_t) = \int q(\mathbf{x}_t \mid \mathbf{x}_0)\, q_0(\mathbf{x}_0)\, d\mathbf{x}_0\) under the integral sign.
+                    Dividing the derivative by \(q_t(\mathbf{x}_t)\) and writing \(q(\mathbf{x}_0 \mid \mathbf{x}_t)\) for the posterior of the clean
+                    data given the noisy sample, we obtain
+                    \[
+                    \begin{align*}
+                    \nabla_{\mathbf{x}_t} \log q_t(\mathbf{x}_t)
+                    &= \int \nabla_{\mathbf{x}_t} \log q(\mathbf{x}_t \mid \mathbf{x}_0)\, q(\mathbf{x}_0 \mid \mathbf{x}_t)\, d\mathbf{x}_0 \\\\
+                    &= -\,\frac{\mathbb{E}[\boldsymbol{\varepsilon} \mid \mathbf{x}_t]}{\sigma_t},
+                    \end{align*}
+                    \]
+                    where the second line uses the key identity above. On the other hand, among all square-integrable functions of \(\mathbf{x}_t\),
+                    the squared error \(\mathbb{E}\,\|\boldsymbol{\varepsilon} - \mathbf{g}(\mathbf{x}_t)\|^2\) over the joint law of
+                    \((\mathbf{x}_0, \boldsymbol{\varepsilon})\) is minimized by
+                    \(\mathbf{g}(\mathbf{x}_t) = \mathbb{E}[\boldsymbol{\varepsilon} \mid \mathbf{x}_t]\), since
+                    <a href="../Probability/conditional_expectation.html#T-ce_l2_projection" class="ref-link"><strong>conditional expectation is the orthogonal projection in \(L^2\)</strong></a>.
+                    A noise predictor that attains the minimum at step \(t\) therefore satisfies
+                    \(-\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t) / \sigma_t = \nabla_{\mathbf{x}_t} \log q_t(\mathbf{x}_t)\).
                 </p>
 
                 <p>
@@ -602,23 +655,26 @@ uses_python: false
                 </p>
 
                 <p>
-                    With this identification in hand, we return to a thread left dangling earlier in the curriculum.
-                    Our <a href="pca.html#T-denoising_score_estimation" class="ref-link"><strong>page on PCA and autoencoders</strong></a>
-                    stated, as a result taken on faith, that a denoising autoencoder trained at noise level \(\sigma\) implicitly learns the score
+                    With this identification in hand, we return to the thread opened in the introduction. The
+                    <a href="pca.html#T-denoising_score_estimation" class="ref-link"><strong>page on PCA and autoencoders</strong></a> took on faith
+                    that a denoising autoencoder trained at noise level \(\sigma\) implicitly learns the score
                     \(\nabla_{\mathbf{x}} \log p(\mathbf{x})\) of the data distribution, via the asymptotic identity
-                    \(\mathbf{r}^*(\mathbf{x}) - \mathbf{x} = \sigma^2 \nabla_{\mathbf{x}} \log p(\mathbf{x}) + o(\sigma^2)\) of Vincent (2011)
-                    and Alain and Bengio (2014). What we have just developed is the multi-scale version of that statement. Rather than fixing
-                    one noise level, the diffusion model trains a single network across the full schedule of noise levels
-                    \(\{\sigma_t\}_{t=1}^T\), and the resulting noise predictor doubles as a score estimator for the entire family of marginals
-                    \(\{q_t\}_{t=1}^T\). The promise made on the autoencoder page (that score-matching theory justifies the denoising construction)
-                    is what the diffusion framework redeems.
+                    \(\mathbf{r}^*(\mathbf{x}) - \mathbf{x} = \sigma^2 \nabla_{\mathbf{x}} \log p(\mathbf{x}) + o(\sigma^2)\) of Vincent (2011) and
+                    Alain and Bengio (2014).
                 </p>
 
                 <p>
-                    In the continuous-time formulation previewed in the introduction, the score function is the central object: Anderson's
-                    1982 reversal theorem expresses the reverse drift in terms of \(\nabla \log p_t\), and the score-based generative
-                    modeling framework of Song and Ermon (2019) and Song et al. (2021) takes this viewpoint as primary. The discrete DDPM
-                    picture developed on this page corresponds to a particular time-discretisation of the variance-preserving SDE.
+                    What we have just developed is the multi-scale version of that statement. Rather than fixing one noise level, the diffusion model
+                    trains a single network across the full schedule of noise levels \(\{\sigma_t\}_{t=1}^T\), and the resulting noise predictor
+                    doubles as a score estimator for the entire family of marginals \(\{q_t\}_{t=1}^T\). The promise made on the autoencoder page (that
+                    score-matching theory justifies the denoising construction) is what the diffusion framework redeems.
+                </p>
+
+                <p>
+                    In the continuous-time formulation previewed in the introduction, the score function is the central object. Anderson's 1982
+                    reversal theorem expresses the reverse drift in terms of \(\nabla \log q_t\), and the score-based generative modeling framework of
+                    Song and Ermon (2019) and Song et al. (2021) takes this viewpoint as primary. The discrete DDPM picture developed on this page
+                    corresponds to a particular time-discretization of the variance-preserving SDE.
                 </p>
             </section>
 
@@ -628,12 +684,13 @@ uses_python: false
                 <h3>Ancestral Sampling</h3>
 
                 <p>
-                    With \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) trained, generation proceeds by simulating the reverse chain.
-                    Starting from \(\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\), we sample successively from
-                    \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) = \mathcal{N}(\boldsymbol{\mu}_{\boldsymbol{\theta}}(\mathbf{x}_t, t),\, \sigma_t^2 \mathbf{I})\)
-                    for \(t = T, T-1, \ldots, 1\), and return \(\mathbf{x}_0\). Because each step uses the conditional distribution of the parent's
-                    immediate predecessor in the chain, this procedure is called <strong>ancestral sampling</strong>. Substituting the noise-prediction
-                    form of \(\boldsymbol{\mu}_{\boldsymbol{\theta}}\) derived earlier gives the explicit step rule used in practice.
+                    With \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) trained, generation proceeds by simulating the reverse chain. Starting from
+                    \(\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\), we sample successively from
+                    \(p_{\boldsymbol{\theta}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t) = \mathcal{N}(\mathbf{x}_{t-1};\, \boldsymbol{\mu}_{\boldsymbol{\theta}}(\mathbf{x}_t, t),\, \sigma_t^2 \mathbf{I})\)
+                    for \(t = T, T-1, \ldots, 1\), and return \(\mathbf{x}_0\). Because each variable is drawn from its conditional distribution given
+                    its parent in the directed chain \(\mathbf{x}_T \to \cdots \to \mathbf{x}_0\), this procedure is called
+                    <strong>ancestral sampling</strong>. Substituting the noise-prediction form of \(\boldsymbol{\mu}_{\boldsymbol{\theta}}\) derived
+                    earlier gives the explicit step rule used in practice.
                 </p>
 
                 <div class="pseudocode">
@@ -652,12 +709,12 @@ uses_python: false
 
                 <ol style="padding-left: 40px;">
                     <li>
-                        <strong>The reverse-kernel variance \(\sigma_t^2\)</strong>, which was fixed by hand during training
-                        rather than learned. Ho, Jain, and Abbeel observed that two natural choices give comparable sample quality.
-                        Setting \(\sigma_t^2 = \beta_t\) corresponds, in a sense made precise in their paper, to an upper bound on the optimal value.
-                        Setting \(\sigma_t^2 = \tilde{\beta}_t\), the reverse-posterior variance computed earlier,
-                        corresponds to the lower bound. In practice both work well, with the difference between them small compared with other sources
-                        of variation in the sampler.
+                        <strong>The reverse-kernel variance \(\sigma_t^2\)</strong>, which was fixed by hand during training rather than learned. Ho,
+                        Jain, and Abbeel observed that two natural choices give comparable sample quality. Setting \(\sigma_t^2 = \beta_t\) is optimal
+                        when \(\mathbf{x}_0 \sim \mathcal{N}(\mathbf{0}, \mathbf{I})\). Setting \(\sigma_t^2 = \tilde{\beta}_t\), the reverse-posterior
+                        variance computed earlier, is optimal when \(\mathbf{x}_0\) is a single fixed point. For data with coordinatewise unit
+                        variance, the two are the extreme choices, giving upper and lower bounds on the entropy of the reverse process. In practice
+                        both work well, with the difference between them small compared with other sources of variation in the sampler.
                     </li>
                     <li>
                         <strong>The suppression of noise at the final step.</strong> When \(t = 1\), the algorithm sets \(\mathbf{z} = \mathbf{0}\)
@@ -668,8 +725,8 @@ uses_python: false
 
                 <p>
                     The principal limitation of ancestral sampling is its cost. With \(T = 1000\) (the value used in the original DDPM experiments),
-                    generating a single sample requires one thousand sequential network evaluations, and the steps cannot be parallelised because
-                    each \(\mathbf{x}_{t-1}\) depends on \(\mathbf{x}_t\). This is the bottleneck that the next subsection addresses.
+                    generating a single sample requires one thousand sequential network evaluations, and the steps cannot be parallelized because each
+                    \(\mathbf{x}_{t-1}\) depends on \(\mathbf{x}_t\). This is the bottleneck that the next subsection addresses.
                 </p>
 
                 <h3>Deterministic Sampling with DDIM</h3>
@@ -682,16 +739,21 @@ uses_python: false
                 </p>
 
                 <p>
-                    The mechanism is a family of reverse kernels indexed by a stochasticity parameter \(\tilde{\sigma}_t \geq 0\).
-                    For each choice of \(\tilde{\sigma}_t\), Song, Meng, and Ermon construct a reverse distribution
+                    The mechanism is a family of reverse kernels indexed by stochasticity parameters \(\tilde{\sigma}_t \geq 0\) with
+                    \(\tilde{\sigma}_t^2 \leq 1 - \bar{\alpha}_{t-1}\). For each choice of \(\tilde{\sigma}_t\), Song, Meng, and Ermon construct
+                    a reverse distribution
                     \[
                     q_{\tilde{\sigma}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)
                     = \mathcal{N}\!\left( \mathbf{x}_{t-1}; \sqrt{\bar{\alpha}_{t-1}}\,\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_{t-1} - \tilde{\sigma}_t^2}\, \cdot \frac{\mathbf{x}_t - \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0}{\sqrt{1 - \bar{\alpha}_t}}, \tilde{\sigma}_t^2 \mathbf{I} \right)
                     \]
-                    that is consistent with the forward marginals \(q(\mathbf{x}_t \mid \mathbf{x}_0)\) used during training, but is not in general
-                    Markovian as a process. Two endpoints of this family are noteworthy. Setting
-                    \(\tilde{\sigma}_t^2 = \tilde{\beta}_t = \frac{(1 - \bar{\alpha}_{t-1}) \beta_t}{1 - \bar{\alpha}_t}\) recovers the DDPM reverse
-                    posterior of the previous section. Setting \(\tilde{\sigma}_t = 0\) yields a fully deterministic update, the DDIM sampler.
+                    that is consistent with the forward marginals \(q(\mathbf{x}_t \mid \mathbf{x}_0)\) used during training, although the forward
+                    process it induces is not in general Markovian.
+                </p>
+
+                <p>
+                    Two members of this family are distinguished. Setting \(\tilde{\sigma}_t^2 = \tilde{\beta}_t\), the reverse-posterior variance,
+                    recovers the DDPM reverse posterior of the previous section. Setting \(\tilde{\sigma}_t = 0\) yields a fully deterministic update,
+                    the DDIM sampler.
                 </p>
 
                 <p>
@@ -730,8 +792,10 @@ uses_python: false
                     </li>
                     <li>
                         This predicted clean sample is re-corrupted to the target time \(s\), using the <em>same</em> noise estimate
-                        \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)\) rather than a fresh Gaussian draw. The two squared scalings
-                        \(\sqrt{\bar{\alpha}_s}\) and \(\sqrt{1 - \bar{\alpha}_s}\) place the result on the forward marginal at time \(s\) by construction.
+                        \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)\) rather than a fresh Gaussian draw. The coefficients
+                        \(\sqrt{\bar{\alpha}_s}\) and \(\sqrt{1 - \bar{\alpha}_s}\), whose squares sum to one, are those of the one-shot forward
+                        reparameterization at time \(s\), so the result has the form of a forward sample at time \(s\) built from
+                        \(\hat{\mathbf{x}}_0\) and the estimated noise.
                     </li>
                 </ol>
 
@@ -747,25 +811,23 @@ uses_python: false
                     reduction in network evaluations per sample, with image quality that approximates the full-chain DDPM sampler.
                 </p>
 
-                <p>
-                    A final pointer. In the continuous-time limit \(T \to \infty\), the deterministic DDIM update converges to a numerical integration
-                    step for the <strong>probability flow ODE</strong> of Song et al. (2021), the deterministic counterpart of the stochastic
-                    ancestral sampling that DDPM performs.
-                </p>
-
                 <h3>Conditional Generation</h3>
 
                 <p>
-                    Practical diffusion systems rarely sample from the unconditional data distribution alone. They generate conditioned on
-                    auxiliary information \(\mathbf{c}\) (a class label, a low-resolution image to upsample, a text prompt), and the user
-                    expects the sampled output to reflect that condition. The minimal modification is to make the network condition-aware.
-                    We replace \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)\) with
+                    Practical diffusion systems rarely sample from the unconditional data distribution alone. They generate conditioned on auxiliary
+                    information \(\mathbf{c}\) (a class label, a low-resolution image to upsample, a text prompt), and the user expects the sampled
+                    output to reflect that condition. The minimal modification is to make the network condition-aware. We replace
+                    \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t)\) with
                     \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c})\) and train on \((\mathbf{x}_0, \mathbf{c})\) pairs
-                    drawn jointly from data. The mechanism of injection depends on the modality of \(\mathbf{c}\). Class labels are typically
-                    embedded and added to the time embedding, conditioning images are concatenated to \(\mathbf{x}_t\) along the channel axis,
-                    and text prompts are encoded by a separate model and consumed through
-                    <a href="deep_nn.html#D-scaled_dot_product_attention" class="ref-link"><strong>cross-attention</strong></a> at multiple
-                    resolutions inside the network. The loss is unchanged, the simple denoising objective applied to the conditional network.
+                    drawn jointly from data.
+                </p>
+
+                <p>
+                    The mechanism of injection depends on the modality of \(\mathbf{c}\). Class labels are typically embedded and added to the time
+                    embedding, conditioning images are concatenated to \(\mathbf{x}_t\) along the channel axis, and text prompts are encoded by a
+                    separate model and consumed through
+                    <a href="deep_nn.html#D-scaled_dot_product_attention" class="ref-link"><strong>cross-attention</strong></a> at multiple resolutions
+                    inside the network. The loss is unchanged, the simple denoising objective applied to the conditional network.
                 </p>
 
                 <p>
@@ -778,48 +840,47 @@ uses_python: false
                 </p>
 
                 <p>
-                    At sampling time,
-                    the two predictions are combined into a guided estimate
+                    At sampling time, the two predictions are combined into a guided estimate
                     \[
                     \tilde{\boldsymbol{\varepsilon}}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c})
                     = (1 + w)\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c})
                     - w\,\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \varnothing),
                     \]
                     which is then substituted for \(\boldsymbol{\varepsilon}_{\boldsymbol{\theta}}\) inside any of the sampling algorithms above.
-                    The <strong>guidance weight</strong> \(w \geq 0\) governs the trade-off. Setting \(w = 0\) recovers the unguided conditional sampler,
-                    while larger \(w\) extrapolates further from the unconditional prediction toward the conditional one, producing samples that
-                    adhere more tightly to \(\mathbf{c}\) at the cost of reduced diversity and occasional artefacts. Image-domain systems
-                    typically use a guidance scale \(s = 1 + w\) in the range 5 to 15.
                 </p>
 
                 <p>
-                    The score-matching perspective developed earlier illuminates the construction. Bayes' rule on log-densities gives the
-                    identity \(\nabla_{\mathbf{x}_t} \log p(\mathbf{x}_t \mid \mathbf{c}) = \nabla_{\mathbf{x}_t} \log p(\mathbf{x}_t)
-                    + \nabla_{\mathbf{x}_t} \log p(\mathbf{c} \mid \mathbf{x}_t)\), so the conditional score decomposes into an unconditional score
-                    and a classifier-like correction. Classifier-free guidance, viewed at the score level, replaces this exact decomposition with
-                    an extrapolation. The guided score \((1+w)\mathbf{s}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c}) - w\,\mathbf{s}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \varnothing)\)
-                    overweights the conditional direction relative to its true Bayesian value, biasing samples toward regions of high
-                    conditional density. This mechanism is what powers the prompt fidelity of large-scale text-to-image systems including
-                    Stable Diffusion, DALL-E, and Imagen. The underlying generative model is a conditional diffusion, and the visual
-                    sharpness of prompt-aligned generation comes substantially from sampling with a non-trivial guidance weight.
+                    The <strong>guidance weight</strong> \(w \geq 0\) governs the trade-off. Setting \(w = 0\) recovers the unguided conditional
+                    sampler, while larger \(w\) extrapolates beyond the conditional prediction, away from the unconditional one. The resulting samples
+                    adhere more tightly to \(\mathbf{c}\), at the cost of reduced diversity and occasional artifacts.
                 </p>
-            </section>
+
+                <p>
+                    The score-matching perspective developed earlier illuminates the construction. Bayes' rule on log-densities gives the identity
+                    \(\nabla_{\mathbf{x}_t} \log p(\mathbf{x}_t \mid \mathbf{c}) = \nabla_{\mathbf{x}_t} \log p(\mathbf{x}_t) + \nabla_{\mathbf{x}_t} \log p(\mathbf{c} \mid \mathbf{x}_t)\),
+                    so the conditional score decomposes into an unconditional score and a classifier-like correction. Classifier-free guidance, viewed
+                    at the score level, replaces this exact decomposition with an extrapolation. The guided score
+                    \((1+w)\mathbf{s}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \mathbf{c}) - w\,\mathbf{s}_{\boldsymbol{\theta}}(\mathbf{x}_t, t, \varnothing)\)
+                    overweights the conditional direction relative to its true Bayesian value and so biases samples toward regions where the
+                    classifier-like likelihood \(p(\mathbf{c} \mid \mathbf{x}_t)\) is high.
+                </p>
+
+                </section>
 
             <section id="demo" class="section-content section-wide">
                 <h2>Interactive Demo</h2>
 
                 <p>
-                    The visualization below applies the full diffusion construction (forward chain, score function, and reverse sampling) to a
-                    point cloud built from the MATH-CS COMPASS logo. Each point carries five coordinates, two spatial \((x, y)\) and three colour
-                    \((r, g, b)\), and the diffusion is run jointly on all five. The forward direction drives both the geometry and the colour of
-                    the logo toward a pure Gaussian distribution. The reverse direction reconstructs points on the data manifold from noise, with
-                    the logo emerging as the support of the distribution being sampled.
+                    The visualization below applies the full diffusion construction (forward chain, score function, and reverse sampling) to a point
+                    cloud built from the MATH-CS COMPASS logo. Each point carries five coordinates, two spatial \((x, y)\) and three color
+                    \((r, g, b)\), and the diffusion is run jointly on all five. The forward direction drives both the geometry and the color of the
+                    logo toward a pure Gaussian distribution. The reverse direction reconstructs points on the data manifold from noise, with the logo
+                    emerging as the support of the distribution being sampled.
                 </p>
 
                 <p>
                     Try the forward direction first to watch the logo dissolve, then switch to reverse and observe the same construction running
-                    backwards. The time slider lets you scrub through any intermediate state. Three overlays expose the machinery rather than
-                    just the result.
+                    backwards. The time slider scrubs through any intermediate state. Three overlays expose the machinery rather than just the result.
                 </p>
 
                 <ul style="padding-left: 40px;">
@@ -851,51 +912,52 @@ uses_python: false
                     <h3>DDPM versus DDIM: Stochastic versus Deterministic Reverse Paths</h3>
                     <p>
                         The sampler toggle is the most pedagogically informative control. Both DDPM and DDIM start from the same initial draw
-                        \(\mathbf{x}_T\) (use the "regenerate noise" button to draw a new one), and both end on the data manifold. What differs
-                        is the structure of the trajectory between them. The DDPM update is stochastic. Each step draws a fresh Gaussian, so
-                        repeated runs from the same \(\mathbf{x}_T\) would in principle produce different reconstructions (this demo caches a
-                        single such run per noise seed for visualization). The DDIM update is deterministic. The entire trajectory is a fixed
-                        function of \(\mathbf{x}_T\), and the demo's DDIM sampler reaches the data manifold in roughly five times fewer steps
-                        than DDPM (twenty against one hundred here).
+                        \(\mathbf{x}_T\) (use the "regenerate noise" button to draw a new one), and both end on the data manifold.
                     </p>
                     <p>
-                        One thing the demo makes visible. Because DDIM compresses many small DDPM steps into a few large jumps, the reconstruction
-                        in this demo lands close to, but not exactly on, the original logo points, so the points look slightly hazier than under DDPM.
-                        The trails overlay shows the cause and the \(t = 0\) readout shows the effect. For the same starting noise, the mean
-                        distance to the data under DDPM is roughly an order of magnitude smaller than under the twenty-step DDIM sampler.
-                        This residual is the discretisation error of the few-step DDIM sampler, the small accuracy cost that pays for the speedup.
-                        On high-dimensional image data the same gap exists but is imperceptible at the resolution of natural images, which is why
-                        DDIM and its variants have been standard samplers in production text-to-image systems, alongside more recent fast samplers
-                        such as DPM-Solver.
+                        What differs is the structure of the trajectory between them. The DDPM update is stochastic. Each step draws a fresh Gaussian,
+                        so repeated runs from the same \(\mathbf{x}_T\) would in principle produce different reconstructions (this demo caches a single
+                        such run per noise seed for visualization). The DDIM update is deterministic. The entire trajectory is a fixed function of
+                        \(\mathbf{x}_T\), and the demo's DDIM sampler reaches the data manifold in roughly five times fewer steps than DDPM (twenty
+                        against one hundred here).
+                    </p>
+                    <p>
+                        Because DDIM compresses many small DDPM steps into a few large jumps, the reconstruction in this demo lands close to, but not
+                        exactly on, the original logo points, so the points look slightly hazier than under DDPM. The trails overlay shows the cause
+                        and the \(t = 0\) readout shows the effect. For the same starting noise, the mean distance to the data under DDPM is clearly
+                        smaller than under the twenty-step DDIM sampler.
+                    </p>
+                    <p>
+                        This residual is the discretization error of the few-step DDIM sampler, the small accuracy cost that pays for the speedup.
+                        The number of steps therefore trades accuracy for speed, and more refined few-step samplers aim to shrink this error at
+                        the same cost.
                     </p>
                 </div>
 
                 <p>
-                    The construction visualised here is a small instance of the family of mathematics that underlies large-scale text-to-image
-                    systems. Replacing the five-dimensional point cloud with a high-dimensional pixel or latent tensor, the point distribution
-                    with the distribution of natural images, and the analytical score with a trained neural network gives the diffusion models
-                    at the heart of systems like Stable Diffusion (which runs the diffusion in a learned latent space rather than directly on
-                    pixels) and its descendants. Production systems add several ingredients on top (classifier-free guidance, conditioning by
-                    text encoders, alternative parameterizations and samplers), but the discrete-time DDPM and DDIM updates developed on this
-                    page remain the structural core.
+                    The construction visualized here is a small instance of the mathematics that underlies diffusion models at scale. Three
+                    replacements turn it into such a model. The five-dimensional point cloud becomes a high-dimensional data tensor, the point
+                    distribution becomes the data distribution, and the analytical score becomes a trained neural network. Some models run the
+                    diffusion in a learned latent space rather than directly on the data. Larger models add several ingredients on top (classifier-free
+                    guidance, learned encoders for the conditioning input, alternative parameterizations and samplers), but the discrete-time DDPM and
+                    DDIM updates developed on this page remain the structural core.
                 </p>
 
                 <p>
-                    A closing observation. What makes the reverse direction possible is the score function
-                    \(\nabla_{\mathbf{x}_t} \log q_t(\mathbf{x}_t)\). Given the gradient of the log-density of every intermediate marginal,
-                    walking back from noise to data is a matter of repeated denoising steps, each one guided by the score evaluated at the
-                    current state. The score-field overlay lets you watch this literally. Switch it on during the reverse process and the
-                    arrows point the way from noise back toward the logo, growing sharper as the marginal concentrates. In this demo the
-                    score is computed exactly from the empirical point cloud. In practice it is learned from data, which is what diffusion
-                    training is really for.
+                    What makes the reverse direction possible is the score function \(\nabla_{\mathbf{x}_t} \log q_t(\mathbf{x}_t)\). Given the
+                    gradient of the log-density of every intermediate marginal, walking back from noise to data is a matter of repeated denoising
+                    steps, each one guided by the score evaluated at the current state.
+                </p>
+
+                <p>
+                    The score-field overlay shows this directly. Switch it on during the reverse process and the arrows point the way from noise back
+                    toward the logo, growing sharper as the marginal concentrates. In this demo the score is computed exactly from the empirical point
+                    cloud. In practice it is learned from data, which is what diffusion training is really for.
                 </p>
 
             </section>
-
         </div>
-
         <script src="/js/data/compass_logo_points.js"></script>
         <script src="/js/sec5_p14_diffusion_demo.js"></script>
-
     </body>
 </html>
