@@ -32,43 +32,48 @@ uses_python: false
 
                 <p>
                     On the page on <a href="deep_nn.html"><strong>deep neural networks</strong></a>, we surveyed
-                    the major architectural innovations of modern deep learning — convolutional networks,
-                    <a href="deep_nn.html#ResNet"><strong>residual connections</strong></a>, attention, and the Transformer — and closed with an observation
-                    that runs through all of them: each architecture is built around a
-                    <em>symmetry</em> of its input domain. Convolutional networks commute with translations of
-                    the input image; self-attention commutes with permutations of the input tokens. The shared
-                    principle is that <strong>the architecture encodes the symmetry</strong>, and architectures
-                    that respect their domain's symmetry generalize from far less data than architectures that do not.
+                    the major architectural innovations of modern deep learning, namely convolutional networks,
+                    <a href="deep_nn.html#ResNet"><strong>residual connections</strong></a>, attention, and the
+                    Transformer. That page closed its survey with an observation that runs through all of them.
+                    Each architecture is built around a <em>symmetry</em> of its input domain. Convolutional
+                    networks commute with translations of the input image (exactly so for stride one on an
+                    unbounded or periodic grid), and self-attention commutes with permutations of the input
+                    tokens. The shared principle is that <strong>the architecture encodes the symmetry</strong>,
+                    and architectures that respect their domain's symmetry tend to generalize from far less data
+                    than architectures that do not.
                 </p>
 
                 <p>
-                    That observation is the starting point of <strong>Geometric Deep Learning (GDL)</strong>:
-                    a unifying framework which views CNNs, Transformers, graph neural networks, and equivariant
-                    architectures for 3D data as instances of a single design principle — equivariance under
-                    the symmetry group of the input domain. The word "geometric" here is meant in its
-                    deep mathematical sense: a geometry is most naturally understood as the study of what
-                    remains <em>invariant</em> under a chosen group of transformations. Different choices of
-                    group give different geometries — a grid under translation, a set under permutation, a
-                    graph under node relabelling, a smooth manifold under rotation. Each is a kind of geometry,
-                    and an architecture is "geometric" when it respects the symmetries of its domain.
+                    That observation is the starting point of <strong>Geometric Deep Learning (GDL)</strong>: a
+                    unifying framework which views CNNs, Transformers, graph neural networks, and equivariant
+                    architectures for 3D data as instances of a single design principle, namely equivariance
+                    under the symmetry group of the input domain.
                 </p>
 
                 <p>
-                    The present page introduces this framework, then
-                    develops its most directly accessible instance, the <strong>graph neural network (GNN)</strong>,
-                    which generalizes message passing from regular grids and complete graphs to arbitrary
-                    graphs. We close with a survey of how the framework extends beyond permutation symmetry
-                    to the continuous symmetries of three-dimensional space — the territory of equivariant
-                    neural networks for molecular structure, point clouds, and rigid-body manipulation.
+                    The word "geometric" here is meant in its deep mathematical sense. A geometry is most
+                    naturally understood as the study of what remains <em>invariant</em> under a chosen group
+                    of transformations. Different choices of group give different geometries, such as a grid
+                    under translation, a set under permutation, a graph under node relabelling, or a smooth
+                    manifold under rotation. An architecture is "geometric" when it respects the symmetries
+                    of its domain.
                 </p>
 
                 <p>
-                    The mathematical machinery for the continuous-symmetry case is substantial: it draws on the
-                    <a href="../Linear_algebra/lie_groups.html"><strong>Lie group theory</strong></a> already
-                    developed in Section I, on representation theory of compact groups, and on the differential
-                    geometry of smooth manifolds. The forthcoming pages on these topics provide the rigorous
-                    foundations; the present page presents the GDL viewpoint at the level of design principle,
-                    showing why those foundations are needed and what kind of architecture they support.
+                    The present page introduces this framework, then develops its most directly accessible
+                    instance, the <strong>graph neural network (GNN)</strong>, which generalizes message passing
+                    from regular grids and complete graphs to arbitrary graphs. We then survey how the framework
+                    extends beyond permutation symmetry to the continuous symmetries of three-dimensional space.
+                    This is the territory of equivariant neural networks for molecular structure, point clouds,
+                    and rigid-body manipulation.
+                </p>
+
+                <p>
+                    The mathematical machinery for the continuous-symmetry case is substantial. It draws on
+                    <a href="../Linear_algebra/lie_groups.html"><strong>Lie group theory</strong></a>, on
+                    representation theory of compact groups, and on the differential geometry of smooth
+                    manifolds. The present page stays at the level of design principle, showing why those
+                    foundations are needed and what kind of architecture they support.
                 </p>
             </section>
 
@@ -76,17 +81,21 @@ uses_python: false
                 <h2>Geometric Deep Learning: A Unifying Framework</h2>
 
                 <p>
-                    The GDL framework, articulated by Bronstein, Bruna, Cohen, and Veličković, organizes
-                    deep architectures by the symmetry group of the input domain and the way each layer is
-                    required to commute with that group's action. Concretely, given a domain \(\mathcal{X}\)
-                    with symmetry group \(G\) acting on it, a layer
-                    \(f : \mathcal{X} \to \mathcal{Y}\) is said to be <strong>\(G\)-equivariant</strong> if
+                    The GDL framework, articulated by Bronstein, Bruna, Cohen, and
+                    Veli&ccaron;kovi&cacute;, organizes deep architectures by the symmetry group of their
+                    input domain and the way each layer is required to commute with that group's action.
+                    Concretely, let \(\mathcal{X}\) be a domain with symmetry group \(G\) acting on it, and
+                    let \(G\) act on \(\mathcal{Y}\) as well. A layer \(f : \mathcal{X} \to \mathcal{Y}\)
+                    is said to be <strong>\(G\)-equivariant</strong> if
                     \[
                     f(g \cdot x) = g \cdot f(x) \quad \text{for every } g \in G,\ x \in \mathcal{X},
                     \]
                     and <strong>\(G\)-invariant</strong> if the right-hand side is replaced by \(f(x)\) itself.
-                    Equivariance preserves symmetry information through the network; invariance discards it.
-                    In practice, deep architectures stack equivariant layers and finish with an invariant
+                </p>
+
+                <p>
+                    Equivariance preserves symmetry information through the network, whereas invariance discards
+                    it. In practice, deep architectures stack equivariant layers and finish with an invariant
                     pooling step, so that the output is invariant to the chosen symmetry while intermediate
                     representations remain sensitive to it.
                 </p>
@@ -97,7 +106,7 @@ uses_python: false
                 </p>
 
                 <div class="theorem">
-                    <span class="theorem-title">Architectures Organized by Symmetry</span>
+                    <span class="theorem-title">Remark: Architectures Organized by Symmetry</span>
                     <p>
                     <table style="width:100%; border-collapse: collapse; margin: 1em 0;">
                         <thead>
@@ -126,7 +135,7 @@ uses_python: false
                                 <td style="padding: 0.5em;"><strong>graph (features \(\mathbf{X}\) + adjacency \(\mathbf{A}\))</strong></td>
                                 <td style="padding: 0.5em;"><strong>symmetric group \(S_n\)</strong></td>
                                 <td style="padding: 0.5em;"><strong>joint permutation of features and topology: \((\mathbf{X}, \mathbf{A}) \mapsto (P\mathbf{X}, P\mathbf{A}P^\top)\)</strong></td></tr>
-                            <tr><td style="padding: 0.5em;">Steerable / SE(3)-equivariant NN</td>
+                            <tr><td style="padding: 0.5em;">Steerable / \(SE(3)\)-equivariant NN</td>
                                 <td style="padding: 0.5em;">3D point cloud, molecular structure</td>
                                 <td style="padding: 0.5em;">\(SO(3)\), \(SE(3)\)</td>
                                 <td style="padding: 0.5em;">continuous group equivariance</td></tr>
@@ -137,71 +146,66 @@ uses_python: false
 
                 <p>
                     The table makes the unification explicit. The MLP, alone among the architectures listed,
-                    encodes no symmetry — it is the baseline against which all the others are GDL instances.
-                    CNNs, Transformers, GNNs, and SE(3)-equivariant networks all share the same template:
-                    identify the symmetry group of the data domain, and constrain each layer to commute
-                    with its action. The differences between them are <em>which</em> group, and <em>how</em>
-                    the group acts.
+                    encodes no symmetry and is the baseline against which all the others are GDL instances.
+                    CNNs, Transformers, GNNs, and \(SE(3)\)-equivariant networks all share the same template.
+                    The template identifies the symmetry group of the data domain and constrains each layer to
+                    commute with its action. The differences between the architectures are <em>which</em> group,
+                    and <em>how</em> the group acts.
                 </p>
 
                 <p>
-                    The Transformer's place in this table deserves a closer look, because it is in some
-                    respects the cleanest example of GDL design philosophy already at industrial scale.
+                    The Transformer's place in this table deserves a closer look, because it is in some respects
+                    the cleanest example of GDL design philosophy already at industrial scale.
                     <a href="deep_nn.html#D-scaled_dot_product_attention" class="ref-link"><strong>Self-attention</strong></a>
                     computes
                     \[
                     \mathrm{Attn}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \operatorname{softmax}\!\left(
                     \tfrac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\right)\mathbf{V},
                     \]
-                    and one can verify directly that permuting the rows of input tokens permutes the rows
-                    of the output identically: the layer commutes with the
+                    and, because \(\mathbf{Q}\), \(\mathbf{K}\), and \(\mathbf{V}\) are all read off from the
+                    same matrix of tokens, permuting the rows of that matrix permutes the rows of the output
+                    identically. The layer therefore commutes with the
                     <a href="../Linear_algebra/cyclic_groups.html#D-symmetric_group" class="ref-link"><strong>symmetric group</strong></a>
-                    \(S_n\) acting on the token axis. A Transformer without
-                    <a href="deep_nn.html#position"><strong>positional encoding</strong></a>
-                    is therefore a <em>permutation-equivariant set processor</em>; positional encoding
-                    deliberately breaks this symmetry to inject sequence order back into the architecture.
-                    From the GDL viewpoint, the modern large language model is built on a fundamentally
-                    GDL-shaped backbone — equivariance was an architectural choice, not an afterthought,
-                    and the choice is part of why the architecture scales.
+                    \(S_n\) acting on the token axis.
                 </p>
 
                 <p>
-                    Graph neural networks generalize this picture in a direction the Transformer does not
-                    cover. A Transformer treats every pair of tokens as connected; the connectivity is
-                    fixed by the architecture, not given by the data. Most real data carries structure:
-                    in a molecule only adjacent atoms interact directly; in a citation network only cited
-                    pairs are linked; in a road network connectivity is constrained by physical layout.
-                    A GNN takes the connectivity as part of its input — a pair \((\mathbf{X}, \mathbf{A})\)
-                    of node features and adjacency matrix — and is designed to be equivariant under the
-                    joint action of \(S_n\) on both:
+                    A Transformer without
+                    <a href="deep_nn.html#position"><strong>positional encoding</strong></a> is therefore a
+                    <em>permutation-equivariant set processor</em>. Positional encoding deliberately breaks
+                    this symmetry to inject sequence order back into the architecture. From the GDL viewpoint,
+                    the modern large language model is built on a fundamentally GDL-shaped backbone.
+                    Equivariance was an architectural choice, not an afterthought, and it is thought to be part
+                    of why the architecture scales.
+                </p>
+
+                <p>
+                    Graph neural networks generalize this picture in a direction the Transformer does not cover.
+                    A Transformer treats every pair of tokens as connected, so its connectivity is fixed by the
+                    architecture rather than given by the data. Most real data carries structure of its own.
+                    Only adjacent atoms in a molecule interact directly, only cited pairs in a citation network
+                    are linked, and connectivity in a road network is constrained by physical layout. A GNN
+                    takes the connectivity as part of its input. That input is a pair
+                    \((\mathbf{X}, \mathbf{A})\) of node features and adjacency matrix, and the GNN is designed
+                    to be equivariant under the joint action of \(S_n\) on both:
                     \[
-                    f(P\mathbf{X},\, P\mathbf{A}P^\top) \;=\; P\,f(\mathbf{X}, \mathbf{A})
+                    f(P\mathbf{X},\, P\mathbf{A}P^\top) = P\,f(\mathbf{X}, \mathbf{A})
                     \quad \text{for every } P \in S_n.
                     \]
                 </p>
 
                 <p>
-                    Both the Transformer (without positional encoding) and the GNN are \(S_n\)-equivariant;
-                    the difference is what \(P\) acts on. The Transformer permutes a feature matrix; the
-                    GNN permutes a feature-adjacency pair, with the adjacency matrix conjugated so that
-                    the graph structure is permuted consistently with the node relabelling. Restricting
-                    attention to a fixed graph \(G\), only those \(P\) preserving \(\mathbf{A}\) — the
-                    <a href="../Linear_algebra/group_isomorphism.html#D-automorphism" class="ref-link"><strong>automorphism group</strong></a>
-                    \(\mathrm{Aut}(G)\) — act non-trivially on features alone, but the architecture itself
-                    is built to handle <em>any</em> graph, which is why a single trained GNN generalizes
-                    to graphs unseen at training time.
+                    Both the Transformer (without positional encoding) and the GNN are \(S_n\)-equivariant, and
+                    the difference lies in what \(P\) acts on. The Transformer permutes a feature matrix,
+                    whereas the GNN permutes a feature-adjacency pair, with the adjacency matrix conjugated so
+                    that the graph structure is permuted consistently with the node relabelling. If we restrict
+                    attention to one fixed graph, the permutations preserving \(\mathbf{A}\) are exactly the
+                    <a href="../Discrete/intro_graph.html#D-graph_isomorphism" class="ref-link"><strong>graph isomorphisms</strong></a>
+                    from that graph onto itself, and they form its automorphism group. Those are the only
+                    relabellings that permute the features while leaving the graph itself fixed. The
+                    architecture, by contrast, is built to handle <em>any</em> graph, which is why a single
+                    trained GNN generalizes to graphs unseen at training time.
                 </p>
-
-                <div class="insight-box">
-                    <h3>Where the GDL Framework Points Next</h3>
-                    <p>
-                        The last row of the table runs forward into the rest of this curriculum: the
-                        continuous symmetry groups \(SO(3)\) and \(SE(3)\) are the
-                        <a href="../Linear_algebra/lie_groups.html"><strong>matrix Lie groups</strong></a>
-                        developed in Section I, and the architectures built on them are taken up later
-                        on this page, where the full map of the required mathematics is drawn.
-                    </p>
-                </div>
             </section>
 
             <section id="gnn" class="section-content">
@@ -209,53 +213,56 @@ uses_python: false
 
                 <p>
                     Two essentially different approaches to constructing graph-based architectures emerged
-                    historically. The <strong>spectral</strong> approach — chronologically first — defines
-                    convolution on a graph through the
+                    historically. The <strong>spectral</strong> approach, which starts from signal processing
+                    on graphs, defines convolution on a graph through the
                     <a href="../Linear_algebra/graph_laplacian.html#signal"><strong>Graph Fourier Transform</strong></a>,
-                    parameterizes filters in the spectral domain, and recovers tractable architectures
-                    by polynomial approximation. The <strong>spatial</strong> approach — now dominant in
-                    practice — defines a layer directly as local message passing between adjacent vertices.
-                    The two viewpoints are connected: the most widely used spatial architecture, the GCN,
-                    is mathematically a first-order Chebyshev approximation of a spectral filter. We treat
-                    them in turn.
+                    parameterizes filters in the spectral domain, and recovers tractable architectures by
+                    polynomial approximation. The <strong>spatial</strong> approach, now dominant in
+                    practice, defines a layer directly as local message passing between adjacent vertices.
+                    The two viewpoints are connected, since the most widely used spatial architecture, the
+                    GCN, is mathematically a first-order Chebyshev approximation of a spectral filter. We
+                    treat them in turn.
                 </p>
 
                 <h3>The Spectral Side: Filters in the Frequency Domain</h3>
 
                 <p>
-                    The
-                    <a href="../Linear_algebra/graph_laplacian.html#D-graph_laplacian_unnormalized" class="ref-link"><strong>graph Laplacian</strong></a>
-                    \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\) is real symmetric and
+                    The <a href="../Linear_algebra/graph_laplacian.html#D-graph_laplacian_unnormalized" class="ref-link"><strong>graph Laplacian</strong></a>
+                    \(\mathbf{L} = \mathbf{D} - \mathbf{A}\) is real symmetric and
                     <a href="../Linear_algebra/graph_laplacian.html#T-laplacian_psd" class="ref-link"><strong>positive semi-definite</strong></a>,
                     so it admits an
                     <a href="../Linear_algebra/symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>eigendecomposition</strong></a>
-                    \(\boldsymbol{L} = \boldsymbol{V}\boldsymbol{\Lambda}\boldsymbol{V}^\top\)
-                    with real non-negative eigenvalues. The eigenvectors play the role of "graph
-                    frequencies," and the
+                    \(\mathbf{L} = \mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^\top\) with real non-negative
+                    eigenvalues. The eigenvectors play the role of "graph frequencies," and the
                     <a href="../Linear_algebra/graph_laplacian.html#D-graph_fourier_transform" class="ref-link"><strong>Graph Fourier Transform</strong></a>
-                    \(\hat{\boldsymbol{f}} = \boldsymbol{V}^\top \boldsymbol{f}\) decomposes a graph
-                    signal into its frequency components. A spectral graph convolution applies a filter
+                    \(\hat{\mathbf{f}} = \mathbf{V}^\top \mathbf{f}\) decomposes a graph signal into its
+                    frequency components. A spectral graph convolution applies a filter
                     \(g(\boldsymbol{\Lambda})\) to the spectrum:
                     \[
-                    \boldsymbol{f}_{\mathrm{out}}
-                    = \boldsymbol{V}\, g(\boldsymbol{\Lambda})\, \boldsymbol{V}^\top \boldsymbol{f}_{\mathrm{in}}.
+                    \mathbf{f}_{\mathrm{out}}
+                    = \mathbf{V}\, g(\boldsymbol{\Lambda})\, \mathbf{V}^\top \mathbf{f}_{\mathrm{in}}.
                     \]
                 </p>
 
                 <p>
-                    Computing this directly requires the full eigendecomposition of \(\boldsymbol{L}\),
-                    which is prohibitive for large graphs. The standard remedy approximates the filter
-                    by a low-degree polynomial in \(\boldsymbol{L}\) — typically Chebyshev polynomials
-                    of the rescaled Laplacian — yielding architectures that are efficient and
-                    <em>localized</em> (a degree-\(K\) polynomial filter respects \(K\)-hop
-                    neighborhoods). The first-order case of this construction is the
-                    <strong>Graph Convolutional Network (GCN)</strong>, which has become the standard
-                    baseline for spectral GNNs. The full development — Chebyshev approximation, the
-                    rescaling \(\tilde{\boldsymbol{L}} = (2/\lambda_{\max})\mathcal{L}_{\mathrm{sym}} - \boldsymbol{I}\)
-                    (where \(\mathcal{L}_{\mathrm{sym}} = \boldsymbol{D}^{-1/2}\boldsymbol{L}\boldsymbol{D}^{-1/2}\)
-                    is the symmetric normalized Laplacian), and the GCN derivation — is given in our
-                    <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian page</strong></a>;
-                    we recall here only what we need to connect spectral and spatial perspectives.
+                    Computing this directly requires the full eigendecomposition of \(\mathbf{L}\), which is
+                    prohibitive for large graphs. The standard remedy approximates the filter by a low-degree
+                    polynomial in \(\mathbf{L}\), typically built from Chebyshev polynomials of the rescaled
+                    Laplacian. The resulting architectures are efficient and <em>localized</em>, since a
+                    degree-\(K\) polynomial filter respects \(K\)-hop neighborhoods. The first-order case of
+                    this construction is the <strong>Graph Convolutional Network (GCN)</strong>, the standard
+                    baseline named above.
+                </p>
+
+                <p>
+                    Our <a href="../Linear_algebra/graph_laplacian.html"><strong>graph Laplacian page</strong></a>
+                    gives the full development: the Chebyshev approximation, the rescaling
+                    \(\tilde{\mathbf{L}} = (2/\lambda_{\max})\mathcal{L}_{\mathrm{sym}} - \mathbf{I}\) of
+                    the symmetric normalized Laplacian
+                    \(\mathcal{L}_{\mathrm{sym}} = \mathbf{D}^{-1/2}\mathbf{L}\mathbf{D}^{-1/2}\), which
+                    is defined when no vertex is isolated and whose largest eigenvalue is
+                    \(\lambda_{\max}\), and the GCN derivation. Here we recall only what we need to
+                    connect the spectral and spatial perspectives.
                 </p>
 
                 <h3>The Spatial Side: Message Passing</h3>
@@ -286,46 +293,48 @@ uses_python: false
 
                 <p>
                     The choice of \(\mathrm{AGGREGATE}\) and \(\mathrm{UPDATE}\) determines the architecture.
-                    The GCN uses a normalized-degree weighted sum derived from
-                    \(\mathcal{L}_{\mathrm{sym}}\); GraphSAGE uses sampled neighborhoods with a learnable
-                    pooling function, addressing scalability on very large graphs; the Graph Attention
-                    Network (GAT) uses an attention mechanism to compute neighborhood weights, recovering
-                    much of the flexibility of self-attention while restricting interactions to graph
-                    edges. The Graph Isomorphism Network (GIN) replaces the aggregation with a sum
-                    followed by an MLP, a choice motivated by its connection to the
-                    <strong>1-Weisfeiler-Lehman (1-WL)</strong> graph isomorphism test — GIN is
-                    provably as expressive as 1-WL and strictly more expressive than mean- or
-                    max-pooling alternatives.
+                    The GCN uses a normalized-degree weighted sum derived from \(\mathcal{L}_{\mathrm{sym}}\).
+                    GraphSAGE uses sampled neighborhoods with a learnable pooling function, which addresses
+                    scalability on very large graphs. The Graph Attention Network (GAT) computes neighborhood
+                    weights by an attention mechanism and so recovers much of the flexibility of self-attention
+                    while restricting interactions to graph edges.
+                </p>
+
+                <p>
+                    The Graph Isomorphism Network (GIN) replaces the aggregation with a sum followed by an MLP,
+                    a choice motivated by its connection to the <strong>1-Weisfeiler-Lehman (1-WL)</strong>
+                    graph isomorphism test. With injective aggregation and update maps, GIN matches the
+                    distinguishing power of 1-WL, and its sum aggregation separates multisets of neighbor
+                    features that mean- or max-pooling cannot.
                 </p>
 
                 <p>
                     The crucial structural property of every message passing layer is automatic
-                    <strong>permutation equivariance</strong>: relabelling the vertices of the graph
-                    produces a correspondingly relabelled output, because \(\mathrm{AGGREGATE}\) operates
-                    on a multiset of messages and is by definition invariant under their order. This is
-                    what places GNNs in the GDL framework — the architecture is constrained, by its very
-                    construction, to satisfy \(f(P\mathbf{X}, P\mathbf{A}P^\top) = Pf(\mathbf{X}, \mathbf{A})\)
-                    for every \(P \in S_n\).
+                    <strong>permutation equivariance</strong>. Relabelling the vertices of the graph produces a
+                    correspondingly relabelled output, because \(\mathrm{AGGREGATE}\) operates on a multiset of
+                    messages and is by definition invariant under their order. This property places GNNs in the
+                    GDL framework, since the architecture is constrained by its very construction to satisfy
+                    \(f(P\mathbf{X}, P\mathbf{A}P^\top) = Pf(\mathbf{X}, \mathbf{A})\) for every \(P \in S_n\).
                 </p>
 
                 <h3>Comparison with CNNs and Transformers</h3>
 
                 <p>
-                    The three architectures — CNN, Transformer, GNN — admit a unified description
-                    as message passing on graphs, distinguished only by which graph and which aggregation:
+                    CNNs, Transformers, and GNNs admit a unified description as message passing on graphs,
+                    distinguished only by which graph and which aggregation:
                 </p>
 
                 <ul style="padding-left: 40px;">
                     <li>
-                        A <strong>CNN</strong> performs message passing on a regular grid graph
-                        with fixed local neighborhoods and a learned weight per edge offset; the same
-                        weights are applied at every position, which is what makes the layer translation-equivariant.
+                        A <strong>CNN</strong> performs message passing on a regular grid graph with fixed local
+                        neighborhoods and a learned weight per edge offset. The same weights are applied at
+                        every position, which is what makes the layer translation-equivariant.
                     </li>
                     <li>
                         A <strong>Transformer</strong> performs message passing on the
-                        <em>complete graph</em> over the input tokens, with attention-derived edge
-                        weights; it is permutation-equivariant in the strong sense that all permutations
-                        of \(S_n\) commute with the layer.
+                        <em>complete graph</em> over the input tokens, with attention-derived edge weights.
+                        The layer is permutation-equivariant in the strong sense that all permutations of
+                        \(S_n\) commute with it.
                     </li>
                     <li>
                         A <strong>GNN</strong> performs message passing on an input graph supplied as
@@ -336,21 +345,20 @@ uses_python: false
 
                 <p>
                     The continuum from CNN through Transformer to GNN is therefore one of increasing
-                    <em>data-dependence</em> in the connectivity structure: regular grid → complete graph
-                    → arbitrary graph. The Transformer's success at scale demonstrates that the complete
-                    graph is often a useful default when no informative connectivity is given; the GNN is
-                    the natural choice when connectivity carries information that should be respected.
+                    <em>data-dependence</em> in the connectivity structure: regular grid &rarr; complete graph
+                    &rarr; arbitrary graph. The Transformer's success at scale suggests that the complete graph
+                    is often a useful default when no informative connectivity is given. The GNN is the natural
+                    choice when connectivity carries information that should be respected.
                 </p>
 
                 <p>
-                    This equivariance with respect to graph structure is exactly the property that has
-                    made GNNs the architecture of choice in domains where data is intrinsically
-                    relational: molecular property prediction (where atoms and bonds form a graph),
-                    recommendation systems and social network analysis (where the user-item or user-user
-                    graph carries the predictive signal), knowledge graph completion, and traffic and
-                    network science. Specific benchmark architectures evolve quickly; the underlying
-                    design principle — encode the graph's symmetry into the layer — has remained stable
-                    across a decade of empirical development.
+                    This equivariance with respect to graph structure is exactly the property that has made GNNs
+                    the architecture of choice where data is intrinsically relational. Examples include
+                    molecular property prediction (where atoms and bonds form a graph), recommendation systems
+                    and social network analysis (where the user-item or user-user graph carries the predictive
+                    signal), knowledge graph completion, and traffic and network science. Specific benchmark
+                    architectures evolve quickly, but the underlying design principle of encoding the graph's
+                    symmetry into the layer has remained stable across a decade of empirical development.
                 </p>
             </section>
 
@@ -358,90 +366,91 @@ uses_python: false
                 <h2>Beyond Permutation: Continuous Group Equivariance</h2>
 
                 <p>
-                    The GDL principle generalizes naturally beyond the discrete symmetries we have
-                    discussed so far. Consider a molecule represented not as an abstract graph but as a
-                    set of atoms with positions in three-dimensional space. Rotating or translating the
-                    entire molecule produces the same molecule — its energy, its stability, its chemical
-                    identity are unchanged. A learned function predicting any of these properties should
-                    therefore be invariant under the group of
-                    <a href="../Linear_algebra/dihedral_group.html#SOSE"><strong>rigid motions</strong></a>
-                    \(SE(3)\), combining
-                    rotations \(SO(3)\) with three-dimensional translations,
-                    and a learned function predicting a vector-valued geometric quantity (a force, an
-                    orientation) should be <em>equivariant</em> under \(SE(3)\): rotating the input
-                    rotates the output by the same rotation.
+                    The GDL principle generalizes naturally beyond the discrete symmetries we have discussed
+                    so far. Consider a molecule represented not as an abstract graph but as a set of atoms
+                    with positions in three-dimensional space. Rotating or translating the entire molecule
+                    produces the same molecule, with its energy, stability, and chemical identity unchanged.
+                    A learned function predicting any of these properties should therefore be invariant under
+                    the group \(SE(3)\) of
+                    <a href="../Linear_algebra/dihedral_group.html#SOSE"><strong>rigid motions</strong></a>,
+                    which combines rotations \(SO(3)\) with three-dimensional translations. A learned
+                    function predicting a vector-valued geometric quantity (a force, an orientation) should
+                    instead be <em>equivariant</em> under \(SE(3)\). Rotating the input then rotates the
+                    output by the same rotation.
                 </p>
 
                 <p>
-                    Implicit in this distinction is a subtlety we have so far suppressed in our notation.
-                    The equivariance condition \(f(g \cdot x) = g \cdot f(x)\) writes the action of \(g\)
-                    the same way on both sides, but the actual action depends on the <strong>type</strong>
-                    of the quantity being acted on. A rotation \(R \in SO(3)\) acts trivially on a scalar
-                    (energy, charge density), as the standard \(3 \times 3\) rotation matrix on a vector
-                    (force, dipole moment), and via more elaborate formulas on higher-order tensors. The
-                    systematic study of how a single group acts in different ways on different feature
-                    types is the <strong>representation theory</strong> of the group, and equivariant
-                    networks for 3D data are organized precisely by which representation each layer-feature
-                    transforms under. The same shorthand \(g \cdot x\) can therefore stand for genuinely
-                    distinct linear maps, and a careful theory must distinguish them.
+                    Implicit in this distinction is a subtlety we have so far suppressed in our notation. The
+                    equivariance condition \(f(g \cdot x) = g \cdot f(x)\) writes the action of \(g\) the same
+                    way on both sides, but the actual action depends on the <strong>type</strong> of the
+                    quantity being acted on. A rotation \(R \in SO(3)\) acts trivially on a scalar (energy,
+                    charge density), as the standard \(3 \times 3\) rotation matrix on a vector (force, dipole
+                    moment), and via more elaborate formulas on higher-order tensors.
                 </p>
 
                 <p>
-                    Both \(SO(3)\) and \(SE(3)\) are continuous groups, and concretely they are the
-                    <a href="../Linear_algebra/lie_groups.html"><strong>matrix Lie groups</strong></a>
-                    we developed in Section I. Building neural network layers that commute with their
-                    action requires more than the multiset symmetrization that powers GNNs.
+                    The systematic study of how a single group acts in different ways on different feature types
+                    is the <strong>representation theory</strong> of the group, and equivariant networks for 3D
+                    data are organized precisely by which representation each layer-feature transforms under.
+                    The same shorthand \(g \cdot x\) can therefore stand for genuinely distinct linear maps, and
+                    a careful theory must distinguish them.
                 </p>
 
                 <p>
-                    The standard approach decomposes vertex features into <strong>irreducible representations</strong>
-                    of the rotation group (scalars, vectors, higher-order tensors corresponding to the
-                    spherical harmonics), constrains messages to transform appropriately under rotation,
-                    and combines them via Clebsch-Gordan products — the tensor product decompositions
-                    that respect the irreducible representation structure.
-                    The result is a graph-like architecture whose messages are themselves geometric
-                    objects rather than scalar features — an architecture that <em>knows</em>, by its
-                    construction, how to handle the rotation of its input.
+                    Both \(SO(3)\) and \(SE(3)\) are continuous groups, and concretely they are
+                    <a href="../Linear_algebra/lie_groups.html"><strong>matrix Lie groups</strong></a>. Building
+                    neural network layers that commute with their action requires more than the multiset
+                    symmetrization that powers GNNs.
                 </p>
 
                 <p>
-                    The mathematical machinery this requires — irreducible representations of compact
-                    Lie groups, spherical harmonics, the
-                    <a href="../Linear_algebra/peter_weyl.html"><strong>Peter-Weyl theorem</strong></a>,
-                    equivariant tensor product
-                    decompositions — is the subject of the forthcoming pages on representation theory
-                    and on Fourier analysis on Hilbert spaces. The systematic construction of equivariant
-                    neural networks built on this machinery belongs to a later stage of the curriculum;
-                    here we record only the application-side outcome.
+                    The standard approach decomposes vertex features into
+                    <strong>irreducible representations</strong> of the rotation group (scalars, vectors,
+                    higher-order tensors corresponding to the spherical harmonics), constrains messages to
+                    transform appropriately under rotation, and combines them via Clebsch-Gordan products, the
+                    tensor product decompositions that respect the irreducible representation structure. The
+                    result is a graph-like architecture whose messages are themselves geometric objects rather
+                    than scalar features. Such an architecture <em>knows</em>, by its construction, how to
+                    handle the rotation of its input.
                 </p>
 
                 <p>
-                    Encoding continuous symmetry into the architecture has produced concrete advances
-                    in structural biology, where <strong>AlphaFold</strong>'s prediction of
-                    three-dimensional protein structure from amino-acid sequence — recognized by the 2024
-                    Nobel Prize in Chemistry — relies on attention mechanisms designed to respect the
-                    rigid-motion symmetries of residues in 3D space. Equivariant architectures are also
-                    the dominant family in machine-learning interatomic potentials for molecular dynamics,
-                    and an active research direction in robotic manipulation, where the geometry of
-                    physical configuration spaces naturally calls for \(SE(3)\)-equivariant policies.
+                    The mathematical machinery this requires includes irreducible representations of compact Lie
+                    groups, spherical harmonics, the
+                    <a href="../Linear_algebra/peter_weyl.html"><strong>Peter-Weyl theorem</strong></a>, and
+                    equivariant tensor product decompositions. The systematic construction of equivariant neural
+                    networks built on this machinery is the subject of our page on
+                    <a href="equivariant_nn.html"><strong>equivariant neural networks</strong></a>. Here we
+                    record only the application-side outcome.
+                </p>
+
+                <p>
+                    Encoding continuous symmetry into the architecture has produced concrete advances in
+                    structural biology. There, <strong>AlphaFold</strong>'s prediction of three-dimensional
+                    protein structure from amino-acid sequence, recognized by the 2024 Nobel Prize in
+                    Chemistry, relies on attention mechanisms designed to respect the rigid-motion symmetries
+                    of residues in 3D space. Equivariant architectures are also a leading family in
+                    machine-learning interatomic potentials for molecular dynamics, and an active research
+                    direction in robotic manipulation, where the geometry of physical configuration spaces
+                    naturally calls for \(SE(3)\)-equivariant policies.
                 </p>
 
                 <div class="insight-box">
                     <h3>Why the Mathematics Comes Next</h3>
                     <p>
-                        Three threads converge in equivariant neural networks for 3D data:
-                        <em>Lie groups</em> provide the symmetry groups themselves and their algebraic
-                        structure (developed in the Lie theory series of Section I); <em>representation theory</em>
-                        decomposes feature spaces into irreducible building blocks compatible with the
-                        symmetry; <em>differential geometry of smooth manifolds</em> supplies the
-                        natural setting for "data on a curved domain" and the analogue of the graph
-                        Laplacian (the Laplace-Beltrami operator) on such domains. The forthcoming 
-                        <a href="../Calculus/topological_manifolds.html"><strong>manifold series</strong></a> 
-                        and representation theory pages develop these threads; the
+                        Three threads converge in equivariant neural networks for 3D data. <em>Lie groups</em>
+                        provide the symmetry groups themselves and their algebraic structure.
+                        <em>Representation theory</em> decomposes feature spaces into irreducible building
+                        blocks compatible with the symmetry. The
+                        <em>differential geometry of smooth manifolds</em> supplies the natural setting for
+                        "data on a curved domain" and the analogue of the graph Laplacian (the Laplace-Beltrami
+                        operator) on such domains. The
+                        <a href="../Calculus/topological_manifolds.html"><strong>manifold series</strong></a>
+                        and the representation theory pages develop these threads, and the
                         <a href="../Linear_algebra/peter_weyl.html#l2-decomposition"><strong>Peter-Weyl theorem</strong></a>
-                        connects them back to the harmonic analysis on Hilbert spaces of Section II.
-                        The GDL viewpoint is what makes the destination concrete: each of these mathematical developments 
-                        will pay off in a specific class of equivariant architecture.
+                        connects them back to harmonic analysis on Hilbert spaces. The GDL viewpoint makes the
+                        destination concrete. Each of these mathematical developments pays off in a specific
+                        class of equivariant architecture.
                     </p>
                 </div>
             </section>
@@ -452,72 +461,77 @@ uses_python: false
                 <div id="gdl_demo"></div>
 
                 <p>
-                    The demo above places the central claim of this page side by side. All three
-                    panels run the same layer template
+                    The demo above places the central claim of this page side by side. All three panels run the
+                    same layer template
                     \[
                     \mathbf{h}^{(k+1)} = \tanh\!\big( w_k\, \hat{\mathbf{A}}\, \mathbf{h}^{(k)} + b_k \mathbf{1} \big),
                     \]
-                    and differ only in the structure matrix \(\hat{\mathbf{A}}\). The <strong>GNN</strong>
-                    uses the fixed, sparse, degree-normalized adjacency
-                    \(\hat{\mathbf{A}} = \tilde{\mathbf{D}}^{-1/2}(\mathbf{A} + \mathbf{I})\tilde{\mathbf{D}}^{-1/2}\)
+                    with the <strong>GNN</strong> and the <strong>Transformer</strong> differing only in the
+                    structure matrix \(\hat{\mathbf{A}}\). The <strong>GNN</strong> uses the fixed, sparse,
+                    degree-normalized adjacency \(\hat{\mathbf{A}} = \tilde{\mathbf{D}}^{-1/2}(\mathbf{A} + \mathbf{I})\tilde{\mathbf{D}}^{-1/2}\)
                     of the displayed graph. The <strong>Transformer</strong> computes a dense attention
                     matrix \(\hat{\mathbf{A}}(\mathbf{h})_{ij} = \operatorname{softmax}_j(h_i h_j / \tau)\)
-                    from the current features, on the complete graph over the vertices. The
-                    <strong>MLP</strong> replaces \(w_k \hat{\mathbf{A}}\) with a learned dense matrix
-                    \(\mathbf{W}_k\) that mixes node coordinates by their index — no structure matrix at
+                    from the current features, with every pair of vertices connected. The
+                    <strong>MLP</strong> replaces \(w_k \hat{\mathbf{A}}\) with a dense matrix
+                    \(\mathbf{W}_k\) of free parameters that mixes node coordinates by their index, and gives
+                    each vertex its own bias in place of \(b_k \mathbf{1}\). It uses no structure matrix at
                     all, which is why its panel draws no edges.
                 </p>
 
                 <p>
-                    The GNN and Transformer panels share the
-                    <em>same</em> scalar weights \((w_k, b_k)\), so whatever differs between those two
-                    panels is attributable to the structure matrix alone. Node colors show the scalar
-                    feature at each vertex (blue negative, red positive); all weights are untrained and
-                    drawn once from a fixed seed.
+                    The GNN and Transformer panels share the <em>same</em> scalar weights \((w_k, b_k)\), so
+                    whatever differs between those two panels is attributable to the structure matrix alone.
+                    Node colors show the scalar feature at each vertex (blue negative, red positive). All
+                    weights are untrained and drawn once from a fixed seed.
                 </p>
 
                 <p>
-                    The <strong>Layer</strong> slider scrubs a single forward pass through all three
-                    panels simultaneously: layer 0 is the input, and each successive layer shows the
-                    features after one application of the template. Beneath each graph, a heatmap
-                    displays the structure matrix in effect for the displayed transition. The GNN's
-                    heatmap never changes — its \(\hat{\mathbf{A}}\) is fixed by the graph. The
-                    Transformer's is recomputed from the features at every layer, so it visibly changes
-                    as we scrub. The MLP's shows the learned \(\mathbf{W}_k\), whose entries bear no
-                    relation to the drawn edges because the architecture has no notion of them.
+                    The <strong>Layer</strong> slider scrubs a single forward pass through all three panels
+                    simultaneously. Layer 0 is the input, and each successive layer shows the features after one
+                    application of the template. Beneath each graph, a heatmap displays the structure matrix in
+                    effect for the displayed transition. The GNN's heatmap never changes, because its
+                    \(\hat{\mathbf{A}}\) is fixed by the graph. The Transformer's is recomputed from the
+                    features at every layer, so it visibly changes as we scrub. The MLP's shows its own
+                    \(\mathbf{W}_k\), whose entries bear no relation to the drawn edges because the architecture
+                    has no notion of them. The <strong>Depth</strong> slider changes the number of layers, which
+                    redraws the whole weight stack from a new fixed seed.
                 </p>
 
                 <p>
-                    The <strong>Shuffle Node Labels</strong> button is where the GDL claim becomes
-                    testable. Shuffling draws a random permutation \(P\) and applies it jointly to the
-                    node features and the adjacency matrix in all three panels at once. The equivariance
-                    condition \(f(P\mathbf{h}, P\mathbf{A}P^\top) = Pf(\mathbf{h}, \mathbf{A})\) is then
-                    evaluated on the original, unshuffled data with the same fixed weights, and each
-                    panel reports its own error. For the GNN and the Transformer the error sits at
-                    floating-point zero; for the MLP the same shuffle produces an order-one discrepancy,
-                    flagged in red — the dense weight matrix mixes node coordinates in a way that depends
-                    on their indexing. The contrast is not a matter of better or worse training; it is
-                    built into the architectures by construction, before any training has occurred.
+                    The <strong>Shuffle Node Labels</strong> button is where the GDL claim becomes testable.
+                    Shuffling draws a random permutation \(P\) and applies it jointly to the node features and
+                    the adjacency matrix in all three panels at once. The equivariance condition
+                    \(f(P\mathbf{h}, P\mathbf{A}P^\top) = Pf(\mathbf{h}, \mathbf{A})\) is then evaluated on the
+                    original, unshuffled data with the same fixed weights, and each panel reports its own error.
+                </p>
+
+                <p>
+                    For the GNN and the Transformer, the error sits at floating-point zero. For the MLP, the
+                    same shuffle produces an order-one discrepancy, flagged in red. The dense weight matrix
+                    mixes node coordinates in a way that depends on their indexing. The contrast is not a matter
+                    of better or worse training. It is built into the architectures by construction, before any
+                    training has occurred.
                 </p>
 
                 <p>
                     The attention used here is genuine
                     <a href="deep_nn.html#D-scaled_dot_product_attention" class="ref-link"><strong>scaled dot-product attention</strong></a>,
-                    specialized to scalar features with identity query and key maps. The specialization
-                    loses nothing structural: at feature dimension one, the query and key maps contribute
-                    only a single scalar multiplier on \(h_i h_j\) — absorbed here into the temperature
-                    \(\tau = 0.15\) — and the value map is absorbed into the shared weight \(w_k\). The fully-dimensional mechanism — learned projections, multiple heads, and
-                    positional encoding — is computed exactly, number by number, in the
-                    <a href="deep_nn.html#transformer"><strong>Transformer walkthrough</strong></a>;
-                    the present demo isolates the one structural fact that survives every such
-                    refinement, namely that attention weights computed from the features themselves
-                    transform covariantly under \(S_n\).
+                    specialized to scalar features with identity query and key maps. The specialization loses
+                    nothing structural. At feature dimension one, the query and key maps contribute only a
+                    single scalar multiplier on \(h_i h_j\), which is absorbed here into the temperature
+                    \(\tau = 0.15\). The value map is likewise absorbed into the shared weight \(w_k\).
                 </p>
+
+                <p>
+                    The full mechanism, with learned projections, multiple heads, and positional encoding, is
+                    computed exactly, number by number, at toy dimension in the
+                    <a href="deep_nn.html#demo"><strong>decoder-block demo</strong></a>. The present demo
+                    isolates the one structural fact that survives every such refinement, namely that attention
+                    weights computed from the features themselves transform covariantly under \(S_n\).
+                </p>
+                
             </section>
-
         </div>
-
         <script src="/js/sec5_p13_gdl_demo.js"></script>
-
     </body>
 </html>
