@@ -31,50 +31,56 @@ uses_python: false
                 <h2>The Gap Encryption Leaves Open</h2>
 
                 <p>
-                    The constructions of the previous pages secure the <em>content</em> of a message. A public-key
-                    cipher lets anyone encrypt to a recipient who alone can read the result, and a key agreement lets
-                    two parties derive a shared secret over an open channel. Both keep an eavesdropper from learning
-                    what was sent. Neither establishes <em>who</em> sent it. This is not an oversight but a separate
-                    goal: the first section of this track distinguished confidentiality from data-origin authentication,
-                    and from non-repudiation — the assurance that an entity cannot later disown what it committed to.
-                    Encryption answers the first. The mechanism of this page answers the other two.
+                    The constructions of the previous pages secure the <em>content</em> of a message. A public-key cipher
+                    lets anyone encrypt to a recipient who alone can read the result, and a key agreement lets two parties
+                    derive a shared secret over an open channel. Both keep an eavesdropper from learning what was sent.
+                    Neither establishes <em>who</em> sent it. This is not an oversight but a separate goal. Our opening
+                    survey of cryptographic goals distinguished confidentiality from data-origin authentication and from
+                    non-repudiation, the assurance that an entity cannot later disown a commitment. Encryption answers the
+                    first. The mechanism of this page answers the other two.
                 </p>
 
                 <p>
                     The gap was named twice already, and naming it a third time fixes precisely what must be supplied.
                     When the public-key framework was introduced, the observation was that publishing a key removes the
                     need to keep it secret but not the need to know whose it is. When key agreement was constructed, the
-                    same gap returned as a concrete attack: an adversary interposed between two parties can run a
-                    separate agreement with each, relaying and re-reading everything, because the exchanged values
-                    carry no evidence of their origin. In both cases the missing ingredient is the same. A public value
-                    must be bound to the identity that issued it, and a message must be bound to the party that stands
-                    behind it — bindings that secrecy cannot provide, because the quantity in question is published on
-                    purpose.
+                    same gap returned as a concrete attack. An adversary interposed between two parties can run a separate
+                    agreement with each, relaying and re-reading everything, because the exchanged values carry no
+                    evidence of their origin.
+                </p>
+
+                <p>
+                    In both cases the missing ingredient is the same. A public value must be bound to the identity that
+                    issued it, and a message must be bound to the party that stands behind it. Secrecy cannot provide
+                    either binding, because the quantity in question is published on purpose.
                 </p>
 
                 <p>
                     What supplies the binding is an object that anyone can check but only one party can produce. A
                     <strong>digital signature</strong> is a string attached to a message that any verifier can test
-                    against a public key, and that no one lacking the corresponding private key could have generated for
-                    that message. Where a
+                    against a public key, and that no one lacking the corresponding private key could feasibly generate
+                    for that message. Where a
                     <a href="public_key_cryptography.html#D-trapdoor_one_way" class="ref-link"><strong>trapdoor
-                    one-way function</strong></a> let the holder of a secret invert a public operation in order to read,
-                    a signature uses a private capability in the opposite direction: to <em>mark</em> rather than to
-                    unlock. That asymmetry — closed production, open verification — is what lets a signature certify
-                    origin without revealing anything that would let a second party forge it.
+                    one-way function</strong></a> let the holder of a secret invert a public operation in order to read, a
+                    signature uses a private capability in the opposite direction: to <em>mark</em> rather than to unlock.
+                    That asymmetry of closed production and open verification is what lets a signature certify origin
+                    without revealing anything that would let a second party forge it.
                 </p>
 
                 <p>
-                    Binding a message to its sender and binding a public key to its owner are the same problem applied
-                    at two levels, and the second is what closes the interposition attack. If each party's published
-                    value is accompanied by a signature from a recognized authority attesting that the value belongs to
-                    a named identity, the adversary who substitutes its own value can no longer pass it off as the other
-                    party's: the substituted value carries no valid attestation, and the forgery the adversary would need
-                    is exactly what the signature is built to preclude. Constructing the attestation reduces to signing,
-                    and so does the question of who is trusted to vouch for whom. The primitive comes first — the signature
-                    itself, made precise next and then built explicitly from arithmetic already in hand — and the structure
-                    of certificates and the trust among them follows from it later on this page, once the mark it rests on
-                    is in place.
+                    Binding a message to its sender and binding a public key to its owner are the same problem applied at
+                    two levels, and the second is what closes the interposition attack. If each party's published value is
+                    accompanied by a signature from a recognized authority attesting that the value belongs to a named
+                    identity, the adversary who substitutes its own value can no longer pass it off as the other party's.
+                    The substituted value carries no valid attestation, and the forgery the adversary would need is
+                    exactly what the signature is built to preclude.
+                </p>
+
+                <p>
+                    Constructing the attestation reduces to signing, and so does the question of who is trusted to vouch
+                    for whom. The primitive comes first. The signature itself is made precise next and then built
+                    explicitly from arithmetic already in hand. Certificates and the trust among them follow from it later
+                    on this page.
                 </p>
             </section>
 
@@ -83,10 +89,10 @@ uses_python: false
 
                 <p>
                     A scheme is specified by two algorithms and a key pair. The signer holds a private key that drives a
-                    <em>signing transformation</em>, producing for a message a string in a designated signature space.
-                    Everyone holds the matching public key, which drives a <em>verification transformation</em> that
-                    decides whether a given message-signature pair is one the signer's private key would have produced.
-                    The verifier never needs the private key — the asymmetry of the previous section, now made into a
+                    <em>signing transformation</em>, which produces for each message a string in a designated signature
+                    space. Everyone holds the matching public key, which drives a <em>verification transformation</em>
+                    that decides whether a given message-signature pair is one the signer's private key would have
+                    produced. The verifier never needs the private key, so the asymmetry of the previous section becomes a
                     pair of named transformations.
                 </p>
 
@@ -99,26 +105,27 @@ uses_python: false
                     <ol style="padding-left: 40px;">
                         <li>
                             a <strong>signing transformation</strong> \(S_A\), determined by entity \(A\)'s private key,
-                            mapping each \(m \in \mathcal{M}\) to a signature \(s \in \mathcal{S}\); and
+                            mapping each \(m \in \mathcal{M}\) to a signature \(s \in \mathcal{S}\).
                         </li>
                         <li>
                             a <strong>verification transformation</strong> \(V_A\), determined by \(A\)'s public key,
                             mapping each pair \((m, s) \in \mathcal{M} \times \mathcal{S}\) to \(\mathrm{true}\) or
-                            \(\mathrm{false}\),
+                            \(\mathrm{false}\).
                         </li>
                     </ol>
                     <p>
-                        such that \(V_A(m, s) = \mathrm{true}\) precisely when \(s\) is a signature that \(A\)'s signing
-                        transformation produces for \(m\). The verification transformation is computable from the public
-                        key alone, without knowledge of the private key. A pair \((m, s)\) with \(V_A(m, s) =
-                        \mathrm{true}\) is called a <strong>valid</strong> signature of \(A\) on \(m\).
+                        The two are related by the requirement that \(V_A(m, s) = \mathrm{true}\) precisely when \(s\) is
+                        a signature that \(A\)'s signing transformation produces for \(m\). The verification
+                        transformation is computable from the public key alone, without knowledge of the private key. A
+                        pair \((m, s)\) with \(V_A(m, s) = \mathrm{true}\) is called a <strong>valid</strong> signature of
+                        \(A\) on \(m\).
                     </p>
                 </div>
 
                 <p>
-                    The two transformations move in opposite directions across the same key pair. The diagram traces
-                    the form in which the message accompanies the signature to verification; read against the cipher of
-                    the previous pages, it shows what the signature inverts.
+                    The two transformations move in opposite directions across the same key pair. The diagram traces the
+                    form in which the message accompanies the signature to verification. Read against the cipher of the
+                    previous pages, it shows what the signature inverts.
                 </p>
 
                 <figure style="margin: 1.5rem 0; text-align: center;">
@@ -160,26 +167,29 @@ uses_python: false
                 </figure>
 
                 <p>
-                    Two structural variants of this skeleton occur, distinguished by what the verifier must be given.
-                    In a scheme <em>with appendix</em> — the form drawn above — the message is required as a separate
-                    input to verification: the signature travels alongside the message and is meaningless without it. In
-                    a scheme <em>with message recovery</em>, the message is reconstructed from the signature itself, so
-                    the signature alone suffices and the original need not be transmitted; there the verification map
-                    returns the recovered message rather than a verdict, and acceptance is the further test that the
-                    recovered value carries the expected structure. The construction of the next section is of this
-                    recovery kind. The distinction is not cosmetic. Schemes with appendix sign a short, fixed-length
-                    digest produced by a one-way function rather than the message directly, which both accommodates
-                    messages of arbitrary length and, as the security discussion below shows, removes a structural
-                    weakness that recovery schemes must guard against by other means.
+                    Two structural variants of this skeleton occur, distinguished by what the verifier must be given. In a
+                    scheme <em>with appendix</em>, the form drawn above, the message is required as a separate input to
+                    verification. The signature travels alongside the message and is meaningless without it. In a scheme
+                    <em>with message recovery</em>, the message is reconstructed from the signature itself, so the
+                    signature alone suffices and the original need not be transmitted. There the verification map returns
+                    the recovered message rather than a verdict, and acceptance is the further test that the recovered
+                    value carries the expected structure. The construction of the next section is of this recovery kind.
                 </p>
 
                 <p>
-                    Defining the scheme is only half of what is needed; the other half is a precise account of what it
+                    The distinction is not cosmetic. Schemes with appendix sign a short, fixed-length digest produced by a
+                    one-way function rather than the message directly. Signing the digest accommodates messages of
+                    arbitrary length and, as the security discussion below shows, removes a structural weakness that
+                    recovery schemes must guard against by other means.
+                </p>
+
+                <p>
+                    Defining the scheme is only half of what is needed. The other half is a precise account of what it
                     means to <em>break</em> one. The attacker's aim is to <strong>forge</strong>: to produce a valid
                     signature on a message the legitimate signer never signed. As with encryption, the strength of a
                     scheme is stated against an adversary's capabilities and graded by what the adversary manages to
-                    achieve — the same two-axis discipline the security definitions used earlier, transposed from
-                    indistinguishability of ciphertexts to unforgeability of signatures.
+                    achieve. The security definitions used the same two-axis discipline earlier, and the discipline now
+                    passes from indistinguishability of ciphertexts to unforgeability of signatures.
                 </p>
 
                 <div class="theorem" id="D-signature_forgery">
@@ -190,15 +200,15 @@ uses_python: false
                     </p>
                     <ol style="padding-left: 40px;">
                         <li>
-                            <strong>total break</strong> — recovering the private key, or an algorithm functionally
-                            equivalent to the signing transformation, so that the adversary can sign any message at will;
+                            <strong>Total break:</strong> recovering the private key, or an algorithm functionally
+                            equivalent to the signing transformation, so that the adversary can sign any message at will.
                         </li>
                         <li>
-                            <strong>selective forgery</strong> — producing a valid signature on a particular message, or
-                            a class of messages, chosen by the adversary in advance; and
+                            <strong>Selective forgery:</strong> producing a valid signature on a particular message, or
+                            a class of messages, chosen by the adversary in advance.
                         </li>
                         <li>
-                            <strong>existential forgery</strong> — producing a valid signature on <em>some</em> message,
+                            <strong>Existential forgery:</strong> producing a valid signature on <em>some</em> message,
                             with little or no control over which message it is.
                         </li>
                     </ol>
@@ -207,32 +217,33 @@ uses_python: false
                     </p>
                     <ol style="padding-left: 40px;">
                         <li>
-                            a <strong>key-only attack</strong> gives the adversary only the signer's public key; while
+                            A <strong>key-only attack</strong> gives the adversary only the signer's public key.
                         </li>
                         <li>
-                            a <strong>message attack</strong> additionally gives valid signatures on messages either
-                            known to or chosen by the adversary, the strongest form being the
+                            A <strong>message attack</strong> additionally gives valid signatures on messages either
+                            known to or chosen by the adversary. Its strongest form is the
                             <strong>adaptive chosen-message attack</strong>, in which the adversary obtains signatures on
                             messages it selects in sequence, each choice allowed to depend on signatures already seen.
                         </li>
                     </ol>
                     <p>
                         A scheme is regarded as secure when even an adversary mounting an adaptive chosen-message attack
-                        cannot achieve so much as existential forgery — the weakest achievement under the strongest
-                        access.
+                        cannot achieve so much as existential forgery, the weakest achievement under the strongest access.
+                        Signatures obtained from the signer do not count as forgeries. A forged message must be one on
+                        which the adversary requested no signature.
                     </p>
                 </div>
 
                 <p>
-                    The reason a scheme with appendix hashes the message before signing is now expressible in these
-                    terms. Existential forgery typically proceeds by manufacturing a signature first and asking afterward
-                    what message it happens to validate; if every signature recovers some message, such a forgery is
-                    immediate. Interposing a one-way function blocks this: a forged signature recovers a digest, and to
-                    turn that digest into a forged <em>message</em> the adversary would have to invert the function and
-                    find a preimage, which one-wayness forbids. The hash must be fixed as part of the scheme rather than
-                    chosen per signature, so that an adversary cannot substitute a weak function and defeat the
-                    protection. This is why signatures with appendix are the common case in practice, and why the
-                    weakness they avoid will reappear, in sharp form, in the recovery-style scheme built next.
+                    The reason a scheme with appendix hashes the message before signing is now expressible in these terms.
+                    Existential forgery typically proceeds by manufacturing a signature first and asking afterward what
+                    message it happens to validate. If every signature recovers some message, such a forgery is immediate.
+                    Interposing a one-way function blocks this. A forged signature now recovers a digest, and to turn that
+                    digest into a forged <em>message</em> the adversary would have to invert the function and find a
+                    preimage, which a one-way function is designed to make infeasible. The hash must be fixed as part of
+                    the scheme rather than chosen per signature, so that an adversary cannot substitute a weak function
+                    and defeat the protection. This is why signatures with appendix are the common case in practice, and
+                    why the weakness they avoid will reappear, in sharp form, in the recovery-style scheme built next.
                 </p>
             </section>
 
@@ -240,102 +251,124 @@ uses_python: false
                 <h2>Signing by Reversing RSA</h2>
 
                 <p>
-                    The framework asks for a private capability that marks and a public one that checks. The previous
-                    page already built a function with exactly the needed shape and used it the other way around. The
+                    The framework asks for a private capability that marks and a public one that checks. The previous page
+                    already built a function with exactly the needed shape and used it the other way around. The
                     <a href="diffie_hellman_rsa.html#D-rsa" class="ref-link"><strong>RSA scheme</strong></a> fixes a
-                    modulus \(n = pq\) and a pair of exponents with \(ed \equiv 1 \pmod{\phi(n)}\), the public exponent
-                    \(e\) raising a residue and the private exponent \(d\) undoing it. For encryption the world raises
-                    with \(e\) and only the holder of \(d\) brings the result back; signing exchanges the roles, the
-                    signer applying \(d\) to produce a mark and the world applying \(e\) to check it. No new construction
-                    is required, only the observation that the trapdoor runs in both directions.
+                    modulus \(n = pq\), sets \(\phi(n) = (p-1)(q-1)\), and chooses a pair of exponents with
+                    \(ed \equiv 1 \pmod{\phi(n)}\), the public exponent \(e\) raising a residue and the private exponent
+                    \(d\) undoing it. For encryption the world raises with \(e\) and only the holder of \(d\) brings the
+                    result back. Signing exchanges the roles, with the signer applying \(d\) to produce a mark and the
+                    world applying \(e\) to check it. No new construction is required, only the observation that the
+                    trapdoor runs in both directions.
                 </p>
 
                 <p>
-                    Concretely, to sign a message \(m\) the signer computes \(s = m^d \bmod n\), and a verifier given
-                    only \(s\) recovers \(s^e \bmod n\) and accepts it as the message. That the recovered value is the
-                    original is the same congruence that made decryption invert encryption, read with \(e\) and \(d\)
-                    swapped: since \(ed \equiv 1 \pmod{\phi(n)}\), the
+                    Concretely, to sign a message \(m\), an integer with \(0 \leq m \leq n-1\), the signer computes
+                    \(s = m^d \bmod n\), and a verifier given only \(s\) recovers \(s^e \bmod n\) and accepts it as the
+                    message. That the recovered value is the original is the same congruence that made decryption invert
+                    encryption, read with \(e\) and \(d\) swapped. Since \(ed \equiv 1 \pmod{\phi(n)}\), the
                     <a href="diffie_hellman_rsa.html#T-rsa_correctness" class="ref-link"><strong>correctness of RSA</strong></a>
                     gives \(s^e \equiv m^{de} \equiv m \pmod n\). The recovery established there for the cipher is, with
-                    the exponents in the opposite order, exactly the verification step here. This is a message-recovery
-                    scheme in the sense of the framework: the verifier reconstructs \(m\) from \(s\) by raising to \(e\),
-                    needing no copy of the message in advance. Signing a digest \(h(m)\) in place of \(m\) turns it into
-                    a scheme with appendix, for long messages or where the existential weakness examined below must be
-                    foreclosed.
+                    the exponents in the opposite order, exactly the verification step here.
+                </p>
+
+                <p>
+                    The result is a message-recovery scheme in the sense of the framework. The verifier reconstructs \(m\)
+                    from \(s\) by raising to \(e\) and needs no copy of the message in advance. Signing a digest \(h(m)\)
+                    in place of \(m\) turns it into a scheme with appendix, for long messages or where the existential
+                    weakness examined below must be foreclosed.
                 </p>
 
                 <div class="proof">
                     <span class="proof-title">Example: Signing in Miniature</span>
                     <p>
                         Take \(p = 11\), \(q = 17\), so \(n = 187\) and \(\phi(n) = 10 \cdot 16 = 160\). Choosing public
-                        exponent \(e = 7\) (coprime to \(160\)) gives private exponent \(d = 23\), since \(7 \cdot 23 =
-                        161 \equiv 1 \pmod{160}\). To sign \(m = 8\) the signer computes \(s = 8^{23} \bmod 187 = 83\).
-                        A verifier raises the signature to the public exponent and recovers \(83^{7} \bmod 187 = 8\),
-                        which is the message itself. The exponentiation that verifies is the same operation that
-                        would decrypt under this key, applied to the signature in place of a ciphertext — the reversal
-                        made arithmetic.
+                        exponent \(e = 7\) (coprime to \(160\)) gives private exponent \(d = 23\), since
+                        \(7 \cdot 23 = 161 \equiv 1 \pmod{160}\). To sign \(m = 8\) the signer computes
+                        \(s = 8^{23} \bmod 187 = 83\). A verifier raises the signature to the public exponent and recovers
+                        \(83^{7} \bmod 187 = 8\), which is the message itself. The exponentiation that verifies is the
+                        same operation that would decrypt under this key, applied to the signature in place of a
+                        ciphertext, so the reversal of roles appears here as plain arithmetic.
                     </p>
                 </div>
 
                 <p>
-                    The security of this signature inherits the previous page's structure directly. Anyone who can
-                    factor \(n\) recovers \(\phi(n)\), hence \(d\) from \(e\), and signs at will — a total break — so the
-                    scheme is no stronger than the
+                    The security of this signature inherits the previous page's structure directly. Anyone who can factor
+                    \(n\) recovers \(\phi(n)\), hence \(d\) from \(e\), and signs at will, which is a total break. The
+                    scheme is therefore no stronger than the
                     <a href="intractable_problems.html#D-integer_factorization" class="ref-link"><strong>integer
-                    factorization problem</strong></a>; this is the signing-side reading of the fact that
+                    factorization problem</strong></a>, and this bound is the signing-side reading of the fact that
                     <a href="diffie_hellman_rsa.html#T-d_recovery_factoring_equivalent" class="ref-link"><strong>recovering
-                    the private exponent is equivalent to factoring</strong></a>. But factoring is not the only route to
-                    a forgery, and the second route is the one the framework warned of. The signing operation carries the
-                    multiplicative structure of modular exponentiation: if \(s_1 = m_1^{d}\) and \(s_2 = m_2^{d}\) are
-                    valid signatures, then
+                    the private exponent is equivalent to factoring</strong></a>. But factoring is not the only route to a
+                    forgery, and the second route is the one the framework warned of. The signing operation carries the
+                    multiplicative structure of modular exponentiation. If \(s_1 = m_1^{d} \bmod n\) and
+                    \(s_2 = m_2^{d} \bmod n\) are valid signatures, then
                 </p>
 
                 <p>
-                    \[ (s_1 s_2)^{e} \equiv (m_1^{d} m_2^{d})^{e} \equiv m_1^{de} m_2^{de} \equiv m_1 m_2 \pmod n, \]
+                    \[
+                    \begin{align*}
+                    (s_1 s_2)^{e}
+                    &\equiv (m_1^{d} m_2^{d})^{e} \\\\
+                    &\equiv m_1^{de} m_2^{de} \\\\
+                    &\equiv m_1 m_2 \pmod n,
+                    \end{align*}
+                    \]
                 </p>
 
                 <p>
-                    so the product \(s_1 s_2\) is a valid signature on the product \(m_1 m_2\) — a signature the signer
-                    never issued, assembled from two it did. Worse, the product needs no honest signatures at all: an
-                    adversary may pick any \(s\), declare it a signature, and compute the message it validates as \(s^e
-                    \bmod n\), obtaining a valid pair on a message it does not control. That is existential forgery, free
-                    for the taking against the raw scheme. The same multiplicative law that here forges a signature was,
-                    on the previous page, what let a chosen-ciphertext adversary maul one ciphertext into another and
-                    recover a plaintext; it is one algebraic property read once on the decryption side and once on the
-                    signing side.
+                    so the product \(s_1 s_2\) is a valid signature on the message \(m_1 m_2 \bmod n\). The signer never
+                    issued that signature, and the adversary assembled it from two the signer did issue. Worse, a forgery
+                    needs no honest signatures at all. An adversary may pick any \(s\), declare it a signature, and
+                    compute the message it validates as \(s^e \bmod n\). The adversary thereby holds a valid pair on a
+                    message it does not control. That is existential forgery, free for the taking against the raw scheme.
+                </p>
+
+                <p>
+                    The same multiplicative law that here forges a signature was, on the previous page, what let a
+                    chosen-ciphertext adversary maul one ciphertext into another and recover a plaintext. One algebraic
+                    property is thus read once on the decryption side and once on the signing side.
                 </p>
 
                 <div class="proof">
                     <span class="proof-title">Example: A Forgery from Two Signatures</span>
                     <p>
                         With the same key \((n = 187,\ e = 7,\ d = 23)\), suppose the signer has issued signatures on
-                        \(m_1 = 3\) and \(m_2 = 5\): namely \(s_1 = 3^{23} \bmod 187 = 181\) and \(s_2 = 5^{23} \bmod 187
-                        = 180\). Their product is \(s_1 s_2 = 181 \cdot 180 \equiv 42 \pmod{187}\), and raising it to the
-                        public exponent gives \(42^{7} \bmod 187 = 15 = m_1 m_2 \bmod 187\). So \(42\) is a valid
-                        signature on \(15\), a message the signer never signed, produced by the adversary from two it
-                        did — and had the adversary simply chosen \(s = 42\) to begin with, the same pair would have
-                        appeared with no honest signatures used at all.
+                        \(m_1 = 3\) and \(m_2 = 5\): namely \(s_1 = 3^{23} \bmod 187 = 181\) and
+                        \(s_2 = 5^{23} \bmod 187 = 180\). Their product is
+                        \(s_1 s_2 = 181 \cdot 180 \equiv 42 \pmod{187}\), and raising it to the public exponent gives
+                        \(42^{7} \bmod 187 = 15 = m_1 m_2 \bmod 187\). So \(42\) is a valid signature on \(15\), a
+                        message the signer never signed, produced by the adversary from two it did. Had the adversary
+                        simply chosen \(s = 42\) to begin with, the same pair would have appeared with no honest
+                        signatures used at all.
                     </p>
                 </div>
 
                 <p>
-                    The remedy is the one the framework already identified, now forced by a concrete attack. Before the
-                    private exponent is applied, the message is passed through a fixed, publicly known
-                    <strong>redundancy function</strong> \(R\), and a verifier accepts only when the recovered value
-                    lies in the image of \(R\). For the forgery to survive, the adversary's manufactured value \(s^e
-                    \bmod n\) would have to land in that image, which a well-chosen \(R\) makes overwhelmingly unlikely;
-                    and for the multiplicative attack to survive, \(R\) must not respect products, so that \(R(m_1)
-                    R(m_2)\) is essentially never \(R(m_1 m_2)\). This is the deterministic-encryption lesson transposed:
-                    a public-key operation applied bare to a raw message leaks structure an adversary exploits, and the
-                    cure is a mandated preprocessing step — a source of
+                    The framework already identified the remedy, and a concrete attack now forces it. Before the private
+                    exponent is applied, the message is passed through a fixed, publicly known
+                    <strong>redundancy function</strong> \(R\), and a verifier accepts only when the recovered value lies
+                    in the image of \(R\). For the forgery to survive, the adversary's manufactured value \(s^e \bmod n\)
+                    would have to land in that image, which a well-chosen \(R\) makes overwhelmingly unlikely. To defeat
+                    the multiplicative attack, \(R\) must not respect products, so that \(R(m_1) R(m_2) \bmod n\)
+                    essentially never lies in the image of \(R\).
+                </p>
+
+                <p>
+                    The deterministic-encryption lesson reappears here in transposed form. A public-key operation applied
+                    bare to a raw message leaks structure an adversary exploits, and the cure is a mandated preprocessing
+                    step. There it was a source of
                     <a href="security_definitions.html#D-randomized_encryption" class="ref-link"><strong>randomness</strong></a>
-                    against distinguishing there, a redundancy against forgery here — without which the textbook
-                    operation is only the skeleton of the secure object. Choosing \(R\) well is itself delicate:
-                    breaking the multiplicative law is necessary but not by itself sufficient, and a poorly matched
-                    redundancy can admit a selective forgery in which the adversary obtains a signature on a message of
-                    its own choosing. The point that survives every refinement is structural — the security of the
-                    scheme rests on the hardness of factoring, but no choice of redundancy buys security against an
-                    adversary for whom factoring itself has become easy.
+                    against distinguishing, and here it is a redundancy against forgery. Without that step the textbook
+                    operation is only the skeleton of the secure object.
+                </p>
+
+                <p>
+                    Choosing \(R\) well is itself delicate. Breaking the multiplicative law is necessary but not by itself
+                    sufficient, and a poorly matched redundancy can admit a selective forgery in which the adversary
+                    obtains a signature on a message of its own choosing. The point that survives every refinement is
+                    structural. The security of the scheme rests on the hardness of factoring, but no choice of redundancy
+                    buys security against an adversary for whom factoring itself has become easy.
                 </p>
             </section>
 
@@ -343,37 +376,42 @@ uses_python: false
                 <h2>Certificates and the Transfer of Trust</h2>
 
                 <p>
-                    Every protocol of the previous pages began with a silent assumption: that each party already holds an
-                    authentic copy of the other's public key. The whole apparatus of signing and verifying presumes that
-                    the verification key in hand truly belongs to the party it is attributed to. Yet this is precisely the
-                    binding that the opening of this page named as the second face of the authentication problem, and it
-                    cannot be taken for granted. A public key travels over the same open channel as everything else, and an
-                    adversary who can replace a message can equally replace a key in transit — substituting its own
-                    verification key for the genuine one, then signing forgeries that check perfectly against the
-                    substitute. Establishing what a signature certifies therefore reduces to a prior question: how does one
-                    come to hold an authentic public key at all?
+                    Every protocol of the previous pages rested on an assumption that those pages flagged but did not
+                    discharge: that each party already holds an authentic copy of the other's public key. The whole
+                    apparatus of signing and verifying presumes that the verification key in hand truly belongs to the
+                    party it is attributed to. Yet this is precisely the binding that the opening of this page named as
+                    the second face of the authentication problem, and it cannot be taken for granted. A public key
+                    travels over the same open channel as everything else, and an adversary who can replace a message can
+                    equally replace a key in transit. The adversary can substitute its own verification key for the
+                    genuine one and then sign forgeries that check perfectly against the substitute. Establishing what a
+                    signature certifies therefore reduces to a prior question: how does one come to hold an authentic
+                    public key at all?
                 </p>
 
                 <p>
                     The honest answer is that authenticity must enter from outside the channel. One could obtain a key by
                     hand from its owner, or from a trusted directory consulted over a secured connection, or from a server
                     that returns keys in signed replies. Each works, and each carries the burden of a secure or trusted
-                    channel maintained continuously. The interesting reduction is the one that needs such a channel only
-                    once: bind a public key to a named identity inside an object that itself carries a signature, so that
-                    any party able to check that one signature can thereafter accept the bound key over a channel that is
-                    not trusted at all. The signature built on this page is exactly the tool that object requires. Two
-                    constructions realize it — one resting on a signature directly, the other on hashing alone — and the
-                    difference between them will matter again when the quantum adversary arrives.
+                    channel maintained continuously.
+                </p>
+
+                <p>
+                    The interesting reduction needs a trusted channel only once. It binds a public key to a named identity
+                    inside an object that itself carries a signature, so that any party able to check that one signature
+                    can thereafter accept the bound key over a channel that is not trusted at all. The signature built on
+                    this page is the tool that object requires. Two constructions realize it, one resting on a signature
+                    directly and the other on hashing alone. The difference between them will matter again when the
+                    quantum adversary arrives.
                 </p>
 
                 <h3>The Certificate as a Signed Binding</h3>
 
                 <p>
-                    The first construction packages the binding as a signed statement. A certificate is a data structure in
-                    two parts: a data part, holding at minimum a public key together with a string naming the party that
-                    key belongs to, and a signature part, holding the signature of a trusted issuer over that data part.
-                    The issuer — the certification authority — is a party whose own verification key is already held
-                    authentically by everyone in the system, distributed once through whatever out-of-band means the
+                    The first construction packages the binding as a signed statement. A certificate is a data structure
+                    in two parts: a data part, holding at minimum a public key together with a string naming the party
+                    that key belongs to, and a signature part, holding the signature of a trusted issuer over that data
+                    part. The issuer, called the certification authority, is a party whose own verification key is already
+                    held authentically by everyone in the system, distributed once through whatever out-of-band means the
                     setting allows. By signing the pairing of a name with a key, the authority vouches that the key is the
                     genuine key of the named party.
                 </p>
@@ -392,43 +430,50 @@ uses_python: false
 
                 <p>
                     The verification a recipient performs is the verification map of this page, applied with the
-                    authority's public key to the certificate's data part and signature part. Nothing new is needed: a
-                    certificate is an application of the signature already constructed, its message being the assertion
-                    "this key belongs to this name." Because the recipient checks a signature rather than the key's origin,
-                    the certificate may be fetched over an open channel, forwarded by any party, or stored in a public
-                    directory; tampering with either the bound key or the bound name invalidates the signature, and the
-                    one-wayness that forecloses existential forgery forecloses a forged certificate by the same argument.
+                    authority's public key to the certificate's data part and signature part. Nothing new is needed. A
+                    certificate is an application of the signature already constructed, whose message is the assertion
+                    "this key belongs to this name." Because the recipient checks a signature rather than the key's
+                    origin, the certificate may be fetched over an open channel, forwarded by any party, or stored in a
+                    public directory. Tampering with either the bound key or the bound name invalidates the signature. A
+                    forged certificate would be a valid signature of the authority on a data part it never signed, which a
+                    scheme secure against existential forgery rules out.
                 </p>
 
                 <p>
-                    What the certificate accomplishes is best stated precisely: it does not establish trust, it transfers
-                    it. A recipient who trusts the authority's single verification key acquires, through one signature
-                    check, trust in the authenticity of any key the authority has certified — trust in one key propagated
-                    to trust in many. The trust at the root, by contrast, is established by something the mathematics does
-                    not supply. The authority's own key must be obtained authentically to begin with, and the authority's
-                    judgement that a key really belongs to a named party rests on procedures outside cryptography
-                    altogether — identity checks, registration, the conventions of the institution that runs it. This is
-                    the thin part, and it is thin in an honest sense: the cryptographic object certifies a binding, but
-                    what the binding is worth depends on a human process for which no theorem can vouch. Authenticity of
-                    the root key is required; secrecy of it is not, since a verification key is public by design.
+                    What the certificate accomplishes is best stated precisely. It transfers trust rather than
+                    establishing it. A recipient who trusts the authority's single verification key acquires, through one
+                    signature check, trust in the authenticity of any key the authority has certified. Trust in one key
+                    thus propagates to trust in many.
+                </p>
+
+                <p>
+                    The trust at the root, by contrast, is established by something the mathematics does not supply. The
+                    authority's own key must be obtained authentically to begin with, and the authority's judgment that a
+                    key really belongs to a named party rests on procedures outside cryptography altogether, such as
+                    identity checks, registration, and the conventions of the institution that runs it. This is the thin
+                    part, and it is thin in an honest sense. The cryptographic object certifies a binding, but what the
+                    binding is worth depends on a human process for which no theorem can vouch. Authenticity of the root
+                    key is required. Its secrecy is not, since a verification key is public by design.
                 </p>
 
                 <h3>Authentication Trees</h3>
 
                 <p>
                     The second construction transfers trust without signing the bound key at all. It rests on nothing
-                    beyond a collision-resistant hash and the shape of a <a href="trees_and_enumeration.html#D-binary_tree" class="ref-link"><strong>binary tree</strong></a>. Suppose an authority must vouch for many public values
-                    at once — the keys of many parties, or many keys of one party. Rather than sign each, it places the
-                    values at the leaves of a binary tree and hashes upward: the edge leaving a leaf carries the hash of
-                    that leaf's value, and each internal vertex carries the hash of its two incoming edge-labels
-                    concatenated. The label that emerges at the root condenses every leaf into a single value, in the sense
-                    that altering any leaf forces a different root unless a collision is found.
+                    beyond a collision-resistant hash and the shape of a
+                    <a href="trees_and_enumeration.html#D-binary_tree" class="ref-link"><strong>binary tree</strong></a>.
+                    Suppose an authority must vouch for many public values at once, such as the keys of many parties or
+                    many keys of one party. Rather than sign each, it places the values at the leaves of a binary tree and
+                    hashes upward. The edge leaving a leaf carries the hash of that leaf's value, and each internal vertex
+                    carries the hash of its two incoming edge-labels concatenated. The label that emerges at the root
+                    condenses every leaf into a single value, in the sense that altering any leaf forces a different root
+                    unless a collision is found.
                 </p>
 
-                <div class="figure" style="margin: 1.5rem 0; text-align: center;">
+                <figure style="margin: 1.5rem 0; text-align: center;">
                     <svg width="100%" viewBox="0 0 640 360" role="img" style="max-width: 640px; height: auto;" aria-labelledby="auth-title auth-desc">
                         <title id="auth-title">An authentication tree over four public values</title>
-                        <desc id="auth-desc">Four public values Y1 through Y4 sit at the leaves of a binary tree. The edge leaving each leaf carries the hash of that value. The leaves Y1 and Y2 combine at an internal vertex labelled h1, that vertex combines with the hash of Y3 at a second internal vertex labelled h2, and h2 combines with the hash of Y4 at the root R. The root condenses all four leaves into a single value. To authenticate the leaf Y1, a party supplies the sibling labels h of Y2, h of Y3, and h of Y4 along the path to the root, recomputes the labels up that path, and accepts when the recomputed root equals the trusted value R.</desc>
+                        <desc id="auth-desc">Four public values Y1 through Y4 sit at the leaves of a binary tree. The edge leaving each leaf carries the hash of that value. The leaves Y1 and Y2 combine at an internal vertex labeled h1, that vertex combines with the hash of Y3 at a second internal vertex labeled h2, and h2 combines with the hash of Y4 at the root R. The root condenses all four leaves into a single value. To authenticate the leaf Y1, a party supplies the sibling labels h of Y2, h of Y3, and h of Y4 along the path to the root, recomputes the labels up that path, and accepts when the recomputed root equals the trusted value R.</desc>
                         <defs>
                             <marker id="auth-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                                 <path d="M 0 1 L 8 5 L 0 9" fill="none" stroke="currentColor" stroke-width="1.5"/>
@@ -479,43 +524,53 @@ uses_python: false
                         <text x="70" y="150" text-anchor="start" fill="#3d7ab5" font-size="11" font-family="sans-serif">sibling labels</text>
                         <text x="70" y="166" text-anchor="start" fill="currentColor" font-size="11" fill-opacity="0.7" font-family="sans-serif">supplied to verify Y<tspan font-size="8" dy="2">1</tspan></text>
                     </svg>
-                </div>
+                </figure>
 
                 <div class="theorem" id="D-authentication_tree">
                     <span class="theorem-title">Definition: Authentication Tree</span>
                     <p>
-                        Let \(h\) be a collision-resistant hash function and let \(T\) be a binary tree whose \(t\) leaves
-                        are labelled by public values \(Y_1, \dots, Y_t\). The <em>authentication tree</em> over these
-                        values labels the edge leaving the leaf \(Y_i\) with \(h(Y_i)\), and labels the upper edge of each
-                        internal vertex whose two incoming edges carry labels \(a\) and \(b\) with \(h(a \mathbin\| b)\),
-                        where \(\mathbin\|\) denotes concatenation. The label \(R\) at the root authenticates all \(t\)
-                        leaves at once: given an authentic \(R\), a leaf value \(Y_i\) is accepted as authentic when the
-                        labels along the unique path from \(Y_i\) to the root — recomputed from \(Y_i\) and the sibling
-                        labels supplied along that path — reproduce \(R\).
+                        Let \(h\) be a collision-resistant hash function with fixed-length output, and let \(T\) be a full
+                        binary tree whose \(t \geq 2\) leaves are labeled by public values \(Y_1, \dots, Y_t\). The
+                        <em>authentication tree</em> over these values labels the edge leaving the leaf \(Y_i\) with
+                        \(h(Y_i)\). Each internal vertex whose two incoming edges carry labels \(a\) and \(b\) receives
+                        the label \(h(a \mathbin\| b)\), where \(\mathbin\|\) denotes concatenation, and passes it to its
+                        upper edge. The label \(R\) received by the root authenticates all \(t\) leaves at once. Given an
+                        authentic \(R\), a leaf value \(Y_i\) is accepted as authentic when the labels along the unique
+                        path from \(Y_i\) to the root, recomputed from \(Y_i\) and the sibling labels supplied along that
+                        path, reproduce \(R\).
                     </p>
                 </div>
 
                 <p>
-                    Verifying one leaf costs only the labels along its path. To authenticate \(Y_1\) in the tree drawn
-                    above, a party is handed the sibling labels \(h(Y_2)\), \(h(Y_3)\), \(h(Y_4)\); it computes \(h(Y_1)\)
-                    itself, combines it with \(h(Y_2)\) to recover the first internal label, combines that with \(h(Y_3)\)
-                    for the next, and finally with \(h(Y_4)\) to reach the root, accepting precisely when the result equals
-                    the trusted \(R\). On a balanced tree the path from a leaf to the root has length about \(\lg t\), so a
-                    value among \(t\) is authenticated by hashing roughly \(\lg t\) times — and only the single root value
-                    need be held authentically, in place of \(t\) separate registrations. A forged leaf would have to
-                    reproduce the same root along its path, which means exhibiting a collision in \(h\); collision
-                    resistance is exactly what forbids it, so the security of the whole structure reduces to a single
-                    property of the hash.
+                    The authentication tree is the Merkle tree previewed where binary trees were introduced, now with its
+                    verification made precise. Verifying one leaf costs only the labels along its path. To authenticate
+                    \(Y_1\) in the tree drawn above, a party is handed the sibling labels \(h(Y_2)\), \(h(Y_3)\),
+                    \(h(Y_4)\). The party computes \(h(Y_1)\) itself, combines it with \(h(Y_2)\) to recover the first
+                    internal label, combines that with \(h(Y_3)\) for the next, and finally combines with \(h(Y_4)\) to
+                    reach the root. It accepts precisely when the result equals the trusted \(R\). On a balanced tree the
+                    path from a leaf to the root has length about \(\lg t\), so a value among \(t\) is authenticated by
+                    hashing roughly \(\lg t\) times. Only the single root value need be held authentically, in place of
+                    \(t\) separate registrations.
                 </p>
 
                 <p>
-                    The two constructions divide along a clean line. A certificate transfers trust through a
-                    signature — the authority's private key produces the binding, and the public key checks it. An
-                    authentication tree transfers trust through a hash — no signing key participates at all, only the
-                    one-wayness and collision resistance of \(h\). That second remark is the one to carry forward. A
-                    structure that authenticates using nothing but a hash rests on an assumption of a different kind than
-                    the trapdoor underlying the signature, and the next section shows that this difference is exactly what
-                    decides which of these survives an adversary the previous pages have been pointing toward all along.
+                    A forged leaf value \(Y' \neq Y_i\) accepted along the path of \(Y_i\) would have to reproduce \(R\).
+                    Compare the labels recomputed from \(Y'\) with the genuine ones along that path. If
+                    \(h(Y') = h(Y_i)\), the pair \(Y'\), \(Y_i\) is already a collision. Otherwise the two sequences of
+                    labels differ at the leaf and agree at the root. At the lowest vertex where they agree, the labels
+                    entering it differ and have fixed length, so two different concatenations have the same hash. Either
+                    way the forger exhibits a collision in \(h\). Collision resistance forbids this, so the security of
+                    the whole structure reduces to a single property of the hash.
+                </p>
+
+                <p>
+                    The two constructions divide along a clean line. A certificate transfers trust through a signature.
+                    The authority's private key produces the binding, and the public key checks it. An authentication tree
+                    transfers trust through a hash. No signing key participates at all, and only the collision resistance
+                    of \(h\) is used. That second remark is the one to carry forward. A structure that authenticates using
+                    nothing but a hash rests on an assumption of a different kind from the trapdoor underlying the
+                    signature. The next section shows that this difference decides which of the two constructions survives
+                    an adversary the previous pages have been pointing toward all along.
                 </p>
             </section>
 
@@ -523,64 +578,78 @@ uses_python: false
                 <h2>What Survives, What Falls</h2>
 
                 <p>
-                    Before turning to that adversary, one boundary of what a signature provides should be marked, since
-                    it separates two kinds of authentication that are easy to conflate. The signature of this page is a
-                    <em>public-key</em> mechanism: producing a mark requires a private key, but checking it requires only
+                    Before turning to that adversary, one boundary of what a signature provides should be marked, since it
+                    separates two kinds of authentication that are easy to conflate. The signature of this page is a
+                    <em>public-key</em> mechanism. Producing a mark requires a private key, but checking it requires only
                     a public one, so any third party can verify, and the signer cannot later disown a valid signature
-                    without disowning the key itself. There is also a symmetric counterpart, in which two parties share
-                    one secret key and append to a message a tag computed under it. Such a tag authenticates the message
-                    to a party who holds the key — it detects tampering and confirms the sender is one of the two
-                    keyholders — but it confers neither third-party verifiability nor non-repudiation, because either
-                    keyholder can produce it, so neither can prove to an outsider which of them did. Symmetric
-                    authentication is cheaper and suffices when the parties trust each other and only a shared channel
-                    must be protected; the public-key signature is what is needed when origin must be provable to anyone
-                    and denial must be foreclosed. It is the latter that the certificates of the preceding section rest on,
-                    and the latter alone that the rest of this section concerns.
+                    without disowning the key itself.
                 </p>
 
                 <p>
-                    The signature built here, and the only one this track has yet constructed, rests on factoring,
-                    exactly as the cipher and the key agreement before it rested on factoring and the discrete logarithm.
-                    That shared foundation is also a shared vulnerability. Both problems are instances of finding a
-                    hidden period in an abelian group, and a quantum algorithm — Shor's — recovers such periods in
-                    polynomial time. The same procedure that factors the modulus, and so exposes the private exponent of
-                    the cipher, exposes the private exponent of the signature; there is no separate quantum attack to
-                    mount, because signing and decrypting are the same trapdoor read in opposite directions, and the
-                    trapdoor itself is what dissolves.
+                    There is also a symmetric counterpart, in which two parties share one secret key and append to a
+                    message a tag computed under it. A party who holds the key can use such a tag to detect tampering
+                    and to confirm that the sender is one of the two keyholders. The tag confers neither third-party
+                    verifiability nor non-repudiation, however, because either keyholder can produce it, so neither can
+                    prove to an outsider which of them did. Symmetric authentication is cheaper and suffices when the
+                    parties trust each other and only a shared channel must be protected. The public-key signature is
+                    what is needed when origin must be provable to anyone and denial must be foreclosed. It is the
+                    latter that the certificates of the preceding section rest on, and the latter alone that the rest of
+                    this section concerns.
+                </p>
+
+                <p>
+                    The signature built here, and the only one these pages have yet constructed, rests on factoring, as
+                    the cipher and the key agreement before it rested on factoring and the discrete logarithm. That
+                    shared foundation is also a shared vulnerability. Both problems are instances of finding a hidden
+                    period in an abelian group, and Shor's quantum algorithm recovers such periods in polynomial time.
+                    The same procedure that factors the modulus, and so exposes the private exponent of the cipher,
+                    exposes the private exponent of the signature. There is no separate quantum attack to mount,
+                    because signing and decrypting are the same trapdoor read in opposite directions, and the trapdoor
+                    itself is what dissolves.
                 </p>
 
                 <p>
                     The reach of this collapse is sharp, and overstating it would misread the situation as badly as
-                    ignoring it. Shor's algorithm dismantles security that was tied to a hidden abelian structure —
-                    factoring and the discrete logarithm among them. It does not dismantle cryptography in general. The symmetric authentication just described,
-                    and the one-way functions on which signatures-with-appendix depend, face only the generic quadratic
-                    speedup of a quantum search, which lowers the effective security level by half and is answered by
-                    enlarging keys and outputs rather than by abandoning the design. The line does not run between
-                    classical and quantum security; it runs between schemes whose hardness reduces to a hidden abelian
-                    period and schemes whose hardness does not. The first family falls together; the second persists,
-                    diminished only by a factor a designer can compensate for.
+                    ignoring it. Shor's algorithm dismantles security that was tied to the hidden abelian structure shared
+                    by factoring and the discrete logarithm. It does not dismantle cryptography in general. The symmetric
+                    authentication just described, and the one-way functions on which signatures with appendix depend,
+                    face, as far as is known, only the generic quadratic speedup of a quantum search, which halves the
+                    effective security level measured in bits and is answered by enlarging keys and outputs rather than by
+                    abandoning the design. The line does not run between classical and quantum security. It runs between
+                    schemes whose hardness reduces to a hidden abelian period and schemes whose hardness does not. The
+                    first family falls together, while the second loses nothing to Shor's algorithm.
                 </p>
 
                 <p>
-                    This is why the successor to the construction of this page is not a stronger version of it. A
-                    signature resting on a harder instance of factoring still rests on factoring, and a single quantum
-                    algorithm answers every instance at once. The replacement must move the private capability onto a
-                    hardness that no known quantum algorithm touches and to which factoring and the discrete logarithm
-                    are not known to reduce. Two directions have been carried forward. One keeps the signing operation a private
-                    inversion of a public function but bases that function on the geometry of high-dimensional lattices
-                    rather than on the arithmetic of primes. The other abandons trapdoors entirely and builds a signature
-                    out of nothing but a one-way function, deriving unforgeability from the preimage and collision
-                    resistance of hashing alone. This second direction is not a new idea so much as the authentication
-                    tree of the preceding section taken to its conclusion: the structure that transferred trust using only
-                    a hash already authenticated without any signing key, and a hash tree over a signer's own one-time
-                    keys turns that same mechanism into a signature in its own right. The hashing that elsewhere on this
-                    page only preprocessed a message becomes, in that family, the whole foundation of the mark — and
-                    because it leans on no hidden abelian period, it is the family Shor leaves standing. Both directions are already standardized, and which to
-                    use is a question of trade-offs the first section of this track recorded rather than one this page
-                    reopens. What the page closes is the account of the classical signature: how a private key marks
-                    what a public key checks, how that mark certifies origin and forecloses denial, and why the
-                    particular mark built from RSA shares both the structure and the expiry date of the cipher it
-                    reverses.
+                    The same line explains why the successor to the construction of this page is not a stronger version of
+                    it. A signature resting on a harder instance of factoring still rests on factoring, and a single
+                    quantum algorithm answers every instance at once. The replacement must move the private capability
+                    onto a hardness that no known quantum algorithm touches and to which factoring and the discrete
+                    logarithm are not known to reduce.
+                </p>
+
+                <p>
+                    Two directions have been carried forward. One keeps the signing operation a private inversion of a
+                    public function but bases that function on the geometry of high-dimensional lattices rather than on
+                    the arithmetic of primes. The other abandons trapdoors entirely and builds a signature out of
+                    nothing but a one-way function, deriving unforgeability from the preimage and collision resistance
+                    of hashing alone.
+                </p>
+
+                <p>
+                    This second direction is not a new idea so much as the authentication tree of the preceding section
+                    taken to its conclusion. The structure that transferred trust using only a hash already authenticated
+                    without any signing key, and a hash tree over a signer's own one-time keys, each used to sign a single
+                    message, turns that same mechanism into a signature in its own right. The hashing that elsewhere on
+                    this page only preprocessed a message becomes, in that family, the whole foundation of the mark.
+                    Because it leans on no hidden abelian period, that family is the one Shor leaves standing. Both
+                    directions were standardized in 2024, and choosing between them is outside the scope of this page.
+                </p>
+
+                <p>
+                    What the page closes is the account of the classical signature: how a private key marks what a public
+                    key checks, how that mark certifies origin and forecloses denial, and why the particular mark built
+                    from RSA shares both the structure and the expiry date of the cipher it reverses.
                 </p>
             </section>
 
