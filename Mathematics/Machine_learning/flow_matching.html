@@ -181,45 +181,59 @@ uses_python: false
                     The continuity equation is what makes the conditional construction pay off. The marginal velocity field
                     that transports \(p_t\) is recovered from the conditional fields by a weighted average. Each data point
                     contributes the field aimed at it, weighted by how plausibly the current location \(\mathbf{x}\) arose
-                    from that point:
+                    from that point.
                 </p>
 
-                \[
-                    \mathbf{u}_t(\mathbf{x}) = \int \mathbf{u}_t(\mathbf{x} \mid \mathbf{z})\,
-                    \frac{p_t(\mathbf{x} \mid \mathbf{z})\, p_{\text{data}}(\mathbf{z})}{p_t(\mathbf{x})}\, \mathrm{d}\mathbf{z}.
-                \]
+                <div class="theorem" id="T-marginalization_trick">
+                    <span class="theorem-title">Theorem: The Marginalization Trick</span>
+                    <p>
+                        Suppose that for each data point \(\mathbf{z}\) the conditional field \(\mathbf{u}_t(\cdot \mid \mathbf{z})\)
+                        transports the conditional path, so that
+                        \[
+                        \partial_t\, p_t(\mathbf{x} \mid \mathbf{z})
+                        = -\operatorname{div}\big(p_t(\cdot \mid \mathbf{z})\, \mathbf{u}_t(\cdot \mid \mathbf{z})\big)(\mathbf{x}),
+                        \]
+                        and assume that \(p_t\) is continuous and that \(\partial_t\) and \(\operatorname{div}\) may be
+                        exchanged with integration over \(\mathbf{z}\). Define the marginal field, wherever
+                        \(p_t(\mathbf{x}) \gt 0\), by
+                        \[
+                        \mathbf{u}_t(\mathbf{x}) = \int \mathbf{u}_t(\mathbf{x} \mid \mathbf{z})\,
+                        \frac{p_t(\mathbf{x} \mid \mathbf{z})\, p_{\text{data}}(\mathbf{z})}{p_t(\mathbf{x})}\, \mathrm{d}\mathbf{z}.
+                        \]
+                        Then the pair \((p_t, \mathbf{u}_t)\) satisfies the continuity equation
+                        \(\partial_t\, p_t = -\operatorname{div}(p_t\, \mathbf{u}_t)\) on the open set where \(p_t \gt 0\).
+                    </p>
+                </div>
 
                 <p>
                     This formula, the <strong>marginalization trick</strong>, is the theoretical heart of flow matching. Its
                     weights are the posterior density of \(\mathbf{z}\) given \(\mathbf{x}_t = \mathbf{x}\), which is
-                    defined wherever \(p_t(\mathbf{x}) \gt 0\). Suppose each conditional field transports its conditional
-                    path, so that
+                    defined wherever \(p_t(\mathbf{x}) \gt 0\).
                 </p>
 
-                \[
-                    \partial_t\, p_t(\mathbf{x} \mid \mathbf{z})
-                    = -\operatorname{div}\big(p_t(\cdot \mid \mathbf{z})\, \mathbf{u}_t(\cdot \mid \mathbf{z})\big)(\mathbf{x}).
-                \]
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Differentiating the mixture under the integral sign and applying the conditional continuity
+                        equation, we obtain
+                        \[
+                        \begin{align*}
+                        \partial_t\, p_t(\mathbf{x})
+                        &= -\int \operatorname{div}\big(p_t(\cdot \mid \mathbf{z})\, \mathbf{u}_t(\cdot \mid \mathbf{z})\big)(\mathbf{x})\,
+                        p_{\text{data}}(\mathbf{z})\, \mathrm{d}\mathbf{z} \\\\
+                        &= -\operatorname{div}\big(p_t\, \mathbf{u}_t\big)(\mathbf{x}),
+                        \end{align*}
+                        \]
+                        since the integral of
+                        \(p_t(\mathbf{x} \mid \mathbf{z})\, \mathbf{u}_t(\mathbf{x} \mid \mathbf{z})\, p_{\text{data}}(\mathbf{z})\)
+                        over \(\mathbf{z}\) is \(p_t(\mathbf{x})\, \mathbf{u}_t(\mathbf{x})\) by the definition of the marginal
+                        field.
+                    </p>
+                </div>
 
                 <p>
-                    Differentiating the mixture under the integral sign, which we take for granted, we obtain
-                </p>
-
-                \[
-                    \begin{align*}
-                    \partial_t\, p_t(\mathbf{x})
-                    &= -\int \operatorname{div}\big(p_t(\cdot \mid \mathbf{z})\, \mathbf{u}_t(\cdot \mid \mathbf{z})\big)(\mathbf{x})\,
-                    p_{\text{data}}(\mathbf{z})\, \mathrm{d}\mathbf{z} \\\\
-                    &= -\operatorname{div}\big(p_t\, \mathbf{u}_t\big)(\mathbf{x}),
-                    \end{align*}
-                \]
-
-                <p>
-                    since the integral of
-                    \(p_t(\mathbf{x} \mid \mathbf{z})\, \mathbf{u}_t(\mathbf{x} \mid \mathbf{z})\, p_{\text{data}}(\mathbf{z})\)
-                    over \(\mathbf{z}\) is \(p_t(\mathbf{x})\, \mathbf{u}_t(\mathbf{x})\) by the formula above. The marginal
-                    field therefore satisfies the continuity equation for the marginal path. It is intractable, just like
-                    the marginal density. The conditional field, by contrast, is explicit. Differentiating
+                    The marginal field is intractable, just like the marginal density. The conditional field, by
+                    contrast, is explicit. Differentiating
                     \(\mathbf{x}_t = \alpha_t \mathbf{z} + \beta_t \boldsymbol{\varepsilon}\) in \(t\) gives the velocity
                     \(\dot\alpha_t \mathbf{z} + \dot\beta_t \boldsymbol{\varepsilon}\), and substituting
                     \(\boldsymbol{\varepsilon} = (\mathbf{x}_t - \alpha_t \mathbf{z})/\beta_t\) expresses it as a function
@@ -263,36 +277,55 @@ uses_python: false
                 <p>
                     with the expectation over a random time \(t \sim \mathrm{Unif}[0,1]\), a data point
                     \(\mathbf{z} \sim p_{\text{data}}\), and a point \(\mathbf{x}_t \sim p_t(\cdot \mid \mathbf{z})\) on the
-                    conditional path. In both losses \(t\) is uniform on \([0,1]\), and drawing \(\mathbf{z}\) and then
-                    \(\mathbf{x}_t\) produces \(\mathbf{x}_t \sim p_t\), so the two expectations of
-                    \(\|\mathbf{u}_t^{\boldsymbol{\theta}}(\mathbf{x}_t)\|^2\) coincide. For the cross terms, the
-                    marginalization trick gives
+                    conditional path. In both losses \(t\) is uniform on \([0,1]\).
                 </p>
 
-                \[
-                    \begin{align*}
-                    \iint \big\langle \mathbf{u}_t^{\boldsymbol{\theta}}(\mathbf{x}), \mathbf{u}_t(\mathbf{x} \mid \mathbf{z}) \big\rangle\,
-                    p_t(\mathbf{x} \mid \mathbf{z})\, p_{\text{data}}(\mathbf{z})\, \mathrm{d}\mathbf{z}\, \mathrm{d}\mathbf{x}
-                    &= \int \big\langle \mathbf{u}_t^{\boldsymbol{\theta}}(\mathbf{x}), \mathbf{u}_t(\mathbf{x}) \big\rangle\,
-                    p_t(\mathbf{x})\, \mathrm{d}\mathbf{x}.
-                    \end{align*}
-                \]
+                <div class="theorem" id="T-cfm_equivalence">
+                    <span class="theorem-title">Theorem: Conditional and Marginal Flow Matching Differ by a Constant</span>
+                    <p>
+                        Let \(\mathbf{u}_t\) be the marginal field of the marginalization trick, and suppose that
+                        \(\mathbb{E}\big[\|\mathbf{u}_t(\mathbf{x}_t \mid \mathbf{z})\|^2\big]\) and
+                        \(\mathbb{E}\big[\|\mathbf{u}_t(\mathbf{x}_t)\|^2\big]\) are finite. Then for every
+                        \(\boldsymbol{\theta}\) with \(\mathbb{E}\big[\|\mathbf{u}_t^{\boldsymbol{\theta}}(\mathbf{x}_t)\|^2\big]\)
+                        finite, the flow matching and conditional flow matching losses satisfy
+                        \[
+                        \begin{align*}
+                        \mathcal{L}_{\text{CFM}}(\boldsymbol{\theta})
+                        &= \mathcal{L}_{\text{FM}}(\boldsymbol{\theta}) \\\\
+                        &\quad + \mathbb{E}\big[\|\mathbf{u}_t(\mathbf{x}_t \mid \mathbf{z})\|^2\big]
+                        - \mathbb{E}\big[\|\mathbf{u}_t(\mathbf{x}_t)\|^2\big],
+                        \end{align*}
+                        \]
+                        and the last two terms do not depend on \(\boldsymbol{\theta}\). In particular the two losses have
+                        the same minimizers, and the same gradient wherever either is differentiable.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Drawing \(\mathbf{z}\) and then \(\mathbf{x}_t\) produces \(\mathbf{x}_t \sim p_t\), so the two
+                        expectations of \(\|\mathbf{u}_t^{\boldsymbol{\theta}}(\mathbf{x}_t)\|^2\) coincide. The cross terms
+                        are integrable because \(|\langle \mathbf{a}, \mathbf{b} \rangle| \le \frac{1}{2}(\|\mathbf{a}\|^2 + \|\mathbf{b}\|^2)\),
+                        and for each \(t\) the definition of the marginal field gives
+                        \[
+                        \begin{align*}
+                        \iint \big\langle \mathbf{u}_t^{\boldsymbol{\theta}}(\mathbf{x}), \mathbf{u}_t(\mathbf{x} \mid \mathbf{z}) \big\rangle\,
+                        p_t(\mathbf{x} \mid \mathbf{z})\, p_{\text{data}}(\mathbf{z})\, \mathrm{d}\mathbf{z}\, \mathrm{d}\mathbf{x}
+                        &= \int \big\langle \mathbf{u}_t^{\boldsymbol{\theta}}(\mathbf{x}), \mathbf{u}_t(\mathbf{x}) \big\rangle\,
+                        p_t(\mathbf{x})\, \mathrm{d}\mathbf{x}.
+                        \end{align*}
+                        \]
+                        Averaging over \(t\), the cross terms of the two losses agree as well. Expanding both squares, every
+                        term that depends on \(\boldsymbol{\theta}\) cancels in the difference, which leaves the stated
+                        constant.
+                    </p>
+                </div>
 
                 <p>
-                    Expanding both squares, the two losses therefore differ by
-                </p>
-
-                \[
-                    \mathbb{E}\big[\|\mathbf{u}_t(\mathbf{x}_t \mid \mathbf{z})\|^2\big]
-                    - \mathbb{E}\big[\|\mathbf{u}_t(\mathbf{x}_t)\|^2\big],
-                \]
-
-                <p>
-                    a constant independent of \(\boldsymbol{\theta}\), provided these expectations are finite. They
-                    have identical gradients, and minimizing the conditional loss is exactly minimizing the marginal
-                    one. The network is only ever shown conditional targets, yet over a sufficiently expressive
-                    family the minimizer is their posterior average, the marginal field that transports
-                    \(p_{\text{init}}\) into \(p_{\text{data}}\).
+                    Minimizing the conditional loss is therefore exactly minimizing the marginal one. The network is only
+                    ever shown conditional targets, yet over a sufficiently expressive family the minimizer is their
+                    posterior average, the marginal field that transports \(p_{\text{init}}\) into \(p_{\text{data}}\).
                 </p>
 
                 <p>
