@@ -31,13 +31,13 @@ uses_python: false
                 <h2>Why Encryption Must Be Randomized</h2>
 
                 <p>
-                    The <a href="intro_cryptography.html"><strong>previous page</strong></a> fixed an encryption scheme as a family of injective maps \(E_e \colon
-                    \mathcal{M} \to \mathcal{C}\), one per key, and treated each \(E_e\) as a fixed function: a given
-                    plaintext under a given key always produces the same ciphertext. We flagged there that this
-                    <em>deterministic</em> choice carries a weakness, and set the repair aside. We collect that debt now,
-                    because the weakness is not a detail of one construction — it is a barrier that no deterministic
-                    scheme can clear, and the security definitions that follow are built to measure exactly what clearing
-                    it requires.
+                    The <a href="intro_cryptography.html"><strong>previous page</strong></a> fixed an encryption scheme
+                    as a family of injective maps \(E_e \colon \mathcal{M} \to \mathcal{C}\), one per key, and treated
+                    each \(E_e\) as a fixed function, so that a given plaintext under a given key always produces the
+                    same ciphertext. We flagged there that this <em>deterministic</em> choice carries a weakness, and set
+                    the repair aside. We collect that debt now. The weakness is a barrier that no deterministic scheme
+                    can clear, not a detail of one construction, and the security definitions that follow are built to
+                    measure exactly what clearing it requires.
                 </p>
 
                 <p>
@@ -47,37 +47,38 @@ uses_python: false
                 </p>
 
                 <p>
-                    <strong>1. Repetition.</strong><br> Because \(E_e\) is a function, equal plaintexts produce
-                    equal ciphertexts: \(m = m'\) forces \(E_e(m) = E_e(m')\). An observer who sees the same ciphertext
-                    twice learns that the same message was sent twice, without breaking anything — the equality of
-                    ciphertexts is visible directly. In a setting where messages recur, the pattern of repetitions is
-                    itself information, and a deterministic scheme transmits it in the clear.
+                    <strong>1. Repetition.</strong><br> Because \(E_e\) is a function, \(m = m'\) forces
+                    \(E_e(m) = E_e(m')\), so equal plaintexts produce equal ciphertexts. An observer who sees the same
+                    ciphertext twice learns that the same message was sent twice, without breaking anything, since the
+                    equality of ciphertexts is visible directly. In a setting where messages recur, the pattern of
+                    repetitions is itself information, and a deterministic scheme transmits it in the clear.
                 </p>
 
                 <p>
-                    <strong>2. Distribution dependence.</strong><br> Suppose the adversary knows that the
-                    plaintext is drawn from a small or skewed set — a yes/no instruction, a choice among a handful of
-                    fixed commands, a field whose likely values are few. Under Kerckhoffs's principle the scheme itself
-                    is public; if the encryption transformation is also public to the adversary, as in a public-key
-                    setting, the adversary can encrypt each likely plaintext directly, and even when the transformation
-                    is not public, a chosen-plaintext adversary can obtain such encryptions. Either way the adversary can compare against the observed
-                    ciphertext. A deterministic scheme offers no defense here, because the ciphertext it produces for a
-                    given plaintext is a fixed target the adversary can reproduce and match.
+                    <strong>2. Distribution dependence.</strong><br> Suppose the adversary knows that the plaintext is
+                    drawn from a small or skewed set, such as a yes/no instruction, a choice among a handful of fixed
+                    commands, or a field whose likely values are few. Under
+                    <a href="intro_cryptography.html#D-kerckhoffs_principle" class="ref-link"><strong>Kerckhoffs's principle</strong></a>
+                    the scheme itself is public. If the encryption transformation is also public to the adversary, as in
+                    a public-key setting, the adversary can encrypt each likely plaintext directly. Even when the
+                    transformation is not public, a chosen-plaintext adversary can obtain such encryptions. Either way
+                    the adversary can compare against the observed ciphertext. A deterministic scheme offers no defense
+                    here, because the ciphertext it produces for a given plaintext is a fixed target the adversary can
+                    reproduce and match.
                 </p>
 
                 <p>
-                    <strong>3. Partial information.</strong><br> The third sharpens the second: even when the
-                    adversary cannot recover the whole plaintext, a
-                    deterministic scheme may leak some part of it — some predicate, some
-                    fragment, some single bit that the ciphertext determines and the adversary can compute. Recovering
-                    the plaintext in full is only the crudest notion of a break; a scheme that hides the message but
-                    discloses a reliable bit of it has still failed against an adversary who needs only that bit. The work
-                    of the sections ahead is to make this precise: what it means to leak nothing, not merely to hide the
-                    whole.
+                    <strong>3. Partial information.</strong><br> The third sharpens the second. Even when the adversary
+                    cannot recover the whole plaintext, a deterministic scheme may leak some part of it, for instance a
+                    predicate, a fragment, or a single bit that the ciphertext determines and the adversary can compute.
+                    Recovering the plaintext in full is only the crudest notion of a break. A scheme that hides the
+                    message but discloses a reliable bit of it has still failed against an adversary who needs only that
+                    bit. The work of the sections ahead is to make this precise: what it means to leak nothing, not
+                    merely to hide the whole.
                 </p>
 
                 <p>
-                    All three failures share one root: a deterministic \(E_e\) is a fixed map, so the ciphertext is a
+                    All three failures share one root. A deterministic \(E_e\) is a fixed map, so the ciphertext is a
                     deterministic function of the plaintext, and any structure in the plaintext passes through to
                     structure in the ciphertext that the adversary can read or reproduce. The repair is to break the
                     functional dependence. A <strong>randomized</strong> encryption scheme draws fresh randomness at
@@ -95,33 +96,33 @@ uses_python: false
                         \]
                         and to encrypt a plaintext \(m\) the sender draws \(r \in \mathcal{R}\) afresh, uniformly and
                         independently of past encryptions, and transmits \(E_e(m, r)\). Decryption recovers the plaintext
-                        from the ciphertext alone: there is a map \(D_d\) with
+                        from the ciphertext alone. There is a map \(D_d\) with
                         \[
                         D_d\bigl(E_e(m, r)\bigr) = m \quad \text{for every } m \in \mathcal{M} \text{ and every } r \in
                         \mathcal{R}.
                         \]
-                        For each fixed \(m\), varying \(r\) ranges over a set of ciphertexts all decrypting to \(m\); the
-                        scheme is no longer a function of the plaintext but a one-to-many assignment, while decryption
-                        remains unambiguous.
+                        For each fixed \(m\), varying \(r\) ranges over a set of ciphertexts all decrypting to \(m\).
+                        Encryption is no longer a function of the plaintext alone but a one-to-many assignment, while
+                        decryption remains unambiguous.
                     </p>
                 </div>
 
                 <p>
                     The decryption condition forces a structural fact: distinct plaintexts must have disjoint ciphertext
-                    sets. If some ciphertext \(c\) could arise as \(E_e(m, r)\) and also as \(E_e(m', r')\) with \(m \neq
-                    m'\), then \(D_d(c)\) would have to equal both \(m\) and \(m'\), contradicting that decryption returns
-                    a single plaintext. So the ciphertext space partitions: each plaintext owns a private region of
-                    \(\mathcal{C}\), and randomness selects which point of its own region a given encryption lands on.
-                    Re-encrypting a message now lands on a different point, and an adversary that encrypts a candidate
-                    plaintext itself cannot predict which point the sender chose.
+                    sets. If some ciphertext \(c\) could arise as \(E_e(m, r)\) and also as \(E_e(m', r')\) with
+                    \(m \neq m'\), then \(D_d(c)\) would have to equal both \(m\) and \(m'\), contradicting that
+                    decryption returns a single plaintext. So the ciphertext space partitions. Each plaintext owns a
+                    private region of \(\mathcal{C}\), and randomness selects which point of its own region a given
+                    encryption lands on. Re-encrypting a message now lands on a different point, and an adversary that
+                    encrypts a candidate plaintext itself cannot predict which point the sender chose.
                 </p>
 
                 <p>
                     Randomization is the precondition for the security this page defines, not an optional hardening of
-                    it. But possibility is not security: a plaintext having many ciphertexts is worthless if the
+                    it. But possibility is not security. A plaintext having many ciphertexts is worthless if the
                     adversary can still tell one plaintext's ciphertexts from another's. We need a definition that holds
-                    the scheme to the right standard — not "the adversary cannot recover the key," nor even "cannot
-                    recover the plaintext," but "cannot extract anything the plaintext was meant to hide."
+                    the scheme to the right standard. That standard is not "the adversary cannot recover the key," nor
+                    even "cannot recover the plaintext," but "cannot extract anything the plaintext was meant to hide."
                 </p>
             </section>
 
@@ -138,10 +139,10 @@ uses_python: false
                 <p>
                     The contest is sharp precisely because the adversary is handed every advantage short of the key.
                     Rather than wait for messages it cannot control, the adversary itself names the two plaintexts whose
-                    encryptions it will try to tell apart — the easiest possible discrimination task, since it knows the
-                    candidates exactly. It is then shown the encryption of one of them, chosen by a fair coin it cannot
+                    encryptions it will try to tell apart. Knowing the candidates exactly, it faces the easiest possible
+                    discrimination task. It is then shown the encryption of one of them, chosen by a fair coin it cannot
                     see, and asked which. A scheme that hides information must defeat the adversary even on this
-                    self-chosen, two-way choice; if it can leak enough to bias that one guess, it has leaked something.
+                    self-chosen, two-way choice. If it leaks enough to bias that one guess, it has leaked something.
                 </p>
 
                 <div class="theorem" id="D-indistinguishability">
@@ -149,9 +150,10 @@ uses_python: false
                     <p>
                         Security is measured by the following game between a challenger holding the key and an adversary
                         \(\mathcal{A}\), played at security parameter \(n\) (the key length). Throughout, \(\mathcal{A}\)
-                        may encrypt plaintexts of its own choosing: in a public-key setting the encryption key is public,
-                        and in a shared-key setting this is the chosen-plaintext access granted by the attack model of
-                        the previous page.
+                        may encrypt plaintexts of its own choosing. In a public-key setting the encryption key is public,
+                        and in a shared-key setting this is the chosen-plaintext access granted by the
+                        <a href="intro_cryptography.html#D-attack_model" class="ref-link"><strong>attack model</strong></a>
+                        of the previous page.
                     </p>
                     <ol style="padding-left: 40px;">
                         <li>
@@ -173,8 +175,8 @@ uses_python: false
                         \[
                         \Pr[b' = b] \le \tfrac{1}{2} + \varepsilon(n),
                         \]
-                        where the advantage \(\varepsilon(n)\) over a blind coin-flip is negligible: it shrinks faster
-                        than the reciprocal of any polynomial in \(n\).
+                        where the advantage \(\varepsilon(n)\) over a blind coin-flip is negligible, meaning that it
+                        shrinks faster than the reciprocal of any polynomial in \(n\).
                     </p>
                 </div>
 
@@ -185,47 +187,48 @@ uses_python: false
                 <p>
                     The bound is stated against <strong>polynomial-time</strong> adversaries. This is where the
                     complexity notions invoked on the previous page enter the definition itself. "The adversary cannot
-                    win" does not mean no winning strategy exists in principle — exhaustive key search always exists —
-                    but that no strategy runs within the resource budget of a feasible attacker, made precise as time
+                    win" does not mean that no winning strategy exists in principle, since exhaustive key search always
+                    exists. It means that no strategy runs within the resource budget of a feasible attacker, made
+                    precise as time
                     <a href="time_complexity.html#D-class_P" class="ref-link"><strong>polynomial</strong></a> in the
-                    security parameter.
-                    A scheme is secure against the bounded adversary the previous page described, not against an
-                    unbounded one; the unbounded case is the separate and stronger guarantee taken up later.
+                    security parameter. A scheme is secure against the bounded adversary the previous page described, not
+                    against an unbounded one. The unbounded case is the separate and stronger guarantee taken up later.
                 </p>
 
                 <p>
                     The winning margin must be <strong>negligible</strong>. An adversary can always achieve exactly
                     \(\tfrac{1}{2}\) by ignoring the ciphertext and flipping its own coin, and can do slightly better by
-                    luck on any given run. What security forbids is a margin a feasible attacker can convert into a
-                    reliable advantage — one small enough to be
+                    luck on any given run. What security forbids is a margin that a feasible attacker can convert into a
+                    reliable advantage. A permitted margin must be small enough to be
                     <a href="time_complexity.html#D-little_o" class="ref-link"><strong>little-o</strong></a> of every
                     inverse polynomial, so that it cannot be amplified into a usable edge by repeating the attack a
-                    feasible number of times.
-                    This is the precise form of the "non-negligible probability" the previous page used to separate a
-                    genuine break from a lucky guess.
+                    feasible number of times. This is the precise form of the "non-negligible probability" the previous
+                    page used to separate a genuine break from a lucky guess.
                 </p>
 
                 <p>
-                    The adversary <strong>chooses the plaintexts</strong>. This single feature subsumes both
+                    The adversary <strong>chooses the plaintexts</strong>. This single feature subsumes the first two
                     deterministic failures from the first section at once. If the scheme were deterministic, the
                     adversary would name any two distinct plaintexts, encrypt \(m_0\) itself, and compare with the
-                    challenge: a match reveals \(b = 0\), a mismatch \(b = 1\), and the adversary wins with certainty.
-                    Indistinguishability is therefore unattainable for deterministic schemes — the game formalizes
-                    exactly why randomization was forced. It also disposes of distribution dependence: by letting the
-                    adversary pick the worst pair of plaintexts, the definition demands security for every distribution
-                    over messages, not merely an average-case one, since the hardest two-point distribution is among the
-                    adversary's choices.
+                    challenge. A match reveals \(b = 0\) and a mismatch reveals \(b = 1\), so the adversary wins with
+                    certainty. Indistinguishability is therefore unattainable for deterministic schemes, and the game
+                    formalizes exactly why randomization was forced.
                 </p>
 
                 <p>
-                    One further constraint of the game is not a design choice but an
-                    honest accounting of what encryption does not promise to hide: \(m_0\) and \(m_1\) are required to
-                    have <strong>equal length</strong>. A ciphertext generally reveals the
-                    length of its plaintext, and an adversary allowed to submit plaintexts of different lengths could
-                    win trivially by reading off the ciphertext size, defeating the scheme for a reason that has nothing
-                    to do with the secrecy of content. Fixing equal lengths isolates the property we actually want:
-                    that nothing <em>about the content</em> leaks. The question of concealing length is a separate
-                    concern addressed by other means.
+                    The same feature also disposes of distribution dependence. By letting the adversary pick the worst
+                    pair of plaintexts, the definition demands security for every distribution over messages, not merely
+                    an average-case one, since the hardest two-point distribution is among the adversary's choices.
+                </p>
+
+                <p>
+                    One further constraint of the game is not a design choice but an honest accounting of what encryption
+                    does not promise to hide. The plaintexts \(m_0\) and \(m_1\) are required to have
+                    <strong>equal length</strong>. A ciphertext generally reveals the length of its plaintext, and an
+                    adversary allowed to submit plaintexts of different lengths could win trivially by reading off the
+                    ciphertext size, defeating the scheme for a reason that has nothing to do with the secrecy of
+                    content. Fixing equal lengths isolates the property we actually want: that nothing <em>about the
+                    content</em> leaks. The question of concealing length is a separate concern addressed by other means.
                 </p>
             </section>
 
@@ -233,20 +236,20 @@ uses_python: false
                 <h2>Semantic Security</h2>
 
                 <p>
-                    The indistinguishability game is a clean test, but it phrases security negatively and narrowly: the
-                    adversary fails to win one specific two-way guessing contest. The intuition we began with was
-                    broader and positive — a ciphertext should betray nothing about its plaintext that the adversary
+                    The indistinguishability game is a clean test, but it phrases security negatively and narrowly, as
+                    the adversary's failure to win one specific two-way guessing contest. The intuition we began with
+                    was broader and positive. A ciphertext should betray nothing about its plaintext that the adversary
                     could not already have known. We now state that intuition directly, in a form that makes no
                     reference to any game.
                 </p>
 
                 <p>
-                    The difficulty is to say what "betray nothing" means without smuggling in a list of forbidden
-                    leaks. We cannot enumerate every fact an adversary might extract — a parity bit, a price bracket,
-                    whether the message names a particular person. The semantic formulation avoids the list by a single
-                    move: it compares two worlds. In one, the adversary holds the ciphertext; in the other, it holds
-                    nothing but the public description of the message distribution. The scheme is secure if these two
-                    worlds are computationally the same — anything the adversary can compute from the ciphertext, it
+                    The difficulty is to say what "betray nothing" means without smuggling in a list of forbidden leaks.
+                    We cannot enumerate every fact an adversary might extract, such as a parity bit, a price bracket, or
+                    whether the message names a particular person. The semantic formulation avoids the list by comparing
+                    two worlds. In one, the adversary holds the ciphertext. In the other, it holds nothing but the
+                    public description of the message distribution. The scheme is secure if these two worlds are
+                    computationally the same, that is, if anything the adversary can compute from the ciphertext it
                     could already compute without it.
                 </p>
 
@@ -255,41 +258,45 @@ uses_python: false
                     <p>
                         A scheme is <strong>semantically secure</strong> if whatever a polynomial-time adversary can
                         compute about the plaintext from the ciphertext, it can already compute in polynomial time
-                        without it — for every distribution over the message space. Formally, for every polynomial-time
-                        adversary \(\mathcal{A}\) given a challenge ciphertext there is a polynomial-time
-                        <strong>simulator</strong> \(\mathcal{S}\) given only the length of the plaintext such that, for
-                        every function \(f\) of the plaintext the adversary might wish to compute, the probability that
-                        \(\mathcal{A}\) correctly computes \(f(m)\) exceeds the probability that \(\mathcal{S}\) does so
-                        by only a negligible amount.
+                        without it, for every distribution over the message space. Formally, let \(\mathcal{A}\) be any
+                        polynomial-time adversary given a challenge ciphertext. Then there is a polynomial-time
+                        <strong>simulator</strong> \(\mathcal{S}\), given only the length of the plaintext, such that,
+                        for every distribution over the message space and every function \(f\) of the plaintext the
+                        adversary might wish to compute, when the plaintext \(m\) is drawn from that distribution, the
+                        probability that \(\mathcal{A}\) correctly computes \(f(m)\) exceeds the probability that
+                        \(\mathcal{S}\) does so by only a negligible amount.
                     </p>
                 </div>
 
                 <p>
                     The simulator is the heart of the definition. It is a hypothetical algorithm that must reproduce the
-                    adversary's success while being denied the one thing the adversary has — the ciphertext. If such a
-                    simulator always exists, the ciphertext was useless to the adversary: every inference it supported
-                    was already available from public knowledge of the message distribution and the plaintext's length
-                    alone.
+                    adversary's success while being denied the one thing the adversary has, namely the ciphertext. If
+                    such a simulator always exists, the ciphertext was useless to the adversary. Every inference it
+                    supported was already available from public knowledge of the message distribution and the
+                    plaintext's length alone.
                 </p>
 
                 <p>
-                    This is the definition that retires the third deterministic failure from the first section. There we
+                    The semantic definition retires the third deterministic failure from the first section. There we
                     observed that a scheme can hide a plaintext in full yet leak a reliable bit of it, and that
-                    recovering the whole message is too crude a notion of a break. Semantic security is the notion that
-                    is not too crude: it forbids leaking <em>any</em> function \(f\) of the plaintext, from the whole
-                    message down to a single predicate, because \(f\) ranges over everything the adversary might want.
-                    A scheme that disclosed even one reliable bit would admit an \(f\) — that bit — which the adversary
-                    computes from the ciphertext and no simulator can match, and the definition would catch it.
+                    recovering the whole message is too crude a notion of a break.
                 </p>
 
                 <p>
-                    Semantic security also clarifies what was meant, on the previous page, by tying secrecy to the whole
-                    message distribution rather than a single message. The guarantee is quantified over <em>every</em>
-                    distribution: it must hold whether the plaintext is a uniform random string or one of two known
-                    commands. This is the same universality the indistinguishability game achieved by letting the
-                    adversary choose the plaintexts, approached now from the opposite side — not "the adversary picks the
-                    worst case" but "the guarantee holds in all cases." That the two routes lead to the same place is
-                    the content of the next section.
+                    Semantic security is the notion that is not too crude. It forbids leaking <em>any</em> function
+                    \(f\) of the plaintext, from the whole message down to a single predicate, because \(f\) ranges
+                    over everything the adversary might want. A scheme that disclosed even one reliable bit would be
+                    caught, because that bit is an \(f\) that the adversary computes from the ciphertext and no
+                    simulator can match.
+                </p>
+
+                <p>
+                    The definition also ties secrecy to the whole message distribution rather than to a single message.
+                    The guarantee is quantified over <em>every</em> distribution, and it must hold whether the plaintext
+                    is a uniform random string or one of two known commands. The indistinguishability game reached the
+                    same universality from the opposite side, by letting the adversary choose the plaintexts. There the
+                    adversary picks the worst case, and here the guarantee holds in all cases. That the two routes lead
+                    to the same place is the content of the next section.
                 </p>
             </section>
 
@@ -297,11 +304,11 @@ uses_python: false
                 <h2>The Two Definitions Agree</h2>
 
                 <p>
-                    We now have two definitions of the same intention. Indistinguishability is operational and narrow: win
-                    a two-way guessing game no more often than chance. Semantic security is conceptual and broad: leak no
-                    function of the plaintext beyond what is already public. The first is easy to test against a scheme;
-                    the second captures what we actually want. Their value comes from a single fact: they are the same
-                    condition.
+                    We now have two definitions of the same intention. Indistinguishability is operational and narrow. It
+                    asks only that the adversary win a two-way guessing game no more often than chance. Semantic security
+                    is conceptual and broad. It asks that no function of the plaintext leak beyond what is already
+                    public. The first is easy to test against a scheme, and the second states what we want. Their value
+                    comes from a single fact: they are the same condition.
                 </p>
 
                 <div class="theorem" id="T-ind_semantic_equivalence">
@@ -340,17 +347,18 @@ uses_python: false
                 </p>
 
                 <p>
-                    <strong>Semantic security implies indistinguishability.</strong><br> This direction is immediate in
-                    contrapositive: an adversary who wins the indistinguishability game is already a violation of
-                    semantic security. Suppose some adversary distinguishes the encryptions of two chosen plaintexts
-                    \(m_0, m_1\) with non-negligible advantage. Consider the function \(f\) that the semantic definition
-                    quantifies over, taken to be the single bit "is the plaintext \(m_1\) rather than \(m_0\)." From the
-                    ciphertext, the winning adversary computes this bit with probability non-negligibly above one half.
-                    No simulator denied the ciphertext can match this: knowing only that the plaintext is one of \(m_0,
-                    m_1\) — each equally likely — the best blind guess of the bit succeeds with probability exactly one
-                    half. The adversary's edge over every simulator is therefore non-negligible, which is precisely the
-                    failure of semantic security. So a semantically secure scheme cannot have a distinguishing
-                    adversary; it has indistinguishable encryptions.
+                    <strong>Semantic security implies indistinguishability.</strong><br> This direction is immediate
+                    in contrapositive, because an adversary who wins the indistinguishability game is already a
+                    violation of semantic security. Suppose some adversary distinguishes the encryptions of two chosen
+                    plaintexts \(m_0, m_1\) with non-negligible advantage. Take the message distribution in the
+                    semantic definition to be uniform on \(\{m_0, m_1\}\), and take the function \(f\) to be the
+                    single bit "is the plaintext \(m_1\) rather than \(m_0\)." From the ciphertext, the winning
+                    adversary computes this bit with probability non-negligibly above one half. No simulator denied
+                    the ciphertext can match this. A simulator knows only that the plaintext is one of \(m_0, m_1\),
+                    each equally likely, so its best blind guess of the bit succeeds with probability exactly one
+                    half. The adversary's edge over every simulator is therefore non-negligible, which is precisely
+                    the failure of semantic security. A semantically secure scheme thus admits no distinguishing
+                    adversary and has indistinguishable encryptions.
                 </p>
 
                 <p>
@@ -360,40 +368,44 @@ uses_python: false
                     some \(f(m)\) from the ciphertext, a simulator \(\mathcal{S}\) that does as well without it. The
                     simulator's strategy is to run \(\mathcal{A}\) on a <em>decoy</em>. Rather than the true ciphertext,
                     which it does not have, \(\mathcal{S}\) encrypts a fixed dummy plaintext of the correct length,
-                    drawing the randomness itself, and feeds the result to \(\mathcal{A}\); it can do this because
-                    encryption is available to it just as it is to the adversary. Indistinguishability guarantees that
-                    \(\mathcal{A}\) cannot tell it has been fed a decoy rather than a real challenge — if it could, that
-                    detection would itself win the guessing game. So \(\mathcal{A}\) computes \(f\) on the decoy run
-                    essentially as well as it would have on the real ciphertext, and the simulator simply reports
-                    \(\mathcal{A}\)'s output. The ciphertext is thereby shown to have been dispensable: whatever
-                    \(\mathcal{A}\) extracted from it could be extracted from a decoy carrying none of the true
-                    plaintext's information. Any gap between the two runs would be a distinguisher, contradicting the
-                    hypothesis.
+                    drawing the randomness itself, and feeds the result to \(\mathcal{A}\). The simulator can do this
+                    because encryption is available to it just as it is to the adversary. Indistinguishability
+                    guarantees that \(\mathcal{A}\) cannot tell it has been fed a decoy rather than a real challenge,
+                    since if it could, that detection would itself win the guessing game. So \(\mathcal{A}\) computes
+                    \(f\) on the decoy run essentially as well as it would have on the real ciphertext, and the
+                    simulator simply reports \(\mathcal{A}\)'s output. The ciphertext is thereby shown to have been
+                    dispensable. Whatever \(\mathcal{A}\) extracted from it could be extracted from a decoy carrying
+                    none of the true plaintext's information. Any gap between the two runs would be a distinguisher,
+                    contradicting the hypothesis.
                 </p>
 
                 <div class="insight-box">
                     <h3>Math \(\leftrightarrow\) CS: Why the Equivalence Is Workable</h3>
                     <p>
-                        The equivalence is what makes the theory practicable. One proves indistinguishability — a finite,
-                        game-shaped obligation that reduces to a hardness assumption about some underlying problem — and
-                        obtains semantic security, the guarantee one actually cares about, for free. Every later claim
-                        that a scheme "leaks nothing about the plaintext" is established this way: not by arguing directly
-                        that no function leaks, which quantifies over all functions and all distributions, but by winning
-                        a single guessing game.
+                        The equivalence is what makes the theory practicable. One proves indistinguishability and obtains
+                        semantic security, the guarantee one cares about, for free. Indistinguishability is a game-shaped
+                        obligation that reduces to a hardness assumption about some underlying problem. Every later claim
+                        that a scheme "leaks nothing about the plaintext" is established this way: not by arguing
+                        directly that no function leaks, which quantifies over all functions and all distributions, but
+                        by showing that no efficient adversary wins a single guessing game.
                     </p>
                 </div>
 
                 <p>
                     The equivalence also closes the account opened on the previous page, where security split into the
                     unconditional and the computational. Perfect secrecy demanded that the ciphertext be statistically
-                    independent of the plaintext — no information, against an adversary of unlimited power — and we saw
-                    it costs a key as long as the message. Semantic security is the computational shadow of that
-                    demand: the ciphertext need not be independent of the plaintext, only independent <em>as far as a
-                    polynomial-time adversary can tell</em>. Relaxing "no information" to "no efficiently extractable
-                    information" is exactly what lifts the key-length barrier, allowing a short key to protect a long
-                    message — the trade the one-time pad could not make. The unconditional guarantee and its
-                    computational relaxation are the same idea held to two different standards of adversary, and the
-                    definitions of this page are the computational one made exact.
+                    independent of the plaintext, so that even an adversary of unlimited power gains no information from
+                    it, and we saw it costs a key at least as long as the message.
+                </p>
+
+                <p>
+                    Semantic security is the computational shadow of that demand. The ciphertext need not be
+                    independent of the plaintext, only independent <em>as far as a polynomial-time adversary can
+                    tell</em>. Relaxing "no information" to "no efficiently extractable information" is exactly what
+                    lifts the key-length barrier. A short key can then protect a long message, which is the trade the
+                    one-time pad could not make. The unconditional guarantee and its computational relaxation are the
+                    same idea held to two different standards of adversary, and the definitions of this page are the
+                    computational one made exact.
                 </p>
             </section>
 
@@ -401,36 +413,42 @@ uses_python: false
                 <h2>Stronger Notions</h2>
 
                 <p>
-                    Semantic security, in either of its equivalent forms, is the baseline a modern encryption scheme is
-                    expected to meet. It is not the ceiling. The guessing game of this page handed the adversary a
-                    specific power — it chose plaintexts and saw their encryptions — but real adversaries have more.
-                    Strengthening the definition is a matter of enlarging what the adversary may do, and the same
+                    Semantic security, in either of its equivalent forms, is the baseline an encryption scheme is
+                    expected to meet. It is not the ceiling. The guessing game of this page gave the adversary one
+                    specific power, the ability to choose plaintexts and see their encryptions. Real adversaries have
+                    more. Strengthening the definition is a matter of enlarging what the adversary may do, and the same
                     game-shaped template absorbs each enlargement.
                 </p>
 
                 <p>
                     The first enlargement follows the attack hierarchy of the previous page. The indistinguishability
-                    game as stated lets the adversary obtain encryptions of plaintexts it chooses; this is security
-                    against a chosen-plaintext attack. But the previous page placed a stronger adversary above it — one
-                    that can also obtain <em>decryptions</em> of ciphertexts of its choosing, even adaptively and even
-                    after seeing the challenge, though never of the target ciphertext itself. Granting the game's
-                    adversary that decryption access, and still demanding it cannot win, defines security against an
-                    adaptive chosen-ciphertext attack. The definition does not change shape — it is the same guessing
-                    game with a more powerful player — but the bar is far higher, and it is the bar that schemes
-                    deployed in adversarial settings are actually held to, because real systems do decrypt
-                    attacker-supplied ciphertexts.
+                    game as stated lets the adversary obtain encryptions of plaintexts it chooses, and so defines
+                    security against a chosen-plaintext attack. But the previous page placed a stronger adversary above
+                    it. That adversary can also obtain <em>decryptions</em> of ciphertexts of its choosing, even
+                    adaptively and even after seeing the challenge, though never of the target ciphertext itself.
+                </p>
+
+                <p>
+                    Granting the game's adversary that decryption access, and still demanding it cannot win,
+                    defines security against an adaptive chosen-ciphertext attack. The definition keeps its shape,
+                    since it is the same guessing game with a more powerful player. The bar, however, is far
+                    higher, and schemes deployed in adversarial settings are held to it because real systems do
+                    decrypt attacker-supplied ciphertexts.
                 </p>
 
                 <p>
                     A second strengthening asks for something the guessing game does not directly address:
                     <strong>non-malleability</strong>. A scheme is malleable if, given a ciphertext, an adversary can
-                    produce a different ciphertext whose plaintext is related to the original in a controlled way —
-                    without ever learning either plaintext. Indistinguishability forbids reading the message;
-                    non-malleability forbids tampering with it coherently. The two are not independent: a non-malleable
-                    scheme is also semantically secure, so non-malleability sits strictly above the baseline of this
-                    page. The distinction matters wherever a ciphertext is not merely read but acted upon — a transferred
-                    amount, a command — since there the threat is an adversary who alters the effect without breaking
-                    the secrecy.
+                    produce a different ciphertext whose plaintext is related to the original in a controlled way,
+                    without ever learning either plaintext. Indistinguishability forbids reading the message, and
+                    non-malleability forbids tampering with it coherently.
+                </p>
+
+                <p>
+                    Non-malleability is the stronger requirement. A non-malleable scheme is also semantically secure, so
+                    non-malleability sits strictly above the baseline of this page. The distinction matters wherever a
+                    ciphertext is not merely read but acted upon, as with a transferred amount or a command, since there
+                    the threat is an adversary who alters the effect without breaking the secrecy.
                 </p>
 
                 <figure style="margin: 1.5rem 0; text-align: center;">
@@ -460,25 +478,25 @@ uses_python: false
 
                 <p>
                     These notions branch from a single baseline along two independent axes, and the branching pattern is
-                    itself the durable object. Each stronger notion is the same construction — a game in which an
-                    adversary, granted some catalogue of powers, must fail to win — instantiated against a stronger
-                    adversary or aimed at a different goal. The catalogue grows; the shape does not. This is the
-                    framework the previous page promised would survive even a change in the model of computation: the
-                    definitions of security are claims about what a bounded adversary cannot do, and they remain
-                    meaningful whatever the adversary is built from, classical or quantum. What a quantum adversary
-                    changes is not the definitions but which schemes meet them — which underlying problems remain hard
-                    enough to anchor the bound.
+                    itself the durable object. Each stronger notion is the same construction, instantiated against a
+                    stronger adversary or aimed at a different goal. The construction is a game in which an adversary,
+                    granted some catalog of powers, must fail to win. The catalog grows, but the shape does not.
                 </p>
 
                 <p>
-                    That anchoring is the next concern. Every definition on this page is conditional: a scheme is secure
-                    if no efficient adversary wins, and whether one exists turns on the hardness of some computational
-                    problem the scheme is built from. We have defined what security means without yet exhibiting a single
-                    scheme that achieves it, because achieving it requires a problem believed intractable and a way to
-                    bind a scheme's security to that problem. Supplying both is the work the rest of the track takes up.
-                    It begins with the divide the previous page drew between a shared secret key and a public one, and
-                    the number-theoretic problems — factoring, the discrete logarithm — on whose presumed hardness the
-                    first concrete public-key schemes, and the meaning of "secure" made precise here, will rest.
+                    The template is the framework the previous page promised would survive even a change in the model of
+                    computation. The definitions of security are claims about what a bounded adversary cannot do, and
+                    they remain meaningful whatever the adversary is built from, classical or quantum. What a quantum
+                    adversary changes is not the definitions but which schemes meet them, that is, which underlying
+                    problems remain hard enough to anchor the bound.
+                </p>
+
+                <p>
+                    Every definition on this page is conditional. A scheme is secure if no efficient adversary wins,
+                    and whether one exists turns on the hardness of some computational problem the scheme is built
+                    from. We have defined what security means without yet exhibiting a single scheme that achieves it,
+                    because achieving it requires a problem believed intractable and a way to bind a scheme's security
+                    to that problem.
                 </p>
             </section>
 
