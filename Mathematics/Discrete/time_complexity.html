@@ -77,7 +77,8 @@ uses_python: true
                 <div class="theorem" id="D-little_o">
                     <span class="theorem-title">Definition: Little-o notation</span>
                     <p>
-                        Let \(f\) and \(g\) be functions \(f, g\colon \mathbb{N} \to \mathbb{R}^+\). Say that
+                        Let \(f\) and \(g\) be functions \(f, g\colon \mathbb{N} \to \mathbb{R}^+\) with \(g(n) \gt 0\) for all
+                        sufficiently large \(n\). Say that
                         \[
                         f(n) = o (g(n))
                         \]
@@ -252,7 +253,7 @@ uses_python: true
                             <pre class="python-code"> 
                                 #from js import performance
                                 import time
-                                # Accept all strings generated from the language A = {0^k 1^k | k >= 0} with O(n log n)
+                                # Accept all strings generated from the language A = {0^k 1^k | k >= 0}, following M2 (this list version runs in O(n))
                                 def machine2(w):
                                     tape = list(w)
 
@@ -321,18 +322,18 @@ uses_python: true
 
                                 # In this case, accepted strings often cause the worst-case performance
                                 # because they force the algorithm to do full verification.
-                                def worst_case_input(n):
-                                    print("n = ", n)
-                                    return "0" * n + "1" * n
+                                def worst_case_input(k):
+                                    print("k = ", k, ", n = ", 2 * k)
+                                    return "0" * k + "1" * k
 
                                 if __name__ == "__main__":
                                     # Define the length of the string. 
                                     input_str = worst_case_input(1000000)
-                                    # Measure machine 2: (O(n log n))
+                                    # Measure machine 2 (list version: O(n))
                                     start = time.time()
                                     machine2(input_str)
                                     end = time.time()
-                                    print("Machine2 (O(n log n)) took:", end - start, "seconds")
+                                    print("Machine2 (list version, O(n)) took:", end - start, "seconds")
                                     
                                     # Measure machine 3: (O(n))
                                     start = time.time()
@@ -383,7 +384,7 @@ uses_python: true
                     <p>
                         We show that the construction from 
                         the <a href="turing_machine.html#T-multitape_single_tape_equivalence" class="ref-link"><strong>multitape-single-tape equivalence</strong></a> 
-                        can be carried out within \(O(t^2(n))\) time. Recall that the simulating single-tape machine \(S\) stores the contents 
+                        can be carried out within \(O(t^2(n))\) time. Recall that the simulating single-tape machine \(T\) stores the contents 
                         of the multitape machine \(M\)'s \(k\) tapes consecutively on a single tape, separated by a delimiter \(\#\), with the head 
                         positions marked by dotted symbols.
                     </p>
@@ -391,21 +392,21 @@ uses_python: true
                         <strong>Bounding the active portion.</strong><br>
                         Since \(M\) runs for at most \(t(n)\) steps, each of its heads visits at most \(t(n) + 1\) cells, and the input occupies
                         \(n \leq t(n)\) cells of the first tape. Each virtual tape therefore has length at most \(t(n) + 1\). Summing over the \(k\)
-                        tapes and adding the \(k + 1\) delimiters, the active portion of \(S\)'s tape (from the leftmost to the \((k+1)\)-st
+                        tapes and adding the \(k + 1\) delimiters, the active portion of \(T\)'s tape (from the leftmost to the \((k+1)\)-st
                         delimiter) has length at most \(k(t(n) + 1) + k + 1 = O(t(n))\), since \(k\) is a fixed constant of the machine.
                     </p>
                     <p>
                         <strong>Cost per simulated step.</strong><br>
-                        To simulate one step of \(M\), \(S\) makes two passes over its active portion: the first to read the symbols under all \(k\)
+                        To simulate one step of \(M\), \(T\) makes two passes over its active portion: the first to read the symbols under all \(k\)
                         virtual heads, and the second to update the virtual tape contents and head positions according to \(M\)'s transition
-                        function. Each pass costs \(O(t(n))\). The machine \(S\) may also need to shift a portion of its tape rightward by one cell,
+                        function. Each pass costs \(O(t(n))\). The machine \(T\) may also need to shift a portion of its tape rightward by one cell,
                         up to \(k\) times, to make room when a virtual head moves into a previously unused cell. Each such shift also costs
                         \(O(t(n))\). The total cost of simulating one \(M\)-step is therefore \(O(t(n))\).
                     </p>
                     <p>
                         <strong>Total time.</strong><br>
                         The initial reformatting of the input takes \(O(n)\) steps. Simulating the at most \(t(n)\) steps of \(M\) costs at most
-                        \(t(n) \cdot O(t(n)) = O(t^2(n))\). The total running time of \(S\) is
+                        \(t(n) \cdot O(t(n)) = O(t^2(n))\). The total running time of \(T\) is
                         \[
                         O(n) + O(t^2(n)) = O(t^2(n)),
                         \]

@@ -212,8 +212,8 @@ uses_python: false
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>\(Q\) is a finite set of states,</li>
-                        <li>\(\Sigma\) is the input alphabet,</li>
-                        <li>\(\Gamma\) is the <strong>stack alphabet</strong>,</li>
+                        <li>\(\Sigma\) is a finite set called the input alphabet,</li>
+                        <li>\(\Gamma\) is a finite set called the <strong>stack alphabet</strong>,</li>
                         <li>\(\delta: Q \times \Sigma_{\epsilon} \times \Gamma_{\epsilon} \to \mathcal{P}(Q \times \Gamma_{\epsilon})\) is the transition function,</li>
                         <li>\(q_0 \in Q\) is the start state,</li>
                         <li>\(F \subseteq Q\) is the set of accept states.</li>
@@ -311,11 +311,13 @@ uses_python: false
                         <strong>\((\Rightarrow)\) CFG to PDA.</strong><br> Given a CFG \(G = (V, \Sigma, R, S)\), we build a PDA \(P\)
                         that nondeterministically simulates <em>leftmost derivations</em> of \(G\). These are derivations in which, at
                         each step, the leftmost variable in the current sentential form is the one expanded. The stack holds the suffix
-                        of the current sentential form yet to be matched. The PDA \(P\) initially pushes \(S\) and then, on each step,
+                        of the current sentential form yet to be matched. The PDA \(P\) initially pushes a new bottom-of-stack marker
+                        \(\$\) and then \(S\), and on each step it
                         does one of two things. If the top of the stack is a variable \(A\), it pops \(A\) and nondeterministically
                         pushes some \(w\) such that \(A \to w \in R\) (simulating a derivation step, with the symbols of \(w\) pushed one
                         per transition through auxiliary states). If the top is a terminal \(a\), it pops \(a\) and matches it against
-                        the next input symbol. Acceptance occurs exactly when the input is consumed and the stack is empty, which
+                        the next input symbol. When \(\$\) reappears on top, \(P\) pops it and enters its accept state. Acceptance
+                        therefore occurs exactly when the input is consumed and the simulated sentential form is exhausted, which
                         corresponds to a successful derivation of the input from \(S\).
                     </p>
                     <p>
@@ -367,8 +369,9 @@ uses_python: false
                     <span class="proof-title">Proof Sketch.</span>
                     <p>
                         Let \(G\) be a CFG generating \(L\). Convert \(G\) to <strong>Chomsky Normal Form</strong>. In this
-                        standard normal form, every production is either \(A \to BC\) (with \(B, C\) variables) or \(A \to a\)
-                        (with \(a\) a terminal). In Chomsky Normal Form, every parse tree of a non-empty string is a binary tree
+                        standard normal form, every production is either \(A \to BC\) (with \(B, C\) variables other than the start
+                        variable) or \(A \to a\) (with \(a\) a terminal), the only exception being a rule \(S \to \epsilon\) for the
+                        start variable \(S\). In Chomsky Normal Form, every parse tree of a non-empty string is a binary tree
                         whose leaves are terminals.
                     </p>
                     <p>
@@ -489,7 +492,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    We have now established the hierarchy
+                    The three classes form the hierarchy
                     \[
                     \text{regular languages} \subsetneq \text{DCFLs} \subsetneq \text{CFLs}.
                     \]
