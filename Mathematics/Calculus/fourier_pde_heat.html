@@ -53,8 +53,9 @@ uses_python: false
                     This perception has been overturned by developments of the deep-learning era. The forward
                     process of a <a href="../Machine_learning/diffusion_models.html"><strong>diffusion generative
                     model</strong></a>, the mechanism behind much of modern image and video synthesis, is in continuous
-                    time a stochastic diffusion. Its density evolution is governed by the Fokker-Planck equation, a
-                    parabolic PDE that reduces to the heat equation in the simplest case of vanishing drift and
+                    time a stochastic diffusion. Its density evolution is governed by the
+                    <a href="../Probability/fokker_planck.html#T-fokker_planck" class="ref-link"><strong>Fokker-Planck
+                    equation</strong></a>, a parabolic PDE that reduces to the heat equation in the simplest case of vanishing drift and
                     constant diffusion coefficient. The continuous domain, long dismissed as a physicist's concern,
                     has become impossible for the ML researcher to ignore.
                 </p>
@@ -80,8 +81,9 @@ uses_python: false
                     neural networks, and the Gaussian scale-space of classical image processing. The treatment is
                     one-dimensional and classical: separation of variables on a bounded interval, the Fourier
                     transform on the real line, the heat kernel and its qualitative properties. Higher dimensions,
-                    weak solutions in Sobolev spaces, semigroup theory, and the stochastic interpretation via
-                    Brownian motion belong to more advanced treatments.
+                    weak solutions in Sobolev spaces, and semigroup theory belong to more advanced treatments. The
+                    stochastic interpretation via Brownian motion is taken up in the pages on
+                    <a href="../Probability/ito_diffusions.html"><strong>It&ocirc; diffusions</strong></a>.
                 </p>
             </section>
 
@@ -590,13 +592,16 @@ uses_python: false
                     u(x, 0) = f(x), & x \in \mathbb{R},
                     \end{cases}
                     \]
-                    with \(k \gt 0\) and \(f \in L^1(\mathbb{R}) \cap L^2(\mathbb{R})\) sufficiently regular and
-                    decaying at infinity. We additionally require that \(u(\cdot, t)\), together with
-                    \(\partial_x u(\cdot, t)\), \(\partial_{xx} u(\cdot, t)\), and \(\partial_t u(\cdot, t)\),
-                    decays as \(|x| \to \infty\) and is integrable in \(x\), locally uniformly in \(t \gt 0\). This restriction picks out the natural function class for the problem and
-                    rules out, for instance, the addition of a constant temperature or a polynomially growing
-                    background field. The uniqueness of the solution within this class is treated alongside the main
-                    theorem below.
+                    with \(k \gt 0\) and \(f \in L^1(\mathbb{R})\). We additionally require two things of \(u\).
+                    First, \(u(\cdot, t)\), \(\partial_x u(\cdot, t)\), \(\partial_{xx} u(\cdot, t)\), and
+                    \(\partial_t u(\cdot, t)\) tend to \(0\) as \(|x| \to \infty\) for each \(t \gt 0\). Second, for
+                    every compact \(J \subset (0, \infty)\) there is an integrable function \(g_J\) on \(\mathbb{R}\)
+                    with \(|u|, |\partial_x u|, |\partial_{xx} u|, |\partial_t u| \leq g_J\) on \(\mathbb{R} \times J\).
+                    We call such a \(u\) a <strong>decaying solution</strong>. This restriction picks out the natural
+                    function class for the problem and rules out, for instance, the addition of a constant
+                    temperature or a polynomially growing background field. The initial condition is imposed as a
+                    limit, \(u(\cdot, t) \to f\) as \(t \to 0^+\), in a sense made precise in the main theorem, and
+                    the uniqueness of the solution within this class is treated alongside that theorem.
                 </p>
 
                 <h3>Fourier-Transforming the Equation</h3>
@@ -616,17 +621,17 @@ uses_python: false
                 <div class="theorem" id="T-heat_fourier_ode">
                     <span class="theorem-title">Theorem: Fourier-Transformed Heat Equation</span>
                     <p>
-                        Let \(u(x, t)\) solve the heat equation on \(\mathbb{R}\) with \(u(\cdot, t)\) decaying at
-                        infinity for each \(t \geq 0\), and let \(\hat{u}(\xi, t)\) denote its spatial Fourier
-                        transform. Then, for each \(\xi \in \mathbb{R}\), the function \(t \mapsto \hat{u}(\xi, t)\)
-                        satisfies
+                        Let \(u\) be a decaying solution of the heat equation on \(\mathbb{R} \times (0, \infty)\)
+                        with \(u(\cdot, t) \to f\) in \(L^1(\mathbb{R})\) as \(t \to 0^+\), and let \(\hat{u}(\xi, t)\)
+                        denote its spatial Fourier transform. Then, for each \(\xi \in \mathbb{R}\), the function
+                        \(t \mapsto \hat{u}(\xi, t)\) satisfies, for \(t \gt 0\),
                         \[
                         \begin{align*}
                         \partial_t \hat{u}(\xi, t) &= -k \xi^2\, \hat{u}(\xi, t), \\\\
-                        \hat{u}(\xi, 0) &= \hat{f}(\xi).
+                        \lim_{t \to 0^+} \hat{u}(\xi, t) &= \hat{f}(\xi).
                         \end{align*}
                         \]
-                        The unique solution is
+                        The unique such function is
                         \[
                         \hat{u}(\xi, t) = \hat{f}(\xi)\, e^{-k \xi^2 t}.
                         \]
@@ -636,8 +641,10 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Differentiation under the integral sign is justified by the regularity and decay hypotheses
-                        on \(u\) stated at the start of this section. Then
+                        Differentiation under the integral sign in \(t\) is justified by the
+                        <a href="lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence
+                        theorem</strong></a>, applied to difference quotients, since \(|\partial_t u(x, t)| \leq g_J(x)\)
+                        for \(t\) in any compact \(J \subset (0, \infty)\) and \(g_J\) is integrable. Then
                         \[
                         \begin{align*}
                         \partial_t \hat{u}(\xi, t) &= \int_{-\infty}^{\infty} \partial_t u(x, t)\, e^{ix\xi}\, dx \\\\
@@ -655,9 +662,19 @@ uses_python: false
                     <p>
                         For each fixed \(\xi\), the equation
                         \(\partial_t \hat{u}(\xi, t) = -k\xi^2\, \hat{u}(\xi, t)\) is a scalar linear
-                        ODE in \(t\) with constant coefficient \(-k\xi^2\) (\(\xi\) is held fixed). Its
-                        unique solution with initial condition \(\hat{u}(\xi, 0) = \hat{f}(\xi)\) is
-                        \(\hat{u}(\xi, t) = \hat{f}(\xi) e^{-k\xi^2 t}\).
+                        ODE in \(t\) on \((0, \infty)\) with constant coefficient \(-k\xi^2\) (\(\xi\) is held
+                        fixed). Hence \(\hat{u}(\xi, t)\, e^{k\xi^2 t}\) has zero derivative, and
+                        \(\hat{u}(\xi, t) = C(\xi)\, e^{-k\xi^2 t}\) for some constant \(C(\xi)\). The limit at
+                        \(t = 0\) holds because
+                        \[
+                        \begin{align*}
+                        |\hat{u}(\xi, t) - \hat{f}(\xi)|
+                        &\leq \int_{-\infty}^{\infty} |u(x, t) - f(x)|\, dx \\\\
+                        &= \|u(\cdot, t) - f\|_{L^1} \longrightarrow 0,
+                        \end{align*}
+                        \]
+                        and letting \(t \to 0^+\) in \(\hat{u}(\xi, t) = C(\xi)\, e^{-k\xi^2 t}\) gives
+                        \(C(\xi) = \hat{f}(\xi)\).
                     </p>
                 </div>
 
@@ -717,27 +734,27 @@ uses_python: false
                 <p>
                     With \(\hat{u}(\xi, t) = \hat{f}(\xi)\, \widehat{K_t}(\xi)\), the
                     <a href="fourier_transform.html#T-convolution_theorem" class="ref-link">convolution theorem</a>
-                    inverts the right-hand side at once. A pointwise product of Fourier transforms is the Fourier
-                    transform of a convolution. The solution in the spatial variable is therefore the convolution of
-                    the initial datum with the heat kernel.
+                    identifies the right-hand side at once. A pointwise product of Fourier transforms is the
+                    Fourier transform of a convolution, so \(\hat{u}(\cdot, t)\) is the transform of \(f * K_t\).
+                    The theorem below confirms that this convolution is a solution, and the only one in the
+                    decaying class.
                 </p>
 
                 <div class="theorem" id="T-heat_kernel_solution">
                     <span class="theorem-title">Theorem: Heat Kernel Solution on \(\mathbb{R}\)</span>
                     <p>
-                        Let \(f \in L^1(\mathbb{R})\) (or more generally \(f\) bounded and continuous with
-                        sufficient decay). The unique decaying solution of the heat equation
-                        \(\partial_t u = k\, \partial_{xx} u\) on \(\mathbb{R} \times (0, \infty)\) with
-                        \(u(\cdot, t) \to f\) as \(t \to 0^+\) is the convolution of \(f\) with the heat kernel:
+                        Let \(f \in L^1(\mathbb{R})\). The convolution of \(f\) with the heat kernel,
                         \[
                         \begin{align*}
                         u(x, t) &= (f * K_t)(x) \\\\
-                        &= \int_{-\infty}^{\infty} K_t(x - y)\, f(y)\, dy.
+                        &= \int_{-\infty}^{\infty} K_t(x - y)\, f(y)\, dy,
                         \end{align*}
                         \]
-                        Here the initial datum is attained in \(L^1(\mathbb{R})\) when \(f \in L^1(\mathbb{R})\),
-                        and pointwise at every continuity point of \(f\) when \(f\) is bounded continuous.
-                        Explicitly,
+                        is a decaying solution of the heat equation \(\partial_t u = k\, \partial_{xx} u\) on
+                        \(\mathbb{R} \times (0, \infty)\) with \(u(\cdot, t) \to f\) in \(L^1(\mathbb{R})\) as
+                        \(t \to 0^+\). It is the only decaying solution with this property. If in addition
+                        \(f\) is bounded and continuous, then \(u(x, t) \to f(x)\) as \(t \to 0^+\) at every
+                        \(x \in \mathbb{R}\). Explicitly,
                         \[
                         u(x, t) = \frac{1}{\sqrt{4\pi kt}} \int_{-\infty}^{\infty}
                             \exp\!\left(-\frac{(x - y)^2}{4kt}\right) f(y)\, dy.
@@ -748,73 +765,131 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        From the Fourier-transformed heat equation,
-                        \(\hat{u}(\xi, t) = \hat{f}(\xi)\, e^{-k\xi^2 t} = \hat{f}(\xi)\, \widehat{K_t}(\xi)\).
-                        By the convolution theorem applied in reverse,
-                        \(\hat{f}(\xi)\, \widehat{K_t}(\xi) = \widehat{f * K_t}(\xi)\). By the
-                        <a href="fourier_transform.html#T-fourier_inversion" class="ref-link"><strong>injectivity
-                        of the Fourier transform</strong></a> on \(L^1(\mathbb{R})\) (both \(u(\cdot, t)\) and \(f * K_t\) lie in
-                        \(L^1(\mathbb{R})\) under the standing hypotheses),
-                        \(u(\cdot, t) = f * K_t\). The integral form is the definition of convolution,
-                        and the symmetry \(K_t(x - y) = K_t(y - x)\) (since \(K_t\) is even) makes the
-                        two integrals interchangeable.
-                    </p>
-                    <p>
-                        Conversely, \(f * K_t\) is indeed a solution. Since
-                        \(\hat{u}(\cdot, t) = \hat{f}\, e^{-k\xi^2 t}\) is integrable, the inversion formula
-                        represents
+                        <strong>Step 1: a representation of the convolution.</strong><br>
+                        The Gaussian transform computed in the preceding page, read with the roles of the space and
+                        frequency variables exchanged and with \(\sigma^2 = 1/(2kt)\), gives
+                        \(\int e^{iz\xi}\, e^{-k\xi^2 t}\, d\xi = \sqrt{\pi/(kt)}\, e^{-z^2/(4kt)}\). Dividing by
+                        \(2\pi\) and using that the Gaussian is even,
+                        \[
+                        K_t(z) = \frac{1}{2\pi} \int_{-\infty}^{\infty} e^{-k\xi^2 t}\, e^{-iz\xi}\, d\xi.
+                        \]
+                        Substituting this into \(u(x, t) = \int f(y)\, K_t(x - y)\, dy\) produces a double integral
+                        whose integrand has absolute value \(|f(y)|\, e^{-k\xi^2 t}\), an integrable function on
+                        \(\mathbb{R}^2\) because \(f \in L^1(\mathbb{R})\). By
+                        <a href="../Probability/limit_theorems_product_measures.html#T-fubini" class="ref-link"><strong>Fubini's
+                        theorem</strong></a>, applied to the real and imaginary parts separately, the order of
+                        integration can be exchanged, and the inner integral in \(y\) is \(\hat{f}(\xi)\). Hence
                         \[
                         u(x, t) = \frac{1}{2\pi}\int_{-\infty}^{\infty}
                             \hat{f}(\xi)\, e^{-k\xi^2 t}\, e^{-ix\xi}\, d\xi.
                         \]
-                        The identity, granted almost everywhere by inversion, holds at every point because both
-                        sides are continuous in \(x\). Differentiation under the integral, once in \(t\) and
-                        twice in \(x\), is then justified
-                        because each pass multiplies the integrand by a polynomial factor in \(\xi\) that remains
-                        dominated, locally uniformly for \(t \gt 0\), by the Gaussian envelope. The operators
-                        \(\partial_t\) and \(k\, \partial_{xx}\) both amount to multiplication of the integrand
-                        by \(-k\xi^2\), so \(\partial_t u = k\, \partial_{xx} u\) holds identically. That
-                        \(f * K_t\) itself decays at infinity, and so lies in the class named in the statement,
-                        follows from the same representation by the
+                        No inversion theorem is used here. The identity is a consequence of the Gaussian
+                        computation and Fubini's theorem alone. The integral form of \(u\) is the definition of
+                        convolution, and the symmetry \(K_t(x - y) = K_t(y - x)\) makes the two orders of the
+                        arguments interchangeable.
+                    </p>
+                    <p>
+                        <strong>Step 2: the convolution is a decaying solution.</strong><br>
+                        Fix \(t_0 \gt 0\) and work on \(t \geq t_0\) with increments in \(t\) that stay in
+                        \([t_0, \infty)\). For \(t \geq t_0\) and every integer \(n \geq 0\),
+                        \[
+                        |\xi|^n\, |\hat{f}(\xi)|\, e^{-k\xi^2 t} \leq \|f\|_{L^1}\, |\xi|^n\, e^{-k\xi^2 t_0},
+                        \]
+                        and the right-hand side is integrable in \(\xi\). By the
+                        <a href="lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence
+                        theorem</strong></a>, applied to difference quotients along any sequence of increments
+                        tending to zero, the representation of Step 1 may be differentiated under the integral
+                        sign for \(t \gt 0\). This applies any number of times in \(x\) and once in \(t\). Each
+                        derivative in
+                        \(x\) multiplies the integrand by \(-i\xi\), and the derivative in \(t\) multiplies it by
+                        \(-k\xi^2\). The operators \(\partial_t\) and \(k\, \partial_{xx}\) therefore act on the
+                        integrand in the same way, so \(\partial_t u = k\, \partial_{xx} u\) holds at every point
+                        of \(\mathbb{R} \times (0, \infty)\).
+                    </p>
+                    <p>
+                        Each of \(u\), \(\partial_x u\), \(\partial_{xx} u\), and \(\partial_t u\) at time \(t\) is,
+                        up to the factor \(1/(2\pi)\) and the reflection \(x \mapsto -x\), the Fourier transform of an
+                        integrable function of \(\xi\). By the
                         <a href="fourier_hilbert.html#T-riemann_lebesgue_l1" class="ref-link"><strong>Riemann-Lebesgue
-                        lemma</strong></a>. That the convolution attains the initial datum in the two senses
-                        stated is the approximate-identity property of the Gaussian family \(K_t\) as
+                        lemma</strong></a>, all four tend to \(0\) as \(|x| \to \infty\). For the integrable bounds,
+                        let \(J = [t_0, t_1] \subset (0, \infty)\).
+                        Each \(\partial_x^n K_t(z)\) with \(n \leq 2\) is a polynomial in \(z\) and \(t^{-1/2}\)
+                        times \(e^{-z^2/(4kt)}\), so there is a constant \(C_J\) with
+                        \[
+                        \begin{align*}
+                        |\partial_x^n K_t(z)| &\leq h_J(z) \quad \text{for all } t \in J \text{ and } n \leq 2, \\\\
+                        h_J(z) &= C_J\, (1 + |z|)^2\, e^{-z^2/(4kt_1)},
+                        \end{align*}
+                        \]
+                        and \(h_J\) is integrable. The convolution integral \(u = f * K_t\) may also be
+                        differentiated under the integral sign, since the difference quotients in \(x\) of
+                        \(f(y)\, \partial_x^n K_t(x - y)\) are bounded by
+                        \(|f(y)|\, \sup_{t \in J} \|\partial_x^{n+1} K_t\|_\infty\), an integrable function of
+                        \(y\). This gives \(\partial_x^n u(\cdot, t) = f * \partial_x^n K_t\), hence
+                        \(|\partial_x^n u(x, t)| \leq (|f| * h_J)(x)\) for \(t \in J\). The function
+                        \(g_J = |f| * h_J\) is integrable with \(\|g_J\|_{L^1} \leq \|f\|_{L^1} \|h_J\|_{L^1}\) by
+                        <a href="../Probability/limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's
+                        theorem</strong></a>, and \(|\partial_t u| = k\, |\partial_{xx} u| \leq k\, g_J\). So
+                        \(\max(1, k)\, g_J\) is an integrable bound for all four functions on \(\mathbb{R} \times J\),
+                        and \(u\) is a decaying solution.
+                    </p>
+                    <p>
+                        <strong>Step 3: the initial datum.</strong><br>
+                        That the convolution attains the initial datum in the two senses stated, in
+                        \(L^1(\mathbb{R})\) for \(f \in L^1(\mathbb{R})\) and pointwise when \(f\) is bounded and
+                        continuous, is the approximate-identity property of the Gaussian family \(K_t\) as
                         \(t \to 0^+\). The verification of this property is omitted here.
                     </p>
                     <p>
-                        The uniqueness within the class of decaying solutions is genuine and depends on the decay
-                        restriction in an essential way. Some growth bound is needed. Boundedness suffices, as does
-                        a bound of the form \(|u(x, t)| \leq C e^{a x^2}\). Without such a restriction, non-trivial
-                        solutions of the same initial-value problem exist. Tychonoff's classical counterexample
-                        exhibits a non-zero \(u\) with the zero initial datum that grows faster than every such
-                        Gaussian bound, demonstrating that the decay qualifier in the theorem hypothesis is doing
-                        genuine work.
+                        <strong>Step 4: uniqueness.</strong><br>
+                        Let \(u\) be any decaying solution with \(u(\cdot, t) \to f\) in \(L^1(\mathbb{R})\) as
+                        \(t \to 0^+\). By the
+                        <a href="#T-heat_fourier_ode" class="ref-link"><strong>Fourier-transformed heat
+                        equation</strong></a>, \(\hat{u}(\xi, t) = \hat{f}(\xi)\, e^{-k\xi^2 t}\) for every \(\xi\)
+                        and \(t \gt 0\), and by the
+                        <a href="fourier_transform.html#T-convolution_theorem" class="ref-link"><strong>convolution
+                        theorem</strong></a> the same function is \(\widehat{f * K_t}(\xi)\). Fix \(t \gt 0\) and
+                        set \(w = u(\cdot, t) - f * K_t\). Then \(w \in L^1(\mathbb{R})\) and \(\hat{w} \equiv 0\).
+                        Moreover \(w\) is continuous and tends to \(0\) at infinity, by the hypotheses on \(u\) and
+                        by Step 2, so \(w\) is bounded, and therefore \(w \in L^2(\mathbb{R})\) as well.
                     </p>
                     <p>
-                        Within the decaying class, uniqueness follows from the energy method, exactly as on the
-                        bounded interval. Let \(u_1, u_2\) be two such solutions with the same initial datum, and
-                        set \(w = u_1 - u_2\), so that \(w\) solves the heat equation with \(w(\cdot, 0) \equiv 0\)
-                        and decays at infinity in \(x\) for each \(t \geq 0\).
-                    </p>
-                    <p>
-                        Assume the decay of each \(u_i\) is sufficient that \(u_i(\cdot, t) \in L^2(\mathbb{R})\)
-                        for every \(t \geq 0\), a mild strengthening of the qualitative "decay at infinity"
-                        hypothesis adopted at the start of this section. The energy
-                        \(E(t) = \int_\mathbb{R} w(x, t)^2\, dx\) is then finite. Differentiating and using
-                        \(\partial_t w = k\, \partial_{xx} w\),
+                        Let \(\psi\) be a Schwartz function. The
+                        <a href="fourier_transform.html#T-fourier_inversion" class="ref-link"><strong>Fourier
+                        inversion formula</strong></a>, in the Schwartz-class case proved on the preceding page, gives
+                        \(\psi(x) = \frac{1}{2\pi} \int \hat{\psi}(\xi)\, e^{-ix\xi}\, d\xi\), so
                         \[
                         \begin{align*}
-                        \frac{dE}{dt}
-                        &= 2\!\int_\mathbb{R} w\, \partial_t w\, dx \\\\
-                        &= 2k\!\int_\mathbb{R} w\, \partial_{xx} w\, dx \\\\
-                        &= -2k\!\int_\mathbb{R} (\partial_x w)^2\, dx \\\\
-                        &\leq 0,
+                        \int_{-\infty}^{\infty} w(x)\, \overline{\psi(x)}\, dx
+                        &= \frac{1}{2\pi} \int_{-\infty}^{\infty} \int_{-\infty}^{\infty}
+                            w(x)\, \overline{\hat{\psi}(\xi)}\, e^{ix\xi}\, d\xi\, dx \\\\
+                        &= \frac{1}{2\pi} \int_{-\infty}^{\infty} \overline{\hat{\psi}(\xi)}\, \hat{w}(\xi)\, d\xi \\\\
+                        &= 0,
                         \end{align*}
                         \]
-                        where integration by parts converts \(\int w\, w_{xx}\, dx\) into \(-\int (w_x)^2\, dx\),
-                        the boundary terms \([w\, w_x]_{-\infty}^{\infty}\) vanishing by decay. Since \(E(0) = 0\)
-                        and \(E \geq 0\), the inequality \(dE/dt \leq 0\) forces \(E(t) \equiv 0\), hence
-                        \(w \equiv 0\) and \(u_1 = u_2\).
+                        where the exchange of the two integrals is justified by Fubini's theorem, the integrand
+                        being bounded in absolute value by \(|w(x)|\, |\hat{\psi}(\xi)|\), which is integrable on
+                        \(\mathbb{R}^2\) because \(w \in L^1\) and \(\hat{\psi} \in \mathcal{S}(\mathbb{R})\). By the
+                        <a href="fourier_transform.html#T-schwartz_density" class="ref-link"><strong>density of the
+                        Schwartz class</strong></a> in \(L^2(\mathbb{R})\), there are Schwartz functions
+                        \(\psi_n \to w\) in \(L^2\). The Cauchy-Schwarz inequality gives
+                        \(|\langle w, w - \psi_n \rangle| \leq \|w\|_{L^2}\, \|w - \psi_n\|_{L^2} \to 0\), so
+                        \[
+                        \|w\|_{L^2}^2 = \langle w, w \rangle = \lim_{n \to \infty} \langle w, \psi_n \rangle = 0.
+                        \]
+                        Hence \(w = 0\) almost everywhere, and since \(w\) is continuous, \(w \equiv 0\). That is,
+                        \(u(\cdot, t) = f * K_t\) for every \(t \gt 0\).
+                    </p>
+                    <p>
+                        <strong>Remark on the class.</strong><br>
+                        The uniqueness statement depends on the decay restriction in an essential way. Without a
+                        growth bound, non-trivial solutions with the zero initial datum exist. Tychonoff's classical
+                        counterexample exhibits a non-zero \(u\) with \(u(x, t) \to 0\) pointwise as \(t \to 0^+\)
+                        that grows faster than every Gaussian bound, so the decay qualifier in the theorem is doing
+                        genuine work. Uniqueness also holds among solutions that attain the initial datum only
+                        pointwise, provided a growth bound such as boundedness or \(|u(x, t)| \leq C e^{a x^2}\) is
+                        imposed. That result rests on the maximum principle rather than on the Fourier transform,
+                        and we do not prove it here.
                     </p>
                 </div>
 
@@ -859,11 +934,14 @@ uses_python: false
                         the initial profile sampled along a random walk emanating from \(x\). The width
                         \(\sqrt{2kt}\) is then nothing but the standard deviation of the random walk's displacement,
                         growing as \(\sqrt{t}\). This is the hallmark of diffusive scaling, in contrast to the
-                        linear-in-\(t\) growth of ballistic motion. The full development of Brownian motion, the
-                        It&ocirc; calculus that formalizes this connection, and the Fokker-Planck equation that
-                        generalizes it to drift-diffusion processes belong to more advanced treatments. What is
-                        established here is the bridge from a purely analytic computation to a probabilistic object,
-                        set up so that the bridge can be crossed in either direction when the time comes.
+                        linear-in-\(t\) growth of ballistic motion. The full development of
+                        <a href="../Probability/brownian_motion.html"><strong>Brownian motion</strong></a>, the
+                        <a href="../Probability/ito_formula.html"><strong>It&ocirc; calculus</strong></a> that
+                        formalizes this connection, and the
+                        <a href="../Probability/fokker_planck.html#T-fokker_planck" class="ref-link"><strong>Fokker-Planck
+                        equation</strong></a> that generalizes it to drift-diffusion processes are carried out in the
+                        stochastic analysis pages. What is established here is the bridge from a purely analytic
+                        computation to a probabilistic object. The probability pages cross it from the other side.
                     </p>
                 </div>
             </section>
@@ -913,7 +991,9 @@ uses_python: false
                     so \(\int u(\cdot, t)\, dx = \int f\, dx\) for all \(t \gt 0\). Physically, heat is neither
                     created nor destroyed. It merely redistributes itself across the line. The same identity, viewed
                     probabilistically, says that the diffusing density remains a probability density at every time,
-                    a fact that lies at the foundation of the Fokker-Planck equation.
+                    a fact that lies at the foundation of the
+                    <a href="../Probability/fokker_planck.html#T-fokker_planck" class="ref-link"><strong>Fokker-Planck
+                    equation</strong></a>.
                 </p>
 
                 <h3>Instantaneous Smoothing</h3>
@@ -934,12 +1014,13 @@ uses_python: false
                 </p>
 
                 <p>
-                    To conclude smoothness from this integrability, recall the
-                    <a href="fourier_transform.html#T-fourier_inversion" class="ref-link"><strong>Fourier inversion
-                    formula</strong></a>
+                    To conclude smoothness from this integrability, recall the representation
                     \[
-                    u(x, t) = \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat{u}(\xi, t)\, e^{-ix\xi}\, d\xi.
+                    u(x, t) = \frac{1}{2\pi}\int_{-\infty}^{\infty} \hat{u}(\xi, t)\, e^{-ix\xi}\, d\xi
                     \]
+                    established in Step 1 of the proof of the
+                    <a href="#T-heat_kernel_solution" class="ref-link"><strong>heat kernel solution</strong></a>,
+                    with \(\hat{u}(\xi, t) = \hat{f}(\xi)\, e^{-k\xi^2 t}\).
                     Differentiating \(n\) times in \(x\) under the integral sign brings down a factor \((-i\xi)^n\):
                     \[
                     \partial_x^n u(x, t) = \frac{1}{2\pi}\int_{-\infty}^{\infty} (-i\xi)^n\, \hat{u}(\xi, t)\, e^{-ix\xi}\, d\xi.
