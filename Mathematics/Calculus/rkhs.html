@@ -210,7 +210,7 @@ uses_python: false
                 </div>
 
                 <div class="proof">
-                    <span class="proof-title">Proof sketch:</span>
+                    <span class="proof-title">Proof:</span>
                     <p>
                         We construct \(\mathcal{H}_K\) explicitly in four steps.
                     </p>
@@ -240,34 +240,95 @@ uses_python: false
                     </p>
                     <p>
                         <strong>Step 3 (completion as a function space).</strong> This is the heart of the theorem.
-                        Take the abstract Hilbert-space completion of \(\mathcal{H}_0\), the equivalence classes of
-                        Cauchy sequences \(\{f_n\} \subset \mathcal{H}_0\). For each \(x \in \mathcal{X}\), the
-                        Cauchy-Schwarz bound from Step 2 gives
-                        \(|f_n(x) - f_m(x)| \leq \|f_n - f_m\| \cdot \sqrt{K(x, x)}\), so \(\{f_n(x)\}\) is Cauchy in
-                        \(\mathbb{R}\) and converges to some \(f(x)\). The same bound shows that Cauchy-equivalent
-                        sequences (\(\|f_n - g_n\| \to 0\)) yield identical pointwise limits, so
-                        \(f : \mathcal{X} \to \mathbb{R}\) depends only on the equivalence class. Conversely, if the
-                        pointwise limit vanishes at every \(x\), then the completion limit \(f^*\) also vanishes
-                        pointwise (the reproducing property extends continuously to the completion, giving
-                        \(f^*(x) = \langle f^*, K(\cdot, x)\rangle = \lim_n f_n(x) = 0\)). Since \(\mathcal{H}_0\) is
-                        dense in the completion and \(f^*\) is orthogonal to every \(K(\cdot, x) \in \mathcal{H}_0\),
-                        this forces \(\|f^*\| = 0\). Thus the assignment "equivalence class \(\mapsto\) pointwise
-                        limit" is injective. The completion thus realizes as a Hilbert space \(\mathcal{H}_K\) of bona
-                        fide functions on \(\mathcal{X}\), not merely as abstract equivalence classes.
+                        We build the completion of \(\mathcal{H}_0\) directly as a space of functions. Call a sequence
+                        \(\{f_n\} \subset \mathcal{H}_0\) that is Cauchy for the inner product of Step 2 an
+                        <em>approximating sequence</em>. For each \(x \in \mathcal{X}\), the Cauchy-Schwarz bound
+                        from Step 2 gives \(|f_n(x) - f_m(x)| \leq \|f_n - f_m\| \cdot \sqrt{K(x, x)}\), so
+                        \(\{f_n(x)\}\) is Cauchy in \(\mathbb{R}\) and converges. Let \(\mathcal{H}_K\) be the set of
+                        all pointwise limits \(f(x) = \lim_n f_n(x)\) of approximating sequences. It is a vector space
+                        of functions \(\mathcal{X} \to \mathbb{R}\) containing \(\mathcal{H}_0\) (constant sequences).
                     </p>
                     <p>
-                        <strong>Step 4 (reproducing property on \(\mathcal{H}_K\), uniqueness).</strong> Point
-                        evaluation \(\delta_x = \langle \cdot, K(\cdot, x)\rangle\) is bounded on \(\mathcal{H}_0\)
-                        with operator norm \(\sqrt{K(x, x)}\). Since \(\mathcal{H}_0\) is dense in \(\mathcal{H}_K\) by
-                        construction, \(\delta_x\) extends by continuity to all of \(\mathcal{H}_K\) and preserves the
-                        reproducing property \(f(x) = \langle f, K(\cdot, x)\rangle\) throughout. Uniqueness of the
-                        reproducing kernel follows from the
+                        The key observation is that an approximating sequence \(\{h_n\}\) with \(h_n(x) \to 0\) for
+                        every \(x\) satisfies \(\|h_n\| \to 0\). Given \(\varepsilon \gt 0\), choose \(N\) with
+                        \(\|h_n - h_m\| \lt \varepsilon\) for \(n, m \geq N\), and fix \(m \geq N\). Writing
+                        \(h_m = \sum_i a_i K(\cdot, y_i)\), the reproducing property on \(\mathcal{H}_0\) gives
+                        \(\langle h_n, h_m\rangle = \sum_i a_i h_n(y_i) \to 0\) as \(n \to \infty\). Hence
+                        \[
+                        \|h_m\|^2 = \langle h_m - h_n, h_m\rangle + \langle h_n, h_m\rangle
+                        \leq \varepsilon \|h_m\| + \langle h_n, h_m\rangle
+                        \]
+                        for every \(n \geq N\). Letting \(n \to \infty\) gives \(\|h_m\|^2 \leq \varepsilon \|h_m\|\), hence
+                        \(\|h_m\| \leq \varepsilon\) for every \(m \geq N\).
+                    </p>
+                    <p>
+                        For \(f, g \in \mathcal{H}_K\) with approximating sequences \(\{f_n\}\) and \(\{g_n\}\), set
+                        \(\langle f, g\rangle := \lim_n \langle f_n, g_n\rangle\). The limit exists because Cauchy
+                        sequences are bounded and
+                        \[
+                        \begin{align*}
+                        |\langle f_n, g_n\rangle - \langle f_m, g_m\rangle|
+                        &\leq |\langle f_n - f_m, g_n\rangle| + |\langle f_m, g_n - g_m\rangle| \\\\
+                        &\leq \|f_n - f_m\| \|g_n\| + \|f_m\| \|g_n - g_m\|.
+                        \end{align*}
+                        \]
+                        It does not depend on the chosen sequences: two approximating sequences for the same \(f\)
+                        differ by an approximating sequence that tends to \(0\) pointwise, hence in norm by the key
+                        observation, and the same estimate shows the limit is unchanged. Bilinearity, symmetry, and
+                        \(\langle f, f\rangle \geq 0\) pass to the limit, and on \(\mathcal{H}_0\) the new form agrees
+                        with that of Step 2. If \(\langle f, f\rangle = 0\), then \(\|f_n\| \to 0\) and
+                        \(|f(x)| = \lim_n |f_n(x)| \leq \lim_n \|f_n\| \sqrt{K(x, x)} = 0\) for every \(x\). The form is
+                        therefore an inner product on \(\mathcal{H}_K\).
+                    </p>
+                    <p>
+                        If \(\{f_n\}\) approximates \(f\), then \(\{f_n - f_m\}_n\) approximates \(f - f_m\), so
+                        \(\|f - f_m\| = \lim_n \|f_n - f_m\|\), which tends to \(0\) as \(m \to \infty\). Thus every
+                        approximating sequence converges in \(\mathcal{H}_K\) to its pointwise limit, and
+                        \(\mathcal{H}_0\) is dense in \(\mathcal{H}_K\). For completeness, let \(\{u_k\}\) be Cauchy in
+                        \(\mathcal{H}_K\) and choose \(h_k \in \mathcal{H}_0\) with \(\|u_k - h_k\| \lt 1/k\). Since
+                        \(\|h_k - h_l\| \leq 1/k + \|u_k - u_l\| + 1/l\), the sequence \(\{h_k\}\) is an approximating sequence,
+                        so it has a pointwise limit \(u \in \mathcal{H}_K\) with \(\|u - h_k\| \to 0\), and
+                        \(\|u - u_k\| \leq \|u - h_k\| + 1/k \to 0\). Hence \(\mathcal{H}_K\) is a Hilbert space whose
+                        elements are bona fide functions on \(\mathcal{X}\).
+                    </p>
+                    <p>
+                        <strong>Step 4 (reproducing property on \(\mathcal{H}_K\), uniqueness).</strong> Each
+                        \(K(\cdot, x)\) lies in \(\mathcal{H}_0 \subseteq \mathcal{H}_K\). For \(f \in \mathcal{H}_K\) with
+                        approximating sequence \(\{f_n\}\), the definition of the inner product and Step 2 give
+                        \[
+                        \begin{align*}
+                        \langle f, K(\cdot, x)\rangle &= \lim_{n \to \infty} \langle f_n, K(\cdot, x)\rangle \\\\
+                        &= \lim_{n \to \infty} f_n(x) = f(x).
+                        \end{align*}
+                        \]
+                        Hence \(|f(x)| \leq \|f\| \sqrt{K(x, x)}\), so every point evaluation \(\delta_x\) is bounded, and
+                        \(K(\cdot, x)\) represents \(\delta_x\). Thus \(K_x = K(\cdot, x)\) and \(K\) is the reproducing kernel
+                        of \(\mathcal{H}_K\) in the sense of the Definition. Uniqueness of the reproducing kernel follows
+                        from the
                         <a href="dual_spaces.html#T-riesz_representation" class="ref-link"><strong>Riesz Representation Theorem</strong></a>.
-                        Each \(\delta_x\) determines its representative \(K_x\) uniquely. Uniqueness of
-                        \(\mathcal{H}_K\) itself follows because any RKHS reproducing the same \(K\) must contain
-                        \(\{K(\cdot, x)\}\), inherit the same inner product on this set (forced by the reproducing
-                        property), and be complete. Such a space therefore coincides with \(\mathcal{H}_K\) as a
-                        function space.
+                        Each \(\delta_x\) determines its representative \(K_x\) uniquely.
+                    </p>
+                    <p>
+                        For uniqueness of \(\mathcal{H}_K\) itself, let \(\tilde{\mathcal{H}}\) be any Hilbert space of
+                        functions on \(\mathcal{X}\) with reproducing kernel \(K\). It contains every \(K(\cdot, x)\),
+                        hence \(\mathcal{H}_0\), and the reproducing property forces its inner product to agree with
+                        that of Step 2 on \(\mathcal{H}_0\). Moreover \(\mathcal{H}_0\) is dense in
+                        \(\tilde{\mathcal{H}}\): a \(w \in \tilde{\mathcal{H}}\) orthogonal to \(\mathcal{H}_0\)
+                        satisfies \(w(x) = \langle w, K(\cdot, x)\rangle = 0\) for every \(x\), so the closure of
+                        \(\mathcal{H}_0\) has trivial orthogonal complement and, by
+                        <a href="dual_spaces.html#T-projection_theorem_hilbert" class="ref-link"><strong>the projection theorem</strong></a>,
+                        is all of \(\tilde{\mathcal{H}}\). Now let \(f \in \mathcal{H}_K\) be the pointwise limit of an
+                        approximating sequence \(\{f_n\}\). This sequence is Cauchy in \(\tilde{\mathcal{H}}\) as well, so it
+                        converges there to some \(\tilde{f}\), and norm convergence in
+                        \(\tilde{\mathcal{H}}\) implies pointwise convergence by the bound
+                        \(|f_n(x) - \tilde{f}(x)| \leq \|f_n - \tilde{f}\|_{\tilde{\mathcal{H}}} \sqrt{K(x, x)}\). Hence
+                        \(\tilde{f} = f\), so \(f \in \tilde{\mathcal{H}}\) and
+                        \(\|f\|_{\tilde{\mathcal{H}}} = \lim_n \|f_n\| = \|f\|_{\mathcal{H}_K}\). Thus \(\mathcal{H}_K \subseteq \tilde{\mathcal{H}}\)
+                        with the same norm, hence, by polarization, with the same inner products.
+                        Conversely, given \(v \in \tilde{\mathcal{H}}\), density provides \(f_n \in \mathcal{H}_0\) with
+                        \(f_n \to v\) in \(\tilde{\mathcal{H}}\). Then \(\{f_n\}\) is an approximating sequence whose pointwise
+                        limit is \(v\), so \(v \in \mathcal{H}_K\). So \(\tilde{\mathcal{H}} = \mathcal{H}_K\) as Hilbert spaces of
+                        functions.
                     </p>
                 </div>
 
@@ -345,9 +406,9 @@ uses_python: false
                         As the partition is refined, the left-hand side converges to
                         \(\iint K(x, x') f(x) f(x')\, d\mu(x) d\mu(x') = \langle T_K f, f\rangle\) (by uniform
                         continuity of \(K\) and \(f\) on the compact \(\mathcal{X}\), together with finiteness of
-                        \(\mu\)), so \(\langle T_K f, f\rangle \geq 0\) for all \(f \in C(\mathcal{X})\). Density of
-                        \(C(\mathcal{X})\) in \(L^2(\mathcal{X}, \mu)\) (standard for finite Borel measures on compact
-                        spaces) and continuity of \(f \mapsto \langle T_K f, f\rangle\) on \(L^2\) extend the
+                        \(\mu\)), so \(\langle T_K f, f\rangle \geq 0\) for all \(f \in C(\mathcal{X})\). The density of
+                        \(C(\mathcal{X})\) in \(L^2(\mathcal{X}, \mu)\), a fact about finite Borel measures on compact
+                        metric spaces that we take for granted here, and continuity of \(f \mapsto \langle T_K f, f\rangle\) on \(L^2\) extend the
                         inequality to all of \(L^2\). All eigenvalues of \(T_K\) are therefore nonnegative.
                     </p>
                     <p>
@@ -518,11 +579,21 @@ uses_python: false
                     <span class="proof-title">Proof sketch:</span>
                     <p>
                         By Mercer's Theorem, \(K(x, y) = \sum_n \lambda_n e_n(x) e_n(y) = \sum_n \phi_n(x) \phi_n(y)\)
-                        with \(\phi_n := \sqrt{\lambda_n}\, e_n\). The Hilbert space of formal series
-                        \(\mathcal{H}' := \{\sum_n c_n \phi_n : \sum_n c_n^2 \lt \infty\}\), equipped with the inner
-                        product \(\langle \sum_n c_n \phi_n, \sum_n d_n \phi_n\rangle := \sum_n c_n d_n\), has
-                        \(\{\phi_n\}\) as an orthonormal basis and reproducing kernel
-                        \(\sum_n \phi_n(x) \phi_n(y) = K(x, y)\). By the uniqueness half of the
+                        with \(\phi_n := \sqrt{\lambda_n}\, e_n\) (continuous representatives). For a square-summable
+                        sequence \((c_n)\), the Cauchy-Schwarz inequality in \(\ell^2\) gives
+                        \[
+                        \sum_{n \gt N} |c_n|\, |\phi_n(x)| \leq \Bigl(\sum_{n \gt N} c_n^2\Bigr)^{1/2} \sqrt{K(x, x)}
+                        \]
+                        (using \(\sum_n \phi_n(x)^2 = K(x, x)\), the Mercer expansion at \(x' = x\)), so \(\sum_n c_n \phi_n\) converges absolutely at every \(x\), and uniformly on \(\mathcal{X}\) because
+                        \(K\) is bounded on the compact \(\mathcal{X} \times \mathcal{X}\). Let \(\mathcal{H}'\) be the space of
+                        these functions with \(\langle \sum_n c_n \phi_n, \sum_n d_n \phi_n\rangle := \sum_n c_n d_n\). The
+                        coefficients are determined by the function: uniform convergence on the finite measure space
+                        implies convergence in \(L^2\), so \(\langle \sum_n c_n \phi_n, e_m\rangle_{L^2} = c_m \sqrt{\lambda_m}\)
+                        with \(\lambda_m \gt 0\). Hence \(\mathcal{H}'\) is a Hilbert space of functions, isometric to
+                        \(\ell^2\), with \(\{\phi_n\}\) as an orthonormal basis. Since \(\sum_n \phi_n(y)^2 = K(y, y)\),
+                        \(K(\cdot, y) = \sum_n \phi_n(y) \phi_n\) lies in \(\mathcal{H}'\), and
+                        \(\langle \sum_n c_n \phi_n, K(\cdot, y)\rangle = \sum_n c_n \phi_n(y)\), so \(K\) is the reproducing
+                        kernel of \(\mathcal{H}'\). By the uniqueness half of the
                         <a href="#T-moore_aronszajn" class="ref-link"><strong>Moore-Aronszajn Theorem</strong></a>,
                         \(\mathcal{H}' = \mathcal{H}_K\) as Hilbert spaces of functions.
                     </p>
