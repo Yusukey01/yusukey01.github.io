@@ -206,16 +206,116 @@ uses_python: false
                         \[
                         \boldsymbol{A} = \boldsymbol{L}\boldsymbol{L}^\top.
                         \]
+                        (The factorization can equivalently be written as \(\boldsymbol{A} = \boldsymbol{R}^\top \boldsymbol{R}\) where
+                        \(\boldsymbol{R} = \boldsymbol{L}^\top\) is upper triangular.)
                     </p>
                     <p>
-                        (Equivalently, \(\boldsymbol{A} = \boldsymbol{R}^\top \boldsymbol{R}\) where \(\boldsymbol{R} = \boldsymbol{L}^\top\) is upper
-                        triangular.) The existence and uniqueness of \(\boldsymbol{L}\) is a standard result in numerical linear algebra. We take it as
-                        given here and focus on its application to MVN sampling below.
+                        Conversely, if \(\boldsymbol{A} = \boldsymbol{L}\boldsymbol{L}^\top\) for some lower triangular matrix \(\boldsymbol{L}\)
+                        with positive diagonal entries, then \(\boldsymbol{A}\) is symmetric and positive definite.
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>Existence.</strong> We argue by induction on \(D\). For \(D = 1\), write \(\boldsymbol{A} = [a]\). Positive definiteness
+                        gives \(a = [1]^\top \boldsymbol{A}\,[1] \gt 0\), so \(\boldsymbol{L} = [\sqrt{a}]\) is the required factor.
+                    </p>
+                    <p>
+                        Now let \(D \geq 2\) and assume the result for symmetric positive definite matrices of size \(D - 1\). Partition
+                        \[
+                        \boldsymbol{A} = \begin{bmatrix} a & \boldsymbol{b}^\top \\ \boldsymbol{b} & \boldsymbol{C} \end{bmatrix},
+                        \]
+                        where \(a \in \mathbb{R}\), \(\boldsymbol{b} \in \mathbb{R}^{D-1}\), and \(\boldsymbol{C} \in \mathbb{R}^{(D-1) \times (D-1)}\)
+                        is symmetric because \(\boldsymbol{A}\) is. Evaluating the quadratic form of \(\boldsymbol{A}\) at the first standard basis vector
+                        \(\boldsymbol{e}_1\) gives \(a = \boldsymbol{e}_1^\top \boldsymbol{A} \boldsymbol{e}_1 \gt 0\). We may therefore form the
+                        <a href="../Linear_algebra/woodbury.html#D-schur_complement" class="ref-link"><strong>Schur complement</strong></a>
+                        of the entry \(a\) in \(\boldsymbol{A}\),
+                        \[
+                        \boldsymbol{S} = \boldsymbol{C} - \frac{1}{a}\boldsymbol{b}\boldsymbol{b}^\top,
+                        \]
+                        which is symmetric because \(\boldsymbol{C}\) and \(\boldsymbol{b}\boldsymbol{b}^\top\) are.
+                    </p>
+                    <p>
+                        The matrix \(\boldsymbol{S}\) is also positive definite. Given a nonzero \(\boldsymbol{w} \in \mathbb{R}^{D-1}\), set
+                        \(t = -\boldsymbol{b}^\top \boldsymbol{w} / a\) and let \(\boldsymbol{v} \in \mathbb{R}^D\) be the vector whose first entry is
+                        \(t\) and whose remaining entries are those of \(\boldsymbol{w}\). Then \(\boldsymbol{v} \neq \boldsymbol{0}\) because \(\boldsymbol{w} \neq \boldsymbol{0}\), and
+                        <a href="../Linear_algebra/matrix_algebra.html#T-block_multiplication" class="ref-link"><strong>block multiplication</strong></a>
+                        gives
+                        \[
+                        \begin{align*}
+                        \boldsymbol{v}^\top \boldsymbol{A} \boldsymbol{v}
+                        &= a t^2 + 2t\,\boldsymbol{b}^\top \boldsymbol{w} + \boldsymbol{w}^\top \boldsymbol{C} \boldsymbol{w} \\\\
+                        &= \boldsymbol{w}^\top \boldsymbol{C} \boldsymbol{w} - \frac{1}{a}\left(\boldsymbol{b}^\top \boldsymbol{w}\right)^2 \\\\
+                        &= \boldsymbol{w}^\top \boldsymbol{S} \boldsymbol{w}.
+                        \end{align*}
+                        \]
+                        The first equality also uses \(\boldsymbol{w}^\top \boldsymbol{b} = \boldsymbol{b}^\top \boldsymbol{w}\), the second substitutes
+                        the value of \(t\), and the last uses
+                        \(\left(\boldsymbol{b}^\top \boldsymbol{w}\right)^2 = \boldsymbol{w}^\top \boldsymbol{b}\boldsymbol{b}^\top \boldsymbol{w}\)
+                        together with the definition of \(\boldsymbol{S}\).
+                        Since \(\boldsymbol{A}\) is positive definite, \(\boldsymbol{w}^\top \boldsymbol{S} \boldsymbol{w} \gt 0\).
+                    </p>
+                    <p>
+                        By the induction hypothesis, \(\boldsymbol{S} = \boldsymbol{L}'\boldsymbol{L}'^\top\) for a lower triangular matrix
+                        \(\boldsymbol{L}'\) with positive diagonal entries. Define
+                        \[
+                        \boldsymbol{L} = \begin{bmatrix} \sqrt{a} & \boldsymbol{0}^\top \\ \boldsymbol{b}/\sqrt{a} & \boldsymbol{L}' \end{bmatrix},
+                        \]
+                        which is lower triangular with positive diagonal entries. Transposing block by block, we have
+                        \[
+                        \boldsymbol{L}^\top = \begin{bmatrix} \sqrt{a} & \boldsymbol{b}^\top/\sqrt{a} \\ \boldsymbol{0} & \boldsymbol{L}'^\top \end{bmatrix},
+                        \]
+                        and block multiplication, followed by \(\boldsymbol{L}'\boldsymbol{L}'^\top = \boldsymbol{S}\), gives
+                        \[
+                        \begin{align*}
+                        \boldsymbol{L}\boldsymbol{L}^\top
+                        &= \begin{bmatrix} a & \boldsymbol{b}^\top \\ \boldsymbol{b} & \frac{1}{a}\boldsymbol{b}\boldsymbol{b}^\top + \boldsymbol{L}'\boldsymbol{L}'^\top \end{bmatrix} \\\\
+                        &= \begin{bmatrix} a & \boldsymbol{b}^\top \\ \boldsymbol{b} & \boldsymbol{C} \end{bmatrix} \\\\
+                        &= \boldsymbol{A}.
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        <strong>Uniqueness.</strong> We again argue by induction on \(D\). For \(D = 1\), the single entry \(\ell\) of
+                        \(\boldsymbol{L}\) must satisfy \(\ell^2 = a\) and \(\ell \gt 0\), so \(\ell = \sqrt{a}\). For \(D \geq 2\), keep the
+                        partition of \(\boldsymbol{A}\) above and let \(\boldsymbol{L}\) be any lower triangular matrix with positive diagonal
+                        entries such that \(\boldsymbol{A} = \boldsymbol{L}\boldsymbol{L}^\top\). Partition it conformally as
+                        \[
+                        \boldsymbol{L} = \begin{bmatrix} \ell & \boldsymbol{0}^\top \\ \boldsymbol{m} & \boldsymbol{M} \end{bmatrix},
+                        \]
+                        where \(\ell \gt 0\), \(\boldsymbol{m} \in \mathbb{R}^{D-1}\), and \(\boldsymbol{M}\) is lower triangular with positive
+                        diagonal entries. Taking the transpose blockwise and multiplying out, we find
+                        \[
+                        \boldsymbol{L}\boldsymbol{L}^\top
+                        = \begin{bmatrix} \ell^2 & \ell\,\boldsymbol{m}^\top \\ \ell\,\boldsymbol{m} & \boldsymbol{m}\boldsymbol{m}^\top + \boldsymbol{M}\boldsymbol{M}^\top \end{bmatrix}.
+                        \]
+                        Comparing blocks with the partition of \(\boldsymbol{A}\), we see that \(\ell^2 = a\), which forces \(\ell = \sqrt{a}\)
+                        because \(\ell \gt 0\). The equation \(\ell\,\boldsymbol{m} = \boldsymbol{b}\) then gives \(\boldsymbol{m} = \boldsymbol{b}/\sqrt{a}\),
+                        and so \(\boldsymbol{M}\boldsymbol{M}^\top = \boldsymbol{C} - \boldsymbol{m}\boldsymbol{m}^\top = \boldsymbol{S}\). The existence
+                        part showed that \(\boldsymbol{S}\) is symmetric positive definite, so the induction hypothesis determines \(\boldsymbol{M}\)
+                        uniquely. Hence \(\boldsymbol{L}\) is unique.
+                    </p>
+                    <p>
+                        <strong>Converse.</strong> Suppose \(\boldsymbol{A} = \boldsymbol{L}\boldsymbol{L}^\top\) with \(\boldsymbol{L}\) as in the
+                        statement. Then
+                        \(\boldsymbol{A}^\top = (\boldsymbol{L}^\top)^\top \boldsymbol{L}^\top = \boldsymbol{L}\boldsymbol{L}^\top = \boldsymbol{A}\),
+                        and for every \(\boldsymbol{u} \in \mathbb{R}^D\),
+                        \[
+                        \boldsymbol{u}^\top \boldsymbol{A} \boldsymbol{u} = \left(\boldsymbol{L}^\top \boldsymbol{u}\right)^\top \left(\boldsymbol{L}^\top \boldsymbol{u}\right),
+                        \]
+                        the sum of the squares of the entries of \(\boldsymbol{L}^\top \boldsymbol{u}\). It remains to show that
+                        \(\boldsymbol{L}^\top \boldsymbol{u} \neq \boldsymbol{0}\) whenever \(\boldsymbol{u} \neq \boldsymbol{0}\). The \(i\)-th entry
+                        of \(\boldsymbol{L}^\top \boldsymbol{u}\) is \(L_{ii} u_i + \sum_{j \gt i} L_{ji} u_j\), because \(L_{ji} = 0\) for
+                        \(j \lt i\). Suppose \(\boldsymbol{L}^\top \boldsymbol{u} = \boldsymbol{0}\). The last entry reads \(L_{DD} u_D = 0\), and
+                        \(L_{DD} \gt 0\) gives \(u_D = 0\). Working upward through \(i = D-1, \ldots, 1\), the entries \(u_j\) with \(j \gt i\) are already
+                        known to vanish, so we obtain \(L_{ii} u_i = 0\) at each step, and \(u_i = 0\) because \(L_{ii} \gt 0\). Thus \(\boldsymbol{u} = \boldsymbol{0}\), and
+                        \(\boldsymbol{u}^\top \boldsymbol{A} \boldsymbol{u} \gt 0\) for every nonzero \(\boldsymbol{u}\).
                     </p>
                 </div>
 
                 <p>
-                    The Cholesky factor \(\boldsymbol{L}\) of \(\Sigma\) provides a recipe for converting standard normal 
+                    Returning to sampling, the Cholesky factor \(\boldsymbol{L}\) of \(\Sigma\) provides a recipe for converting standard normal 
                     samples into MVN samples with arbitrary mean and covariance.
                 </p>
 
