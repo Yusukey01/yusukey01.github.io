@@ -1,9 +1,12 @@
 //======================================================================
-// sec2_p35_trichotomy_demo.js (v2) -- calc-35
+// sec2_p35_trichotomy_demo.js (v3) -- calc-35
 // [Core IIFE] TriCore: heat / wave / Laplace mathematics, DOM-free.
-// The solver code below is carried over from v1 (spec v2) verbatim; the
-// v1 load-time self-tests are ported into the blocking runSelfTests()
-// gate and extended with route-independence and closed-form certificates.
+// v3 changes to the solvers: heat is solved on the real line (zero-padded
+// spectral solve) rather than on the periodic window; the cumulative
+// integral of g is the exact integral of its linear interpolant (the v2
+// rule was shifted by one grid step); the Poisson integral integrates the
+// kernel exactly over each grid cell, so the discrete maximum principle
+// holds at every depth. The blocking self-test gate certifies all three.
 //======================================================================
 var TriCore = (function () {
 
@@ -26,8 +29,9 @@ const X_MAX = 1.0;
 
 /**
  * Build the spatial grid {x_j} for j = 0, ..., N-1.
- * The grid covers x ∈ [-1, 1) at spacing Δx; the periodic endpoint x = +1
- * is not included (it would coincide with x = -1 mod L under periodic BC).
+ * The grid covers x ∈ [-1, 1) at spacing Δx; the endpoint x = +1 is not
+ * included (the grid is the first N points of an FFT grid, on which x = +1
+ * would coincide with x = -1 modulo the period).
  *
  * @returns {Float64Array} length-N grid of x-coordinates
  */
@@ -40,15 +44,17 @@ function buildSpatialGrid() {
 }
 
 /**
- * Build the wave-number array {ξ_n} used by the heat-equation spectral solver.
+ * Build the wave-number array {ξ_n} for a DFT on the window. (v2's heat
+ * solver used it; v3 solves heat on the zero-padded grid with XI_H below,
+ * and XI is kept only as an export.)
  *
- * Convention (fftshift): for a DFT of length N on a periodic domain of
+ * Convention (unshifted FFT order): for a DFT of length N on a periodic domain of
  * length L, the wave numbers are
  *     ξ_n = 2π n / L              for n = 0, 1, ..., N/2
  *     ξ_n = 2π (n - N) / L        for n = N/2 + 1, ..., N - 1
  * This places positive frequencies in the lower half and negative
- * frequencies in the upper half of the output array — the standard
- * "fftshift" convention used by numpy.fft and most scientific code.
+ * frequencies in the upper half of the output array — the unshifted
+ * order of numpy.fft.fftfreq, i.e. before any fftshift is applied.
  *
  * @returns {Float64Array} length-N array of wave numbers
  */
@@ -70,10 +76,11 @@ function buildWaveNumbers() {
 // ------------------------------------------------------------
 // Implementation notes:
 //   - In-place algorithm: operates on the input arrays directly.
-//   - Caller is responsible for ensuring N is a power of 2 (= 256 here).
+//   - Transform lengths must be powers of 2: N = 256 on the window and
+//     NH = 2048 on the zero-padded heat grid.
 //   - We store complex arrays as a pair (re, im) of Float64Arrays.
-//   - The bit-reverse permutation is precomputed once at boot for N = 256;
-//     this is a substantial speedup over recomputing it per FFT call.
+//   - The bit-reverse permutation is precomputed once at boot for each
+//     length; this is a substantial speedup over recomputing it per call.
 //   - Twiddle factors {exp(-2πi k / N)} are likewise precomputed.
 //
 // Mathematical convention:
@@ -90,12 +97,13 @@ function buildWaveNumbers() {
  * For index j ∈ {0, ..., N-1}, bitRev[j] is the value of j with its
  * log2(N) lowest bits reversed.
  *
- * @returns {Uint16Array} length-N permutation array
+ * @param {number} n  transform length (a power of 2)
+ * @returns {Uint16Array} length-n permutation array
  */
-function buildBitReversal() {
-    const logN = Math.log2(N) | 0;   // 8 for N = 256
-    const br = new Uint16Array(N);
-    for (let j = 0; j < N; j++) {
+function buildBitReversal(n) {
+    const logN = Math.log2(n) | 0;   // 8 for n = 256
+    const br = new Uint16Array(n);
+    for (let j = 0; j < n; j++) {
         let r = 0, v = j;
         for (let b = 0; b < logN; b++) {
             r = (r << 1) | (v & 1);
@@ -113,14 +121,15 @@ function buildBitReversal() {
  *
  * For inverse FFT, the same arrays are used with conjugation (sin negated).
  *
- * @returns {{cos: Float64Array, sin: Float64Array}} cos/sin of -2πk/N
+ * @param {number} n  transform length (a power of 2)
+ * @returns {{cos: Float64Array, sin: Float64Array}} cos/sin of -2πk/n
  */
-function buildTwiddles() {
-    const NHALF = N / 2;
+function buildTwiddles(n) {
+    const NHALF = n / 2;
     const c = new Float64Array(NHALF);
     const s = new Float64Array(NHALF);
     for (let k = 0; k < NHALF; k++) {
-        const theta = -2.0 * Math.PI * k / N;
+        const theta = -2.0 * Math.PI * k / n;
         c[k] = Math.cos(theta);
         s[k] = Math.sin(theta);
     }
@@ -128,8 +137,8 @@ function buildTwiddles() {
 }
 
 // Boot-time global precomputations (constant across the entire demo lifetime)
-const BIT_REV = buildBitReversal();
-const TWIDDLES = buildTwiddles();
+const BIT_REV = buildBitReversal(N);
+const TWIDDLES = buildTwiddles(N);
 
 /**
  * In-place forward FFT on the complex sequence (re, im) of length N.
@@ -141,9 +150,18 @@ const TWIDDLES = buildTwiddles();
  * @param {Float64Array} im  imaginary parts, length N
  */
 function fft(re, im) {
+    fftCore(re, im, N, BIT_REV, TWIDDLES);
+}
+
+/**
+ * Radix-2 decimation-in-time FFT of length n with precomputed tables.
+ * Shared by the window-length transform fft() and the zero-padded
+ * heat transform fftHeat().
+ */
+function fftCore(re, im, n, bitRev, twiddles) {
     // Step 1: bit-reverse the input (in-place).
-    for (let j = 0; j < N; j++) {
-        const k = BIT_REV[j];
+    for (let j = 0; j < n; j++) {
+        const k = bitRev[j];
         if (k > j) {
             // Swap (re[j], im[j]) with (re[k], im[k])
             let tmp = re[j]; re[j] = re[k]; re[k] = tmp;
@@ -155,12 +173,12 @@ function fft(re, im) {
     //     For each butterfly j in the block:
     //       Combine the lower half (s+j) with the upper half (s+j+m/2)
     //       using twiddle factor W^(j · N/m).
-    const Tcos = TWIDDLES.cos;
-    const Tsin = TWIDDLES.sin;
-    for (let m = 2; m <= N; m <<= 1) {
+    const Tcos = twiddles.cos;
+    const Tsin = twiddles.sin;
+    for (let m = 2; m <= n; m <<= 1) {
         const mh = m >> 1;
-        const tStep = N / m;      // stride into the twiddle table for this stage
-        for (let s = 0; s < N; s += m) {
+        const tStep = n / m;      // stride into the twiddle table for this stage
+        for (let s = 0; s < n; s += m) {
             for (let j = 0; j < mh; j++) {
                 const tIdx = j * tStep;
                 const wr = Tcos[tIdx];
@@ -189,12 +207,16 @@ function fft(re, im) {
  * @param {Float64Array} im  imaginary parts, length N
  */
 function ifft(re, im) {
+    ifftCore(re, im, N, BIT_REV, TWIDDLES);
+}
+
+function ifftCore(re, im, n, bitRev, twiddles) {
     // Conjugate input
-    for (let j = 0; j < N; j++) im[j] = -im[j];
-    fft(re, im);
+    for (let j = 0; j < n; j++) im[j] = -im[j];
+    fftCore(re, im, n, bitRev, twiddles);
     // Conjugate and scale output
-    const invN = 1.0 / N;
-    for (let j = 0; j < N; j++) {
+    const invN = 1.0 / n;
+    for (let j = 0; j < n; j++) {
         re[j] = re[j] * invN;
         im[j] = -im[j] * invN;
     }
@@ -336,12 +358,55 @@ function trapz(fGrid) {
 const X_GRID = buildSpatialGrid();
 const XI = buildWaveNumbers();
 
+// ------------------------------------------------------------
+// Zero-padded grid for the heat equation on the real line
+// ------------------------------------------------------------
+// The heat panel shows the solution of u_t = k u_xx on the whole line
+// with initial datum f extended by zero outside the window, as in the
+// wave and Laplace panels. A spectral solve on
+// the window itself would instead solve the periodic problem, whose
+// solution tends to the window average rather than to zero (visible at
+// large k t). We therefore embed the window [-1, 1) as the first N points
+// of a periodic domain of length HEAT_PAD · L = 16, i.e. [-1, 15). The
+// periodic images of the initial support lie at distance at least 14 from
+// the window. The heat kernel at distance 14 is
+// (4π k t)^(-1/2) · exp(-14² / (4 k t)), which increases with k t, so for
+// k t <= 0.25 (k <= 0.05, t <= 5) it is at most 0.57 · exp(-196), and
+// on the window the padded periodic solution agrees with the
+// real-line solution to far below double-precision rounding.
+const HEAT_PAD = 8;
+const NH = N * HEAT_PAD;                       // 2048 padded points
+const BIT_REV_H = buildBitReversal(NH);
+const TWIDDLES_H = buildTwiddles(NH);
+const XI_H = (function () {
+    const xi = new Float64Array(NH);
+    const LH = L * HEAT_PAD;
+    for (let n = 0; n <= NH / 2; n++) xi[n] = (2.0 * Math.PI * n) / LH;
+    for (let n = NH / 2 + 1; n < NH; n++) xi[n] = (2.0 * Math.PI * (n - NH)) / LH;
+    return xi;
+})();
+
+/**
+ * Forward transform of the zero-padded initial profile for the heat solver.
+ * Output arrays have length NH; entries 0..N-1 of the padded signal are f.
+ *
+ * @param {Float64Array} fReal  profile on the window grid, length N
+ * @returns {{re: Float64Array, im: Float64Array}} length-NH DFT
+ */
+function heatSpectrum(fReal) {
+    const re = new Float64Array(NH);
+    const im = new Float64Array(NH);
+    re.set(fReal);                       // f on the window, zero elsewhere
+    fftCore(re, im, NH, BIT_REV_H, TWIDDLES_H);
+    return { re, im };
+}
+
 
 /**
  * Gaussian profile: f(x) = exp(-x²/(2σ²)), σ = 0.10.
  *
  * Verification: f(±1) = exp(-50) ≈ 1.9 × 10^-22, far below the 10^-5 tail
- * tolerance required for periodic BC and zero-extension consistency.
+ * tolerance required for zero-extension consistency.
  *
  * @returns {Float64Array} length-N tabulated Gaussian
  */
@@ -464,8 +529,11 @@ function gProfileAtRest() {
  * Discontinuous at x = 0 (g(0+) = +A, g(0-) = -A); we set g(0) = 0 by
  * convention. Localized: g ≈ 0 outside |x| > 3σ.
  *
- * Numerical effect with the Gaussian f: max u ≈ 1.13, min u ≈ -0.13
- * (the bound [0,1] is breached on both sides).
+ * Numerical effect with the Gaussian f at the default c = 0.3, over
+ * τ ∈ [0, 1]: max u ≈ 1.11, min u ≈ -0.11 (the bound [0,1] is breached on
+ * both sides). The breach is on the lower side only (max u = 1) for the
+ * bimodal f at c >= 0.37 (min u between -0.50 and -0.31) and for the
+ * Triangle at c >= 0.54 (min u ≈ -0.01).
  */
 function gProfileOutwardKick() {
     const g = new Float64Array(N);
@@ -489,9 +557,9 @@ function gProfileOutwardKick() {
  * velocity at t = 0 — as if a stage lifts the whole string while
  * simultaneously the string had the shape f.
  *
- * Numerical effect: max u ≈ 1.25 (Gauss), ≈ 1.68 (Bimodal). The
- * solution rises monotonically until the travelling components carry
- * the disturbance out of the window.
+ * Numerical effect at the default c = 0.3, over τ ∈ [0, 1]: max u ≈ 1.25
+ * (Gauss), ≈ 1.68 (Bimodal). For c >= 0.50 the Triangle stays within
+ * [0, 1] (the f-part leaves the centre faster than the push lifts it).
  */
 function gProfileUniformPush() {
     const g = new Float64Array(N);
@@ -536,14 +604,18 @@ function buildGProfile(name) {
 //
 // Naming convention: all functions are PURE. They read inputs and write
 // to a caller-supplied output buffer; no DOM access, no global state
-// other than the boot-time constants (N, DX, X_GRID, XI).
+// other than the boot-time constants (N, DX, X_GRID, XI, NH, XI_H) and
+// the scratch buffer LAPLACE_W, which evolveLaplace fully rewrites before
+// reading on every call.
 //
 // Performance discipline (per spec §3.3, §4):
-//   - heat:    spectral multiply + IFFT, O(N log N).  fHat is cached
+//   - heat:    spectral multiply + IFFT on the zero-padded grid,
+//              O(NH log NH) with NH = 8N.  fHat is cached
 //              by the caller and only forward-FFTed on profile change.
 //   - wave:    d'Alembert evaluation, O(N).  Energy auxiliaries
 //              additionally O(N).
-//   - laplace: trapezoidal Poisson sum, O(N²).  Dominant cost.
+//   - laplace: Poisson kernel integrated exactly over each grid cell,
+//              O(N) arctan evaluations + O(N²) weighted sum.  Dominant cost.
 
 
 // ------------------------------------------------------------
@@ -551,35 +623,39 @@ function buildGProfile(name) {
 // ------------------------------------------------------------
 
 /**
- * Evolve the heat equation u_t = k u_xx on the periodic domain of length L.
+ * Evolve the heat equation u_t = k u_xx on the real line, with initial
+ * datum f extended by zero outside the window (see the zero-padded grid
+ * above).
  *
- * Method: spectral. Given the precomputed forward FFT of the initial
- * profile, multiply each mode by exp(-k ξ_n² t) and inverse-transform.
+ * Method: spectral on the padded domain. Given the precomputed forward
+ * FFT of the zero-padded profile (heatSpectrum), multiply each mode by
+ * exp(-k ξ_n² t) and inverse-transform.
  *
- * The caller supplies workspace buffers (re, im) to avoid per-call
- * allocation; on entry they may hold any data — this function overwrites
- * them. On exit, re contains the real part of u(·, t); im contains the
- * imaginary residual (numerical noise, ~10^-15).
+ * The caller supplies workspace buffers (re, im) of length NH to avoid
+ * per-call allocation; on entry they may hold any data — this function
+ * overwrites them. On exit, re[0..N-1] contains u(·, t) on the window
+ * grid (re[N..NH-1] is the solution on the padding, x in [1, 15)); im
+ * contains the imaginary residual (numerical noise, ~10^-15).
  *
- * @param {Float64Array} fHatRe   real part of FFT(f), length N        — input
- * @param {Float64Array} fHatIm   imaginary part of FFT(f), length N   — input
+ * @param {Float64Array} fHatRe   real part of the padded FFT, length NH      — input
+ * @param {Float64Array} fHatIm   imaginary part of the padded FFT, length NH — input
  * @param {number}       t        physical time
  * @param {number}       k        diffusivity
- * @param {Float64Array} re       output buffer for real part, length N
- * @param {Float64Array} im       output buffer for imag part, length N
+ * @param {Float64Array} re       output buffer for real part, length NH
+ * @param {Float64Array} im       output buffer for imag part, length NH
  */
 function evolveHeat(fHatRe, fHatIm, t, k, re, im) {
     // Apply the heat semigroup in the frequency domain:
     //   û(ξ_n, t) = f̂(ξ_n) · exp(-k ξ_n² t)
     // The DC mode (n = 0) has ξ_0 = 0 and is preserved exactly.
-    for (let n = 0; n < N; n++) {
-        const xi = XI[n];
+    for (let n = 0; n < NH; n++) {
+        const xi = XI_H[n];
         const damp = Math.exp(-k * xi * xi * t);
         re[n] = fHatRe[n] * damp;
         im[n] = fHatIm[n] * damp;
     }
     // Inverse-transform back to physical space.
-    ifft(re, im);
+    ifftCore(re, im, NH, BIT_REV_H, TWIDDLES_H);
 }
 
 
@@ -605,7 +681,9 @@ function evolveHeat(fHatRe, fHatIm, t, k, re, im) {
  * a "constant continuation" of G outside [-1, 1] — at s ≤ -1 we have
  * G̃(s) = 0 (g vanishes there), at s ≥ +1 we have G̃(s) = G(+1) (total
  * mass of g), interpreted as the contribution of g over [-1, 1] only.
- * Linear interpolation of G inside [-1, 1].
+ * Linear interpolation of G inside [-1, 1]. Here g̃ is the linear
+ * interpolant of the samples, zero outside [x_0, x_{N-1}], exactly as in
+ * interp1d.
  *
  * Cost: O(N) per call (one interp per grid point).
  *
@@ -635,7 +713,14 @@ function evolveWave(f, gCumul, t, c, uOut) {
 
 /**
  * Compute the cumulative integral G(s) = ∫_{-1}^{s} g̃(σ) dσ tabulated
- * at the N+1 knots s_k = -1 + k·DX for k = 0, ..., N. Trapezoidal rule.
+ * at the N+1 knots s_k = -1 + k·DX for k = 0, ..., N.
+ *
+ * Here g̃ is the same function the rest of the demo uses (interp1d): the
+ * linear interpolant of the samples on [x_0, x_{N-1}] = [-1, 1 - DX],
+ * zero outside. The knot s_k coincides with the sample point x_k for
+ * k <= N - 1, so on each cell the trapezoid DX · (g_{k-1} + g_k) / 2 is
+ * the exact integral of g̃, and G[k] is exact at every knot. On the last
+ * cell [x_{N-1}, +1] the interpolant is zero, so G[N] = G[N-1].
  *
  * @param {Float64Array} g       g sampled on the grid, length N
  * @returns {Float64Array}       length-(N+1) cumulative integral, G[0] = 0
@@ -643,19 +728,10 @@ function evolveWave(f, gCumul, t, c, uOut) {
 function cumulativeIntegrate(g) {
     const G = new Float64Array(N + 1);
     // G[0] = 0 (integral from -1 to -1)
-    // The grid samples g[j] are at positions x = -1 + j·DX for j = 0,...,N-1.
-    // The k-th knot is at s_k = -1 + k·DX. Trapezoidal between consecutive
-    // knots uses the average of g at the two endpoints; for the last
-    // knot (k = N, position +1), we use g[N-1] alone since g is sampled
-    // only at indices 0..N-1.
-    for (let k = 1; k <= N; k++) {
-        const gThis = g[k - 1];
-        const gPrev = (k >= 2) ? g[k - 2] : g[0];
-        // Trapezoid: ∫_{s_{k-1}}^{s_k} g ds ≈ DX · (g_{k-1} + g_k)/2
-        // where g_k is interpolated. With knots at sample positions
-        // (offset by half), we use a simple midpoint-like rule:
-        G[k] = G[k - 1] + DX * 0.5 * (gPrev + gThis);
+    for (let k = 1; k <= N - 1; k++) {
+        G[k] = G[k - 1] + DX * 0.5 * (g[k - 1] + g[k]);
     }
+    G[N] = G[N - 1];
     return G;
 }
 
@@ -663,7 +739,8 @@ function cumulativeIntegrate(g) {
  * Interpolate the cumulative integral G at an arbitrary position s.
  * For s ≤ -1, return 0; for s ≥ +1, return G[N] (the total mass).
  * Inside [-1, +1], linear interpolation between the two surrounding
- * knots G[k], G[k+1].
+ * knots G[k], G[k+1] (G itself is piecewise quadratic there, so the
+ * interpolation error is at most DX² · max|g̃'| / 8 on each cell).
  *
  * @param {Float64Array} G   length-(N+1) cumulative integral
  * @param {number}       s   query point
@@ -723,13 +800,21 @@ function waveEnergy(fPrime, g, t, c) {
  *     u(x, y) = (1/π) ∫ y / ((x − s)² + y²) · f̃(s) ds
  * where f̃ denotes f extended by zero outside [-1, 1].
  *
- * Discrete trapezoidal rule on the grid:
- *     u(x_i, y) ≈ Δx · Σ_j w_j · P_y(x_i − x_j) · f_j
- * where P_y(z) = (1/π) y / (z² + y²) and w_j = 1 for interior points,
- * w_j = 1/2 for j = 0 and j = N-1 (trapezoidal endpoint weighting).
+ * Discretization: f̃ is taken constant (= f_j) on each grid cell
+ * [x_j − Δx/2, x_j + Δx/2] and the kernel is integrated exactly over
+ * the cell,
+ *     u(x_i, y) ≈ Σ_j W_{i−j}(y) · f_j,
+ *     W_d(y) = (1/π) [ arctan((d + 1/2) Δx / y) − arctan((d − 1/2) Δx / y) ],
+ * using ∫ P_y = (1/π) arctan(z / y). The weights are positive and sum to
+ * less than 1, so min(0, min f) <= u <= max(0, max f) holds exactly at
+ * every depth (the discrete maximum principle; for the demo's non-negative
+ * profiles, 0 <= u <= max f). A pointwise rule Δx · P_y(x_i − x_j) would
+ * not have this property: for y below about Δx the kernel is narrower
+ * than the grid and its point samples sum to coth(π y / Δx) > 1, which
+ * pushed u above max f at the first slider step.
  *
- * Cost: O(N²) per call — the dominant operation in the demo. At N = 256
- * this is ~65,000 multiplies, comfortably under 5ms (see spec §4).
+ * Cost: O(N) arctan evaluations plus an O(N²) weighted sum per call — the
+ * dominant operation in the demo. At N = 256 this is ~65,000 multiplies.
  *
  * Special case y = 0: the Poisson kernel degenerates (kernel mass
  * concentrates at z = 0 only as y → 0⁺). At exactly y = 0, the integral
@@ -740,6 +825,8 @@ function waveEnergy(fPrime, g, t, c) {
  * @param {number}       y       depth (≥ 0)
  * @param {Float64Array} uOut    output buffer for u(·, y), length N
  */
+const LAPLACE_W = new Float64Array(2 * N - 1);   // scratch for evolveLaplace
+
 function evolveLaplace(f, y, uOut) {
     if (y <= 0.0) {
         // y = 0: u(x, 0) = f(x) is the boundary condition itself.
@@ -747,27 +834,21 @@ function evolveLaplace(f, y, uOut) {
         return;
     }
     const INV_PI = 1.0 / Math.PI;
-    const yFactor = y * INV_PI;        // (1/π) · y, pulled out of the loop
+    // Cell weights W_d for offsets d = i − j ∈ {−(N−1), ..., N−1},
+    // stored at index d + (N − 1) in a buffer allocated once at boot.
+    const W = LAPLACE_W;
+    for (let d = -(N - 1); d <= N - 1; d++) {
+        W[d + N - 1] = INV_PI * (Math.atan(((d + 0.5) * DX) / y)
+                               - Math.atan(((d - 0.5) * DX) / y));
+    }
     // Outer loop: each output point x_i
     for (let i = 0; i < N; i++) {
-        const xi_ = X_GRID[i];
         let acc = 0.0;
-        // Inner loop: integrate the kernel against f over the grid.
-        // Trapezoidal endpoint weights (1/2) for j = 0 and j = N-1.
-        // The two endpoint values contribute very little for our profiles
-        // (boundary tails < 10^-5), so the trapezoidal correction is
-        // tiny — but we apply it for principle and to make the rule exact
-        // for affine boundary data.
-        for (let j = 1; j < N - 1; j++) {
-            const dz = xi_ - X_GRID[j];
-            acc += f[j] / (dz * dz + y * y);
+        const base = i + N - 1;          // index of W_{i − j} is base − j
+        for (let j = 0; j < N; j++) {
+            acc += W[base - j] * f[j];
         }
-        // Endpoint half-weights
-        const dz0 = xi_ - X_GRID[0];
-        const dzN = xi_ - X_GRID[N - 1];
-        acc += 0.5 * f[0]     / (dz0 * dz0 + y * y);
-        acc += 0.5 * f[N - 1] / (dzN * dzN + y * y);
-        uOut[i] = DX * yFactor * acc;
+        uOut[i] = acc;
     }
 }
 
@@ -785,7 +866,8 @@ function evolveLaplace(f, y, uOut) {
 
   //====================================================================
   // Self-tests (blocking gate; v1 tests F1-F3, P, H1-H2, W1-W6, L1-L3
-  // ported, plus new certificates N1, N4-N7)
+  // ported, plus certificates N1, N4-N7 and, in v3, F4, H3, W7a-b, L4;
+  // H1 and N1 were restated for the real-line heat problem)
   //====================================================================
   function runSelfTests() {
     var failures = [];
@@ -836,25 +918,36 @@ function evolveLaplace(f, y, uOut) {
 
     var f = profileGaussian();
     var fp = centralDiff(f);
-    var fHat = fftReal(f);
+    var fHat = heatSpectrum(f);
     var gZero = gProfileAtRest(), gKick = gProfileOutwardKick(), gPush = gProfileUniformPush();
     var GZero = cumulativeIntegrate(gZero), GKick = cumulativeIntegrate(gKick), GPush = cumulativeIntegrate(gPush);
-    function freshHeat(tt, k) {
-      var re = new Float64Array(N), im = new Float64Array(N);
-      evolveHeat(new Float64Array(fHat.re), new Float64Array(fHat.im), tt, k, re, im);
+    function freshHeat(tt, k, spec) {
+      var sp = spec || fHat;
+      var re = new Float64Array(NH), im = new Float64Array(NH);
+      evolveHeat(new Float64Array(sp.re), new Float64Array(sp.im), tt, k, re, im);
       return re;
     }
 
     (function () {
-      var re = freshHeat(1.0, 0.01);
+      var re = new Float64Array(NH), im = new Float64Array(NH), orig = new Float64Array(NH), maxErr = 0;
+      for (j = 0; j < NH; j++) { orig[j] = Math.sin(0.0371 * j) + 0.25 * Math.cos(0.9 * j); re[j] = orig[j]; }
+      fftCore(re, im, NH, BIT_REV_H, TWIDDLES_H);
+      ifftCore(re, im, NH, BIT_REV_H, TWIDDLES_H);
+      for (j = 0; j < NH; j++) maxErr = Math.max(maxErr, Math.abs(re[j] - orig[j]), Math.abs(im[j]));
+      check('F4 padded ifft(fft(x)) == x', maxErr < 1e-11, maxErr.toExponential(2));
+    })();
+    (function () {
+      // total mass on the line = sum over the whole padded domain
+      var re = freshHeat(5.0, 0.05);
       var s0 = 0, s1 = 0;
-      for (j = 0; j < N; j++) { s0 += f[j]; s1 += re[j]; }
-      check('H1 heat conserves the discrete sum', Math.abs(s1 - s0) < 1e-10, (s1 - s0).toExponential(2));
+      for (j = 0; j < N; j++) s0 += f[j];
+      for (j = 0; j < NH; j++) s1 += re[j];
+      check('H1 heat conserves the total mass on the line', Math.abs(s1 - s0) < 1e-10, (s1 - s0).toExponential(2));
     })();
     (function () {
       var prevMax = 1.0 + 1e-12, ok = true, mono = true;
       [0.5, 1.0, 5.0].forEach(function (tt) {
-        var re = freshHeat(tt, 0.01);
+        var re = freshHeat(tt, 0.05);
         var mx = -Infinity, mn = Infinity;
         for (j = 0; j < N; j++) { mx = Math.max(mx, re[j]); mn = Math.min(mn, re[j]); }
         if (mx > 1 + 1e-10 || mn < -1e-10) ok = false;
@@ -865,16 +958,32 @@ function evolveLaplace(f, y, uOut) {
       check('H2b heat max non-increasing in t (dissipation)', mono);
     })();
     (function () {
-      var mode = new Float64Array(N);
-      for (j = 0; j < N; j++) mode[j] = Math.cos(Math.PI * X_GRID[j]);
-      var mh = fftReal(mode);
-      var re = new Float64Array(N), im = new Float64Array(N);
-      var k = 0.02, tt = 0.7;
-      evolveHeat(mh.re, mh.im, tt, k, re, im);
-      var damp = Math.exp(-k * Math.PI * Math.PI * tt);
+      // Real-line closed form for the Gaussian datum exp(-x^2/(2 s^2)), s = 0.1:
+      //   u(x, t) = s / sqrt(s^2 + 2kt) · exp(-x^2 / (2 (s^2 + 2kt))).
+      // At k t = 0.25 the periodic problem on the window differs from this
+      // by about 0.05 near x = ±1, so the test certifies the line problem.
       var worst = 0;
-      for (j = 0; j < N; j++) worst = Math.max(worst, Math.abs(re[j] - damp * mode[j]));
-      check('N1 heat closed form on cos(pi x)', worst < 1e-12, worst.toExponential(2));
+      [[0.02, 0.7], [0.05, 5.0]].forEach(function (kt) {
+        var re = freshHeat(kt[1], kt[0]), v = 0.01 + 2 * kt[0] * kt[1];
+        for (j = 0; j < N; j++) {
+          var x = X_GRID[j];
+          worst = Math.max(worst, Math.abs(re[j] - Math.sqrt(0.01 / v) * Math.exp(-x * x / (2 * v))));
+        }
+      });
+      check('N1 heat closed form on the line (Gaussian datum)', worst < 1e-10, worst.toExponential(2));
+    })();
+    (function () {
+      var ok = true;
+      ['triangle', 'bimodal'].forEach(function (nm) {
+        var sp = heatSpectrum(buildProfile(nm));
+        [0.005, 0.05, 1.0].forEach(function (tau) {
+          [0.001, 0.05].forEach(function (k) {
+            var re = freshHeat(tau * 5.0, k, sp);
+            for (j = 0; j < N; j++) if (re[j] > 1 + 1e-6 || re[j] < -1e-6) ok = false;
+          });
+        });
+      });
+      check('H3 heat 0 <= u <= 1 for the other profiles', ok);
     })();
 
     (function () {
@@ -901,13 +1010,28 @@ function evolveLaplace(f, y, uOut) {
       });
       check('W3 wave energy conserved (g = kick, small t)', ok);
     })();
-    check('W5a cumulative integral of uniform 0.5 == 1', Math.abs(GPush[N] - 1.0) < 0.01, GPush[N]);
+    check('W5a cumulative integral of uniform 0.5 == 0.5 (2 - DX)', Math.abs(GPush[N] - 0.5 * (2 - DX)) < 1e-12, GPush[N]);
     check('W5b cumulative integral of zero g == 0', Math.abs(GZero[N]) < 1e-14);
     // constant-continuation contract: G-tilde is 0 left of the window and
     // the total mass right of it (documented; d'Alembert relies on it
     // whenever a characteristic leaves the window)
     check('W5c interpCumul right continuation == total mass', interpCumul(GPush, 2.0) === GPush[N]);
     check('W5d interpCumul left continuation == 0', interpCumul(GPush, -2.0) === 0.0);
+    (function () {
+      // g(x) = x: exact G(s) = (s^2 - 1)/2 on [-1, x_{N-1}]; linear
+      // interpolation of G costs at most DX^2/8 (a one-step shift of the
+      // knots would cost about DX).
+      var gl = new Float64Array(N), worst = 0;
+      for (j = 0; j < N; j++) gl[j] = X_GRID[j];
+      var Gl = cumulativeIntegrate(gl), knot = 0;
+      for (j = 0; j < N; j++) knot = Math.max(knot, Math.abs(Gl[j] - (X_GRID[j] * X_GRID[j] - 1) / 2));
+      check('W7a cumulative integral exact at the knots (g = x)', knot < 1e-13 && Gl[N] === Gl[N - 1], knot.toExponential(2));
+      for (var q = 0; q <= 400; q++) {
+        var sq = -1 + q * (2 - DX) / 400;
+        worst = Math.max(worst, Math.abs(interpCumul(Gl, sq) - (sq * sq - 1) / 2));
+      }
+      check('W7b cumulative integral within DX^2/8 between knots (g = x)', worst <= DX * DX / 8 + 1e-15, worst.toExponential(2));
+    })();
     (function () {
       var u = new Float64Array(N), maxOverall = -Infinity;
       [0.5, 1.0, 1.5].forEach(function (tt) {
@@ -1014,14 +1138,30 @@ function evolveLaplace(f, y, uOut) {
       }
       check('N6 Poisson kernel semigroup P_{y0} -> P_{y0+y}', worst < 5e-3, worst.toExponential(2));
     })();
+    (function () {
+      // discrete maximum principle at every depth, including depths below
+      // the grid spacing (the first slider steps)
+      var u = new Float64Array(N), ok = true, mx = -Infinity, mn = Infinity;
+      ['gaussian', 'triangle', 'bimodal'].forEach(function (nm) {
+        var fp0 = buildProfile(nm);
+        [0.004, 0.008, 0.016, 0.04, 0.2, 0.8].forEach(function (y) {
+          evolveLaplace(fp0, y, u);
+          for (j = 0; j < N; j++) {
+            mx = Math.max(mx, u[j]); mn = Math.min(mn, u[j]);
+            if (u[j] > 1 + 1e-12 || u[j] < -1e-12) ok = false;
+          }
+        });
+      });
+      check('L4 Laplace 0 <= u <= 1 at small depth, all profiles', ok, mn + ',' + mx);
+    })();
 
     return { pass: failures.length === 0, failures: failures };
   }
 
   return {
     N: N, L: L, DX: DX,
-    X_GRID: X_GRID, XI: XI,
-    fft: fft, ifft: ifft, fftReal: fftReal,
+    X_GRID: X_GRID, XI: XI, NH: NH, XI_H: XI_H,
+    fft: fft, ifft: ifft, fftReal: fftReal, heatSpectrum: heatSpectrum,
     interp1d: interp1d, centralDiff: centralDiff, trapz: trapz,
     buildProfile: buildProfile, buildGProfile: buildGProfile,
     profileGaussian: profileGaussian, profileTriangle: profileTriangle, profileBimodal: profileBimodal,
@@ -1054,7 +1194,7 @@ var evolveHeat = TriCore.evolveHeat;
 var evolveWave = TriCore.evolveWave;
 var evolveLaplace = TriCore.evolveLaplace;
 var waveEnergy = TriCore.waveEnergy;
-var fft = TriCore.fft;
+var heatSpectrum = TriCore.heatSpectrum;
 
 
 
@@ -1433,8 +1573,9 @@ function renderWavePanel(ctx, state, W, H, palette) {
     drawInitialVelocity(ctx, state.g, W, H, palette);
     // The two characteristics through the origin, x = -ct and x = +ct:
     // certificate N5 pins that the solution's support edges travel at
-    // exactly these speeds, so the markers ride the two travelling humps
-    // for every centred profile.
+    // exactly these speeds. For the single-hump profiles released at rest
+    // the markers ride the two travelling humps; for the bimodal profile
+    // they mark the characteristics through its centre.
     (function () {
         var ct = state.tau * T_W_MAX * state.c;
         if (ct > 1e-6 && ct < 1.02) {
@@ -1493,6 +1634,15 @@ function renderLaplacePanel(ctx, state, W, H, palette) {
 
 
 /**
+ * Round-off residue (e.g. -1e-17 from the heat IFFT) would print as
+ * "-0.0000" and read as a bound violation; values below the last shown
+ * digit are displayed as zero. The status tests use the raw value.
+ */
+function displayNumber(val) {
+    return (Math.abs(val) < 5e-5) ? 0 : val;
+}
+
+/**
  * Format max/min readout values, with bound-violation coloring class hint.
  *
  * @param {number} val   the current max u or min u
@@ -1501,7 +1651,7 @@ function renderLaplacePanel(ctx, state, W, H, palette) {
  * @returns {{text: string, violated: boolean}}
  */
 function formatBoundReadout(val, bound, kind) {
-    const text = val.toFixed(4);
+    const text = displayNumber(val).toFixed(4);
     const TOL = 2e-4;       // see spec §2.6
     let violated = false;
     if (kind === 'upper') {
@@ -1549,7 +1699,7 @@ function formatEnergyReadout(Et, E0) {
  * @returns {{text: string, band: 'green'|'amber'}}
  */
 function formatWaveBoundReadout(maxU) {
-    const text = maxU.toFixed(4);
+    const text = displayNumber(maxU).toFixed(4);
     const TOL = 2e-4;
     const band = (maxU > 1.0 + TOL) ? 'amber' : 'green';
     return { text, band };
@@ -2388,7 +2538,7 @@ function createInitialState() {
         // Initial-data and its derivatives (set on profile change)
         f:      new Float64Array(N),
         fPrime: new Float64Array(N),
-        fHat:   { re: new Float64Array(N), im: new Float64Array(N) },
+        fHat:   { re: new Float64Array(TriCore.NH), im: new Float64Array(TriCore.NH) },
         E0:     0.0,
 
         // Wave initial velocity g and its cumulative integral
@@ -2397,8 +2547,8 @@ function createInitialState() {
         gCumul: new Float64Array(N + 1),
 
         // Per-panel solutions (overwritten each frame)
-        uH:   new Float64Array(N),
-        uHIm: new Float64Array(N),   // sticky imag-output buffer for heat IFFT
+        uH:   new Float64Array(TriCore.NH),   // padded; entries 0..N-1 are the window
+        uHIm: new Float64Array(TriCore.NH),   // sticky imag-output buffer for heat IFFT
         uW:   new Float64Array(N),
         uL:   new Float64Array(N),
 
@@ -2425,10 +2575,10 @@ function applyProfileChange(state, name) {
     state.f.set(f);
     const fp = centralDiff(state.f);
     state.fPrime.set(fp);
-    // Forward FFT into the cached buffers
-    state.fHat.re.set(state.f);
-    state.fHat.im.fill(0.0);
-    fft(state.fHat.re, state.fHat.im);
+    // Forward FFT of the zero-padded profile into the cached buffers
+    const spec = heatSpectrum(state.f);
+    state.fHat.re.set(spec.re);
+    state.fHat.im.set(spec.im);
     // Initial energy at t = 0 for the current c and g
     state.E0 = waveEnergy(state.fPrime, state.g, 0.0, state.c);
     computeAllPanels(state);
@@ -2446,6 +2596,7 @@ function applyGProfileChange(state, name) {
     state.gCumul.set(cumulativeIntegrate(state.g));
     state.E0 = waveEnergy(state.fPrime, state.g, 0.0, state.c);
     computeWavePanel(state);
+    updateFrameDiagnostics(state);
 }
 
 /**
@@ -2454,6 +2605,7 @@ function applyGProfileChange(state, name) {
 function applyKChange(state, kNew) {
     state.k = kNew;
     computeHeatPanel(state);
+    updateFrameDiagnostics(state);
 }
 
 /**
@@ -2464,6 +2616,7 @@ function applyCChange(state, cNew) {
     state.c = cNew;
     state.E0 = waveEnergy(state.fPrime, state.g, 0.0, state.c);
     computeWavePanel(state);
+    updateFrameDiagnostics(state);
 }
 
 /**
@@ -2542,7 +2695,7 @@ function updateReadouts(state, refs) {
     // Compact variant: 2-decimal text and a different class set
     function setCompact(el, val, statusClass) {
         if (!el) return;
-        el.textContent = val.toFixed(2);
+        el.textContent = displayNumber(val).toFixed(2);
         el.classList.remove('tri-status-ok', 'tri-status-warn', 'tri-status-bad');
         if (statusClass) el.classList.add(statusClass);
     }
