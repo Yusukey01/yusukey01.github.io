@@ -159,7 +159,7 @@ uses_python: true
 
                 <p>
                     This factorization reduces the number of parameters needed to specify the joint distribution from exponential (in the number of
-                    variables) to a sum of local conditional distributions. Among all Bayesian networks, one of the simplest and most widely used
+                    variables) to at most the sum of the sizes of the local conditional probability tables. Among all Bayesian networks, one of the simplest and most widely used
                     structures is the <strong>linear chain</strong>, where every variable is conditioned only on the one before it. This leads to the
                     concept of a Markov chain.
                 </p>
@@ -434,7 +434,7 @@ uses_python: true
 
                 <p>
                     The estimator implements the closed-form MLE solutions derived above: \(\hat{\pi}_j = N_j^1 / \sum_{j'} N_{j'}^1\) and
-                    \(\hat{A}_{jk} = N_{jk} / N_j\). The corner case \(N_j = 0\) (a state never visited) is handled by setting the corresponding row of
+                    \(\hat{A}_{jk} = N_{jk} / N_j\). The corner case \(N_j = 0\) (a state never left) is handled by setting the corresponding row of
                     \(\hat{A}\) to zero. This pragmatic choice foreshadows the sparse-data discussion in the next section, where a Bayesian prior replaces
                     the ad-hoc fix.
                 </p>
@@ -493,7 +493,7 @@ uses_python: true
                                 
                                     pi_hat = N1 / np.sum(N1) # Estimate start probabilities π̂
                                     row_sums = np.sum(N_jk, axis=1, keepdims=True) # row_sums[j] = N_j (total transitions originating from state j)
-                                    # Estimate transition matrix Â. If state j is never visited (row_sums[j] = 0), 
+                                    # Estimate transition matrix Â. If state j is never left (row_sums[j] = 0), 
                                     # leave A_hat[j, :] as zeros to avoid division-by-zero — this sparse-zero case 
                                     # motivates the Dirichlet prior introduced in the next section.
                                     A_hat = np.divide(N_jk, row_sums, out=np.zeros_like(N_jk), where=row_sums != 0)
@@ -602,7 +602,8 @@ uses_python: true
                     \[
                     P(A_{j:}) \propto \prod_{k=1}^K (A_{jk})^{\alpha -1}.
                     \]
-                    (The prior adds the same amount to each transition probability.)
+                    (Every factor carries the same exponent \(\alpha - 1\), so once the likelihood is multiplied in below, the prior adds the same
+                    pseudocount \(\alpha\) to every count \(N_{jk}\).)
                 </p>
 
                 <p>
