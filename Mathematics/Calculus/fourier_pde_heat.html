@@ -30,9 +30,12 @@ uses_python: false
                 <h2>Introduction</h2>
 
                 <p>
-                    With the <a href="fourier_series.html"><strong>Fourier series</strong></a> and the
-                    <a href="fourier_transform.html"><strong>Fourier transform</strong></a> in hand, the toolkit of
-                    Fourier analysis can appear, from a computer science perspective, essentially complete.
+                    Three pages have built the toolkit of Fourier analysis: the
+                    <a href="fourier_series.html"><strong>Fourier series</strong></a>, the
+                    <a href="fourier_transform.html"><strong>Fourier transform</strong></a>, and their Hilbert-space
+                    formulation in
+                    <a href="fourier_hilbert.html"><strong>Fourier analysis in Hilbert spaces</strong></a>.
+                    From a computer science perspective, it can appear essentially complete.
                     Orthogonal decomposition, Plancherel's identity, convolution as pointwise multiplication, and
                     the FFT cover what most CS curricula treat as the entirety of the subject. Fourier is the engine
                     of signal processing, image compression, and spectral algorithms. Yet a question implicit in our
@@ -103,7 +106,10 @@ uses_python: false
                     u(x, 0) = f(x), & 0 \leq x \leq L,
                     \end{cases}
                     \]
-                    where \(f\) is a prescribed initial temperature profile.
+                    where \(f\) is a prescribed initial temperature profile. At the two corners \((0, 0)\) and
+                    \((L, 0)\) the boundary and initial conditions both apply, and they agree only if
+                    \(f(0) = f(L) = 0\). The theorem below fixes the precise sense in which each condition is
+                    imposed.
                 </p>
 
                 <p>
@@ -119,9 +125,10 @@ uses_python: false
                     ordinary differential equations linked by a separation constant. The spatial ODE together with
                     the boundary conditions becomes an <em>eigenvalue problem</em> whose solutions are the standing
                     waves of the rod. Superposition of these standing waves, weighted by the Fourier sine
-                    coefficients of \(f\), gives the complete solution. The method is due to Daniel Bernoulli
-                    (1700s) and was systematized by Fourier. Its scope extends far beyond the heat equation,
-                    underpinning much of the linear theory of partial differential equations on bounded domains.
+                    coefficients of \(f\), gives the complete solution. The idea of superposing standing modes goes
+                    back to Daniel Bernoulli, and Fourier made it systematic. The method reaches far beyond the heat
+                    equation and underpins much of the linear theory of partial differential equations on bounded
+                    domains.
                 </p>
 
                 <h3>Separation of Variables</h3>
@@ -191,26 +198,49 @@ uses_python: false
                 <div class="theorem" id="D-heat_eigenvalue_problem">
                     <span class="theorem-title">Definition: Eigenvalues and Eigenfunctions of the Dirichlet Laplacian on \([0, L]\)</span>
                     <p>
-                        A real number \(\lambda\) is an <strong>eigenvalue</strong> of the boundary value problem
+                        A number \(\lambda \in \mathbb{C}\) is an <strong>eigenvalue</strong> of the boundary value
+                        problem
                         \[
                         \begin{align*}
                         \phi''(x) + \lambda\, \phi(x) &= 0, \\\\
                         \phi(0) = \phi(L) &= 0
                         \end{align*}
                         \]
-                        if there exists a nontrivial solution \(\phi \not\equiv 0\). Any such \(\phi\) is called
-                        an <strong>eigenfunction</strong> corresponding to \(\lambda\). The terminology arises
-                        because the problem can be rewritten as \(-\phi'' = \lambda\, \phi\), expressing \(\phi\)
-                        as an eigenvector of the differential operator \(-d^2/dx^2\) acting on twice-differentiable
-                        functions on \([0, L]\) that vanish at both endpoints.
+                        if there exists a twice-differentiable solution \(\phi : [0, L] \to \mathbb{C}\) with
+                        \(\phi \not\equiv 0\). Any such \(\phi\) is called an <strong>eigenfunction</strong>
+                        corresponding to \(\lambda\). The terminology arises because the problem can be rewritten as
+                        \(-\phi'' = \lambda\, \phi\), expressing \(\phi\) as an eigenvector of the differential operator
+                        \(-d^2/dx^2\) acting on twice-differentiable functions on \([0, L]\) that vanish at both
+                        endpoints.
                     </p>
                 </div>
 
                 <p>
-                    To find the eigenvalues, we solve the ODE directly. The characteristic equation
-                    \(r^2 + \lambda = 0\) has roots \(r = \pm\sqrt{-\lambda}\), and the sign of \(\lambda\) decides
-                    whether these roots are real, zero, or purely imaginary. A complete analysis must consider three
-                    cases. (Complex eigenvalues are excluded automatically, as the proof below records.)
+                    Every eigenvalue is real and positive. Let \(\phi\) be an eigenfunction for \(\lambda\). Since
+                    \(\phi'' = -\lambda\, \phi\) is continuous, we may multiply \(-\phi'' = \lambda\, \phi\) by the
+                    complex conjugate \(\overline{\phi}\) and integrate by parts over \([0, L]\). The boundary term
+                    \([\phi'\, \overline{\phi}]_0^L\) vanishes because \(\phi(0) = \phi(L) = 0\), which gives the
+                    <em>energy identity</em>
+                    \[
+                    \begin{align*}
+                    \lambda \int_0^L |\phi(x)|^2\, dx
+                    &= -\int_0^L \phi''(x)\, \overline{\phi(x)}\, dx \\\\
+                    &= \int_0^L |\phi'(x)|^2\, dx.
+                    \end{align*}
+                    \]
+                    The integral on the left is positive, because \(\phi\) is continuous and not identically zero.
+                    Hence \(\lambda\) is real and \(\lambda \geq 0\). If \(\lambda = 0\), the identity forces
+                    \(\phi' \equiv 0\), so \(\phi\) is constant, and the boundary conditions make it zero.
+                    Therefore \(\lambda \gt 0\).
+                </p>
+
+                <p>
+                    To find the eigenvalues themselves, we solve the ODE directly. The characteristic equation
+                    \(r^2 + \lambda = 0\) has roots \(r = \pm\sqrt{-\lambda}\), and for real \(\lambda\) the sign
+                    decides whether these roots are real, zero, or purely imaginary. The identity above has already
+                    excluded \(\lambda \leq 0\). The direct computation confirms this independently, and it is what
+                    identifies the positive values that occur. We therefore consider three cases. Throughout, the
+                    constants \(c_1\) and \(c_2\) are complex numbers.
                 </p>
 
                 <p>
@@ -238,7 +268,7 @@ uses_python: false
 
                 <p>
                     <strong>Case 3: \(\lambda \gt 0\).</strong><br> The characteristic roots are purely imaginary,
-                    \(r = \pm i\sqrt{\lambda}\), and the general solution in real form is
+                    \(r = \pm i\sqrt{\lambda}\), and the general solution in trigonometric form is
                     \[
                     \phi(x) = c_1 \cos\sqrt{\lambda}\, x + c_2 \sin\sqrt{\lambda}\, x.
                     \]
@@ -269,32 +299,28 @@ uses_python: false
                         \end{align*}
                         \]
                         for \(n = 1, 2, 3, \ldots\). The eigenvalues form a strictly increasing sequence
-                        \(0 \lt \lambda_1 \lt \lambda_2 \lt \cdots\) tending to infinity, with
-                        \(\lambda_n = O(n^2)\). Each eigenvalue is simple. Its eigenspace is one-dimensional,
-                        spanned by \(\phi_n\) up to scalar multiplication.
+                        \(0 \lt \lambda_1 \lt \lambda_2 \lt \cdots\) tending to infinity. Each eigenvalue is simple. Its
+                        eigenspace is one-dimensional, so every eigenfunction for \(\lambda_n\) is a complex multiple
+                        of \(\phi_n\).
                     </p>
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        The case analysis above establishes that nontrivial real-valued solutions exist only when
-                        \(\lambda \gt 0\) and \(\sqrt{\lambda}\, L = n\pi\) for some positive integer \(n\), giving
-                        \(\lambda_n = (n\pi/L)^2\). The corresponding eigenfunctions \(\phi_n(x) = \sin(n\pi x/L)\)
-                        span a one-dimensional space. Any other solution of the ODE with eigenvalue \(\lambda_n\) is
-                        a linear combination of \(\sin\sqrt{\lambda_n}\, x\) and \(\cos\sqrt{\lambda_n}\, x\), and
-                        the boundary condition at \(x = 0\) eliminates the cosine component while \(\phi(L) = 0\) is
-                        automatically satisfied by \(\sin\sqrt{\lambda_n}\, x\).
+                        The case analysis above establishes that nontrivial solutions exist only when
+                        \(\lambda \gt 0\) and \(\sqrt{\lambda}\, L = n\pi\) for some positive integer \(n\), that is,
+                        when \(\lambda = \lambda_n = (n\pi/L)^2\). The corresponding eigenfunctions
+                        \(\phi_n(x) = \sin(n\pi x/L)\) span a one-dimensional space. Any other solution of the ODE
+                        with eigenvalue \(\lambda_n\) is a complex linear combination of \(\sin\sqrt{\lambda_n}\, x\)
+                        and \(\cos\sqrt{\lambda_n}\, x\), and the boundary condition at \(x = 0\) eliminates the cosine
+                        component while \(\phi(L) = 0\) is automatically satisfied by \(\sin\sqrt{\lambda_n}\, x\).
                     </p>
                     <p>
                         The sequence is strictly increasing because
-                        \(\lambda_{n+1} - \lambda_n = (2n + 1)\pi^2/L^2 \gt 0\), and the asymptotic
-                        \(\lambda_n = O(n^2)\) is immediate from \(\lambda_n/n^2 = \pi^2/L^2\). Restricting
-                        attention to real \(\lambda\) is harmless. The operator \(-d^2/dx^2\) with these boundary
-                        conditions is symmetric on twice-differentiable functions vanishing at both endpoints, with
-                        respect to the \(L^2([0, L])\) inner product, so all of its eigenvalues are
-                        real. The general formulation of this fact belongs to the spectral theory of self-adjoint
-                        operators.
+                        \(\lambda_{n+1} - \lambda_n = (2n + 1)\pi^2/L^2 \gt 0\). No other eigenvalues exist, because
+                        the energy identity preceding the case analysis shows that all eigenvalues are real, and the
+                        three cases cover every real value.
                     </p>
                 </div>
 
@@ -309,10 +335,14 @@ uses_python: false
                         shall see, decay more rapidly in time.
                     </p>
                     <p>
-                        The asymptotic \(\lambda_n \sim n^2\) is no accident. It reflects the fact that the
-                        Laplacian on a one-dimensional interval is a second-order operator. Weyl's law in higher
-                        dimensions generalizes this scaling. On a \(d\)-dimensional domain of volume \(V\), the
-                        \(n\)th Dirichlet eigenvalue scales like \(\lambda_n \sim (n/V)^{2/d}\). The spectral
+                        The quadratic growth \(\lambda_n = (\pi/L)^2 n^2\) is no accident. It reflects the fact that
+                        the Laplacian on a one-dimensional interval is a second-order operator. Weyl's law in higher
+                        dimensions generalizes this scaling. On a bounded \(d\)-dimensional domain of volume \(V\),
+                        the \(n\)th Dirichlet eigenvalue satisfies \(\lambda_n \sim C_d\, (n/V)^{2/d}\) as
+                        \(n \to \infty\), where \(C_d = 4\pi^2 \omega_d^{-2/d}\) and \(\omega_d\) is the volume of the
+                        unit ball in \(\mathbb{R}^d\). Here \(\sim\) means that the ratio of the two sides tends to
+                        \(1\). For \(d = 1\), where \(V = L\) and \(\omega_1 = 2\), this gives \(C_1 = \pi^2\), in
+                        agreement with the exact formula above. We state Weyl's law without proof. The spectral
                         structure of a domain encodes deep geometric information. This theme connects to the
                         spectral analysis of graph Laplacians in
                         <a href="../Linear_algebra/graph_laplacian.html"><strong>spectral graph theory</strong></a>
@@ -332,7 +362,7 @@ uses_python: false
                     &= \exp\!\left(-k\!\left(\tfrac{n\pi}{L}\right)^{\!2} t\right),
                     \end{align*}
                     \]
-                    chosen with the normalisation \(G_n(0) = 1\) so that the multiplicative constant is absorbed
+                    chosen with the normalization \(G_n(0) = 1\) so that the multiplicative constant is absorbed
                     into the spatial part at the time of superposition. Multiplying the spatial eigenfunction by
                     its time evolution gives the \(n\)th <strong>product solution</strong> or
                     <strong>fundamental mode</strong>:
@@ -368,7 +398,10 @@ uses_python: false
                     series, provided the series converges in an appropriate sense. Termwise differentiation in both
                     \(x\) and \(t\) is justified for \(t \gt 0\) because the exponential factors
                     \(\exp(-k(n\pi/L)^2 t)\) decay so rapidly in \(n\) that the differentiated series converges
-                    uniformly on every closed half-strip \(0 \leq x \leq L\), \(t \geq t_0 \gt 0\).
+                    uniformly on every closed half-strip \(0 \leq x \leq L\), \(t \geq t_0 \gt 0\). Here we use a
+                    standard fact of real analysis without proof. A convergent series of differentiable functions may
+                    be differentiated term by term on any interval where the series of derivatives converges
+                    uniformly.
                 </p>
 
                 <p>
@@ -393,18 +426,19 @@ uses_python: false
                 <div class="theorem" id="T-heat_dirichlet_series_solution">
                     <span class="theorem-title">Theorem: Series Solution of the Heat Equation on a Bounded Interval</span>
                     <p>
-                        Let \(f \in L^2([0, L])\) be the initial temperature profile. The initial-boundary value
-                        problem
+                        Let \(f \in L^2([0, L])\) be a real-valued initial temperature profile. We call \(u\) a
+                        <strong>solution</strong> of the initial-boundary value problem
                         \[
                         \begin{cases}
                         \partial_t u = k\, \partial_{xx} u, & 0 \lt x \lt L,\ t \gt 0, \\\\
-                        u(0, t) = u(L, t) = 0, & t \geq 0, \\\\
-                        u(x, 0) = f(x), & 0 \leq x \leq L
+                        u(0, t) = u(L, t) = 0, & t \gt 0, \\\\
+                        u(\cdot, t) \to f \text{ in } L^2([0, L]), & t \to 0^+
                         \end{cases}
                         \]
-                        admits, in the sense that \(u\) satisfies the differential equation and the
-                        boundary conditions classically for \(t \gt 0\) and attains the initial datum as an
-                        \(L^2\)-limit \(u(\cdot, t) \to f\) as \(t \to 0^+\), the solution
+                        if \(u\) is real-valued, satisfies the three conditions above, and has the following
+                        regularity. The functions \(u\), \(\partial_x u\), \(\partial_{xx} u\), and \(\partial_t u\)
+                        exist and are continuous on \([0, L] \times (0, \infty)\), with one-sided \(x\)-derivatives
+                        at \(x = 0\) and \(x = L\). This problem has exactly one solution, namely
                         \[
                         u(x, t) = \sum_{n=1}^{\infty} B_n \sin\frac{n\pi x}{L}\, \exp\!\left(-k\!\left(\tfrac{n\pi}{L}\right)^{\!2} t\right),
                         \]
@@ -421,74 +455,222 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
+                        <strong>Step 1: the series is a solution.</strong><br>
                         Termwise the series satisfies the PDE and the Dirichlet boundary conditions, as each product
                         solution \(u_n\) does. The convergence claims are a consequence of the rapid decay of the
-                        exponential factors. For \(t \geq t_0 \gt 0\), the bound
-                        \(|B_n| \leq \|f\|_{L^2}\sqrt{2/L}\) (which follows from <a href="intro_analysis.html#T-bessel_inequality" class="ref-link"><strong>Bessel's inequality</strong></a>) combined with
-                        \(\exp(-k(n\pi/L)^2 t_0)\) decaying faster than any inverse polynomial in \(n\) gives
-                        absolute and uniform convergence of the series and of all its termwise derivatives.
-                        Consequently \(u\) is \(C^\infty\) in \((x, t)\) for \(t \gt 0\), differentiation can be
-                        carried out under the summation, and \(u\) satisfies the PDE classically.
+                        exponential factors. The bound \(|B_n| \leq \|f\|_{L^2}\sqrt{2/L}\) follows from
+                        <a href="intro_analysis.html#T-bessel_inequality" class="ref-link"><strong>Bessel's inequality</strong></a>
+                        for the orthonormal system \(\{\sqrt{2/L}\sin(n\pi x/L)\}_{n \geq 1}\) in \(L^2([0, L])\). Fix
+                        \(t_0 \gt 0\). Every termwise derivative of the series is bounded on
+                        \([0, L] \times [t_0, \infty)\) by a constant multiple of \(n^j \exp(-k(n\pi/L)^2 t_0)\) for
+                        some integer \(j \geq 0\), and these bounds decay faster than any inverse power of \(n\). The
+                        series and all of its termwise derivatives therefore converge absolutely and uniformly on
+                        \([0, L] \times [t_0, \infty)\). By the termwise-differentiation fact recalled above, \(u\) is
+                        \(C^\infty\) there, up to \(x = 0\) and \(x = L\), and the termwise identities pass to the sum.
+                        Since \(t_0 \gt 0\) is arbitrary, \(u\) has the regularity required of a solution. It is
+                        real-valued because \(f\) is.
                     </p>
                     <p>
-                        At \(t = 0\), the series reduces to the Fourier sine series of \(f\), which converges to
-                        \(f\) in \(L^2([0, L])\) because \(\{\sqrt{2/L}\sin(n\pi x/L)\}_{n \geq 1}\) is a complete
-                        orthonormal system on \(L^2([0, L])\). This completeness follows by odd reflection across
-                        the origin from the corresponding <a href="fourier_hilbert.html#T-fourier_series_l2_onb" class="ref-link"><strong>completeness
-                        of the full trigonometric system</strong></a> on \(L^2([-L, L])\). The \(L^2\)-continuity
-                        \(u(\cdot, t) \to f\) as \(t \to 0^+\) follows from <a href="intro_analysis.html#T-parseval_identity_hilbert" class="ref-link"><strong>Parseval's identity</strong></a>:
+                        <strong>Step 2: the initial datum.</strong><br>
+                        The system \(\{\sqrt{2/L}\sin(n\pi x/L)\}_{n \geq 1}\) is an orthonormal basis of
+                        \(L^2([0, L])\). To see this, let \(g \in L^2([0, L])\) be orthogonal to every
+                        \(\sin(n\pi x/L)\), and let \(G\) be its odd extension to \([-L, L]\). For every integer
+                        \(n \geq 0\), the product of \(G\) with \(\cos(n\pi x/L)\) is odd, so its integral over
+                        \([-L, L]\) vanishes. For \(n \geq 1\), the product with \(\sin(n\pi x/L)\) is even, so its
+                        integral is twice the integral of \(g \sin(n\pi x/L)\) over \([0, L]\), which is zero. Hence
+                        \(G\) is orthogonal to every \(e^{in\pi x/L}\) with \(n \in \mathbb{Z}\), and the
+                        <a href="fourier_hilbert.html#T-fourier_series_l2_onb" class="ref-link"><strong>completeness
+                        of the full trigonometric system</strong></a> on \(L^2([-L, L])\) gives \(G = 0\), so
+                        \(g = 0\). An orthonormal system to which only the zero vector is orthogonal is an
+                        orthonormal basis, by the characterization recalled in the
+                        <a href="fourier_hilbert.html#fourier_series_onb">completeness argument for Fourier series</a>.
+                        In particular, at \(t = 0\) the series is the Fourier sine series of \(f\), which converges to
+                        \(f\) in \(L^2([0, L])\).
+                    </p>
+                    <p>
+                        For \(t \gt 0\) the series for \(u(\cdot, t)\) converges uniformly on \([0, L]\), hence in
+                        \(L^2([0, L])\), and the inner product is continuous, so its coefficients in this basis may be
+                        computed term by term. The coefficients of \(u(\cdot, t) - f\) are therefore
+                        \(\sqrt{L/2}\, B_n (e^{-k\lambda_n t} - 1)\), with \(B_n\) real because \(f\) is real-valued.
+                        The \(L^2\)-continuity \(u(\cdot, t) \to f\) as \(t \to 0^+\) then follows from
+                        <a href="intro_analysis.html#T-parseval_identity_hilbert" class="ref-link"><strong>Parseval's identity</strong></a>:
                         \[
                         \|u(\cdot, t) - f\|_{L^2}^2 = \frac{L}{2}\sum_{n=1}^{\infty} B_n^2
                             \left(e^{-k\lambda_n t} - 1\right)^2,
                         \]
-                        which tends to \(0\) as \(t \to 0^+\) by <a href="lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence</strong></a>. Each term vanishes pointwise
-                        and is bounded uniformly in \(t \geq 0\) by \(B_n^2\), since
-                        \(0 \leq e^{-k\lambda_n t} \leq 1\), while \((L/2)\sum_n B_n^2 = \|f\|_{L^2}^2 \lt \infty\).
+                        which tends to \(0\) as \(t \to 0^+\) by
+                        <a href="lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence</strong></a>,
+                        applied to the counting measure on the positive integers along an arbitrary sequence
+                        \(t_j \to 0^+\). Each term vanishes pointwise and is bounded uniformly in \(t \geq 0\) by
+                        \(B_n^2\), since \(0 \leq e^{-k\lambda_n t} \leq 1\), while
+                        \((L/2)\sum_n B_n^2 = \|f\|_{L^2}^2 \lt \infty\).
+                    </p>
+                    <p>
+                        <strong>Step 3: uniqueness.</strong><br>
+                        Let \(u_1\) and \(u_2\) be two solutions, and set \(w = u_1 - u_2\). Then \(w\) has the same
+                        regularity, satisfies \(\partial_t w = k\, \partial_{xx} w\) for \(0 \lt x \lt L\) and
+                        \(t \gt 0\), and vanishes at \(x = 0\) and \(x = L\) for \(t \gt 0\). Moreover,
+                        \[
+                        \|w(\cdot, t)\|_{L^2} \leq \|u_1(\cdot, t) - f\|_{L^2} + \|u_2(\cdot, t) - f\|_{L^2}
+                        \]
+                        for every \(t \gt 0\), so \(\|w(\cdot, t)\|_{L^2} \to 0\) as \(t \to 0^+\). Define
+                        \(E(t) = \int_0^L w(x, t)^2\, dx\) for \(t \gt 0\). On each compact rectangle
+                        \([0, L] \times [t_0, t_1]\) with \(t_0 \gt 0\), the functions \(w\) and \(\partial_t w\) are
+                        continuous and hence bounded. By the mean value theorem, the difference quotients of \(w^2\)
+                        in \(t\) are bounded there by \(2 \sup|w| \sup|\partial_t w|\). Dominated convergence, which
+                        applies along every sequence of increments with limit zero, therefore justifies
+                        differentiation under the integral sign. Using \(\partial_t w = k\, \partial_{xx} w\),
+                        \[
+                        \begin{align*}
+                        \frac{dE}{dt}
+                        &= 2\!\int_0^L w\, \partial_t w\, dx \\\\
+                        &= 2k\!\int_0^L w\, \partial_{xx} w\, dx \\\\
+                        &= -2k\!\int_0^L (\partial_x w)^2\, dx \\\\
+                        &\leq 0.
+                        \end{align*}
+                        \]
+                        The integration by parts in the third equality is valid because \(w(\cdot, t)\) is twice
+                        continuously differentiable on \([0, L]\), and the boundary term
+                        \(2k\,[w\, \partial_x w]_0^L\) drops out by the Dirichlet condition. Since \(dE/dt \leq 0\),
+                        \(E\) is non-increasing on \((0, \infty)\). For \(0 \lt s \lt t\) this gives
+                        \(E(t) \leq E(s) = \|w(\cdot, s)\|_{L^2}^2\), and letting \(s \to 0^+\) yields \(E(t) = 0\).
+                        Since \(w(\cdot, t)\) is continuous, it vanishes identically, and \(u_1 = u_2\).
                     </p>
                 </div>
 
                 <p>
-                    The theorem asserts existence. Uniqueness holds as well within the class of classical solutions,
-                    and admits a direct argument by the <strong>energy method</strong>. By a classical solution we
-                    mean \(u \in C^2((0, T] \times [0, L])\), continuous up to \(t = 0\) and \(x = 0, L\), with the
-                    initial condition attained pointwise where \(f\) is continuous. (The series solution above is
-                    classical for \(t \gt 0\) by the \(C^\infty\) smoothing established in the proof. Pointwise
-                    attainment of \(f\) at \(t = 0\) additionally requires regularity of \(f\), and is automatic
-                    when \(f\) is continuous.)
+                    The argument in Step 3 is the <strong>energy method</strong>. The class of solutions in the
+                    theorem contains every function that has the stated regularity for \(t \gt 0\), satisfies the
+                    heat equation with the Dirichlet condition, and extends continuously to
+                    \([0, L] \times [0, \infty)\) with \(u(\cdot, 0) = f\). Continuity on the compact rectangle
+                    \([0, L] \times [0, 1]\) makes \(u(\cdot, t) \to f\) uniformly, hence in \(L^2\), so the
+                    uniqueness statement applies to them.
                 </p>
 
                 <p>
-                    Let \(u_1, u_2\) be two solutions with \(u_1(\cdot, 0) = u_2(\cdot, 0)\) on \([0, L]\) and the same Dirichlet
-                    boundary conditions, and set \(w = u_1 - u_2\). Then \(w\) solves the heat equation with
-                    \(w(\cdot, 0) \equiv 0\) and \(w(0, t) = w(L, t) = 0\). Define
-                    \(E(t) = \int_0^L w(x, t)^2\, dx\). Differentiating under the integral and using
-                    \(\partial_t w = k\, \partial_{xx} w\),
-                    \[
-                    \begin{align*}
-                    \frac{dE}{dt}
-                    &= 2\!\int_0^L w\, \partial_t w\, dx \\\\
-                    &= 2k\!\int_0^L w\, \partial_{xx} w\, dx \\\\
-                    &= -2k\!\int_0^L (\partial_x w)^2\, dx \\\\
-                    &\leq 0,
-                    \end{align*}
-                    \]
-                    where integration by parts converts \(\int w\, w_{xx}\, dx\) into \(-\int (w_x)^2\, dx\), the
-                    boundary term \([w\, w_x]_0^L\) vanishing by the Dirichlet condition. Since \(E(0) = 0\) and
-                    \(E \geq 0\), the inequality \(dE/dt \leq 0\) forces \(E(t) \equiv 0\), hence \(w \equiv 0\) and
-                    \(u_1 = u_2\).
+                    Attaining the initial datum continuously asks more of \(f\) than square-integrability. If a
+                    solution \(u\), extended by \(u(\cdot, 0) = f\), is continuous on
+                    \([0, L] \times [0, \infty)\), then \(f\) is continuous and
+                    \(f(0) = \lim_{t \to 0^+} u(0, t) = 0\), and likewise \(f(L) = 0\). These endpoint conditions
+                    are therefore necessary, and together with a mild regularity assumption they are also
+                    sufficient. We call \(f\) <strong>piecewise \(C^1\)</strong> on \([0, L]\) if there are points
+                    \(0 = s_0 \lt s_1 \lt \cdots \lt s_m = L\) such that the restriction of \(f\) to each
+                    \([s_{j-1}, s_j]\) is continuously differentiable, with one-sided derivatives at the endpoints.
+                </p>
+
+                <div class="theorem" id="T-sine_coefficients_summable">
+                    <span class="theorem-title">Lemma: Absolute Summability of Sine Coefficients</span>
+                    <p>
+                        Let \(f\) be continuous and piecewise \(C^1\) on \([0, L]\) with \(f(0) = f(L) = 0\), and let
+                        \[
+                        B_n = \frac{2}{L}\int_0^L f(x) \sin\frac{n\pi x}{L}\, dx.
+                        \]
+                        Then \(\sum_{n=1}^{\infty} |B_n| \lt \infty\), and the Fourier sine series
+                        \(\sum_{n} B_n \sin(n\pi x/L)\) converges to \(f(x)\) absolutely and uniformly on
+                        \([0, L]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Write \(I_j\) for the integral of \(f(x) \sin(n\pi x/L)\) over \([s_{j-1}, s_j]\). Integration
+                        by parts gives
+                        \[
+                        \begin{align*}
+                        I_j
+                        &= \Bigl[-\frac{L}{n\pi}\, f(x) \cos\frac{n\pi x}{L}\Bigr]_{s_{j-1}}^{s_j} \\\\
+                        &\quad + \frac{L}{n\pi}\int_{s_{j-1}}^{s_j} f'(x) \cos\frac{n\pi x}{L}\, dx.
+                        \end{align*}
+                        \]
+                        Summing over \(j\), the boundary terms telescope because \(f\) is continuous, and the two
+                        surviving terms vanish because \(f(0) = f(L) = 0\). Hence
+                        \[
+                        \begin{align*}
+                        B_n &= \frac{L}{n\pi}\, a_n, \\\\
+                        a_n &= \frac{2}{L}\int_0^L f'(x) \cos\frac{n\pi x}{L}\, dx,
+                        \end{align*}
+                        \]
+                        where \(f'\) is bounded and continuous except at the finitely many points \(s_j\), so it is
+                        square-integrable. The
+                        <a href="fourier_series.html#T-trig_orthogonality" class="ref-link"><strong>orthogonality
+                        relations</strong></a>, restricted to \([0, L]\) because \(\cos(n\pi x/L)\cos(m\pi x/L)\) is an
+                        even function, show that the functions \(\sqrt{2/L}\cos(n\pi x/L)\) with \(n \geq 1\) form an
+                        orthonormal system in \(L^2([0, L])\). The inner product of \(f'\) with the \(n\)th of them is
+                        \(\sqrt{L/2}\, a_n\), so
+                        <a href="intro_analysis.html#T-bessel_inequality" class="ref-link"><strong>Bessel's inequality</strong></a>
+                        gives \(\frac{L}{2}\sum_n |a_n|^2 \leq \|f'\|_{L^2}^2 \lt \infty\). The Cauchy-Schwarz
+                        inequality for sums then yields
+                        \[
+                        \begin{align*}
+                        \sum_{n=1}^{\infty} |B_n|
+                        &= \frac{L}{\pi} \sum_{n=1}^{\infty} \frac{|a_n|}{n} \\\\
+                        &\leq \frac{L}{\pi} \Bigl(\sum_{n=1}^{\infty} \frac{1}{n^2}\Bigr)^{1/2}
+                        \Bigl(\sum_{n=1}^{\infty} |a_n|^2\Bigr)^{1/2} \\\\
+                        &\lt \infty.
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        Since \(|B_n \sin(n\pi x/L)| \leq |B_n|\), the Weierstrass M-test shows that the sine series
+                        converges uniformly on \([0, L]\), and absolutely at every point. Its sum \(S\) is continuous,
+                        as a uniform limit of continuous functions. The M-test and the continuity of uniform limits
+                        are standard facts that we take for granted. Uniform convergence on the bounded interval
+                        implies convergence in \(L^2([0, L])\), so the partial sums tend to \(S\) in \(L^2\). They
+                        also tend to \(f\) in \(L^2\), because the functions \(\sqrt{2/L}\sin(n\pi x/L)\) form an
+                        orthonormal basis of \(L^2([0, L])\), as Step 2 of the proof of the
+                        <a href="#T-heat_dirichlet_series_solution" class="ref-link"><strong>series solution theorem</strong></a>
+                        shows. Limits in \(L^2\) are unique, so \(S = f\) almost everywhere. Since \(f\) is
+                        continuous by hypothesis, \(S - f\) is continuous, and a continuous function that vanishes
+                        almost everywhere vanishes everywhere, because otherwise it would be nonzero on an interval
+                        of positive length. Hence \(S = f\) on \([0, L]\).
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-heat_continuous_attainment">
+                    <span class="theorem-title">Theorem: Continuous Attainment of the Initial Datum</span>
+                    <p>
+                        Let \(f\) be real-valued, continuous, and piecewise \(C^1\) on \([0, L]\) with
+                        \(f(0) = f(L) = 0\), and let \(u\) be the solution given by the
+                        <a href="#T-heat_dirichlet_series_solution" class="ref-link"><strong>series solution
+                        theorem</strong></a>. Then the series defining \(u\) converges absolutely and uniformly on
+                        \([0, L] \times [0, \infty)\). With \(u(x, 0) = f(x)\), the function \(u\) is continuous on
+                        \([0, L] \times [0, \infty)\), so \(u(x, t) \to f(x_0)\) as \((x, t) \to (x_0, 0)\) for every
+                        \(x_0 \in [0, L]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        On \([0, L] \times [0, \infty)\), each term has absolute value at most \(|B_n|\), and
+                        \(\sum_n |B_n| \lt \infty\) by the
+                        <a href="#T-sine_coefficients_summable" class="ref-link"><strong>summability lemma</strong></a>.
+                        The M-test gives absolute and uniform convergence there, so the sum is continuous. At
+                        \(t = 0\) it reduces to the sine series of \(f\), whose sum is \(f\) by the same lemma.
+                    </p>
+                </div>
+
+                <p>
+                    The worked example below satisfies these hypotheses. For a merely continuous \(f\) with
+                    \(f(0) = f(L) = 0\), the series defining \(u\) need not converge pointwise at \(t = 0\), but
+                    the function \(u\), with \(u(\cdot, 0) = f\), is still continuous on
+                    \([0, L] \times [0, \infty)\). The proof of that statement needs an approximation argument
+                    that we do not give here.
                 </p>
 
                 <p>
-                    The solution formula has a clean structure. <em>Each Fourier mode of the initial datum evolves
-                    independently, weighted by an exponential decay whose rate is the eigenvalue times the
+                    The series solution formula has a clean structure. <em>Each Fourier mode of the initial datum
+                    evolves independently, weighted by an exponential decay whose rate is the eigenvalue times the
                     diffusivity</em>. The Laplacian \(\partial_{xx}\) on \([0, L]\) with Dirichlet boundary
                     conditions is diagonalized by the orthonormal basis \(\{\sqrt{2/L}\sin(n\pi x/L)\}\), and the
-                    heat semigroup \(e^{tk\partial_{xx}}\) acts on this basis by multiplication by
-                    \(e^{-tk\lambda_n}\). This is the prototype example of functional calculus for self-adjoint
-                    operators: an abstract framework we touched in <a href="fourier_hilbert.html"><strong>Fourier
-                    analysis in Hilbert spaces</strong></a> and one which generalizes to elliptic operators on
-                    manifolds, graph Laplacians in spectral graph theory, and ultimately to the spectral theorem
-                    itself.
+                    heat semigroup \(e^{tk\partial_{xx}}\) is defined on this basis as multiplication by
+                    \(e^{-tk\lambda_n}\). This is diagonalization by a unitary change of basis, the viewpoint in
+                    which the <a href="fourier_hilbert.html"><strong>Hilbert-space treatment of Fourier
+                    analysis</strong></a> culminates. Functions of an unbounded self-adjoint operator, such as the
+                    Dirichlet Laplacian, are treated in general by the functional calculus of such operators, which
+                    lies beyond the scope of this page. The same picture recurs for elliptic operators on manifolds
+                    and for graph Laplacians in spectral graph theory.
                 </p>
 
                 <h3>A Worked Example</h3>
@@ -538,10 +720,15 @@ uses_python: false
                         rate set by the smoothness of \(f\) and its compatibility with the boundary conditions.
                         Smoother initial data produce more rapidly decaying coefficients. Finally, the time
                         exponential \(\exp(-k(2j+1)^2 \pi^2 t)\) damps high modes far faster than the fundamental
-                        \((j = 0)\) mode \(\sin(\pi x) e^{-k\pi^2 t}\). For any \(t \gt 0\) of moderate size, the
-                        solution is well approximated by its first nonzero term and resembles a sine arch whose
-                        amplitude shrinks exponentially. The parabolic initial profile relaxes, on the timescale
-                        \(1/(k\pi^2)\), to a sine arch and thence to the zero equilibrium.
+                        \((j = 0)\) mode \(\sin(\pi x) e^{-k\pi^2 t}\). The shape relaxes toward a sine arch on the
+                        timescale \(1/(8k\pi^2)\), since the ratio of the \(j = 1\) term to the fundamental carries the
+                        factor \(e^{-8k\pi^2 t}\). After a few multiples of that time the solution is well approximated
+                        by its first term, a sine arch whose amplitude decays to the zero equilibrium on the longer
+                        timescale \(1/(k\pi^2)\). Because \(f\) is continuously differentiable with
+                        \(f(0) = f(1) = 0\), the
+                        <a href="#T-heat_continuous_attainment" class="ref-link"><strong>continuous attainment
+                        theorem</strong></a> applies, and \(u(x, t) \to f(x_0)\) as \((x, t) \to (x_0, 0)\) for every
+                        \(x_0 \in [0, 1]\).
                     </p>
                 </div>
 
@@ -556,10 +743,9 @@ uses_python: false
                     <p>
                         The next section removes the bounded interval and asks what happens on the entire real line,
                         where the boundary is sent to infinity. The Dirichlet eigenmodes \(\sin(n\pi x/L)\) lose
-                        their normalisation as \(L \to \infty\), and the discrete spectrum thickens into a
-                        continuum. The replacement of the Fourier series by the Fourier transform, already developed
-                        in our preceding page, is precisely what is needed. On \(\mathbb{R}\), the heat equation
-                        will be solved by a single integral kernel.
+                        their normalization as \(L \to \infty\), and the discrete spectrum thickens into a
+                        continuum. The replacement of the Fourier series by the Fourier transform is precisely what
+                        is needed. On \(\mathbb{R}\), the heat equation will be solved by a single integral kernel.
                     </p>
                 </div>
             </section>
@@ -569,19 +755,19 @@ uses_python: false
 
                 <p>
                     Replacing the rod \([0, L]\) by the full line \(\mathbb{R}\) changes the analytic situation in a
-                    structurally important way. On a bounded interval, the Dirichlet eigenfunctions
-                    \(\sin(n\pi x/L)\) provide a countable orthonormal basis and the solution is a discrete sum over
-                    normal modes. On the real line, no such basis of eigenfunctions of \(-\partial_{xx}\) exists in
-                    \(L^2(\mathbb{R})\). The formal eigenfunctions \(e^{i\xi x}\) are bounded but not
-                    square-integrable, and the "expansion in eigenmodes" must be replaced by an integral over a
-                    continuous frequency variable.
+                    structurally important way. On a bounded interval, the normalized Dirichlet eigenfunctions
+                    \(\sqrt{2/L}\sin(n\pi x/L)\) provide a countable orthonormal basis and the solution is a
+                    discrete sum over normal modes. On the real line, no such basis of eigenfunctions of
+                    \(-\partial_{xx}\) exists in \(L^2(\mathbb{R})\). The formal eigenfunctions \(e^{i\xi x}\)
+                    are bounded but not square-integrable, and the "expansion in eigenmodes" must be replaced by an
+                    integral over a continuous frequency variable.
                 </p>
 
                 <p>
                     That replacement is precisely the passage from Fourier series to the
-                    <a href="fourier_transform.html#D-fourier_transform" class="ref-link">Fourier transform</a>
-                    carried out in the preceding page. Here we put that machinery to its first serious use, solving
-                    an initial-value problem on an unbounded domain.
+                    <a href="fourier_transform.html#D-fourier_transform" class="ref-link"><strong>Fourier transform</strong></a>,
+                    carried out on the page devoted to it. Here we put that machinery to its first serious use,
+                    solving an initial-value problem on an unbounded domain.
                 </p>
 
                 <p>
@@ -592,11 +778,14 @@ uses_python: false
                     u(x, 0) = f(x), & x \in \mathbb{R},
                     \end{cases}
                     \]
-                    with \(k \gt 0\) and \(f \in L^1(\mathbb{R})\). We additionally require two things of \(u\).
-                    First, \(u(\cdot, t)\), \(\partial_x u(\cdot, t)\), \(\partial_{xx} u(\cdot, t)\), and
-                    \(\partial_t u(\cdot, t)\) tend to \(0\) as \(|x| \to \infty\) for each \(t \gt 0\). Second, for
-                    every compact \(J \subset (0, \infty)\) there is an integrable function \(g_J\) on \(\mathbb{R}\)
-                    with \(|u|, |\partial_x u|, |\partial_{xx} u|, |\partial_t u| \leq g_J\) on \(\mathbb{R} \times J\).
+                    with \(k \gt 0\) and \(f \in L^1(\mathbb{R})\). We additionally require three things of \(u\).
+                    First, the partial derivatives \(\partial_x u\), \(\partial_{xx} u\), and \(\partial_t u\) exist
+                    on \(\mathbb{R} \times (0, \infty)\), and for each fixed \(t \gt 0\) the four functions
+                    \(u(\cdot, t)\), \(\partial_x u(\cdot, t)\), \(\partial_{xx} u(\cdot, t)\), and
+                    \(\partial_t u(\cdot, t)\) are continuous. Second, these four functions tend to \(0\) as
+                    \(|x| \to \infty\) for each \(t \gt 0\). Third, for every compact \(J \subset (0, \infty)\) there
+                    is an integrable function \(g_J\) on \(\mathbb{R}\) with
+                    \(|u|, |\partial_x u|, |\partial_{xx} u|, |\partial_t u| \leq g_J\) on \(\mathbb{R} \times J\).
                     We call such a \(u\) a <strong>decaying solution</strong>. This restriction picks out the natural
                     function class for the problem and rules out, for instance, the addition of a constant
                     temperature or a polynomially growing background field. The initial condition is imposed as a
@@ -611,11 +800,13 @@ uses_python: false
                     \[
                     \hat{u}(\xi, t) = \int_{-\infty}^{\infty} u(x, t)\, e^{ix\xi}\, dx.
                     \]
-                    Applying the transform to both sides of the heat equation and using the
-                    <a href="fourier_transform.html#T-ft_differentiation" class="ref-link">differentiation
-                    property</a> of the Fourier transform, which on \(\partial_{xx}\) produces the factor
-                    \((-i\xi)^2 = -\xi^2\), converts the partial differential equation in \((x, t)\) into an
-                    ordinary differential equation in \(t\) alone, with \(\xi\) entering only as a parameter:
+                    Under the transform, a double integration by parts with respect to \(x\), the argument that
+                    proves the
+                    <a href="fourier_transform.html#T-ft_differentiation" class="ref-link"><strong>differentiation
+                    property</strong></a>, turns \(\partial_{xx}\) into multiplication by \((-i\xi)^2 = -\xi^2\).
+                    Applying the transform to both sides of the heat equation therefore converts the partial
+                    differential equation in \((x, t)\) into an ordinary differential equation in \(t\) alone, with
+                    \(\xi\) entering only as a parameter:
                 </p>
 
                 <div class="theorem" id="T-heat_fourier_ode">
@@ -653,11 +844,22 @@ uses_python: false
                                                    &= -k\xi^2\, \hat{u}(\xi, t),
                         \end{align*}
                         \]
-                        where the third equality applies the differentiation property of the Fourier transform with
-                        \(n = 2\). The boundary terms that arise from the two integrations by parts, namely
-                        \([u\, e^{ix\xi}]_{-\infty}^{\infty}\) and
-                        \([\partial_x u \cdot e^{ix\xi}]_{-\infty}^{\infty}\), vanish by the assumed decay of \(u\)
-                        and \(\partial_x u\) at infinity.
+                        where the third equality is the computation behind the differentiation property of the Fourier
+                        transform. That property is stated for Schwartz functions, which \(u(\cdot, t)\) need not be,
+                        so we carry out the computation directly. Since \(u(\cdot, t)\) is twice continuously
+                        differentiable, two integrations by parts on \([-R, R]\) give
+                        \[
+                        \begin{align*}
+                        \int_{-R}^{R} \partial_{xx} u\, e^{ix\xi}\, dx
+                        &= \Bigl[\partial_x u\, e^{ix\xi}\Bigr]_{-R}^{R} \\\\
+                        &\quad - i\xi \Bigl[u\, e^{ix\xi}\Bigr]_{-R}^{R} \\\\
+                        &\quad + (i\xi)^2 \int_{-R}^{R} u\, e^{ix\xi}\, dx.
+                        \end{align*}
+                        \]
+                        As \(R \to \infty\), the boundary terms vanish by the assumed decay of \(u\) and
+                        \(\partial_x u\) at infinity, and the two integrals converge to integrals over \(\mathbb{R}\)
+                        because \(u(\cdot, t)\) and \(\partial_{xx} u(\cdot, t)\) are integrable. Since
+                        \((i\xi)^2 = (-i\xi)^2 = -\xi^2\), this is the third equality.
                     </p>
                     <p>
                         For each fixed \(\xi\), the equation
@@ -692,7 +894,7 @@ uses_python: false
                 <p>
                     To recover \(u(x, t)\) we must invert the Fourier transform of the right-hand side,
                     that is, identify the function whose Fourier transform is \(e^{-k\xi^2 t}\). This is
-                    the moment at which the Gaussian calculation done once in the preceding page
+                    the moment at which the Gaussian calculation done once on the Fourier-transform page
                     pays for itself across all of parabolic theory. There it was established (as a
                     worked example) that
                     \[
@@ -700,7 +902,7 @@ uses_python: false
                     \]
                     for any \(\sigma \gt 0\). Choosing \(\sigma^2 = 2kt\) makes the right-hand side equal
                     \(\sigma\sqrt{2\pi}\, e^{-k\xi^2 t}\), which differs from the target \(e^{-k\xi^2 t}\)
-                    only by the normalisation factor \(\sigma\sqrt{2\pi} = \sqrt{4\pi kt}\). Dividing
+                    only by the normalization factor \(\sigma\sqrt{2\pi} = \sqrt{4\pi kt}\). Dividing
                     through gives the function whose Fourier transform is \(e^{-k\xi^2 t}\). This
                     function is fundamental enough to deserve a name.
                 </p>
@@ -723,17 +925,16 @@ uses_python: false
 
                 <p>
                     The Fourier identity in the definition is the substitution \(\sigma^2 = 2kt\) applied to the
-                    Gaussian Fourier transform established in the preceding page, divided by \(\sqrt{4\pi kt}\). No
-                    fresh integration is required. In the spatial variable, \(K_t\) is a centred Gaussian bell whose
-                    width \(\sqrt{2kt}\) grows like \(\sqrt{t}\), the characteristic length scale of diffusive
-                    spreading.
+                    Gaussian Fourier transform displayed above, divided by \(\sqrt{4\pi kt}\). No fresh integration
+                    is required. In the spatial variable, \(K_t\) is a centered Gaussian bell whose width
+                    \(\sqrt{2kt}\) grows like \(\sqrt{t}\), the characteristic length scale of diffusive spreading.
                 </p>
 
                 <h3>Solution by Convolution</h3>
 
                 <p>
                     With \(\hat{u}(\xi, t) = \hat{f}(\xi)\, \widehat{K_t}(\xi)\), the
-                    <a href="fourier_transform.html#T-convolution_theorem" class="ref-link">convolution theorem</a>
+                    <a href="fourier_transform.html#T-convolution_theorem" class="ref-link"><strong>convolution theorem</strong></a>
                     identifies the right-hand side at once. A pointwise product of Fourier transforms is the
                     Fourier transform of a convolution, so \(\hat{u}(\cdot, t)\) is the transform of \(f * K_t\).
                     The theorem below confirms that this convolution is a solution, and the only one in the
@@ -766,8 +967,8 @@ uses_python: false
                     <span class="proof-title">Proof:</span>
                     <p>
                         <strong>Step 1: a representation of the convolution.</strong><br>
-                        The Gaussian transform computed in the preceding page, read with the roles of the space and
-                        frequency variables exchanged and with \(\sigma^2 = 1/(2kt)\), gives
+                        The Gaussian transform displayed before the definition of the heat kernel, read with the
+                        roles of the space and frequency variables exchanged and with \(\sigma^2 = 1/(2kt)\), gives
                         \(\int e^{iz\xi}\, e^{-k\xi^2 t}\, d\xi = \sqrt{\pi/(kt)}\, e^{-z^2/(4kt)}\). Dividing by
                         \(2\pi\) and using that the Gaussian is even,
                         \[
@@ -811,8 +1012,8 @@ uses_python: false
                         up to the factor \(1/(2\pi)\) and the reflection \(x \mapsto -x\), the Fourier transform of an
                         integrable function of \(\xi\). By the
                         <a href="fourier_hilbert.html#T-riemann_lebesgue_l1" class="ref-link"><strong>Riemann-Lebesgue
-                        lemma</strong></a>, all four tend to \(0\) as \(|x| \to \infty\). For the integrable bounds,
-                        let \(J = [t_0, t_1] \subset (0, \infty)\).
+                        lemma</strong></a>, all four are continuous in \(x\) and tend to \(0\) as \(|x| \to \infty\).
+                        For the integrable bounds, let \(J = [t_0, t_1] \subset (0, \infty)\).
                         Each \(\partial_x^n K_t(z)\) with \(n \leq 2\) is a polynomial in \(z\) and \(t^{-1/2}\)
                         times \(e^{-z^2/(4kt)}\), so there is a constant \(C_J\) with
                         \[
@@ -856,7 +1057,7 @@ uses_python: false
                     <p>
                         Let \(\psi\) be a Schwartz function. The
                         <a href="fourier_transform.html#T-fourier_inversion" class="ref-link"><strong>Fourier
-                        inversion formula</strong></a>, in the Schwartz-class case proved on the preceding page, gives
+                        inversion formula</strong></a>, whose proof covers the Schwartz class, gives
                         \(\psi(x) = \frac{1}{2\pi} \int \hat{\psi}(\xi)\, e^{-ix\xi}\, d\xi\), so
                         \[
                         \begin{align*}
@@ -884,19 +1085,21 @@ uses_python: false
                         <strong>Remark on the class.</strong><br>
                         The uniqueness statement depends on the decay restriction in an essential way. Without a
                         growth bound, non-trivial solutions with the zero initial datum exist. Tychonoff's classical
-                        counterexample exhibits a non-zero \(u\) with \(u(x, t) \to 0\) pointwise as \(t \to 0^+\)
-                        that grows faster than every Gaussian bound, so the decay qualifier in the theorem is doing
-                        genuine work. Uniqueness also holds among solutions that attain the initial datum only
-                        pointwise, provided a growth bound such as boundedness or \(|u(x, t)| \leq C e^{a x^2}\) is
-                        imposed. That result rests on the maximum principle rather than on the Fourier transform,
-                        and we do not prove it here.
+                        counterexample exhibits a non-zero \(u\) with \(u(x, t) \to 0\) pointwise as \(t \to 0^+\).
+                        This solution violates \(|u(x, t)| \leq C e^{a x^2}\) for every choice of the constants \(C\)
+                        and \(a\), so the decay qualifier in the theorem is doing genuine work. We omit the
+                        construction. Uniqueness also holds among solutions that attain the initial datum only
+                        pointwise, provided \(u\) is continuous up to \(t = 0\) on a finite time interval
+                        \([0, T]\) and satisfies a growth bound there, such as boundedness or
+                        \(|u(x, t)| \leq C e^{a x^2}\). That result rests on the maximum principle rather than on the
+                        Fourier transform, and we do not prove it here.
                     </p>
                 </div>
 
                 <p>
                     The convolution form admits a transparent physical reading. The temperature at \(x\) at time
                     \(t\) is a weighted average of the initial temperature, with weights given by the heat kernel
-                    centred at \(x\). The kernel is sharply peaked at \(y = x\) for small \(t\) and broadens with
+                    centered at \(x\). The kernel is sharply peaked at \(y = x\) for small \(t\) and broadens with
                     width \(\sqrt{2kt}\), so that nearby initial values contribute heavily at first and
                     progressively more distant values contribute as time advances.
                 </p>
@@ -915,11 +1118,11 @@ uses_python: false
                         K_t(x) = \frac{1}{\sqrt{2\pi \sigma^2}}\, \exp\!\left(-\frac{x^2}{2\sigma^2}\right),
                         \]
                         which is the probability density function of the
-                        <a href="../Probability/gaussian.html#D-normal_distribution" class="ref-link">normal
-                        distribution</a> with mean \(0\) and variance \(2kt\). Viewed in this light, the identity
-                        \(\int K_t(x)\, dx = 1\) is the
-                        <a href="../Probability/gaussian.html#T-gaussian_integral" class="ref-link">Gaussian
-                        integral</a>. We will exploit it in the next section as conservation of total heat.
+                        <a href="../Probability/gaussian.html#D-normal_distribution" class="ref-link"><strong>normal
+                        distribution</strong></a> with mean \(0\) and variance \(2kt\). Viewed in this light, the
+                        identity \(\int K_t(x)\, dx = 1\) is the
+                        <a href="../Probability/gaussian.html#T-gaussian_integral" class="ref-link"><strong>Gaussian
+                        integral</strong></a>. We will exploit it in the next section as conservation of total heat.
                     </p>
                     <p>
                         The agreement is not coincidence. The heat equation governs the time evolution of the
@@ -963,8 +1166,8 @@ uses_python: false
                 <p>
                     The total integral of the temperature is preserved in time. For the heat kernel itself, this is
                     the statement that \(K_t\) is a probability density. The
-                    <a href="../Probability/gaussian.html#T-gaussian_integral" class="ref-link">Gaussian integral
-                    identity</a> gives
+                    <a href="../Probability/gaussian.html#T-gaussian_integral" class="ref-link"><strong>Gaussian integral
+                    identity</strong></a> gives
                     \[
                     \begin{align*}
                     \int_{-\infty}^{\infty} K_t(x)\, dx
@@ -1050,9 +1253,9 @@ uses_python: false
                 <p>
                     For this subsection we strengthen our hypotheses and assume that the initial datum \(f\) is
                     <strong>bounded</strong> on \(\mathbb{R}\), so that \(\inf_{y \in \mathbb{R}} f(y)\) and
-                    \(\sup_{y \in \mathbb{R}} f(y)\) are both finite real numbers. Boundedness is essential for the
-                    statement that follows. The argument interprets \(u(x, t)\) as a weighted average of values of
-                    \(f\), and a weighted average is bounded by the input range only when that range is finite.
+                    \(\sup_{y \in \mathbb{R}} f(y)\) are both finite real numbers. Boundedness is what makes the two
+                    bounds below informative. The argument interprets \(u(x, t)\) as a weighted average of values of
+                    \(f\), and for an unbounded \(f\) at least one of the bounds is infinite and says nothing.
                 </p>
 
                 <p>
@@ -1073,10 +1276,11 @@ uses_python: false
                     what was initially present, nor cold spots colder. The result is genuinely a statement about
                     parabolic evolution. Unlike the heat equation, the wave equation generally lacks an analogous
                     pointwise maximum principle. In higher dimensions, focusing can amplify solutions beyond the
-                    initial range, and even in one dimension a non-zero initial velocity drives the solution outside
-                    the bounds of \(f\). The conserved quantity of the wave equation is the global mechanical energy
-                    rather than a pointwise bound. The <a href="fourier_pde_laplace.html"><strong>Laplace
-                    equation</strong></a> has a related but distinct boundary-data form.
+                    initial range, and even in one dimension a non-zero initial velocity can drive the solution
+                    outside the bounds of \(f\). The conserved quantity of the wave equation is the global
+                    mechanical energy rather than a pointwise bound. The
+                    <a href="fourier_pde_laplace.html"><strong>Laplace equation</strong></a> has a related but
+                    distinct boundary-data form.
                 </p>
 
                 <h3>The Backward Problem is Ill-Posed</h3>
@@ -1093,19 +1297,54 @@ uses_python: false
                 <p>
                     Any high-frequency noise present in \(u(\cdot, T)\), whether from measurement error, numerical
                     round-off, or any other source, is amplified beyond all bounds. The map
-                    \(f \mapsto u(\cdot, T)\) is well-defined and even smoothing, but its inverse fails to be
-                    continuous on any reasonable function space. This is what is meant by saying the
+                    \(f \mapsto u(\cdot, T)\) is well-defined and even smoothing, but its inverse is not
+                    continuous. On \(L^1 \cap L^2(\mathbb{R})\) the map is injective, since
+                    \(\hat{u}(\cdot, T) = \hat{f}\, e^{-k\xi^2 T}\) determines \(\hat{f}\), and by
+                    <a href="fourier_transform.html#T-plancherel" class="ref-link"><strong>Plancherel's
+                    theorem</strong></a> \(\hat{f} = 0\) forces \(\|f\|_{L^2} = 0\). The failure of continuity can
+                    be exhibited explicitly in the \(L^2\) norm. Let
+                    \(f_m(x) = e^{-x^2/2}\cos(mx)\) for \(m = 1, 2, \ldots\). Each \(f_m\) lies in
+                    \(L^1 \cap L^2(\mathbb{R})\), and the same Gaussian transform gives
+                    \[
+                    \begin{align*}
+                    \|f_m\|_{L^2}^2 &= \tfrac{\sqrt{\pi}}{2}\bigl(1 + e^{-m^2}\bigr), \\\\
+                    \widehat{f_m}(\xi) &= \sqrt{\tfrac{\pi}{2}}\,\bigl(e^{-(\xi + m)^2/2} + e^{-(\xi - m)^2/2}\bigr).
+                    \end{align*}
+                    \]
+                    The solution \(u_m(\cdot, T) = f_m * K_T\) is integrable by Tonelli's theorem and bounded by
+                    \(\|f_m\|_{L^1} \sup K_T\), hence in \(L^1 \cap L^2(\mathbb{R})\), and its transform is
+                    \(\widehat{f_m}\, e^{-k\xi^2 T}\) by the convolution theorem. Plancherel's theorem, the
+                    inequality \((\alpha + \beta)^2 \leq 2\alpha^2 + 2\beta^2\), and the symmetry
+                    \(\xi \mapsto -\xi\) give
+                    \[
+                    \begin{align*}
+                    \|u_m(\cdot, T)\|_{L^2}^2
+                    &= \frac{1}{2\pi}\int_{-\infty}^{\infty} |\widehat{f_m}(\xi)|^2\, e^{-2k\xi^2 T}\, d\xi \\\\
+                    &\leq \int_{-\infty}^{\infty} e^{-(\xi - m)^2}\, e^{-2kT\xi^2}\, d\xi \\\\
+                    &= \sqrt{\frac{\pi}{1 + 2kT}}\, \exp\!\Bigl(-\frac{2kT\, m^2}{1 + 2kT}\Bigr),
+                    \end{align*}
+                    \]
+                    where the last step completes the square in the exponent.
+                </p>
+
+                <p>
+                    As \(m \to \infty\), \(\|f_m\|_{L^2}^2\) stays at least \(\sqrt{\pi}/2\) while
+                    \(\|u_m(\cdot, T)\|_{L^2} \to 0\). No bound of the form
+                    \(\|f\|_{L^2} \leq C\, \|u(\cdot, T)\|_{L^2}\) can therefore hold, and the inverse map is not
+                    continuous in the \(L^2\) norm. This is what is meant by saying the
                     <strong>backward heat equation</strong> is <em>ill-posed</em> in the sense of Hadamard.
                 </p>
 
                 <p>
                     The forward irreversibility just established stands in sharp contrast to the time-reversibility
                     of <a href="fourier_pde_wave.html"><strong>the wave equation</strong></a>, where the backward
-                    problem is as well-posed as the forward one and no information is lost. In the context of
-                    diffusion generative models, the forward (noising) process is precisely the well-posed
-                    direction. The difficulty of reversing it, that is, of denoising a corrupted sample back to its
-                    origin, is analogous to the heat equation's ill-posed backward problem, which a neural network
-                    learns to approximate by exploiting strong prior assumptions on the data distribution.
+                    problem is as well-posed as the forward one and no information is lost. Diffusion generative
+                    models run a noising process of this forward, smoothing kind, but they do not attempt the
+                    ill-posed inversion. Their aim is not to recover the particular sample that was noised, only to
+                    draw new samples from the data distribution. The reverse dynamics that achieve this can be
+                    written in terms of the score of each intermediate marginal distribution. The page on
+                    <a href="../Machine_learning/diffusion_models.html#reverse"><strong>diffusion models</strong></a>
+                    shows that the noise prediction of the network is, up to scaling, an estimate of that score.
                 </p>
             </section>
 
