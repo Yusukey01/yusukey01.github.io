@@ -271,16 +271,109 @@ uses_python: false
                 </div>
 
                 <p>
-                    That \(\|\cdot\|_{\ast}\) satisfies the triangle inequality is not obvious, and we do not prove it on this page.
+                    That \(\|\cdot\|_{\ast}\) satisfies the triangle inequality is not obvious. We prove it later on this
+                    page, once the spectral norm is available, as a consequence of the
+                    <a href="#T-nuclear_norm_variational" class="ref-link"><strong>variational characterization of the nuclear norm</strong></a>.
                 </p>
-                
+
+                <p>
+                    To compute the nuclear norm through the square root of a positive semidefinite matrix, we first
+                    record that such a square root exists and is unique.
+                </p>
+
+                <div class="theorem" id="T-psd_square_root">
+                    <span class="theorem-title">Theorem: Square Root of a Positive Semidefinite Matrix</span>
+                    <p>
+                        Let \(S \in \mathbb{R}^{n \times n}\) be symmetric and
+                        <a href="symmetry.html#D-quadratic_form_classification" class="ref-link"><strong>positive semidefinite</strong></a>.
+                        Then there is exactly one symmetric positive semidefinite matrix \(R \in \mathbb{R}^{n \times n}\)
+                        with \(R^2 = S\). We denote it by \(\sqrt{S}\). If \(S = Q \Lambda Q^\top\) with \(Q\) orthogonal
+                        and \(\Lambda = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)\), then every \(\lambda_i \geq 0\) and
+                        \[
+                        \sqrt{S} = Q \operatorname{diag}\!\left(\sqrt{\lambda_1}, \ldots, \sqrt{\lambda_n}\right) Q^\top.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <em>Existence.</em><br>
+                        By the <a href="symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a>,
+                        \(S\) has a factorization \(S = Q \Lambda Q^\top\) with \(Q\) orthogonal and
+                        \(\Lambda = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)\). Fix any such factorization and write
+                        \(\mathbf{q}_i = Q\mathbf{e}_i\) for the \(i\)-th column of \(Q\). Positive semidefiniteness gives
+                        \[
+                        \lambda_i = \mathbf{e}_i^\top \Lambda \mathbf{e}_i = \mathbf{q}_i^\top S \mathbf{q}_i \geq 0.
+                        \]
+                        Set \(R = Q \Lambda_+ Q^\top\) with \(\Lambda_+ = \operatorname{diag}(\sqrt{\lambda_1}, \ldots, \sqrt{\lambda_n})\).
+                        Then \(R\) is symmetric,
+                        \[
+                        \begin{align*}
+                        R^2 &= Q \Lambda_+ Q^\top Q \Lambda_+ Q^\top \\\\
+                        &= Q \Lambda_+^2 Q^\top = S,
+                        \end{align*}
+                        \]
+                        and for every \(\mathbf{x} \in \mathbb{R}^n\), putting \(\mathbf{y} = Q^\top \mathbf{x}\),
+                        \[
+                        \begin{align*}
+                        \mathbf{x}^\top R \mathbf{x} &= \mathbf{y}^\top \Lambda_+ \mathbf{y} \\\\
+                        &= \sum_{i=1}^n \sqrt{\lambda_i}\, y_i^2 \geq 0.
+                        \end{align*}
+                        \]
+                        So \(R\) is a symmetric positive semidefinite square root of \(S\), and it satisfies
+                        \(R\mathbf{q}_i = Q \Lambda_+ \mathbf{e}_i = \sqrt{\lambda_i}\, \mathbf{q}_i\) for every \(i\).
+                    </p>
+                    <p>
+                        <em>Uniqueness.</em><br>
+                        Let \(R'\) be any symmetric positive semidefinite matrix with \(R'^2 = S\).
+                        Then \(R'S = R'^3 = SR'\). Fix an eigenvalue \(\mu\) of \(S\) and let
+                        \(E_\mu = \{\mathbf{v} \in \mathbb{R}^n : S\mathbf{v} = \mu\mathbf{v}\}\), of dimension \(k \geq 1\).
+                        For \(\mathbf{v} \in E_\mu\) we have \(S(R'\mathbf{v}) = R'S\mathbf{v} = \mu R'\mathbf{v}\), so \(R'\)
+                        maps \(E_\mu\) into itself. Let \(P \in \mathbb{R}^{n \times k}\) have as columns an orthonormal basis
+                        \(\mathbf{p}_1, \ldots, \mathbf{p}_k\) of \(E_\mu\) (the
+                        <a href="orthogonality.html#T-gram_schmidt" class="ref-link"><strong>Gram-Schmidt process</strong></a>
+                        followed by normalization provides one). By the
+                        <a href="orthogonality.html#T-orthogonal_basis_coefficients" class="ref-link"><strong>coordinate formula for an orthogonal basis</strong></a>,
+                        every \(\mathbf{v} \in E_\mu\) satisfies
+                        \(\mathbf{v} = \sum_{j=1}^k (\mathbf{p}_j^\top \mathbf{v})\, \mathbf{p}_j = PP^\top \mathbf{v}\). Every column of
+                        \(R'P\) lies in \(E_\mu\), so \(R'P = PC\) with \(C = P^\top R' P \in \mathbb{R}^{k \times k}\).
+                    </p>
+                    <p>
+                        The matrix \(C\) is symmetric, so the spectral theorem gives \(C = Z \Gamma Z^\top\) with \(Z\)
+                        orthogonal and \(\Gamma = \operatorname{diag}(\gamma_1, \ldots, \gamma_k)\). The columns of \(PZ\) are
+                        orthonormal, since \((PZ)^\top PZ = Z^\top P^\top P Z = I_k\), and they lie in \(E_\mu\). Orthonormal
+                        vectors are linearly independent, and there are \(k = \dim E_\mu\) of them, so they form an
+                        orthonormal basis of \(E_\mu\). Moreover \(R'PZ = PCZ = PZ\Gamma\), so the \(j\)-th column
+                        \(\mathbf{u}\) of \(PZ\) satisfies \(R'\mathbf{u} = \gamma_j \mathbf{u}\). Then
+                        \(\gamma_j = \mathbf{u}^\top R' \mathbf{u} \geq 0\) and
+                        \[
+                        \gamma_j^2 \mathbf{u} = R'^2 \mathbf{u} = S\mathbf{u} = \mu \mathbf{u},
+                        \] 
+                        so \(\gamma_j = \sqrt{\mu}\). Hence \(R'\) acts as \(\sqrt{\mu}\) on a basis of \(E_\mu\), that is, 
+                        \(R'\mathbf{v} = \sqrt{\mu}\,\mathbf{v}\) for every \(\mathbf{v} \in E_\mu\).
+                    </p>
+                    <p>
+                        Finally, each column \(\mathbf{q}_i\) of \(Q\) satisfies \(S\mathbf{q}_i = Q\Lambda\mathbf{e}_i = \lambda_i \mathbf{q}_i\),
+                        so \(\mathbf{q}_i \in E_{\lambda_i}\) and therefore 
+                        \[
+                        R'\mathbf{q}_i = \sqrt{\lambda_i}\,\mathbf{q}_i = R\mathbf{q}_i.
+                        \]
+                        The \(\mathbf{q}_i\) form a basis of \(\mathbb{R}^n\), so \(R' = R\). In particular \(R\) does not depend on
+                        the chosen factorization of \(S\), which justifies the formula in the theorem.
+                    </p>
+                </div>
+
                 <div class="theorem" id="T-nuclear_norm_svd">
                     <span class="theorem-title">Theorem: Nuclear Norm via SVD</span>  
                     <p>
                         Let \(A \in \mathbb{R}^{m \times n}\) have
                         <a href="symmetry.html#T-svd" class="ref-link"><strong>singular value decomposition</strong></a>
                         (SVD) \(A = U \Sigma V^\top\), and let \(\sqrt{A^\top A}\) denote the unique symmetric positive
-                        semidefinite square root of \(A^\top A\). Then
+                        semidefinite square root of \(A^\top A\) given by the
+                        <a href="#T-psd_square_root" class="ref-link"><strong>square root theorem</strong></a> (the theorem
+                        applies because \(A^\top A\) is symmetric and
+                        \(\mathbf{x}^\top A^\top A \mathbf{x} = \|A\mathbf{x}\|_2^2 \geq 0\) for every \(\mathbf{x} \in \mathbb{R}^n\)). Then
                         \[
                         \| A \|_{\ast} = \sum_{i=1}^{\min(m,n)} \sigma_i = \operatorname{tr}\!\left(\sqrt{A^\top A}\right).
                         \]
@@ -290,7 +383,7 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Let \(A = U\Sigma V^\top\) be the SVD of \(A\), with \(U \in \mathbb{R}^{m \times m}\) and
+                        Let \(A = U\Sigma V^\top\) be an SVD of \(A\), with \(U \in \mathbb{R}^{m \times m}\) and
                         \(V \in \mathbb{R}^{n \times n}\) orthogonal and \(\Sigma \in \mathbb{R}^{m \times n}\)
                         containing the singular values \(\sigma_1 \geq \cdots \geq \sigma_{\min(m,n)} \geq 0\) on its
                         diagonal. Since \(U^\top U = I_m\),
@@ -298,24 +391,18 @@ uses_python: false
                         A^\top A = V \Sigma^\top U^\top U \Sigma V^\top = V (\Sigma^\top \Sigma) V^\top,
                         \]
                         where \(\Sigma^\top \Sigma \in \mathbb{R}^{n \times n}\) is diagonal with entries
-                        \(\sigma_1^2, \ldots, \sigma_{\min(m,n)}^2\) (padded with zeros if \(n \gt m\)). Thus
-                        \(A^\top A\) is symmetric positive semidefinite. The square root named in the theorem is
-                        obtained by taking nonnegative square roots of the diagonal entries:
+                        \(\sigma_1^2, \ldots, \sigma_{\min(m,n)}^2\) (padded with zeros if \(n \gt m\)). The displayed
+                        identity is a factorization of the kind used in the
+                        <a href="#T-psd_square_root" class="ref-link"><strong>square root theorem</strong></a>, with
+                        \(S = A^\top A\), \(Q = V\), and \(\Lambda = \Sigma^\top \Sigma\). That theorem therefore gives the
+                        square root by taking nonnegative square roots of the diagonal entries \(\sigma_i^2\) and of the
+                        padded zeros, namely \(\sqrt{\sigma_i^2} = \sigma_i\) (as \(\sigma_i \geq 0\)) and \(0\):
                         \[
                         \begin{align*}
                         \sqrt{A^\top A} &= V \, \Sigma_+ \, V^\top, \\\\
                         \Sigma_+ &= \operatorname{diag}(\sigma_1, \ldots, \sigma_{\min(m,n)}, 0, \ldots, 0) \in \mathbb{R}^{n \times n}.
                         \end{align*}
                         \]
-                        This \(V \Sigma_+ V^\top\) is symmetric, positive semidefinite, and squares to
-                        \(V \Sigma^\top \Sigma V^\top = A^\top A\). It is the only such matrix. Suppose \(S\) is
-                        symmetric positive semidefinite with \(S^2 = A^\top A\). Then \(S\) commutes with
-                        \(S^2 = A^\top A\), so \(S\) maps each eigenspace \(E_\mu = \ker(A^\top A - \mu I)\) into
-                        itself. The restriction of \(S\) to \(E_\mu\) is symmetric with square \(\mu I\), so by the
-                        <a href="symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a>
-                        its eigenvalues are nonnegative numbers whose squares equal \(\mu\). Hence
-                        \(S = \sqrt{\mu}\, I\) on \(E_\mu\). Since the eigenspaces of \(A^\top A\) span
-                        \(\mathbb{R}^n\), \(S\) is determined.
                     </p>
                     <p>
                         Now \(\sqrt{A^\top A}\) is an \(n \times n\) symmetric matrix, so its trace is well-defined. 
@@ -327,7 +414,7 @@ uses_python: false
                         &= \operatorname{tr}(\Sigma_+ V^\top V) \\\\
                         &= \operatorname{tr}(\Sigma_+) \\\\
                         &= \sum_{i=1}^{\min(m,n)} \sigma_i \\\\
-                        &= \|A\|_*.
+                        &= \|A\|_{\ast}.
                         \end{align*}
                         \]
                     </p>
@@ -366,7 +453,7 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Derivation:</span>
                     <p>
-                        Let \(A = U \Sigma V^\top\) be the SVD with \(U, V\) orthogonal and singular values ordered as
+                        Let \(A = U \Sigma V^\top\) be an SVD with \(U, V\) orthogonal and singular values ordered as
                         \(\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_{\min(m,n)} \geq 0\). The remaining singular
                         values \(\sigma_i\), \(\min(m,n) \lt i \leq n\), vanish, since \(A^\top A\) has rank at most
                         \(m\). For any \(\mathbf{x} \in \mathbb{R}^n\) with \(\|\mathbf{x}\|_2 = 1\), set
@@ -407,7 +494,166 @@ uses_python: false
                 </p>
 
                 <p>
-                    The induced norm depends on a choice of vector \(p\)-norm. The Euclidean norm used throughout linear algebra is the 
+                    For a symmetric matrix the spectral norm can be read off from the eigenvalues directly.
+                </p>
+
+                <div class="theorem" id="T-spectral_norm_symmetric">
+                    <span class="theorem-title">Corollary: Spectral Norm of a Symmetric Matrix</span>
+                    <p>
+                        Let \(A \in \mathbb{R}^{n \times n}\) be symmetric, and let \(A = Q \Lambda Q^\top\) be any
+                        factorization with \(Q\) orthogonal and \(\Lambda = \operatorname{diag}(d_1, \ldots, d_n)\) (one
+                        exists by the
+                        <a href="symmetry.html#T-spectral_theorem_symm" class="ref-link"><strong>spectral theorem</strong></a>).
+                        Then the set of eigenvalues of \(A\) is \(\{d_1, \ldots, d_n\}\), and
+                        \[
+                        \|A\|_2 = \max_{1 \leq i \leq n} |d_i|.
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Each \(d_i\) is an eigenvalue, since \(AQ\mathbf{e}_i = Q\Lambda Q^\top Q\mathbf{e}_i = Q\Lambda\mathbf{e}_i = d_i\, Q\mathbf{e}_i\)
+                        and \(Q\mathbf{e}_i \neq \mathbf{0}\). Conversely, if \(A\mathbf{v} = \lambda\mathbf{v}\) with
+                        \(\mathbf{v} \neq \mathbf{0}\), then \(\mathbf{y} = Q^\top\mathbf{v} \neq \mathbf{0}\) satisfies
+                        \(\Lambda\mathbf{y} = \lambda\mathbf{y}\), that is, \(d_i y_i = \lambda y_i\) for every \(i\). Choosing
+                        \(i\) with \(y_i \neq 0\) gives \(\lambda = d_i\).
+                    </p>
+                    <p>
+                        Since \(A\) is symmetric, \(A^\top A = A^2 = Q\Lambda^2 Q^\top\), and
+                        \(\Lambda^2 = \operatorname{diag}(d_1^2, \ldots, d_n^2)\). The argument just given, applied to this
+                        factorization of the symmetric matrix \(A^\top A\), shows that the set of eigenvalues of \(A^\top A\)
+                        is \(\{d_1^2, \ldots, d_n^2\}\). By the
+                        <a href="#D-spectral_norm" class="ref-link"><strong>spectral norm</strong></a> formula,
+                        \[
+                        \begin{align*}
+                        \|A\|_2 &= \sqrt{\lambda_{\max}(A^\top A)} \\\\
+                        &= \sqrt{\max_{i} d_i^2} \\\\
+                        &= \max_{i} |d_i|.
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <p>
+                    With the spectral norm in hand, we can settle the question left open after the definition of the
+                    nuclear norm. The two norms are tied together through the
+                    <a href="#D-frobenius_inner_product" class="ref-link"><strong>Frobenius inner product</strong></a>.
+                </p>
+
+                <div class="theorem" id="T-nuclear_norm_variational">
+                    <span class="theorem-title">Theorem: Variational Characterization of the Nuclear Norm</span>
+                    <p>
+                        For every \(A \in \mathbb{R}^{m \times n}\),
+                        \[
+                        \|A\|_{\ast} = \max_{\|W\|_2 \leq 1} \langle W, A \rangle_F,
+                        \]
+                        where \(W\) ranges over \(\mathbb{R}^{m \times n}\) and
+                        \(\langle W, A \rangle_F = \operatorname{tr}(W^\top A)\).
+                        Consequently \(\|\cdot\|_{\ast}\) is a norm on \(\mathbb{R}^{m \times n}\). For all
+                        \(A, B \in \mathbb{R}^{m \times n}\) and \(c \in \mathbb{R}\),
+                        \[
+                        \begin{align*}
+                        \|A\|_{\ast} = 0 &\iff A = 0, \\\\
+                        \|cA\|_{\ast} &= |c| \, \|A\|_{\ast}, \\\\
+                        \|A + B\|_{\ast} &\leq \|A\|_{\ast} + \|B\|_{\ast}.
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <em>Upper bound.</em><br>
+                        Let \(A = U\Sigma V^\top\) be an SVD as in the proof of the
+                        <a href="#T-nuclear_norm_svd" class="ref-link"><strong>nuclear norm via SVD</strong></a>, so that all
+                        off-diagonal entries of \(\Sigma\) vanish and \(\Sigma_{ii} = \sigma_i\) for \(1 \leq i \leq \min(m,n)\).
+                        Fix \(W \in \mathbb{R}^{m \times n}\) with \(\|W\|_2 \leq 1\) and put
+                        \(M = U^\top W V \in \mathbb{R}^{m \times n}\). The cyclic property of the trace (Property 5, applied to
+                        the \(n \times n\) product \((W^\top U \Sigma) V^\top\)) and \(V^\top W^\top U = M^\top\) give
+                        \[
+                        \begin{align*}
+                        \operatorname{tr}(W^\top A)
+                        &= \operatorname{tr}(W^\top U \Sigma V^\top) \\\\
+                        &= \operatorname{tr}(V^\top W^\top U \Sigma) \\\\
+                        &= \operatorname{tr}(M^\top \Sigma) \\\\
+                        &= \sum_{i=1}^{\min(m,n)} \sigma_i \, M_{ii},
+                        \end{align*}
+                        \]
+                        where the last step is Property 4 for \(m \times n\) matrices, with only the diagonal entries of
+                        \(\Sigma\) contributing.
+                    </p>
+                    <p>
+                        Next, \(\|M\|_2 = \|W\|_2\). Indeed, \(U^\top\) is orthogonal (since \(UU^\top = I_m\)), so
+                        \(U^\top\) preserves Euclidean length on \(\mathbb{R}^m\) and \(V\) preserves it on \(\mathbb{R}^n\), by the
+                        <a href="orthogonality.html#T-orthonormal_columns_preserve_norm" class="ref-link"><strong>norm-preserving property</strong></a>.
+                        Hence, for \(\mathbf{x} \in \mathbb{R}^n\), \(\|M\mathbf{x}\|_2 = \|W(V\mathbf{x})\|_2\) and \(\|V\mathbf{x}\|_2 = \|\mathbf{x}\|_2\). As
+                        \(\mathbf{x}\) runs over the unit sphere of \(\mathbb{R}^n\), so does \(V\mathbf{x}\) (with inverse
+                        \(V^\top\)), and the two maxima in the
+                        <a href="#D-induced_norm" class="ref-link"><strong>induced norm</strong></a> coincide. Now \(M_{ii}\)
+                        is the \(i\)-th entry of \(M\mathbf{e}_i\), so
+                        \[
+                        \begin{align*}
+                        |M_{ii}| &\leq \|M\mathbf{e}_i\|_2 \\\\
+                        &\leq \|M\|_2 \, \|\mathbf{e}_i\|_2 \\\\
+                        &= \|W\|_2 \leq 1.
+                        \end{align*}
+                        \]
+                        Since every \(\sigma_i \geq 0\),
+                        \[
+                        \begin{align*}
+                        \operatorname{tr}(W^\top A)
+                        &\leq \sum_{i=1}^{\min(m,n)} \sigma_i \, |M_{ii}| \\\\
+                        &\leq \sum_{i=1}^{\min(m,n)} \sigma_i \\\\
+                        &= \|A\|_{\ast}.
+                        \end{align*}
+                        \]
+                    </p>
+                    <p>
+                        <em>The bound is attained.</em><br>
+                        Let \(J \in \mathbb{R}^{m \times n}\) have \(J_{ii} = 1\) for
+                        \(1 \leq i \leq \min(m,n)\) and all other entries \(0\), and put \(W_0 = UJV^\top\). The matrix
+                        \(M\) built from \(W_0\) is \(U^\top U J V^\top V = J\), so \(\|W_0\|_2 = \|J\|_2\) by the previous
+                        paragraph. For \(\mathbf{x} \in \mathbb{R}^n\),
+                        \(\|J\mathbf{x}\|_2^2 = \sum_{i=1}^{\min(m,n)} x_i^2 \leq \|\mathbf{x}\|_2^2\), with equality at
+                        \(\mathbf{x} = \mathbf{e}_1\), so \(\|W_0\|_2 = 1\). The computation above gives
+                        \(\operatorname{tr}(W_0^\top A) = \sum_i \sigma_i J_{ii} = \|A\|_{\ast}\). Hence the maximum exists
+                        and equals \(\|A\|_{\ast}\).
+                    </p>
+                    <p>
+                        <em>Norm properties.</em><br>
+                        If \(\|A\|_{\ast} = 0\), the nonnegative numbers \(\sigma_i\) sum to zero,
+                        so \(\Sigma = 0\) and \(A = U\Sigma V^\top = 0\). Conversely, every eigenvalue of
+                        \(0^\top 0 = 0\) is zero, so all singular values of the zero matrix vanish. For homogeneity, the
+                        linearity of the trace gives \(\operatorname{tr}(W^\top (cA)) = c\,\operatorname{tr}(W^\top A)\).
+                        If \(c \geq 0\), taking the maximum over \(W\) gives \(\|cA\|_{\ast} = c\|A\|_{\ast}\). If
+                        \(c \lt 0\), write \(c\,\operatorname{tr}(W^\top A) = |c|\operatorname{tr}((-W)^\top A)\) and note that
+                        \(W \mapsto -W\) maps the set \(\{\|W\|_2 \leq 1\}\) onto itself (since
+                        \(\|(-W)\mathbf{x}\|_2 = \|W\mathbf{x}\|_2\) for every \(\mathbf{x}\)), so again
+                        \(\|cA\|_{\ast} = |c|\,\|A\|_{\ast}\). For the triangle inequality, every \(W\) with
+                        \(\|W\|_2 \leq 1\) satisfies
+                        \[
+                        \begin{align*}
+                        \operatorname{tr}(W^\top (A + B))
+                        &= \operatorname{tr}(W^\top A) + \operatorname{tr}(W^\top B) \\\\
+                        &\leq \|A\|_{\ast} + \|B\|_{\ast}
+                        \end{align*}
+                        \]
+                        by the upper bound, and taking the maximum over \(W\) gives
+                        \(\|A + B\|_{\ast} \leq \|A\|_{\ast} + \|B\|_{\ast}\).
+                    </p>
+                </div>
+
+                <p>
+                    In words, the nuclear norm is the largest value of the Frobenius inner product
+                    \(\langle W, A \rangle_F\) over the unit ball of the spectral norm. This
+                    is the sense in which the nuclear norm is called the <strong>dual norm</strong> of the spectral norm.
+                </p>
+
+                <p>
+                    Returning to the induced norm, recall that it depends on a choice of vector \(p\)-norm. The Euclidean norm used throughout linear algebra is the 
                     special case \(p = 2\). In general, we define the \(p\)-norm on vectors as follows.
                 </p>
 
