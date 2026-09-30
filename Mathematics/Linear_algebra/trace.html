@@ -257,7 +257,44 @@ uses_python: false
                 </p>
 
                 <p>
-                    Another popular norm of a matrix is the <strong>nuclear norm</strong> (also called <strong>trace norm</strong>). 
+                    We begin with norms on vectors. The Euclidean norm used throughout linear algebra is the case
+                    \(p = 2\) of the following family.
+                </p>
+
+                <div class="theorem" id="D-p_norm">
+                    <span class="theorem-title">Definition: \(p\)-Norm</span>
+                    <p>
+                        For \(p \geq 1\), the <strong>\(p\)-norm</strong> of a vector \(\mathbf{x} \in \mathbb{R}^n\) is
+                        \[
+                        \| \mathbf{x} \|_p = \left( \sum_{i=1}^n |x_i|^p \right)^{1/p}.
+                        \]
+                        The restriction \(p \geq 1\) ensures the triangle inequality holds (Minkowski's inequality,
+                        which we do not prove here). For \(0 \lt p \lt 1\) and \(n \geq 2\), the expression above still
+                        defines a function but fails to be a norm, since the standard basis vectors satisfy
+                        \(\|\mathbf{e}_1 + \mathbf{e}_2\|_p = 2^{1/p} \gt 2 = \|\mathbf{e}_1\|_p + \|\mathbf{e}_2\|_p\).
+                    </p>
+                </div>
+
+                <p>              
+                    The case \(p = 1\) gives the <strong>Manhattan norm</strong> (or \(\ell_1\) norm), common in
+                    grid-based environments. It also serves as a regularizer when we need <strong>sparsity</strong> in models
+                    such as Lasso regression.
+                </p>
+
+                <p>
+                    When \(p \to \infty\), we obtain the <strong>maximum norm</strong>: 
+                    \[
+                    \| \mathbf{x} \|_\infty = \lim_{p \to \infty} \| \mathbf{x} \|_p = \max_{i} |x_i|.
+                    \]
+                    The limit exists and equals the maximum because
+                    \(\max_i |x_i| \leq \|\mathbf{x}\|_p \leq n^{1/p} \max_i |x_i|\) and \(n^{1/p} \to 1\). In numerical
+                    analysis, the maximum norm is used for "worst-case" error analysis. Similarly, in machine learning,
+                    it appears when we want to minimize the worst error rather than the total error across sample data.
+                </p>
+
+                <p>
+                    For matrices, a popular alternative to the Frobenius norm is the <strong>nuclear norm</strong>
+                    (also called the <strong>trace norm</strong>).
                 </p>
                 <div class="theorem" id="D-nuclear_norm">
                     <span class="theorem-title">Definition: Nuclear Norm (Trace Norm)</span>
@@ -400,12 +437,13 @@ uses_python: false
                         \[
                         \begin{align*}
                         \sqrt{A^\top A} &= V \, \Sigma_+ \, V^\top, \\\\
-                        \Sigma_+ &= \operatorname{diag}(\sigma_1, \ldots, \sigma_{\min(m,n)}, 0, \ldots, 0) \in \mathbb{R}^{n \times n}.
+                        \Sigma_+ &= \operatorname{diag}(\sigma_1, \ldots, \sigma_{\min(m,n)}, 0, \ldots, 0).
                         \end{align*}
                         \]
                     </p>
                     <p>
-                        Now \(\sqrt{A^\top A}\) is an \(n \times n\) symmetric matrix, so its trace is well-defined. 
+                        Here \(\Sigma_+ \in \mathbb{R}^{n \times n}\), so \(\sqrt{A^\top A}\) is an \(n \times n\) matrix and its
+                        trace is well-defined.
                         By the <strong>cyclic permutation</strong> property of trace (Property 5) together with \(V^\top V = I_n\),
                         \[
                         \begin{align*}
@@ -420,6 +458,11 @@ uses_python: false
                     </p>
                 </div>
                 
+                <p>
+                    Each <a href="#D-p_norm" class="ref-link"><strong>\(p\)-norm</strong></a> from the start of this section also induces
+                    a notion of size for matrices.
+                </p>
+
                 <div class="theorem" id="D-induced_norm">
                     <span class="theorem-title">Definition: Induced Norm</span>
                     <p>
@@ -652,50 +695,15 @@ uses_python: false
                     is the sense in which the nuclear norm is called the <strong>dual norm</strong> of the spectral norm.
                 </p>
 
-                <p>
-                    Returning to the induced norm, recall that it depends on a choice of vector \(p\)-norm. The Euclidean norm used throughout linear algebra is the 
-                    special case \(p = 2\). In general, we define the \(p\)-norm on vectors as follows.
-                </p>
-
-                <div class="theorem" id="D-p_norm">
-                    <span class="theorem-title">Definition: \(p\)-Norm</span>
-                    <p>
-                        For \(p \geq 1\), the <strong>\(p\)-norm</strong> of a vector \(\mathbf{x} \in \mathbb{R}^n\) is
-                        \[
-                        \| \mathbf{x} \|_p = \left( \sum_{i=1}^n |x_i|^p \right)^{1/p}.
-                        \]
-                        The restriction \(p \geq 1\) ensures the triangle inequality holds (Minkowski's inequality,
-                        which we do not prove here). For \(0 \lt p \lt 1\), the expression above still defines a
-                        function but fails to be a norm.
-                    </p>
-                </div>
-
-                <p>              
-                    When \(p = 1\), the \(p\)-norm is called the <strong>Manhattan norm</strong> (or \(\ell_1\) norm),
-                    which is commonly used in grid-based environments. When we need <strong>sparsity</strong> in models
-                    such as Lasso regression, the Manhattan norm also serves as a regularizer.
-                </p>
-
-                <p>
-                    When \(p \to \infty\), we obtain the <strong>maximum norm</strong>: 
-                    \[
-                    \| \mathbf{x} \|_\infty = \lim_{p \to \infty} \| \mathbf{x} \|_p = \max_{i} |x_i|.
-                    \]
-                    The limit exists and equals the maximum because
-                    \(\max_i |x_i| \leq \|\mathbf{x}\|_p \leq n^{1/p} \max_i |x_i|\) and \(n^{1/p} \to 1\). In numerical
-                    analysis, the maximum norm is used for "worst-case" error analysis. Similarly, in machine learning,
-                    it is used when we want to minimize the worst error rather than the total error across sample data.
-                </p>
-
             </section>
 
             <section id="ms" class="section-content">
                 <h2>Introduction to Metric Spaces</h2>
 
                 <p>
-                    Look back over the norms we have collected in the previous two sections: the Frobenius norm on
-                    matrices, the nuclear and spectral norms measuring singular-value magnitudes, the \(p\)-norms on
-                    vectors, the Manhattan and maximum norms as special cases. At first glance they feel ad hoc, each
+                    Let us look back over the norms we have collected in the previous two sections: the Frobenius norm on
+                    matrices, the \(p\)-norms on vectors (with the Manhattan and maximum norms as special cases), and the
+                    nuclear and spectral norms measuring singular-value magnitudes. At first glance they feel ad hoc, each
                     invented for a specific purpose on a specific space. But something invariant runs through all of
                     them. Every norm we have seen turns differences into distances, and those distances satisfy three
                     properties: <strong>positive definiteness, symmetry, and the triangle inequality</strong>. These
