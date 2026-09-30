@@ -86,28 +86,55 @@ uses_python: true
                         \[
                         P(X_1, X_2, \ldots, X_n) = \prod_{i=1}^n P(X_i \mid X_{\operatorname{pa}(i)}).
                         \]
+                        Explicitly, for every \((x_1, \ldots, x_n)\) (the variables are discrete, as the point conditionals in the definition presuppose),
+                        \[
+                        P(X_1 = x_1, \ldots, X_n = x_n) = \prod_{i=1}^n p_i(x_i \mid x_{\operatorname{pa}(i)}),
+                        \]
+                        where each factor on the right is the one supplied by the network. It equals
+                        \(P(X_i = x_i \mid X_{\operatorname{pa}(i)} = x_{\operatorname{pa}(i)})\) whenever that conditioning event has positive
+                        probability.
                     </p>
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof.</span>
                     <p>
-                        Assume the vertices are numbered in topological order. Applying the definition of
-                        <a href="basic.html#D-conditional_probability" class="ref-link"><strong>conditional probability</strong></a> repeatedly gives the
-                        chain rule of probability,
+                        Assume the vertices are numbered in topological order, and fix \((x_1, \ldots, x_n)\). Write \(E_i\) for the event
+                        \(\{X_1 = x_1, \ldots, X_i = x_i\}\), so that \(E_1 \supseteq E_2 \supseteq \cdots \supseteq E_n\). Every edge \(X_j \to X_i\) has
+                        \(j \lt i\), so vertex \(1\) has no parents and \(p_1(x_1) = P(X_1 = x_1) = P(E_1)\). For \(i \geq 2\), the conditioning set in
+                        \(P(X_i = x_i \mid E_{i-1})\) is exactly \(X_{\operatorname{pred}(i)}\), since \(\operatorname{pred}(i) = \{1, \ldots, i-1\}\).
+                        The ordered Markov property states that, conditional on the parents \(X_{\operatorname{pa}(i)}\), the variable \(X_i\) is
+                        independent of the remaining predecessors \(X_{\operatorname{pred}(i) \setminus \operatorname{pa}(i)}\), so conditioning on them
+                        as well does not change the conditional probability of \(X_i\). Hence, whenever \(P(E_{i-1}) \gt 0\),
                         \[
-                        P(X_1, X_2, \ldots, X_n) = \prod_{i=1}^n P(X_i \mid X_1, X_2, \ldots, X_{i-1}).
+                        \begin{align*}
+                        P(X_i = x_i \mid E_{i-1}) &= P(X_i = x_i \mid X_{\operatorname{pa}(i)} = x_{\operatorname{pa}(i)}) \\\\
+                                                  &= p_i(x_i \mid x_{\operatorname{pa}(i)}),
+                        \end{align*}
                         \]
+                        where the second equality holds because the event \(\{X_{\operatorname{pa}(i)} = x_{\operatorname{pa}(i)}\}\) contains \(E_{i-1}\)
+                        and so has positive probability.
                     </p>
                     <p>
-                        The conditioning set on the right is exactly \(X_{\operatorname{pred}(i)}\), since \(\operatorname{pred}(i) = \{1, \ldots, i-1\}\)
-                        under the topological ordering. The ordered Markov property states that, conditional on the parents \(X_{\operatorname{pa}(i)}\), the
-                        variable \(X_i\) is independent of the remaining predecessors \(X_{\operatorname{pred}(i) \setminus \operatorname{pa}(i)}\). Hence
-                        the conditioning set in each factor collapses to the parents:
+                        If \(n = 1\), the claim is \(P(E_1) = p_1(x_1)\), shown above, so let \(n \geq 2\). If \(P(E_{n-1}) \gt 0\), the
+                        <a href="basic.html#T-multiplication_rule" class="ref-link"><strong>chain rule of probability</strong></a>, applied to the events
+                        \(\{X_1 = x_1\}, \ldots, \{X_n = x_n\}\), gives
                         \[
-                        P(X_i \mid X_{\operatorname{pred}(i)}) = P(X_i \mid X_{\operatorname{pa}(i)}).
+                        P(E_n) = P(E_1) \prod_{i=2}^n P(X_i = x_i \mid E_{i-1}),
                         \]
-                        Substituting into the chain rule expansion yields the claimed factorization.
+                        and substituting the display above into each factor yields the claimed factorization.
+                    </p>
+                    <p>
+                        If \(P(E_{n-1}) = 0\), the left side \(P(E_n)\) is \(0\), and we show that some factor on the right vanishes. Let \(i\) be the
+                        smallest index with \(P(E_i) = 0\). If \(i = 1\), then \(p_1(x_1) = P(E_1) = 0\). If \(i \geq 2\), then \(P(E_{i-1}) \gt 0\) by
+                        minimality, and the display above gives
+                        \[
+                        \begin{align*}
+                        p_i(x_i \mid x_{\operatorname{pa}(i)}) &= P(X_i = x_i \mid E_{i-1}) \\\\
+                                                                &= P(E_i)/P(E_{i-1}) = 0.
+                        \end{align*}
+                        \]
+                        Every factor lies in \([0, 1]\), so the product is \(0\) as well.
                     </p>
                 </div>
 
@@ -158,7 +185,8 @@ uses_python: true
                 </p>
 
                 <p>
-                    By the chain rule of probability,
+                    By the <a href="basic.html#T-multiplication_rule" class="ref-link"><strong>chain rule of probability</strong></a>, valid for
+                    \(T \geq 2\) at every sequence with \(P(y_{1:T-1}) \gt 0\),
                     \[
                     \begin{align*}
                     P(y_{1:T}) &= P(y_1) P(y_2 \mid y_1) P(y_3 \mid y_2, y_1) \cdots \\\\
@@ -188,8 +216,10 @@ uses_python: true
                     \]
                     This is precisely the <a href="#T-bayesian_network_factorization" class="ref-link"><strong>Bayesian-network factorization</strong></a>
                     specialized to the linear-chain DAG, with each \(\operatorname{pa}(t) = \{t-1\}\) for \(t \geq 2\) and
-                    \(\operatorname{pa}(1) = \varnothing\). This <strong>memoryless property</strong> (formalized above as the first-order Markov property)
-                    cuts the parameter count from \(O(K^T)\) for the full joint distribution to \(O(K^2)\) for the transition probabilities.
+                    \(\operatorname{pa}(1) = \varnothing\). Read pointwise, as in that theorem, with \(P(y_1)\) taken from the initial distribution and
+                    each \(P(y_t \mid y_{t-1})\) from the transition probabilities, the identity holds at every sequence. This
+                    <strong>memoryless property</strong> (formalized above as the first-order Markov property) cuts the parameter count from \(O(K^T)\)
+                    for the full joint distribution to \(O(K^2)\) for the transition probabilities.
                 </p>
 
                 <p>
@@ -326,6 +356,19 @@ uses_python: true
                     (We omit the non-negativity constraints \(\pi_j \geq 0\) and \(A_{jk} \geq 0\). They are automatically satisfied by the closed-form
                     solutions below since the counts are non-negative.) Both objectives are concave, and the constraint sets (a simplex for \(\pi\), one
                     simplex per row for \(A\)) are convex, so any point meeting the stationarity conditions below is a global maximizer.
+                </p>
+
+                <p>
+                    One case needs care before the computation. Suppose \(N_j \gt 0\) and some count vanishes, say \(N_{jk} = 0\). The term
+                    \(N_{jk} \log A_{jk}\) is then absent from the objective (with the convention \(0 \cdot \log 0 = 0\)), and the stationarity condition
+                    \(N_{jk}/A_{jk} = \mu_j\) derived below would force \(\mu_j = 0\), which is incompatible with the condition
+                    \(N_{jk'}/A_{jk'} = \mu_j\) for any \(k'\) with \(N_{jk'} \gt 0\). No stationary point exists, but the maximizer is still easy to
+                    locate. The objective is finite at some point (for instance, equal weights on the components with positive count), so at any maximizer
+                    every component with positive count is positive, and moving mass from a zero-count component to one of them would strictly increase
+                    the objective. Hence every maximizer has \(A_{jk} = 0\) wherever \(N_{jk} = 0\). We therefore run the Lagrange computation over the
+                    components with positive counts only, and the resulting closed form, which assigns \(0\) to the zero-count components, is correct for
+                    every component. The same remark applies to the starting counts \(N_j^1\) in the problem for \(\pi\), whose total \(\sum_j N_j^1 = N\)
+                    is positive.
                 </p>
 
                 <p>
@@ -597,21 +640,25 @@ uses_python: true
 
                 <p>
                     The posterior mean is often used in practice because it is always defined. The <strong>mode</strong> (the "actual" MAP estimate)
-                    maximizes the posterior density over the simplex, and the Lagrange computation used for the MLE above, with \(N_{jk}\) replaced by
-                    \(N_{jk} + \alpha - 1\), gives
+                    maximizes the posterior density over the simplex. Assume \(N_{jk} + \alpha \geq 1\) for every \(k\). The Dirichlet density is given at
+                    the points of the simplex where every coordinate is positive, and since every exponent \(N_{jk} + \alpha - 1\) is then non-negative,
+                    it extends continuously to the whole simplex and stays bounded. The mode is the maximizer of this extension. The Lagrange computation
+                    used for the MLE above, with \(N_{jk}\) replaced by \(N_{jk} + \alpha - 1\) (so that its treatment of vanishing counts now applies to
+                    the components with \(N_{jk} + \alpha - 1 = 0\)), gives
                     \[
                     \operatorname{mode}(A_{jk}) = \frac{N_{jk}+\alpha - 1}{N_j + K (\alpha - 1)}.
                     \]
-                    (This formula requires \(N_{jk} + \alpha \geq 1\) for every \(k\), so that the posterior density is bounded. Components with
-                    \(N_{jk} + \alpha = 1\) then sit on the boundary of the simplex. If some \(N_{jk} + \alpha \lt 1\), the density is unbounded near the
-                    boundary and the mode is not defined.)
+                    A component with \(N_{jk} + \alpha = 1\) receives \(0\), so the mode lies on the face \(A_{jk} = 0\) of the simplex. With integer
+                    counts this happens only when \(\alpha = 1\) and \(N_{jk} = 0\). If every component has \(N_{jk} + \alpha = 1\), that is,
+                    \(\alpha = 1\) and \(N_j = 0\), the posterior is flat, the formula reads \(0/0\), and the mode is not unique. If some
+                    \(N_{jk} + \alpha \lt 1\), the density is unbounded near the boundary and the mode is not defined.
                 </p>
 
                 <p>
-                    When \(\alpha = 1\), however, the mode simplifies to \(\frac{N_{jk}}{N_j}\), which is exactly the maximum likelihood estimate. Using the
-                    MAP estimate with a uniform prior (\(\alpha = 1\)) therefore provides no smoothing, and the sparse data problem remains unresolved.
-                    Furthermore, in the large-sample regime the two estimates nearly coincide. This is why the estimator based on the posterior mean is
-                    commonly used and, for \(\alpha = 1\), is referred to as add-one smoothing.
+                    When \(\alpha = 1\) and \(N_j \gt 0\), however, the mode simplifies to \(\frac{N_{jk}}{N_j}\), which is exactly the maximum likelihood
+                    estimate. Using the MAP estimate with a uniform prior (\(\alpha = 1\)) therefore provides no smoothing, and the sparse data problem
+                    remains unresolved. Furthermore, in the large-sample regime the two estimates nearly coincide. This is why the estimator based on the
+                    posterior mean is commonly used and, for \(\alpha = 1\), is referred to as add-one smoothing.
                 </p>
 
                 <p>
