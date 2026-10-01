@@ -66,7 +66,8 @@ uses_python: false
                     Instead, they asked: <em>can we build a larger number system where this equation does have a solution?</em>
                     The answer is the complex numbers \(\mathbb{C}\), constructed by "adjoining" the imaginary unit \(i\).
                     The Fundamental Theorem of Field Theory guarantees that this construction is always possible for
-                    <em>any</em> nonconstant polynomial over <em>any</em> field.
+                    <em>any</em> nonconstant polynomial over <em>any</em> field. Throughout, fields are assumed to satisfy
+                    \(1 \neq 0\).
                 </p>
 
                 <div class="theorem" id="D-extension_field">
@@ -397,6 +398,175 @@ uses_python: false
                     and reliable.
                 </p>
 
+                <h3>Repeated Zeros and the Formal Derivative</h3>
+
+                <p>
+                    Over a splitting field, \(f(x)\) factors into linear factors, and nothing in the definition forces these
+                    factors to be distinct. Let \(f(x) \in F[x]\) be nonzero and let \(\alpha\) be a zero of \(f(x)\) in an
+                    extension field \(E\) of \(F\). We call \(\alpha\) a <strong>repeated zero</strong> of \(f(x)\) if
+                    \((x - \alpha)^2\) divides \(f(x)\) in \(E[x]\). Equivalently, the multiplicity of \(\alpha\), defined
+                    alongside <a href="polynomial_rings.html#division">the bound on the number of zeros of a polynomial</a>, is
+                    at least \(2\) when \(f(x)\) is regarded as an element of \(E[x]\). The formal derivative defined below
+                    detects repeated zeros.
+                </p>
+
+                <div class="theorem" id="D-formal_derivative">
+                    <span class="theorem-title">Definition: Formal Derivative</span>
+                    <p>
+                        Let \(F\) be a field and let \(f(x) = a_n x^n + a_{n-1} x^{n-1} + \cdots + a_1 x + a_0 \in F[x]\). The
+                        <strong>formal derivative</strong> of \(f(x)\) is the polynomial
+                        \[
+                        f'(x) = n \cdot a_n x^{n-1} + (n-1) \cdot a_{n-1} x^{n-2} + \cdots + 2 \cdot a_2 x + a_1
+                        \]
+                        in \(F[x]\), where \(k \cdot a_k\) denotes the \(k\)-fold sum \(a_k + a_k + \cdots + a_k\). The formal
+                        derivative of a constant polynomial is \(0\).
+                    </p>
+                </div>
+
+                <p>
+                    The definition is a rule on coefficients, so it makes sense over every field, including the finite ones,
+                    where no notion of limit is available. Over \(\mathbb{R}\) it agrees with the derivative of calculus, but in
+                    characteristic \(p\), with \(p\) prime, it can behave differently. The polynomial \(x^p\) has formal
+                    derivative \(p \cdot x^{p-1} = 0\), although \(x^p\) is not constant.
+                </p>
+
+                <div class="theorem" id="T-formal_derivative_rules">
+                    <span class="theorem-title">Lemma: Rules for the Formal Derivative</span>
+                    <p>
+                        Let \(F\) be a field, let \(f(x), g(x) \in F[x]\), and let \(c \in F\). Then
+                        \[
+                        \begin{align*}
+                        \bigl(f(x) + g(x)\bigr)' &= f'(x) + g'(x) \\\\
+                        \bigl(c f(x)\bigr)' &= c f'(x) \\\\
+                        \bigl(f(x) g(x)\bigr)' &= f'(x) g(x) + f(x) g'(x).
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Write \(f(x) = \sum_k a_k x^k\) and \(g(x) = \sum_k b_k x^k\), with all but finitely many coefficients
+                        equal to \(0\). For \(k \geq 1\), the coefficient of \(x^{k-1}\) in \(\bigl(f(x) + g(x)\bigr)'\) is
+                        \(k \cdot (a_k + b_k) = k \cdot a_k + k \cdot b_k\), because addition in \(F\) is commutative and
+                        associative. Likewise, the corresponding coefficient in \(\bigl(c f(x)\bigr)'\) is
+                        \(k \cdot (c a_k) = c\,(k \cdot a_k)\) by distributivity. These are the first two rules.
+                    </p>
+                    <p>
+                        For the product rule, both sides are additive in \(f\) when \(g\) is fixed. The left side is additive
+                        because multiplication in \(F[x]\) distributes over addition and the first rule applies. So is the right
+                        side, by the first rule and distributivity. Both sides are likewise additive in \(g\). Every
+                        polynomial is a finite sum of monomials, so it suffices to treat \(f(x) = s x^i\) and \(g(x) = t x^j\).
+                        If \(i = 0\), then \(f(x)\) is the constant \(s\), and both sides equal \(s g'(x)\) by the second rule,
+                        since \(f'(x) = 0\). The case \(j = 0\) follows in the same way. If \(i, j \geq 1\), then
+                        \(f(x) g(x) = st\, x^{i+j}\), and
+                        \[
+                        \begin{align*}
+                        f'(x) g(x) + f(x) g'(x)
+                        &= (i \cdot s)\, t\, x^{i+j-1} + s\, (j \cdot t)\, x^{i+j-1} \\\\
+                        &= \bigl((i + j) \cdot st\bigr) x^{i+j-1} \\\\
+                        &= \bigl(f(x) g(x)\bigr)'.
+                        \end{align*}
+                        \]
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-repeated_zero_derivative">
+                    <span class="theorem-title">Lemma: A Repeated Zero Is a Zero of the Derivative</span>
+                    <p>
+                        Let \(E\) be an extension field of a field \(F\), let \(f(x) \in F[x]\), and let \(\alpha \in E\). If
+                        \((x - \alpha)^2\) divides \(f(x)\) in \(E[x]\), then \(f'(\alpha) = 0\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        Because \(E\) is an extension field of \(F\), each coefficient \(k \cdot a_k\) of \(f'(x)\) is the
+                        same whether it is formed in \(F\) or in \(E\). Thus \(f'(x)\) is also the formal derivative of
+                        \(f(x)\) regarded as an element of \(E[x]\). Write \(f(x) = (x - \alpha)^2 g(x)\) with
+                        \(g(x) \in E[x]\). The formal derivative of \(x - \alpha\) is \(1\), so the product rule of the
+                        <a href="#T-formal_derivative_rules" class="ref-link"><strong>Rules for the Formal Derivative</strong></a>
+                        gives \(\bigl((x - \alpha)^2\bigr)' = (x - \alpha) + (x - \alpha) = 2 \cdot (x - \alpha)\). Applying the
+                        product rule once more, we obtain
+                        \[
+                        f'(x) = 2 \cdot (x - \alpha) g(x) + (x - \alpha)^2 g'(x).
+                        \]
+                        Both terms on the right carry the factor \(x - \alpha\). Substitution of \(\alpha\) for \(x\) respects sums
+                        and products, as noted in <a href="polynomial_rings.html#division">the discussion following the Division
+                        Algorithm</a>, so setting \(x = \alpha\) in this identity gives \(f'(\alpha) = 0\).
+                    </p>
+                </div>
+
+                <p>
+                    The lemma turns a repeated zero into a common zero of \(f(x)\) and \(f'(x)\). For an irreducible
+                    polynomial in characteristic \(0\), this rules out repeated zeros altogether.
+                </p>
+
+                <div class="theorem" id="T-char0_no_repeated_zeros">
+                    <span class="theorem-title">Theorem: No Repeated Zeros in Characteristic \(0\)</span>
+                    <p>
+                        Let \(F\) be a field of characteristic \(0\) and let \(f(x) \in F[x]\) be irreducible over \(F\). Then for
+                        every extension field \(E\) of \(F\), no \(\alpha \in E\) is a repeated zero of \(f(x)\). That is, there is
+                        no \(\alpha \in E\) such that \((x - \alpha)^2\) divides \(f(x)\) in \(E[x]\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        An irreducible polynomial is nonzero, so we may write \(f(x) = a_n x^n + \cdots + a_0\) with
+                        \(a_n \neq 0\). If \(n = 0\), then \(f(x) = a_0\) is a nonzero constant and hence a unit of \(F[x]\)
+                        with inverse \(a_0^{-1}\), which an irreducible polynomial is not. Hence \(n \geq 1\). The leading
+                        coefficient of \(f'(x)\) is \(n \cdot a_n = (n \cdot 1)\, a_n\). If \(n \cdot 1 = 0\), then
+                        \(n \cdot y = (n \cdot 1)\, y = 0\) for every \(y \in F\), which contradicts
+                        <a href="intro_rings.html#D-characteristic" class="ref-link"><strong>characteristic \(0\)</strong></a>.
+                        So \(n \cdot 1 \neq 0\), and \(n \cdot a_n \neq 0\) because a product of nonzero elements of a field is
+                        nonzero. Therefore \(f'(x) \neq 0\) and \(\deg f'(x) = n - 1\).
+                    </p>
+                    <p>
+                        Suppose, for contradiction, that \((x - \alpha)^2\) divides \(f(x)\) in \(E[x]\) for some
+                        \(\alpha \in E\). Then \(f(\alpha) = 0\), and \(f'(\alpha) = 0\) by
+                        <a href="#T-repeated_zero_derivative" class="ref-link"><strong>A Repeated Zero Is a Zero of the Derivative</strong></a>.
+                        Consider
+                        \[
+                        I = \{h(x) \in F[x] \mid h(\alpha) = 0\}.
+                        \]
+                        Each \(h(x) \in F[x]\) is evaluated at \(\alpha\) as an element of \(E[x]\), and evaluation is compatible
+                        with addition and multiplication. Hence \(I\) contains \(0\), contains \(h_1(x) - h_2(x)\) whenever it contains
+                        \(h_1(x)\) and \(h_2(x)\), and contains \(w(x) h_1(x)\) for every \(w(x) \in F[x]\). By the
+                        <a href="ideals.html#T-ideal_test" class="ref-link"><strong>Ideal Test</strong></a>, \(I\) is an ideal of
+                        \(F[x]\). As
+                        <a href="polynomial_rings.html#T-Fx_is_pid" class="ref-link"><strong>\(F[x]\) is a principal ideal domain</strong></a>,
+                        \(I = \langle m(x) \rangle\) for some \(m(x) \in F[x]\). The constant \(1\) does not lie in \(I\), since
+                        \(1 \neq 0\) in \(E\). Therefore \(m(x)\) is not a unit, for otherwise \(1 = m(x)\, m(x)^{-1} \in I\).
+                    </p>
+                    <p>
+                        Since \(f(x) \in I\), we can write \(f(x) = m(x) u(x)\) with \(u(x) \in F[x]\). The polynomial \(f(x)\)
+                        is irreducible, and \(m(x)\) is not a unit, which forces \(u(x)\) to be a unit and gives
+                        \(m(x) = f(x) u(x)^{-1}\). Since \(f'(x) \in I\) as well, \(f'(x) = m(x) v(x)\) for some
+                        \(v(x) \in F[x]\), that is,
+                        \[
+                        f'(x) = f(x)\, u(x)^{-1} v(x).
+                        \]
+                        Here \(u(x)^{-1} v(x) \neq 0\) because \(f'(x) \neq 0\). Since \(F\) is a field, it is an
+                        <a href="intro_rings.html#T-field_is_integral_domain" class="ref-link"><strong>integral domain</strong></a>,
+                        so the <a href="polynomial_rings.html#T-degree_product_integral_domain" class="ref-link"><strong>Degree of a Product</strong></a>
+                        gives \(\deg f'(x) \geq \deg f(x) = n\). This contradicts \(\deg f'(x) = n - 1\).
+                    </p>
+                </div>
+
+                <p>
+                    Characteristic \(0\) enters the proof at one point only, the nonvanishing of the leading coefficient
+                    \(n \cdot a_n\). This coefficient vanishes in characteristic \(p\) whenever \(p\) divides \(n\), and the
+                    argument breaks down. Both results return on the two paths introduced next. In the study of algebraic
+                    extensions, the theorem supplies the distinct zeros on which the
+                    <a href="algebraic_extension.html#T-primitive_element" class="ref-link"><strong>Primitive Element Theorem</strong></a>
+                    depends. In the study of finite fields, the fact that a repeated zero is a zero of the formal derivative
+                    shows that \(x^{p^n} - x\) has distinct zeros, because its formal derivative is the nonzero constant \(-1\).
+                </p>
+
             </section>
 
             <section id="crossroads" class="section-content">
@@ -404,8 +574,9 @@ uses_python: false
 
                 <p>
                     We have now established the shared foundation of field extensions. The Fundamental Theorem guarantees
-                    zeros exist, splitting fields provide minimal complete environments, and extensions of the form
-                    \(F(a)\) have concrete polynomial representations. From this foundation, two distinct paths emerge.
+                    zeros exist, splitting fields provide minimal complete environments, extensions of the form
+                    \(F(a)\) have concrete polynomial representations, and the formal derivative detects repeated zeros.
+                    From this foundation, two distinct paths emerge.
                     Each leads to different applications in modern computing.
                 </p>
 
