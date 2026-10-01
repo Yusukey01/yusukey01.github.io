@@ -1094,8 +1094,40 @@ uses_python: false
                     \[
                     C(s, t) = \mathbb{E}[X(s)\, \overline{X(t)}].
                     \]
-                    The kernel \(C\) is <strong>Hermitian symmetric</strong> (\(C(s,t) = \overline{C(t,s)}\))
-                    and positive semi-definite. The most common ML setting takes \(X\) real-valued, in which
+                    The kernel \(C\) is <strong>Hermitian symmetric</strong> (\(C(s,t) = \overline{C(t,s)}\)).
+                    Its second structural property, positive semi-definiteness, makes sense for kernels on an
+                    arbitrary set, and we define it in that generality.
+                </p>
+
+                <div class="theorem" id="D-psd_kernel_hermitian">
+                    <span class="theorem-title">Definition: Positive Semi-Definite Kernel (Complex)</span>
+                    <p>
+                        A function \(K : S \times S \to \mathbb{C}\) on a set \(S\) is
+                        <strong>positive semi-definite</strong> if for every \(r \in \mathbb{N}\), all points
+                        \(t_1, \ldots, t_r \in S\), and all scalars
+                        \(c_1, \ldots, c_r \in \mathbb{C}\),
+                        \[
+                        \sum_{i,j=1}^{r} \overline{c_i}\, c_j\, K(t_i, t_j) \geq 0.
+                        \]
+                        Taking \(r = 1\) shows that \(K(t, t) \geq 0\), and taking \(r = 2\) with
+                        \((c_1, c_2) = (1, 1)\) and \((1, i)\) then shows that
+                        \(K(t_2, t_1) = \overline{K(t_1, t_2)}\). A positive semi-definite kernel is therefore
+                        Hermitian, and the condition says exactly that every Gram matrix
+                        \(\bigl[K(t_i, t_j)\bigr]_{i,j=1}^{r}\) is a positive semi-definite Hermitian matrix.
+                    </p>
+                </div>
+
+                <p>
+                    The covariance kernel \(C\) is positive semi-definite in this sense, since for any points
+                    \(t_1, \ldots, t_r \in [a,b]\) and scalars \(c_1, \ldots, c_r \in \mathbb{C}\),
+                    \[
+                    \begin{align*}
+                    \sum_{i,j=1}^{r} \overline{c_i}\, c_j\, C(t_i, t_j)
+                    &= \mathbb{E}\Bigl|\sum_{j=1}^{r} c_j\, \overline{X(t_j)}\Bigr|^2 \\\\
+                    &\geq 0.
+                    \end{align*}
+                    \]
+                    The most common ML setting takes \(X\) real-valued, in which
                     case the conjugate is a no-op and \(C\) reduces to a real symmetric kernel
                     \(C(s,t) = \mathbb{E}[X(s) X(t)]\). The formulation here covers both this classical case
                     and complex-valued processes (for example, complex baseband signals in communications and
@@ -1108,8 +1140,12 @@ uses_python: false
                     \[
                     (\mathcal{C}f)(s) = \int_a^b C(s, t)\, f(t)\, dt.
                     \]
-                    This is a Hilbert-Schmidt integral operator with a Hermitian, positive semi-definite
-                    kernel, so it is compact and self-adjoint. The Spectral Theorem applies directly.
+                    Under the continuity of \(C\) assumed in the theorem below, \(|C|\) attains a maximum on the
+                    compact square \([a,b]^2\) by the
+                    <a href="compactness.html#T-extreme_value_theorem" class="ref-link"><strong>Extreme Value Theorem</strong></a>,
+                    so \(C\) is square-integrable. Then \(\mathcal{C}\) is a Hilbert-Schmidt
+                    integral operator with a Hermitian, positive semi-definite kernel, so it is compact and
+                    self-adjoint. The Spectral Theorem applies directly.
                 </p>
 
                 <div class="theorem" id="T-karhunen_loeve_expansion">
@@ -1176,7 +1212,9 @@ uses_python: false
                         \(\int_a^b C(t,t)\, dt\), which makes the trace series \(\sum_n \lambda_n\) converge.
                         Its full strength upgrades the conclusion to convergence in mean square at each
                         fixed \(t\), uniformly in \(t\), through the pointwise kernel expansion taken up in
-                        the bridge to kernel methods below.
+                        the bridge to kernel methods below. That expansion is obtained there from Mercer's
+                        theorem for real-valued processes and only stated in the complex case, and the
+                        deduction of the mean-square statement from it is not carried out here.
                     </p>
                 </div>
 
@@ -1231,38 +1269,111 @@ uses_python: false
                 <h3>Application 3: The Bridge to Mercer's Theorem and RKHS</h3>
 
                 <p>
-                    Consider a continuous, <strong>Hermitian</strong> (\(K(x,t) = \overline{K(t,x)}\)),
-                    positive semi-definite kernel \(K : [a,b] \times [a,b] \to \mathbb{C}\). The integral
-                    operator
+                    Consider a continuous, <strong>Hermitian</strong> (\(K(x,t) = \overline{K(t,x)}\)) kernel
+                    \(K : [a,b] \times [a,b] \to \mathbb{C}\) that is
+                    <a href="#D-psd_kernel_hermitian" class="ref-link"><strong>positive semi-definite</strong></a>.
+                    The integral operator
                     \[
                     (T_K f)(x) = \int_a^b K(x, t)\, f(t)\, dt
                     \]
-                    is compact, self-adjoint, and positive (all eigenvalues \(\lambda_n \geq 0\)). The
-                    Spectral Theorem, combined with the product-basis expansion from the compactness proof
-                    above, gives the eigenfunction expansion
+                    is a <a href="#D-hilbert_schmidt_operator" class="ref-link"><strong>Hilbert-Schmidt operator</strong></a>,
+                    hence compact, because \(K\) is square-integrable by the same Extreme Value Theorem
+                    argument as for \(C\). Since \(K\) is Hermitian, \(T_K\) is also self-adjoint.
+                    Finally, \(T_K\) is <strong>positive</strong>, meaning that \(\langle T_K f, f \rangle \geq 0\)
+                    for every \(f \in L^2([a,b])\), so every eigenvalue \(\lambda = \langle T_K e, e \rangle\) with
+                    unit eigenvector \(e\) is nonnegative.
+                </p>
+
+                <p>
+                    We now verify positivity, which requires promoting the condition on finitely many points
+                    to an integral statement. Take first a continuous \(f\), split \([a,b]\) into \(m\) intervals
+                    \(I_1, \ldots, I_m\) of length \(h = (b-a)/m\), and let \(x_i\) be the left endpoint of
+                    \(I_i\). The function \(g(x,t) = \overline{f(x)}\, K(x,t)\, f(t)\) is continuous on the
+                    compact square, hence uniformly continuous by the
+                    <a href="compactness.html#T-heine_cantor_uniform_continuity" class="ref-link"><strong>Heine-Cantor theorem</strong></a>.
+                    The quantity
                     \[
-                    K(x, t) = \sum_{n=1}^{\infty} \lambda_n \, e_n(x)\, \overline{e_n(t)},
+                    \omega(h) = \sup\bigl\{|g(x,t) - g(x',t')| : |x - x'|, |t - t'| \leq h\bigr\},
                     \]
-                    with convergence in \(L^2([a,b]^2)\),
-                    and Mercer's theorem, which uses the continuity of \(K\), upgrades the \(L^2\) convergence
-                    of this expansion to absolute and uniform convergence.
+                    with the supremum over points \((x,t)\) and \((x',t')\) of \([a,b]^2\), therefore tends to
+                    \(0\) as \(h \to 0\). The inner product is the iterated integral
+                    \(\langle T_K f, f\rangle = \int_a^b \int_a^b g(x,t)\, dt\, dx\), and splitting it over the
+                    \(m^2\) cells \(I_i \times I_j\), each of area \(h^2\), we obtain
+                    \[
+                    \begin{align*}
+                    \Bigl|\langle T_K f, f\rangle - \sum_{i,j=1}^{m} h^2\, g(x_i, x_j)\Bigr|
+                    &\leq \sum_{i,j=1}^{m} \int_{I_i} \int_{I_j} |g(x,t) - g(x_i, x_j)|\, dt\, dx \\\\
+                    &\leq (b-a)^2\, \omega(h).
+                    \end{align*}
+                    \]
+                    With \(c_j = h\, f(x_j)\), the sum \(\sum_{i,j} h^2\, g(x_i, x_j)\) equals
+                    \(\sum_{i,j} \overline{c_i}\, c_j\, K(x_i, x_j)\), which is nonnegative by positive
+                    semi-definiteness. Letting \(m \to \infty\) gives \(\langle T_K f, f\rangle \geq 0\).
+                </p>
+
+                <p>
+                    For general \(f \in L^2([a,b])\), the map \(f \mapsto \langle T_K f, f\rangle\) is
+                    continuous, since for all \(v, w \in L^2([a,b])\)
+                    \[
+                    \begin{align*}
+                    |\langle T_K v, v\rangle - \langle T_K w, w\rangle|
+                    &= |\langle T_K v, v - w\rangle + \langle T_K (v - w), w\rangle| \\\\
+                    &\leq \|T_K\|\,(\|v\|_2 + \|w\|_2)\,\|v - w\|_2.
+                    \end{align*}
+                    \]
+                    The density of \(C([a,b])\) in \(L^2([a,b])\), a fact about finite Borel measures on
+                    compact metric spaces that we take for granted here, extends the inequality
+                    \(\langle T_K f, f\rangle \geq 0\) from continuous \(f\) to all of \(L^2([a,b])\).
+                </p>
+
+                <p>
+                    Let \(\{e_n\}\) and \(\{\lambda_n\}\) be as in the
+                    <a href="#T-spectral_theorem_csa_operators" class="ref-link"><strong>Spectral Theorem</strong></a>,
+                    applied on the separable space \(L^2([a,b])\). Each \(\lambda_n\) is nonzero by
+                    construction, hence positive. Adjoining an orthonormal basis of
+                    \(\ker T_K\) to \(\{e_n\}\) gives, by conclusion (e), an orthonormal basis \(\{u_k\}\) of
+                    \(L^2([a,b])\). The argument given in the Hilbert-Schmidt compactness proof above for the
+                    products \(\varphi_i(x)\varphi_j(t)\) applies equally to the products
+                    \(u_k(x)\overline{u_l(t)}\), because \(\{\overline{u_l}\}\) is again an orthonormal basis.
+                    These products therefore form an orthonormal basis of \(L^2([a,b]^2)\). The coefficient of
+                    \(K\) on \(u_k(x)\overline{u_l(t)}\) is \(\langle T_K u_l, u_k \rangle\), which equals
+                    \(\lambda_n\) when \(u_k = u_l = e_n\) and vanishes otherwise. Hence
+                    \[
+                    K(x, t) = \sum_n \lambda_n \, e_n(x)\, \overline{e_n(t)},
+                    \]
+                    with convergence in \(L^2([a,b]^2)\).
                 </p>
 
                 <p>
                     The most common ML setting uses real-symmetric kernels (Gaussian, polynomial, Laplacian,
-                    Mat&eacute;rn, and so on). In that case the conjugate is a no-op and the formula reduces
-                    to \(K(x,t) = \sum_n \lambda_n e_n(x) e_n(t)\). This real-symmetric case is the setting of
-                    <a href="rkhs.html#T-mercers_theorem" class="ref-link"><strong>Mercer's theorem</strong></a>.
+                    Mat&eacute;rn, and so on). In that case \(T_K\) commutes with complex conjugation, so each
+                    eigenspace is closed under conjugation. The real and imaginary parts of its members
+                    therefore lie in it and span it, and since an eigenspace of a nonzero eigenvalue is
+                    finite-dimensional by conclusion (c), Gram-Schmidt applied to these real-valued functions
+                    yields a real-valued orthonormal basis. Once the
+                    \(e_n\) are chosen real-valued, the conjugate becomes a no-op and the formula reduces to
+                    \(K(x,t) = \sum_n \lambda_n e_n(x) e_n(t)\). For such kernels, which the kernel literature
+                    calls positive definite,
+                    <a href="rkhs.html#T-mercers_theorem" class="ref-link"><strong>Mercer's theorem</strong></a>
+                    uses the continuity of \(K\) to upgrade the \(L^2\) convergence to absolute and uniform
+                    convergence. The measure hypothesis of that theorem holds, since Lebesgue measure on
+                    \([a,b]\) is finite and positive on every nonempty open interval. The same upgrade holds
+                    for continuous Hermitian kernels, a statement we leave unproved.
                 </p>
 
                 <p>
-                    This eigenfunction expansion has a profound consequence. The kernel \(K\) defines an
+                    This eigenfunction expansion has a profound consequence. Each \(e_n\) has a continuous
+                    representative \(\lambda_n^{-1} T_K e_n\), because \(|(T_K e_n)(x) - (T_K e_n)(x')|\) is at
+                    most \(\sqrt{b-a}\, \sup_t |K(x,t) - K(x',t)|\) and \(K\) is uniformly continuous. With these
+                    representatives, the uniform convergence above makes the expansion hold at every pair of
+                    points. Setting \(t = x\) gives
+                    \(\sum_n \lambda_n |e_n(x)|^2 = K(x, x) \lt \infty\), so the kernel \(K\) defines an
                     implicit <strong>feature map</strong>
                     \[
                     \Phi(x) = \bigl(\sqrt{\lambda_1}\, e_1(x), \sqrt{\lambda_2}\, e_2(x), \ldots\bigr) \in \ell^2,
                     \]
-                    such that \(K(x, t) = \langle \Phi(x), \Phi(t) \rangle_{\ell^2}\). In the
-                    linear-in-first-argument convention the second slot conjugates, which recovers the
+                    and the expansion reads \(K(x, t) = \langle \Phi(x), \Phi(t) \rangle_{\ell^2}\).
+                    In the linear-in-first-argument convention the second slot conjugates, which recovers the
                     Hermitian \(\overline{e_n(t)}\) automatically. The kernel "trick" is mathematically
                     grounded in this spectral decomposition. The trick computes inner products in a
                     high-dimensional feature space without ever forming \(\Phi\) explicitly.
@@ -1286,7 +1397,7 @@ uses_python: false
                         \(Tx = \sum \lambda_n \langle x, e_n \rangle e_n\). Countable eigenvalues decaying to 0. 
                         Powers Functional PCA, continuous Laplacians.</li>
                     <li><strong>Ahead</strong>: 
-                        Mercer's Theorem converts the spectral decomposition of a positive kernel 
+                        Mercer's Theorem converts the spectral decomposition of a positive semi-definite kernel 
                         into an explicit feature space, the mathematical foundation of 
                         SVMs, Gaussian Processes, and Kernel PCA.</li>
                 </ol>
