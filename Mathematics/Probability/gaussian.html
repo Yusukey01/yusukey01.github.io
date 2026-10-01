@@ -241,12 +241,86 @@ uses_python: false
                         The remaining integral is evaluated by integration by parts with \(v = u\) and \(dw = u\,e^{-u^2/2}\,du\) (so
                         \(w = -e^{-u^2/2}\)):
                         \[
+                        \begin{align*}
                         \int_{-\infty}^{\infty} u^2\,e^{-u^2/2}\,du
-                        = \bigl[-u\,e^{-u^2/2}\bigr]_{-\infty}^{\infty} + \int_{-\infty}^{\infty} e^{-u^2/2}\,du
-                        = 0 + \sqrt{2\pi},
+                        &= \bigl[-u\,e^{-u^2/2}\bigr]_{-\infty}^{\infty} + \int_{-\infty}^{\infty} e^{-u^2/2}\,du \\\\
+                        &= 0 + \sqrt{2\pi},
+                        \end{align*}
                         \]
-                        the boundary term vanishing by exponential decay. Therefore
+                        the boundary term vanishing by exponential decay (quantified in the proof of the next theorem). Therefore
                         \(\operatorname{Var}(X) = (\sigma^2/\sqrt{2\pi})\cdot\sqrt{2\pi} = \sigma^2\).
+                    </p>
+                </div>
+
+                <p>
+                    The integration by parts in the variance computation is the first step of a recursion that reaches every even
+                    moment. We record the general result for a centered normal variable.
+                </p>
+
+                <div class="theorem" id="T-gaussian_moments">
+                    <span class="theorem-title">Theorem: Moments of the Centered Normal Distribution</span>
+                    <p>
+                        Let \(X \sim \mathcal{N}(0, \sigma^2)\) with \(\sigma \gt 0\). Then:
+                    </p>
+                    <p>
+                        <strong>(a) Finiteness.</strong><br>
+                        \(\mathbb{E}\bigl[|X|^m\bigr] \lt \infty\) for every integer \(m \geq 0\).
+                    </p>
+                    <p>
+                        <strong>(b) Even moments.</strong><br>
+                        For every integer \(k \geq 1\),
+                        \[
+                        \mathbb{E}\bigl[X^{2k}\bigr] = (2k - 1)(2k - 3) \cdots 3 \cdot 1 \cdot \sigma^{2k},
+                        \]
+                        the product running over the odd integers from \(1\) to \(2k - 1\). In particular,
+                        \(\mathbb{E}[X^2] = \sigma^2\) and \(\mathbb{E}[X^4] = 3\sigma^4\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        As in the variance computation, the
+                        <a href="random_variables.html#T-expectation_of_function" class="ref-link"><strong>Expectation of a Function of a Random Variable</strong></a>
+                        evaluates each moment against the density of \(X\), and the substitution \(u = x/\sigma\) turns it into
+                        \[
+                        \mathbb{E}\bigl[g(X)\bigr] = \frac{1}{\sqrt{2\pi}}\int_{-\infty}^{\infty} g(\sigma u)\,e^{-u^2/2}\,du
+                        \]
+                        for the continuous functions \(g(x) = |x|^m\) and \(g(x) = x^{2k}\), provided the integral converges absolutely.
+                    </p>
+                    <p>
+                        For (a), fix \(m \geq 0\). The exponential series gives \(e^{y} \geq y^m/m!\) for \(y \geq 0\), so
+                        \(e^{u^2/4} \geq u^{2m}/(4^m m!)\). Hence \(|u|^m e^{-u^2/4} \leq 4^m m!\,|u|^{-m} \leq 4^m m!\) for \(|u| \geq 1\),
+                        while for \(|u| \lt 1\) the left side is at most \(1 \leq 4^m m!\). With \(C_m = 4^m m!\),
+                        \[
+                        \begin{align*}
+                        |u|^m e^{-u^2/2}
+                        &= \bigl(|u|^m e^{-u^2/4}\bigr)\, e^{-u^2/4} \\\\
+                        &\leq C_m\, e^{-u^2/4}
+                        \end{align*}
+                        \]
+                        for every \(u \in \mathbb{R}\). Taking \(1/4\) in place of \(a\) in (2), the function \(e^{-u^2/4}\) has integral
+                        \(2\sqrt{\pi}\) over \(\mathbb{R}\). The integral for \(g(x) = |x|^m\) therefore converges, and
+                        \(\mathbb{E}\bigl[|X|^m\bigr] \leq \sqrt{2}\,C_m \sigma^m\), which is finite.
+                    </p>
+                    <p>
+                        For (b), write \(J_k(R) = \int_{-R}^{R} u^{2k} e^{-u^2/2}\,du\) for \(R \gt 0\) and
+                        \(J_k = \int_{-\infty}^{\infty} u^{2k} e^{-u^2/2}\,du\), which is finite by the estimate in the proof of (a) and is the
+                        limit of \(J_k(R)\) as \(R \to \infty\). Moreover, \(J_0 = \sqrt{2\pi}\), the integral already evaluated in deriving
+                        (3). Fix \(k \geq 1\). Integrating by parts on \([-R, R]\) with \(v = u^{2k-1}\) and \(dw = u\,e^{-u^2/2}\,du\), so
+                        that \(w = -e^{-u^2/2}\) as before, we obtain
+                        \[
+                        \begin{align*}
+                        J_k(R)
+                        &= \bigl[-u^{2k-1} e^{-u^2/2}\bigr]_{-R}^{R} + (2k - 1)\, J_{k-1}(R) \\\\
+                        &= -2R^{2k-1} e^{-R^2/2} + (2k - 1)\, J_{k-1}(R).
+                        \end{align*}
+                        \]
+                        The pointwise bound \(|u|^m e^{-u^2/4} \leq C_m\) from the proof of (a), taken with \(m = 2k - 1\), gives
+                        \(2R^{2k-1} e^{-R^2/2} \leq 2C_{2k-1} e^{-R^2/4}\), so the boundary term tends to \(0\) as \(R \to \infty\). Letting
+                        \(R \to \infty\) therefore yields \(J_k = (2k - 1) J_{k-1}\). Induction on \(k\) from \(J_0 = \sqrt{2\pi}\) gives
+                        \(J_k = (2k - 1)(2k - 3) \cdots 3 \cdot 1 \cdot \sqrt{2\pi}\), and the substitution formula with \(g(x) = x^{2k}\)
+                        turns this into \(\mathbb{E}\bigl[X^{2k}\bigr] = \sigma^{2k} J_k/\sqrt{2\pi}\), which completes the proof.
                     </p>
                 </div>
 
