@@ -51,8 +51,8 @@ uses_python: false
                     The complex Hermitian theory developed in
                     <a href="spectral_theory.html"><strong>Spectral Theory</strong></a> specializes cleanly to this
                     real-symmetric case. The conjugation in the Hermitian inner product becomes a no-op when all
-                    quantities are real-valued. We will state this reduction explicitly when it matters (notably in the
-                    <a href="#mercer">Mercer expansion</a>).
+                    quantities are real-valued. We state this reduction explicitly where it matters (notably for
+                    <a href="#rkhs">positive definite kernels</a> below).
                 </p>
 
                 <p>
@@ -514,8 +514,9 @@ uses_python: false
                 </p>
 
                 <p>
-                    This is the rigorous justification for the
-                    <a href="../Machine_learning/intro_classification.html#kernel"><strong>kernel trick</strong></a>.
+                    Under Mercer's hypotheses, this gives a concrete \(\ell^2\) realization of the
+                    <a href="../Machine_learning/intro_classification.html#kernel"><strong>kernel trick</strong></a>, which is available for
+                    every positive definite kernel through the canonical feature map \(x \mapsto K(\cdot, x)\).
                     The kernel evaluates an inner product in a possibly infinite-dimensional feature space
                     <em>without ever computing the feature map \(\Phi\) explicitly</em>. To see that \(\Phi(x)\) indeed
                     lands in \(\ell^2\), set \(x = x'\) in the Mercer expansion:
@@ -697,9 +698,9 @@ uses_python: false
                 <p>
                     The division by \(\lambda_n\) is the key insight. Since the eigenvalues \(\lambda_n\) are
                     nonincreasing, the <em>higher-order</em> eigenfunctions (those corresponding to small eigenvalues)
-                    are <strong>penalized more heavily</strong> in the RKHS norm. A function that relies heavily on
-                    high-frequency components will have a large RKHS norm, while a function concentrated on the first
-                    few eigenmodes will have a small norm.
+                    are <strong>penalized more heavily</strong> in the RKHS norm. Relative to its \(L^2\) norm, a function
+                    concentrated on the first few eigenmodes has a small RKHS norm, while weight on small-\(\lambda_n\) modes
+                    (typically the high-frequency ones) inflates it.
                 </p>
 
                 <div class="insight-box">
@@ -732,15 +733,16 @@ uses_python: false
 
                 <p>
                     The RKHS consists of "smoother" functions. These are the functions whose high-frequency components
-                    decay fast enough to compensate for the shrinking eigenvalues. The faster the eigenvalues
-                    \(\lambda_n\) decay, the smaller (and smoother) the RKHS becomes.
+                    decay fast enough to compensate for the shrinking eigenvalues. For kernels with the same eigenfunctions,
+                    eigenvalues dominated mode by mode up to a constant (\(\lambda'_n \leq C \lambda_n\) for every \(n\))
+                    give a smaller (and smoother) RKHS, \(\mathcal{H}_{K'} \subseteq \mathcal{H}_K\).
                 </p>
 
                 <p>
-                    This also explains why point evaluation is continuous in an RKHS but not in \(L^2\). The extra
-                    smoothness required for RKHS membership ensures that functions are "nice enough" to be evaluated
-                    pointwise. Generic \(L^2\) functions, by contrast, are only defined up to measure-zero
-                    modifications.
+                    Point evaluation is continuous in every RKHS, by the bound
+                    \(|f(x)| \leq \|f\|_{\mathcal{H}_K} \sqrt{K(x, x)}\). In the Mercer setting (continuous \(K\)), RKHS
+                    membership also forces the functions themselves to be continuous. Generic \(L^2\) functions, by contrast,
+                    are only defined up to measure-zero modifications.
                 </p>
 
             </section>
@@ -751,7 +753,7 @@ uses_python: false
 
                 <p>
                     We now arrive at the theorem that ties the entire Functional Analysis series together: the
-                    <strong>Representer Theorem</strong>. It tells us that even though the RKHS \(\mathcal{H}_K\) is
+                    <strong>Representer Theorem</strong>. It tells us that even though the RKHS \(\mathcal{H}_K\) may be
                     infinite-dimensional, any minimizer of a regularized empirical risk minimization problem lies in a
                     <strong>finite-dimensional subspace</strong> spanned by the kernel functions at the data points.
                 </p>
@@ -784,8 +786,8 @@ uses_python: false
                 </div>
 
                 <p>
-                    This is a remarkable dimension reduction. The optimization was posed over the entire
-                    infinite-dimensional space \(\mathcal{H}_K\), yet the answer lies in the subspace
+                    This is a remarkable dimension reduction. The optimization was posed over the entire (possibly
+                    infinite-dimensional) space \(\mathcal{H}_K\), yet the answer lies in the subspace
                     \(\operatorname{span}\{K(\cdot, x_1), \ldots, K(\cdot, x_N)\}\), of dimension at most \(N\).
                 </p>
 
@@ -821,7 +823,7 @@ uses_python: false
                 <h3>From the Representer Theorem to Kernel Algorithms</h3>
 
                 <p>
-                    With \(f^*(x) = \sum_{i=1}^N \alpha_i K(x, x_i)\), the infinite-dimensional problem reduces to a
+                    With \(f^*(x) = \sum_{i=1}^N \alpha_i K(x, x_i)\), the (possibly infinite-dimensional) problem reduces to a
                     finite-dimensional optimization over \(\boldsymbol{\alpha} \in \mathbb{R}^N\). The reproducing
                     property gives
                     \[
@@ -857,7 +859,8 @@ uses_python: false
                     equivalence of boundedness and continuity, which is exactly what point evaluation \(\delta_x\) must
                     satisfy for the whole theory to begin. <a href="dual_spaces.html"><strong>Dual Spaces</strong></a>
                     and the Riesz Representation Theorem converted "\(\delta_x\) is bounded" into the concrete
-                    statement "\(\delta_x\) has a Riesz representative \(K_x\)", the reproducing kernel itself.
+                    statement "\(\delta_x\) has a Riesz representative \(K_x = K(\cdot, x)\)", and these assemble into the
+                    reproducing kernel \(K(x, x') = \langle K_x, K_{x'} \rangle\).
                 </p>
 
                 <p>
