@@ -177,9 +177,9 @@ uses_python: false
                         Every layer of a neural network is a composition of a linear map (the weight matrix \(\mathbf{W}\)) followed by a nonlinear
                         activation. The linear part \(x \mapsto \mathbf{W}x\) is a bounded linear operator on \(\mathbb{R}^n\), and its "gain" is
                         precisely its operator norm. When we pass inputs forward through many layers, and the activations are 1-Lipschitz, the total
-                        stretch of the signal is bounded by the product of the individual gains. Ensuring these operators remain strictly bounded is
-                        the mathematical foundation of <strong>Lipschitz-constrained networks</strong>, which are essential for training stable
-                        Generative Adversarial Networks (GANs) and ensuring robustness against adversarial attacks.
+                        stretch of the signal is bounded by the product of the individual gains. Keeping these operator norms below a prescribed
+                        constant (often 1) is the mathematical foundation of <strong>Lipschitz-constrained networks</strong>, which are widely used to
+                        stabilize the training of Generative Adversarial Networks (GANs) and to certify robustness against adversarial attacks.
                     </p>
                 </div>
 
@@ -280,7 +280,8 @@ uses_python: false
                     The finite-dimensional comfort we just described consists of compact unit balls, automatic boundedness, and equivalence of norms.
                     All of it rests on a single geometric fact: the unit ball is compact precisely when the space is finite-dimensional. The reverse
                     direction of this characterization is subtle and requires a careful geometric construction. The key is the following lemma, which
-                    shows that in any proper closed subspace, one can always find a unit vector "almost orthogonal" to the entire subspace.
+                    shows that, given any proper closed subspace, one can always find a unit vector of the whole space "almost orthogonal" to the
+                    entire subspace.
                 </p>
 
                 <div class="theorem" id="T-riesz_lemma">
@@ -382,14 +383,15 @@ uses_python: false
                     <h3>Why This Matters: The Failure of Brute-Force Optimization</h3>
                     <p>
                         In finite-dimensional optimization (standard machine learning with a fixed-size parameter vector), we can always appeal to
-                        compactness. Once the parameters are bounded, a continuous loss function attains its minimum.
+                        compactness. Once the parameters range over a closed and bounded set, a continuous loss function attains its minimum.
                     </p>
                     <p>
                         This guarantee evaporates in infinite-dimensional function space optimization: training a neural network of unbounded width,
                         finding the optimal function in a reproducing kernel Hilbert space, or solving a variational problem. A bounded sequence of
                         candidate solutions may fail to have any convergent subsequence, meaning the "optimal" function may fail to exist in the space
                         at all. This is why infinite-dimensional optimization requires genuinely new tools: weak convergence, convexity, and carefully
-                        chosen function space topologies. None of these are needed in finite dimensions.
+                        chosen function space topologies. None of these are needed to prove existence of a minimizer
+                        on a closed bounded set in finite dimensions.
                     </p>
                 </div>
 
@@ -581,8 +583,8 @@ uses_python: false
                         is the diagonal matrix of the activation function's derivatives.
                     </p>
                     <p>
-                        Standard activation functions like ReLU and Tanh satisfy \(|\sigma'(t)| \leq 1\) everywhere (they are 1-Lipschitz), so the
-                        diagonal entries of \(\mathbf{D}_\ell\) are all at most 1 in absolute value, giving
+                        ReLU and Tanh are 1-Lipschitz, so \(|\sigma'(t)| \leq 1\) wherever the derivative exists (for ReLU, any choice of
+                        \(\sigma'(0) \in [0, 1]\) keeps the bound), and the diagonal entries of \(\mathbf{D}_\ell\) are all at most 1 in absolute value, giving
                         \(\|\mathbf{D}_\ell\|_{\text{op}} \leq 1\). By submultiplicativity, the norm of the entire gradient through \(L\) layers is
                         bounded by:
                         \[
@@ -590,10 +592,13 @@ uses_python: false
                         \]
                     </p>
                     <p>
-                        This bound reveals a profound architectural beauty. <strong>The burden of preventing exploding/vanishing gradients falls
-                        entirely on the operator norm of the weight matrices \(\mathbf{W}_\ell\).</strong> Techniques like <strong>orthogonal
-                        initialization</strong> (\(\|\mathbf{W}_\ell\|_{\text{op}} \approx 1\)) and <strong>spectral normalization</strong> are direct
-                        applications of this theory to guarantee stable gradient flow.
+                        This bound reveals a profound architectural beauty. <strong>The operator norms of the weight matrices \(\mathbf{W}_\ell\)
+                        control this upper bound, and with it the risk of exploding gradients.</strong> Vanishing gradients are a separate matter, since
+                        an upper bound cannot rule out the product becoming small (small entries of \(\mathbf{D}_\ell\) or small singular
+                        values of \(\mathbf{W}_\ell\) can drive it toward zero). Techniques like <strong>orthogonal
+                        initialization</strong> (\(\|\mathbf{W}_\ell\|_{\text{op}} = 1\) at initialization) and <strong>spectral normalization</strong> (which
+                        keeps \(\|\mathbf{W}_\ell\|_{\text{op}}\) at most about 1 during training) are direct applications of this bound, preventing
+                        the upper bound from growing exponentially with depth, though neither rules out vanishing gradients.
                     </p>
                 </div>
             </section>
@@ -719,11 +724,11 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Connection to Function Space Optimization</h3>
                     <p>
-                        The completeness of \(\mathcal{B}(\mathcal{X}, \mathcal{Y})\) guarantees that if we have a sequence of "improving" operators
-                        (for example, a sequence of trained neural network weight configurations converging in operator norm), the limit is a
-                        <strong>valid bounded operator</strong> that remains in the space. Without this result, there would be no guarantee that the
-                        "best" operator obtained by an optimization process actually exists within our working space. Completeness of
-                        \(\mathcal{B}(\mathcal{X}, \mathcal{Y})\) plays here the same foundational role that completeness of \(L^2\) plays for
+                        The completeness of \(\mathcal{B}(\mathcal{X}, \mathcal{Y})\) (for \(\mathcal{Y}\) a Banach space) guarantees that if a
+                        sequence of operators is Cauchy in operator norm (any two sufficiently late iterates differ by arbitrarily little in worst-case
+                        gain), it converges to a <strong>valid bounded operator</strong> that remains in the space. Completeness alone does not make an
+                        optimization problem attain its optimum, but without it even a Cauchy sequence of iterates could fail to have a limit within our
+                        working space. Completeness of \(\mathcal{B}(\mathcal{X}, \mathcal{Y})\) plays here the same foundational role that completeness of \(L^2\) plays for
                         function approximation.
                     </p>
                 </div>
@@ -745,7 +750,7 @@ uses_python: false
 
                 <p>
                     This is a completely different meaning from the word "manifold" as used in modern differential geometry and in Geometric Deep
-                    Learning, where a manifold is a <em>curved</em> space that only <em>locally</em> looks Euclidean. The adjective "linear" in
+                    Learning, where a manifold is a possibly <em>curved</em> space that only <em>locally</em> looks Euclidean. The adjective "linear" in
                     "linear manifold" is precisely what marks the object as flat. The term has largely fallen out of use outside classical functional
                     analysis, so a reader trained on the modern literature will rarely encounter it. When it does appear, misreading it as a curved
                     manifold is an easy trap.
@@ -755,7 +760,7 @@ uses_python: false
                     <span class="theorem-title">Definition: Manifold (Topological / Smooth)</span>
                     <p>
                         An <strong>\(n\)-dimensional manifold</strong> is a second-countable Hausdorff topological space in which every point has a
-                        neighbourhood homeomorphic to an open subset of \(\mathbb{R}^n\) (via homeomorphisms called <em>charts</em>). The integer
+                        neighborhood homeomorphic to an open subset of \(\mathbb{R}^n\) (via homeomorphisms called <em>charts</em>). The integer
                         \(n\) is the <strong>dimension</strong>, fixed for each connected component. A <strong>smooth manifold</strong> additionally
                         requires that the transition maps between overlapping charts are infinitely differentiable, enabling calculus on curved
                         spaces.
@@ -763,9 +768,10 @@ uses_python: false
                 </div>
 
                 <p>
-                    Key examples include spheres \(S^n\), the
-                    <a href="../Linear_algebra/lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>rotation group</strong></a> \(SO(3)\), and
-                    the space of positive definite matrices. Under their natural metrics, all of these carry intrinsic <strong>curvature</strong>.
+                    Key examples include spheres \(S^n\) with \(n \geq 2\) and the round metric, the
+                    <a href="../Linear_algebra/lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>rotation group</strong></a> \(SO(3)\) with its
+                    bi-invariant metric, and the space of \(n \times n\) positive definite matrices with \(n \geq 2\) and the affine-invariant
+                    metric. Under these metrics, all of them carry intrinsic <strong>curvature</strong>.
                 </p>
 
                 <p>
@@ -779,14 +785,15 @@ uses_python: false
                     </li>
                     <li>
                         <strong>"Manifold" (modern differential geometry and GDL):</strong> a locally Euclidean topological space, potentially curved,
-                        with no ambient vector space required. Carries rich geometric structure: tangent spaces, geodesics, curvature.
+                        with no ambient vector space required. Equipped with a smooth structure and a Riemannian metric, it carries rich geometric
+                        structure: tangent spaces, geodesics, curvature.
                     </li>
                 </ul>
 
                 <div class="insight-box">
                     <h3>Why This Matters for GDL</h3>
                     <p>
-                        In Geometric Deep Learning, "manifold" always refers to curved spaces: the sphere \(S^2\) for omnidirectional images, the
+                        In Geometric Deep Learning, "manifold" typically refers to non-Euclidean, often curved spaces: the sphere \(S^2\) for omnidirectional images, the
                         <a href="../Linear_algebra/lie_groups.html#D-matrix_lie_group" class="ref-link"><strong>Lie group</strong></a> \(SO(3)\) for
                         3D rotations in robotics, or the statistical manifold of probability distributions for
                         <a href="../Machine_learning/natural_gd.html"><strong>natural gradient descent</strong></a>. When "linear manifold" appears in

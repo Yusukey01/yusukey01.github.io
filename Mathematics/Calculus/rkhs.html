@@ -80,9 +80,10 @@ uses_python: false
                     \[
                     \mathcal{L}(f) = \sum_{i=1}^{N} \ell\bigl(y_i,\, f(x_i)\bigr) + \lambda \|f\|_{\mathcal{H}}^2.
                     \]
-                    If point evaluation is not continuous, this expression is not well-defined as a 
-                    functional on \(\mathcal{H}\). We need a Hilbert space where point evaluation is 
-                    always bounded.
+                    In \(L^2\) this expression is not even well-defined, and in a Hilbert space of
+                    functions where point evaluation is not continuous it is defined, but the data-fit
+                    term is in general not continuous in \(f\). We need a Hilbert space where point
+                    evaluation is always bounded.
                 </p>
 
                 <p>
@@ -351,9 +352,9 @@ uses_python: false
                         in <a href="../Machine_learning/svm.html"><strong>SVMs</strong></a> replaces inner products
                         \(\langle \phi(x), \phi(x') \rangle\) with kernel evaluations \(K(x, x')\). The Moore-Aronszajn
                         theorem tells us exactly what is happening:
-                        \(K(x, x') = \langle K(\cdot, x), K(\cdot, x') \rangle_{\mathcal{H}_K}\), so the "feature map"
-                        is \(\phi(x) = K(\cdot, x) \in \mathcal{H}_K\). The kernel trick is not a computational
-                        shortcut. It is the reproducing property of an RKHS.
+                        \(K(x, x') = \langle K(\cdot, x), K(\cdot, x') \rangle_{\mathcal{H}_K}\), so one canonical
+                        feature map is \(\phi(x) = K(\cdot, x) \in \mathcal{H}_K\). The kernel trick is not merely a
+                        computational shortcut. It is the reproducing property of an RKHS.
                     </p>
                 </div>
 
@@ -515,7 +516,7 @@ uses_python: false
                 <p>
                     This is the rigorous justification for the
                     <a href="../Machine_learning/intro_classification.html#kernel"><strong>kernel trick</strong></a>.
-                    The kernel evaluates an inner product in an infinite-dimensional feature space
+                    The kernel evaluates an inner product in a possibly infinite-dimensional feature space
                     <em>without ever computing the feature map \(\Phi\) explicitly</em>. To see that \(\Phi(x)\) indeed
                     lands in \(\ell^2\), set \(x = x'\) in the Mercer expansion:
                     \(\|\Phi(x)\|_{\ell^2}^2 = \sum_n \lambda_n\, e_n(x)^2 = K(x, x) \lt \infty\), which is finite
@@ -526,20 +527,27 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Example: The RBF (Gaussian) Kernel</span>
                     <p>
-                        The radial basis function kernel \(K(x, x') = \exp\bigl(-\|x - x'\|^2 / (2\sigma^2)\bigr)\) is
-                        continuous, symmetric, and positive definite. Its Mercer eigenfunctions are related to Hermite
-                        functions, and the eigenvalues decay <strong>exponentially</strong>:
-                        \(\lambda_n \sim C \cdot r^n\) for some \(0 \lt r \lt 1\). This rapid decay explains why the
-                        <a href="../Machine_learning/intro_classification.html#rbf-approx"><strong>Random Fourier Feature</strong></a>
-                        approximation works well in practice. Only the first few eigenfunctions carry significant
-                        weight.
+                        The radial basis function kernel
+                        \(K(x, x') = \exp\bigl(-\|x - x'\|^2 / (2\sigma^2)\bigr)\) is continuous, symmetric,
+                        and positive definite. For a Gaussian input measure on \(\mathbb{R}\), its
+                        eigenfunctions are Hermite-type functions and the eigenvalues decay
+                        <strong>exponentially</strong>: \(\lambda_n = C \cdot r^n\) with \(0 \lt r \lt 1\).
+                        (That measure is not supported on a compact set, so this example lies just outside the
+                        hypotheses of the theorem above.) This rapid decay explains why low-rank
+                        approximations of the Gram matrix, such as truncating the expansion after a few terms,
+                        work well in practice. Unless the bandwidth is small relative to the spread of the
+                        data, only the first few eigenfunctions carry significant weight.
+                        (<a href="../Machine_learning/intro_classification.html#rbf-approx"><strong>Random Fourier Features</strong></a>
+                        rest on a different fact, Bochner's theorem, which represents a continuous
+                        positive-definite shift-invariant kernel normalized by \(K(x, x) = 1\) as the Fourier
+                        transform of a probability measure.)
                     </p>
                 </div>
 
                 <div class="insight-box">
                     <h3>Connection to Gaussian Processes</h3>
                     <p>
-                        In a <a href="../Probability/gaussian_process.html"><strong>Gaussian Process</strong></a> with
+                        In a zero-mean <a href="../Probability/gaussian_process.html"><strong>Gaussian Process</strong></a> with
                         covariance function \(K\), the Mercer expansion gives the
                         <a href="spectral_theory.html#T-karhunen_loeve_expansion" class="ref-link"><strong>Karhunen-Lo&egrave;ve expansion</strong></a>:
                         \[
@@ -777,8 +785,8 @@ uses_python: false
 
                 <p>
                     This is a remarkable dimension reduction. The optimization was posed over the entire
-                    infinite-dimensional space \(\mathcal{H}_K\), yet the answer lies in the \(N\)-dimensional subspace
-                    \(\operatorname{span}\{K(\cdot, x_1), \ldots, K(\cdot, x_N)\}\).
+                    infinite-dimensional space \(\mathcal{H}_K\), yet the answer lies in the subspace
+                    \(\operatorname{span}\{K(\cdot, x_1), \ldots, K(\cdot, x_N)\}\), of dimension at most \(N\).
                 </p>
 
                 <div class="proof">
@@ -835,7 +843,8 @@ uses_python: false
                     For the squared loss \(\ell(y, \hat{y}) = (y - \hat{y})^2\), this is
                     <strong>Kernel Ridge Regression</strong>, with closed-form solution
                     \(\boldsymbol{\alpha} = (\mathbf{K} + \lambda I)^{-1} \mathbf{y}\). For the hinge loss, it is the
-                    kernel <a href="../Machine_learning/svm.html"><strong>SVM</strong></a>.
+                    kernel <a href="../Machine_learning/svm.html"><strong>SVM</strong></a> without an offset term (the usual
+                    unpenalized offset \(b\) requires a mild extension of the theorem).
                 </p>
 
                 <h3>The Grand Synthesis</h3>
