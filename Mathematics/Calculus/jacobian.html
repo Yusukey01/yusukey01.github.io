@@ -173,7 +173,7 @@ uses_python: false
                         sign of \(\det J\) records whether orientation is preserved. In generative
                         modeling, specifically <strong>Normalizing Flows</strong>, this determinant is what allows the
                         change-of-variables formula to preserve total probability mass under complex nonlinear
-                        transformations of a base distribution.
+                        invertible transformations of a base distribution.
                     </p>
                 </div>
 
@@ -217,7 +217,7 @@ uses_python: false
                     <p>
                         Let \(J_{\mathbf{h}} := \mathbf{h}'(\mathbf{x})\) and
                         \(J_{\mathbf{g}} := \mathbf{g}'(\mathbf{u})\). We use throughout the fact that in finite
-                        dimensions every linear map is automatically bounded. There exists \(C \gt 0\) with
+                        dimensions every linear map \(L\) is automatically bounded. There exists \(C \geq 0\) with
                         \(\|L\mathbf{v}\| \leq C\|\mathbf{v}\|\) for all \(\mathbf{v}\) (with Euclidean norms one may take
                         \(C = \sum_{i,j} |L_{ij}|\), since each entry of \(L\mathbf{v}\) is bounded by the absolute sum of
                         its row times \(\|\mathbf{v}\|\)). The least admissible \(C\) is the operator norm
@@ -284,14 +284,16 @@ uses_python: false
                         The Jacobian of a composition is a product of Jacobians in a specific order: outer-first,
                         inner-last. The dimensional count confirms this. If \(\mathbf{x} \in \mathbb{R}^n\),
                         \(\mathbf{h}(\mathbf{x}) \in \mathbb{R}^p\), and
-                        \(\mathbf{g}(\mathbf{h}(\mathbf{x})) \in \mathbb{R}^m\), then only
+                        \(\mathbf{g}(\mathbf{h}(\mathbf{x})) \in \mathbb{R}^m\), then
                         \[
                         \underbrace{\mathbf{g}'(\mathbf{h}(\mathbf{x}))}_{m \times p}
                         \cdot
                         \underbrace{\mathbf{h}'(\mathbf{x})}_{p \times n}
                         \]
-                        produces a well-defined \(m \times n\) matrix. Reversing the order would, in general, not even
-                        be dimensionally compatible. This non-commutativity is the reason chain-rule applications in
+                        produces a well-defined \(m \times n\) matrix. The reversed product
+                        \(\mathbf{h}'(\mathbf{x})\,\mathbf{g}'(\mathbf{h}(\mathbf{x}))\) is defined only when \(n = m\),
+                        and even then it is a \(p \times p\) matrix that in general differs from
+                        \(\mathbf{f}'(\mathbf{x})\). This non-commutativity is the reason chain-rule applications in
                         machine learning must keep careful track of which direction the composition runs.
                     </p>
                 </div>
@@ -379,11 +381,17 @@ uses_python: false
                         &= (1 \times n) = (\nabla L)^\top.
                     \end{align*}
                     \]
-                    The intermediate matrix \(\mathbf{f}_2'\,\mathbf{f}_1'\) has \(q \times n\) entries, which is much
-                    larger than any row vector in reverse mode when \(n\) is large (the typical parameter regime). This
-                    is the fundamental reason deep networks are trained with reverse-mode autodiff rather than
-                    forward-mode. For scalar loss and high-dimensional parameters, reverse mode is the cheaper of the
-                    two, by a factor that grows with the number of parameters.
+                    The intermediate matrix \(\mathbf{f}_2'\,\mathbf{f}_1'\) has \(q \times n\) entries. The largest
+                    intermediate product reverse mode forms is the final row vector \((\nabla L)^\top\), with \(n\)
+                    entries when \(n\) is the largest dimension (the typical parameter regime). In this matrix count
+                    the saving of reverse mode is therefore a factor of roughly \(q\). In practice neither mode forms
+                    the layer Jacobians. Forward mode pushes one parameter direction \(\mathbf{e}_j\) through the
+                    network per pass and obtains one entry \(f_3'\,\mathbf{f}_2'\,\mathbf{f}_1'\,\mathbf{e}_j\) of the
+                    gradient. Reverse mode pulls a single row vector back through the network once. Each pass costs a
+                    small constant multiple of one evaluation of \(L\), so forward mode needs \(n\) passes to assemble
+                    the full gradient and reverse mode needs one. This is the fundamental reason deep networks are
+                    trained with reverse-mode autodiff rather than forward-mode. For a scalar loss, the saving grows
+                    with the number of parameters.
                 </p>
 
                 <div class="insight-box">

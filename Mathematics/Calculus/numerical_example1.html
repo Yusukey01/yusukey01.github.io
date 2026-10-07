@@ -59,7 +59,7 @@ uses_python: true
                     For a differentiable function \(f\), the
                     <a href="jacobian.html#D-differentiable_multivariate" class="ref-link"><strong>differential</strong></a>
                     \(df\) at \(X\) (matrices being identified with the vectors of their entries) is the linear part
-                    of the increment, equivalently the quantity that satisfies
+                    of the increment, that is, \(df = f'(X)[dX]\) for the unique linear map \(f'(X)\) that satisfies
                     \[
                     f(X + dX) - f(X) = df + o(\|dX\|).
                     \]
@@ -174,9 +174,11 @@ print(f"Relative error (backward): {b_rel_err:.2e}")
                 <p>
                     Typical output shows relative errors around \(10^{-8}\). That size is consistent with the optimal
                     accuracy predicted by the balance of truncation and rounding errors discussed above. If one of
-                    these errors suddenly spiked to \(10^{-2}\) or larger, that would indicate either a bug in the
-                    analytical formula or an inappropriate perturbation scale, and the validation would have caught
-                    it.
+                    these errors suddenly spiked to \(10^{-2}\) or larger, that would indicate a bug in the analytical
+                    formula, an inappropriate perturbation scale, or an unlucky direction \(dX\) along which \(df\)
+                    nearly vanishes. Rerunning with a fresh random \(dX\) separates the unlucky direction from the
+                    other two causes. If the spike persists at a sound scale, the validation has caught a bug in the
+                    formula.
                 </p>
 
                 <div class="insight-box">
@@ -184,17 +186,20 @@ print(f"Relative error (backward): {b_rel_err:.2e}")
                     <p>
                         Modern machine-learning frameworks compute gradients with
                         <a href="../Machine_learning/autodiff.html"><strong>automatic differentiation</strong></a>,
-                        not by hand. But whenever one writes a <em>custom</em> operator, the framework's autodiff
-                        only works for the parts built from its registered primitives. Such operators include a new
-                        layer type, an exotic loss function, or a physics-informed constraint. Anything custom needs
-                        a hand-written derivative, and a hand-written derivative needs finite-difference validation
-                        before it goes into training.
+                        not by hand. But whenever one writes a <em>custom</em> operator, such as a new layer type, an
+                        exotic loss function, or a physics-informed constraint, the framework's autodiff covers it only
+                        if it is built from the framework's registered primitives. A custom operator outside those
+                        primitives (external code, a hand-written kernel) usually needs a hand-written derivative, and a
+                        hand-written derivative needs finite-difference validation before it goes into training.
                     </p>
                     <p>
-                        The same logic applies to gradient checks in scientific-computing libraries and to the
-                        testing of custom CUDA kernels. The technique on this page is to pick a perturbation at the
-                        \(\sqrt{\varepsilon_{\text{mach}}}\) scale, compare against a forward or backward difference,
-                        and measure the relative error. That recipe is the workhorse behind these checks.
+                        The same logic applies to gradient checks in scientific-computing libraries and to the testing
+                        of custom CUDA kernels. The technique on this page is to perturb the input, compare against a
+                        finite difference, and measure the relative error. That recipe is the idea behind these
+                        checks. Deep-learning gradient checkers usually take the average of the forward and backward
+                        differences (the central difference), whose relative truncation error is \(O(\|dX\|^2)\) for
+                        \(C^3\) functions. The step that balances this truncation error against rounding then scales
+                        like \(\varepsilon_{\text{mach}}^{1/3}\) rather than \(\sqrt{\varepsilon_{\text{mach}}}\).
                     </p>
                 </div>
 

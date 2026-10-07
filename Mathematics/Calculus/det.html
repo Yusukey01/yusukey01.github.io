@@ -55,12 +55,13 @@ uses_python: true
                 </p>
 
                 <p>
-                    Unlike vectors, matrices admit several genuinely different norms: the Frobenius norm
-                    \(\|\cdot\|_F\) we use throughout this page, the operator (spectral) norm \(\|\cdot\|_2\), the
-                    nuclear norm \(\|\cdot\|_*\), and more. In finite dimensions these are all equivalent as
-                    topologies (a fact proved later in this section when we turn to normed spaces), but they produce
-                    qualitatively different <em>geometric</em> statements. A ball of radius \(1\) in Frobenius norm is
-                    not the same shape as a ball of radius \(1\) in operator norm.
+                    Matrices admit several genuinely different norms, as vectors do, and some of them use the matrix
+                    structure itself: the Frobenius norm \(\|\cdot\|_F\) we use throughout this page, the operator
+                    (spectral) norm \(\|\cdot\|_2\), the nuclear norm \(\|\cdot\|_*\), and more. In finite dimensions
+                    these are all equivalent as topologies (a fact proved later in this section when we turn to normed
+                    spaces), but they produce qualitatively different <em>geometric</em> statements. When
+                    \(m, n \geq 2\), a ball of radius \(1\) in Frobenius norm is not the same shape as a ball of radius
+                    \(1\) in operator norm.
                 </p>
 
                 <p>
@@ -299,7 +300,8 @@ uses_python: true
 
                 <p>
                     Jacobi's formula specializes cleanly to the one-variable derivative of \(p(x) = \det(xI - A)\),
-                    the <strong>characteristic polynomial</strong> of \(A\). This quantity appears in iterative
+                    the <strong>characteristic polynomial</strong> of \(A\) in its monic form (it equals
+                    \((-1)^n \det(A - xI)\)). This quantity appears in iterative
                     eigenvalue algorithms, for instance in Newton's method on \(p\).
                 </p>
 
@@ -324,7 +326,7 @@ uses_python: true
                 </div>
 
                 <p>
-                    This identity has a striking consequence. Over \(\mathbb{C}\) the
+                    This identity has a striking consequence. Over \(\mathbb{C}\) the monic
                     <a href="../Linear_algebra/eigenvectors.html#D-characteristic_equation" class="ref-link"><strong>characteristic polynomial</strong></a>
                     factors as \(p(x) = \prod_{k=1}^n (x - \lambda_k)\), where \(\lambda_1, \dots, \lambda_n\) are the
                     eigenvalues of \(A\), possibly complex and counted with algebraic multiplicity (a consequence of the
@@ -336,10 +338,14 @@ uses_python: true
                 </p>
 
                 <p>
-                    In numerical practice, <a href="../Machine_learning/autodiff.html"><strong>reverse-mode automatic
-                    differentiation</strong></a> can be preferable to the analytical formula when \(xI - A\) is poorly
-                    conditioned or close to singular (\(\det(xI - A) \approx 0\)), since it can avoid explicitly forming
-                    its inverse.
+                    The formula \(p'(x) = p(x)\, \operatorname{tr}\bigl((xI - A)^{-1}\bigr)\) breaks down at an
+                    eigenvalue of \(A\), where \((xI - A)^{-1}\) does not exist although \(p'(x)\) is defined.
+                    Jacobi's formula also gives the adjugate form
+                    \(p'(x) = \operatorname{tr}\bigl(\operatorname{adj}(xI - A)\bigr)\), a polynomial in \(x\) that
+                    needs no inverse and holds for every \(x\). Some
+                    <a href="../Machine_learning/autodiff.html"><strong>automatic differentiation</strong></a>
+                    libraries compute determinant derivatives in a similar inverse-free way, so that they stay defined
+                    at singular matrices.
                 </p>
 
                 <h3>Numerical verification</h3>
@@ -401,8 +407,10 @@ uses_python: true
                 </div>
 
                 <p>
-                    Typical output shows a relative error near \(10^{-8}\), matching the optimal accuracy of a forward
-                    difference at \(dx = \sqrt{\varepsilon_{\text{mach}}}\) (as analyzed in our
+                    With the random seed fixed in the code, our run gives a relative error of about
+                    \(5 \times 10^{-8}\) (the trailing digits can vary with the floating-point library). This is of
+                    the order of the optimal accuracy of a forward difference at
+                    \(dx \approx \sqrt{\varepsilon_{\text{mach}}}\) (as analyzed in our
                     <a href="numerical_example1.html"><strong>introduction to numerical computation</strong></a>). The
                     match confirms the Jacobi-based formula and illustrates how analytical and numerical tools
                     routinely cross-check each other in practice.

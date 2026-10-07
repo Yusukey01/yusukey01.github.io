@@ -65,8 +65,8 @@ uses_python: false
                     \[
                     d(GH) = (dG)\,H + G\,(dH).
                     \]
-                    Moving a \(dX\) past a constant matrix changes the value. That move is the single most common
-                    source of error in matrix calculus.
+                    Moving a \(dX\) past a constant matrix changes the value in general. That move is the single most
+                    common source of error in matrix calculus.
                 </p>
 
                 <h3>Warm-up: affine matrix functions</h3>
@@ -102,8 +102,9 @@ uses_python: false
                            &\quad + X(dX)^2 + (dX)X(dX) + (dX)^2 X + (dX)^3.
                         \end{align*}
                         \]
-                        The four nonlinear terms (three quadratic and one cubic in \(dX\)) are \(o(\|dX\|)\). Each is
-                        bounded by a constant multiple of \(\|dX\|^2\) via submultiplicativity of the operator norm,
+                        The four nonlinear terms (three quadratic and one cubic in \(dX\)) are \(o(\|dX\|)\). For
+                        \(\|dX\| \leq 1\), each is bounded by a constant multiple of \(\|dX\|^2\) via submultiplicativity
+                        of the operator norm,
                         which follows from applying the defining bound
                         \(\|M\mathbf{v}\| \leq \|M\|_{\mathrm{op}}\|\mathbf{v}\|\) twice (for example,
                         \(\|X(dX)^2\| \leq \|X\|_{\mathrm{op}}\|dX\|^2\), all norms being operator norms). The three
@@ -278,17 +279,18 @@ uses_python: false
                     <p>
                         The identity \(dX = (dL)U + L(dU)\) is the starting point for <strong>reverse-mode autodiff
                         through the LU factorization</strong>, and the same pattern (differentiate the defining
-                        identity, then solve triangular systems) underlies other factorizations. That capability is a key ingredient in frameworks
-                        that differentiate through linear solves, determinant computations, and Cholesky
-                        factorizations.
+                        identity, then solve triangular systems) yields the backward rules of other factorizations, such
+                        as the Cholesky factorization.
                     </p>
                     <p>
                         Given the upstream gradients \(\bar L\) and \(\bar U\) (the sensitivities of a downstream loss
                         with respect to the factors), one recovers \(\bar X\) by solving the adjoint equations derived
-                        from the identity above. This is what allows end-to-end training of models that embed linear
-                        solves, without writing hand-tuned backward passes. Such models range from
-                        <strong>Gaussian processes</strong> and <strong>differentiable physics simulators</strong> to
-                        <strong>structured-prediction layers</strong>.
+                        from the identity above. This lets a model whose loss depends on the factors themselves be
+                        trained end to end without a hand-written backward pass. A typical example is the
+                        log-absolute-determinant \(\log|\det X| = \sum_i \log|U_{ii}|\), computed from the pivots. A
+                        model that only embeds a linear solve does not need this rule. The adjoint of the solve
+                        follows from the formula for \(d(X^{-1})\) above, and a factorization computed in the forward
+                        pass is reused to evaluate it.
                     </p>
                 </div>
 
