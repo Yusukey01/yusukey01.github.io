@@ -942,7 +942,7 @@ var FftDemoGate = (function () {
         '<div class="ft1-charttitle">Time domain &mdash; first 0.125 s of the 1 s record</div>' +
         '<canvas id="ft1-time" width="760" height="210"></canvas>' +
         '<div class="ft1-caption"><span style="color:' + C.signal + ';">&#9644;</span> x(t) ' +
-          '&nbsp;<span class="ft1-sub">amplitude axis fixed to &plusmn;(a&#8321;+a&#8322;+3&sigma;<sub>noise</sub>)</span></div>' +
+          '&nbsp;<span class="ft1-sub">amplitude axis fixed to &plusmn;max(0.5, a&#8321;+a&#8322;+3&sigma;<sub>noise</sub>)</span></div>' +
       '</div>' +
       '<div class="ft1-canvascell">' +
         '<div class="ft1-charttitle">Frequency domain &mdash; single-sided amplitude spectrum</div>' +
@@ -1123,8 +1123,10 @@ var FftDemoGate = (function () {
         ' &nbsp;|&nbsp; noise seed #' + state.regenCount;
       if (offBin1 || offBin2) {
         html += '<br><span class="ft1-warn">off-bin frequency: the peak straddles two bins, so the nearest-bin readout ' +
-          'under-reads the true amplitude (scalloping) and energy leaks along the whole axis' +
-          (state.windowName === 'rect' ? ' &mdash; switch to the Hann window to confine the leakage' : '') + '.</span>';
+          'under-reads the true amplitude (scalloping)' +
+          (state.windowName === 'rect'
+            ? ' and energy leaks along the whole axis &mdash; switch to the Hann window to confine the leakage'
+            : '; the Hann window confines almost all of the leakage to a few neighboring bins') + '.</span>';
       }
       el.readouts.innerHTML = html;
     }
@@ -1377,7 +1379,7 @@ var FftDemoGate = (function () {
           for (var i = 0; i < N; i++) if (mask[i] < 0.5) suppressed++;
           extra = 'suppressed <strong>' + suppressed + '</strong> frequency-domain pixels (spikes above the 99.7th magnitude percentile, DC protected)';
           if (state.gray && isPatternLike()) {
-            extra += '<br><span class="ft2-warn">note: a genuinely periodic image (like the checkerboard) also produces spectral spikes &mdash; the notch cannot tell your pattern from interference and will eat both.</span>';
+            extra += '<br><span class="ft2-warn">note: a genuinely periodic image (like the checkerboard) also produces spectral spikes &mdash; the notch cannot tell your pattern from interference, so it will eat the pattern.</span>';
           }
         }
       } else {
