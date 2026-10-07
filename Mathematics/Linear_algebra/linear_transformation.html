@@ -229,14 +229,14 @@ uses_python: false
                     so differentiation is a <strong>linear operator</strong> on functions. (Integration is too.)
                 </p>
                 <p>
-                    In statistics, the expected value is linear. For any random variables \(X, Y\) and constants \(a, b\),
+                    In statistics, the expected value is linear. For any random variables \(X, Y\) with finite expectations and constants \(a, b\),
                     \[
                     \mathbb{E}[a X + b Y] = a\, \mathbb{E}[X] + b\, \mathbb{E}[Y].
                     \]
                 </p>
                 <p>
-                    This ubiquity is what makes "linear" algebra so powerful. Any time we recognize a linear structure, the entire toolkit developed
-                    here transfers immediately.
+                    This ubiquity is what makes "linear" algebra so powerful. Any time we recognize a linear structure, much of the toolkit
+                    developed here transfers.
                 </p>
             </section>
 
@@ -305,14 +305,17 @@ uses_python: false
                 <div class="insight-box">
                     <h3>CS / Numerical Insight: Order of Operations Matters</h3>
                     <p>
-                        Suppose \(A, B, C, D, E\) are dense \(n \times n\) matrices and \(\mathbf{x} \in \mathbb{R}^n\). To compute \(ABCDE\,\mathbf{x}\), 
-                        evaluating left-to-right would require four matrix-matrix products at \(O(n^3)\) each, costing \(O(n^4)\) operations and \(O(n^2)\) intermediate storage.
+                        Suppose \(A, B, C, D, E\) are dense \(n \times n\) matrices and \(\mathbf{x} \in \mathbb{R}^n\). To compute
+                        \(ABCDE\,\mathbf{x}\), evaluating left-to-right would require four matrix-matrix products at \(O(n^3)\) each, costing \(O(n^3)\)
+                        operations in total and \(O(n^2)\) intermediate storage.
                     </p>
                     <p>
-                        Evaluating <em>right-to-left</em> uses associativity. We compute \(E\mathbf{x}\), then \(D(E\mathbf{x})\), and so on. Each
-                        step is a matrix-vector product at \(O(n^2)\), for a total of \(O(n^2)\) operations and \(O(n)\) storage. The saving is orders
-                        of magnitude. This trick is foundational in numerical linear algebra and the implementation of deep neural networks, where
-                        chained matrix-vector products dominate runtime.
+                        Evaluating <em>right-to-left</em> uses associativity. We compute \(E\mathbf{x}\), then \(D(E\mathbf{x})\), and so on. Each step
+                        is a matrix-vector product at \(O(n^2)\), for a total of \(O(n^2)\) operations and \(O(n)\) storage. The saving is orders of
+                        magnitude. This trick is foundational in numerical linear algebra. It is also the idea behind backpropagation in deep neural
+                        networks: the chain rule writes the gradient of a scalar loss as a row vector times a long product of the layers' derivative
+                        matrices, and reverse-mode differentiation pushes that single vector through the chain from the output end, one vector-matrix
+                        product at a time, without ever forming the matrix products.
                     </p>
                 </div>
             </section>
@@ -320,12 +323,15 @@ uses_python: false
             <section id="interactive" class="section-content section-wide">
                 <h2>Interactive Linear Transformation Visualizer</h2>
                 <p>
-                    Linear transformations are often best understood through visual intuition. In two dimensions, every linear transformation is a
-                    matrix multiplication that rotates, reflects, scales, or shears the entire plane, not just a single shape.
+                    Linear transformations are often best understood through visual intuition. In two dimensions, every linear transformation is
+                    multiplication by a \(2 \times 2\) matrix, and it acts on the entire plane, not just a single shape. Rotations, reflections, scalings
+                    and shears are the basic examples. Every \(T\) that is one-to-one and onto is a composition of these (a fact we do not prove here),
+                    while any other collapses the plane onto a line or a point.
                 </p>
                 <p>
-                    The visualizer below shows this action on the whole plane at once. The blue grid is the image of the coordinate grid. Because
-                    \(T\) is linear, grid lines remain straight, parallel lines remain parallel and evenly spaced, and the origin stays fixed.
+                    The visualizer below shows this action on the whole plane at once. The blue grid is the image of the coordinate grid. Because \(T\)
+                    is linear, the origin stays fixed and each grid line goes to a straight line or a single point. When \(T\) is one-to-one and onto,
+                    grid lines stay distinct, and parallel lines remain parallel and evenly spaced.
                 </p>
                 <p>
                     The two arrows are the images \(A\mathbf{e}_1\) and \(A\mathbf{e}_2\) of the standard basis vectors. By the column-wise reading of
@@ -334,14 +340,16 @@ uses_python: false
                     \(|\det A|\) and whether orientation is preserved (\(\det A \gt 0\)) or reversed (\(\det A \lt 0\)).
                 </p>
                 <p>
-                    Now try the "Project onto X-axis" preset, or type in any matrix with determinant zero. The plane collapses, and the visualizer
-                    draws two lines. The <strong>image</strong> of \(T\) is the span of the columns, now only a line, so \(T\) is <em>not onto</em>.
-                    The <strong>kernel</strong> is the line of all vectors sent to \(\mathbf{0}\), so \(T\) is <em>not one-to-one</em>.
+                    Now try the "Project onto X-axis" preset, or type in any nonzero matrix with determinant zero. The plane collapses, and the
+                    visualizer draws two lines. The <strong>image</strong> of \(T\) is the span of the columns, now only a line, so \(T\) is
+                    <em>not onto</em>. The <strong>kernel</strong> is the line of all vectors sent to \(\mathbf{0}\), so
+                    \(T\) is <em>not one-to-one</em>.
                 </p>
                 <p>
-                    The onto and one-to-one characterizations proved earlier on this page are failing here, and failing <em>together</em>. For a
-                    square matrix, the columns span \(\mathbb{R}^2\) exactly when they are linearly independent. The determinant readout also updates
-                    continuously during animation. Watch "Rotate 180&deg;" pass through the zero matrix halfway.
+                    The onto and one-to-one characterizations proved earlier on this page are failing here, and failing <em>together</em>. For a square
+                    matrix, the columns span \(\mathbb{R}^2\) exactly when they are linearly independent. The determinant readout also updates
+                    continuously during animation. Halfway through "Rotate 180&deg;", the interpolated matrix is the zero matrix, so the plane shrinks
+                    almost to a point and the determinant readout falls almost to zero.
                 </p>
                 <div id="linear-transformation-visualizer"></div>
                 <br>

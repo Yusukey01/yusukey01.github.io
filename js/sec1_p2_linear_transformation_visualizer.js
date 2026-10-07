@@ -62,18 +62,26 @@ var LtCore = (function () {
   //           <=>  T one-to-one AND onto            (the page's two theorems)
   //   rank 1  ->  image = a line (not onto), kernel = a line (not one-to-one)
   //   rank 0  ->  image = {0}, kernel = R^2
-  // Tolerance is relative: entries scale det quadratically, so the det
-  // threshold scales with s^2 (s = max |entry|).
+  // Tolerance is scale-invariant: M is divided by s = max |entry| before
+  // the determinant test, so cM is classified like M for every c != 0 for
+  // which the entries of cM neither underflow nor overflow (up to rounding
+  // when |det(M/s)| lies within rounding of the threshold).
+  // Rank 0 only for the exact zero matrix. A matrix with |det(M/s)| <= 1e-9
+  // is treated as singular; this absorbs float noise from decimal entries
+  // such as [[0.1,0.7],[0.3,2.1]], and also classifies a nearly singular
+  // invertible matrix such as diag(1, 1e-10) as singular.
   function classifyRank(M) {
     var a = M[0][0], b = M[0][1], c = M[1][0], d = M[1][1];
     var s = Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d));
-    if (s <= 1e-12) {
+    if (s === 0) {
       return { rank: 0, det: 0, kernel: null, image: null };
     }
     var dt = a * d - b * c;
-    var tol = 1e-9 * Math.max(1, s * s);
-    if (Math.abs(dt) > tol) {
-      return { rank: 2, det: dt, kernel: null, image: null };
+    var dn = (a / s) * (d / s) - (b / s) * (c / s);
+    if (Math.abs(dn) > 1e-9) {
+      // ndet = det(M/s): its sign is the sign of det M even when det M
+      // itself underflows or overflows
+      return { rank: 2, det: dt, ndet: dn, kernel: null, image: null };
     }
     // rank 1: kernel direction from the larger row (a x + b y = 0 -> (b,-a)),
     // image direction = the larger column. Larger row/column chosen for
@@ -155,10 +163,12 @@ var LtCore = (function () {
   }
 
   // ---------- grid ----------
-  // The image of the grid line {x = k} under L = lerp(M,t) is the straight
-  // line { L(k, y) : y in R } — linearity means two endpoints determine it,
-  // and the whole family stays parallel (direction L e2) and evenly spaced
-  // (consecutive lines differ by exactly L e1). Certified in T7.
+  // The image of the grid line {x = k} under L = lerp(M,t) is the set
+  // { L(k, y) : y in R }: a straight line when L e2 != 0, a single point
+  // when L e2 = 0. Linearity means two endpoints determine it. For
+  // invertible L the family stays parallel (direction L e2) and evenly
+  // spaced (consecutive lines differ by exactly L e1). Certified in T7
+  // for an invertible L.
   function gridPolyline(M, family, k, half, t) {
     var L = lerp(M, t === undefined ? 1 : t);
     if (family === 'v') {
@@ -396,6 +406,20 @@ var LtCore = (function () {
       classifyRank([[1, 0], [0, 1e-6]]).rank === 2);
     check('T8 small uniform matrix is NOT rank 0',
       classifyRank([[1e-4, 0], [0, 1e-4]]).rank === 2);
+    // scale invariance: tiny and huge invertible matrices stay rank 2
+    check('T8 1e-5 I -> rank 2', classifyRank([[1e-5, 0], [0, 1e-5]]).rank === 2);
+    check('T8 3e-5 I -> rank 2', classifyRank([[3e-5, 0], [0, 3e-5]]).rank === 2);
+    check('T8 1e-13 I -> rank 2 (not the zero map)',
+      classifyRank([[1e-13, 0], [0, 1e-13]]).rank === 2);
+    checkRank1('tiny rank 1', [[1e-13, 0], [0, 0]], [0, 1], [1, 0]);
+    var rng8 = makeRng(11006);
+    for (var i8b = 0; i8b < 10; i8b++) {
+      var M8 = randMat(rng8), r8 = classifyRank(M8).rank;
+      var lo8 = [[1e-8 * M8[0][0], 1e-8 * M8[0][1]], [1e-8 * M8[1][0], 1e-8 * M8[1][1]]];
+      var hi8 = [[1e8 * M8[0][0], 1e8 * M8[0][1]], [1e8 * M8[1][0], 1e8 * M8[1][1]]];
+      check('T8 scale invariance 1e-8 #' + i8b, classifyRank(lo8).rank === r8);
+      check('T8 scale invariance 1e8 #' + i8b, classifyRank(hi8).rank === r8);
+    }
     // property mapping (page's two theorems, 2x2 case)
     var p2 = mapProperties(2), p1 = mapProperties(1), p0 = mapProperties(0);
     check('T8 rank2 -> onto & one-to-one', p2.onto === true && p2.oneToOne === true);
@@ -532,6 +556,12 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LtCore; 
   ];
 
   function fmt(x, d) { return (Object.is(x, -0) ? 0 : x).toFixed(d); }
+  // determinant / area readout: for a matrix classified as rank 2, a nonzero
+  // value that would round to 0.000 is shown in exponent form; rank <= 1
+  // keeps the fixed-point form
+  function fmtDet(x, rank) {
+    return (rank === 2 && x !== 0 && Math.abs(x) < 5e-4) ? x.toExponential(2) : fmt(x, 3);
+  }
 
   function init() {
     var container = document.getElementById('linear-transformation-visualizer');
@@ -596,10 +626,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LtCore; 
             '<div class="ltv-hint">Type any entries. Invalid entries are outlined and ignored until corrected.</div>' +
           '</div>' +
           '<div class="ltv-group ltv-readouts">' +
-            '<div><span class="ltv-lab">det A =</span> <span id="ltv-det" class="ltv-val"></span></div>' +
+            '<div><span class="ltv-lab">det <span id="ltv-sym0">A</span> =</span> <span id="ltv-det" class="ltv-val"></span></div>' +
             '<div id="ltv-area" class="ltv-sub"></div>' +
-            '<div class="ltv-basisrow"><span class="ltv-lab" style="color:' + C.basis1 + ';">A<b>e</b><sub>1</sub> =</span> <span id="ltv-basis1" class="ltv-val"></span> <span class="ltv-sub">(column 1)</span></div>' +
-            '<div class="ltv-basisrow"><span class="ltv-lab" style="color:' + C.basis2 + ';">A<b>e</b><sub>2</sub> =</span> <span id="ltv-basis2" class="ltv-val"></span> <span class="ltv-sub">(column 2)</span></div>' +
+            '<div class="ltv-basisrow"><span class="ltv-lab" style="color:' + C.basis1 + ';"><span id="ltv-sym1">A</span><b>e</b><sub>1</sub> =</span> <span id="ltv-basis1" class="ltv-val"></span> <span class="ltv-sub">(column 1)</span></div>' +
+            '<div class="ltv-basisrow"><span class="ltv-lab" style="color:' + C.basis2 + ';"><span id="ltv-sym2">A</span><b>e</b><sub>2</sub> =</span> <span id="ltv-basis2" class="ltv-val"></span> <span class="ltv-sub">(column 2)</span></div>' +
+            '<div id="ltv-anim" class="ltv-sub"></div>' +
             '<div id="ltv-status" class="ltv-status"></div>' +
           '</div>' +
           '<div class="ltv-buttons">' +
@@ -674,6 +705,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LtCore; 
     var b1El = document.getElementById('ltv-basis1');
     var b2El = document.getElementById('ltv-basis2');
     var statusEl = document.getElementById('ltv-status');
+    var animEl = document.getElementById('ltv-anim');
+    var symEls = [
+      document.getElementById('ltv-sym0'), document.getElementById('ltv-sym1'),
+      document.getElementById('ltv-sym2')
+    ];
     var animateBtn = document.getElementById('ltv-animate');
     var resetBtn = document.getElementById('ltv-reset');
 
@@ -751,30 +787,39 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LtCore; 
     }
 
     // ---------- readouts (all values from LtCore) ----------
-    function updateReadouts(L, cls) {
+    // During the animation (t < 1) every readout describes the displayed
+    // matrix A(t) = (1 - t)I + tA, not A; the labels say so.
+    function updateReadouts(L, cls, t) {
+      var anim = t < 1;
+      var symA = anim ? 'A(t)' : 'A';
+      var symT = anim ? 'The map <b>x</b> \u21A6 A(t)<b>x</b>' : 'T';
+      for (var se = 0; se < symEls.length; se++) symEls[se].textContent = symA;
+      animEl.innerHTML = anim
+        ? 'Animating: the readouts and arrows show A(t) = (1 \u2212 t)I + tA, where I = [[1, 0], [0, 1]], at t \u2248 ' + fmt(Math.min(t, 0.99), 2) + '.'
+        : '';
       var d = LtCore.det(L);
-      detEl.textContent = fmt(d, 3);
+      detEl.textContent = fmtDet(d, cls.rank);
       var orient;
-      if (cls.rank === 2 && d > 0) orient = 'orientation preserved';
-      else if (cls.rank === 2 && d < 0) orient = 'orientation reversed';
+      if (cls.rank === 2 && cls.ndet > 0) orient = 'orientation preserved';
+      else if (cls.rank === 2 && cls.ndet < 0) orient = 'orientation reversed';
       else orient = 'space collapsed';
-      areaEl.textContent = 'Unit square \u2192 parallelogram of area |det A| = ' +
-        fmt(Math.abs(d), 3) + ' \u2014 ' + orient + '.';
+      areaEl.textContent = 'Unit square \u2192 parallelogram of area |det ' + symA + '| = ' +
+        fmtDet(Math.abs(d), cls.rank) + ' \u2014 ' + orient + '.';
       var c1 = LtCore.colOf(L, 0), c2 = LtCore.colOf(L, 1);
       b1El.textContent = '(' + fmt(c1[0], 2) + ', ' + fmt(c1[1], 2) + ')';
       b2El.textContent = '(' + fmt(c2[0], 2) + ', ' + fmt(c2[1], 2) + ')';
       var props = LtCore.mapProperties(cls.rank);
       var s;
       if (cls.rank === 2) {
-        s = 'T is <strong>one-to-one</strong> \u2713 and <strong>onto</strong> \u2713 \u2014 ' +
-            'the columns of A are linearly independent and span \u211D\u00B2.';
+        s = symT + ' is <strong>one-to-one</strong> \u2713 and <strong>onto</strong> \u2713 \u2014 ' +
+            'the columns of ' + symA + ' are linearly independent and span \u211D\u00B2.';
       } else if (cls.rank === 1) {
-        s = 'T is <strong>not one-to-one</strong>: the kernel is the dashed line ' +
+        s = symT + ' is <strong>not one-to-one</strong>: the kernel is the dashed line ' +
             '(every vector on it is sent to <strong>0</strong>). ' +
-            'T is <strong>not onto</strong>: the image is only the solid line ' +
+            symT + ' is <strong>not onto</strong>: the image is only the solid line ' +
             '(the span of the columns).';
       } else {
-        s = 'T is the <strong>zero map</strong>: the image is {<strong>0</strong>} and the ' +
+        s = symT + ' is the <strong>zero map</strong>: the image is {<strong>0</strong>} and the ' +
             'kernel is all of \u211D\u00B2 \u2014 neither one-to-one nor onto.';
       }
       // consistency guard: text branch must agree with the certified mapping
@@ -818,7 +863,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LtCore; 
       // at rank <= 1 the parallelogram is degenerate and keeps the neutral color.
       var d = LtCore.det(L);
       var cls = LtCore.classifyRank(L);
-      var rev = cls.rank === 2 && d < 0;
+      var rev = cls.rank === 2 && cls.ndet < 0;
       var usq = LtCore.transformPoly(state.M, LtCore.UNIT_SQUARE, state.t);
       poly(view, usq, rev ? C.unitNegStroke : C.unitPosStroke,
                       rev ? C.unitNegFill : C.unitPosFill);
@@ -830,8 +875,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LtCore; 
 
       // theorem layer: image / kernel lines when the displayed map is singular
       if (cls.rank === 1) {
-        lineThroughOrigin(view, cls.image, C.imageLine, false, 'im T');
-        lineThroughOrigin(view, cls.kernel, C.kernelLine, true, 'ker T');
+        var mapLab = state.t < 1 ? 'A(t)' : 'T';
+        lineThroughOrigin(view, cls.image, C.imageLine, false, 'im ' + mapLab);
+        lineThroughOrigin(view, cls.kernel, C.kernelLine, true, 'ker ' + mapLab);
       } else if (cls.rank === 0) {
         var o = LtCore.worldToCanvas(view, [0, 0]);
         ctx.fillStyle = C.imageLine;
@@ -839,10 +885,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LtCore; 
       }
 
       // basis vectors: the columns of the displayed matrix
-      arrow(view, LtCore.colOf(L, 0), C.basis1, 'Ae\u2081');
-      arrow(view, LtCore.colOf(L, 1), C.basis2, 'Ae\u2082');
+      var lab = state.t < 1 ? 'A(t)' : 'A';
+      arrow(view, LtCore.colOf(L, 0), C.basis1, lab + 'e\u2081');
+      arrow(view, LtCore.colOf(L, 1), C.basis2, lab + 'e\u2082');
 
-      updateReadouts(L, cls);
+      updateReadouts(L, cls, state.t);
     }
 
     // ---------- interactions ----------
