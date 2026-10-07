@@ -59,8 +59,8 @@ uses_python: false
                     Here we want to generalize the familiar \(\varepsilon\)-\(\delta\) notion from elementary calculus to arbitrary metric
                     spaces. Why does this matter for modern ML? Because ML operates in spaces far richer than \(\mathbb{R}^n\): probability
                     distributions (Wasserstein space), functions (reproducing kernel Hilbert spaces), and even
-                    <a href="../Machine_learning/neural_networks.html"><strong>neural network</strong></a> weights (high-dimensional
-                    parameter spaces with non-Euclidean geometry).
+                    <a href="../Machine_learning/neural_networks.html"><strong>neural network</strong></a> weights when the parameter space
+                    is given a non-Euclidean geometry (for example, the one induced by the Fisher information).
                 </p>
 
                 <div class="theorem" id="D-sequence_tail">
@@ -94,9 +94,11 @@ uses_python: false
                     <ul style="padding-left: 40px;">
                         <li>
                             <strong>Parameter Convergence.</strong><br>
-                            In optimization, we expect iterates \(\theta_t \to \theta^*\) under proper conditions (for example, the
-                            Robbins-Monro conditions for SGD). This means that for any \(\varepsilon\)-ball around the optimum \(\theta^*\),
-                            the sequence eventually enters and remains within it. <br>
+                            In optimization, we expect iterates \(\theta_t \to \theta^*\) under proper conditions. For SGD these combine the
+                            Robbins-Monro step-size conditions with assumptions on the objective and the gradient noise, and the convergence
+                            then holds almost surely, that is, along almost every realization of the random iterates. Along such a
+                            realization, every \(\varepsilon\)-ball around the optimum \(\theta^*\) is eventually entered and
+                            never left. <br>
                             Without these conditions, the stochastic noise might prevent the sequence from settling.
                         </li>
                         <li>
@@ -109,9 +111,12 @@ uses_python: false
                         </li>
                         <li>
                             <strong>Function Space Convergence.</strong><br>
-                            The Universal Approximation Theorem states that neural networks are dense in the space of continuous functions.
-                            This implies that as we increase the model capacity, the approximation can converge to any target function \(f\)
-                            under norms like the \(L_{\infty}\) (uniform convergence) or \(L_2\) norm.
+                            The Universal Approximation Theorem states that, for a suitable activation (for example, a continuous
+                            non-polynomial one), neural networks are dense in the space of continuous functions on a compact set
+                            \(K \subseteq \mathbb{R}^n\) under the \(L^{\infty}\) (uniform) norm. As we increase the model capacity, the
+                            approximation can therefore converge uniformly on \(K\) to any continuous target function \(f\). Since
+                            continuous functions are in turn dense in \(L^2(K)\), it can also converge in the \(L^2\) norm to
+                            any square-integrable target.
                         </li>
                     </ul>
                 </div>
@@ -183,8 +188,8 @@ uses_python: false
 
                 <p>
                     Criterion 4 is the familiar \(\varepsilon\)-ball formulation. For every \(\varepsilon \gt 0\), there exists \(N\) such
-                    that \(d(x_n, z) \lt \varepsilon\) for all \(n \geq N\). This is precisely what we check when we set a convergence
-                    tolerance in numerical algorithms.
+                    that \(d(x_n, z) \lt \varepsilon\) for all \(n \geq N\). This is the condition that a convergence tolerance in a
+                    numerical algorithm is meant to certify, although the limit \(z\) is usually not available to check against.
                 </p>
 
                 <p>
@@ -196,8 +201,9 @@ uses_python: false
 
                 <p>
                     Remember, convergent sequences of real numbers converge to "at most" one point. This is because \(\mathbb{R}\) is a
-                    metric space, and uniqueness of limits holds in any metric space. This uniqueness of limits guarantees that optimization
-                    algorithms do not exhibit "mode-switching" behavior where iterates oscillate between multiple candidates indefinitely.
+                    metric space, and uniqueness of limits holds in any metric space. This uniqueness of limits guarantees that a convergent
+                    sequence of iterates cannot settle on two different candidates. It does not prevent iterates that fail to converge from
+                    oscillating between candidates indefinitely.
                 </p>
 
                 <div class="theorem" id="T-uniqueness_of_limits">
@@ -256,8 +262,8 @@ uses_python: false
                     <ul>
                         <li>
                             <strong>Robustness to Checkpointing.</strong><br>
-                            This property guarantees that the "limit" we observe through periodic checkpoints is mathematically identical to
-                            the true limit of the continuous training process.
+                            Provided the full sequence of iterates converges, this property guarantees that the "limit" we observe through
+                            periodic checkpoints is identical to the limit of the training process.
                         </li>
                         <li>
                             <strong>Avoiding Inconsistency.</strong><br>
@@ -290,12 +296,13 @@ uses_python: false
                     <ul>
                         <li>
                             <strong>Closed Subsets.</strong> If our constraint set \(Y\) is <strong>closed</strong> in \(\mathbb{R}^n\), any
-                            sequence that converges in the larger space \(\mathbb{R}^n\) is guaranteed to have its limit in \(Y\).
+                            sequence in \(Y\) that converges in the larger space \(\mathbb{R}^n\) is guaranteed to have its limit in \(Y\).
                         </li>
                         <li>
-                            <strong>Numerical Instability.</strong> The set of floating-point numbers \(\mathbb{F} \subseteq \mathbb{R}\) is
-                            a discrete subspace. A sequence might "converge" in \(\mathbb{R}\), but its limit may not exist in
-                            \(\mathbb{F}\), leading to rounding errors or numerical instability.
+                            <strong>Numerical Instability.</strong> The floating-point numbers form a finite subset of \(\mathbb{R}\). A
+                            sequence of real numbers can converge to a limit, such as \(\sqrt{2}\), that is not a floating-point number, so
+                            computed iterates can only approximate it to within rounding error, and these errors can accumulate
+                            into numerical instability.
                         </li>
                     </ul>
                 </div>
@@ -357,8 +364,8 @@ uses_python: false
                         d(x_m, x_n) \lt \varepsilon \quad \text{for all } m, n \geq N.
                         \]
                         We mention this equivalence purely as a dictionary between the two formulations. In this curriculum, we consistently
-                        work with the ball-tail form, which generalizes directly to topological and manifold settings central to modern
-                        functional analysis and geometric deep learning.
+                        work with the ball-tail form, which, like the ball form of convergence, asks for a tail inside a ball, and so makes
+                        the comparison between the two notions immediate.
                     </p>
                 </div>
 
@@ -387,8 +394,8 @@ uses_python: false
                     <p>
                         In optimization, the target point \(x^*\) is unknown, so detecting convergence by checking
                         \(d(x_n, x^*) \lt \varepsilon\) is a <strong>circular problem</strong>. The Cauchy criterion provides a rigorous
-                        theoretical escape. It ensures convergence by examining whether all future terms in a sequence remain arbitrarily
-                        close to one another, independent of the limit itself.
+                        theoretical escape. In a complete space such as \(\mathbb{R}^n\), it ensures convergence by examining whether all
+                        future terms in a sequence remain arbitrarily close to one another, independent of the limit itself.
                     </p>
                     <p>
                         However, a gap exists between theory and implementation. Verifying the formal Cauchy condition requires monitoring
@@ -500,19 +507,19 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Insight</h3>
                     <p>
-                        While enforcing a bound does not mathematically guarantee convergence (as the sequence could still oscillate), it
-                        ensures the iterates remain within a <strong>bounded region</strong>. In the finite-dimensional parameter spaces
-                        typical of machine learning, such a region, when combined with appropriate closure, forms a <strong>compact
-                        set</strong>. This "structural containment" is a prerequisite for the Cauchy property to even be possible in
-                        practice.
+                        While enforcing a bound does not mathematically guarantee convergence (as the sequence could still oscillate), a
+                        bound placed on the iterates themselves keeps them within a <strong>bounded region</strong>. In the
+                        finite-dimensional parameter spaces typical of machine learning, such a region, when combined with appropriate
+                        closure, forms a <strong>compact set</strong>. This "structural containment" is a prerequisite for the Cauchy
+                        property to even be possible in practice.
                     </p>
 
                     <ul style="padding-left: 40px;">
                         <li>
                             <strong>Gradient Clipping.</strong><br>
-                            By enforcing \(\|\nabla L\| \leq M\), we ensure the update steps remain in a bounded subset of the parameter
-                            space. This is a heuristic countermeasure against the <strong>exploding gradient problem</strong>, preventing
-                            iterates from escaping to infinity.
+                            By enforcing \(\|\nabla L\| \leq M\), we bound the length of each update step. This is a heuristic
+                            countermeasure against the <strong>exploding gradient problem</strong>, preventing a single step from throwing
+                            the iterates arbitrarily far, although it does not by itself keep the iterates in a bounded region.
                         </li>
                         <li>
                             <strong>Weight Clipping (for example, WGAN).</strong><br>
@@ -522,14 +529,16 @@ uses_python: false
                         </li>
                         <li>
                             <strong>Regularization (\(L^2\)).</strong><br>
-                            Adding a penalty \(\|\theta\|^2\) makes the objective function <strong>coercive</strong>. It ensures that the
-                            set of parameters with low loss remains bounded, effectively "trapping" the optimization process in a region
-                            where a minimum is guaranteed to exist.
+                            Adding a penalty \(\lambda\|\theta\|^2\) with \(\lambda \gt 0\) to a loss that is bounded below makes the
+                            objective function <strong>coercive</strong>. It ensures that the set of parameters with low objective value
+                            remains bounded, effectively "trapping" the optimization process in a region where, for a continuous loss, a
+                            minimum is guaranteed to exist.
                         </li>
                         <li>
                             <strong>Trust Regions.</strong><br>
-                            By restricting each step to a ball of radius \(\Delta\), we ensure that the <strong>Taylor
-                            approximation</strong> (which is only locally valid) remains an accurate model of the loss surface.
+                            By restricting each step to a ball of radius \(\Delta\), we keep the step where the
+                            <strong>Taylor approximation</strong> (which is only locally valid) is trusted as a model of the loss surface,
+                            shrinking \(\Delta\) whenever the model predicts the actual decrease poorly.
                         </li>
                     </ul>
                 </div>
@@ -573,14 +582,14 @@ uses_python: false
                 </ul>
 
                 <p>
-                    A word of caution is needed for
-                    <a href="intro_analysis.html#D-Hilbert_space" class="ref-link"><strong>Hilbert spaces</strong></a>. The celebrated
-                    <strong>Hilbert projection theorem</strong> guarantees a unique nearest point in a closed convex subset
+                    A word of caution is needed for <a href="intro_analysis.html#D-Hilbert_space" class="ref-link"><strong>Hilbert spaces</strong></a>. The celebrated
+                    <strong>Hilbert projection theorem</strong> guarantees a unique nearest point in a nonempty closed convex subset
                     \(C \subseteq \mathcal{H}\), but only for ambient points \(z \in \mathcal{H}\), not for points in an arbitrary
                     superspace of \(C\). Thus closed convex subsets of a Hilbert space inherit a <em>restricted</em> version of the
                     nearest-point property within \(\mathcal{H}\), which is what drives orthogonal projection, least-squares regression, and
-                    feasibility projections in convex optimization. The unrestricted nearest-point property (over every superspace) still
-                    requires compactness.
+                    feasibility projections in convex optimization. The unrestricted nearest-point property (over every superspace) asks for
+                    more, namely that every bounded sequence in the set have a subsequence converging to a point of the set. Closed subsets
+                    of \(\mathbb{R}^n\) meet this demand, while the closed unit ball of an infinite-dimensional Hilbert space does not.
                 </p>
 
                 <p>
@@ -596,9 +605,9 @@ uses_python: false
                         can always find a best approximation (a projection) within it.
                     </p>
                     <p>
-                        For instance, in <strong>Constrained SGD</strong> or <strong>SVM</strong>, we rely on this structural "solidness" to
-                        ensure that our algorithms always have a valid point to converge to. We will explore how this combines with
-                        boundedness to form the broader concept of <em>compactness</em> on a later page.
+                        For instance, in <strong>Constrained SGD</strong> or <strong>SVM</strong>, we rely on this structural "solidness" so
+                        that every projection step has a nearest point to land on. We will explore how this combines with boundedness to
+                        form the broader concept of <em>compactness</em> on a later page.
                     </p>
                 </div>
 
@@ -702,9 +711,9 @@ uses_python: false
                             Spaces).</strong><br>
                             The <a href="lp_completeness.html#T-riesz_fischer" class="ref-link"><strong>Riesz-Fischer Theorem</strong></a>
                             proves that \(L^p\) spaces are complete. In particular, they are
-                            <a href="intro_analysis.html#D-Banach_space" class="ref-link"><strong>Banach spaces</strong></a>. This is
-                            fundamental for <strong>universal approximation</strong>. It allows us to define the "target function" as the
-                            limit of a sequence of neural networks under an integral norm.
+                            <a href="intro_analysis.html#D-Banach_space" class="ref-link"><strong>Banach spaces</strong></a>. This matters
+                            for approximation by neural networks. It guarantees that any sequence of networks in \(L^p\) that is Cauchy in
+                            the \(L^p\) norm converges to some limit function in \(L^p\).
                         </li>
                     </ul>
                 </div>

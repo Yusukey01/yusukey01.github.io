@@ -35,16 +35,17 @@ uses_python: false
                 </p>
 
                 <p>
-                    Why does this matter for machine learning and optimization?
-                    Neural networks are essentially compositions of continuous functions (linear layers and non-linear activations).
-                    The "loss landscape" we navigate during training relies on continuity to ensure that we can essentially "slide down"
-                    to a minimum. Without continuity, optimization methods like Gradient Descent would be fundamentally broken.
+                    Why does this matter for machine learning and optimization? Neural networks are essentially compositions of
+                    continuous functions (linear layers and non-linear activations). The "loss landscape" we navigate during training
+                    relies on continuity as a minimal precondition for "sliding down" toward a minimum. Without continuity,
+                    optimization methods like Gradient Descent would be fundamentally broken.
                 </p>
 
                 <p>
                     But not all notions of continuity are equal. <strong>Uniform continuity</strong> provides stronger global
-                    guarantees, and <strong>Lipschitz continuity</strong>, which bounds how fast a function can change, is
-                    essential for guaranteeing the convergence speed of these algorithms.
+                    guarantees, and <strong>Lipschitz continuity</strong>, which bounds how fast a function can change, is the standard
+                    hypothesis behind guarantees on the convergence speed of these algorithms, usually imposed on the gradient
+                    of the objective.
                 </p>
             </section>
 
@@ -154,10 +155,9 @@ uses_python: false
                 </div>
 
                 <p>
-                    The sequential characterization is the bridge from topology to analysis. Convergence of sequences, the
-                    operational concept developed on the previous page, now encodes continuity. This is the form most
-                    directly useful in iterative algorithms, where we verify continuity by checking the behavior of the
-                    function along the sequence of iterates.
+                    The sequential characterization is the bridge from topology to analysis. Convergence of sequences, the operational
+                    concept developed on the previous page, now encodes continuity. This is the form most directly useful in iterative
+                    algorithms, where continuity lets us conclude \(f(x_n) \to f(z)\) along a sequence of iterates once \(x_n \to z\).
                 </p>
 
                 <p>
@@ -318,9 +318,9 @@ uses_python: false
 
                 <p>
                     A stronger form of continuity, often encountered in linear maps between normed linear spaces, is
-                    <strong>Lipschitz continuity</strong>. Unlike uniform continuity, which only says "steepness is bounded
-                    locally," Lipschitz continuity gives us a concrete number, the <strong>Lipschitz constant</strong>, that
-                    bounds the rate of change globally.
+                    <strong>Lipschitz continuity</strong>. Unlike uniform continuity, which places no bound on local steepness (the
+                    function \(\sqrt{x}\) on \([0, 1]\) is uniformly continuous yet arbitrarily steep near \(0\)), Lipschitz continuity
+                    gives us a concrete number, the <strong>Lipschitz constant</strong>, that bounds the rate of change globally.
                 </p>
 
                 <div class="theorem" id="D-Lipschitz_Continuous_Function">
@@ -401,12 +401,12 @@ uses_python: false
                     \[
                     e(\phi(a), \phi(b)) = d(a, b) \quad \forall a, b \in X.
                     \]
-                    Note: Every isometry is a Lipschitz function with constant \(L = 1\). When \(X = Y\), our curriculum's
-                    convention (see terminology note above) classifies it as a <strong>contraction</strong> (with contraction
-                    factor \(k = 1\), but not a strong contraction). The converse fails. A Lipschitz function with \(L = 1\) need not be an isometry.
-                    For instance, the absolute-value map \(f: \mathbb{R} \to \mathbb{R}\), \(f(x) = |x|\), satisfies
-                    \(\big||a| - |b|\big| \leq |a - b|\) (reverse triangle inequality), so \(L = 1\) works. However,
-                    \(f(-1) = f(1) = 1\), so \(f\) is not injective and therefore not an isometry.
+                    Note: Every isometry is a Lipschitz function with constant \(L = 1\). When \(X = Y\), our curriculum's convention
+                    (see terminology note above) classifies it as a <strong>contraction</strong> (with contraction factor \(k = 1\),
+                    and not a strong contraction once \(X\) has at least two points). The converse fails. A Lipschitz function with
+                    \(L = 1\) need not be an isometry. For instance, the absolute-value map \(f: \mathbb{R} \to \mathbb{R}\),
+                    \(f(x) = |x|\), satisfies \(\big||a| - |b|\big| \leq |a - b|\) (reverse triangle inequality), so \(L = 1\) works.
+                    However, \(f(-1) = f(1) = 1\), so \(f\) is not injective and therefore not an isometry.
                 </div>
 
                 <div class="insight-box">
@@ -417,8 +417,12 @@ uses_python: false
                     </p>
                     <ul style="padding-left: 40px;">
                         <li><strong>Continuity:</strong> The bare minimum for Gradient Descent to "slide" on a loss landscape without jumps.</li>
-                        <li><strong>Uniform Continuity:</strong> A guarantee that a fixed step size does not lead to unpredictable behavior when we move to a different region of the space.</li>
-                        <li><strong>Lipschitz Continuity:</strong> The gold standard, providing a concrete limit on "steepness" and ensuring stability during training.</li>
+                        <li><strong>Uniform Continuity:</strong> A guarantee that one input tolerance \(\delta\) achieves a given
+                        output tolerance \(\varepsilon\) in every region of the space. By itself it says nothing about gradients or
+                        about which learning rates are safe.</li>
+                        <li><strong>Lipschitz Continuity:</strong> The gold standard, providing a concrete limit on "steepness", so
+                        that each gradient step has length at most the learning rate times the Lipschitz constant. Convergence
+                        guarantees need more, typically a Lipschitz gradient with a matched step size.</li>
                     </ul>
 
                     <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
@@ -428,8 +432,10 @@ uses_python: false
                         <li>
                             <strong>Convergence Rates:</strong><br>
                             In convex optimization, if the gradient is \(L\)-Lipschitz (called
-                            <a href="duality.html#D-L_smoothness" class="ref-link"><strong>\(L\)-smooth</strong></a>),
-                            gradient descent is guaranteed to converge at a rate of \(O(1/T)\). The constant \(L\) determines the maximum safe learning rate (\(\eta \lt 2/L\)).
+                            <a href="duality.html#D-L_smoothness" class="ref-link"><strong>\(L\)-smooth</strong></a>), and a minimizer
+                            exists, gradient descent with a fixed learning rate \(\eta \in (0, 2/L)\) reduces the gap
+                            \(f(x_T) - \min f\) at a rate of \(O(1/T)\). The constant \(L\) thus determines the range of
+                            safe learning rates.
                         </li>
                         <li>
                             <strong>GAN Stability:</strong><br>
@@ -438,8 +444,10 @@ uses_python: false
                         </li>
                         <li>
                             <strong>Fixed Point Iterations:</strong><br>
-                            <strong>Strong contractions</strong> on a nonempty complete space guarantee a unique fixed point (Banach Fixed Point Theorem).
-                            This is why the Bellman Operator in Reinforcement Learning converges to the optimal value function.
+                            <strong>Strong contractions</strong> on a nonempty complete space guarantee a unique fixed point (Banach
+                            Fixed Point Theorem). This is why, for a discount factor \(\gamma \lt 1\), bounded rewards, and finitely
+                            many actions, iterating the Bellman optimality operator in Reinforcement Learning converges to the
+                            optimal value function.
                         </li>
                     </ul>
                 </div>

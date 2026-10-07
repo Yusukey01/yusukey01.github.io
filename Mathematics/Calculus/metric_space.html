@@ -53,9 +53,9 @@ uses_python: false
 
                 <p>
                     This page introduces that framework: <strong>metric spaces</strong> and the notion of <strong>completeness</strong>.
-                    These concepts formalize exactly when iterative algorithms converge to valid solutions. Rather than learning new
-                    computational techniques, we are gaining the language to state precisely what we have been assuming all along and to
-                    understand when those assumptions hold.
+                    These concepts formalize when the limit that an iterative algorithm approaches is guaranteed to exist inside the space
+                    we are working in. Rather than learning new computational techniques, we are gaining the language to state precisely
+                    what we have been assuming all along and to understand when those assumptions hold.
                 </p>
 
             </section>
@@ -99,14 +99,16 @@ uses_python: false
                         We have already used non-Euclidean distances throughout this curriculum. In k-nearest neighbors, the choice between
                         Euclidean distance, Manhattan distance, or cosine similarity fundamentally changes which points are considered
                         "close." In kernel methods, the kernel function implicitly defines a distance in a high-dimensional feature space.
-                        These are all metrics on different spaces.
+                        Euclidean distance, Manhattan distance, and the feature-space distance are metrics. Cosine similarity is a
+                        similarity score rather than a distance, and the cosine distance \(1 - \cos\theta\), where \(\theta\) is the angle
+                        between the two vectors, violates the triangle inequality, so it is not a metric.
                     </p>
                     <p>
                         The axioms are not arbitrary mathematical restrictions. They encode the minimal properties required for algorithms
-                        to behave sensibly. For instance, if the triangle inequality fails, then a nearest-neighbor search might return a
-                        point \(y\) as "closest" to \(x\), even when a third point \(z\) satisfies \(d(x, z) \lt d(x, y)\) via an indirect
-                        path. Efficient search structures like KD-trees and ball trees rely on the triangle inequality for their pruning
-                        guarantees.
+                        to behave sensibly. For instance, if the triangle inequality fails, then a nearest-neighbor search that discards
+                        candidates using distance bounds might return a point \(y\) as "closest" to \(x\), even when a third point \(z\)
+                        satisfies \(d(x, z) \lt d(x, y)\). Efficient search structures like KD-trees and ball trees rely on the triangle
+                        inequality for their pruning guarantees.
                     </p>
                 </div>
              </section>
@@ -235,10 +237,12 @@ uses_python: false
                     A nearest point need not exist in general. Take \(X = \mathbb{R}\), \(S = (0, 1)\), and \(z = 0\). Then
                     \(\operatorname{dist}(z, S) = 0\), yet no member of \(S\) is at distance zero from \(z\), because \(S\) is open and
                     excludes its boundary. Existence is guaranteed, however, when \(S\) has sufficient structure. The most notable case is
-                    that \(S\) is <strong>compact</strong>, a notion we formalize on a later page. In \(\mathbb{R}^n\), compactness reduces
-                    to \(S\) being closed and bounded (Heine-Borel). More generally, closedness alone suffices in "nice" spaces such as
-                    <a href="intro_analysis.html#D-Hilbert_space" class="ref-link"><strong>Hilbert spaces</strong></a>, where the projection
-                    onto a closed convex set is uniquely determined.
+                    that \(S\) is nonempty and <strong>compact</strong>, a notion we formalize on a later page. In \(\mathbb{R}^n\),
+                    compactness reduces to \(S\) being closed and bounded (Heine-Borel). Boundedness is not even needed there, since every
+                    nonempty closed subset of \(\mathbb{R}^n\) has a nearest point to each point of \(\mathbb{R}^n\). In an
+                    infinite-dimensional <a href="intro_analysis.html#D-Hilbert_space" class="ref-link"><strong>Hilbert space</strong></a>,
+                    closedness alone is not enough, but every nonempty closed convex set has exactly one nearest point to each point of the
+                    space, namely the projection of that point onto it.
                 </p>
 
                 <div class="insight-box">
@@ -266,17 +270,17 @@ uses_python: false
                             is automatic.
                         </li>
                         <li>
-                            <strong>Open constraint sets (for example, strict inequalities \(g(x) \lt 0\)).</strong> This is where existence
-                            can <em>fail</em>. The nearest feasible point may not exist. The typical fix is to replace the constraint with
-                            its closure \(g(x) \leq 0\), or to use a barrier/penalty method rather than direct projection.
+                            <strong>Open constraint sets (for example, strict inequalities \(g(x) \lt 0\)).</strong> This is where
+                            existence can <em>fail</em>. The nearest feasible point may not exist. The typical fix is to replace the strict
+                            constraint with \(g(x) \leq 0\), whose feasible set is closed when \(g\) is continuous, or to use a
+                            barrier/penalty method rather than direct projection.
                         </li>
                         <li>
-                            <strong>Non-compact feasible sets (even convex ones).</strong> There is no guarantee in general. The fundamental
-                            obstruction is not non-convexity but <em>non-compactness</em>. A closed but unbounded set in \(\mathbb{R}^n\),
-                            or any closed bounded set in an infinite-dimensional
-                            <a href="intro_analysis.html#D-Banach_space" class="ref-link"><strong>Banach space</strong></a> (which is never
-                            compact), can fail to contain a nearest point. Iterative algorithms operating in such settings may oscillate or
-                            approach a limit outside \(S\).
+                            <strong>Feasible sets in infinite-dimensional spaces.</strong> In \(\mathbb{R}^n\), every nonempty closed set
+                            contains a nearest point to each point of \(\mathbb{R}^n\). In infinite dimensions there is no such guarantee.
+                            A nonempty closed set that is not convex in an infinite-dimensional Hilbert space, or even a nonempty closed
+                            convex set in a general <a href="intro_analysis.html#D-Banach_space" class="ref-link"><strong>Banach space</strong></a>, can fail to
+                            contain a nearest point. Iterative algorithms operating in such settings may then fail to converge.
                         </li>
                     </ul>
                     <p>
@@ -363,8 +367,8 @@ uses_python: false
                 </div>
 
                 <p>
-                    Note that most subsets of metric spaces are neither open nor closed. A set can contain some but not all of its boundary
-                    points. However, the sets that <em>are</em> open form a structure worth naming.
+                    Note that most subsets of \(\mathbb{R}\) are neither open nor closed. A set can contain some but not all of its
+                    boundary points. However, the sets that <em>are</em> open form a structure worth naming.
                 </p>
 
                 <p>
@@ -397,15 +401,14 @@ uses_python: false
                     The standard example is \(\mathbb{Q}\) inside \(\mathbb{R}\). Every real number is a limit of rationals, so
                     \(\overline{\mathbb{Q}} = \mathbb{R}\) and \(\mathbb{Q}\) is dense in \(\mathbb{R}\). The same holds componentwise for
                     \(\mathbb{Q}^n\) inside \(\mathbb{R}^n\). The irrationals \(\mathbb{R} \setminus \mathbb{Q}\) are also dense in
-                    \(\mathbb{R}\). Density is symmetric in a strong sense. A set and its complement can both be dense, which is exactly
-                    what happens here.
+                    \(\mathbb{R}\). A set and its complement can both be dense, which is exactly what happens here.
                 </p>
 
                 <p>
                     In function spaces, dense subsets play an even more decisive role. Trigonometric polynomials are dense in continuous
-                    periodic functions, and continuous compactly supported functions are dense in \(L^p\). These density results are the
-                    engines behind the entire theory of Fourier analysis and \(L^p\) approximation, where we prove an identity for a "nice"
-                    dense subclass and then extend it to the whole space by continuity.
+                    periodic functions, and continuous compactly supported functions are dense in \(L^p\) for \(1 \leq p \lt \infty\).
+                    These density results are the engines behind the entire theory of Fourier analysis and \(L^p\) approximation, where we
+                    prove an identity for a "nice" dense subclass and then extend it to the whole space by continuity.
                 </p>
 
                 <div class="theorem" id="D-topology_from_metric">
@@ -425,8 +428,8 @@ uses_python: false
                     example, \(0 \lt x \lt 1\)), an algorithm might iterate forever, approaching a boundary value without ever reaching it.
                     The limit point is excluded from the feasible set. A <strong>closed</strong> set contains its boundary, ensuring that
                     edge solutions are valid. More fundamentally, the <strong>Extreme Value Theorem</strong> guarantees that a continuous
-                    function attains its maximum and minimum only when the domain is <strong>compact</strong>, which in \(\mathbb{R}^n\)
-                    means both closed and bounded.
+                    real-valued function attains its maximum and minimum when its domain is nonempty and <strong>compact</strong>, which in
+                    \(\mathbb{R}^n\) means closed and bounded.
                 </p>
 
                 <p>
@@ -477,10 +480,9 @@ uses_python: false
                 </p>
 
                 <p>
-                    More importantly for algorithms, balls give us a <strong>coordinate-free</strong> way to talk about
-                    neighborhoods. When we say "there exists a step size \(\alpha\) such that gradient descent stays in the
-                    feasible region," we are implicitly saying the current point lies in an open ball contained within
-                    that region.
+                    More importantly for algorithms, balls give us a <strong>coordinate-free</strong> way to talk about neighborhoods. When
+                    the current point lies in an open ball contained within the feasible region, a sufficiently small gradient step cannot
+                    leave that ball, so some step size \(\alpha\) keeps the next iterate feasible.
                 </p>
 
                 <div class="theorem" id="D-open_and_closed_balls">
