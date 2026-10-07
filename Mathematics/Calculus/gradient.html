@@ -134,510 +134,515 @@ uses_python: true
                 <div class="insight-box">
                     <h3>Convex vs. non-convex landscapes</h3>
                     <p>
-                        The sufficient condition (\(\mathbf{H} \succ 0\)) certifies only a <em>strict local</em>
-                        minimum. A non-convex objective typically has many <em>stationary points</em> (points where
-                        \(\mathbf{g} = \mathbf{0}\)): local minima with \(\mathbf{H} \succeq 0\), local maxima with
-                        \(\mathbf{H} \preceq 0\), and <strong>saddle points</strong> where \(\mathbf{H}\) is
-                        indefinite. First-order methods can converge to stationary points of any type and cannot
-                        distinguish them without further information. This is one reason the convexity structure
-                        studied in the next section is so valuable. Under convexity, stationarity already certifies
-                        global optimality.
+                        The sufficient condition (\(\mathbf{H} \succ 0\)) certifies only a <em>strict local</em> minimum. A
+                        non-convex objective typically has many <em>stationary points</em> (points where
+                        \(\mathbf{g} = \mathbf{0}\)): local minima (where necessarily \(\mathbf{H} \succeq 0\)), local maxima
+                        (where necessarily \(\mathbf{H} \preceq 0\)), and <strong>saddle points</strong>, which are neither and
+                        include every stationary point where \(\mathbf{H}\) is indefinite. First-order methods can converge to
+                        stationary points of any type and cannot distinguish them without further information. This is one
+                        reason the convexity structure studied in the next section is so valuable. Under convexity, stationarity
+                        already certifies global optimality.
                     </p>
                 </div>
             </section>
     
-        <section id="convexity" class="section-content">
-            <h2>Convexity</h2>
-            <p>
-                We often design training objectives to be <strong>convex</strong>, because in a convex optimization problem every
-                local minimum is automatically a global minimum. Convexity therefore removes the principal obstacle of non-convex
-                optimization. The underlying geometry is that of a
-                <a href="metric_space.html#D-convex_set" class="ref-link"><strong>convex set</strong></a>: a subset
-                \(\mathcal{S} \subseteq \mathbb{R}^n\) that contains the line segment joining any two of its points.
-            </p>
-
-            <div class="theorem" id="D-convex_function">
-                <span class="theorem-title">Definition: Convex Function</span>
+            <section id="convexity" class="section-content">
+                <h2>Convexity</h2>
                 <p>
-                    Let \(\mathcal{S} \subseteq \mathbb{R}^n\) be a convex set. A function \(f: \mathcal{S} \to \mathbb{R}\) is a
-                    <strong>convex function</strong> if for every \(\mathbf{x}, \mathbf{y} \in \mathcal{S}\) and every
-                    \(\lambda \in [0,1]\),
+                    We often design training objectives to be <strong>convex</strong>, because in a convex optimization problem every
+                    local minimum is automatically a global minimum. Convexity therefore removes the principal obstacle of non-convex
+                    optimization. The underlying geometry is that of a
+                    <a href="metric_space.html#D-convex_set" class="ref-link"><strong>convex set</strong></a>: a subset
+                    \(\mathcal{S} \subseteq \mathbb{R}^n\) that contains the line segment joining any two of its points.
+                </p>
+
+                <div class="theorem" id="D-convex_function">
+                    <span class="theorem-title">Definition: Convex Function</span>
+                    <p>
+                        Let \(\mathcal{S} \subseteq \mathbb{R}^n\) be a convex set. A function \(f: \mathcal{S} \to \mathbb{R}\) is a
+                        <strong>convex function</strong> if for every \(\mathbf{x}, \mathbf{y} \in \mathcal{S}\) and every
+                        \(\lambda \in [0,1]\),
+                        \[
+                        f\!\left(\lambda \mathbf{x} + (1-\lambda)\mathbf{y}\right)
+                        \leq \lambda f(\mathbf{x}) + (1-\lambda) f(\mathbf{y}).
+                        \]
+                        It is <strong>strictly convex</strong> if the inequality is strict whenever \(\mathbf{x} \neq \mathbf{y}\)
+                        and \(\lambda \in (0,1)\).
+                    </p>
+                </div>
+
+                <p>
+                    In one dimension, for twice-differentiable functions, convexity is captured entirely by the sign of the second
+                    derivative. We begin with a lemma that links convexity to the first-order Taylor inequality. This lemma is the
+                    technical bridge used in both directions of the next theorem.
+                </p>
+
+                <div class="theorem" id="T-first_order_convexity">
+                    <span class="theorem-title">Lemma: First-Order Characterization of Convexity</span>
+                    <p>
+                        Let \(f: I \to \mathbb{R}\) be differentiable on an open interval \(I \subseteq \mathbb{R}\). Then \(f\) is
+                        convex on \(I\) if and only if
+                        \[
+                        f(y) \geq f(x) + f'(x)(y - x) \quad \text{for all } x, y \in I. \tag{*}
+                        \]
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(\(\Rightarrow\))</strong> Assume \(f\) is convex. Fix \(x, y \in I\) and \(\lambda \in (0,1)\), and
+                        let \(z_\lambda = \lambda y + (1-\lambda)x = x + \lambda(y-x)\). By convexity,
+                        \[
+                        \begin{align*}
+                        f(z_\lambda) &\leq \lambda f(y) + (1-\lambda) f(x), \\\\
+                        \text{that is,} \quad \frac{f(x + \lambda(y-x)) - f(x)}{\lambda} &\leq f(y) - f(x).
+                        \end{align*}
+                        \]
+                        Letting \(\lambda \downarrow 0\) and using differentiability gives \(f'(x)(y-x) \leq f(y) - f(x)\), which is
+                        (*).
+                    </p>
+                    <p>
+                        <strong>(\(\Leftarrow\))</strong> Assume (*) holds. Fix \(a, b \in I\), \(\lambda \in [0,1]\), and set
+                        \(z = \lambda a + (1-\lambda) b\). Applying (*) at the base point \(z\) to both \(a\) and \(b\):
+                        \[
+                        \begin{align*}
+                        f(a) &\geq f(z) + f'(z)(a - z), \\\\
+                        f(b) &\geq f(z) + f'(z)(b - z).
+                        \end{align*}
+                        \]
+                        Multiplying the first inequality by \(\lambda\), the second by \((1-\lambda)\), and adding:
+                        \[
+                        \begin{align*}
+                        \lambda f(a) + (1-\lambda) f(b)
+                        &\geq f(z) + f'(z)\bigl[\lambda (a-z) + (1-\lambda)(b-z)\bigr].
+                        \end{align*}
+                        \]
+                        The bracketed term equals \(\lambda a + (1-\lambda) b - z = 0\) by the definition of \(z\), so
+                        \(\lambda f(a) + (1-\lambda) f(b) \geq f(z)\), which is convexity.
+                    </p>
+                </div>
+
+                <div class="theorem" id="T-convexity_univariate_2nd_order">
+                    <span class="theorem-title">Theorem: Second-Order Condition for Convexity (Univariate)</span>
+                    <p>
+                        Let \(f: I \to \mathbb{R}\) be twice differentiable on an open interval \(I\). Then \(f\) is convex on
+                        \(I\) if and only if \(f''(x) \geq 0\) for all \(x \in I\).
+                    </p>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        <strong>(\(\Leftarrow\))</strong> Suppose \(f'' \geq 0\) on \(I\). By
+                        <a href="mvt.html#T-taylor_lagrange" class="ref-link"><strong>Taylor's theorem, Lagrange form</strong></a>, 
+                        for any \(x, y \in I\) with
+                        \(x \neq y\) (the case \(x = y\) is trivial) there exists \(c\) between \(x\) and \(y\) such that
+                        \[
+                        \begin{align*}
+                        f(y) &= f(x) + f'(x)(y - x) + \tfrac{1}{2} f''(c)(y - x)^2 \\\\
+                        &\geq f(x) + f'(x)(y - x),
+                        \end{align*}
+                        \]
+                        since the quadratic remainder is non-negative. This is (*) of the preceding lemma, hence \(f\) is convex.
+                    </p>
+                    <p>
+                        <strong>(\(\Rightarrow\))</strong> Suppose \(f\) is convex. By the lemma, (*) holds. Fix \(a \lt b\) in \(I\)
+                        and apply (*) in both directions:
+                        \[
+                        \begin{align*}
+                        f(b) &\geq f(a) + f'(a)(b - a) \\\\
+                        &\Longrightarrow f'(a) \leq \frac{f(b) - f(a)}{b - a},
+                        \end{align*}
+                        \]
+                        \[
+                        \begin{align*}
+                        f(a) &\geq f(b) + f'(b)(a - b) \\\\
+                        &\Longrightarrow f'(b) \geq \frac{f(b) - f(a)}{b - a}.
+                        \end{align*}
+                        \]
+                        Hence \(f'(a) \leq f'(b)\) whenever \(a \lt b\), so \(f'\) is monotonically non-decreasing. For a
+                        differentiable \(f'\), this is equivalent to \(f'' \geq 0\).
+                    </p>
+                </div>
+
+                <p>
+                    Convex functions appear throughout machine learning. For example, the
+                    <a href="../Probability/entropy.html"><strong>cross-entropy</strong></a> loss for
+                    <a href="../Machine_learning/intro_classification.html"><strong>classification</strong></a> is convex <em>in the
+                    predicted probability vector</em>, and the ReLU activation \(\phi(x) = \max(0, x)\) used in
+                    <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a> is convex on
+                    \(\mathbb{R}\). (Note that cross-entropy composed with a deep network is convex in the <em>probabilities</em> but
+                    generally <em>non-convex</em> in the network parameters. This failure of convexity is the origin of the non-convex
+                    optimization landscape that dominates deep learning.)
+                </p>
+
+                <p>
+                    For the multivariate case, we reduce to the univariate theorem via restriction to lines.
+                </p>
+
+                <div class="theorem" id="T-convexity_multivariate_2nd_order">
+                    <span class="theorem-title">Theorem: Second-Order Condition for Convexity (Multivariate)</span>
+                    <p>
+                        Let \(f: \mathcal{S} \to \mathbb{R}\) be \(C^2\) on an open convex set \(\mathcal{S} \subseteq \mathbb{R}^n\).
+                        Then:
+                    </p>
+                    <ol style="padding-left: 40px;">
+                        <li>\(f\) is convex on \(\mathcal{S}\) \(\iff\) \(\nabla^2 f(\mathbf{x}) \succeq 0\) for all \(\mathbf{x} \in \mathcal{S}\).</li>
+                        <li>If \(\nabla^2 f(\mathbf{x}) \succ 0\) for all \(\mathbf{x} \in \mathcal{S}\), then \(f\) is strictly
+                            convex (the converse fails in general, since \(f(x) = x^4\) is strictly convex while \(f''(0) = 0\)).</li>
+                    </ol>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof:</span>
+                    <p>
+                        For \(\mathbf{x}, \mathbf{y} \in \mathcal{S}\), choose an open interval \(J \supseteq [0,1]\) with
+                        \(\mathbf{x} + t(\mathbf{y}-\mathbf{x}) \in \mathcal{S}\) for all \(t \in J\) (possible because the
+                        segment is compact and \(\mathcal{S}\) is open), and define the one-variable restriction
+                        \(\varphi: J \to \mathbb{R}\) by
+                        \[
+                        \varphi(t) = f\!\left(\mathbf{x} + t(\mathbf{y} - \mathbf{x})\right).
+                        \]
+                        Since \(f \in C^2\) and the map \(t \mapsto \mathbf{x} + t(\mathbf{y}-\mathbf{x})\) is smooth, \(\varphi\) is
+                        \(C^2\) on \(J\) by the chain rule.
+                    </p>
+                    <p>
+                        A direct computation gives
+                        \[
+                        \varphi''(t) = (\mathbf{y} - \mathbf{x})^\top\, \nabla^2 f\!\left(\mathbf{x} + t(\mathbf{y}-\mathbf{x})\right)\, (\mathbf{y} - \mathbf{x}).
+                        \]
+                    </p>
+                    <p>
+                        <strong>Equivalence of convexity on restrictions.</strong> \(f\) is convex on \(\mathcal{S}\) if and only if
+                        every such \(\varphi\) is convex on \(J\). The "only if" direction is immediate from the definition,
+                        and the "if" direction follows by taking \(t = \lambda\) in
+                        \(\varphi(\lambda) \leq \lambda \varphi(1) + (1-\lambda)\varphi(0)\).
+                    </p>
+                    <p>
+                        <strong>(1)</strong> By the univariate theorem, each \(\varphi\) is convex \(\iff\) \(\varphi''(t) \geq 0\) on
+                        \(J\). Varying \(\mathbf{x}, \mathbf{y}\), and using that \(\mathbf{y} - \mathbf{x}\) ranges over a
+                        ball around \(\mathbf{0}\) because \(\mathcal{S}\) is open while the inequality is homogeneous in
+                        \(\mathbf{v}\), this translates to
+                        \(\mathbf{v}^\top \nabla^2 f(\mathbf{p}) \mathbf{v} \geq 0\) for all \(\mathbf{p} \in \mathcal{S}\) and all
+                        \(\mathbf{v} \in \mathbb{R}^n\), that is, \(\nabla^2 f \succeq 0\) on \(\mathcal{S}\).
+                    </p>
+                    <p>
+                        <strong>(2)</strong> If \(\nabla^2 f \succ 0\) on \(\mathcal{S}\), then \(\varphi''(t) \gt 0\) for
+                        \(\mathbf{x} \neq \mathbf{y}\), so the remainder in the Taylor argument for the univariate theorem
+                        is strictly positive for \(y \neq x\), the inequalities of the lemma become strict, and each
+                        \(\varphi\) is strictly convex, which gives strict convexity of \(f\).
+                    </p>
+                </div>
+
+                <div class="insight-box">
+                    <h3>Why Hessian structure matters for ML</h3>
+                    <p>
+                        The Hessian governs more than convexity. Its spectrum controls, for a positive-definite Hessian,
+                        the <strong>condition number</strong> \(\kappa = \lambda_{\max} / \lambda_{\min}\), which governs
+                        the worst-case rate of gradient-based methods on strongly convex problems. We develop that theme
+                        formally in the <a href="duality.html#Lip"><strong>convergence analysis</strong></a> later in this
+                        section. In deep learning, the Hessian's effective rank, spectral gap, and curvature distribution
+                        at initialization have become active research objects. They are studied for their influence on
+                        generalization and trainability, and they inform the choice of preconditioner.
+                    </p>
+                </div>
+            </section>
+            
+            <section id="gradient" class="section-content">
+                <h2>Gradient Descent</h2>
+                <p>
+                    By the first-order <a href="mvt.html#taylor"><strong>Taylor expansion</strong></a>,
                     \[
-                    f\!\left(\lambda \mathbf{x} + (1-\lambda)\mathbf{y}\right)
-                    \leq \lambda f(\mathbf{x}) + (1-\lambda) f(\mathbf{y}).
+                    \mathcal{L}(\boldsymbol{\theta} + \mathbf{d})
+                    \approx \mathcal{L}(\boldsymbol{\theta}) + \nabla \mathcal{L}(\boldsymbol{\theta})^\top \mathbf{d}
+                    \quad (\|\mathbf{d}\| \text{ small}).
                     \]
-                    It is <strong>strictly convex</strong> if the inequality is strict whenever \(\mathbf{x} \neq \mathbf{y}\)
-                    and \(\lambda \in (0,1)\).
-                </p>
-            </div>
-
-            <p>
-                In one dimension, convexity is captured entirely by the sign of the second derivative. We begin with a lemma that
-                links convexity to the first-order Taylor inequality. This lemma is the technical bridge used in both directions
-                of the next theorem.
-            </p>
-
-            <div class="theorem" id="T-first_order_convexity">
-                <span class="theorem-title">Lemma: First-Order Characterization of Convexity</span>
-                <p>
-                    Let \(f: I \to \mathbb{R}\) be differentiable on an open interval \(I \subseteq \mathbb{R}\). Then \(f\) is
-                    convex on \(I\) if and only if
+                    To make \(\mathcal{L}\) decrease fastest, we want \(\mathbf{d}\) to minimize
+                    \(\nabla \mathcal{L}(\boldsymbol{\theta})^\top \mathbf{d}\) subject to \(\|\mathbf{d}\| = 1\). Assuming
+                    \(\nabla \mathcal{L}(\boldsymbol{\theta}) \neq \mathbf{0}\), the Cauchy-Schwarz inequality
+                    \(|\mathbf{a}^\top\mathbf{b}| \leq \|\mathbf{a}\|\,\|\mathbf{b}\|\), with equality exactly when the two vectors
+                    are linearly dependent, which we take as known, shows that
+                    \(\nabla \mathcal{L}(\boldsymbol{\theta})^\top \mathbf{d} \geq -\|\nabla \mathcal{L}(\boldsymbol{\theta})\|\)
+                    for every unit vector \(\mathbf{d}\), with equality only at
                     \[
-                    f(y) \geq f(x) + f'(x)(y - x) \quad \text{for all } x, y \in I. \tag{*}
+                    \mathbf{d}^\star = -\frac{\nabla \mathcal{L}(\boldsymbol{\theta})}{\|\nabla \mathcal{L}(\boldsymbol{\theta})\|},
                     \]
+                    the direction of <strong>steepest descent</strong>. (At a stationary point
+                    \(\nabla \mathcal{L}(\boldsymbol{\theta}) = \mathbf{0}\), the first-order model predicts no change in any
+                    direction, and the method halts.)
                 </p>
-            </div>
-
-            <div class="proof">
-                <span class="proof-title">Proof:</span>
                 <p>
-                    <strong>(\(\Rightarrow\))</strong> Assume \(f\) is convex. Fix \(x, y \in I\) and \(\lambda \in (0,1)\), and
-                    let \(z_\lambda = \lambda y + (1-\lambda)x = x + \lambda(y-x)\). By convexity,
+                    Gradient descent iterates along the steepest-descent direction with a chosen step size \(\eta \gt 0\):
                     \[
-                    \begin{align*}
-                    f(z_\lambda) &\leq \lambda f(y) + (1-\lambda) f(x), \\\\
-                    \text{that is,} \quad \frac{f(x + \lambda(y-x)) - f(x)}{\lambda} &\leq f(y) - f(x).
-                    \end{align*}
+                    \boldsymbol{\theta}^{(k+1)} = \boldsymbol{\theta}^{(k)} - \eta\, \nabla \mathcal{L}(\boldsymbol{\theta}^{(k)}).
                     \]
-                    Letting \(\lambda \downarrow 0\) and using differentiability gives \(f'(x)(y-x) \leq f(y) - f(x)\), which is
-                    (*).
+                    Under suitable regularity (for example, a Lipschitz-continuous gradient with constant \(L\), called
+                    \(L\)-smoothness, together with \(\eta \leq 1/L\) and \(\mathcal{L}\) bounded below), the gradient
+                    norms \(\|\nabla \mathcal{L}(\boldsymbol{\theta}^{(k)})\|\) tend to zero.
                 </p>
-                <p>
-                    <strong>(\(\Leftarrow\))</strong> Assume (*) holds. Fix \(a, b \in I\), \(\lambda \in [0,1]\), and set
-                    \(z = \lambda a + (1-\lambda) b\). Applying (*) at the base point \(z\) to both \(a\) and \(b\):
-                    \[
-                    \begin{align*}
-                    f(a) &\geq f(z) + f'(z)(a - z), \\\\
-                    f(b) &\geq f(z) + f'(z)(b - z).
-                    \end{align*}
-                    \]
-                    Multiplying the first inequality by \(\lambda\), the second by \((1-\lambda)\), and adding:
-                    \[
-                    \begin{align*}
-                    \lambda f(a) + (1-\lambda) f(b)
-                    &\geq f(z) + f'(z)\bigl[\lambda (a-z) + (1-\lambda)(b-z)\bigr].
-                    \end{align*}
-                    \]
-                    The bracketed term equals \(\lambda a + (1-\lambda) b - z = 0\) by the definition of \(z\), so
-                    \(\lambda f(a) + (1-\lambda) f(b) \geq f(z)\), which is convexity.
-                </p>
-            </div>
 
-            <div class="theorem" id="T-convexity_univariate_2nd_order">
-                <span class="theorem-title">Theorem: Second-Order Condition for Convexity (Univariate)</span>
-                <p>
-                    Let \(f: I \to \mathbb{R}\) be twice differentiable on an open interval \(I\). Then \(f\) is convex on
-                    \(I\) if and only if \(f''(x) \geq 0\) for all \(x \in I\).
-                </p>
-            </div>
+                <div class="pseudocode">
+                    <span class="pseudocode-title">Algorithm 1: GRADIENT_DESCENT</span>
+                    <strong>Input:</strong> objective \(\mathcal{L}\), tolerance \(\epsilon\), learning rate \(\eta\);<br>
+                    <strong>Output:</strong> \(\boldsymbol{\theta}\) with \(\|\nabla \mathcal{L}(\boldsymbol{\theta})\| \lt \epsilon\);<br>
+                    <strong>begin</strong><br>
+                    &emsp;\(k \leftarrow 0\); choose an initial point \(\boldsymbol{\theta}^{(0)}\);<br>
+                    &emsp;<strong>repeat</strong><br>
+                    &emsp;&emsp;\(\mathbf{d}^{(k)} \leftarrow -\nabla \mathcal{L}(\boldsymbol{\theta}^{(k)})\);<br>
+                    &emsp;&emsp;\(\boldsymbol{\theta}^{(k+1)} \leftarrow \boldsymbol{\theta}^{(k)} + \eta\, \mathbf{d}^{(k)}\);<br>
+                    &emsp;&emsp;\(k \leftarrow k + 1\);<br>
+                    &emsp;<strong>until</strong> \(\|\nabla \mathcal{L}(\boldsymbol{\theta}^{(k)})\| \lt \epsilon\);<br>
+                    &emsp;Output \(\boldsymbol{\theta}^{(k)}\);<br>
+                    <strong>end</strong>
+                </div>
 
-            <div class="proof">
-                <span class="proof-title">Proof:</span>
                 <p>
-                    <strong>(\(\Leftarrow\))</strong> Suppose \(f'' \geq 0\) on \(I\). By
-                    <a href="mvt.html#T-taylor_lagrange" class="ref-link"><strong>Taylor's theorem, Lagrange form</strong></a>, 
-                    for any \(x, y \in I\) with
-                    \(x \neq y\) (the case \(x = y\) is trivial) there exists \(c\) between \(x\) and \(y\) such that
+                    Gradient descent is called a <strong>first-order method</strong> because it uses only the gradient. Choosing
+                    \(\eta\) optimally, rather than by trial-and-error, leads to the <strong>line search</strong> machinery. The
+                    <a href="newton.html#D-armijo_condition" class="ref-link"><strong>Armijo</strong></a> and
+                    <a href="newton.html#D-wolfe_conditions" class="ref-link"><strong>Wolfe</strong></a> conditions are developed
+                    together with <a href="newton.html"><strong>Newton's method</strong></a>. Analyzing <em>how fast</em> gradient
+                    descent converges leads to the <a href="duality.html#Lip"><strong>contraction-mapping analysis</strong></a> at the
+                    end of this section.
+                </p>
+            </section>
+
+            <section id="sgd" class="section-content">
+                <h2>Stochastic Gradient Descent</h2>
+                <p>
+                    In <strong>stochastic optimization</strong>, the objective is an expectation:
                     \[
-                    \begin{align*}
-                    f(y) &= f(x) + f'(x)(y - x) + \tfrac{1}{2} f''(c)(y - x)^2 \\\\
-                    &\geq f(x) + f'(x)(y - x),
-                    \end{align*}
+                    \mathcal{L}(\boldsymbol{\theta}) = \mathbb{E}_{q(z)}\bigl[\ell(\boldsymbol{\theta}, z)\bigr],
                     \]
-                    since the quadratic remainder is non-negative. This is (*) of the preceding lemma, hence \(f\) is convex.
-                </p>
-                <p>
-                    <strong>(\(\Rightarrow\))</strong> Suppose \(f\) is convex. By the lemma, (*) holds. Fix \(a \lt b\) in \(I\)
-                    and apply (*) in both directions:
+                    where \(z\) is a random input (a training example, or a latent noise term) whose distribution \(q(z)\) does not
+                    depend on \(\boldsymbol{\theta}\). At each iteration, <strong>stochastic gradient descent (SGD)</strong> samples
+                    \(z^{(k)} \sim q\) and updates
                     \[
-                    \begin{align*}
-                    f(b) &\geq f(a) + f'(a)(b - a) \\\\
-                    &\Longrightarrow f'(a) \leq \frac{f(b) - f(a)}{b - a},
-                    \end{align*}
-                    \]
-                    \[
-                    \begin{align*}
-                    f(a) &\geq f(b) + f'(b)(a - b) \\\\
-                    &\Longrightarrow f'(b) \geq \frac{f(b) - f(a)}{b - a}.
-                    \end{align*}
-                    \]
-                    Hence \(f'(a) \leq f'(b)\) whenever \(a \lt b\), so \(f'\) is monotonically non-decreasing. For a
-                    differentiable \(f'\), this is equivalent to \(f'' \geq 0\).
-                </p>
-            </div>
-
-            <p>
-                Convex functions appear throughout machine learning. For example, the
-                <a href="../Probability/entropy.html"><strong>cross-entropy</strong></a> loss for
-                <a href="../Machine_learning/intro_classification.html"><strong>classification</strong></a> is convex <em>in the
-                predicted probability vector</em>, and the ReLU activation \(\phi(x) = \max(0, x)\) used in
-                <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a> is convex on
-                \(\mathbb{R}\). (Note that cross-entropy composed with a deep network is convex in the <em>probabilities</em> but
-                generally <em>non-convex</em> in the network parameters. This failure of convexity is the origin of the non-convex
-                optimization landscape that dominates deep learning.)
-            </p>
-
-            <p>
-                For the multivariate case, we reduce to the univariate theorem via restriction to lines.
-            </p>
-
-            <div class="theorem" id="T-convexity_multivariate_2nd_order">
-                <span class="theorem-title">Theorem: Second-Order Condition for Convexity (Multivariate)</span>
-                <p>
-                    Let \(f: \mathcal{S} \to \mathbb{R}\) be \(C^2\) on an open convex set \(\mathcal{S} \subseteq \mathbb{R}^n\).
-                    Then:
-                </p>
-                <ol style="padding-left: 40px;">
-                    <li>\(f\) is convex on \(\mathcal{S}\) \(\iff\) \(\nabla^2 f(\mathbf{x}) \succeq 0\) for all \(\mathbf{x} \in \mathcal{S}\).</li>
-                    <li>If \(\nabla^2 f(\mathbf{x}) \succ 0\) for all \(\mathbf{x} \in \mathcal{S}\), then \(f\) is strictly
-                        convex (the converse fails in general, since \(f(x) = x^4\) is strictly convex while \(f''(0) = 0\)).</li>
-                </ol>
-            </div>
-
-            <div class="proof">
-                <span class="proof-title">Proof:</span>
-                <p>
-                    For \(\mathbf{x}, \mathbf{y} \in \mathcal{S}\), choose an open interval \(J \supseteq [0,1]\) with
-                    \(\mathbf{x} + t(\mathbf{y}-\mathbf{x}) \in \mathcal{S}\) for all \(t \in J\) (possible because the
-                    segment is compact and \(\mathcal{S}\) is open), and define the one-variable restriction
-                    \(\varphi: J \to \mathbb{R}\) by
-                    \[
-                    \varphi(t) = f\!\left(\mathbf{x} + t(\mathbf{y} - \mathbf{x})\right).
-                    \]
-                    Since \(f \in C^2\) and the map \(t \mapsto \mathbf{x} + t(\mathbf{y}-\mathbf{x})\) is smooth, \(\varphi\) is
-                    \(C^2\) on \(J\) by the chain rule.
-                </p>
-                <p>
-                    A direct computation gives
-                    \[
-                    \varphi''(t) = (\mathbf{y} - \mathbf{x})^\top\, \nabla^2 f\!\left(\mathbf{x} + t(\mathbf{y}-\mathbf{x})\right)\, (\mathbf{y} - \mathbf{x}).
+                    \boldsymbol{\theta}^{(k+1)} = \boldsymbol{\theta}^{(k)} - \eta^{(k)}\, \nabla_{\boldsymbol{\theta}}\,
+                    \ell(\boldsymbol{\theta}^{(k)}, z^{(k)}).
                     \]
                 </p>
                 <p>
-                    <strong>Equivalence of convexity on restrictions.</strong> \(f\) is convex on \(\mathcal{S}\) if and only if
-                    every such \(\varphi\) is convex on \(J\). The "only if" direction is immediate from the definition,
-                    and the "if" direction follows by taking \(t = \lambda\) in
-                    \(\varphi(\lambda) \leq \lambda \varphi(1) + (1-\lambda)\varphi(0)\).
+                    By the Leibniz rule (interchange of expectation and gradient, valid under mild regularity since \(q(z)\) does
+                    not depend on \(\boldsymbol{\theta}\)),
+                    \(\mathbb{E}_{z^{(k)}}[\nabla_{\boldsymbol{\theta}}\, \ell(\boldsymbol{\theta}, z^{(k)})] = \nabla \mathcal{L}(\boldsymbol{\theta})\),
+                    so SGD follows the full gradient in expectation. Classical convergence theory, which goes back to Robbins and
+                    Monro and is not reproduced on this page, works with a diminishing step-size schedule
+                    \(\sum_k \eta^{(k)} = \infty\) and \(\sum_k (\eta^{(k)})^2 \lt \infty\), under which, given suitable smoothness
+                    and boundedness assumptions on \(\ell\) and with \(\mathcal{L}\) bounded below, the gradients
+                    \(\nabla \mathcal{L}(\boldsymbol{\theta}^{(k)})\) tend to zero almost surely.
                 </p>
-                <p>
-                    <strong>(1)</strong> By the univariate theorem, each \(\varphi\) is convex \(\iff\) \(\varphi''(t) \geq 0\) on
-                    \(J\). Varying \(\mathbf{x}, \mathbf{y}\), and using that \(\mathbf{y} - \mathbf{x}\) ranges over a
-                    ball around \(\mathbf{0}\) because \(\mathcal{S}\) is open while the inequality is homogeneous in
-                    \(\mathbf{v}\), this translates to
-                    \(\mathbf{v}^\top \nabla^2 f(\mathbf{p}) \mathbf{v} \geq 0\) for all \(\mathbf{p} \in \mathcal{S}\) and all
-                    \(\mathbf{v} \in \mathbb{R}^n\), that is, \(\nabla^2 f \succeq 0\) on \(\mathcal{S}\).
-                </p>
-                <p>
-                    <strong>(2)</strong> If \(\nabla^2 f \succ 0\) on \(\mathcal{S}\), then \(\varphi''(t) \gt 0\) for
-                    \(\mathbf{x} \neq \mathbf{y}\), so the remainder in the Taylor argument for the univariate theorem
-                    is strictly positive for \(y \neq x\), the inequalities of the lemma become strict, and each
-                    \(\varphi\) is strictly convex, which gives strict convexity of \(f\).
-                </p>
-            </div>
 
-            <div class="insight-box">
-                <h3>Why Hessian structure matters for ML</h3>
                 <p>
-                    The Hessian governs more than convexity. Its spectrum controls, for a positive-definite Hessian,
-                    the <strong>condition number</strong> \(\kappa = \lambda_{\max} / \lambda_{\min}\), which governs
-                    the worst-case rate of gradient-based methods on strongly convex problems. We develop that theme
-                    formally in the <a href="duality.html#Lip"><strong>convergence analysis</strong></a> later in this
-                    section. In deep learning, the Hessian's effective rank, spectral gap, and curvature distribution
-                    at initialization have become active research objects. They are studied for their influence on
-                    generalization and trainability, and they inform the choice of preconditioner.
+                    In practice, computing the full-batch gradient on every step is prohibitive when the dataset size
+                    \(N\) is large. The <strong>mini-batch</strong> approach is the standard compromise. At each step, we
+                    draw a random subset \(B \subset \{1, \ldots, N\}\) of size \(|B|\), typically \(32\), \(64\), or
+                    \(128\), and use the batch-averaged gradient
+                    \[
+                    \hat{\mathbf{g}}^{(k)} = \frac{1}{|B|} \sum_{i \in B} \nabla_{\boldsymbol{\theta}}\, \ell(\boldsymbol{\theta}^{(k)}, z_i).
+                    \]
+                    This is an unbiased estimator of \(\nabla \mathcal{L}\) with lower variance than a single-sample
+                    gradient. Mini-batching also maps cleanly onto GPU parallelism. Both properties make it the default in
+                    modern deep learning.
                 </p>
-            </div>
-        </section>
+
+                <div class="pseudocode">
+                    <span class="pseudocode-title">Algorithm 2: MINI_BATCH_SGD</span>
+                    <strong>Input:</strong> dataset \(X\), objective \(\ell\), tolerance \(\epsilon\), batch size \(|B|\), learning rate \(\eta\), max_epoch;<br>
+                    <strong>Output:</strong> approximate stationary point \(\boldsymbol{\theta}^*\);<br>
+                    <strong>begin</strong><br>
+                    &emsp;\(k \leftarrow 0\); \(e \leftarrow 0\); choose an initial point \(\boldsymbol{\theta}^{(0)}\);<br>
+                    &emsp;<strong>repeat</strong><br>
+                    &emsp;&emsp;Shuffle \(X\) randomly;<br>
+                    &emsp;&emsp;Partition \(X\) into mini-batches \(\{B_1, B_2, \ldots, B_m\}\) of size \(|B|\) (the last possibly smaller);<br>
+                    &emsp;&emsp;<strong>for</strong> each mini-batch \(B_j\):<br>
+                    &emsp;&emsp;&emsp;\(\hat{\mathbf{g}}^{(k)} \leftarrow \frac{1}{|B_j|} \sum_{i \in B_j} \nabla_{\boldsymbol{\theta}}\, \ell(\boldsymbol{\theta}^{(k)}, z_i)\);<br>
+                    &emsp;&emsp;&emsp;\(\boldsymbol{\theta}^{(k+1)} \leftarrow \boldsymbol{\theta}^{(k)} - \eta\, \hat{\mathbf{g}}^{(k)}\);<br>
+                    &emsp;&emsp;&emsp;\(k \leftarrow k + 1\);<br>
+                    &emsp;&emsp;<strong>end for</strong><br>
+                    &emsp;&emsp;\(e \leftarrow e + 1\);<br>
+                    &emsp;<strong>until</strong> \(\|\hat{\mathbf{g}}^{(k-1)}\| \lt \epsilon\) or \(e \geq\) max_epoch;<br>
+                    &emsp;Output \(\boldsymbol{\theta}^{(k)}\);<br>
+                    <strong>end</strong>
+                </div>
+
+                <p>
+                    One full pass over the shuffled dataset is called an <strong>epoch</strong>. Shuffling between epochs
+                    is important. Without it, the same mini-batches recur in the same order every epoch, so the gradient
+                    noise becomes a fixed periodic pattern rather than fresh randomness, and it is this randomness that is
+                    often credited with helping SGD escape shallow basins.
+                </p>
+
+                <p>
+                    A sample implementation of mini-batch SGD for linear regression follows.
+                </p>
+
+                <div class="code-container">
+                    <div class="collapsible-section">
+                    <button class="collapsible-btn">Show/Hide Code</button>
+                    <div class="collapsible-content">
+                    <pre class="python-code">
+                        import numpy as np
+
+                        # Fixed parameters for mini-batch SGD
+                        MAX_EPOCH = 10000
+                        BATCH_SIZE = 64
+                        TOLERANCE = 1e-3
+                        LEARNING_RATE = 0.01
+
+                        # Sample data dimensions
+                        N_SAMPLES = 10000
+                        N_FEATURES = 3
+
+                        # Mini-batch Stochastic Gradient Descent
+                        def mini_batch_sgd(X, y):
+                            n_samples = X.shape[0]
+                            theta = np.random.randn(X.shape[1]) * 0.01  # initial theta
+
+                            for i in range(MAX_EPOCH):
+                                # Shuffle data
+                                indices = np.random.permutation(n_samples)
+                                x_shuffled = X[indices]
+                                y_shuffled = y[indices]
+
+                                for j in range(0, n_samples, BATCH_SIZE):
+                                    end = j + BATCH_SIZE
+                                    x_batch = x_shuffled[j:end]
+                                    y_batch = y_shuffled[j:end]
+
+                                    # Gradient of MSE on the mini-batch
+                                    g = grad_f(theta, x_batch, y_batch)
+
+                                    # Update parameters
+                                    theta -= LEARNING_RATE * g
+
+                                # Convergence check on the last mini-batch gradient
+                                if np.linalg.norm(g) < TOLERANCE:
+                                    print(f"Converged in {i + 1} epochs.")
+                                    break
+                            return theta
+
+                        # Gradient of the MSE objective for linear regression
+                        def grad_f(theta, x_batch, y_batch):
+                            return (1 / x_batch.shape[0]) * x_batch.T @ ((x_batch @ theta) - y_batch)
+
+                        # Main
+                        if __name__ == "__main__":
+                            # Generate sample data
+                            X = np.random.rand(N_SAMPLES, N_FEATURES)
+                            true_theta = np.array([5, -1, -9])
+                            y = X @ true_theta + np.random.randn(X.shape[0]) * 0.1  # additive noise
+
+                            # Run mini-batch SGD
+                            estimated_theta = mini_batch_sgd(X, y)
+
+                            # Relative error
+                            relative_error = np.linalg.norm(estimated_theta - true_theta) / np.linalg.norm(true_theta)
+
+                            print("True Parameters:     ", true_theta)
+                            print("Estimated Parameters:", estimated_theta)
+                            print(f"Relative Error:       {relative_error:.6f}")
+                        </pre>
+                    </div>
+                    </div>
+                    <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
+                    <div class="python-output"></div>
+                </div>
+            </section>
         
-        <section id="gradient" class="section-content">
-            <h2>Gradient Descent</h2>
-            <p>
-                By the first-order <a href="mvt.html#taylor"><strong>Taylor expansion</strong></a>,
-                \[
-                \mathcal{L}(\boldsymbol{\theta} + \mathbf{d})
-                \approx \mathcal{L}(\boldsymbol{\theta}) + \nabla \mathcal{L}(\boldsymbol{\theta})^\top \mathbf{d}
-                \quad (\|\mathbf{d}\| \text{ small}).
-                \]
-                To make \(\mathcal{L}\) decrease fastest, we want \(\mathbf{d}\) to minimize
-                \(\nabla \mathcal{L}(\boldsymbol{\theta})^\top \mathbf{d}\) subject to \(\|\mathbf{d}\| = 1\). Assuming
-                \(\nabla \mathcal{L}(\boldsymbol{\theta}) \neq \mathbf{0}\), the Cauchy-Schwarz inequality
-                \(|\mathbf{a}^\top\mathbf{b}| \leq \|\mathbf{a}\|\,\|\mathbf{b}\|\), with equality exactly when one
-                vector is a nonnegative multiple of the other, which we take as known, gives the minimum at
-                \[
-                \mathbf{d}^\star = -\frac{\nabla \mathcal{L}(\boldsymbol{\theta})}{\|\nabla \mathcal{L}(\boldsymbol{\theta})\|},
-                \]
-                the direction of <strong>steepest descent</strong>. (At a stationary point
-                \(\nabla \mathcal{L}(\boldsymbol{\theta}) = \mathbf{0}\), the first-order model predicts no change in any
-                direction, and the method halts.)
-            </p>
-            <p>
-                Gradient descent iterates along the steepest-descent direction with a chosen step size \(\eta \gt 0\):
-                \[
-                \boldsymbol{\theta}^{(k+1)} = \boldsymbol{\theta}^{(k)} - \eta\, \nabla \mathcal{L}(\boldsymbol{\theta}^{(k)}).
-                \]
-                Under suitable regularity (for example, a Lipschitz-continuous gradient with constant \(L\), called
-                \(L\)-smoothness, together with \(\eta \leq 1/L\) and \(\mathcal{L}\) bounded below), the gradient
-                norms \(\|\nabla \mathcal{L}(\boldsymbol{\theta}^{(k)})\|\) tend to zero.
-            </p>
+            <section id="subgradient" class="section-content">
+                <h2>Sub-gradient Descent</h2>
+                <p>
+                    Many ML objectives are <em>not</em> differentiable everywhere, notably those using \(\ell_1\) regularization,
+                    ReLU, or hinge loss. Gradient descent is not directly applicable at the kinks. When the objective is convex, as
+                    for a convex loss of a linear model plus an \(\ell_1\) penalty, the remedy is to generalize the gradient to a
+                    set-valued notion.
+                </p>
 
-            <div class="pseudocode">
-                <span class="pseudocode-title">Algorithm 1: GRADIENT_DESCENT</span>
-                <strong>Input:</strong> objective \(\mathcal{L}\), tolerance \(\epsilon\), learning rate \(\eta\);<br>
-                <strong>Output:</strong> \(\boldsymbol{\theta}\) with \(\|\nabla \mathcal{L}(\boldsymbol{\theta})\| \lt \epsilon\);<br>
-                <strong>begin</strong><br>
-                &emsp;\(k \leftarrow 0\); choose an initial point \(\boldsymbol{\theta}^{(0)}\);<br>
-                &emsp;<strong>repeat</strong><br>
-                &emsp;&emsp;\(\mathbf{d}^{(k)} \leftarrow -\nabla \mathcal{L}(\boldsymbol{\theta}^{(k)})\);<br>
-                &emsp;&emsp;\(\boldsymbol{\theta}^{(k+1)} \leftarrow \boldsymbol{\theta}^{(k)} + \eta\, \mathbf{d}^{(k)}\);<br>
-                &emsp;&emsp;\(k \leftarrow k + 1\);<br>
-                &emsp;<strong>until</strong> \(\|\nabla \mathcal{L}(\boldsymbol{\theta}^{(k)})\| \lt \epsilon\);<br>
-                &emsp;Output \(\boldsymbol{\theta}^{(k)}\);<br>
-                <strong>end</strong>
-            </div>
-
-            <p>
-                Gradient descent is called a <strong>first-order method</strong> because it uses only the gradient. Choosing
-                \(\eta\) optimally, rather than by trial-and-error, leads to the <strong>line search</strong> machinery. The
-                <a href="newton.html#D-armijo_condition" class="ref-link"><strong>Armijo</strong></a> and
-                <a href="newton.html#D-wolfe_conditions" class="ref-link"><strong>Wolfe</strong></a> conditions are developed
-                together with <a href="newton.html"><strong>Newton's method</strong></a>. Analyzing <em>how fast</em> gradient
-                descent converges leads to the <a href="duality.html#Lip"><strong>contraction-mapping analysis</strong></a> at the
-                end of this section.
-            </p>
-        </section>
-
-        <section id="sgd" class="section-content">
-            <h2>Stochastic Gradient Descent</h2>
-            <p>
-                In <strong>stochastic optimization</strong>, the objective is an expectation:
-                \[
-                \mathcal{L}(\boldsymbol{\theta}) = \mathbb{E}_{q(z)}\bigl[\ell(\boldsymbol{\theta}, z)\bigr],
-                \]
-                where \(z\) is a random input (a training example, or a latent noise term) whose distribution \(q(z)\) does not
-                depend on \(\boldsymbol{\theta}\). At each iteration, <strong>stochastic gradient descent (SGD)</strong> samples
-                \(z^{(k)} \sim q\) and updates
-                \[
-                \boldsymbol{\theta}^{(k+1)} = \boldsymbol{\theta}^{(k)} - \eta^{(k)}\, \nabla_{\boldsymbol{\theta}}\,
-                \ell(\boldsymbol{\theta}^{(k)}, z^{(k)}).
-                \]
-            </p>
-            <p>
-                By the Leibniz rule (interchange of expectation and gradient, valid under mild regularity since \(q(z)\) does not
-                depend on \(\boldsymbol{\theta}\)),
-                \(\mathbb{E}_{z^{(k)}}[\nabla_{\boldsymbol{\theta}}\, \ell(\boldsymbol{\theta}, z^{(k)})]
-                = \nabla \mathcal{L}(\boldsymbol{\theta})\), so SGD follows the full gradient in expectation. Classical
-                convergence theory, due to Robbins and Monro and not reproduced on this page, requires a diminishing
-                step-size schedule \(\sum_k \eta^{(k)} = \infty\) and
-                \(\sum_k (\eta^{(k)})^2 \lt \infty\), under which the iterates converge (almost surely) to a stationary point,
-                given suitable smoothness and boundedness assumptions on \(\ell\).
-            </p>
-
-            <p>
-                In practice, computing the full-batch gradient on every step is prohibitive when the dataset size
-                \(N\) is large. The <strong>mini-batch</strong> approach is the standard compromise. At each step, we
-                draw a random subset \(B \subset \{1, \ldots, N\}\) of size \(|B|\), typically \(32\), \(64\), or
-                \(128\), and use the batch-averaged gradient
-                \[
-                \hat{\mathbf{g}}^{(k)} = \frac{1}{|B|} \sum_{i \in B} \nabla_{\boldsymbol{\theta}}\, \ell(\boldsymbol{\theta}^{(k)}, z_i).
-                \]
-                This is an unbiased estimator of \(\nabla \mathcal{L}\) with lower variance than a single-sample
-                gradient. Mini-batching also maps cleanly onto GPU parallelism. Both properties make it the default in
-                modern deep learning.
-            </p>
-
-            <div class="pseudocode">
-                <span class="pseudocode-title">Algorithm 2: MINI_BATCH_SGD</span>
-                <strong>Input:</strong> dataset \(X\), objective \(\ell\), tolerance \(\epsilon\), batch size \(|B|\), learning rate \(\eta\), max_epoch;<br>
-                <strong>Output:</strong> approximate stationary point \(\boldsymbol{\theta}^*\);<br>
-                <strong>begin</strong><br>
-                &emsp;\(k \leftarrow 0\); choose an initial point \(\boldsymbol{\theta}^{(0)}\);<br>
-                &emsp;<strong>repeat</strong><br>
-                &emsp;&emsp;Shuffle \(X\) randomly;<br>
-                &emsp;&emsp;Partition \(X\) into mini-batches \(\{B_1, B_2, \ldots, B_m\}\) of size \(|B|\);<br>
-                &emsp;&emsp;<strong>for</strong> each mini-batch \(B_j\):<br>
-                &emsp;&emsp;&emsp;\(\hat{\mathbf{g}}^{(k)} \leftarrow \frac{1}{|B|} \sum_{i \in B_j} \nabla_{\boldsymbol{\theta}}\, \ell(\boldsymbol{\theta}^{(k)}, z_i)\);<br>
-                &emsp;&emsp;&emsp;\(\boldsymbol{\theta}^{(k+1)} \leftarrow \boldsymbol{\theta}^{(k)} - \eta\, \hat{\mathbf{g}}^{(k)}\);<br>
-                &emsp;&emsp;&emsp;\(k \leftarrow k + 1\);<br>
-                &emsp;&emsp;<strong>end for</strong><br>
-                &emsp;<strong>until</strong> \(\|\hat{\mathbf{g}}^{(k)}\| \lt \epsilon\) or \(k \geq\) max_epoch;<br>
-                &emsp;Output \(\boldsymbol{\theta}^{(k)}\);<br>
-                <strong>end</strong>
-            </div>
-
-            <p>
-                One full pass over the shuffled dataset is called an <strong>epoch</strong>. Shuffling between epochs
-                is important. Without it, the same mini-batches recur in the same order every epoch, so the gradient
-                noise becomes a fixed periodic pattern rather than fresh randomness, and it is this randomness that is
-                often credited with helping SGD escape shallow basins.
-            </p>
-
-            <p>
-                A sample implementation of mini-batch SGD for linear regression follows.
-            </p>
-
-            <div class="code-container">
-                <div class="collapsible-section">
-                <button class="collapsible-btn">Show/Hide Code</button>
-                <div class="collapsible-content">
-                <pre class="python-code">
-                    import numpy as np
-
-                    # Fixed parameters for mini-batch SGD
-                    MAX_EPOCH = 10000
-                    BATCH_SIZE = 64
-                    TOLERANCE = 1e-3
-                    LEARNING_RATE = 0.01
-
-                    # Sample data dimensions
-                    N_SAMPLES = 10000
-                    N_FEATURES = 3
-
-                    # Mini-batch Stochastic Gradient Descent
-                    def mini_batch_sgd(X, y):
-                        n_samples = X.shape[0]
-                        theta = np.random.randn(X.shape[1]) * 0.01  # initial theta
-
-                        for i in range(MAX_EPOCH):
-                            # Shuffle data
-                            indices = np.random.permutation(n_samples)
-                            x_shuffled = X[indices]
-                            y_shuffled = y[indices]
-
-                            for j in range(0, n_samples, BATCH_SIZE):
-                                end = j + BATCH_SIZE
-                                x_batch = x_shuffled[j:end]
-                                y_batch = y_shuffled[j:end]
-
-                                # Gradient of MSE on the mini-batch
-                                g = grad_f(theta, x_batch, y_batch)
-
-                                # Update parameters
-                                theta -= LEARNING_RATE * g
-
-                            # Convergence check on the last mini-batch gradient
-                            if np.linalg.norm(g) < TOLERANCE:
-                                print(f"Converged in {i + 1} epochs.")
-                                break
-                        return theta
-
-                    # Gradient of the MSE objective for linear regression
-                    def grad_f(theta, x_batch, y_batch):
-                        return (1 / x_batch.shape[0]) * x_batch.T @ ((x_batch @ theta) - y_batch)
-
-                    # Main
-                    if __name__ == "__main__":
-                        # Generate sample data
-                        X = np.random.rand(N_SAMPLES, N_FEATURES)
-                        true_theta = np.array([5, -1, -9])
-                        y = X @ true_theta + np.random.randn(X.shape[0]) * 0.1  # additive noise
-
-                        # Run mini-batch SGD
-                        estimated_theta = mini_batch_sgd(X, y)
-
-                        # Relative error
-                        relative_error = np.linalg.norm(estimated_theta - true_theta) / np.linalg.norm(true_theta)
-
-                        print("True Parameters:     ", true_theta)
-                        print("Estimated Parameters:", estimated_theta)
-                        print(f"Relative Error:       {relative_error:.6f}")
-                    </pre>
+                <div class="theorem" id="D-subgradient">
+                    <span class="theorem-title">Definition: Subgradient</span>
+                    <p>
+                        Let \(f\) be a convex function on a convex set \(\operatorname{dom}(f) \subseteq \mathbb{R}^n\) and
+                        let \(\mathbf{x} \in \operatorname{dom}(f)\). A vector
+                        \(\mathbf{g} \in \mathbb{R}^n\) is a <strong>subgradient</strong> of \(f\) at \(\mathbf{x}\) if
+                        \[
+                        f(\mathbf{z}) \geq f(\mathbf{x}) + \mathbf{g}^\top (\mathbf{z} - \mathbf{x})
+                        \quad \text{for all } \mathbf{z} \in \operatorname{dom}(f). \tag{\dagger}
+                        \]
+                    </p>
                 </div>
+
+                <div class="theorem" id="D-subdifferential">
+                    <span class="theorem-title">Definition: Subdifferential</span>
+                    <p>
+                        The <strong>subdifferential</strong> of \(f\) at \(\mathbf{x}\), denoted \(\partial f(\mathbf{x})\),
+                        is the set of all subgradients of \(f\) at \(\mathbf{x}\):
+                        \[
+                        \partial f(\mathbf{x}) = \{\, \mathbf{g} \in \mathbb{R}^n : (\dagger) \text{ holds for all } \mathbf{z} \,\}.
+                        \]
+                        We say \(f\) is <strong>subdifferentiable</strong> at \(\mathbf{x}\) if
+                        \(\partial f(\mathbf{x}) \neq \emptyset\). For a convex function, \(\partial f(\mathbf{x})\) is
+                        closed and convex, being the intersection over \(\mathbf{z}\) of the closed half-spaces in
+                        \(\mathbf{g}\) cut out by (\(\dagger\)). At every interior point of \(\operatorname{dom}(f)\) it
+                        is also non-empty, and there \(\partial f(\mathbf{x}) = \{\nabla f(\mathbf{x})\}\) precisely when
+                        \(f\) is differentiable at \(\mathbf{x}\). These two facts rest on a separating-hyperplane
+                        argument that we do not reproduce
+                        on this page.
+                    </p>
                 </div>
-                <button class="run-button" onclick="runPythonCode(this)">Run Code</button>
-                <div class="python-output"></div>
-            </div>
-        </section>
-    
-        <section id="subgradient" class="section-content">
-            <h2>Sub-gradient Descent</h2>
-            <p>
-                Many ML objectives are convex but <em>not</em> differentiable everywhere, notably those using \(\ell_1\)
-                regularization, ReLU, or hinge loss. Gradient descent is not directly applicable at the kinks. The remedy is to
-                generalize the gradient to a set-valued notion.
-            </p>
 
-            <div class="theorem" id="D-subgradient">
-                <span class="theorem-title">Definition: Subgradient</span>
+                <div class="proof">
+                    <span class="proof-title">Example: absolute value.</span>
+                    <p>
+                        For \(f(x) = |x|\) on \(\mathbb{R}\),
+                        \[
+                        \partial f(x) = \begin{cases}
+                            \{-1\} & \text{if } x \lt 0,\\\\
+                            [-1, 1] & \text{if } x = 0,\\\\
+                            \{+1\} & \text{if } x \gt 0.
+                        \end{cases}
+                        \]
+                    </p>
+                    <p>
+                        At \(x \neq 0\), \(f\) is differentiable and the subdifferential collapses to the ordinary derivative. At
+                        \(x = 0\), every slope \(g \in [-1, 1]\) satisfies \(|z| \geq 0 + g \cdot z\) for all \(z\), giving a full
+                        interval of subgradients.
+                    </p>
+                </div>
+
                 <p>
-                    Let \(f\) be a convex function on a convex set \(\operatorname{dom}(f) \subseteq \mathbb{R}^n\) and
-                    let \(\mathbf{x} \in \operatorname{dom}(f)\). A vector
-                    \(\mathbf{g} \in \mathbb{R}^n\) is a <strong>subgradient</strong> of \(f\) at \(\mathbf{x}\) if
+                    <strong>Sub-gradient descent</strong> selects any
+                    \(\mathbf{g}^{(k)} \in \partial \mathcal{L}(\boldsymbol{\theta}^{(k)})\) and updates
                     \[
-                    f(\mathbf{z}) \geq f(\mathbf{x}) + \mathbf{g}^\top (\mathbf{z} - \mathbf{x})
-                    \quad \text{for all } \mathbf{z} \in \operatorname{dom}(f). \tag{\dagger}
+                    \boldsymbol{\theta}^{(k+1)} = \boldsymbol{\theta}^{(k)} - \eta^{(k)}\, \mathbf{g}^{(k)}.
                     \]
+                    Because \(-\mathbf{g}^{(k)}\) need not be a descent direction, the objective values need not decrease
+                    monotonically, and because the chosen subgradient need not vanish at the optimum (the subdifferential there
+                    contains \(\mathbf{0}\) but is in general larger), a <em>diminishing</em> step-size schedule is essential for
+                    convergence. For a convex objective with a minimizer and bounded subgradients, the best objective value found in
+                    the first \(k\) steps approaches the optimum at rate \(O(1/\sqrt{k})\) under a suitable step-size choice, slower
+                    than gradient descent's \(O(1/k)\) under \(L\)-smoothness. The gap is the price of handling non-smoothness.
                 </p>
-            </div>
 
-            <div class="theorem" id="D-subdifferential">
-                <span class="theorem-title">Definition: Subdifferential</span>
-                <p>
-                    The <strong>subdifferential</strong> of \(f\) at \(\mathbf{x}\), denoted \(\partial f(\mathbf{x})\),
-                    is the set of all subgradients of \(f\) at \(\mathbf{x}\):
-                    \[
-                    \partial f(\mathbf{x}) = \{\, \mathbf{g} \in \mathbb{R}^n : (\dagger) \text{ holds for all } \mathbf{z} \,\}.
-                    \]
-                    We say \(f\) is <strong>subdifferentiable</strong> at \(\mathbf{x}\) if
-                    \(\partial f(\mathbf{x}) \neq \emptyset\). For a convex function, \(\partial f(\mathbf{x})\) is
-                    closed and convex, being the intersection over \(\mathbf{z}\) of the closed half-spaces in
-                    \(\mathbf{g}\) cut out by (\(\dagger\)). At every interior point of \(\operatorname{dom}(f)\) it
-                    is also non-empty, and there \(\partial f(\mathbf{x}) = \{\nabla f(\mathbf{x})\}\) precisely when
-                    \(f\) is differentiable at \(\mathbf{x}\). These two facts rest on a separating-hyperplane
-                    argument that we do not reproduce
-                    on this page.
-                </p>
-            </div>
+                <div class="insight-box">
+                    <h3>Why this matters for modern ML</h3>
+                    <p>
+                        The subdifferential underpins the practical use of non-smooth regularizers. Lasso's \(\ell_1\)
+                        penalty, the SVM hinge loss, and the ReLU activation are all analyzed through their
+                        subdifferentials. The <strong>proximal gradient method</strong> and <strong>ISTA/FISTA</strong>
+                        algorithms explicitly exploit this structure to achieve sparse solutions. Automatic
+                        differentiation frameworks such as PyTorch and JAX resolve the ambiguity at kinks by a fixed
+                        convention, which for ReLU is a canonical element of the subdifferential (\(0\) for
+                        \(\mathrm{ReLU}'(0)\) in both PyTorch and JAX). The convention is mathematically arbitrary, since
+                        any element of the subdifferential is admissible.
+                    </p>
+                </div>
+            </section>
+        </div>
 
-            <div class="proof">
-                <span class="proof-title">Example: absolute value.</span>
-                <p>
-                    For \(f(x) = |x|\) on \(\mathbb{R}\),
-                    \[
-                    \partial f(x) = \begin{cases}
-                        \{-1\} & \text{if } x \lt 0,\\\\
-                        [-1, 1] & \text{if } x = 0,\\\\
-                        \{+1\} & \text{if } x \gt 0.
-                    \end{cases}
-                    \]
-                </p>
-                <p>
-                    At \(x \neq 0\), \(f\) is differentiable and the subdifferential collapses to the ordinary derivative. At
-                    \(x = 0\), every slope \(g \in [-1, 1]\) satisfies \(|z| \geq 0 + g \cdot z\) for all \(z\), giving a full
-                    interval of subgradients.
-                </p>
-            </div>
-
-            <p>
-                <strong>Sub-gradient descent</strong> selects any
-                \(\mathbf{g}^{(k)} \in \partial \mathcal{L}(\boldsymbol{\theta}^{(k)})\) and updates
-                \[
-                \boldsymbol{\theta}^{(k+1)} = \boldsymbol{\theta}^{(k)} - \eta^{(k)}\, \mathbf{g}^{(k)}.
-                \]
-                Because subgradients need not vanish at the optimum (they only contain \(\mathbf{0}\) there), the
-                objective values do not decrease monotonically, and a <em>diminishing</em> step-size schedule is
-                essential for convergence. The method converges on the order of \(O(1/\sqrt{k})\) for general convex
-                functions, slower than gradient descent's \(O(1/k)\) under \(L\)-smoothness. The gap is the price of
-                handling non-smoothness.
-            </p>
-
-            <div class="insight-box">
-                <h3>Why this matters for modern ML</h3>
-                <p>
-                    The subdifferential underpins the practical use of non-smooth regularizers. Lasso's \(\ell_1\)
-                    penalty, the SVM hinge loss, and the ReLU activation are all analyzed through their
-                    subdifferentials. The <strong>proximal gradient method</strong> and <strong>ISTA/FISTA</strong>
-                    algorithms explicitly exploit this structure to achieve sparse solutions. Automatic
-                    differentiation frameworks such as PyTorch and JAX resolve the ambiguity at kinks by a fixed
-                    convention, which for ReLU is a canonical element of the subdifferential (\(0\) for
-                    \(\mathrm{ReLU}'(0)\) in both PyTorch and JAX). The convention is mathematically arbitrary, since
-                    any element of the subdifferential is admissible.
-                </p>
-            </div>
-        </section>
-    </div>
-
-    <script src="/js/runPythonCode.js"></script>
-    <script src="/js/collapsible.js"></script>
+        <script src="/js/runPythonCode.js"></script>
+        <script src="/js/collapsible.js"></script>
 
     </body>
 </html>

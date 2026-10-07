@@ -413,7 +413,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = DualCore
 // together. Interaction happens directly on the primal canvas:
 //   * drag a constraint line  -> translates it (changes b_i)
 //   * drag the -c arrow head  -> rotates the objective (changes c direction,
-//     magnitude preserved) — watch the optimum hop between vertices and
+//     magnitude kept approximately: snapped to the 0.5 slider grid,
+//     capped at 5 per component, and reset to 3 when |c| < 0.5) — watch
+//     the optimum hop between vertices and
 //     lambda* slide along the dual region's boundary in real time
 // Active constraints glow; the complementarity chips flip live.
 // Sliders remain available under a collapsed "fine-tune" panel.
