@@ -31,26 +31,27 @@ uses_python: false
                 <h2>Introduction</h2>
                 <p>
                     In physics, a <strong>Field</strong>, such as a magnetic field, is defined by its influence. It is a region
-                    of space where physical forces are felt. While it is naturally bounded by its own reach, its primary characteristic
-                    is the distribution of energy across a coordinate system.
+                    of space where physical forces are felt. While it is naturally bounded by its own reach, it is described by a
+                    physical quantity assigned to every point of that region.
                 </p>
 
                 <p>
                     In mathematics, the term <strong>Field</strong> carries a different weight. Its original German name, <strong>K&ouml;rper</strong>,
-                    literally means <strong>'Body'</strong> or <strong>'Organization'</strong>. This describes a system defined not
-                    by its reach in space, but by its internal symmetry. It is so complete that its arithmetic never escapes
-                    its own boundaries. Addition, subtraction, multiplication, and division all return elements of the field
-                    itself.
+                    literally means <strong>'Body'</strong>, suggesting a self-contained, organically closed whole.
+                    This describes a system defined not by its reach in space, but by its internal arithmetic. It is so complete
+                    that this arithmetic never escapes its own boundaries. Addition, subtraction, multiplication, and division by
+                    nonzero elements all return elements of the field itself.
                 </p>
 
                 <p>
                     The limitation of such a perfect "Body" is its inability to spontaneously evolve. If a field cannot solve a specific polynomial
                     equation, it has no "internal logic" to find the answer. The real numbers \(\mathbb{R}\), for instance,
-                    cannot solve \(x^2 + 1 = 0\). Such a field is trapped by the very completeness that makes it a field.
+                    cannot solve \(x^2 + 1 = 0\). Closure under its own operations keeps all arithmetic inside the field, but
+                    it does not supply the roots the field lacks.
                 </p>
 
                 <p>
-                    To progress, we must perform a mathematical "transplant." We must force this closed organization open and graft new dimensions
+                    To progress, we must perform a mathematical "transplant." We must force this closed whole open and graft new dimensions
                     onto its structure. This process of expanding a perfect system into a larger, more capable universe is what we call
                     <strong>Extension Fields</strong>.
                 </p>
@@ -265,8 +266,7 @@ uses_python: false
                         <li>
                             <strong>Deterministic Memory Footprint:</strong><br>
                             Because every element is uniquely represented by a polynomial of degree less than \(n\), an element of
-                            \(GF(2^n)\) occupies exactly \(n\) bits, and for the small \(n\) used in practice it fits in a single
-                            machine register.
+                            \(GF(2^n)\) occupies exactly \(n\) bits, and when \(n\) is at most the machine word size it fits in a single register.
                             For instance, in <strong>AES</strong> (where \(n=8\)), every field element is exactly 1 byte.
                         </li>
                         <li>
@@ -312,7 +312,7 @@ uses_python: false
                     </p>
                     <p>
                         The constant <code>0x1B</code> seen in cryptographic source code is not an arbitrary magic number. It is
-                        the direct representation of the coefficients of the irreducible polynomial \(p(x)\) from field theory.
+                        the direct representation of the coefficients of \(p(x)\) below \(x^8\), that is, of the residue of \(x^8\) modulo \(p(x)\).
                     </p>
 
                     <div class="pseudocode">
@@ -340,25 +340,26 @@ uses_python: false
                     shift-and-conditional-XOR never leave a single byte, and the running accumulator is displayed at every
                     step so that the answer assembles in view. The bar at the bottom states the punchline. The two final
                     bytes agree, and the demo's built-in self-tests verify this agreement exhaustively over all
-                    \(65{,}536\) input pairs before the demo is allowed to render. That universal agreement between
-                    "polynomial remainder arithmetic" and "shift-and-XOR on bytes" <em>is</em> the isomorphism
-                    \(F_2[x] \, / \langle p(x) \rangle \cong GF(2^8)\) doing real work.
+                    \(65{,}536\) input pairs before the demo is allowed to render. That universal agreement shows that
+                    shift-and-XOR on bytes <em>is</em> multiplication in \(F_2[x] \, / \langle p(x) \rangle\), and because
+                    \(p(x)\) is irreducible, this quotient ring is the field \(GF(2^8)\).
                 </p>
                 <p>
-                    Three experiments are worth running. The preset <em>57&middot;83</em> reproduces the worked example from
-                    the AES specification. The preset <em>53&middot;CA</em> lands on \(\mathtt{0x01}\). These two bytes are
-                    multiplicative inverses, and the existence of an inverse for <em>every</em> nonzero byte is precisely
-                    what the AES S-box is built on. That property is what makes \(F_2[x] \, / \langle p(x) \rangle\) a field
-                    rather than a mere ring, and it follows from the
+                    Three experiments are worth running. The preset <em>57&middot;83</em> expands to degree \(13\), and its
+                    long division uses two aligned copies of \(p(x)\). The preset
+                    <em>53&middot;CA</em> lands on \(\mathtt{0x01}\). These two bytes are multiplicative inverses, and the
+                    existence of an inverse for <em>every</em> nonzero byte is precisely what the AES S-box is built on. That
+                    property is what makes \(F_2[x] \, / \langle p(x) \rangle\) a field rather than a mere ring, and it follows from the
                     <a href="polynomial_rings.html#T-quotient_field_irreducible" class="ref-link"><strong>characterization of \(F[x] \, / \langle p(x) \rangle\) as a field</strong></a>
                     together with the irreducibility of \(p(x)\).
                 </p>
 
                 <p>
-                    Finally, <em>87&middot;02</em> shows the cleanest possible reduction, one shift and one XOR. Its
-                    grayed-out trailing rows illustrate why real implementations run all eight iterations regardless of the
-                    input. A data-independent step count is what makes the multiplier constant-time and resistant to timing
-                    side-channel attacks.
+                    Finally, <em>87&middot;02</em> needs a single reduction, since only the shift in the first row overflows
+                    into \(x^8\) before the product is complete. Its grayed-out trailing rows illustrate why constant-time
+                    implementations run all eight iterations regardless of the input. A data-independent step count, together
+                    with branch-free masking in place of the conditional XORs, keeps the running time independent of the
+                    operands and so resists timing side-channel attacks.
                 </p>
                 <div id="gf28-multiplication-visualizer"></div>
 

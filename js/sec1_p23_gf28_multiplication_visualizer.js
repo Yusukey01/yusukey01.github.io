@@ -4,7 +4,8 @@
 // p(x) = x^8 + x^4 + x^3 + x + 1 (0x11B), computed by TWO independently
 // written routes -- the theorem route (carry-less product in F2[x], then
 // long division by p) and the hardware route (shift-and-conditional-XOR).
-// Their exhaustive agreement is the isomorphism made executable.
+// Their exhaustive agreement shows that byte-level shift-and-XOR is exactly
+// multiplication in F2[x]/<p(x)>, a field because p is irreducible.
 //======================================================================
 var GfCore = (function () {
   'use strict';
@@ -24,7 +25,7 @@ var GfCore = (function () {
 
   // ---------- route 2: hardware (Russian peasant, 0x1B conditional XOR) ----
   // Returns the product AND a full trace rich enough for the UI to show the
-  // running accumulator at every step; the trace is certificate-checked.
+  // running accumulator at every step; T7 replays the trace on 46 pairs.
   function gfMulPeasant(a, b) {
     var result = 0, temp = a & 0xFF, bb = b & 0xFF;
     var trace = [];
@@ -42,15 +43,8 @@ var GfCore = (function () {
       step.accAfter = result;
       var hibit = temp & 0x80;
       step.overflow = hibit ? 1 : 0;
-      temp = (temp << 1) & 0x1FF;
-      if (hibit) temp ^= P_FULL & 0x1FF; // == (temp<<1 & 0xFF) ^ P_LOW
-      // PROVEN-EQUIVALENT mutants (documented): (i) dropping the mask below
-      // is equivalent because when hibit is set, bit 8 of (temp<<1)&0x1FF is
-      // set and 0x11B clears it, and when hibit is clear bit 8 is already 0;
-      // (ii) masking the shift with 0xFF instead of 0x1FF is equivalent
-      // because it pre-clears bit 8 and the XOR with 0x11B then sets it,
-      // and this mask clears it again: both orders yield (temp<<1 & 0xFF)^0x1B.
-      temp &= 0xFF;
+      // xtime: shift within the byte (dropping x^8), then add x^8 mod p
+      temp = ((temp << 1) & 0xFF) ^ (hibit ? P_LOW : 0);
       step.tempAfter = temp;
       trace.push(step);
       bb >>= 1;
@@ -159,7 +153,7 @@ var GfCore = (function () {
     }
     var a, b, i;
 
-    // T1: THE ISOMORPHISM CERTIFICATE -- both routes agree on ALL 65536 pairs
+    // T1: both routes agree on ALL 65536 pairs (shift-and-XOR == F2[x]/<p> product)
     (function () {
       var bad = -1;
       for (a = 0; a < 256 && bad < 0; a++) {
@@ -199,10 +193,10 @@ var GfCore = (function () {
     })();
 
     // T3: external value pins
-    check('T3a FIPS-197 worked example 57*83 == C1', gfMul(0x57, 0x83) === 0xC1, hex2(gfMul(0x57, 0x83)));
+    check('T3a 57*83 == C1 (pinned value)', gfMul(0x57, 0x83) === 0xC1, hex2(gfMul(0x57, 0x83)));
     check('T3b xtime overflow 02*80 == 1B', gfMul(0x02, 0x80) === 0x1B, hex2(gfMul(0x02, 0x80)));
     check('T3c inverse pair 53*CA == 01', gfMul(0x53, 0xCA) === 0x01, hex2(gfMul(0x53, 0xCA)));
-    check('T3d 87*02 == 15 (one shift, one reduction)', gfMul(0x87, 0x02) === 0x15, hex2(gfMul(0x87, 0x02)));
+    check('T3d 87*02 == 15 (x*87 needs one reduction)', gfMul(0x87, 0x02) === 0x15, hex2(gfMul(0x87, 0x02)));
 
     // T4: every nonzero element has EXACTLY ONE inverse
     (function () {
@@ -404,7 +398,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GfCore; 
         'mod p(x). This demo computes the same product a &middot; b twice, by two independently implemented routes: ' +
         'the <strong>theorem route</strong> (multiply in F&#8322;[x], then divide by p(x) and keep the remainder) and the ' +
         '<strong>hardware route</strong> used in AES (shift &amp; conditional XOR with 0x1B, never leaving 8 bits). ' +
-        'The isomorphism is the statement that the two final bytes always agree.</div>' +
+        'The two final bytes always agree: shift-and-XOR on bytes is exactly multiplication in F&#8322;[x]/\u27E8p(x)\u27E9, ' +
+        'a field because p(x) is irreducible.</div>' +
       '<div class="gfv-inputrow">' +
         '<div class="gfv-inputgroup">' +
           '<label for="gfv-a">Element a (hex 00-FF)</label>' +
@@ -421,9 +416,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GfCore; 
         '</div>' +
       '</div>' +
       '<div class="gfv-btnrow">' +
-        '<button class="gfv-btn gfv-preset" data-a="57" data-b="83">AES spec example: 57&middot;83 = C1</button>' +
+        '<button class="gfv-btn gfv-preset" data-a="57" data-b="83">Two reductions: 57&middot;83 = C1</button>' +
         '<button class="gfv-btn gfv-preset" data-a="53" data-b="CA">Inverse pair: 53&middot;CA = 01</button>' +
-        '<button class="gfv-btn gfv-preset" data-a="87" data-b="02">One shift, one reduction: 87&middot;02</button>' +
+        '<button class="gfv-btn gfv-preset" data-a="87" data-b="02">One reduction: 87&middot;02</button>' +
         '<button class="gfv-btn gfv-preset" data-a="01" data-b="FF">Identity: 01&middot;FF</button>' +
       '</div>' +
       '<div id="gfv-error" class="gfv-error" style="display:none;"></div>' +
@@ -531,7 +526,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GfCore; 
       return html;
     }
 
-    function supOf(n) { // superscript, with x^0/x^1 spelled out in captions via polyStr
+    function supOf(n) { // superscript digits; captions use the uniform x^0, x^1, ... notation
       var SUP = '\u2070\u00B9\u00B2\u00B3\u2074\u2075\u2076\u2077\u2078\u2079';
       return String(n).split('').map(function (d) { return SUP[+d]; }).join('');
     }
@@ -558,12 +553,13 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GfCore; 
         '<th>k</th><th>b[k]</th><th>temp = a\u00B7x<sup>k</sup> mod p</th><th>action</th><th>accumulator</th>' +
         '</tr></thead><tbody>' + rows + '</tbody></table>' +
         '<div class="gfv-note">Each row: if bit k of b is 1, the current temp (which <em>is</em> a\u00B7x' +
-        '<sup>k</sup> mod p, by the distributive law) is XORed into the accumulator; then temp is shifted left, and if the ' +
-        'shift overflows into x\u2078, one XOR with 0x1B applies x\u2078 \u2261 x\u2074+x\u00B3+x+1. The accumulator after row 7 is the product.</div>';
+        '<sup>k</sup> mod p, since each row multiplies by x and reduces at most once) is XORed into the accumulator; then temp is ' +
+        'shifted left, and if the shift overflows into x\u2078, one XOR with 0x1B applies x\u2078 \u2261 x\u2074+x\u00B3+x+1. ' +
+        'By the distributive law, the accumulator after row 7 is the product.</div>';
       if (topBit < 7) {
         html += '<div class="gfv-note">Grayed rows no longer change the accumulator (all remaining bits of b are 0) &mdash; ' +
-          'yet real AES implementations still execute them, because running a data-<em>independent</em> number of steps ' +
-          'is what makes the multiplier constant-time and immune to timing side channels.</div>';
+          'yet constant-time implementations still execute them: a data-<em>independent</em> number of steps, together ' +
+          'with branch-free masking of the conditional XORs, keeps the timing independent of the operands.</div>';
       }
       return html;
     }
@@ -597,7 +593,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GfCore; 
       if (same) {
         agreeHtml = 'Route 1 = Route 2 = <span class="gfv-big">' + G.hex2(naive.result) + '</span> \u2713 &mdash; ' +
           'two implementations that share no code agree, here and (by this page\u2019s self-tests) on all 65,536 input pairs. ' +
-          'That agreement is the isomorphism F&#8322;[x]/\u27E8p(x)\u27E9 \u2245 GF(2\u2078) doing real work.';
+          'Shift-and-XOR on bytes is exactly multiplication in F&#8322;[x]/\u27E8p(x)\u27E9, which is the field GF(2\u2078) ' +
+          'because p(x) is irreducible.';
         if (naive.result === 0x01 && (a !== 1 || b !== 1)) {
           agreeHtml += '<br><span class="gfv-inv">The product is 1: ' + G.hex2(a) + ' and ' + G.hex2(b) +
             ' are multiplicative inverses of each other. The AES S-box is built from exactly this inversion map ' +

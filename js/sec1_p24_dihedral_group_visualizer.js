@@ -292,7 +292,8 @@ var D6Core = (function () {
         var k = parseId(id).k;
         return Math.abs(axisAngleOf(id) - (30 * k) % 180) < 1e-9;
       }));
-      // vertex-axes fix exactly the two vertices on the axis; edge-axes fix none
+      // vertex-axes (even k) fix two vertices, edge-axes (odd k) fix none
+      // (T9e checks the counts; T9d pins the actual vertices for s)
       check('T9d s fixes vertices {1, 4}', fixedVertices(permutationOf('s')).join(',') === '1,4',
         fixedVertices(permutationOf('s')).join(','));
       var ok = IDS.filter(isReflection).every(function (id) {
@@ -357,7 +358,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = D6Core; 
 // [UI IIFE] #dihedral-group-visualizer, prefix dgv-
 // Action mode: clicking an element g composes g onto the current state
 // (state <- g o state), with a breadcrumb showing the word and its
-// live reduction. Everything displayed is recomputed from D6Core.
+// live reduction. Everything displayed except the static orthogonality badge
+// and subgroup/coset panel titles (backed by self-tests T7b, T10) is
+// recomputed from D6Core.
 //======================================================================
 (function () {
   'use strict';
@@ -426,10 +429,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = D6Core; 
     container.innerHTML =
       '<div class="dgv-root">' +
       '<div class="dgv-hint">Each button is an element of D\u2086 <em>acting</em> on the hexagon: clicking g replaces the ' +
-        'current state x by g \u2218 x, and the word below reduces live using the relations ' +
-        'r\u2076 = e, s\u00B2 = e, srs = r\u207B\u00B9. There are no in-between angles &mdash; the polygon snaps from one ' +
+        'current state x by g \u2218 x, and the word below reduces live to a single element r\u1D4F or r\u1D4Fs, the normal ' +
+        'form dictated by the relations r\u2076 = e, s\u00B2 = e, srs = r\u207B\u00B9 (computed by multiplying the matrices). ' +
+        'There are no in-between angles &mdash; the polygon snaps from one ' +
         'symmetric configuration to the next. Watch the vertex labels: the permutation shown is derived from the very ' +
-        'matrix displayed on the right, so the numbers, the matrix, and the picture always agree.</div>' +
+        'matrix shown in the 2\u00D72 matrix panel, so the numbers, the matrix, and the picture always agree.</div>' +
       '<div class="dgv-layout">' +
       '<div class="dgv-canvascell">' +
         '<canvas id="dgv-canvas" width="480" height="480"></canvas>' +
@@ -465,7 +469,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = D6Core; 
           '</div>' +
           '<div class="dgv-note">Try g\u2082 = r, g\u2081 = s against g\u2082 = s, g\u2081 = r: ' +
             'r \u2218 s = ' + pretty(G.product('r', 's')) + ' but s \u2218 r = ' + pretty(G.product('s', 'r')) +
-            ' &mdash; the group is non-Abelian, and this single inequality is why 3D orientation needs matrix products, not addition.</div>' +
+            ' &mdash; the group is non-Abelian. In three dimensions rotations about different axes generally fail to commute, ' +
+            'which is why 3D orientation needs matrix products, not addition.</div>' +
         '</div>' +
       '</div></div></div>';
 

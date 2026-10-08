@@ -71,8 +71,8 @@ var RigidCore = (function () {
   }
 
   // ---------- Euler ZYX ----------
-  // closed form of Rz(psi) Ry(theta) Rx(phi); certified against the
-  // explicit triple product in E1
+  // closed form of Rz(psi) Ry(theta) Rx(phi); checked against the
+  // explicit triple product on 300 seeded samples in E1
   function eulerZYX(rollDeg, pitchDeg, yawDeg) {
     var phi = rollDeg * D2R, theta = pitchDeg * D2R, psi = yawDeg * D2R;
     var cp = Math.cos(phi), sp = Math.sin(phi);
@@ -511,9 +511,9 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
       return;
     }
 
-    // math is certified; now fetch the renderer
+    // math self-tests passed; now fetch the renderer
     container.innerHTML = card('Loading 3D renderer\u2026',
-      'Fetching three.js from its CDN. The mathematics is already verified.', C.borderStrong);
+      'Fetching three.js from its CDN. The mathematical self-tests have already passed.', C.borderStrong);
 
     var failed = false;
     function networkFail() {
@@ -561,7 +561,7 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
     container.innerHTML =
       '<div class="rbv-root">' +
       '<div class="rbv-hint" id="rbv-instruction">SO(3): pure rotation. Drag the coin (shift+drag orbits the camera) ' +
-        'or use the sliders. Every readout below is measured from the current matrix, and det(R) stays exactly 1.</div>' +
+        'or use the sliders. The readouts below are computed from the current rotation, and det(R) = 1 up to rounding.</div>' +
       '<div class="rbv-layout">' +
       '<div class="rbv-viewcell"><div id="rbv-three"></div>' +
         '<div class="rbv-caption">hexagonal coin (circumradius 0.8) with body frame; world frame at the origin. ' +
@@ -605,11 +605,11 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
             '<input type="range" id="rbv-yaw" min="-180" max="180" value="0"></div>' +
           '</div>' +
           '<div id="rbv-transliders" class="rbv-slidergrid" style="display:none;">' +
-          '<div class="rbv-slider"><label>t\u2093 = <span id="rbv-tx-val">0.0</span></label>' +
+          '<div class="rbv-slider"><label>t<sub>x</sub> = <span id="rbv-tx-val">0.0</span></label>' +
             '<input type="range" id="rbv-tx" min="-2" max="2" step="0.1" value="0"></div>' +
-          '<div class="rbv-slider"><label>t\u1D67 = <span id="rbv-ty-val">0.0</span></label>' +
+          '<div class="rbv-slider"><label>t<sub>y</sub> = <span id="rbv-ty-val">0.0</span></label>' +
             '<input type="range" id="rbv-ty" min="-2" max="2" step="0.1" value="0"></div>' +
-          '<div class="rbv-slider"><label>t\u2094 = <span id="rbv-tz-val">0.0</span></label>' +
+          '<div class="rbv-slider"><label>t<sub>z</sub> = <span id="rbv-tz-val">0.0</span></label>' +
             '<input type="range" id="rbv-tz" min="-2" max="2" step="0.1" value="0"></div>' +
           '</div></div>' +
       '</div></div></div>';
@@ -663,6 +663,8 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
     mount.appendChild(renderer.domElement);
     var controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableRotate = false; // plain drag is reserved for the coin
+    // with shift held, r128 OrbitControls turns a LEFT+PAN drag into ROTATE
+    controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
     controls.enableZoom = true;
     controls.enablePan = false;
 
@@ -678,7 +680,8 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
 
     // hexagonal coin: cylinder with 6 radial segments, thin, plus body axes
     var coin = new THREE.Group();
-    var geo = new THREE.CylinderGeometry(G.COIN_RADIUS, G.COIN_RADIUS, 0.08, 6);
+    // thetaStart = pi/6 puts the drawn vertices at the angles of coinVertices
+    var geo = new THREE.CylinderGeometry(G.COIN_RADIUS, G.COIN_RADIUS, 0.08, 6, 1, false, Math.PI / 6);
     var mat = new THREE.MeshStandardMaterial({ color: 0x4da3ff, metalness: 0.35, roughness: 0.45 });
     var mesh = new THREE.Mesh(geo, mat);
     mesh.rotation.x = Math.PI / 2; // cylinder axis (three's y) -> our z
@@ -723,7 +726,7 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
         gEl.innerHTML = 'Approaching <strong>gimbal lock</strong>: at \u03B8 = ' + out.gimbalSign +
           '90\u00B0 the map (\u03C6, \u03C8) \u21A6 R collapses to a single degree of freedom ' +
           '(only \u03C6 ' + (out.gimbalSign === '+' ? '\u2212' : '+') + ' \u03C8 matters \u2014 ' +
-          'try moving roll and yaw together). The matrix, axis\u2013angle, and quaternion stay perfectly ' +
+          'try moving roll and yaw together). The matrix stays perfectly ' +
           'well-behaved: the singularity lives in the Euler <em>chart</em>, not in SO(3) itself. This is why ' +
           'downstream robotics and the Lie-theory pages work on the group directly.';
       } else {
@@ -770,7 +773,7 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
       document.getElementById('rbv-Tpanel').style.display = m === 'SE3' ? 'block' : 'none';
       document.getElementById('rbv-transliders').style.display = m === 'SE3' ? 'grid' : 'none';
       document.getElementById('rbv-instruction').textContent = m === 'SO3'
-        ? 'SO(3): pure rotation. Drag the coin (shift+drag orbits the camera) or use the sliders. Every readout below is measured from the current matrix, and det(R) stays exactly 1.'
+        ? 'SO(3): pure rotation. Drag the coin (shift+drag orbits the camera) or use the sliders. The readouts below are computed from the current rotation, and det(R) = 1 up to rounding.'
         : 'SE(3): rotation + translation = full rigid-body motion. The 4\u00D74 homogeneous matrix carries both at once; the order experiment below shows why the two ingredients do not commute.';
       if (m === 'SO3') { state.tx = state.ty = state.tz = 0; pushSliders(); }
       updateDisplays();
@@ -791,18 +794,24 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
       updateDisplays();
     });
 
-    // coin drag: dx -> yaw, dy -> pitch; shift+drag -> camera orbit.
-    // OrbitControls samples enableRotate inside ITS OWN mousedown handler,
-    // so the flag must be set on keydown, before the gesture starts.
-    var dragging = false, lastX = 0, lastY = 0;
+    // coin drag: dx -> yaw, dy -> pitch, on pointer events (r128 OrbitControls
+    // calls preventDefault on mouse/pen pointerdown and on touchstart, which
+    // suppresses the compatibility mouse events). Only the primary pointer
+    // drives the coin, and a second finger ends the coin drag, leaving the
+    // pinch to zoom. shift+drag -> camera orbit: with mouseButtons.LEFT = PAN,
+    // OrbitControls turns a shift+left drag into ROTATE, which it allows only
+    // while enableRotate is true, so the flag follows the Shift key.
+    var dragging = false, dragId = null, lastX = 0, lastY = 0;
     window.addEventListener('keydown', function (e) { if (e.key === 'Shift') controls.enableRotate = true; });
     window.addEventListener('keyup', function (e) { if (e.key === 'Shift') controls.enableRotate = false; });
-    renderer.domElement.addEventListener('mousedown', function (e) {
-      if (e.shiftKey) return; // camera gesture; OrbitControls handles it
-      dragging = true; lastX = e.clientX; lastY = e.clientY;
+    renderer.domElement.addEventListener('pointerdown', function (e) {
+      if (!e.isPrimary) { dragging = false; dragId = null; return; } // second finger
+      // shift or a non-left button: left to OrbitControls (shift+left orbits)
+      if (e.shiftKey || e.button !== 0) return;
+      dragging = true; dragId = e.pointerId; lastX = e.clientX; lastY = e.clientY;
     });
-    window.addEventListener('mousemove', function (e) {
-      if (!dragging) return;
+    window.addEventListener('pointermove', function (e) {
+      if (!dragging || e.pointerId !== dragId) return;
       state.yaw += (e.clientX - lastX) * 0.5;
       state.pitch += (e.clientY - lastY) * 0.5;
       state.yaw = ((state.yaw + 180) % 360 + 360) % 360 - 180;
@@ -811,7 +820,9 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
       pushSliders();
       updateDisplays();
     });
-    window.addEventListener('mouseup', function () { dragging = false; });
+    function endDrag(e) { if (e.pointerId === dragId) { dragging = false; dragId = null; } }
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
 
     function animate() {
       requestAnimationFrame(animate);
