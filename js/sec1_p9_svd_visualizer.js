@@ -14,7 +14,8 @@
 //   completed to an orthonormal basis with the perpendicular of u_1
 //   (the "extend to an orthonormal basis" step of the SVD proof).
 // All displayed values (U, S, V, rank, kappa, A-dagger, effective rank)
-// come from this core and are certified by runSelfTests().
+// come from this core; runSelfTests() checks its routines on pinned and
+// seeded test matrices.
 // ============================================================================
 var SvdCore = (function () {
   'use strict';
@@ -90,11 +91,11 @@ var SvdCore = (function () {
     }
     if (theta > Math.PI) theta -= 2 * Math.PI;
 
-    var tolZero = 1e-12 * Math.max(1, scaleA);
-    var tolRank = 1e-10 * Math.max(1, s1);
+    var tolZero = 1e-12 * scaleA;   // relative: only A = 0 has s1 <= 0
+    var tolRank = 1e-10 * s1;       // relative to the largest singular value
     var u1, u2, rank;
     if (s1 <= tolZero) {
-      // zero matrix: conventions U = V = I
+      // zero matrix: conventions U = V = I (reached only for A = 0)
       rank = 0;
       theta = 0;
       v1 = [1, 0]; v2 = [0, 1];
@@ -135,7 +136,7 @@ var SvdCore = (function () {
   function pseudoInverse(A, eps) {
     var d = decompose(A);
     var e = (eps === undefined || eps === null)
-      ? 1e-10 * Math.max(1, d.S[0])
+      ? 1e-10 * d.S[0]
       : eps;
     var sdag = [d.S[0] >= e && d.S[0] > 0 ? 1 / d.S[0] : 0,
                 d.S[1] >= e && d.S[1] > 0 ? 1 / d.S[1] : 0];
@@ -148,7 +149,7 @@ var SvdCore = (function () {
   // ---------- presets (single source; UI builds the buttons from this) ----------
   var SQ2 = Math.SQRT1_2;
   // rotation preset uses 4-decimal entries so the input cells stay readable;
-  // sigma = 0.99997 ~ 1 and the T8 orthogonality pin allows 1e-4
+  // sigma = 0.7071*sqrt(2) = 0.99999 ~ 1 and the T8 orthogonality pin allows 1e-4
   var PRESETS = [
     { key: 'symmetric',    label: 'Symmetric',      m: [[3, 1], [1, 2]] },
     { key: 'identity',     label: 'Identity',       m: [[1, 0], [0, 1]] },
@@ -282,6 +283,11 @@ var SvdCore = (function () {
     check('T4 zero matrix rank 0, U = V = I', dZ.rank === 0 &&
       mClose(dZ.U, [[1, 0], [0, 1]], 0) && mClose(dZ.V, [[1, 0], [0, 1]], 0) && dZ.kappa === null);
     var dNS = decompose([[1, 2], [2, 4.01]]);
+    var dSc = decompose([[1e-11, 0], [0, 1e-11]]);
+    check('T4 scaled identity 1e-11 I: rank 2, kappa 1 (relative tolerance)',
+      dSc.rank === 2 && Math.abs(dSc.kappa - 1) <= 1e-12, JSON.stringify([dSc.rank, dSc.kappa]));
+    var dSz = decompose([[1e-13, 0], [0, 1e-13]]);
+    check('T4 1e-13 I is not treated as the zero matrix', dSz.rank === 2, dSz.rank);
     check('T4 nearSingular rank 2 with huge kappa', dNS.rank === 2 && dNS.kappa > 1000, dNS.kappa);
     check('T4 nearSingular s2 pin', Math.abs(dNS.S[1] - 0.0019968038374267) <= 1e-9, dNS.S[1]);
 
@@ -450,7 +456,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = SvdCore;
     warn: '#ffc857'
   };
 
-  function fmt(x, d) { return (Object.is(x, -0) ? 0 : x).toFixed(d); }
+  function fmt(x, d) { var s = x.toFixed(d); return /^-0(\.0+)?$/.test(s) ? s.slice(1) : s; }
   function fmtSm(x) {
     var a = Math.abs(x);
     return (a !== 0 && a < 1e-3) ? x.toExponential(1) : fmt(x, 3);
@@ -633,9 +639,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = SvdCore;
     ];
     var STEP_DETAILS = [
       'The unit circle with the standard basis (faint) and the right singular vectors v\u2081, v\u2082 \u2014 the orthonormal directions the factorization singles out. Watch where they go.',
-      'V\u1D40 is orthogonal: a pure rotation (by \u2212\u03B8). It sends v\u2081 \u2192 e\u2081 and v\u2082 \u2192 e\u2082 while leaving the unit circle unchanged \u2014 orthogonal maps preserve lengths and angles.',
-      '\u03A3 stretches the first axis by \u03C3\u2081 and the second by \u03C3\u2082. The circle becomes an axis-aligned ellipse with semi-axes \u03C3\u2081 and \u03C3\u2082 \u2014 all the "shape change" of A happens here.',
-      'U is orthogonal (rotation or reflection): it carries the axes onto the left singular vectors u\u2081, u\u2082. The result is the image of the unit circle under A \u2014 an ellipse with semi-axes \u03C3\u2081u\u2081 and \u03C3\u2082u\u2082.'
+      'V\u1D40 is orthogonal: a pure rotation (by \u2212\u03B8). It sends v\u2081 \u2192 e\u2081 and v\u2082 \u2192 e\u2082 while leaving the unit circle unchanged \u2014 orthogonal maps preserve lengths and angles. (In-between animation frames blend linearly from I and are in general not orthogonal; the completed step is.)',
+      '\u03A3 stretches the first axis by \u03C3\u2081 and the second by \u03C3\u2082. The circle becomes an axis-aligned ellipse with semi-axes \u03C3\u2081 and \u03C3\u2082 (a segment if \u03C3\u2082 = 0 \u003C \u03C3\u2081, a point if A = 0) \u2014 all the "shape change" of A happens here.',
+      'U is orthogonal (rotation or reflection): it carries the axes onto the left singular vectors u\u2081, u\u2082. The result is the image of the unit circle under A \u2014 an ellipse with semi-axes \u03C3\u2081u\u2081 and \u03C3\u2082u\u2082 (degenerate when A is singular). (In-between animation frames blend linearly from I and are in general not orthogonal; the completed step is.)'
     ];
 
     // ---------- factor matrices for the pipeline ----------
@@ -844,12 +850,14 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = SvdCore;
 
     // ---------- readouts ----------
     function kappaHtml(d) {
-      if (d.rank === 0) return '<span class="svd-sub">\u2014 (zero matrix)</span>';
-      if (d.rank === 1) return '<span class="svd-warn">\u221E \u2014 A is singular (rank 1)</span>';
+      if (d.rank === 0) return '<span class="svd-sub">A = 0 (rank 0): \u03BA(A) is undefined</span>';
+      if (d.rank === 1) return '<span class="svd-warn">A is numerically singular (rank 1): \u03C3\u2082 is below ' +
+        'the rank tolerance and is treated as 0</span>';
       var k = d.kappa;
       var ks = k >= 1000 ? k.toExponential(2) : fmt(k, 2);
-      if (k > 100) return '<span class="svd-warn">' + ks + ' \u2014 ill-conditioned</span>';
-      return '<span class="svd-mat">' + ks + '</span>';
+      var head = '\u03BA(A) = \u03C3\u2081/\u03C3\u2082 = ';
+      if (k > 100) return head + '<span class="svd-warn">' + ks + ' \u2014 ill-conditioned</span>';
+      return head + '<span class="svd-mat">' + ks + '</span>';
     }
     function updateReadouts() {
       var d = state.svd;
@@ -858,15 +866,15 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = SvdCore;
       var thetaDeg = d.thetaV * 180 / Math.PI;
       var uLabel = Math.abs(d.detU - 1) < 1e-9 ? 'rotation (det U = +1)' : 'reflection (det U = \u22121)';
       var html =
-        '<div><strong>Decomposition</strong> <span class="svd-sub">(computed by the certified core)</span></div>' +
+        '<div><strong>Decomposition</strong> <span class="svd-sub">(computed by the self-tested core)</span></div>' +
         '<div style="margin-top:4px;">U = ' + matHtml(d.U, 3) + ' <span class="svd-sub">' + uLabel + '</span></div>' +
         '<div>\u03A3 = ' + matHtml([[d.S[0], 0], [0, d.S[1]]], 3) + '</div>' +
         '<div>V\u1D40 = ' + matHtml(SvdCore.transpose2(d.V), 3) +
-          ' <span class="svd-sub">rotation by \u03B8 = ' + fmt(thetaDeg, 1) + '\u00B0</span></div>' +
+          ' <span class="svd-sub">rotation by \u2212\u03B8 (V = R(\u03B8), \u03B8 = ' + fmt(thetaDeg, 1) + '\u00B0)</span></div>' +
         '<div style="margin-top:6px;">\u03C3\u2081 = <span class="svd-mat">' + fmtSm(d.S[0]) + '</span>, ' +
           '\u03C3\u2082 = <span class="svd-mat">' + fmtSm(d.S[1]) + '</span>, ' +
           'rank = <span class="svd-mat">' + d.rank + '</span></div>' +
-        '<div>\u03BA(A) = \u03C3\u2081/\u03C3\u2082 = ' + kappaHtml(d) + '</div>' +
+        '<div>' + kappaHtml(d) + '</div>' +
         '<div class="svd-sub" style="margin-top:6px;">Verification: \u2016U\u03A3V\u1D40 \u2212 A\u2016 = ' +
           recErr.toExponential(1) + '</div>';
       readoutsEl.innerHTML = html;
@@ -891,7 +899,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = SvdCore;
       }
       var PA = SvdCore.matMul2(p.Adag, state.A);
       html += '<div style="margin-top:4px;">A\u2020A = ' + matHtml(PA, 3) + ' <span class="svd-sub">' +
-        (p.effRank === 2 ? '= I (A invertible at this \u03B5)' : 'projection onto Row A') + '</span></div>';
+        (p.effRank === 2 ? '= I (no singular value truncated)' : p.effRank === 1 ? 'projection onto Span{v\u2081}' : '= 0 (no singular value kept)') + '</span></div>';
       pinvReadouts.innerHTML = html;
     }
     pinvToggle.addEventListener('change', function () {

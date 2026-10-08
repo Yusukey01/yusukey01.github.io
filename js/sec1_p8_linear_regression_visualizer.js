@@ -1,13 +1,15 @@
 // ============================================================================
 // LsqCore — math core for the Least-Squares Regression Visualizer (linalg-8)
 // DOM-free, Node-requirable. Vectors are arrays; matrices are arrays of rows.
-// The least-squares solve goes through QR (modified Gram-Schmidt) — the
-// numerically stable route this page itself teaches — never through an
-// explicitly formed (X^T X)^{-1}. A normal-equation route with HONEST
+// The least-squares solve goes through QR (modified Gram-Schmidt), the
+// route this page teaches, never through an explicitly formed (X^T X)^{-1}.
+// (MGS followed by Q^T y is not backward stable for ill-conditioned X;
+// well-spread samples are unaffected, but tightly clustered clicked points
+// can show it.) A normal-equation route with HONEST
 // singularity detection exists solely as an independent verification route
 // for the self-tests. All displayed values (beta, residuals, SSE, X^T eps,
-// rank messages, dataset samples) come from this core and are certified by
-// runSelfTests(); the UI layers only render what this core returns.
+// rank messages, dataset samples) come from this core; runSelfTests()
+// checks its routines on fixed and seeded cases; the UI layers only render what this core returns.
 // ============================================================================
 var LsqCore = (function () {
   'use strict';
@@ -913,9 +915,10 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
           'least-squares solutions, and picking one needs the pseudo-inverse (see the section above). ' +
           'Add more points or lower the degree.</div>';
       }
-      return '<div class="lrv-status-warn">The columns of X are linearly dependent (repeated x-values), ' +
-        'so X\u1D40X is singular and no unique least-squares solution exists \u2014 the pseudo-inverse ' +
-        'section above covers this case. Move or remove a duplicated point.</div>';
+      return '<div class="lrv-status-warn">The columns of X are linearly dependent or numerically so (fewer than p ' +
+        'distinct x-values, or x-values too close together), so no unique least-squares solution can be ' +
+        'computed reliably \u2014 the pseudo-inverse section above covers the dependent case. ' +
+        'Spread out clustered points, add points at new x-values, or lower the degree.</div>';
     }
 
     function metricsHtml(s) {
@@ -940,7 +943,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
         html += '<div class="lrv-formula" style="margin-top:6px;">' + polyEquation(s.beta) + '</div>';
         html += metricsHtml(s);
         if (s.interpolating) {
-          html += '<div class="lrv-status-ok">n = p: exact interpolation \u2014 the residual is zero and the "fit" passes through every point.</div>';
+          html += '<div class="lrv-status-ok">n = p: exact interpolation \u2014 the residual is zero (up to rounding) and the "fit" passes through every point.</div>';
         }
       }
       readoutsEl.innerHTML = html;
@@ -1202,7 +1205,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
         html += '<div class="lrv-formula" style="margin-top:6px;">' + surfaceEquation(s.beta, state.model) + '</div>';
         html += metricsHtml(s);
         if (s.interpolating) {
-          html += '<div class="lrv-status-ok">n = p: exact interpolation \u2014 zero residual.</div>';
+          html += '<div class="lrv-status-ok">n = p: exact interpolation \u2014 zero residual (up to rounding).</div>';
         }
       }
       readoutsEl.innerHTML = html;

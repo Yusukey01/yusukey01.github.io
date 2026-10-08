@@ -3,7 +3,8 @@
 // DOM-free, Node-requirable. Vectors are plain arrays [x,y] or [x,y,z];
 // every routine is dimension-generic unless named *3. All displayed values
 // (inner products, projections, residuals, GS steps, Gram matrices,
-// conditioning) are computed HERE and certified by runSelfTests(); the two
+// conditioning) are computed HERE; runSelfTests() checks these routines on
+// pinned and seeded inputs, and the UI renders only if it passes. The two
 // UI layers (2D canvas, 3D three.js) only render what this core returns.
 // ============================================================================
 var OrthCore = (function () {
@@ -82,8 +83,9 @@ var OrthCore = (function () {
 
   // ---------- projection onto the plane W = Span{v1, v2} in R^3 ----------
   // Route: n = v1 x v2; z = proj_n(y) (component orthogonal to W);
-  // yhat = y - z. Fails if v1, v2 are (nearly) dependent, since then W is
-  // not a plane. yhat + z = y by construction; yhat . n = 0 is certified.
+  // yhat = y - z. Fails if v1, v2 are (nearly) dependent, or if
+  // ||v1|| ||v2|| <= 1e-12 (absolute floor). yhat + z = y by construction;
+  // yhat . n = 0 is checked by the self-tests.
   function projOntoPlane3(y, v1, v2) {
     var n = cross3(v1, v2);
     var nn = dot(n, n);
@@ -99,7 +101,9 @@ var OrthCore = (function () {
   // Returns per-step data for the UIs: for each k, the input x_k, the list
   // of projections subtracted (coefficient + vector), and the resulting v_k.
   // FAILS (ok:false, failedIndex=k) when ||v_k|| <= relTol * ||x_k|| —
-  // i.e. when x_k is (numerically) dependent on the previous vectors.
+  // i.e. when x_k is (numerically) dependent on the previous vectors, and
+  // also (failedIndex=k) when an earlier v_j is below projOnto's absolute
+  // floor, which happens only for tiny inputs.
   // The GS theorem requires a linearly independent input; a dependent input
   // must be reported, never silently orthogonalized into noise.
   function gramSchmidtSteps(xs) {
@@ -112,7 +116,9 @@ var OrthCore = (function () {
       var projs = [];
       for (var j = 0; j < vs.length; j++) {
         var pr = projOnto(x, vs[j]);
-        // vs[j] is never ~0 here (earlier steps passed the tolerance gate)
+        // vs[j] passed the relative gate, but a tiny input can still fall under
+        // projOnto's absolute floor: report it instead of reading pr.coeff
+        if (!pr.ok) return { ok: false, failedIndex: k, vs: vs, steps: steps };
         projs.push({ onto: j, coeff: pr.coeff, p: pr.p });
         v = sub(v, pr.p);
       }
@@ -367,6 +373,8 @@ var OrthCore = (function () {
     check('T6n 3 vectors in R^2 flagged', dep2.ok === false && dep2.failedIndex === 2);
     var dep3 = gramSchmidtSteps([[1, 2, 3], [2, 4, 6], [0, 0, 1]]);
     check('T6n dependent 3D flagged', dep3.ok === false && dep3.failedIndex === 1);
+    var tiny6 = gramSchmidtSteps([[1e-13, 0], [1, 1]]);
+    check('T6n tiny first vector flagged (projOnto floor)', tiny6.ok === false && tiny6.failedIndex === 1);
     // float-noise dependence: v2 is ~1e-17 noise, NOT exactly 0 — tolerance is load-bearing
     var noisy = sub(scale([0.1, 0.7], 3), [0.3, 2.1]);
     check('T6n float-noise premise (residual nonzero)', norm(noisy) !== 0, norm(noisy));
@@ -522,7 +530,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = OrthCore
     bad: '#ef5350'
   };
 
-  function fmt(x, d) { return (Object.is(x, -0) ? 0 : x).toFixed(d); }
+  function fmt(x, d) { var s = x.toFixed(d); return /^-0(\.0+)?$/.test(s) ? s.slice(1) : s; }
   function fv(v, d) {
     var parts = [];
     for (var i = 0; i < v.length; i++) parts.push(fmt(v[i], d === undefined ? 2 : d));
@@ -796,8 +804,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = OrthCore
       arrow(vw, u, C.u, 'u', 3, true);
       arrow(vw, v, C.v, 'v', 3, true);
 
-      // exact-orthogonality arc between u and v
-      var scl = 1 + OrthCore.norm(u) * OrthCore.norm(v);
+      // orthogonality arc: |u.v| <= 1e-9 ||u|| ||v|| (relative tolerance)
+      var scl = OrthCore.norm(u) * OrthCore.norm(v);
       if (Math.abs(OrthCore.dot(u, v)) <= 1e-9 * scl &&
           OrthCore.norm(u) > 1e-9 && OrthCore.norm(v) > 1e-9) {
         var o = w2c(vw, [0, 0]);
@@ -818,7 +826,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = OrthCore
       }
       html += '</div>';
       if (Math.abs(duv) <= 1e-9 * scl && ang.ok) {
-        html += '<div class="ov-status-ok">u \u22A5 v : the vectors are orthogonal (u\u00B7v = 0).</div>';
+        html += '<div class="ov-status-ok">u \u22A5 v (to rounding): |cos\u03B8| \u2264 10\u207B\u2079.</div>';
       }
       if (pr.ok) {
         html += '<div style="margin-top:6px;"><strong>Decomposition u = proj_v u + z:</strong><br>' +
@@ -833,9 +841,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = OrthCore
           '<span style="color:' + C.textDim + ';">proj_v u is the closest point of W to u ' +
           '(best approximation); \u2016z\u2016 = ' + fmt(Math.sqrt(nz2), 3) + ' is dist(u, W).</span></div>';
       } else {
-        html += '<div class="ov-status-warn" style="margin-top:6px;">v = 0: W = Span{v} = {0}, and the projection ' +
-          'formula divides by v\u00B7v = 0 \u2014 the projection onto the zero vector is undefined. ' +
-          'Make v nonzero.</div>';
+        html += '<div class="ov-status-warn" style="margin-top:6px;">v\u00B7v \u2264 10\u207B\u00B2\u2074: v is the zero vector ' +
+          '(then W = Span{v} = {0} and the projection formula divides by v\u00B7v = 0) or too small to ' +
+          'project onto reliably. Make v larger.</div>';
       }
       readoutsEl.innerHTML = html;
     }
@@ -1091,7 +1099,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = OrthCore
   var THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
   var ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
 
-  function fmt(x, d) { return (Object.is(x, -0) ? 0 : x).toFixed(d); }
+  function fmt(x, d) { var s = x.toFixed(d); return /^-0(\.0+)?$/.test(s) ? s.slice(1) : s; }
   function fv(v, d) {
     var parts = [];
     for (var i = 0; i < v.length; i++) parts.push(fmt(v[i], d === undefined ? 2 : d));
@@ -1369,8 +1377,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = OrthCore
         addArrow(v2, C.v2Hex); addLabel('v\u2082', OrthCore.add(v2, [0.2, 0.2, 0.2]), '#ff8a65');
         addArrow(y, C.yHex); addLabel('y', OrthCore.add(y, [0.2, 0.2, 0.2]), '#3498db');
 
-        if (pp.ok) {
-          var on = OrthCore.orthonormalize([v1, v2]);
+        var on = pp.ok ? OrthCore.orthonormalize([v1, v2]) : { ok: false };
+        if (pp.ok && on.ok) {
           addPlane(on.us[0], on.us[1], 4.5);
           addArrow(pp.yhat, C.projHex);
           addLabel('proj_W y', OrthCore.add(pp.yhat, [0.2, 0.2, 0.2]), '#ab47bc');
@@ -1395,9 +1403,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = OrthCore
             '<span style="color:' + C.textDim + ';">proj_W y is the closest point of the plane to y ' +
             '(best approximation); \u2016z\u2016 = ' + fmt(Math.sqrt(nz2), 3) + ' is dist(y, W).</span></div>';
         } else {
-          html += '<div class="ov3-status-warn">v\u2081 and v\u2082 are linearly dependent (or zero), so ' +
-            'Span{v\u2081, v\u2082} is not a plane and n = v\u2081 \u00D7 v\u2082 = 0. ' +
-            'Choose independent vectors.</div>';
+          html += '<div class="ov3-status-warn">v\u2081 and v\u2082 are linearly dependent or nearly so, or their sizes are too extreme, so ' +
+            'Span{v\u2081, v\u2082} cannot be computed reliably as a plane. ' +
+            'Choose independent vectors of moderate size.</div>';
         }
         readoutsEl.innerHTML = html;
       }

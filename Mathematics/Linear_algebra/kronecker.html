@@ -84,9 +84,9 @@ uses_python: true
                     <h3>Insight: Vectorization in Machine Learning</h3>
                     <p>
                         Vectorization is more than a notational convenience. It is the algebraic bridge between coordinate-free matrix operations and
-                        hardware-level linear algebra. Deep learning frameworks like PyTorch and JAX leverage this by flattening multi-dimensional parameter
-                        tensors into vectors to perform efficient vector-Jacobian products (VJPs), the operation reverse-mode differentiation applies at every
-                        layer during backpropagation.
+                        hardware-level linear algebra, and it lets derivatives with respect to matrix- or tensor-shaped parameters be written as ordinary
+                        vector-Jacobian products (VJPs), the operation reverse-mode differentiation applies at every layer during backpropagation. Frameworks
+                        such as PyTorch and JAX compute these VJPs directly on the native tensor shapes, without forming the Jacobian.
                     </p>
                     <p>
                         The identity
@@ -102,13 +102,15 @@ uses_python: true
                         \[
                         AX + XA^\top = Q,
                         \]
-                        used to certify the stability of dynamical systems (including RNNs and neural controllers). By applying vectorization, this matrix
-                        equation is transformed into the standard linear system
+                        used to certify the stability of linear dynamical systems \(\dot{\mathbf{x}} = A\mathbf{x}\) (and, through linearization, the local
+                        stability of continuous-time recurrent networks and neural controllers). By applying vectorization, this matrix equation is transformed
+                        into the standard linear system
                         \[
                         (I \otimes A + A \otimes I)\operatorname{vec}(X) = \operatorname{vec}(Q).
                         \]
-                        This transformation allows us to use high-performance linear solvers to find the Lyapunov candidate \(X\), thereby mathematically
-                        guaranteeing that a system's "energy" dissipates over time.
+                        This transformation allows us to use high-performance linear solvers to find \(X\) whenever this linear system is uniquely solvable.
+                        When \(Q\) is negative definite and the solution \(X\) is positive definite, the quadratic "energy"
+                        \(\mathbf{x}^\top X^{-1}\mathbf{x}\) strictly decreases along every nonzero trajectory, which certifies stability.
                     </p>
                 </div>
                 
@@ -267,7 +269,8 @@ uses_python: true
                     <span class="proof-title">Proof (Mixed-Product Property):</span>
                     <p>
                         We prove Property 1, the mixed-product property, by direct block computation. The remaining properties follow from this one or by
-                        analogous direct calculation, which we give below.
+                        analogous direct calculation, which we give below, except that the proof of Property 6 covers only diagonalizable \(A\) and \(B\), and
+                        Property 5, whose derivation here uses the general case of Property 6, is scoped out.
                     </p>
                     <p>
                         Let \(A \in \mathbb{R}^{m \times n}\), \(B \in \mathbb{R}^{p \times q}\), \(C \in \mathbb{R}^{n \times r}\), 
@@ -394,9 +397,9 @@ uses_python: true
                     </p>
                     <p>
                         <strong>Remark on the non-diagonalizable case.</strong><br>
-                        The identity \(\operatorname{spec}(A \otimes B) = \{\lambda_i \mu_j\}\) holds in full generality (with multiplicity), but a
-                        complete proof requires reducing to the diagonalizable case via density arguments or working with the Jordan canonical form. We
-                        omit the details here.
+                        The identity \(\operatorname{spec}(A \otimes B) = \{\lambda_i \mu_j\}\) holds in full generality (with multiplicity), but a complete
+                        proof needs one more tool, such as a triangularization of \(A\) and \(B\) over \(\mathbb{C}\), the Jordan canonical form, or a density
+                        argument reducing to the diagonalizable case. We omit the details here.
                     </p>
                     <p>
                         <strong>Property 5 (Determinant): Scope-out.</strong><br>
@@ -473,16 +476,17 @@ uses_python: true
                 <div class="insight-box">
                     <h3>Insight: Kronecker Products in Machine Learning</h3>
                     <p>
-                        The mixed-product property \((A \otimes B)(C \otimes D) = (AC) \otimes (BD)\) is the algebraic foundation of 
-                        <strong>Kronecker-factored approximations</strong>. The <strong>K-FAC</strong> optimizer approximates the Fisher Information Matrix 
-                        of a layer as \(F \approx A \otimes G\), where \(A\) is the covariance of activations and \(G\) is the covariance of 
-                        backpropagated gradient statistics.
+                        The mixed-product property \((A \otimes B)(C \otimes D) = (AC) \otimes (BD)\) is the algebraic foundation of
+                        <strong>Kronecker-factored approximations</strong>. The <strong>K-FAC</strong> optimizer approximates the Fisher Information Matrix of
+                        a layer as \(F \approx A \otimes G\), where \(A = \mathbb{E}[\mathbf{a}\mathbf{a}^\top]\) is the second-moment matrix of the layer's
+                        input activations \(\mathbf{a}\) and \(G\) is the corresponding second-moment matrix of the backpropagated gradients.
                     </p>
                     <p>
                         By exploiting this structure, K-FAC replaces one inversion of cost \(O(n^3)\) on the full parameter space by two inversions of the
                         factors. For a layer whose input and output dimensions are comparable, this is approximately \(O(n^{3/2})\). The
-                        <strong>eigenvalue property</strong> further enables efficient <strong>spectral preconditioning</strong>. It lets large-scale networks
-                        use the curvature of the loss landscape and converge faster. K-FAC is treated in detail on the
+                        <strong>eigenvalue property</strong> further enables efficient <strong>spectral preconditioning</strong>, since the eigenvectors and
+                        eigenvalues of \(A \otimes G\) come from those of the two small factors. Preconditioning with this Fisher approximation, a positive
+                        semidefinite proxy for curvature, often speeds up training in practice. K-FAC is treated in detail on the
                         <a href="../Machine_learning/natural_gd.html#kfac"><strong>Natural Gradient Descent</strong></a> page.
                     </p>
                 </div>
@@ -517,8 +521,8 @@ uses_python: true
                         <li>A <strong>matrix</strong> is an order-2 tensor (a two-dimensional array, \(A \in \mathbb{R}^{m \times n}\)).</li>
                     </ul>
                     <p>
-                        The <strong>order</strong> (also called <strong>mode</strong> or informally "dimension") of a tensor refers to 
-                        the number of indices required to specify an entry.
+                        The <strong>order</strong> of a tensor (also called its number of <strong>modes</strong> or ways, or informally its "dimension") is the
+                        number of indices required to specify an entry.
                     </p>
                 </div>
 
@@ -564,11 +568,12 @@ uses_python: true
                 </div>
 
                 <p>
-                    <em>Remark.</em> A basis-free definition exists via a <strong>universal property</strong>. The space \(V \otimes W\) is the unique (up
-                    to isomorphism) vector space \(U\) equipped with a bilinear map \(V \times W \to U\) through which every bilinear map out of
-                    \(V \times W\) factors uniquely. This formulation makes the tensor product independent of any basis choice and extends naturally to
-                    infinite-dimensional and more general settings. We will not need this level of generality here. The basis-based definition above
-                    suffices for everything we do here.
+                    <em>Remark.</em> A basis-free definition exists via a <strong>universal property</strong>. The space \(V \otimes W\) is characterized,
+                    up to a unique isomorphism compatible with the bilinear maps, as a vector space \(U\) equipped with a bilinear map
+                    \(\otimes : V \times W \to U\) such that every bilinear map \(\beta : V \times W \to Z\) into a vector space \(Z\) equals
+                    \(L \circ \otimes\) for a unique linear map \(L : U \to Z\). This formulation makes the tensor product independent of any basis choice
+                    and extends naturally to infinite-dimensional and more general settings. We will not need this level of generality here. The
+                    basis-based definition above suffices for everything we do here.
                 </p>
 
                 <p>
@@ -612,18 +617,19 @@ uses_python: true
                     <h3>Insight: Tensors as the Language of Deep Learning</h3>
                     <p>
                         While deep learning frameworks treat tensors primarily as multidimensional arrays, their algebraic power stems from their identity as
-                        <strong>multilinear maps</strong>. In Transformer architectures, the <strong>Attention mechanism</strong> is fundamentally a series of
-                        tensor contractions. Specifically, queries and keys interact through bilinear operations to produce attention weights.
+                        <strong>multilinear maps</strong>. In Transformer architectures, the <strong>Attention mechanism</strong> is built from tensor
+                        contractions with a softmax in between. Queries and keys interact through bilinear operations to produce attention scores, a softmax
+                        turns the scores into weights, and a further contraction with the values produces the output.
                     </p>
                     <p>
-                        In the emerging field of <strong>Geometric Deep Learning</strong>, the mathematical definition of a tensor, namely how it transforms
-                        under coordinate changes, becomes critical. This enables the design of <strong>Equivariant Neural Networks</strong>, where internal
-                        representations (scalars, vectors, and higher-order tensors) transform consistently according to group representations. This ensures
-                        the model respects the underlying physical symmetries of the data, such as rotation and reflection invariance in 3D molecular modeling
-                        or medical imaging. The relevant symmetries are formalized through continuous matrix groups such as
-                        <a href="lie_groups.html#D-special_orthogonal_group" class="ref-link"><strong>\(SO(n)\)</strong></a>, developed in the Lie groups
-                        series later in our linear-algebra pages. The geometric flavor of these groups is previewed in
-                        <a href="dihedral_group.html#SOSE"><strong>Geometry of Symmetry</strong></a>.
+                        In the emerging field of <strong>Geometric Deep Learning</strong>, the way a tensor's components transform under coordinate changes, a
+                        consequence of its definition as an element of a tensor product, becomes critical. This enables the design of
+                        <strong>Equivariant Neural Networks</strong>, where internal representations (scalars, vectors, and higher-order tensors) transform
+                        consistently according to group representations. This ensures the model respects the underlying physical symmetries of the data, such
+                        as rotation and reflection invariance in 3D molecular modeling or medical imaging. The relevant symmetries are formalized through
+                        continuous matrix groups such as <a href="lie_groups.html#D-special_orthogonal_group" class="ref-link"><strong>\(SO(n)\)</strong></a>
+                        and \(O(n)\), developed in the Lie groups series later in our linear-algebra pages. The geometric flavor of these groups is previewed
+                        in <a href="dihedral_group.html#SOSE"><strong>Geometry of Symmetry</strong></a>.
                     </p>
                 </div>
 

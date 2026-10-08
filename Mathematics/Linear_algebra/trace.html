@@ -131,7 +131,7 @@ uses_python: false
                         The term \(j = 1\) is \((\lambda - a_{11}) \det(\lambda I - A_{11})\), where \(A_{11}\) is \(A\)
                         with its first row and column deleted, and by the induction hypothesis this equals
                         \(\lambda^n - (a_{11} + \operatorname{tr}(A_{11}))\lambda^{n-1} + \cdots = \lambda^n - \operatorname{tr}(A)\lambda^{n-1} + \cdots\).
-                        For \(j \geq 2\) the term is \(-a_{1j}\) times the determinant of a minor in which only
+                        For \(j \geq 2\) the term is \((-1)^{1+j}(-a_{1j})\) times the determinant of a minor in which only
                         \(n - 2\) rows contain \(\lambda\). Since every product in the cofactor expansion uses exactly
                         one entry from each row, that term has degree at most \(n - 2\). Over \(\mathbb{C}\), the
                         fundamental theorem of algebra factors the monic polynomial \(p_A\) as
@@ -163,9 +163,9 @@ uses_python: false
                         </li>
                         <li>
                             <strong>Computational Efficiency (The Summation Trick).</strong> 
-                            Suppose we need to compute the average of quadratic forms over \(N\) data points.
-                            Calculating each individually is computationally expensive, but the trace trick allows us to
-                            factor through the <strong>covariance matrix</strong>:
+                            Suppose we need to compute the average of quadratic forms over \(N\) data points. The trace trick lets
+                            us factor it through the <strong>second-moment matrix</strong> \(\Sigma\) (the covariance matrix when
+                            the data are centered):
                             \[
                             \begin{align*}
                             \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i^\top A \mathbf{x}_i
@@ -173,8 +173,8 @@ uses_python: false
                             &= \operatorname{tr}(A \Sigma).
                             \end{align*}
                             \]
-                            By pre-computing the covariance \(\Sigma\), we reduce \(N\) vector-matrix-vector products to
-                            a single matrix product and one trace operation.
+                            Once \(\Sigma\) has been computed, the average for any further matrix \(A\) costs the single trace
+                            \(\operatorname{tr}(A\Sigma)\) instead of \(N\) vector-matrix-vector products.
                         </li>
                         <li>
                             <strong>Structural Analysis.</strong> 
@@ -247,13 +247,13 @@ uses_python: false
                 <p>
                     While the trace characterizes matrices through a single scalar, norms provide a way to measure the
                     "size" or "magnitude" of both vectors and matrices. In machine learning, norms are fundamental for
-                    training stability, and they are used to scale data to a common range, ensuring that every feature
-                    contributes equally to model training and reducing sensitivity to feature scale. This
-                    <strong>normalization</strong> process is important in distance-based models such as
+                    training stability, and they are used to scale data to a common range, so that no feature dominates
+                    merely because of its units. This <strong>normalization</strong> process is important in distance-based
+                    models such as
                     <a href="../Machine_learning/svm.html"><strong>support vector machines (SVMs)</strong></a> and
                     <strong>\(k\)-nearest neighbors (k-NN)</strong>. Norms also appear in
-                    <a href="../Machine_learning/regression.html"><strong>regularization</strong></a>, which penalizes
-                    model complexity to avoid overfitting and help the model <strong>generalize</strong> to new data.
+                    <a href="../Machine_learning/regression.html"><strong>regularization</strong></a>, which penalizes model
+                    complexity to avoid overfitting and help the model <strong>generalize</strong> to new data.
                 </p>
 
                 <p>
@@ -531,9 +531,10 @@ uses_python: false
                 </div>
             
                 <p>
-                    The spectral norm is commonly used to control the <strong>Lipschitz continuity</strong> of functions 
-                    in <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a> 
-                    to prevent <strong>vanishing or exploding gradients</strong>.
+                    The spectral norm is commonly used to control the <strong>Lipschitz continuity</strong> of functions in
+                    <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a>. Bounding it
+                    guards against <strong>exploding gradients</strong>, although an upper bound alone cannot
+                    prevent vanishing ones.
                 </p>
 
                 <p>
@@ -761,21 +762,22 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Why This Abstraction Matters for ML and CS</h3>
                     <p>
-                        The convergence of iterative algorithms (gradient descent, Newton's method, EM, MCMC) is not fundamentally about 
-                        real numbers or Euclidean geometry. It is about whether successive iterates get closer to a limit, 
-                        in <em>some</em> notion of distance. The relevant notion depends on the space:
+                        The convergence of iterative algorithms (gradient descent, Newton's method, EM, MCMC) is not
+                        fundamentally about real numbers or Euclidean geometry. It is about whether successive iterates (for
+                        MCMC, the successive distributions of the state) get closer to a limit, in <em>some</em> notion of
+                        distance. The relevant notion depends on the space:
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>On \(\mathbb{R}^n\), gradient descent is analyzed using the Euclidean metric.</li>
                         <li>On spaces of matrices, low-rank recovery is analyzed using the Frobenius or nuclear norm.</li>
-                        <li>On spaces of probability distributions, convergence is measured by the Wasserstein metric or KL divergence.</li>
+                        <li>On spaces of probability distributions, convergence is measured by the Wasserstein metric, or by divergences such as the KL divergence, which is not a metric.</li>
                         <li>On function spaces (where neural networks live in the infinite-width limit), a natural metric comes from an \(L^p\) norm.</li>
                     </ul>
                     <p>
-                        Each of these is a different metric space. To speak the language of convergence in modern ML
-                        (why an algorithm converges, at what rate, and to what limit), one must first speak the language
-                        of <a href="../Calculus/metric_space.html"><strong>metric spaces</strong></a>, which is exactly
-                        where this path continues.
+                        Each metric here defines a different metric space. To speak the language of convergence in modern ML
+                        (why an algorithm converges, at what rate, and to what limit), one must first speak the language of
+                        <a href="../Calculus/metric_space.html"><strong>metric spaces</strong></a>, which is exactly where
+                        this path continues.
                     </p>
                 </div>
             </section>
