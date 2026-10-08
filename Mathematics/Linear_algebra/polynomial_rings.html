@@ -110,24 +110,25 @@ uses_python: false
                 <p>
                     The formula for \(c_k\) is a <strong>discrete convolution</strong>. The same operation appears throughout signal
                     processing and deep learning. In Convolutional Neural Networks (CNNs), the "convolution" of a filter with an
-                    input follows this identical algebraic pattern. Understanding polynomial multiplication thus provides insight
+                    input follows the same pattern with the filter reversed (most CNN libraries compute this cross-correlation).
+                    Understanding polynomial multiplication thus provides insight
                     into why convolution is so natural for processing sequential and spatial data.
                 </p>
 
                 <p>
                     <strong>Computational Note.</strong> For degree-\(n\) polynomials, naive polynomial multiplication requires
-                    \(O(n^2)\) operations, which becomes a bottleneck for high-degree polynomials. However, by leveraging the
-                    <a href="../Calculus/fourier_transform.html#fft"><strong>Fast Fourier Transform (FFT)</strong></a>, we can reduce
-                    this time complexity to \(O(n \log n)\).
+                    \(O(n^2)\) operations, which becomes a bottleneck for high-degree polynomials. However, for complex coefficients,
+                    by leveraging the <a href="../Calculus/fourier_transform.html#fft"><strong>Fast Fourier Transform (FFT)</strong></a>,
+                    we can reduce this time complexity to \(O(n \log n)\).
                 </p>
                 <p>
                     The key insight lies in the
                     <a href="../Calculus/fourier_transform.html#convolution"><strong>Convolution Theorem</strong></a>:
                     while convolution is computationally expensive in the coefficient representation, it transforms into
                     simple <strong>pointwise multiplication</strong> in the evaluation (frequency) representation. This
-                    FFT-based approach is not just a theoretical curiosity. It provides the backbone for efficient
-                    implementations of <strong>CRC</strong>, <strong>Reed-Solomon codes</strong>, and large-integer
-                    arithmetic in modern cryptographic libraries.
+                    FFT-based approach is not just a theoretical curiosity. It is how very large integers and polynomials are
+                    multiplied in practice, and a version of it over \(\mathbb{Z}_q\), the <strong>number-theoretic transform</strong>,
+                    multiplies polynomials in the lattice-based standard <strong>ML-KEM</strong> discussed at the end of this page.
                 </p>
 
                 <p>
@@ -515,9 +516,9 @@ uses_python: false
 
                 <p>
                     At first glance, Gauss's Lemma may seem like a niche property of primitive polynomials. However, its true power 
-                    lies in how it connects the arithmetic of integers to the arithmetic of rational numbers. Since any polynomial with 
-                    rational coefficients can be transformed into a primitive integer polynomial by clearing denominators, we obtain 
-                    the following crucial corollary:
+                    lies in how it connects the arithmetic of integers to the arithmetic of rational numbers. Since any nonzero polynomial
+                    with rational coefficients can be transformed into a primitive integer polynomial by clearing denominators and then
+                    dividing by the content, we obtain the following crucial corollary:
                 </p>
 
                 <div class="theorem" id="T-reducible_Q_implies_reducible_Z">
@@ -569,8 +570,8 @@ uses_python: false
                 <p>
                     Specifically, it ensures that if a polynomial \(f(x) \in \mathbb{Z}[x]\) cannot be factored using integer
                     coefficients, it is mathematically impossible to find a factorization using rational coefficients either. This
-                    effectively reduces a search across the infinite set \(\mathbb{Q}\) to a finite, decidable problem within
-                    \(\mathbb{Z}\), a necessity for any computational approach to irreducibility.
+                    reduces a search over rational coefficients to a search over integer coefficients, which is where computational
+                    approaches to irreducibility over \(\mathbb{Q}\) begin.
                 </p>
 
                 <div class="theorem" id="T-mod_p_irreducibility_test">
@@ -690,15 +691,16 @@ uses_python: false
 
                 <p>
                     Eisenstein's Criterion gives a quick supply of polynomials that are irreducible over \(\mathbb{Q}\) of any
-                    degree we desire. We simply choose a prime \(p\) and set the coefficients accordingly. This is how
-                    extensions of \(\mathbb{Q}\) of prescribed degree are built. The finite fields used in cryptography need
+                    degree we desire. We simply choose a prime \(p\) and set the coefficients accordingly. This gives an easy
+                    way to build extensions of \(\mathbb{Q}\) of any prescribed degree. The finite fields used in cryptography need
                     irreducibility over \(\mathbb{Z}_p\) instead, and the criterion says nothing about that question.
                 </p>
 
                 <p>
                     <strong>Algorithmic Perspective.</strong> Testing irreducibility is a fundamental operation in
                     <strong>Computer Algebra Systems (CAS)</strong> like Mathematica. The tests covered here (degree 2-3 test, Mod
-                    \(p\) test, Eisenstein's Criterion) are among the elementary checks such systems apply first. For large polynomials over
+                    \(p\) test, Eisenstein's Criterion) show the basic ideas, and reduction modulo a prime, as in the Mod \(p\) test, is a
+                    core step of the standard algorithms for factoring over \(\mathbb{Z}\). For large polynomials over
                     finite fields, more sophisticated algorithms are employed: <strong>Berlekamp's algorithm</strong> (1967), a
                     deterministic method based on linear algebra, and the <strong>Cantor-Zassenhaus algorithm</strong> (1981), a
                     probabilistic method that is now the dominant approach in modern implementations.
@@ -801,8 +803,8 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">The Essence of the Proof:</span>
                     <strong>Existence.</strong> Given a polynomial that is not yet a product of irreducibles, we keep splitting it into 
-                    smaller pieces. Each split either lowers the degree of a factor or shrinks the integer coefficients (when we peel off 
-                    a prime constant from the content). Both quantities are non-negative integers, so the splitting cannot continue
+                    smaller pieces. Each split either lowers the degree of a factor or lowers the content (when we peel off a prime
+                    constant). Degree and content are non-negative integers, so the splitting cannot continue
                     forever. The process terminates with a product of irreducible "atoms."
                     <br><br>
                     <strong>Uniqueness.</strong> Two ingredients combine. First, 
@@ -818,15 +820,19 @@ uses_python: false
 
                 <p>
                     This theorem tells us that irreducible polynomials are truly the "prime numbers" of the polynomial world. 
-                    Just as we can break down 60 into \(2^2 \cdot 3 \cdot 5\), we can break down any complex polynomial into 
-                    a unique set of irreducible atoms.
+                    Just as we can break down 60 into \(2^2 \cdot 3 \cdot 5\), we can break down any polynomial in \(\mathbb{Z}[x]\) that is
+                    neither zero nor a unit into irreducible atoms, unique up to order and sign.
                 </p>
 
                 <p>
-                    In computing, this <strong>atomicity</strong> is what makes data structures based on polynomials reliable. In
-                    <strong>Reed-Solomon codes</strong> (used in QR codes, CDs, DVDs, and deep-space communication), data is encoded
-                    as coefficients of a polynomial. The uniqueness of the factorization ensures that the error pattern can be
-                    unambiguously identified and corrected.
+                    Polynomials also make data reliable in a different way. In one standard description of
+                    <strong>Reed-Solomon codes</strong> (used in QR codes, CDs, DVDs, and deep-space communication), the data are the
+                    coefficients of a polynomial of degree less than \(k\) over a finite field, and the transmitted codeword lists the
+                    values of that polynomial at \(n \geq k\) distinct points of the field. Since a nonzero polynomial of degree less than
+                    \(k\) has <a href="#T-poly_at_most_n_zeros" class="ref-link"><strong>at most \(k - 1\) zeros</strong></a>, two
+                    different data polynomials agree at no more than \(k - 1\) of these points, so any two codewords differ in at least
+                    \(n - k + 1\) of the \(n\) positions. If at most \(\lfloor (n - k)/2 \rfloor\) values are corrupted, the received word is
+                    still closer to the transmitted codeword than to any other, so the data can be identified and corrected.
                 </p>
                 
             </section>
@@ -834,9 +840,9 @@ uses_python: false
            <section id="bridge" class="section-content">
                 <h2>Bridge to AES</h2>
                 <p>
-                    The Advanced Encryption Standard (AES) processes data in 8-bit blocks (bytes). To perform secure algebraic operations on 
-                    these bits, we map each byte to a formal polynomial in \(\mathbb{Z}_2[x]\). For example, the byte <code>10001101</code> is 
-                    treated as \(x^7 + x^3 + x^2 + 1\).
+                    The Advanced Encryption Standard (AES) processes data in 128-bit blocks, each arranged as 16 bytes. To perform secure
+                    algebraic operations on these bytes, we map each byte to a formal polynomial in \(\mathbb{Z}_2[x]\). For example, the
+                    byte <code>10001101</code> is treated as \(x^7 + x^3 + x^2 + 1\).
                 </p>
                 <ul style="padding-left: 40px;">
                     <li><strong>The Field.</strong> To ensure every nonzero byte has a multiplicative inverse, AES uses the finite field \(GF(2^8)\).
@@ -847,7 +853,7 @@ uses_python: false
                     <li><strong>The S-Box.</strong> The AES <em>SubBytes</em> step consists of two stages. The first computes the
                         multiplicative inverse \(a^{-1}\) of each byte \(a\) within \(GF(2^8)\), with the convention that
                         \(0 \mapsto 0\) because the zero byte has no inverse. The second applies an affine transformation over
-                        \(GF(2)\). The first stage is mathematically defined only because we are working within a field
+                        \(GF(2)\). The first stage is defined on every nonzero byte only because we are working within a field
                         constructed from an irreducible modulus.</li>
                 </ul><br>     
 
@@ -884,9 +890,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    The "atomic" nature of irreducible polynomials does not just protect today's web traffic. It provides the
-                    structural integrity for the next generation of cryptographic defenses. The future of security is not about
-                    abandoning these classical algebraic structures, but scaling them to meet the quantum challenge.
+                    The modulus plays a different role there than in AES. In ML-KEM, \(n = 256\) and \(q = 3329\), and
+                    \(x^{256} + 1\) splits modulo \(q\) into \(128\) quadratic factors, so the quotient ring is deliberately not a
+                    field. This splitting is what makes its arithmetic fast, and the security rests on lattice problems rather than
+                    on irreducibility. The future of security is not about abandoning polynomial quotient rings, but
+                    scaling them to meet the quantum challenge.
                 </p>
             </section>
             

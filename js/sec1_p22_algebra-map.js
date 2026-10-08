@@ -2,9 +2,11 @@
 // sec1_p22_algebra-map.js (v2) -- linalg-22
 // [Core IIFE] AlgCore: the hierarchy of algebraic structures with
 // EXECUTABLE separating witnesses. Every strict inclusion displayed by
-// the map is backed by a computation in runSelfTests(); the resident
-// data table is itself cross-validated against those computations, so
-// a wrong placement cannot render.
+// the map, except PID > ED (an unwitnessed gap, noted in the PID layer's gapNote),
+// has a witness whose computation runs in runSelfTests(). The resident
+// placements are entered by hand and checked against a second
+// hand-written placement list (A8c); they are not derived from the
+// witness computations.
 //
 // Layer semantics (outermost to innermost):
 //   Group  > Ring > Integral Domain > UFD > PID > ED > Field
@@ -182,8 +184,8 @@ var AlgCore = (function () {
   ];
 
   //====================================================================
-  // Self-tests: every witness, executed; then the data table validated
-  // against the witness outcomes.
+  // Self-tests: every witness, executed; then the data table checked
+  // against a hand-written placement list.
   //====================================================================
   function runSelfTests() {
     var failures = [];
@@ -236,7 +238,8 @@ var AlgCore = (function () {
       check('A2d Z/6 distributive (exhaustive)', distrib);
     })();
 
-    // ---- W_Zs5: the page's two-factorization witness, fully certified ----
+    // ---- W_Zs5: the page's two-factorization witness (exact identities;
+    // norm multiplicativity checked on a finite box) ----
     (function () {
       var one_p = [1, 1], one_m = [1, -1], two = [2, 0], three = [3, 0];
       // the ring homomorphism into C: route-independence of the product rule
@@ -298,7 +301,9 @@ var AlgCore = (function () {
         if (member[0] !== 2 * f[0]) okEven = false; // const term identity, exact
       }
       check('A4a const(2f + xg) == 2 f(0) exactly (80 seeded)', okEven);
-      check('A4b 1 has an odd constant term, so 1 \u2209 (2, x) and \u27E8\u00B11\u27E9 \u2260 (2, x)', (1 % 2) !== 0);
+      // Since const(2f + xg) = 2 f(0) (spot-checked by A4a), every member of
+      // (2, x) has an even constant term, so the odd constant 1 is not a
+      // member and <+-1> != (2, x).
       // x is not a multiple of 2: 2h has every coefficient even; x has a 1
       var okOdd = true;
       for (i = 0; i < 40; i++) {
@@ -307,7 +312,9 @@ var AlgCore = (function () {
         if (m2.some(function (co) { return ((co % 2) + 2) % 2 !== 0; })) okOdd = false;
       }
       check('A4c every element of \u27E82\u27E9 has all-even coefficients (40 seeded)', okOdd);
-      check('A4d x has coefficient 1, so x \u2209 \u27E8\u00B12\u27E9', true && (1 % 2) === 1);
+      // Since 2h has all-even coefficients (spot-checked by A4c), every
+      // member of <2> does, while x has the odd coefficient 1, so x is not
+      // a member of <+-2>.
       // any generator of (2, x) must divide 2, hence be constant +-1 or +-2:
       // deg additivity over Z (no zero divisors -> leading coeffs multiply)
       var okDeg = true;
@@ -352,7 +359,7 @@ var AlgCore = (function () {
         if (polyDeg(dm.r) >= polyDeg(g)) okDiv = false;
       }
       check('A6a division algorithm in GF(7)[x] (60 seeded, exact)', okDiv);
-      // x * g != 1 for every g up to degree 4 with coefficients mod 7:
+      // x * g != 1, checked on 60 seeded g of degree <= 4 over GF(7):
       // x*g has zero constant term, 1 does not
       var okNoInv = true;
       for (i = 0; i < 60; i++) {
@@ -380,24 +387,26 @@ var AlgCore = (function () {
       check('A7c exact division in GF(7): remainder always 0', okF);
     })();
 
-    // ---- A8: the display data validates against the witnesses ----
+    // ---- A8: consistency of the display data ----
     (function () {
       var idx = {};
       ORDER.forEach(function (kk, n) { idx[kk] = n; });
       check('A8a layer order matches LAYERS array', LAYERS.every(function (L, n) { return L.key === ORDER[n]; }));
-      check('A8b radii will nest strictly (7 layers)', LAYERS.length === 7);
-      // tightest-class claims consistent with the computations above:
+      check('A8b exactly 7 layers', LAYERS.length === 7);
+      // tightest-class placements, entered by hand from the witnesses above
+      // (Q has no computed witness; it is placed as the field of fractions of Z):
       var claims = {
         S3: idx.group, Z6: idx.ring, Zs5: idx.id, Zx: idx.ufd,
         Z: idx.ed, F7x: idx.ed, F7: idx.field, Q: idx.field
       };
       var okClaims = RESIDENTS.every(function (r) { return claims[r.id] === idx[r.tightest]; });
-      check('A8c resident placements match the certified witnesses', okClaims);
+      check('A8c resident placements match the hand-written placement list', okClaims);
       check('A8g the PID layer carries the strictness note (honest gap)',
         typeof LAYERS[idx.pid].gapNote === 'string' && LAYERS[idx.pid].gapNote.indexOf('beyond this page') >= 0);
       // monotone consistency: the witness computations force these:
       check('A8d Z/6 is a ring but not an ID (zero divisors exist)', zeroDivisorsOf(6).length > 0);
-      check('A8e Z[\u221A\u22125] is an ID (A3j) but not a UFD (A3b-i)', true);
+      // Z[sqrt(-5)] is not a UFD by A3b-A3i; it is an ID as a subring of C
+      // (A3j checks the norm criterion on a finite box).
       check('A8f every resident id unique', new Set(RESIDENTS.map(function (r) { return r.id; })).size === RESIDENTS.length);
     })();
 
@@ -431,10 +440,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = AlgCore;
 //======================================================================
 // [UI IIFE] #algebra-map-root, prefix alg-
 // Concentric layers Group > Ring > ID > UFD > PID > ED > Field, with
-// resident rings drawn as dots in the annulus of their TIGHTEST class.
-// Clicking a layer shows its definition and the page theorems proving
-// its inclusion; clicking a resident shows its membership vector and
-// the separating witness -- the same computation the gate just ran.
+// residents (S3 and rings) drawn as dots in the annulus of their
+// TIGHTEST class. Clicking a layer shows its definition and, where
+// available, links to related definitions and theorems on this page;
+// clicking a resident shows its membership vector and a blurb
+// describing why it sits in that tier.
 //======================================================================
 (function () {
   'use strict';
@@ -541,15 +551,16 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = AlgCore;
     root.innerHTML =
       '<div class="alg-root">' +
       '<div class="alg-hint">Each layer inward keeps the objects and adds a property; the single outermost step is ' +
-        'different in kind \u2014 every ring is, through its addition, an abelian group. Each dot is a concrete ring ' +
-        'placed in the <em>gap</em> of its tightest class: click it to see the computation that pins it there. Every ' +
-        'witness shown below was verified by the demo\u2019s self-tests before this map rendered.</div>' +
+        'different in kind \u2014 every ring is, through its addition, an abelian group. Each dot is a concrete example ' +
+        '(S\u2083 is a group, the others are rings) placed in the <em>gap</em> of its tightest class: click it to see why ' +
+        'it sits there. For every dot except \u211A, the computations behind its witness ran as the demo\u2019s ' +
+        'self-tests before this map rendered.</div>' +
       '<div class="alg-layout">' +
       '<div class="alg-mapcell"><svg viewBox="0 0 600 600">' + svg + '</svg></div>' +
       '<div class="alg-info" id="alg-info">' +
         '<div class="alg-infotitle" id="alg-info-name">The hierarchy of integrity</div>' +
-        '<div class="alg-infobody" id="alg-info-body">Click a layer for its definition and the page theorems that ' +
-          'prove its inclusion, or click a ring for the separating witness that fixes its exact tier.</div>' +
+        '<div class="alg-infobody" id="alg-info-body">Click a layer for its definition (with links to related ' +
+          'definitions and theorems on this page, where available), or click a dot for the reason it sits in its tier.</div>' +
         '<div class="alg-vector" id="alg-info-vector"></div>' +
         '<div class="alg-links" id="alg-info-links"></div>' +
       '</div>' +
