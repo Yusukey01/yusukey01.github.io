@@ -123,8 +123,8 @@ uses_python: false
                     and \(v_j\) are adjacent, \(v_i \sim v_j\), exactly when \(w_{ij} \gt 0\). The weighted degree is
                     \(d_i = \sum_j w_{ij}\), the degree matrix is \(\boldsymbol{D} = \operatorname{diag}(d_1, \ldots, d_n)\),
                     and the Laplacian is \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\) as before. The unweighted case
-                    is \(w_{ij} \in \{0, 1\}\), which recovers the definition above, and every statement below is proved in
-                    the weighted setting.
+                    is \(w_{ij} \in \{0, 1\}\), which recovers the definition above. Unless a statement says otherwise, every
+                    result below holds in the weighted setting.
                 </p>
 
                 <div class="theorem" id="T-dirichlet_energy">
@@ -191,8 +191,8 @@ uses_python: false
 
                 <p>
                     The Dirichlet energy is small when adjacent vertices have similar signal values (the signal 
-                    is "smooth") and large when adjacent vertices differ significantly. The Laplacian thus acts 
-                    as an operator that measures the total variation of a signal across the graph's edges. 
+                    is "smooth") and large when adjacent vertices differ significantly. The quadratic form of the Laplacian thus
+                    measures the total squared variation of a signal across the graph's edges.
                     The nonnegativity of every summand also gives an immediate structural consequence.
                 </p>
 
@@ -399,7 +399,7 @@ uses_python: false
                         \]
                         so the <strong>multiplicity of the zero eigenvalue</strong> equals the number of connected components:
                         \(\dim \ker \boldsymbol{L} = c\). In particular, \(G\) is connected if and only if \(\lambda_0 = 0\) is a
-                        simple eigenvalue, equivalently \(\lambda_1 \gt 0\).
+                        simple eigenvalue. When \(n \geq 2\), this is equivalent to \(\lambda_1 \gt 0\).
                     </p>
                 </div>
 
@@ -452,15 +452,16 @@ uses_python: false
                     </p>
                     <p>
                         If \(G\) is connected, \(c = 1\) and \(\ker \boldsymbol{L} = \operatorname{span}\{\boldsymbol{1}\}\) is
-                        one-dimensional. Hence \(\lambda_0 = 0\) is simple, and the next eigenvalue satisfies \(\lambda_1 \gt 0\).
+                        one-dimensional. Hence \(\lambda_0 = 0\) is simple. When \(n \geq 2\), the next eigenvalue
+                        therefore satisfies \(\lambda_1 \gt 0\).
                     </p>
                 </div>
 
                 <h3>The Fiedler Vector and Algebraic Connectivity</h3>
 
                 <p>
-                    While \(\lambda_0 = 0\) tells us whether the graph is connected (and how many components it has), 
-                    the second-smallest eigenvalue \(\lambda_1\) quantifies <em>how well</em> the graph is connected. 
+                    While the multiplicity of the eigenvalue \(\lambda_0 = 0\) tells us whether the graph is connected (and how many
+                    components it has), the second-smallest eigenvalue \(\lambda_1\) quantifies <em>how well</em> the graph is connected. 
                     It is arguably the single most informative spectral quantity of a graph.
                 </p>
 
@@ -488,7 +489,8 @@ uses_python: false
                 <div class="theorem" id="T-fiedler_connectivity">
                     <span class="theorem-title">Theorem: Algebraic Connectivity and Graph Connectedness</span>
                     <p>
-                        For a graph \(G\), \(\lambda_1 \gt 0\) if and only if \(G\) is connected. This is an immediate corollary of
+                        For a graph \(G\) with \(n \geq 2\) vertices, \(\lambda_1 \gt 0\) if and only if \(G\) is connected.
+                        This is an immediate corollary of
                         <a href="#T-kernel_connectivity" class="ref-link"><strong>Theorem: Kernel of \(\boldsymbol{L}\) and Connected Components</strong></a>:
                         \(G\) is connected if and only if \(c = 1\), and by the theorem this holds if and only if
                         \(\dim \ker \boldsymbol{L} = 1\), that is, if and only if \(\lambda_1 \gt 0\).
@@ -497,7 +499,7 @@ uses_python: false
 
                 <p>
                     Heuristically, a larger \(\lambda_1\) indicates a more "well-connected" graph, one with less of a "bottleneck". The
-                    next subsection turns this heuristic into an inequality.
+                    next subsection turns this heuristic into an inequality for the normalized Laplacian.
                 </p>
                 
                 <h3>The Spectral Gap and Cheeger's Inequality</h3>
@@ -505,8 +507,8 @@ uses_python: false
                 <p>
                     The Fiedler value \(\lambda_1\) provides a spectral measure of connectivity, but 
                     one might ask: does it correspond to a genuine combinatorial notion of "bottleneck"? 
-                    Cheeger's inequality makes this connection precise, relating the spectral gap to the 
-                    minimum normalized cut of the graph.
+                    Cheeger's inequality makes this connection precise, relating the spectral gap of the normalized
+                    Laplacian to the Cheeger constant, a minimum cut normalized by volume, defined below.
                 </p>
 
                 <div class="theorem" id="T-cheeger_inequality">
@@ -541,8 +543,8 @@ uses_python: false
                         only if \(G\) is disconnected).
                     </p>
                     <p>
-                        <em>The proof is nontrivial. The lower bound in particular requires a careful analysis of the Fiedler vector's
-                        level sets. We omit it here but will use the inequality freely below.</em>
+                        <em>The proof is nontrivial. The lower bound in particular requires a careful analysis of the level sets of an
+                        eigenvector of \(\mathcal{L}_{rw}\) for \(\lambda_1^{\mathrm{norm}}\). We omit it here.</em>
                     </p>
                 </div>
 
@@ -650,7 +652,7 @@ uses_python: false
                 <p>
                     The spectral theory above assumes access to the full eigendecomposition of \(\boldsymbol{L}\), but computing all
                     \(n\) eigenvalues and eigenvectors requires \(O(n^3)\) operations, which is prohibitive for graphs with millions of
-                    vertices. In practice, most applications (spectral clustering, GNNs, graph partitioning) require only the few
+                    vertices. In practice, many applications, such as spectral clustering and graph partitioning, require only the few
                     smallest eigenvalues and their eigenvectors, which can be computed efficiently using iterative methods.
                 </p>
 
@@ -847,8 +849,10 @@ uses_python: false
                 <p>
                     The same diffusive process is also the formal explanation for the <strong>over-smoothing</strong> problem in deep
                     GNNs. Repeated application of a smoothing operator such as \(e^{-t\boldsymbol{L}}\), or of the GCN propagation
-                    matrix, drives features toward the kernel of the corresponding Laplacian (for \(e^{-t\boldsymbol{L}}\), the signals
-                    that are constant on every connected component), so that node representations become indistinguishable.
+                    matrix introduced below, drives features toward the eigenspace for the eigenvalue \(1\) of that operator. For
+                    \(e^{-t\boldsymbol{L}}\), this eigenspace is \(\ker \boldsymbol{L}\), the signals that are constant on every connected
+                    component. Within each connected component, node representations therefore become indistinguishable (for the
+                    GCN matrix, up to a degree-dependent scale).
                 </p>
                 <p>
                     More advanced models take this connection to its logical conclusion, explicitly modeling GNNs as continuous-time
@@ -901,9 +905,9 @@ uses_python: false
                         network tomography, and graph embeddings.
                     </li>
                     <li><strong>Matrix-Tree Theorem (Kirchhoff):</strong><br>
-                        Any cofactor of \(\boldsymbol{L}\) equals the number of <strong>spanning trees</strong> of \(G\). This
-                        combinatorial identity connects Laplacian spectra to graph enumeration and is foundational in statistical
-                        physics and random graph theory.
+                        For an unweighted graph, any cofactor of \(\boldsymbol{L}\) equals the number of <strong>spanning trees</strong>
+                        of \(G\). This combinatorial identity connects Laplacian spectra to graph enumeration and is foundational in
+                        statistical physics and random graph theory.
                     </li>
                     <li><strong>Computer Vision:</strong><br>
                          Historically used for image segmentation and denoising via graph cuts (minimum cut problems, which are directly 
@@ -918,8 +922,8 @@ uses_python: false
                 <h2>Looking Ahead</h2>
 
                 <p>
-                    The graph Laplacian closes the main arc of our linear-algebra section. We began with abstract vector spaces
-                    and linear maps, then developed the spectral theory of symmetric matrices. Now we have deployed that theory on
+                    The graph Laplacian closes the matrix-theoretic arc of our linear-algebra section. We began with linear systems, linear maps,
+                    and vector spaces, then developed the spectral theory of symmetric matrices. Now we have deployed that theory on
                     a concrete combinatorial object, a graph, to recover connectivity, clustering, frequency, and diffusion, all
                     from a single eigendecomposition. The static algebraic tools developed so far have come together into a
                     dynamical, geometric picture.
@@ -930,8 +934,9 @@ uses_python: false
                 <p>
                     Our definition \(\boldsymbol{L} = \boldsymbol{D} - \boldsymbol{A}\) is combinatorial, in that it starts from
                     adjacency counts. A second, deeper construction is available. Orient each edge arbitrarily and form the
-                    <strong>oriented incidence matrix</strong> \(\boldsymbol{B} \in \mathbb{R}^{n \times m}\), which places \(+1\) at
-                    the tail and \(-1\) at the head of each edge. Then the Laplacian admits the factorization
+                    <strong>oriented incidence matrix</strong> \(\boldsymbol{B} \in \mathbb{R}^{n \times m}\), where \(m\) is the number
+                    of edges. It places \(+1\) at the tail and \(-1\) at the head of each edge. For an unweighted graph, the
+                    Laplacian admits the factorization
                     \[
                     \boldsymbol{L} = \boldsymbol{B}\boldsymbol{B}^\top.
                     \]
@@ -976,13 +981,15 @@ uses_python: false
 
                 <p>
                     The most immediate destination beyond this page is <strong>Graph Neural Networks</strong> and, more broadly,
-                    <strong>Geometric Deep Learning</strong>. Every architectural idea in the <em>spectral</em> GNN family rests on
-                    properties of \(\boldsymbol{L}\) proved on this page. These ideas include spectral filtering, Chebyshev polynomial
-                    approximations, the GCN renormalization trick, heat-kernel diffusion, over-smoothing, and graph differential
-                    equations. Spectral GNNs are, at their core, linear algebraic operators designed to act diagonally in the
-                    eigenbasis of \(\boldsymbol{L}\). Spatial or message-passing GNNs (GAT, GraphSAGE, etc.) do not commute with
-                    \(\boldsymbol{L}\) directly, but they still respect the graph's permutation symmetries, of which commutation with
-                    \(\boldsymbol{L}\) is one strong form.
+                    <strong>Geometric Deep Learning</strong>. Many architectural ideas in the <em>spectral</em> GNN family draw on the
+                    properties of the graph Laplacians developed on this page. These ideas include spectral filtering, Chebyshev polynomial
+                    approximations, the GCN renormalization trick, and heat-kernel diffusion. The same properties also explain
+                    over-smoothing and motivate graph differential equations. Spectral GNNs are, at their core, linear algebraic
+                    operators designed to act diagonally in the eigenbasis of a graph Laplacian (\(\boldsymbol{L}\), \(\mathcal{L}_{sym}\),
+                    or the renormalized \(\boldsymbol{I} - \tilde{\boldsymbol{D}}^{-1/2}\tilde{\boldsymbol{A}}\tilde{\boldsymbol{D}}^{-1/2}\)). Spatial or
+                    message-passing GNNs with a permutation-invariant aggregation (GAT, for example, whose aggregation weights depend on
+                    the features) are in general not filters of this form, but they still respect the graph's permutation symmetries,
+                    as spectral filters \(g(\boldsymbol{L})\) do.
                 </p>
                 <p>
                     The same principle generalizes. On a smooth manifold, the relevant operator is the Laplace-Beltrami operator. On a

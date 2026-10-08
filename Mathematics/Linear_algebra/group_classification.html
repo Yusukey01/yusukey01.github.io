@@ -604,12 +604,14 @@ uses_python: false
                     <li>Track the maximum order found</li>
                 </ol><br>
                 <p>
-                    This requires many modular exponentiations, which are tedious by hand and slow computationally. The
-                    decomposition gives the answer in one line.
+                    This requires many modular exponentiations, which are tedious by hand. Given the factorization
+                    \(105 = 3 \cdot 5 \cdot 7\), the decomposition gives the answer in one line.
                 </p>
 
                 <p>
-                    In cryptography, this maximum order is called the <strong>exponent</strong> of the group. 
+                    The least common multiple of all element orders is called the <strong>exponent</strong> of the group. For
+                    \(U(105)\) it equals the maximum order, since every element order divides \(\operatorname{lcm}(2, 4, 6) = 12\)
+                    and the order \(12\) is attained.
                     It determines how many times an operation must be applied before every element returns to 
                     the identity. For systems like RSA, understanding the group exponent 
                     is essential for security analysis.
@@ -1129,8 +1131,8 @@ uses_python: false
                         <em>Sub-claim:</em> \(|b| = p\).
                     </p>
                     <p>
-                        <em>Proof of Sub-claim.</em> We first show \(b^p \in \langle a \rangle\). If \(|b| = p\), then
-                        \(b^p = e \in \langle a \rangle\) trivially. Otherwise \(|b| \geq p^2\), and by the
+                        <em>Proof of Sub-claim.</em> If \(|b| = p\), there is nothing to prove, so assume \(|b| \geq p^2\). We
+                        first show \(b^p \in \langle a \rangle\). By the
                         <a href="cyclic_groups.html#T-order_of_power" class="ref-link"><strong>Order of a Power</strong></a>
                         formula,
                         \[
@@ -1140,7 +1142,7 @@ uses_python: false
                     <p>
                         In particular \(|b^p| \geq p \gt 1\), so \(b^p \neq e\). If \(b^p \notin \langle a \rangle\), then
                         \(b^p\) would be an element outside \(\langle a \rangle\) with strictly smaller order than \(b\),
-                        contradicting the minimality of \(|b|\). Hence \(b^p \in \langle a \rangle\) in both cases. Say
+                        contradicting the minimality of \(|b|\). Hence \(b^p \in \langle a \rangle\). Say
                         \(b^p = a^i\). Since \(b^p \neq e\) and \(\langle a \rangle\) has order \(p^t\), the exponent can be
                         chosen with \(1 \leq i \lt p^t\).
                     </p>
@@ -1178,7 +1180,7 @@ uses_python: false
                         \]
                         So \(c\) is an element of order dividing \(p\) that lies outside \(\langle a \rangle\). Since
                         \(c \neq e\), in fact \(|c| = p\). By the choice of \(b\) (smallest order among elements outside
-                        \(\langle a \rangle\)), we conclude \(|b| \leq |c| = p\). Combined with \(p \mid |b|\), this gives
+                        \(\langle a \rangle\)), we conclude \(|b| \leq |c| = p\). This contradicts \(|b| \geq p^2\), so
                         \(|b| = p\), proving the Sub-claim.
                     </p>
                     <p>
@@ -1438,8 +1440,11 @@ uses_python: false
 
                 <p>
                     This completes the proof of the Fundamental Theorem of Finite Abelian Groups. The four lemmas together 
-                    show that every finite Abelian group has a unique (up to reordering) decomposition into cyclic groups 
-                    of prime-power order.
+                    show that every finite Abelian group is a direct product of cyclic groups of prime-power order, with the
+                    number of factors and their orders uniquely determined up to reordering. For the uniqueness, write \(G\) as any
+                    internal direct product of cyclic subgroups of prime-power order, and let \(P_i\) be the product of its factors
+                    of \(p_i\)-power order. Comparing orders gives \(|P_i| = p_i^{n_i}\), so every element of \(P_i\) lies in
+                    \(G(p_i)\), and hence \(P_i = G(p_i)\). Lemma 4 applied to each \(G(p_i)\) then fixes the orders of the factors.
                 </p>
 
                 <h3>Using the Theorem</h3>
@@ -1508,11 +1513,11 @@ uses_python: false
                 <p>
                     <a href="#T-cyclic_decomposition_existence" class="ref-link"><strong>Lemma 3</strong></a> and
                     <a href="#T-cyclic_decomposition_uniqueness" class="ref-link"><strong>Lemma 4</strong></a> together
-                    establish that each \(G(p_i)\) admits a unique decomposition into cyclic factors of \(p_i\)-power order,
-                    which (under the correspondence sending a partition \(a_i = b_1 + b_2 + \cdots + b_s\) with
-                    \(b_1 \geq \cdots \geq b_s \geq 1\) to
-                    \(\mathbb{Z}_{p_i^{b_1}} \times \cdots \times \mathbb{Z}_{p_i^{b_s}}\)) is in bijection with the
-                    partitions of \(a_i\).
+                    establish that each \(G(p_i)\) is a direct product of cyclic groups of orders
+                    \(p_i^{b_1}, \ldots, p_i^{b_s}\) with \(b_1 \geq \cdots \geq b_s \geq 1\), and that this list is determined by
+                    \(G(p_i)\). Since \(b_1 + \cdots + b_s = a_i\), the list is a partition of \(a_i\), and every partition
+                    arises, namely from \(\mathbb{Z}_{p_i^{b_1}} \times \cdots \times \mathbb{Z}_{p_i^{b_s}}\). So the Abelian groups of
+                    order \(p_i^{a_i}\), up to isomorphism, are in bijection with the partitions of \(a_i\).
                 </p>
 
                 <p>
@@ -1527,7 +1532,7 @@ uses_python: false
                     <h3>Application: RSA and CRT-Accelerated Decryption</h3>
                     <p>
                         In the RSA cryptosystem, arithmetic takes place in the group of units \(U(n)\) where 
-                        \(n = pq\) is a product of two large primes. Combining the 
+                        \(n = pq\) is a product of two distinct large primes. Combining the 
                         <a href="#T-U_direct_product_CRT" class="ref-link"><strong>\(U(n)\) direct-product theorem</strong></a> 
                         with the cyclic structure 
                         \(U(p) \cong \mathbb{Z}_{p-1}\), which follows from 
@@ -1536,7 +1541,7 @@ uses_python: false
                         \[
                         U(pq) \cong U(p) \times U(q) \cong \mathbb{Z}_{p-1} \times \mathbb{Z}_{q-1}.
                         \]
-                        This is the Fundamental Theorem of Finite Abelian Groups made computationally actionable: 
+                        This is the \(U(n)\) direct-product theorem made computationally actionable: 
                         the single large computation in \(U(pq)\) decomposes into two smaller, independent computations 
                         in \(U(p)\) and \(U(q)\).
                     </p>
