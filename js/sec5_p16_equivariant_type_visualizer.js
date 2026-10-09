@@ -18,12 +18,13 @@
 // only the Schur form is EXACTLY zero for every R (bitwise: rho * lambda
 // and lambda * rho are the same float products).
 //
-// Certificates: exact ONB construction (1/sqrt2, 1/sqrt6, 2/sqrt6);
+// Self-tests: closed-form ONB construction (1/sqrt2, 1/sqrt6, 2/sqrt6);
 // rho2 homomorphism on non-commuting rotations + orthogonality; the
 // DEFINING property coeffs(R S R^T) = rho2(R) coeffs(S); Casimir pins
 // via FD generators (sum_a drho(J_a)^2 = -l(l+1) I: -2 for l=1, -6 for
 // l=2); Schur commutation bitwise-zero; commutant-dimension evidence
-// (3 exact Schur generators + 20 seeded off-span directions all break).
+// (one Schur-form W with all three lambdas nonzero commutes exactly at
+// 5 seeded R; 20 seeded off-span directions all break at a fixed R).
 // ============================================================
 
 var EqvCore = (function () {
@@ -188,7 +189,7 @@ var EqvCore = (function () {
     }
 
     var DEFAULTS = {
-        wSeed: 4201,          // Regenerate advances this stream
+        wSeed: 4201,          // "New random W" increments this seed
         rotSeed: 4301,        // Random Rotation stream
         schurLambdas: [1.5, 0.8, -0.6]
     };
@@ -215,7 +216,8 @@ var EqvCore = (function () {
             check('T1 ONB orthonormal symmetric traceless', ok);
         })();
 
-        // T2: rotation matrices — orthogonality, det, 90-degree pins.
+        // T2: rotation matrices — orthogonality and det on a sample R, one
+        // 90-degree pin (Rz), R_rpy convention pin.
         (function () {
             var R = R_rpy(0.7, -0.4, 1.9);
             var RtR = mul3(T3(R), R);
@@ -395,9 +397,9 @@ var EqvCore = (function () {
 
         // T8: story + commutant-dimension evidence. Generic and
         // block-arbitrary W both break equivariance (measured margins);
-        // 20 seeded directions orthogonal to the Schur span all break too —
-        // together with T7's three exact generators this is the numerical
-        // face of "commutant dimension = 3".
+        // 20 seeded directions orthogonal to the Schur span all break too
+        // at the same fixed R — together with T7's exact Schur form this
+        // is the numerical face of "commutant dimension = 3".
         (function () {
             var R = R_rpy(0.8, -0.5, 1.4);
             var g = commutatorResidual(genericW(DEFAULTS.wSeed), R);
@@ -603,9 +605,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = EqvCore;
             '<button class="eqv-mode-btn active" id="eqv-mode-schur">Schur: &lambda;&#8320; &oplus; &lambda;&#8321;I&#8323; &oplus; &lambda;&#8322;I&#8325;</button>' +
             '</div>' +
             '<div class="eqv-grid" id="eqv-grid-w"></div>' +
-            '<div class="eqv-grid-note">red positive &middot; blue negative &middot; dark = exactly zero</div>' +
+            '<div class="eqv-grid-note">red positive &middot; blue negative &middot; cells marked 0 are exactly zero</div>' +
             '<div class="eqv-resid idle" id="eqv-resid"></div>' +
-            '<div class="eqv-btn-row"><button class="eqv-btn sec" id="eqv-regen">&#8635; New random W</button></div>' +
+            '<div class="eqv-btn-row"><button class="eqv-btn sec" id="eqv-regen">&#8635; New random W (Generic / Block)</button></div>' +
             '</div>' +
             '</div>' +
             '</div></div></div>';
@@ -618,7 +620,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = EqvCore;
         container.innerHTML =
             '<div class="eqv-refusal"><strong>Demo disabled: mathematical self-tests failed.</strong>' +
             '<ul>' + items + '</ul>' +
-            '<p>The demo refuses to render rather than display unverified quantities.</p></div>';
+            '<p>The demo refuses to render when its mathematical self-tests fail.</p></div>';
     }
 
     // ---------- grids ----------
@@ -656,7 +658,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = EqvCore;
         schur: 'Schur mode: W = \u03BB\u2080 \u2295 \u03BB\u2081I\u2083 \u2295 \u03BB\u2082I\u2085 \u2014 one scalar per type. ' +
             'The residual is exactly zero for every R: this is the ONLY shape an equivariant weight can take here.',
         block: 'Block-diagonal is NOT enough. These blocks respect the type boundaries, yet an arbitrary 3\u00D73 or ' +
-            '5\u00D75 block still fails to commute with \u03C1(R) \u2014 Schur\u2019s lemma forces each block all the way down to \u03BBI.',
+            '5\u00D75 block still fails to commute with \u03C1(R) for a generic R \u2014 Schur\u2019s lemma forces each block all the way down to \u03BBI.',
         generic: 'A generic W mixes types and breaks equivariance badly \u2014 rotate R and watch the residual. ' +
             'Compare with the other two modes.'
     };
@@ -731,9 +733,10 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = EqvCore;
             var resid = EqvCore.commutatorResidual(W, R);
             var el = refs.resid;
             // Display tiers: schurW commutes BITWISE (resid === 0 for every
-            // R); other modes at R = I give float noise ~1e-16 (rho2(I)
-            // diagonal is 0.999... from squaring 1/sqrt(6)) — shown as a
-            // numerical zero with the rotate hint, never as a violation.
+            // R); other modes at R = I give float noise ~1e-15 (rho2(I)
+            // diagonal is 1 +/- 2.2e-16 from rounding 1/sqrt2, 1/sqrt6) —
+            // shown as a numerical zero with the rotate hint, never as a
+            // violation.
             if (state.mode === 'schur' && resid === 0) {
                 el.className = 'eqv-resid good';
                 el.textContent = '\u2016\u03C1(R)W \u2212 W\u03C1(R)\u2016 = 0 (exact, for every R)';
@@ -776,7 +779,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = EqvCore;
         });
 
         refs.regen.addEventListener('click', function () {
-            state.wSeed += 1; // documented seed-stream advance
+            state.wSeed += 1; // seed increment
             renderAll();
         });
 
