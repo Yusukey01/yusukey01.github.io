@@ -164,8 +164,8 @@ uses_python: false
                 <p>
                     Before we can choose an optimal estimator, we need a way to measure how well a candidate parameter value \(\theta\)
                     explains the observed data. The key insight is a <strong>change of perspective</strong>. The same mathematical expression
-                    that gives the probability of data given a parameter can also be viewed as a function of the parameter given fixed data.
-                    This reversal of roles leads to the <strong>likelihood function</strong>.
+                    that gives the probability (or probability density) of data given a parameter can also be viewed as a function of the
+                    parameter given fixed data. This reversal of roles leads to the <strong>likelihood function</strong>.
                 </p>
 
                 <div class="theorem" id="D-likelihood_function">
@@ -195,8 +195,8 @@ uses_python: false
 
                 <p>
                     The crucial distinction is one of interpretation. The expression \(\prod_{i=1}^n f(x_i \mid \theta)\) is the same
-                    mathematical formula in both readings. Read as a probability it is a function of \(x\) with \(\theta\) fixed, and read as
-                    a likelihood it is a function of \(\theta\) with \(x\) fixed. This duality is often expressed as
+                    mathematical formula in both readings. Read as a probability (or density) it is a function of \(x\) with \(\theta\)
+                    fixed, and read as a likelihood it is a function of \(\theta\) with \(x\) fixed. This duality is often expressed as
                     \[
                     \underbrace{L(\theta \mid x_1, \ldots, x_n)}_{\text{After sampling: function of } \theta}
                     = \underbrace{\prod_{i=1}^n f(x_i \mid \theta)}_{\text{Before sampling: function of } x}.
@@ -213,10 +213,9 @@ uses_python: false
                 <p>
                     In machine learning, model fitting (or training) is the process of estimating unknown parameters 
                     \(\boldsymbol{\theta} = (\theta_1, \ldots, \theta_k)\) from sample data 
-                    \(\mathcal{D} = \{\mathbf{x}_1, \ldots, \mathbf{x}_n\}\). This is typically framed as the 
-                    optimization of an objective (or loss) function over \(\boldsymbol{\theta}\). 
-                    A widely used choice in frequentist inference is to select the parameter that makes the 
-                    observed data most probable.
+                    \(\mathcal{D} = \{\mathbf{x}_1, \ldots, \mathbf{x}_n\}\). This is typically framed as the optimization of an objective
+                    (or loss) function over \(\boldsymbol{\theta}\). A widely used choice in frequentist inference is to select the parameter
+                    under which the observed data are most probable or, for continuous data, have the highest density.
                 </p>
 
                 <p>
@@ -237,10 +236,10 @@ uses_python: false
                 </div>
 
                 <p>
-                    The argmax need not exist or be unique in general. Standard regularity conditions guarantee existence and local uniqueness
-                    near the truth. Compactness of \(\Theta\) with continuous \(L\) gives the first, and strict concavity of \(\ln L\) gives
-                    the second. The binomial example below satisfies both. In the normal example the parameter space is not compact, and
-                    existence is settled directly, by tracking the likelihood at the edges of that space.
+                    The argmax need not exist or be unique in general. Compactness of \(\Theta\) with continuous \(L\) gives existence, and
+                    strict concavity of \(\ln L\) on the set where \(L \gt 0\), when that set is convex and nonempty, gives uniqueness. The
+                    binomial example below satisfies both. In the normal example the parameter space is not compact, and existence is settled
+                    directly, by tracking the likelihood at the edges of that space.
                 </p>
 
                 <p>
@@ -280,12 +279,12 @@ uses_python: false
                 </p>
 
                 <p>
-                    Each flip is a Bernoulli trial, and the \(n\) flips together follow \(b(n, \theta)\). We can equivalently view the data as
-                    a single observation \(X \sim b(n, \theta)\) with likelihood \(L(\theta) = P(X = k \mid \theta)\), or as \(n\) i.i.d.
-                    Bernoulli trials with likelihood \(\prod_{i=1}^n \theta^{x_i}(1-\theta)^{1-x_i}\) where \(\sum x_i = k\). Both views yield
-                    the same log-likelihood up to a \(\theta\)-independent constant. We adopt the single-observation view below, so the symbol
-                    \(n\) here denotes the number of <em>trials</em> in the binomial experiment, not the sample size of the previous section
-                    (which is one in this view).
+                    Each flip is a Bernoulli trial, and the number of heads in the \(n\) flips follows \(b(n, \theta)\). We can equivalently
+                    view the data as a single observation \(X \sim b(n, \theta)\) with likelihood \(L(\theta) = P(X = k \mid \theta)\), or as
+                    \(n\) i.i.d. Bernoulli trials with likelihood \(\prod_{i=1}^n \theta^{x_i}(1-\theta)^{1-x_i}\) where \(\sum x_i = k\).
+                    Both views yield the same log-likelihood up to a \(\theta\)-independent constant. We adopt the single-observation view
+                    below, so the symbol \(n\) here denotes the number of <em>trials</em> in the binomial experiment, not the sample size of
+                    the previous section (which is one in this view).
                 </p>
 
                 <div class="proof">
@@ -481,12 +480,14 @@ uses_python: false
                         MLE is the default parameter estimation method across machine learning. Training a
                         <a href="../Machine_learning/intro_classification.html"><strong>logistic regression</strong></a> model is equivalent
                         to minimizing the negative log-likelihood (cross-entropy loss). Training a
-                        <a href="../Machine_learning/neural_networks.html"><strong>neural network</strong></a> with mean squared error loss is
-                        equivalent to MLE under a Gaussian noise assumption. The
-                        <a href="expfamily.html"><strong>exponential family</strong></a> unifies these examples, since within that class MLE
-                        reduces to <strong>moment matching</strong>. In <a href="bayesian.html"><strong>Bayesian inference</strong></a>,
-                        maximum-a-posteriori estimation under a uniform (flat) prior reduces to MLE, and incorporating regularization is
-                        equivalent to choosing a non-uniform prior.
+                        <a href="../Machine_learning/neural_networks.html"><strong>neural network</strong></a> with mean squared error loss
+                        is equivalent to MLE under a Gaussian noise assumption. The
+                        <a href="expfamily.html"><strong>exponential family</strong></a> contains the Bernoulli and Gaussian likelihoods
+                        behind these examples, and when its natural parameter depends linearly on the parameters being estimated, the MLE,
+                        where it exists, is characterized by <strong>moment matching</strong>. In
+                        <a href="bayesian.html"><strong>Bayesian inference</strong></a>, maximum-a-posteriori estimation under a uniform
+                        (flat) prior reduces to MLE, and adding a squared \(\ell^2\) or an \(\ell^1\) penalty to the negative log-likelihood
+                        is equivalent to choosing a zero-mean Gaussian or Laplace prior, respectively.
                     </p>
                 </div>
 
