@@ -42,8 +42,10 @@ uses_python: false
                     \[
                     \boldsymbol{y} = X\boldsymbol{\beta} + \boldsymbol{\epsilon}
                     \]
-                    where \(X \in \mathbb{R}^{n \times d}\) is the <strong>design matrix</strong>, \(\boldsymbol{\beta} \in \mathbb{R}^d\) is the <strong>parameter (weight) vector</strong>, 
-                    \(\boldsymbol{y} \in \mathbb{R}^n\) is the <strong>observation vector</strong>, and \(\boldsymbol{\epsilon} = \boldsymbol{y} - X\boldsymbol{\beta}\) is the <strong>residual vector</strong>.
+                    where \(X \in \mathbb{R}^{n \times d}\) is the <strong>design matrix</strong>, \(\boldsymbol{\beta} \in \mathbb{R}^d\) is the
+                    <strong>parameter (weight) vector</strong>, \(\boldsymbol{y} \in \mathbb{R}^n\) is the <strong>observation vector</strong>, and
+                    \(\boldsymbol{\epsilon} = \boldsymbol{y} - X\boldsymbol{\beta}\) is the <strong>error (noise) vector</strong>. For an estimate
+                    \(\hat{\boldsymbol{\beta}}\), the observable vector \(\boldsymbol{y} - X\hat{\boldsymbol{\beta}}\) is the <strong>residual vector</strong>.
                 </p>
 
                 <p>
@@ -222,12 +224,12 @@ uses_python: false
                         Minimizing squared error is equivalent to maximum likelihood under Gaussian noise. The connection extends broadly.
                     </p>
                     <p>
-                        Adding an \(\ell^2\) penalty
+                        Adding a squared \(\ell^2\) penalty
                         (<a href="../Machine_learning/regression.html#T-ridge_regression_solution" class="ref-link"><strong>ridge regression</strong></a>)
-                        corresponds to placing a <a href="bayesian.html"><strong>Gaussian prior</strong></a> on \(\boldsymbol{\beta}\) and computing the MAP
-                        estimate, while an \(\ell^1\) penalty
+                        corresponds to placing a zero-mean <a href="bayesian.html"><strong>Gaussian prior</strong></a> on \(\boldsymbol{\beta}\) and computing
+                        the MAP estimate, while an \(\ell^1\) penalty
                         (<a href="../Machine_learning/regression.html#D-lasso_regression" class="ref-link"><strong>Lasso</strong></a>) corresponds to a
-                        <a href="student.html#D-laplace" class="ref-link"><strong>Laplace prior</strong></a>. The
+                        zero-mean <a href="student.html#D-laplace" class="ref-link"><strong>Laplace prior</strong></a>. The
                         <a href="../Machine_learning/regression.html#T-bias_variance_decomposition" class="ref-link"><strong>bias-variance decomposition</strong></a>
                         of the ridge prediction error mirrors the split of the <a href="mle.html#D-MSE" class="ref-link"><strong>mean squared error</strong></a>
                         into variance and squared bias, which we met with maximum likelihood estimation.
@@ -243,29 +245,34 @@ uses_python: false
             <section id="interactive-tool" class="section-content section-wide">
                 <h2>Interactive Statistical Regression Tool</h2>
                 <p>
-                    The tool below runs the full statistical analysis this page develops, either on uploaded or pasted CSV data or on the built-in samples. The
-                    coefficients are computed by the QR route, and every entry of the coefficient table is genuine inference: standard errors from
-                    \(\hat{\sigma}^2 (X^\top X)^{-1}\) with \(\hat{\sigma}^2 = \text{SSE}/(n - p)\) for \(p\) estimated coefficients, \(t\)-statistics with their
-                    two-sided \(p\)-values, and 95% confidence intervals built from the \(t_{n-p}\) distribution. The critical value is computed for the actual
-                    sample size, not approximated by the large-sample 1.96.
+                    The tool below fits the model of this page, either to uploaded or pasted CSV data or to the built-in samples, and adds the standard
+                    inference that the Gaussian noise model supports; those inferential formulas are stated here without derivation. The coefficients are
+                    computed by the QR route. Under the Gaussian noise model above, with \(n \gt p\), the entries of the coefficient table are exact
+                    finite-sample inference. The standard error of each coefficient is the square root of the corresponding diagonal entry of
+                    \(\hat{\sigma}^2 (X^\top X)^{-1}\), with \(\hat{\sigma}^2 = \text{SSE}/(n - p)\) for \(p\) estimated coefficients, and the \(t\)-statistics
+                    with their two-sided \(p\)-values and the 95% confidence intervals are built from the \(t_{n-p}\) distribution. The critical value is
+                    computed for the actual sample size, not approximated by the large-sample 1.96.
                 </p>
                 <p>
                     The summary line reports \(R^2\), adjusted \(R^2\), and the overall \(F\)-test of the hypothesis that every non-intercept coefficient is
                     zero. That test applies the hypothesis-testing machinery to the model as a whole.
                 </p>
                 <p>
-                    The regression plot distinguishes two different 95% bands: the <strong>confidence band</strong> for the mean response
-                    \(\mathbb{E}[Y \mid \boldsymbol{x}]\), and the wider <strong>prediction band</strong> for a new observation. The prediction band is wider
-                    because its variance carries an extra \(\sigma^2\), the irreducible noise that no amount of data removes.
+                    In single-predictor mode, the regression plot distinguishes two different 95% bands: the <strong>confidence band</strong> for the mean
+                    response \(\mathbb{E}[Y \mid \boldsymbol{x}]\), and the wider <strong>prediction band</strong> for a new observation. The prediction band is
+                    wider because its variance carries an extra \(\sigma^2\), the irreducible noise that no amount of data removes.
                 </p>
                 <p>
                     The diagnostics panel checks the Gaussian assumption that made MLE equal least squares in the first place. The residuals-vs-fitted plot
                     exposes nonlinearity and heteroscedasticity (try the "Heteroscedastic" sample and watch the funnel), and the normal QQ plot puts the
-                    standardized residuals against Gaussian quantiles (try "Outliers" and watch the tails peel off the line). When predictors are collinear or
-                    \(n \lt p\), the matrix \(X^\top X\) is singular, and the tool says so instead of printing meaningless coefficients. That check enforces the
-                    invertibility condition \(\operatorname{rank}(X) = d\) from the proof above. When \(n = p\) and \(X\) has full rank, \(X^\top X\) is
-                    invertible, but the fit interpolates the data exactly. The estimate \(\hat{\sigma}^2 = \text{SSE}/(n - p)\) is then undefined, so the
-                    tool reports the coefficients without standard errors or \(p\)-values.
+                    standardized residuals against Gaussian quantiles (try "Outliers" and watch the tails peel off the line). When predictors are exactly
+                    collinear or \(n \lt p\), the matrix \(X^\top X\) is singular, and the tool says so instead of printing meaningless coefficients. The check
+                    is a numerical version of the invertibility condition \(\operatorname{rank}(X) = d\) from the proof above: a column that is linearly
+                    dependent on the earlier ones up to a small relative tolerance counts as dependent, so designs that are singular to within that tolerance
+                    are declined as well. When \(n = p\) and \(X\) has full rank, \(X^\top X\) is invertible, but the fit interpolates the data exactly. The
+                    estimate \(\hat{\sigma}^2 = \text{SSE}/(n - p)\) is then undefined, so the tool reports the coefficients without standard errors or
+                    \(p\)-values. It does the same when \(n \gt p\) but the residuals vanish up to a small relative tolerance (as in a perfect fit, which
+                    includes a constant response), since \(\hat{\sigma}^2\) is then negligible.
                 </p>
                 
                 <div id="statistical-regression-analyzer"></div>

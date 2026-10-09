@@ -299,9 +299,9 @@ uses_python: false
                 <h2>Cross Entropy</h2>
 
                 <p>
-                    Conditional entropy measures how much observing one variable reduces uncertainty about another. 
-                    A different but equally important question is: what happens when we use an <em>incorrect</em> distribution \(q\) 
-                    to encode data that actually follows distribution \(p\)? The answer is the <strong>cross entropy</strong>.
+                    Conditional entropy measures how much uncertainty about one variable remains after observing another. A different but equally
+                    important question is: what happens when we use an <em>incorrect</em> distribution \(q\) to encode data that actually follows
+                    distribution \(p\)? The answer is the <strong>cross entropy</strong>.
                 </p>
 
                 <div class="theorem" id="D-cross_entropy">
@@ -456,16 +456,25 @@ uses_python: false
                         \[
                         \sum_{k=1}^n a_k \log \frac{a_k}{b_k} \geq \Big(\sum_{k=1}^n a_k\Big) \log \frac{\sum_{k=1}^n a_k}{\sum_{k=1}^n b_k},
                         \]
-                        with equality if and only if \(a_k / b_k\) is the same for all \(k\) (the conventions established at the beginning of the page
-                        apply, with \(p, q\) replaced by general nonnegative reals \(a_k, b_k\)).
+                        with equality if and only if there is a constant \(c \geq 0\) such that \(a_k = c\,b_k\) for every \(k\), or \(b_k = 0\) for
+                        every \(k\) (the conventions established at the beginning of the page apply, with \(p, q\) replaced by general nonnegative
+                        reals \(a_k, b_k\)).
                     </p>
                 </div>
 
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        Zero terms are absorbed by the conventions above (terms with \(a_k = 0\) vanish, and terms with \(b_k = 0, a_k \gt 0\) make
-                        the left side \(+\infty\), in which case the inequality is trivial). Assume henceforth that all \(a_k, b_k \gt 0\).
+                        Write \(A = \sum_k a_k\) and \(B = \sum_k b_k\), and dispose first of the cases involving zeros, using the conventions
+                        above. If \(A = 0\), every term on both sides vanishes, so equality holds, and \(a_k = 0 \cdot b_k\) for every \(k\). If
+                        \(A \gt 0\) and \(B = 0\), both sides equal \(+\infty\). If \(A, B \gt 0\) and some \(k\) has \(b_k = 0 \lt a_k\), the left
+                        side is \(+\infty\) while the right side is finite, so the inequality is strict; no constant \(c\) gives \(a_k = c\,b_k\)
+                        for that \(k\), and since \(B \gt 0\), not every \(b_k\) vanishes. It remains to treat \(A, B \gt 0\) with \(b_k \gt 0\)
+                        whenever \(a_k \gt 0\). Let \(S = \{k : a_k \gt 0\}\) and \(B_S = \sum_{k \in S} b_k\), so \(0 \lt B_S \leq B\). The terms
+                        with \(k \notin S\) vanish on the left, and since \(\log\) is increasing, \(A \log (A/B_S) \geq A \log (A/B)\), with
+                        equality if and only if \(B_S = B\), that is, \(b_k = 0\) for every \(k \notin S\). It therefore suffices to prove the
+                        inequality, with its equality case, for the terms indexed by \(S\), where all \(a_k, b_k \gt 0\). Relabelling, we assume
+                        henceforth that all \(a_k, b_k \gt 0\).
                     </p>
                     <p>
                         The function \(f(x) = x \log x\) is strictly convex on \((0, \infty)\), since \(f''(x) = 1/x \gt 0\). Set
@@ -482,7 +491,9 @@ uses_python: false
                         \]
                         Because \(f\) is strictly convex, the equality case of Jensen's inequality, applied to the random variable that takes the
                         value \(a_k / b_k\) with probability \(\lambda_k \gt 0\), shows that equality in the Jensen step holds if and only if all
-                        \(a_k / b_k\) are equal.
+                        \(a_k / b_k\) are equal. Combining this with the reduction, equality holds in this remaining case if and only if \(b_k = 0\)
+                        whenever \(a_k = 0\) and the ratios \(a_k / b_k\) over \(k \in S\) are all equal, that is, if and only if \(a_k = c\,b_k\)
+                        for every \(k\) with \(c = A/B \gt 0\). Together with the cases treated first, this gives the stated equality condition.
                     </p>
                 </div>
 
@@ -519,8 +530,9 @@ uses_python: false
                     </p>
                     <p>
                         Since \(p\) and \(q\) are probability distributions, \(\sum_k p_k = \sum_k q_k = 1\), so the right-hand side becomes
-                        \(1 \cdot \log 1 = 0\). Therefore \(D_{\mathbb{KL}}(p \| q) \geq 0\), with equality if and only if \(p_k / q_k\) is constant
-                        in \(k\). Since both sum to 1, this constant must be 1, that is, \(p = q\). The equivalence with Gibbs' inequality follows
+                        \(1 \cdot \log 1 = 0\). Therefore \(D_{\mathbb{KL}}(p \| q) \geq 0\), with equality if and only if there is a constant
+                        \(c \geq 0\) such that \(p_k = c\,q_k\) for every \(k\) (the alternative that every \(q_k = 0\) is excluded because
+                        \(\sum_k q_k = 1\)). Summing over \(k\) gives \(c = 1\), that is, \(p = q\). The equivalence with Gibbs' inequality follows
                         immediately from the identity \(D_{\mathbb{KL}}(p \| q) = \mathbb{H}(p, q) - \mathbb{H}(p)\) established above.
                     </p>
                 </div>
@@ -611,9 +623,9 @@ uses_python: false
                 </div>
 
                 <p>
-                    The four forms admit complementary readings. The first is the union of the marginals minus the joint. Next comes the reduction in
-                    the uncertainty of \(X\) after observing \(Y\), and then the same reduction with the roles of \(X\) and \(Y\) exchanged. The
-                    fourth reading is the joint uncertainty minus both residual conditional entropies \(\mathbb{H}(X \mid Y)\) and
+                    The four forms admit complementary readings. The first is the sum of the marginal entropies minus the joint entropy. Next comes
+                    the reduction in the uncertainty of \(X\) after observing \(Y\), and then the same reduction with the roles of \(X\) and \(Y\)
+                    exchanged. The fourth reading is the joint uncertainty minus both residual conditional entropies \(\mathbb{H}(X \mid Y)\) and
                     \(\mathbb{H}(Y \mid X)\).
                 </p>
 
@@ -639,7 +651,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    These identities deliver two important consequences. First, combining the union form
+                    These identities deliver two important consequences. First, combining the first form
                     \(\mathbb{I}(X; Y) = \mathbb{H}(X) + \mathbb{H}(Y) - \mathbb{H}(X, Y)\) with non-negativity completes the proof of the left
                     inequality of the <a href="#T-joint_entropy_bounds" class="ref-link"><strong>joint entropy bounds</strong></a> previously deferred:
                     \[

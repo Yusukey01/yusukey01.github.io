@@ -7,7 +7,7 @@
 // well-spread samples are unaffected, but tightly clustered clicked points
 // can show it.) A normal-equation route with HONEST
 // singularity detection exists solely as an independent verification route
-// for the self-tests. All displayed values (beta, residuals, SSE, X^T eps,
+// for the self-tests. All displayed values (beta, residuals, SSE, X^T resid,
 // rank messages, dataset samples) come from this core; runSelfTests()
 // checks its routines on fixed and seeded cases; the UI layers only render what this core returns.
 // ============================================================================
@@ -668,8 +668,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
           '<div class="lrv-legend">' +
             '<div class="lrv-li"><span class="lrv-sw" style="background:' + C.point + ';"></span>Data points</div>' +
             '<div class="lrv-li"><span class="lrv-sw" style="background:' + C.curve + ';"></span>Least-squares fit \u0177 = X\u03B2\u0302</div>' +
-            '<div class="lrv-li"><span class="lrv-sw" style="background:' + C.resid + ';"></span>Residuals \u03B5\u1D62 = y\u1D62 \u2212 \u0177\u1D62</div>' +
-            '<div class="lrv-li"><span class="lrv-sw" style="background:' + C.squareFill + ';border:1px solid ' + C.squareStroke + ';"></span>Squared errors \u03B5\u1D62\u00B2 (the areas being minimized)</div>' +
+            '<div class="lrv-li"><span class="lrv-sw" style="background:' + C.resid + ';"></span>Residuals \u03B5\u0302\u1D62 = y\u1D62 \u2212 \u0177\u1D62</div>' +
+            '<div class="lrv-li"><span class="lrv-sw" style="background:' + C.squareFill + ';border:1px solid ' + C.squareStroke + ';"></span>Squared residuals \u03B5\u0302\u1D62\u00B2 (the areas being minimized)</div>' +
           '</div>' +
         '</div>' +
         '<div class="lrv-controls">' +
@@ -714,7 +714,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
           '</div>' +
           '<div class="lrv-group">' +
             '<label class="lrv-toggle"><input type="checkbox" id="lrv-resid" checked> Show residuals</label>' +
-            '<label class="lrv-toggle"><input type="checkbox" id="lrv-squares"> Show squared errors</label>' +
+            '<label class="lrv-toggle"><input type="checkbox" id="lrv-squares"> Show squared residuals</label>' +
             '<label class="lrv-toggle" id="lrv-surface-toggle" style="display:none;"><input type="checkbox" id="lrv-surface" checked> Show fitted surface</label>' +
           '</div>' +
         '</div>' +
@@ -858,7 +858,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
       var showFit = !s.empty && s.ok;
 
       if (showFit) {
-        // residuals + squared errors
+        // residuals + squared residuals
         for (var i = 0; i < s.pts.length; i++) {
           var pd = s.pts[i];
           var ph = [pd[0], s.yhat[i]];
@@ -922,10 +922,10 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
     }
 
     function metricsHtml(s) {
-      return '<div style="margin-top:6px;"><span class="lrv-formula">SSE = \u2016\u03B5\u2016\u00B2 = ' + fmtSm(s.sse) +
-        '</span> &nbsp; <span class="lrv-formula">\u2016\u03B5\u2016 = ' + fmtSm(s.lsError) +
+      return '<div style="margin-top:6px;"><span class="lrv-formula">SSE = \u2016\u03B5\u0302\u2016\u00B2 = ' + fmtSm(s.sse) +
+        '</span> &nbsp; <span class="lrv-formula">\u2016\u03B5\u0302\u2016 = ' + fmtSm(s.lsError) +
         '</span> &nbsp; <span class="lrv-formula">MSE = ' + fmtSm(s.mse) + '</span></div>' +
-        '<div><span class="lrv-formula">\u2016X\u1D40\u03B5\u2016 = ' + fmtSm(s.xtResidNorm) + '</span>' +
+        '<div><span class="lrv-formula">\u2016X\u1D40\u03B5\u0302\u2016 = ' + fmtSm(s.xtResidNorm) + '</span>' +
         ' <span class="lrv-sub">\u2014 the residual is orthogonal to Col X: the normal equations ' +
         'X\u1D40X\u03B2\u0302 = X\u1D40Y hold, i.e. \u0177 = proj<sub>Col X</sub> Y.</span></div>';
     }

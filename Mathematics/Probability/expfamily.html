@@ -41,10 +41,12 @@ uses_python: false
 
                 <ul style="padding-left: 40px;">
                     <li><strong>Conjugacy</strong>:<br>
-                        Every member possesses a natural conjugate prior, ensuring tractable Bayesian updates.
+                        Every member possesses a natural conjugate prior, under which the Bayesian update reduces to adding the aggregated sufficient
+                        statistic and the sample size to the prior's hyperparameters.
                     </li>
                     <li><strong>Efficiency</strong>:<br>
-                        Maximum likelihood estimation (MLE) reduces to moment matching, significantly simplifying the optimization landscape.
+                        Where the maximum likelihood estimate (MLE) exists in the interior of the natural parameter space, it is characterized by
+                        moment matching, significantly simplifying the optimization landscape.
                     </li>
                     <li><strong>Geometry</strong>:<br>
                         The log-partition function serves as a cumulant generating function, providing a direct bridge to Fisher information and 
@@ -56,8 +58,8 @@ uses_python: false
                     <span class="theorem-title">Definition: Exponential Family</span>
                     <p>
                         The exponential family is a family of probability distributions parameterized by <strong>natural parameters</strong> (or
-                        <strong>canonical parameters</strong>) \(\eta \in \mathbb{R}^K\) with support over \(\mathcal{X} \subseteq \mathbb{R}^D\) such
-                        that
+                        <strong>canonical parameters</strong>) \(\eta \in \mathbb{R}^K\) satisfying \(Z(\eta) \lt \infty\), with support over
+                        \(\mathcal{X} \subseteq \mathbb{R}^D\) such that
                         \[
                         \begin{align*}
                         p(x \mid \eta ) &= \frac{1}{Z(\eta)} h(x) \exp\{\eta^\top \mathcal{T}(x)\}\\\\
@@ -90,8 +92,10 @@ uses_python: false
                      A(\eta) = \log Z(\eta)
                     \]
                     is <strong>convex</strong> over the convex set \(\Omega = \{\eta \in \mathbb{R}^K : A(\eta) \lt \infty\}\), and is
-                    <strong>strictly convex</strong> when the family is minimal. Both statements follow from the Hessian formula
-                    \(\nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]\) proved below.
+                    <strong>strictly convex</strong> when the family is minimal. That \(\Omega\) is convex, and that \(A\) is convex on all of
+                    \(\Omega\), are consequences of H&ouml;lder's inequality that we take for granted here. On the interior of \(\Omega\), which is
+                    convex because \(\Omega\) is, the convexity of \(A\), and its strict convexity when the family is minimal, also follow from the
+                    Hessian formula \(\nabla^2 A(\eta) = \operatorname{Cov}[\mathcal{T}(x)]\) proved below.
                 </p>
 
                 <p>
@@ -321,9 +325,10 @@ uses_python: false
 
                 <p>
                     The univariate case extends naturally to higher dimensions. The
-                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> introduces the
-                    <strong>information form</strong> parameterization, which is the natural exponential family representation for Gaussians and plays
-                    a central role in graphical models and message passing algorithms.
+                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a> can be rewritten
+                    in the <strong>information form</strong>, parameterized by the precision matrix \(\Lambda = \Sigma^{-1}\) and
+                    \(\xi = \Lambda\mu\), which converts directly into canonical exponential-family form (Example 3 below). This form plays a central
+                    role in graphical models and message passing algorithms.
                 </p>
 
                 <div class="proof">
@@ -389,11 +394,11 @@ uses_python: false
                     </p>
 
                     <p>
-                        <strong>Note.</strong> This form is <strong>non-minimal</strong> because the symmetry \(\Lambda_{ij} = \Lambda_{ji}\) of the
-                        precision matrix imposes a linear constraint on \(\operatorname{vec}(\Lambda)\). The natural parameter \(\eta\) is
-                        over-specified by \(D(D-1)/2\) redundant components. A minimal representation would use only the upper-triangular (or
-                        lower-triangular) part of \(\Lambda\). However, in practice, the non-minimal representation is easier to plug into algorithms
-                        and stable for certain operations, while the minimal form is preferred for mathematical derivations.
+                        <strong>Note.</strong> For \(D \geq 2\) this form is <strong>non-minimal</strong>: since \(x_i x_j = x_j x_i\), the entries
+                        of \(\operatorname{vec}(xx^\top)\) repeat, so the natural parameter \(\eta\) is over-specified by \(D(D-1)/2\) redundant
+                        components. A minimal representation would use only the upper-triangular (or lower-triangular) part of \(\Lambda\). However,
+                        in practice, the non-minimal representation is easier to plug into algorithms and stable for certain operations, while the
+                        minimal form is preferred for mathematical derivations.
                     </p>
                 </div>
             </section>
@@ -461,7 +466,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    Using \(\mathbb{E}[x] = \mu\) and \(\mathbb{E}[x^2] = \mu^2 + \sigma^2\), we obtain the closed-form MLE
+                    Using \(\mathbb{E}[x] = \mu\) and \(\mathbb{E}[x^2] = \mu^2 + \sigma^2\), and provided the sample contains at least two distinct
+                    values (so that \(\overline{x^2} \gt \bar{x}^2\)), we obtain the closed-form MLE
                     \[
                     \hat{\mu}_{\text{MLE}} = \bar{x}, \quad \widehat{\sigma^2}_{\text{MLE}} = \overline{x^2} - \bar{x}^2 = \frac{1}{N}\sum_{n=1}^N (x_n - \bar{x})^2.
                     \]
@@ -477,8 +483,10 @@ uses_python: false
                 </p>
 
                 <p>
-                    The exponential family structure reveals that the log-partition function \(A(\eta)\) encodes all distributional information through
-                    its derivatives. The support \(\mathcal{X}\) is fixed and does not vary with \(\eta\), so the
+                    The exponential family structure reveals that the log-partition function \(A(\eta)\) encodes, through its derivatives on the
+                    interior of \(\Omega\), all the cumulants of the sufficient statistic \(\mathcal{T}(x)\). The support \(\mathcal{X}\) does not
+                    vary with \(\eta\), and for \(\eta\) in the interior of \(\Omega\), as in the proof of the cumulant identities above, we take for
+                    granted that differentiation may be carried out under the integral sign, so the
                     <a href="fisher_info.html#T-fim_hessian_form" class="ref-link"><strong>expected negative Hessian form</strong></a> of the
                     <a href="fisher_info.html#D-fisher_information_matrix" class="ref-link"><strong>Fisher information matrix</strong></a> is
                     available.
