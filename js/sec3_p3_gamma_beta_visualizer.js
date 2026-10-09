@@ -2,14 +2,17 @@
 // GbCore — math core for the Gamma & Beta Visualizer (prob-3)
 // DOM-free, Node-requirable.
 //
-// Special functions: logGamma (Lanczos, ~1e-14 relative accuracy — certified
-// against exact factorials, half-integer values, the recurrence, and the
-// reflection formula), regularized incomplete gamma (series + continued
-// fraction) and regularized incomplete beta (continued fraction). The CDFs
-// are certified by TWO INDEPENDENT ROUTES: closed-form pins for the special
-// cases this page derives, and Simpson integration of the pdf.
-// All displayed values (pdf/cdf curves, mean, variance, mode, posterior
-// parameters) come from this core and are certified by runSelfTests().
+// Special functions: logGamma (Lanczos; absolute error of logGamma, i.e.
+// relative error of Gamma, about 1e-11 on (0, 20] and below 1e-10 up to
+// z = 70 — spot-checked against exact factorials, half-integer values, the
+// recurrence, and the reflection formula), regularized incomplete gamma
+// (series + continued fraction) and regularized incomplete beta (continued
+// fraction). The CDFs are spot-checked two ways: closed-form pins (the
+// exponential and uniform cases derived on the page, plus alpha = 2 and
+// Beta(2,2)), and Simpson integration of the pdf, which shares the logGamma
+// normalization.
+// The distribution curves and statistics (pdf/cdf, mean, variance, mode,
+// posterior parameters) come from this core; runSelfTests() spot-checks them.
 // ============================================================================
 var GbCore = (function () {
   'use strict';
@@ -152,7 +155,7 @@ var GbCore = (function () {
     if (a > 1 && b > 1) mode = (a - 1) / (a + b - 2);
     else if (a === 1 && b === 1) modeNote = 'uniform: every point is a mode';
     else if (a < 1 && b < 1) modeNote = 'bimodal: density diverges at 0 and 1';
-    else if (a <= 1 && b > 1) { mode = 0; modeNote = a < 1 ? 'density diverges at 0' : null; }
+    else if ((a <= 1 && b > 1) || (a < 1 && b === 1)) { mode = 0; modeNote = a < 1 ? 'density diverges at 0' : null; }
     else { mode = 1; modeNote = b < 1 ? 'density diverges at 1' : null; }
     return { mean: mean, variance: variance, sd: Math.sqrt(variance), mode: mode, modeNote: modeNote };
   }
@@ -195,7 +198,7 @@ var GbCore = (function () {
     }
     function close(x, y, tol) { return Math.abs(x - y) <= tol; }
     function relClose(x, y, tol) { return Math.abs(x - y) <= tol * (1 + Math.abs(y)); }
-    // Simpson integration (independent numeric route, tests only)
+    // Simpson integration (numeric route, tests only)
     function simpson(f, lo, hi, n) {
       var h = (hi - lo) / n;
       var s = f(lo) + f(hi);
@@ -235,11 +238,11 @@ var GbCore = (function () {
     check('T2 B(2.5, 1.5) spot pin (mpmath)', relClose(betaFn(2.5, 1.5), 0.19634954084936208, 1e-11));
     check('T2 B(1, b) = 1/b', relClose(betaFn(1, 4), 0.25, 1e-11));
     check('T2 symmetry B(a,b) = B(b,a)', close(logBeta(2.3, 4.1), logBeta(4.1, 2.3), 1e-12));
-    // independent integral route: B(a,b) = int_0^1 t^{a-1}(1-t)^{b-1} dt, a,b >= 1
+    // integral route: B(a,b) = int_0^1 t^{a-1}(1-t)^{b-1} dt, a,b >= 2
     var rng2 = makeRng(50003);
     for (var i2 = 0; i2 < 8; i2++) {
       // a, b >= 2 keeps the integrand C^1 at the endpoints (Simpson converges);
-      // the a,b < 2 region is covered by closed-form pins instead
+      // the a,b < 2 region is only spot-checked by a few pins
       var a2 = 2 + 4 * rng2(), b2 = 2 + 4 * rng2();
       var numeric = simpson(function (t) {
         return Math.pow(t, a2 - 1) * Math.pow(1 - t, b2 - 1);
@@ -311,7 +314,7 @@ var GbCore = (function () {
       check('T4 integrates to 1 #' + i4c, close(mass4, 1, 1e-6), mass4);
     }
 
-    // ---- T5: CDFs, two independent routes + closed-form pins ----
+    // ---- T5: CDFs, two routes + closed-form pins ----
     // exponential: F(x) = 1 - e^{-beta x}  (the page's formula)
     var rng5 = makeRng(50009);
     for (var i5 = 0; i5 < 10; i5++) {
@@ -337,7 +340,7 @@ var GbCore = (function () {
       check('T5 gamma cdf vs Simpson #' + i5c, close(gammaCdf(xq, al5, be5c), numeric5, 5e-5),
         gammaCdf(xq, al5, be5c) - numeric5);
     }
-    // monotonicity + limits
+    // limits
     check('T5 gamma cdf at 0', gammaCdf(0, 3, 1) === 0);
     check('T5 gamma cdf far right ~ 1', close(gammaCdf(200, 3, 1), 1, 1e-9));
     // beta cdf closed forms
@@ -371,7 +374,7 @@ var GbCore = (function () {
     // continued fraction loses 4+ digits or diverges outright for x near 1
     check('T5 extreme-x pin I_0.98(8,8)', close(betaCdf(0.98, 8, 8), 0.99999999985469039, 1e-10), betaCdf(0.98, 8, 8));
     check('T5 extreme-x pin I_0.999(5,5)', close(betaCdf(0.999, 5, 5), 0.99999999999987442, 1e-11));
-    // bounds certificate: a CDF must satisfy 0 <= F <= 1 everywhere
+    // bounds spot-check: 0 <= F <= 1 at sampled points near 1
     var rng5g = makeRng(50016);
     for (var i5g = 0; i5g < 20; i5g++) {
       var a5g = 2 + 13 * rng5g(), b5g = 2 + 13 * rng5g();
@@ -394,6 +397,11 @@ var GbCore = (function () {
     check('T6 beta mode pin', close(b6.mode, 0.2, 1e-15));
     check('T6 uniform mode note', betaStats(1, 1).modeNote === 'uniform: every point is a mode');
     check('T6 bimodal note', betaStats(0.5, 0.5).modeNote === 'bimodal: density diverges at 0 and 1');
+    // a < 1, b = 1: density a x^(a-1) decreases and diverges at 0 (regression)
+    var b6c = betaStats(0.5, 1);
+    check('T6 Beta(0.5, 1) mode at 0 (regression)', b6c.mode === 0 && b6c.modeNote === 'density diverges at 0');
+    var b6d = betaStats(1, 0.5);
+    check('T6 Beta(1, 0.5) mode at 1', b6d.mode === 1 && b6d.modeNote === 'density diverges at 1');
     // numeric-integral agreement for beta mean/variance (a, b >= 1)
     var rng6 = makeRng(50015);
     for (var i6 = 0; i6 < 5; i6++) {
@@ -424,7 +432,7 @@ var GbCore = (function () {
 
     // ---- T9: plotting range ----
     var r9 = gammaXRange(3, 1);
-    check('T9 range covers mean + 3sd', r9.max >= 3 + 3 * Math.sqrt(3) - 1e-12);
+    check('T9 range covers mean + 3sd for Gamma(3,1)', r9.max >= 3 + 3 * Math.sqrt(3) - 1e-12);
     check('T9 range bounded', gammaXRange(100, 0.1).max <= 30 && gammaXRange(0.2, 5).max >= 2);
     check('T9 range starts at 0', r9.min === 0);
 
@@ -461,7 +469,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GbCore; 
 // ============================================================================
 // UI layer — three tabs: Gamma distribution, Beta distribution (with a
 // conjugate-prior Bayesian overlay), and the Gamma function itself.
-// Renders only what GbCore computes; the gate refuses to render on self-test
+// Renders the curves and statistics GbCore computes (the Gamma(z) tab's
+// markers are fixed constants); the gate refuses to render on self-test
 // failure. Prefix: gbv-. Dark island (fixed palette).
 // ============================================================================
 (function () {
@@ -515,7 +524,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GbCore; 
         '<strong style="color:' + C.bad + ';">Demo disabled: mathematical self-tests failed (' +
         gate.failures.length + ' of ' + gate.count + ' checks).</strong>' +
         '<p style="color:' + C.textDim + ';margin:8px 0 4px;">This visualizer refuses to render ' +
-        'rather than display incorrect mathematics. Failures:</p>' +
+        'while any self-test fails. Failures:</p>' +
         '<ul style="color:' + C.textDim + ';margin:0 0 0 18px;">' + list + '</ul></div>';
       return;
     }
@@ -759,7 +768,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GbCore; 
         html += '<div class="gbv-sub">mode: ' + st.modeNote + '</div>';
       }
       if (divergent) {
-        html += '<div class="gbv-warn">The density diverges at the clipped edge \u2014 the curve is cut at the plot top, but its integral is still 1.</div>';
+        html += '<div class="gbv-warn">The density diverges at an edge of its support; near that edge the curve may be cut at the plot top, but its integral is still 1.</div>';
       }
       return html;
     }
@@ -776,9 +785,12 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GbCore; 
       var st = GbCore.gammaStats(al, be);
       // +-sigma band
       var lo = Math.max(range.min, st.mean - st.sd), hi = Math.min(range.max, st.mean + st.sd);
-      ctx.fillStyle = C.sdBand;
-      ctx.fillRect(xToPx(r, lo, range.min, range.max), r.y0,
-                   xToPx(r, hi, range.min, range.max) - xToPx(r, lo, range.min, range.max), r.h);
+      var bandOn = hi > lo;  // the band can lie entirely beyond the capped x-range
+      if (bandOn) {
+        ctx.fillStyle = C.sdBand;
+        ctx.fillRect(xToPx(r, lo, range.min, range.max), r.y0,
+                     xToPx(r, hi, range.min, range.max) - xToPx(r, lo, range.min, range.max), r.h);
+      }
       drawCurve(r, f, range.min + 1e-9, range.max, yMax, C.pdf, false, C.pdfFill);
       vLine(r, st.mean, range.min, range.max, C.meanLine, [6, 4], 'mean');
       if (al > 1) vLine(r, st.mode, range.min, range.max, C.modeLine, [2, 4], 'mode');
@@ -790,8 +802,10 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GbCore; 
       readoutsEl.innerHTML = '<div><strong>' + eq + '</strong> ' +
         '<span class="gbv-sub">mean = \u03B1/\u03B2, var = \u03B1/\u03B2\u00B2</span></div>' +
         statsHtml(st, al < 1);
-      var leg = [[C.pdf, 'pdf f(x)'], [C.meanLine, 'mean \u03B1/\u03B2 (dashed)'], [C.sdBand, 'mean \u00B1 \u03C3 band']];
-      if (al > 1) leg.splice(2, 0, [C.modeLine, 'mode (\u03B1\u22121)/\u03B2 (dotted)']);
+      var leg = [[C.pdf, 'pdf f(x)']];
+      if (st.mean <= range.max) leg.push([C.meanLine, 'mean \u03B1/\u03B2 (dashed)']);
+      if (al > 1 && st.mode <= range.max) leg.push([C.modeLine, 'mode (\u03B1\u22121)/\u03B2 (dotted)']);
+      if (bandOn) leg.push([C.sdBand, 'mean \u00B1 \u03C3 band']);
       if (state.showCdf) leg.push([C.cdf, 'CDF (right axis)']);
       setLegend(leg);
       container.dataset.gbvState = JSON.stringify({ tab: 'gamma', alpha: al, beta: be, cdf: state.showCdf });
