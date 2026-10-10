@@ -55,10 +55,11 @@ uses_python: false
                     We use \(\int \cdot \, d\boldsymbol{z}\) throughout to denote integration against the appropriate reference measure on the latent space
                     (Lebesgue measure for continuous \(\boldsymbol{z}\), counting measure for discrete \(\boldsymbol{z}\), product for mixed cases). All
                     densities below are understood as densities with respect to this reference measure. The difficulty hidden in the formula is the
-                    <strong>evidence</strong> \(p_{\boldsymbol{\theta}}(\boldsymbol{x})\). For conjugate exponential-family models the integral admits a closed
-                    form. Outside this regime, as with neural-network likelihoods, non-conjugate priors, or discrete-continuous interactions, there is no
-                    analytic solution, and numerical quadrature scales prohibitively in the dimension of \(\boldsymbol{z}\). The posterior itself is a
-                    conditional distribution. Each of its probabilities is a
+                    <strong>evidence</strong> \(p_{\boldsymbol{\theta}}(\boldsymbol{x})\). When, for instance, \(\boldsymbol{z}\) is the parameter of an
+                    exponential-family likelihood and the prior is conjugate to that likelihood, the integral admits a closed form. Outside such regimes, as
+                    with neural-network likelihoods, non-conjugate priors, or discrete-continuous interactions, there is in general no analytic solution, and
+                    numerical quadrature scales prohibitively in the dimension of \(\boldsymbol{z}\). The posterior itself is a conditional distribution. Each
+                    of its probabilities is a
                     <a href="conditional_expectation.html#T-conditional_expectation_definition" class="ref-link"><strong>conditional expectation</strong></a> of
                     an indicator, and selecting these versions coherently across all sets of latent values is the question of regular conditional distributions,
                     discussed but not developed on the linked page. What variational inference addresses is the intractability of <em>computing</em> with the
@@ -114,11 +115,12 @@ uses_python: false
                 </p>
 
                 <p>
-                    The reader familiar with the variational autoencoder literature will recognize this framework as the foundation of the VAE. A VAE is the
-                    amortized specialization of the variational program below, in which a neural network (the inference network) reads \(\boldsymbol{x}_n\) and
-                    produces the variational parameters \(\boldsymbol{\psi}_n = f_{\boldsymbol{\phi}}(\boldsymbol{x}_n)\). We treat the non-amortized case
-                    throughout. The amortized reduction is developed in <a href="../Machine_learning/vae.html"><strong>Variational Autoencoders</strong></a> and
-                    builds on this framework rather than replacing it.
+                    The reader familiar with the variational autoencoder literature will recognize this framework as the foundation of the VAE. A VAE combines
+                    the amortized specialization of the variational program below, in which a neural network (the inference network) reads
+                    \(\boldsymbol{x}_n\) and produces the variational parameters \(\boldsymbol{\psi}_n = f_{\boldsymbol{\phi}}(\boldsymbol{x}_n)\), with the
+                    learning of the model parameters \(\boldsymbol{\theta}\) by maximizing the same ELBO. We treat the non-amortized case throughout. The
+                    amortized reduction is developed in <a href="../Machine_learning/vae.html"><strong>Variational Autoencoders</strong></a> and builds on
+                    this framework rather than replacing it.
                 </p>
 
                 <p>
@@ -513,13 +515,13 @@ uses_python: false
                     \(q_{\boldsymbol{\psi}}\). The <strong>reparameterization gradient</strong> applies when \(q_{\boldsymbol{\psi}}\) admits a sampling
                     representation \(\boldsymbol{z} = g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon})\) with \(\boldsymbol{\epsilon}\) drawn from a fixed base
                     distribution. It pushes the \(\boldsymbol{\psi}\)-dependence inside the expectation, where ordinary differentiation under the integral sign
-                    applies, and yields a low-variance estimator at the cost of requiring \(g_{\boldsymbol{\psi}}\) and the log-joint to be differentiable. The
-                    <strong>score-function estimator</strong>, also called REINFORCE, applies much more widely, including when \(\boldsymbol{z}\) is discrete or
-                    \(g_{\boldsymbol{\psi}}\) is non-differentiable, provided \(\log q_{\boldsymbol{\psi}}\) is differentiable in \(\boldsymbol{\psi}\) and its
-                    support does not move with \(\boldsymbol{\psi}\). The estimator exploits an algebraic identity that converts the gradient of the expectation
-                    into a different expectation that can be estimated by Monte Carlo. The price is high variance and a corresponding need for
-                    variance-reduction techniques. We develop both estimators in turn, with the rigorous justification (in each case, an application of
-                    dominated convergence) explicit.
+                    applies, and typically yields a low-variance estimator at the cost of requiring \(g_{\boldsymbol{\psi}}\) and the log-joint to be
+                    differentiable. The <strong>score-function estimator</strong>, also called REINFORCE, applies much more widely, including when
+                    \(\boldsymbol{z}\) is discrete or \(g_{\boldsymbol{\psi}}\) is non-differentiable, provided \(\log q_{\boldsymbol{\psi}}\) is differentiable
+                    in \(\boldsymbol{\psi}\) and its support does not move with \(\boldsymbol{\psi}\). The estimator exploits an algebraic identity that
+                    converts the gradient of the expectation into a different expectation that can be estimated by Monte Carlo. The price is high variance and a
+                    corresponding need for variance-reduction techniques. We develop both estimators in turn, with the rigorous justification (in each case, an
+                    application of dominated convergence) explicit.
                 </p>
 
                 <h3>The Gradient Interchange Problem</h3>
@@ -556,10 +558,10 @@ uses_python: false
                 <p>
                     The legitimate operation underlying both estimators we develop below is differentiation under the integral sign, which the
                     <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a> licenses provided one
-                    can find a single integrable function dominating the \(\boldsymbol{\psi}\)-derivatives uniformly in a neighborhood of the parameter value.
-                    The two estimators differ in <em>where</em> they apply this principle. The reparameterization gradient first rewrites the expectation against
-                    a fixed \(\boldsymbol{\psi}\)-independent measure (eliminating the second source of \(\boldsymbol{\psi}\)-dependence) and then differentiates
-                    under the integral. By contrast, the score-function estimator differentiates under the integral directly and pays for the
+                    can find a single integrable function dominating the \(\boldsymbol{\psi}\)-difference quotients uniformly in a neighborhood of the parameter
+                    value. The two estimators differ in <em>where</em> they apply this principle. The reparameterization gradient first rewrites the expectation
+                    against a fixed \(\boldsymbol{\psi}\)-independent measure (eliminating the second source of \(\boldsymbol{\psi}\)-dependence) and then
+                    differentiates under the integral. By contrast, the score-function estimator differentiates under the integral directly and pays for the
                     \(\boldsymbol{\psi}\)-dependent measure with an algebraic identity that produces an additional term.
                 </p>
 
@@ -590,13 +592,15 @@ uses_python: false
                         indexed by \(\boldsymbol{\psi}\) in an open set \(\Psi \subseteq \mathbb{R}^d\),
                         such that \(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}) \sim q_{\boldsymbol{\psi}}\)
                         when \(\boldsymbol{\epsilon} \sim p_0\). Let \(h_{\boldsymbol{\psi}} : \mathcal{Z} \to \mathbb{R}\) be a family of integrable
-                        functions, possibly depending on \(\boldsymbol{\psi}\). Assume that
-                        \((\boldsymbol{\psi}, \boldsymbol{\epsilon}) \mapsto h_{\boldsymbol{\psi}}(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}))\)
-                        is differentiable in \(\boldsymbol{\psi}\) for \(p_0\)-almost every
-                        \(\boldsymbol{\epsilon}\), and that there exists a \(p_0\)-integrable dominating
-                        function \(M(\boldsymbol{\epsilon})\) with
-                        \(\|\nabla_{\boldsymbol{\psi}} h_{\boldsymbol{\psi}}(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}))\| \leq M(\boldsymbol{\epsilon})\)
-                        for all \(\boldsymbol{\psi}\) in a neighborhood of the parameter value of interest.
+                        functions, possibly depending on \(\boldsymbol{\psi}\). Fix a parameter value of interest, and assume that for \(p_0\)-almost every
+                        \(\boldsymbol{\epsilon}\) the map \(\boldsymbol{\psi} \mapsto h_{\boldsymbol{\psi}}(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}))\) is
+                        differentiable at that value, and that there exists a \(p_0\)-integrable dominating function \(M(\boldsymbol{\epsilon})\) with
+                        \[
+                        \big| h_{\boldsymbol{\psi}}(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}))
+                        - h_{\boldsymbol{\psi}'}(g_{\boldsymbol{\psi}'}(\boldsymbol{\epsilon})) \big|
+                        \leq M(\boldsymbol{\epsilon}) \, \|\boldsymbol{\psi} - \boldsymbol{\psi}'\|
+                        \]
+                        for all \(\boldsymbol{\psi}, \boldsymbol{\psi}'\) in a neighborhood of the parameter value of interest.
                         Then
                         \[
                         \nabla_{\boldsymbol{\psi}} \, \mathbb{E}_{q_{\boldsymbol{\psi}}(\boldsymbol{z})}\!\left[
@@ -629,11 +633,11 @@ uses_python: false
                         \[
                         \partial_{\psi_j} h_{\boldsymbol{\psi}}(g_{\boldsymbol{\psi}}(\boldsymbol{\epsilon}))
                         \]
-                        as \(t \to 0\), and is dominated in absolute value by \(M(\boldsymbol{\epsilon})\) (by the mean-value theorem and the domination
-                        hypothesis). The <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a>
-                        therefore licenses the interchange of the limit and the expectation along every sequence \(t_n \to 0\), which is exactly the
-                        differentiation under the integral. Reading the coordinate-wise statement as a vector identity, with \(\nabla_{\boldsymbol{\psi}}\) the
-                        vector of partial derivatives, gives the claim.
+                        as \(t \to 0\), and is dominated in absolute value by \(M(\boldsymbol{\epsilon})\) by the domination hypothesis. The
+                        <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence theorem</strong></a> therefore licenses
+                        the interchange of the limit and the expectation along every sequence \(t_n \to 0\), which is exactly the differentiation under the
+                        integral. Reading the coordinate-wise statement as a vector identity, with \(\nabla_{\boldsymbol{\psi}}\) the vector of partial
+                        derivatives, gives the claim.
                     </p>
                 </div>
 
@@ -742,14 +746,19 @@ uses_python: false
                 <div class="theorem" id="T-score_function_estimator">
                     <span class="theorem-title">Theorem: Score-Function Estimator</span>
                     <p>
-                        Let \(q_{\boldsymbol{\psi}}\) be a family of densities on \(\mathcal{Z}\) such that
-                        \((\boldsymbol{\psi}, \boldsymbol{z}) \mapsto q_{\boldsymbol{\psi}}(\boldsymbol{z})\) is differentiable in \(\boldsymbol{\psi}\) for
-                        almost every \(\boldsymbol{z}\), and let \(h_{\boldsymbol{\psi}} : \mathcal{Z} \to \mathbb{R}\) be a family of integrable functions,
-                        possibly depending on \(\boldsymbol{\psi}\). Assume the <strong>common-support hypothesis</strong> that the support
-                        \(\{\boldsymbol{z} : q_{\boldsymbol{\psi}}(\boldsymbol{z}) \gt 0\}\) does not depend on \(\boldsymbol{\psi}\) in a neighborhood of the
-                        parameter value of interest, and that
-                        \(\boldsymbol{z} \mapsto \nabla_{\boldsymbol{\psi}}[h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z})]\) admits
-                        an integrable dominating function in that neighborhood. Then
+                        Let \(q_{\boldsymbol{\psi}}\) be a family of densities on \(\mathcal{Z}\) and let \(h_{\boldsymbol{\psi}} : \mathcal{Z} \to \mathbb{R}\) be
+                        a family of integrable functions, possibly depending on \(\boldsymbol{\psi}\). Fix a parameter value of interest, and assume that for
+                        almost every \(\boldsymbol{z}\) the maps \(\boldsymbol{\psi} \mapsto q_{\boldsymbol{\psi}}(\boldsymbol{z})\) and
+                        \(\boldsymbol{\psi} \mapsto h_{\boldsymbol{\psi}}(\boldsymbol{z})\) are differentiable at that value. Assume the
+                        <strong>common-support hypothesis</strong> that the support \(\{\boldsymbol{z} : q_{\boldsymbol{\psi}}(\boldsymbol{z}) \gt 0\}\) does not
+                        depend on \(\boldsymbol{\psi}\) in a neighborhood of the parameter value of interest, and the domination hypothesis that there is an
+                        integrable function \(M(\boldsymbol{z})\) with
+                        \[
+                        \big| h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z})
+                        - h_{\boldsymbol{\psi}'}(\boldsymbol{z}) q_{\boldsymbol{\psi}'}(\boldsymbol{z}) \big|
+                        \leq M(\boldsymbol{z}) \, \|\boldsymbol{\psi} - \boldsymbol{\psi}'\|
+                        \]
+                        for all \(\boldsymbol{\psi}, \boldsymbol{\psi}'\) in that neighborhood. Then
                         \[
                         \nabla_{\boldsymbol{\psi}} \, \mathbb{E}_{q_{\boldsymbol{\psi}}(\boldsymbol{z})}\!\left[
                             h_{\boldsymbol{\psi}}(\boldsymbol{z})
@@ -763,9 +772,9 @@ uses_python: false
                         \]
                         In particular, when \(h\) is independent of \(\boldsymbol{\psi}\) the first term vanishes and the identity reduces to
                         \(\mathbb{E}_{q_{\boldsymbol{\psi}}}[h(\boldsymbol{z}) \nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}(\boldsymbol{z})]\). The
-                        common-support hypothesis is essential. Without it, differentiating the integral produces additional Leibniz boundary terms. The
-                        classical pitfall is \(z \sim \mathrm{Uniform}(0, \psi)\) with scalar \(\psi \gt 0\), where the \(\psi\)-dependent endpoint generates a
-                        contribution that the score identity does not capture.
+                        common-support hypothesis is what lets the proof set aside the zero set of \(q_{\boldsymbol{\psi}}\). It fails, together with the
+                        domination hypothesis, in the classical pitfall \(z \sim \mathrm{Uniform}(0, \psi)\) with scalar \(\psi \gt 0\), where the density jumps
+                        as \(\psi\) crosses \(z\) and differentiating the integral produces a Leibniz boundary term that the score identity does not capture.
                     </p>
                 </div>
 
@@ -774,8 +783,9 @@ uses_python: false
                     <p>
                         Writing the expectation as an integral and differentiating under the integral sign (justified by
                         <a href="../Calculus/lp_completeness.html#T-dct" class="ref-link"><strong>dominated convergence</strong></a> applied to the
-                        family \(\boldsymbol{\psi} \mapsto h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z})\) with the
-                        dominating hypothesis assumed),
+                        difference quotients of \(\boldsymbol{\psi} \mapsto h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z})\),
+                        which converge for almost every \(\boldsymbol{z}\) by the differentiability hypothesis and are bounded by \(M(\boldsymbol{z})\) by
+                        the domination hypothesis),
                         \[
                         \nabla_{\boldsymbol{\psi}} \int h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z}) \, d\boldsymbol{z}
                         = \int \nabla_{\boldsymbol{\psi}}\!\left[ h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z}) \right] d\boldsymbol{z}.
@@ -793,10 +803,8 @@ uses_python: false
                         +
                         h_{\boldsymbol{\psi}}(\boldsymbol{z}) \cdot q_{\boldsymbol{\psi}}(\boldsymbol{z}) \, \nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}(\boldsymbol{z}).
                         \]
-                        The domination hypothesis presupposes that
-                        \(\boldsymbol{\psi} \mapsto h_{\boldsymbol{\psi}}(\boldsymbol{z}) q_{\boldsymbol{\psi}}(\boldsymbol{z})\) is differentiable, so
-                        \(h_{\boldsymbol{\psi}}(\boldsymbol{z})\) is differentiable in \(\boldsymbol{\psi}\) wherever
-                        \(q_{\boldsymbol{\psi}}(\boldsymbol{z}) \gt 0\). Off the common support the product vanishes for every \(\boldsymbol{\psi}\) near
+                        Both factors are differentiable at the parameter value for almost every \(\boldsymbol{z}\) by hypothesis, so the product rule
+                        applies there. Off the common support the product vanishes for every \(\boldsymbol{\psi}\) near
                         the parameter value of interest, so its gradient is zero there and only \(\{q_{\boldsymbol{\psi}} \gt 0\}\) contributes to the
                         integral. Integrating against \(d\boldsymbol{z}\) and recognizing both terms as expectations under \(q_{\boldsymbol{\psi}}\)
                         gives the claim.
@@ -840,8 +848,8 @@ uses_python: false
                     \[
                     \mathbb{E}_{q_{\boldsymbol{\psi}}}[\nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}] = 0
                     \]
-                    (the theorem applied with \(h \equiv 1\), whose domination hypothesis asks for an integrable function dominating
-                    \(\nabla_{\boldsymbol{\psi}} q_{\boldsymbol{\psi}}\) near the parameter value), the first term contributes zero. The ELBO
+                    (the theorem applied with \(h \equiv 1\), whose domination hypothesis asks for \(q_{\boldsymbol{\psi}}(\boldsymbol{z})\) to be
+                    Lipschitz in \(\boldsymbol{\psi}\) near the parameter value with an integrable constant), the first term contributes zero. The ELBO
                     gradient is therefore
                     \[
                     \nabla_{\boldsymbol{\psi}} \mathcal{L}
@@ -865,19 +873,20 @@ uses_python: false
                 </p>
 
                 <p>
-                    The reparameterization estimator achieves low variance because the \(\boldsymbol{\psi}\)-dependence has been pushed into a single
-                    deterministic transform \(g_{\boldsymbol{\psi}}\), and the gradient is taken pathwise. Each Monte Carlo sample evaluates the derivative of a
-                    smooth composition, and no factor of the score \(\nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}\) multiplies the integrand, which is
-                    the main source of variance in the score-function estimator. For Gaussian \(q_{\boldsymbol{\psi}}\) and smooth log-joint
-                    \(\log p_{\boldsymbol{\theta}}\), estimates from one or two samples per gradient step are typically sufficient to drive stochastic gradient
-                    optimization to convergence, and standard variational autoencoder training relies on this.
+                    The reparameterization estimator typically achieves low variance, when the integrand is smooth with moderate derivatives, because the
+                    \(\boldsymbol{\psi}\)-dependence has been pushed into a single deterministic transform \(g_{\boldsymbol{\psi}}\), and the gradient is taken
+                    pathwise. Each Monte Carlo sample evaluates the derivative of a smooth composition, and no factor of the score
+                    \(\nabla_{\boldsymbol{\psi}} \log q_{\boldsymbol{\psi}}\) multiplies the integrand, which is the main source of variance in the
+                    score-function estimator. For Gaussian \(q_{\boldsymbol{\psi}}\) and smooth log-joint \(\log p_{\boldsymbol{\theta}}\), estimates from one
+                    or two samples per gradient step are typically sufficient to drive stochastic gradient optimization to convergence, and standard variational
+                    autoencoder training relies on this.
                 </p>
 
                 <p>
-                    The score-function estimator, by contrast, suffers from variance that scales with the magnitude of
-                    \(h(\boldsymbol{z}) - \mathbb{E}_{q_{\boldsymbol{\psi}}}[h]\) and with the variance of the score function itself. In high-dimensional latent
-                    spaces, or when the integrand has wide range, single-sample estimates can have variance orders of magnitude larger than the
-                    reparameterization counterpart. Both situations are common in modern probabilistic models.
+                    The score-function estimator, by contrast, suffers from variance that scales with the magnitude of \(h(\boldsymbol{z})\), which the control
+                    variates below can reduce toward the scale of \(h(\boldsymbol{z}) - \mathbb{E}_{q_{\boldsymbol{\psi}}}[h]\), and with the variance of the
+                    score function itself. In high-dimensional latent spaces, or when the integrand has wide range, single-sample estimates can have variance
+                    orders of magnitude larger than the reparameterization counterpart. Both situations are common in modern probabilistic models.
                 </p>
 
                 <p>
@@ -915,11 +924,12 @@ uses_python: false
                     =
                     \frac{\operatorname{Cov}(\tilde{g}_i(\boldsymbol{z}), \, b_i(\boldsymbol{z}))}{\operatorname{Var}(b_i(\boldsymbol{z}))},
                     \]
-                    which can be estimated from earlier iterations or from a separate batch of samples, so that the coefficient does not depend on the samples it
-                    multiplies. Choosing \(b_i\) and \(c_i^*\) in this way can reduce variance by orders of magnitude while preserving unbiasedness. A further
-                    refinement, common in policy-gradient reinforcement learning, uses a learned baseline that depends on the observation but not on the sampled
-                    \(\boldsymbol{z}\) (a function of the state rather than of the action), which keeps the zero-mean condition intact. Effective control
-                    variates are an extensive research topic that we do not pursue further here.
+                    which can be estimated from earlier iterations or from a separate batch of samples, so that the coefficient does not depend on the samples
+                    it multiplies. Choosing \(b_i\) and \(c_i^*\) in this way can reduce variance by orders of magnitude while preserving unbiasedness. A
+                    further refinement, common in policy-gradient reinforcement learning, subtracts from \(h\) a learned scalar \(b(\boldsymbol{x})\) that
+                    depends on the observation but not on the sampled \(\boldsymbol{z}\) (a function of the state rather than of the action). This amounts to
+                    the control variate \(b(\boldsymbol{x}) \, \partial_{\psi_i} \log q_{\boldsymbol{\psi}}(\boldsymbol{z})\), which has zero mean because the
+                    score does. Effective control variates are an extensive research topic that we do not pursue further here.
                 </p>
 
                 <p>
@@ -1047,10 +1057,12 @@ uses_python: false
                 </p>
 
                 <p>
-                    Second, the functional form of \(q_j^*\) is dictated by the model's log-joint. When \(p_{\boldsymbol{\theta}}\) is a member of the
-                    exponential family with conjugate prior structure, the expectation \(\mathbb{E}_{q_{-j}}[\log p]\) is a linear function of the sufficient
-                    statistics of \(z_j\), and \(q_j^*\) inherits the same exponential-family form as the corresponding conditional. This is the source of the
-                    closed-form update equations that make CAVI practical. In effect, the model rather than the practitioner dictates the variational family.
+                    Second, the functional form of \(q_j^*\) is dictated by the model's log-joint. When each complete conditional
+                    \(p_{\boldsymbol{\theta}}(z_j \mid \boldsymbol{x}, \boldsymbol{z}_{-j})\) is a member of an exponential family, as in models with conjugate
+                    prior structure, the expectation \(\mathbb{E}_{q_{-j}}[\log p]\), as a function of \(z_j\), is a linear function of the sufficient
+                    statistics of \(z_j\) plus the log base measure and a constant, and \(q_j^*\) inherits the same exponential-family form as the corresponding
+                    conditional. This is the source of the closed-form update equations that make CAVI practical. In effect, the model rather than the
+                    practitioner dictates the variational family.
                 </p>
 
                 <h3>The CAVI Algorithm</h3>
@@ -1130,8 +1142,8 @@ uses_python: false
                         data and by \(\alpha_0\) rather than fixed in advance.
                     </p>
                     <p>
-                        Mathematically, the effect arises from the digamma function, denoted \(\psi_{\mathrm{dig}}\) here to avoid a clash with the variational
-                        parameters \(\boldsymbol{\psi}\), which appears in the variational expectation of \(\log \pi_k\) under the Dirichlet factor. This
+                        Mathematically, the effect arises from the digamma function (denoted \(\psi_{\mathrm{dig}}\) here to avoid a clash with the variational
+                        parameters \(\boldsymbol{\psi}\)), which appears in the variational expectation of \(\log \pi_k\) under the Dirichlet factor. This
                         expectation is \(\psi_{\mathrm{dig}}(\alpha_k) - \psi_{\mathrm{dig}}(\sum_l \alpha_l)\), so the factors \(q_n(z_n)\) weight cluster \(k\)
                         in proportion to \(\exp(\psi_{\mathrm{dig}}(\alpha_k))\) rather than to \(\alpha_k\) itself, and
                         \(\exp(\psi_{\mathrm{dig}}(\alpha_k)) \lt \alpha_k\) for every \(\alpha_k \gt 0\). The weight behaves like \(\alpha_k - \tfrac{1}{2}\)
@@ -1198,8 +1210,5 @@ uses_python: false
             </section>
 
         </div>
-
-        <script src="/js/main.js"></script>
-        <script src="/js/ref-preview.js"></script>
     </body>
 </html>
