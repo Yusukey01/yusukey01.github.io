@@ -57,11 +57,12 @@ uses_python: false
                     <a href="radon_nikodym.html#T-radon_nikodym" class="ref-link"><strong>Radon-Nikodym theorem</strong></a>.
                     We read a sub-\(\sigma\)-algebra \(\mathcal{G} \subseteq \mathcal{F}\) as "the information
                     available to an observer". Given an integrable random variable \(X\) and such a \(\mathcal{G}\),
-                    there is a single \(\mathcal{G}\)-measurable random variable, denoted
-                    \(\mathbb{E}[X \mid \mathcal{G}]\), that simultaneously specialises to both classical formulas and
-                    continues to make sense in every intermediate situation. The unifying object is a function on
-                    \(\Omega\) rather than a number. Its values reflect the best forecast of \(X\) that an observer
-                    with information \(\mathcal{G}\) can make.
+                    there is a \(\mathcal{G}\)-measurable random variable, unique up to almost-sure equality and
+                    denoted \(\mathbb{E}[X \mid \mathcal{G}]\), that simultaneously specialises to both classical
+                    formulas and continues to make sense in every intermediate situation. The unifying object is a
+                    function on \(\Omega\) rather than a number. For square-integrable \(X\), its values give the
+                    best forecast of \(X\), in the mean-square sense, that an observer with information
+                    \(\mathcal{G}\) can make.
                 </p>
 
                 <p>
@@ -73,12 +74,14 @@ uses_python: false
                 </p>
 
                 <p>
-                    The conditional expectation also underlies, in idealised form, several core constructions of modern
+                    The conditional expectation also underlies, in idealised form, several core constructions of
                     machine learning, which <a href="#applications">the closing section</a> takes up in detail. In
                     expectation-maximisation, the E-step is exactly a conditional expectation. The Bellman equation of
-                    reinforcement learning rests on the tower property. The Bayesian posterior predictive
+                    reinforcement learning rests on the tower property. Under the usual assumption that a new
+                    observation is conditionally independent of the observed data \(D\) given the parameter \(\theta\),
+                    the Bayesian posterior predictive
                     \(p(x_{\text{new}} \mid D) = \mathbb{E}[p(x_{\text{new}} \mid \theta) \mid D]\) is a conditional
-                    expectation given the data \(D\), and the
+                    expectation given \(D\), and the
                     <a href="variational_inference.html"><strong>ELBO of variational inference</strong></a> replaces an
                     intractable conditional measure by a tractable surrogate.
                 </p>
@@ -218,7 +221,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    All three hypotheses of the Radon-Nikodym theorem are now in place. The measure
+                    The ingredients for the Radon-Nikodym theorem are now in place. The measure
                     \(\mathbb{P}|_{\mathcal{G}}\) is finite (hence \(\sigma\)-finite) and non-negative on
                     \((\Omega, \mathcal{G})\), and \(\nu_X\) is a finite signed measure absolutely continuous with
                     respect to it. The theorem is stated and proved for non-negative \(\nu\) only, and the proof below
@@ -926,9 +929,12 @@ uses_python: false
                     The monotonic improvement of the marginal log-likelihood \(\ell(\theta) = \log p(X \mid \theta)\)
                     under EM iterations follows from Jensen's inequality. Write
                     \(p(z \mid x, \theta) = p(x, z \mid \theta) / p(x \mid \theta)\), so that
-                    \(\log p(x \mid \theta) = \log p(x, z \mid \theta) - \log p(z \mid x, \theta)\) for every \(z\). We
-                    take conditional expectations of both sides given \(X\) under \(p(\cdot \mid X, \theta^{(t)})\).
-                    Since the left side does not depend on \(z\), it is unchanged, and we obtain
+                    \(\log p(x \mid \theta) = \log p(x, z \mid \theta) - \log p(z \mid x, \theta)\) for every \(z\)
+                    with \(p(x, z \mid \theta) \gt 0\), provided \(p(x \mid \theta) \gt 0\). By the assumption, stated
+                    below, that the two conditional densities of \(z\) at \(\theta\) and at \(\theta^{(t)}\) are
+                    positive on the same set, this covers \(p(\cdot \mid x, \theta^{(t)})\)-almost every \(z\). We take
+                    conditional expectations of both sides given \(X\) under \(p(\cdot \mid X, \theta^{(t)})\). Since
+                    the left side does not depend on \(z\), it is unchanged, and we obtain
                     \[
                     \log p(X \mid \theta)
                     = \underbrace{\mathbb{E}\big[ \log p(X, Z \mid \theta) \,\big|\, X, \theta^{(t)} \big]}_{Q(\theta \mid \theta^{(t)})}
@@ -975,7 +981,8 @@ uses_python: false
                     \]
                     in which the conditioning density cancels and the remaining integrand is a probability density that
                     integrates to \(1\). This is the same algebraic structure as the importance-sampling identity
-                    \(\mathbb{E}_q[f(Z) \, p(Z)/q(Z)] = \mathbb{E}_p[f(Z)]\).
+                    \(\mathbb{E}_q[f(Z) \, p(Z)/q(Z)] = \mathbb{E}_p[f(Z)]\), valid when \(q(z) \gt 0\) wherever
+                    \(f(z)\, p(z) \neq 0\) and \(f\) is integrable under \(p\).
                 </p>
 
                 <p>
@@ -997,8 +1004,8 @@ uses_python: false
                     \]
                     rests on the tower property. Assume bounded rewards and \(\gamma \lt 1\), so that the discounted
                     return \(X = \sum_t \gamma^t R_{t+1}\) is integrable, and a countable state space with
-                    \(\mathbb{P}(S_0 = s) \gt 0\), so that conditioning on \(S_0 = s\) is the elementary formula
-                    recovered in the discrete case. The \(\sigma\)-algebra structure is
+                    \(\mathbb{P}(S_0 = s) \gt 0\) for every state \(s\), so that conditioning on \(S_0 = s\) is the
+                    elementary formula recovered in the discrete case. The \(\sigma\)-algebra structure is
                     \(\sigma(S_0) \subseteq \sigma(S_0, S_1)\), and the tower property gives
                     \[
                     \mathbb{E}[X \mid \sigma(S_0)] = \mathbb{E}\big[ \mathbb{E}[X \mid \sigma(S_0, S_1)] \,\big|\, \sigma(S_0) \big].
@@ -1096,8 +1103,5 @@ uses_python: false
             </section>
 
         </div>
-
-        <script src="/js/main.js"></script>
-        <script src="/js/ref-preview.js"></script>
     </body>
 </html>
