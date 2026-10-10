@@ -63,17 +63,17 @@ uses_python: false
                 </p>
 
                 <p>
-                    However, this approach fails when sampling from \(\pi(\mathbf{x})\) is computationally expensive or infeasible, when 
-                    the normalizing constant of \(\pi(\mathbf{x})\) is unknown 
-                    (as is common in <a href="bayesian.html"><strong>Bayesian inference</strong></a>), or when \(\varphi(\mathbf{x})\) 
-                    has large values only in regions where \(\pi(\mathbf{x})\) assigns low probability (rare events).
+                    However, this approach fails when sampling from \(\pi(\mathbf{x})\) is computationally expensive or infeasible (as is common in
+                    <a href="bayesian.html"><strong>Bayesian inference</strong></a>), or when \(\varphi(\mathbf{x})\) has large values only in regions
+                    where \(\pi(\mathbf{x})\) assigns low probability (rare events).
                 </p>
 
                 <p>
-                    <strong>Importance sampling</strong> solves these problems by introducing a <strong>proposal distribution</strong> (or
+                    <strong>Importance sampling</strong> addresses these problems by introducing a <strong>proposal distribution</strong> (or
                     <strong>importance distribution</strong>) \(q(\mathbf{x})\) from which we can easily sample, then reweighting samples to account for
-                    the distribution mismatch. The idea of reusing samples collected under one distribution to estimate expectations under another is one
-                    of the most broadly applicable principles in computational statistics.
+                    the distribution mismatch. In its self-normalized form, it requires \(\pi(\mathbf{x})\) only up to its normalizing constant, which is
+                    often unknown in Bayesian inference. The idea of reusing samples collected under one distribution to estimate expectations under
+                    another is one of the most broadly applicable principles in computational statistics.
                 </p>
 
                 <p>
@@ -82,7 +82,7 @@ uses_python: false
 
                 <h3>1. <a href="../Machine_learning/intro_RL.html">Reinforcement Learning</a> from Human Feedback (RLHF)</h3>
                 <p>
-                    Large language models (LLMs) fine-tuned by RLHF rely on importance sampling. The
+                    Large language models (LLMs) fine-tuned by PPO-based RLHF rely on importance sampling. The
                     <strong>Proximal Policy Optimization (PPO)</strong> algorithm uses importance sampling to enable multiple gradient updates from the
                     same batch of collected data:
                     \[
@@ -95,8 +95,8 @@ uses_python: false
                 <p>
                     The importance ratio \(\pi_\theta/\mu\) allows us to reuse data collected under \(\mu\) for multiple updates to \(\pi_\theta\). PPO's
                     clipping mechanism (typically with \(\epsilon = 0.2\)) removes the incentive to move this ratio outside
-                    \([1 - \epsilon, 1 + \epsilon]\) and thereby stabilizes training. Without importance sampling, every gradient step would require fresh
-                    on-policy data, and RLHF would be computationally prohibitive.
+                    \([1 - \epsilon, 1 + \epsilon]\) and thereby stabilizes training. Without importance sampling, every gradient step would require
+                    fresh on-policy data.
                 </p>
 
                 <h3>2. Off-Policy Reinforcement Learning</h3>
@@ -124,7 +124,7 @@ uses_python: false
                 <p>
                     Many probabilistic models in AI (Boltzmann machines, energy-based models, certain Bayesian posteriors) have intractable 
                     normalizing constants. Importance sampling, particularly <strong>annealed importance sampling</strong>, provides practical methods to 
-                    estimate these constants, which is essential for model comparison and learning.
+                    estimate these constants, which is essential for likelihood-based model comparison.
                 </p>
 
                 <p>
@@ -254,9 +254,10 @@ uses_python: false
                 </div>
 
                 <p>
-                    If the importance weights vary dramatically, a few samples will dominate the estimate, and the variance will be high. This is
-                    quantified by the <strong>effective sample size (ESS)</strong>, which measures the number of independent samples that would provide the
-                    same statistical efficiency as the current weighted sample. The ESS can be computed in two equivalent ways:
+                    If the importance weights vary dramatically, a few samples often carry most of the total weight, and unless \(\varphi\) offsets the
+                    weights, the variance is typically high. This degeneracy is quantified by the <strong>effective sample size (ESS)</strong>, a
+                    heuristic computed from the weights alone for the number of independent samples from \(\pi\) that would give comparable statistical
+                    efficiency. The ESS can be computed in two equivalent ways:
                 </p>
 
                 <div class="theorem" id="D-effective_sample_size">
@@ -497,7 +498,7 @@ uses_python: false
                 </p>
                 <ul style="padding-left: 40px;">
                     <li><strong>Linear.</strong> \(\beta_j = \frac{n - j}{n}\)</li>
-                    <li><strong>Geometric.</strong> \(\beta_j = \left( \frac{n - j}{n} \right)^{\alpha}\), for some \(\alpha \gt 0\)</li>
+                    <li><strong>Power.</strong> \(\beta_j = \left( \frac{n - j}{n} \right)^{\alpha}\), for some \(\alpha \gt 0\)</li>
                     <li><strong>Adaptive.</strong> Chosen to maintain approximately constant effective sample size (ESS) between steps</li>
                 </ul>
                 
@@ -543,7 +544,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    Each ratio is typically close to 1, which keeps the weights stable and prevents variance explosion. 
+                    Each ratio is close to 1 when successive \(\beta_j\) are close, and with well-mixing transitions \(T_j\) this keeps the weights more
+                    stable than in one-step importance sampling.
                 </p>
 
                 <div class="proof">

@@ -39,9 +39,10 @@ uses_python: false
                 </p>
 
                 <p>
-                    The <strong>Fisher information matrix (FIM)</strong> captures the <strong>curvature</strong> of the log-likelihood function. 
-                    In frequentist statistics, it characterizes the asymptotic variance of the MLE. In Bayesian statistics, it defines Jeffreys prior. 
-                    In optimization, it gives rise to <a href="../Machine_learning/natural_gd.html"><strong>natural gradient descent</strong></a>.
+                    The <strong>Fisher information matrix (FIM)</strong> captures, under regularity conditions, the expected <strong>curvature</strong>
+                    of the log-likelihood function. In frequentist statistics, it characterizes the asymptotic variance of the MLE. In Bayesian
+                    statistics, it defines Jeffreys prior. In optimization, it gives rise to
+                    <a href="../Machine_learning/natural_gd.html"><strong>natural gradient descent</strong></a>.
                 </p>
 
                 <div class="theorem" id="D-score_function">
@@ -64,11 +65,12 @@ uses_python: false
                 <div class="theorem" id="D-fisher_information_matrix">
                     <span class="theorem-title">Definition: Fisher Information Matrix</span>
                     <p>
-                        The <strong>Fisher information matrix (FIM)</strong> is the
-                        <a href="covariance.html#D-covariance_matrix" class="ref-link"><strong>covariance</strong></a> of the score function:
+                        The <strong>Fisher information matrix (FIM)</strong> is the second-moment matrix of the score function:
                         \[
                         F(\theta) = \mathbb{E}_{x \sim p(x \mid \theta)} [s(\theta)\,s(\theta)^\top].
                         \]
+                        When the score has zero mean, as it does under the regularity conditions of the theorem on the Hessian form below, \(F(\theta)\)
+                        is the <a href="covariance.html#D-covariance_matrix" class="ref-link"><strong>covariance</strong></a> of the score.
                     </p>
                 </div>
                 
@@ -290,10 +292,11 @@ uses_python: false
                 </div>
 
                 <p>
-                    <strong>Note.</strong> As a covariance matrix, the FIM \(F\) is always
-                    <a href="covariance.html#T-covariance_psd" class="ref-link"><strong>positive semi-definite</strong></a>. It is positive definite exactly
-                     when the components of the score are linearly independent. Identifiability alone does not guarantee this.
-                    It is also often easier to compute and to approximate than the Hessian matrix, since it involves only first derivatives 
+                    <strong>Note.</strong> The FIM \(F\) is always positive semi-definite, since \(v^\top F v = \mathbb{E}[(v^\top s)^2] \geq 0\) for
+                    every vector \(v\). When the score has zero mean, this is the
+                    <a href="covariance.html#T-covariance_psd" class="ref-link"><strong>positive semi-definiteness</strong></a> of a covariance matrix.
+                    It is positive definite exactly when the components of the score are linearly independent. Identifiability alone does not guarantee
+                    this. It is also often easier to compute and to approximate than the Hessian matrix, since it involves only first derivatives
                     of the log-likelihood.
                 </p>
             </section>
@@ -302,15 +305,17 @@ uses_python: false
                 <h2>Cram&eacute;r-Rao Lower Bound</h2>
 
                 <p>
-                    We return to the frequentist thread anticipated at the start of this page. The FIM does not just describe the geometry of the model. It
-                    also sets a hard limit on how accurately any unbiased estimator can recover \(\theta\) from data. The smaller the FIM, the less
-                    information the data carries, and the larger the unavoidable variance of estimation.
+                    We return to the frequentist thread anticipated at the start of this page. The FIM does not just describe the geometry of the model.
+                    It also sets a hard limit on how accurately any unbiased estimator can recover \(\theta\) from data, under regularity conditions on
+                    the model and the estimator. The smaller the FIM, the less information the data carries, and the larger the unavoidable
+                    variance of estimation.
                 </p>
 
                 <p>
                     Recall from the definition of <a href="mle.html#D-bias" class="ref-link">bias</a> that an estimator
-                    \(\hat\theta = \hat\theta(\mathcal{D})\) is <strong>unbiased</strong> if \(\mathbb{E}[\hat\theta] = \theta^*\) for the true parameter
-                    \(\theta^*\). Being unbiased is not enough for a good estimator. Its <strong>variance</strong>
+                    \(\hat\theta = \hat\theta(\mathcal{D})\) is <strong>unbiased</strong> if \(\mathbb{E}_\theta[\hat\theta] = \theta\) for every
+                    parameter value \(\theta\), in particular at the true parameter \(\theta^*\). Being unbiased is not enough for a good
+                    estimator. Its <strong>variance</strong>
                     \[
                     \mathbb{V}[\hat\theta] := \mathbb{E}\!\left[\hat\theta^2\right] - \big(\mathbb{E}[\hat\theta]\big)^2
                     \]
@@ -398,16 +403,17 @@ uses_python: false
                 </p>
 
                 <p>
-                    The factor \(N\) in the denominator sets the scaling. Doubling the sample size halves the minimum achievable variance. The Fisher
-                    information \(F(\theta^*)\) controls the constant. Parameter values where the likelihood is sharply peaked (large \(F\)) admit
-                    lower-variance estimators than values where the likelihood is flat (small \(F\)).
+                    The factor \(N\) in the denominator sets the scaling. Doubling the sample size halves this lower bound. The Fisher information
+                    \(F(\theta^*)\) controls the constant. Parameter values where the likelihood is sharply peaked (large \(F\)) have a smaller lower
+                    bound than values where the likelihood is flat (small \(F\)).
                 </p>
 
                 <div class="insight-box">
                     <h3>MLE is Asymptotically Optimal</h3>
                     <p>
-                        Under the same regularity conditions, the <a href="mle.html#D-MLE" class="ref-link">MLE</a> \(\hat\theta_{\text{MLE}}\) is
-                        asymptotically unbiased and achieves the Cram&eacute;r-Rao bound in the large-sample limit. A Taylor expansion of the score equation
+                        Under further regularity conditions, which strengthen those above and which we do not list here, the
+                        <a href="mle.html#D-MLE" class="ref-link">MLE</a> \(\hat\theta_{\text{MLE}}\) is consistent, and its asymptotic variance
+                        attains the Cram&eacute;r-Rao bound in the large-sample limit. A Taylor expansion of the score equation
                         \(\nabla_\theta \log p(\mathcal{D} \mid \hat\theta_{\text{MLE}}) = 0\) around \(\theta^*\), combined with the law of large numbers
                         and central limit theorem, yields the asymptotic distribution
                         \[
@@ -416,9 +422,10 @@ uses_python: false
                     </p>
                     <p>
                         A full proof requires the convergence theory of random variables (developed in
-                        <a href="convergence.html"><strong>convergence of random variables</strong></a>). The takeaway is that no other (sufficiently
-                        regular) unbiased estimator can have smaller asymptotic variance than the MLE. The MLE is <strong>asymptotically optimal</strong>.
-                        This is the precise sense in which "maximum likelihood" is, in the large-sample frequentist regime, the right thing to do.
+                        <a href="convergence.html"><strong>convergence of random variables</strong></a>). The takeaway is that the MLE asymptotically
+                        attains the variance bound that no (sufficiently regular) unbiased estimator can beat. The MLE is
+                        <strong>asymptotically optimal</strong>. This is the precise sense in which "maximum likelihood" is, in the large-sample
+                        frequentist regime, the right thing to do.
                     </p>
                     <p>
                         This optimality result complements the bias-variance decomposition discussed in
@@ -515,7 +522,7 @@ uses_python: false
                         \]
                         Thus, the Jeffreys prior for the parameter \(\theta\) is given by
                         \[
-                        p_{\theta} (\theta) = \sqrt{F(\theta)} \propto  \theta^{-\frac{1}{2}} (1 - \theta)^{-\frac{1}{2}}.
+                        p_{\theta} (\theta) \propto \sqrt{F(\theta)} \propto  \theta^{-\frac{1}{2}} (1 - \theta)^{-\frac{1}{2}}.
                         \]
                         This is the <a href="gamma.html#D-beta_distribution" class="ref-link">beta distribution</a> \(\text{Beta}(1/2, 1/2)\), which is also
                         a special case of the Beta <a href="bayesian.html#D-conjugate_prior" class="ref-link">conjugate prior</a> for the Binomial
@@ -553,7 +560,7 @@ uses_python: false
                         \]
                         Thus, the Jeffreys prior for the reparameterized variable \(\phi\) is given by:
                         \[
-                        p_{\phi}(\phi) = \sqrt{F(\phi)} \propto \phi^{-\frac{1}{2}}(\phi +1)^{-1}.
+                        p_{\phi}(\phi) \propto \sqrt{F(\phi)} \propto \phi^{-\frac{1}{2}}(\phi +1)^{-1}.
                         \]
                     </p>
                 </div>
@@ -562,18 +569,20 @@ uses_python: false
                     <strong>Note.</strong> In one dimension, under regularity conditions, the Jeffreys prior coincides with the
                     <strong>reference prior</strong>, which maximizes the expected KL divergence between posterior and prior asymptotically, as the sample
                     size grows. In other words, it maximizes the information provided by the "data" relative to the prior. For multidimensional parameters,
-                    they are not the same.
+                    they generally differ.
                 </p>
                 <p>
-                    Also, finding a reference prior is equivalent to finding the prior that maximizes
+                    Also, the expected KL divergence above equals the
                     <a href="entropy.html#D-mutual_information" class="ref-link"><strong>mutual information</strong></a> between \(\theta\) and
-                    \(\mathcal{D}\).
+                    \(\mathcal{D}\), so the two objectives coincide:
                     \[
                     \begin{align*}
                     p^*(\theta) &= \arg \max_{p(\theta)} \mathbb{E}_{\mathcal{D}}[D_{\mathbb{KL}}(p(\theta \mid \mathcal{D}) \,\|\, p(\theta) )] \\\\
                                 &= \arg \max_{p(\theta)}\, \mathbb{I}(\theta ; \mathcal{D}).
                     \end{align*}
                     \]
+                    The reference prior is obtained from this criterion through a limiting procedure as the size of \(\mathcal{D}\) grows; we do not
+                    develop its precise form here.
                 </p>
                 <p>
                     In the continuous case,
@@ -601,7 +610,7 @@ uses_python: false
                     <p>
                         The Fisher information matrix (FIM) is central to modern deep learning optimization. The <strong>natural gradient</strong> update
                         \(\theta \leftarrow \theta - \alpha F^{-1} \nabla \mathcal{L}\) often provides a more effective descent direction than the standard
-                        gradient by accounting for the curvature of the statistical manifold.
+                        gradient by accounting for the local geometry that the FIM itself defines on the statistical manifold.
                     </p>
                     <p>
                         While inverting the full FIM is computationally impractical for large networks due to its \(O(d^3)\) complexity for \(d\)
@@ -610,8 +619,9 @@ uses_python: false
                         <a href="../Machine_learning/natural_gd.html"><strong>natural gradient descent page</strong></a> explores this further.
                     </p>
                     <p>
-                        In the field of <strong>Information Geometry</strong>, the FIM acts as a <strong>Riemannian metric</strong>. 
-                        From this perspective, the FIM is essentially the second-order Taylor approximation of the KL divergence:
+                        In the field of <strong>Information Geometry</strong>, the FIM acts as a <strong>Riemannian metric</strong> wherever it is
+                        positive definite and depends smoothly on the parameters. From this perspective, the FIM is essentially the second-order Taylor
+                        approximation of the KL divergence:
                         \[
                         D_{\mathbb{KL}}(p_{\theta} \| p_{\theta+d\theta}) \approx \frac{1}{2} d\theta^\top F(\theta) d\theta.
                         \]

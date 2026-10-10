@@ -177,9 +177,9 @@ uses_python: false
                     u &= \theta_{\left(\left\lceil S \times \left(1 - \frac{\alpha}{2}\right) \right\rceil\right)},
                     \end{align*}
                     \]
-                    where \(\lceil \cdot \rceil\) denotes the ceiling function. Other conventions exist. For example, numerical libraries (such as numpy's
-                    <code>quantile</code>) often use linear interpolation between adjacent order statistics. All such conventions agree in the limit
-                    \(S \to \infty\).
+                    where \(\lceil \cdot \rceil\) denotes the ceiling function. Other conventions exist. For example, numerical libraries (such as
+                    numpy's <code>quantile</code>) often use linear interpolation between adjacent order statistics. Provided the target quantiles are
+                    uniquely determined, all such conventions agree in the limit \(S \to \infty\).
                 </p> 
 
                 <div class="theorem" id="T-glivenko_cantelli">
@@ -240,10 +240,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    Both convergence theorems of this page run live in the lower plot. In the ECDF view, the empirical cdf \(\hat{F}_S\) is drawn over the
-                    true \(F\), with the exact sup-distance \(\sup_x |\hat{F}_S(x) - F(x)|\) reported and marked at the point where it is attained.
-                    Increase \(S\) and watch the Glivenko-Cantelli theorem squeeze it toward zero. Switching to the convergence trace plots the running
-                    mean \(\hat{\mu}_S\) and the interval endpoints against \(S\), and the trace shows the strong law of large numbers pulling them onto
+                    Both convergence theorems of this page run live in the lower plot. In the ECDF view, the empirical cdf \(\hat{F}_S\) is drawn over
+                    the true \(F\), with the exact sup-distance \(\sup_x |\hat{F}_S(x) - F(x)|\) reported and marked at the sample point where it is
+                    attained or, as a left limit, approached. Increase \(S\) and watch the Glivenko-Cantelli theorem squeeze it toward zero. Switching to
+                    the convergence trace plots the running mean \(\hat{\mu}_S\) and the central interval's endpoints against \(S\) on a logarithmic
+                    axis, and the trace shows the strong law of large numbers pulling the mean, and quantile consistency pulling the endpoints, onto
                     the true values.
                 </p>
 
@@ -255,10 +256,11 @@ uses_python: false
 
                 <p>
                     Selecting <strong>HPD</strong> switches to the highest-density construction developed in the next section, estimated from the samples
-                    by a kernel density estimate with a density-quantile threshold. Alongside it, the true HPD region is computed from the exact density by
-                    threshold bisection, with the threshold \(p^*\) reported. For the well-separated bimodal case the region correctly splits into a
-                    disjoint union of two intervals, one around each mode. For the skewed gamma it is visibly shorter than the central interval, as the
-                    next section says it must be.
+                    by a kernel density estimate with a density-quantile threshold. Alongside it, the true HPD region is computed from the exact density
+                    by threshold bisection, with the threshold \(p^*\) reported. For the well-separated bimodal case the region correctly splits into a
+                    disjoint union of two intervals, one around each mode. For the skewed gamma at its default shape, the true HPD interval in the HPD
+                    readout is visibly shorter than the true quantile interval in the central readout; by the minimality property stated in the next
+                    section, it can never be longer.
                 </p>
             </section>
 
@@ -298,7 +300,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    Unlike central credible intervals, HPD regions are not required to be symmetric or centered around the mean. This makes them
+                    Unlike central credible intervals, HPD regions are not required to place probability \(\alpha/2\) in each tail. This makes them
                     especially useful when the posterior distribution is skewed or multimodal. In such cases, HPD regions better capture the actual
                     regions of highest posterior density. For unimodal distributions, the HPD region is in fact a single interval, the shortest one
                     containing \(1-\alpha\) probability mass.
@@ -306,9 +308,10 @@ uses_python: false
 
                 <p>
                     The demo above shows that the HPD interval is often narrower than the central credible interval and may exclude low-density regions
-                    that the central interval mistakenly includes. Both the central credible interval and the HPD region require samples from the posterior
-                    distribution. In the examples above, we assumed that such samples are readily available. In practice, however, directly sampling from
-                    the posterior is often impossible. The next section introduces the algorithmic framework that makes posterior sampling feasible.
+                    that the central interval mistakenly includes. Estimating either the central credible interval or the HPD region by Monte Carlo
+                    requires samples from the posterior distribution. In the examples above, we assumed that such samples are readily available. In
+                    practice, however, directly sampling from the posterior is often impossible. The next section introduces the algorithmic framework
+                    that makes posterior sampling feasible.
                 </p>
 
             </section>
@@ -353,8 +356,8 @@ uses_python: false
 
                 <ul style="padding-left: 40px;">
                     <li><strong>Metropolis-Hastings:</strong><br>
-                         A general-purpose algorithm that proposes new samples from a proposal distribution and accepts or rejects 
-                         them based on a ratio of unnormalized densities.
+                         A general-purpose algorithm that proposes new samples from a proposal distribution and accepts or rejects them based on a ratio
+                         of unnormalized target densities, multiplied by a ratio of proposal densities when the proposal is not symmetric.
                     </li>
                     <li><strong>Gibbs sampling:</strong><br>
                         A special case of Metropolis-Hastings that is efficient when the full conditional distributions are available 

@@ -2,21 +2,23 @@
 // McCore — math core for the Monte Carlo Visualizer (prob-19)
 // DOM-free, Node-requirable. No external statistics library (the v1 tool
 // depended on an unpinned jStat CDN build; everything here is self-contained
-// and certified).
+// and checked by built-in spot tests).
 //
 // Design highlights, each tied to this page's content:
 // * Sampling for gamma/beta is INVERSE-TRANSFORM through our own quantile
-//   functions (bisection on certified CDFs) — the page's F^{-1} is literally
+//   functions (bisection on our own CDFs) — the page's F^{-1} is literally
 //   the sampler. Normal/bimodal sample directly via Box-Muller (seeded).
 // * The central credible interval uses EXACTLY the page's order-statistic
 //   convention: 1-based indices ceil(S*alpha/2) and ceil(S*(1-alpha/2))
 //   (v1 was off by one from the page's own formula).
 // * The Kolmogorov-Smirnov statistic sup|F_S - F| is computed exactly, so
-//   the Glivenko-Cantelli theorem runs live as a certificate and a readout.
-// * HPD comes in two certified routes: from samples (Gaussian KDE with
-//   Silverman bandwidth + density-quantile threshold; handles disjoint
-//   regions) and from the true density (threshold bisection with masses
-//   evaluated through the exact CDF).
+//   the Glivenko-Cantelli theorem runs live as a readout.
+// * HPD comes in two routes: from samples (Gaussian KDE with Silverman
+//   bandwidth + density-quantile threshold, clipped to the support, gaps
+//   narrower than two grid steps merged; handles disjoint regions) and from
+//   the true density (threshold bisection with masses evaluated through the
+//   exact CDF, crossings refined by bisection on the pdf; a constant density
+//   is reported as having no unique HPD region).
 // ============================================================================
 var McCore = (function () {
   'use strict';
@@ -232,7 +234,8 @@ var McCore = (function () {
 
   // ---------- exact Kolmogorov-Smirnov statistic sup |F_S - F| ----------
   // ksDetail also reports WHERE the sup is attained (for the plot marker):
-  // side 'post' means F_S jumps above F at x, 'pre' means F exceeds F_S there
+  // side 'post' means F_S jumps above F at x, 'pre' means F exceeds F_S just
+  // before x (a left limit: the sup is approached there, not attained)
   function ksDetail(sorted, cdf) {
     var n = sorted.length;
     var D = 0, at = sorted.length ? sorted[0] : 0, side = 'post', F0 = 0;
@@ -286,7 +289,8 @@ var McCore = (function () {
   }
 
   // ---------- HPD from samples (KDE + density-quantile threshold) ----------
-  function hpdFromSamples(sorted, alpha) {
+  // support (optional): [lo, hi] of the distribution; the region is clipped to it
+  function hpdFromSamples(sorted, alpha, support) {
     var n = sorted.length;
     var h = silvermanBandwidth(sorted);
     // threshold: alpha-quantile of the density values at the samples
@@ -317,6 +321,30 @@ var McCore = (function () {
       prevX = x; prevV = v;
     }
     if (inRegion) intervals.push({ start: start, end: hi });
+    // clip to the support (the KDE leaks past a hard boundary)
+    if (support) {
+      var clipped = [];
+      for (var c = 0; c < intervals.length; c++) {
+        var cs = Math.max(intervals[c].start, support[0]);
+        var ce = Math.min(intervals[c].end, support[1]);
+        if (ce > cs) clipped.push({ start: cs, end: ce });
+      }
+      intervals = clipped;
+    }
+    // merge gaps narrower than two grid steps: below the scan's resolution
+    var merged = [];
+    for (var mi = 0; mi < intervals.length; mi++) {
+      if (merged.length && intervals[mi].start - merged[merged.length - 1].end < 2 * (hi - lo) / G) {
+        merged[merged.length - 1].end = intervals[mi].end;
+      } else merged.push({ start: intervals[mi].start, end: intervals[mi].end });
+    }
+    // drop components that contain no sample
+    intervals = merged.filter(function (iv) {
+      for (var k = 0; k < n; k++) {
+        if (sorted[k] >= iv.start && sorted[k] <= iv.end) return true;
+      }
+      return false;
+    });
     // mass: fraction of samples inside the region
     var inside = 0;
     for (var s2 = 0; s2 < n; s2++) {
@@ -333,13 +361,28 @@ var McCore = (function () {
     var lo = range[0], hi = range[1];
     var G = 2048;
     var xs = new Array(G + 1), ps = new Array(G + 1);
-    var pmax = 0;
+    var pmax = 0, pmin = Infinity;
     for (var g = 0; g <= G; g++) {
       xs[g] = lo + (hi - lo) * g / G;
       var pv = dist.pdf(xs[g]);
       if (!isFinite(pv)) pv = 1e300; // divergent edges count as "above any threshold"
       ps[g] = pv;
       if (pv < 1e300 && pv > pmax) pmax = pv;
+      if (pv < pmin) pmin = pv;
+    }
+    // a constant density on its support (Beta(1,1)): no density level singles
+    // out a region, so the HPD region is not defined
+    if (pmin > 0 && pmax - pmin <= 1e-9 * pmax) {
+      return { intervals: [], threshold: pmax, mass: NaN, flat: true };
+    }
+    // crossing of pdf = pstar between grid points xa < xb, refined by bisection
+    function crossing(xa, xb, pstar) {
+      var fa = dist.pdf(xa) >= pstar;
+      for (var it2 = 0; it2 < 40; it2++) {
+        var xm = (xa + xb) / 2;
+        if ((dist.pdf(xm) >= pstar) === fa) xa = xm; else xb = xm;
+      }
+      return (xa + xb) / 2;
     }
     function regionFor(pstar) {
       var intervals = [];
@@ -347,15 +390,10 @@ var McCore = (function () {
       for (var g2 = 0; g2 <= G; g2++) {
         var above = ps[g2] >= pstar;
         if (above && !inRegion) {
-          if (g2 === 0) start = xs[0];
-          else {
-            var t = (pstar - ps[g2 - 1]) / (ps[g2] - ps[g2 - 1]);
-            start = xs[g2 - 1] + t * (xs[g2] - xs[g2 - 1]);
-          }
+          start = g2 === 0 ? xs[0] : crossing(xs[g2 - 1], xs[g2], pstar);
           inRegion = true;
         } else if (!above && inRegion) {
-          var t2 = (pstar - ps[g2 - 1]) / (ps[g2] - ps[g2 - 1]);
-          intervals.push({ start: start, end: xs[g2 - 1] + t2 * (xs[g2] - xs[g2 - 1]) });
+          intervals.push({ start: start, end: crossing(xs[g2 - 1], xs[g2], pstar) });
           inRegion = false;
         }
       }
@@ -459,10 +497,10 @@ var McCore = (function () {
       seq.map(function (v) { return v + 800; }), seq.map(function (v) { return v + 900; })), 1 - 95 / 100);
     check('T5 float-fuzz alpha: index 25, not 26', ccF.lIndex1 === 25 && ccF.uIndex1 === 975,
       ccF.lIndex1 + ',' + ccF.uIndex1);
-    // convergence to true quantiles (inverse-transform normal samples)
+    // one seeded check near the true quantiles (Box-Muller normal samples)
     var big = sortedCopy(sampleMany(N01, 4000, 90003));
     var ccBig = centralCredible(big, 0.05);
-    check('T5 MC central converges to +-1.96', close(ccBig.l, -1.96, 0.12) && close(ccBig.u, 1.96, 0.12),
+    check('T5 MC central at S = 4000 within 0.12 of +-1.96 (seeded)', close(ccBig.l, -1.96, 0.12) && close(ccBig.u, 1.96, 0.12),
       ccBig.l + ',' + ccBig.u);
 
     // ---- T6: Glivenko-Cantelli enactment (exact KS statistic) ----
@@ -479,7 +517,7 @@ var McCore = (function () {
     var s5000 = sortedCopy(sampleMany(N01, 5000, 90004));
     var d200 = ksStatistic(s200, N01.cdf);
     var d5000 = ksStatistic(s5000, N01.cdf);
-    check('T6 D_5000 < D_200 (uniform convergence, seeded)', d5000 < d200, d5000 + ' vs ' + d200);
+    check('T6 D_5000 < D_200 (one seeded comparison)', d5000 < d200, d5000 + ' vs ' + d200);
     check('T6 D_5000 small', d5000 < 0.03, d5000);
 
     // ---- T7: SLLN enactment ----
@@ -514,7 +552,15 @@ var McCore = (function () {
         hpdB.intervals[0].start < -3 && -3 < hpdB.intervals[0].end);
       check('T9 second interval contains mode +3',
         hpdB.intervals[1].start < 3 && 3 < hpdB.intervals[1].end);
-    } else { count += 2; }
+    }
+    var sg = sortedCopy(sampleMany(makeDist('gamma', { shape: 2, rate: 1 }), 1000, 90009));
+    var hpdGs = hpdFromSamples(sg, 0.05, [0, Infinity]);
+    check('T9 gamma sample-HPD clipped to the support', hpdGs.intervals.length === 1 &&
+      hpdGs.intervals[0].start >= 0, JSON.stringify(hpdGs.intervals));
+    var sg5 = sortedCopy(sampleMany(makeDist('gamma', { shape: 0.5, rate: 1 }), 1000, 4006));
+    var hpdG5 = hpdFromSamples(sg5, 0.05, [0, Infinity]);
+    check('T9 gamma(0.5), S = 1000, seed 4006: gap narrower than two grid steps merged, one interval from 0',
+      hpdG5.intervals.length === 1 && hpdG5.intervals[0].start === 0, JSON.stringify(hpdG5.intervals));
 
     // ---- T10: HPD from the true density ----
     var hpdN = hpdTrue(N01, 0.05);
@@ -532,8 +578,9 @@ var McCore = (function () {
       close(G2.pdf(hpdG.intervals[0].end), hpdG.threshold, 6e-3 * (1 + hpdG.threshold)),
       G2.pdf(hpdG.intervals[0].start) + ',' + G2.pdf(hpdG.intervals[0].end) + ',' + hpdG.threshold);
     check('T10 gamma HPD mass', close(hpdG.mass, 0.95, 1e-4));
-    // THE THEOREM: for a skewed density, the HPD interval is strictly shorter
-    // than the central credible interval
+    // one instance of the HPD-is-shortest property: for a continuous unimodal
+    // density whose values at the two central endpoints differ (here
+    // Gamma(2,1)), the HPD interval is strictly shorter than the central one
     var centralG = { l: G2.inv(0.025), u: G2.inv(0.975) };
     var lenHpd = hpdG.intervals[0].end - hpdG.intervals[0].start;
     var lenCentral = centralG.u - centralG.l;
@@ -542,6 +589,13 @@ var McCore = (function () {
     var hpdBM = hpdTrue(BMsep, 0.05);
     check('T10 separated bimodal true-HPD: two intervals', hpdBM.intervals.length === 2);
     check('T10 bimodal true-HPD mass', close(hpdBM.mass, 0.95, 1e-4));
+    var hpdG11 = hpdTrue(makeDist('gamma', { shape: 1.1, rate: 0.2 }), 0.2);
+    check('T10 gamma(1.1, 0.2) 80% true-HPD pins (scipy root-finding)',
+      hpdG11.intervals.length === 1 && close(hpdG11.intervals[0].start, 2.0767749504698686e-07, 1e-9) &&
+      close(hpdG11.intervals[0].end, 8.779870785548718, 1e-6) &&
+      close(hpdG11.threshold, 0.03841768992008745, 1e-9), JSON.stringify(hpdG11));
+    check('T10 Beta(1,1): constant density flagged',
+      hpdTrue(makeDist('beta', { a: 1, b: 1 }), 0.05).flat === true);
 
     // ---- T11: inverse-transform sampler quality ----
     var gs = sampleMany(G31, 1500, 90008);
@@ -589,7 +643,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
 // convention, or HPD with disjoint regions) with the TRUE interval overlaid
 // for comparison. Canvas 2: the two theorems live — ECDF vs true CDF with
 // the exact sup-distance D_S marked (Glivenko-Cantelli), or the running-mean
-// and endpoint traces (SLLN). All numbers come from certified McCore.
+// and endpoint traces (SLLN). All numbers come from McCore, which must pass
+// its built-in spot tests before anything is drawn.
 // Prefix: mcv-. Dark island; seeded and reproducible; no external libraries.
 // ============================================================================
 (function () {
@@ -622,7 +677,10 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
   };
   var SEED_BASE = 4001;
 
-  function fmt(x, d) { return (Object.is(x, -0) ? 0 : x).toFixed(d); }
+  function fmt(x, d) {
+    var s = x.toFixed(d);
+    return /^-0(\.0+)?$/.test(s) ? s.slice(1) : s; // no "-0.0" for tiny negatives
+  }
   function fmtIv(ivs, d) {
     return ivs.map(function (iv) {
       return '[' + fmt(iv.start, d) + ', ' + fmt(iv.end, d) + ']';
@@ -651,7 +709,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
         '<strong style="color:' + C.bad + ';">Demo disabled: mathematical self-tests failed (' +
         gate.failures.length + ' of ' + gate.count + ' checks).</strong>' +
         '<p style="color:' + C.textDim + ';margin:8px 0 4px;">This visualizer refuses to render ' +
-        'rather than display incorrect mathematics. Failures:</p>' +
+        'when its built-in spot checks fail. Failures:</p>' +
         '<ul style="color:' + C.textDim + ';margin:0 0 0 18px;">' + list + '</ul></div>';
       return;
     }
@@ -813,7 +871,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
     }
 
     // ---------- plot helpers ----------
-    function frame(ctx, W, H, xMin, xMax, yMin, yMax) {
+    function frame(ctx, W, H, xMin, xMax, yMin, yMax, xLabel) {
       var r = { x0: 48, y0: 10, w: W - 48 - 14, h: H - 10 - 32 };
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = C.bg;
@@ -830,7 +888,14 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
         ctx.fillStyle = C.faint;
         var xv = xMin + (xMax - xMin) * i / ticks;
         var yv = yMax - (yMax - yMin) * i / ticks;
-        ctx.fillText(fmt(xv, Math.abs(xMax - xMin) > 8 ? 0 : 1), tx - 8, r.y0 + r.h + 16);
+        if (xLabel) {
+          var xs = xLabel(xv);
+          var mt = ctx.measureText ? ctx.measureText(xs) : null;
+          var xw = mt && mt.width ? mt.width : 6 * xs.length;
+          ctx.fillText(xs, Math.max(2, Math.min(tx - xw / 2, W - xw - 2)), r.y0 + r.h + 16);
+        } else {
+          ctx.fillText(fmt(xv, Math.abs(xMax - xMin) > 8 ? 0 : 1), tx - 8, r.y0 + r.h + 16);
+        }
         ctx.fillText(fmt(yv, yMax - yMin > 8 ? 0 : 2), 4, ty + 4);
       }
       ctx.strokeStyle = C.axis;
@@ -873,8 +938,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
         mcIvs = [{ start: cc.l, end: cc.u }];
         trueIvs = [{ start: dist.inv(alpha / 2), end: dist.inv(1 - alpha / 2) }];
         html += '<div>MC estimate: <span class="mcv-mc">' + fmtIv(mcIvs, 3) + '</span> ' +
-          '<span class="mcv-sub">= (\u03B8<sup>(' + cc.lIndex1 + ')</sup>, \u03B8<sup>(' + cc.uIndex1 +
-          ')</sup>) \u2014 the page\u2019s ceiling convention</span></div>';
+          '<span class="mcv-sub">= [\u03B8<sub>(' + cc.lIndex1 + ')</sub>, \u03B8<sub>(' + cc.uIndex1 +
+          ')</sub>] \u2014 the page\u2019s ceiling convention</span></div>';
         html += '<div>True quantiles F<sup>\u22121</sup>: <span class="mcv-true">' + fmtIv(trueIvs, 3) + '</span></div>';
         var err = (Math.abs(mcIvs[0].start - trueIvs[0].start) + Math.abs(mcIvs[0].end - trueIvs[0].end)) / 2;
         html += '<div>mean endpoint error: <span class="mcv-val">' + fmt(err, 4) + '</span></div>';
@@ -882,27 +947,36 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
         expose.trueIv = { l: trueIvs[0].start, u: trueIvs[0].end };
         expose.err = err;
       } else {
-        var hs = McCore.hpdFromSamples(sorted, alpha);
+        var support = dist.key === 'gamma' ? [0, Infinity] : (dist.key === 'beta' ? [0, 1] : null);
+        var hs = McCore.hpdFromSamples(sorted, alpha, support);
         var ht = McCore.hpdTrue(dist, alpha);
-        mcIvs = hs.intervals;
+        mcIvs = ht.flat ? [] : hs.intervals;
         trueIvs = ht.intervals;
-        html += '<div>MC estimate (KDE): <span class="mcv-mc">' + fmtIv(mcIvs, 3) + '</span></div>';
-        html += '<div>True HPD: <span class="mcv-true">' + fmtIv(trueIvs, 3) + '</span> ' +
-          '<span class="mcv-sub">p* = ' + fmt(ht.threshold, 4) + '</span></div>';
-        html += '<div>MC region mass: <span class="mcv-val">' + fmt(hs.mass, 3) + '</span>' +
-          (mcIvs.length !== trueIvs.length ?
-            ' <span class="mcv-warn">\u2014 region structure differs from the truth; increase S</span>' : '') + '</div>';
+        html += '<div>MC estimate (KDE): <span class="mcv-mc">' + (ht.flat ? 'no target region' : fmtIv(mcIvs, 3)) +
+          '</span></div>';
+        if (ht.flat) {
+          html += '<div>True HPD: <span class="mcv-true">not defined</span> ' +
+            '<span class="mcv-sub">(the density is constant on its support, so no density level ' +
+            'singles out a region)</span></div>';
+        } else {
+          html += '<div>True HPD: <span class="mcv-true">' + fmtIv(trueIvs, 3) + '</span> ' +
+            '<span class="mcv-sub">p* = ' + fmt(ht.threshold, 4) + '</span></div>';
+        }
+        html += '<div>MC region mass: <span class="mcv-val">' + (ht.flat ? 'n/a' : fmt(hs.mass, 3)) + '</span>' +
+          (!ht.flat && mcIvs.length !== trueIvs.length ?
+            ' <span class="mcv-warn">\u2014 region structure differs from the true HPD</span>' : '') + '</div>';
         thresholdNote = 'HPD';
         expose.mcIntervals = mcIvs;
         expose.trueIntervals = trueIvs;
         expose.pstar = ht.threshold;
-        expose.mass = hs.mass;
+        expose.mass = ht.flat ? null : hs.mass;
       }
       html += '<div style="margin-top:6px;">sample mean <span class="mcv-val">' + fmt(sMean, 3) +
         '</span> vs E[\u03B8] = <span class="mcv-val">' + fmt(dist.mean, 3) + '</span> ' +
         '<span class="mcv-sub">(SLLN)</span></div>';
       html += '<div>sup |F\u0302<sub>S</sub> \u2212 F| = <span class="mcv-val">' + fmt(ks.D, 4) +
-        '</span> <span class="mcv-sub">(Glivenko-Cantelli; marked on the CDF plot)</span></div>';
+        '</span> <span class="mcv-sub">(Glivenko-Cantelli' + (state.trace ? '' : '; marked on the CDF plot') +
+        ')</span></div>';
       readoutsEl.innerHTML = html;
       container.dataset.mcvState = JSON.stringify(expose);
 
@@ -915,6 +989,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
         [C.mcBand, 'MC ' + (state.type === 'central' ? 'central interval' : 'HPD region')],
         [C.trueLine, 'true ' + (state.type === 'central' ? 'quantile interval' : 'HPD boundaries') + ' (dashed)']
       ];
+      if (!trueIvs.length) leg.pop();
+      if (!mcIvs.length) leg.splice(2, 1);
       var lh = '';
       for (var li = 0; li < leg.length; li++) {
         lh += '<div class="mcv-li"><span class="mcv-sw" style="background:' + leg[li][0] + ';"></span>' + leg[li][1] + '</div>';
@@ -948,6 +1024,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
       }
       var yMax = Math.max(pMax, hMax) * 1.12;
       var P = frame(ctx1, state.w1, state.h1, lo, hi, 0, yMax);
+      // boundary lines on the frame edge would be hidden by it: keep them 1.5px inside
+      function bx(x) { return Math.max(P.r.x0 + 1.5, Math.min(P.r.x0 + P.r.w - 1.5, P.px(x))); }
       ctx1.save();
       ctx1.beginPath();
       ctx1.rect(P.r.x0, P.r.y0, P.r.w, P.r.h);
@@ -958,16 +1036,16 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
         ctx1.fillRect(P.px(mcIvs[m].start), P.r.y0, P.px(mcIvs[m].end) - P.px(mcIvs[m].start), P.r.h);
         ctx1.strokeStyle = C.mcEdge;
         ctx1.lineWidth = 1.5;
-        ctx1.beginPath(); ctx1.moveTo(P.px(mcIvs[m].start), P.r.y0); ctx1.lineTo(P.px(mcIvs[m].start), P.r.y0 + P.r.h); ctx1.stroke();
-        ctx1.beginPath(); ctx1.moveTo(P.px(mcIvs[m].end), P.r.y0); ctx1.lineTo(P.px(mcIvs[m].end), P.r.y0 + P.r.h); ctx1.stroke();
+        ctx1.beginPath(); ctx1.moveTo(bx(mcIvs[m].start), P.r.y0); ctx1.lineTo(bx(mcIvs[m].start), P.r.y0 + P.r.h); ctx1.stroke();
+        ctx1.beginPath(); ctx1.moveTo(bx(mcIvs[m].end), P.r.y0); ctx1.lineTo(bx(mcIvs[m].end), P.r.y0 + P.r.h); ctx1.stroke();
       }
       // true interval boundaries (dashed)
       ctx1.strokeStyle = C.trueLine;
       ctx1.lineWidth = 1.5;
       ctx1.setLineDash([6, 4]);
       for (var t = 0; t < trueIvs.length; t++) {
-        ctx1.beginPath(); ctx1.moveTo(P.px(trueIvs[t].start), P.r.y0); ctx1.lineTo(P.px(trueIvs[t].start), P.r.y0 + P.r.h); ctx1.stroke();
-        ctx1.beginPath(); ctx1.moveTo(P.px(trueIvs[t].end), P.r.y0); ctx1.lineTo(P.px(trueIvs[t].end), P.r.y0 + P.r.h); ctx1.stroke();
+        ctx1.beginPath(); ctx1.moveTo(bx(trueIvs[t].start), P.r.y0); ctx1.lineTo(bx(trueIvs[t].start), P.r.y0 + P.r.h); ctx1.stroke();
+        ctx1.beginPath(); ctx1.moveTo(bx(trueIvs[t].end), P.r.y0); ctx1.lineTo(bx(trueIvs[t].end), P.r.y0 + P.r.h); ctx1.stroke();
       }
       ctx1.setLineDash([]);
       // histogram
@@ -1044,7 +1122,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
         ctx2.stroke();
         ctx2.restore();
       } else {
-        title.textContent = 'Running mean and interval endpoints vs S (SLLN / consistency)';
+        title.textContent = 'Running mean and interval endpoints vs S, log scale (SLLN / consistency)';
         var alpha = 1 - state.level / 100;
         var rm = McCore.runningMeans(state.samples);
         var n2 = state.samples.length;
@@ -1064,7 +1142,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
         var mn = Math.min.apply(null, allY), mx = Math.max.apply(null, allY);
         var pad = (mx - mn) * 0.1 + 1e-9;
         var lx0 = Math.log(20), lx1 = Math.log(n2);
-        var P2 = frame(ctx2, state.w2, state.h2, 0, 1, mn - pad, mx + pad);
+        var P2 = frame(ctx2, state.w2, state.h2, 0, 1, mn - pad, mx + pad, function (t) {
+          return String(Math.round(Math.exp(lx0 + t * (lx1 - lx0))));
+        });
         function lpx(k) { return P2.r.x0 + (Math.log(k) - lx0) / (lx1 - lx0) * P2.r.w; }
         // true reference lines
         ctx2.setLineDash([6, 4]);
@@ -1099,10 +1179,6 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = McCore; 
           }
           ctx2.stroke();
         });
-        ctx2.fillStyle = C.faint;
-        ctx2.font = '11px system-ui, sans-serif';
-        ctx2.fillText('S = 20', P2.r.x0 + 2, P2.r.y0 + P2.r.h + 16);
-        ctx2.fillText('S = ' + n2, P2.r.x0 + P2.r.w - 46, P2.r.y0 + P2.r.h + 16);
       }
     }
 

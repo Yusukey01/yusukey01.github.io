@@ -110,8 +110,9 @@ uses_python: false
                     decision rules as special cases. We will see three such recoveries in this page. For continuous parameters, squared-error loss yields
                     the posterior mean and absolute-error loss yields the posterior median. For discrete labels, zero-one loss yields the maximum a
                     posteriori (MAP) estimate, and this is the decision-theoretic justification for choosing the most probable class at inference time.
-                    After establishing these special cases, we connect the Bayesian formulation above to its frequentist counterpart and show that the
-                    two perspectives are operationally equivalent under mild regularity.
+                    After establishing these special cases, we connect the Bayesian formulation above to its frequentist counterpart and show that, once
+                    a prior is fixed, averaging the frequentist risk over that prior and minimizing posterior expected loss lead to the same optimal rule
+                    under mild regularity.
                 </p>
 
             </section>
@@ -272,8 +273,8 @@ uses_python: false
                         Setting this to zero yields \(F(a \mid \boldsymbol{x}) = \tfrac{1}{2}\), that is, \(a^* = m^*\) is a posterior median. Since
                         \(F(\cdot \mid \boldsymbol{x})\) is nondecreasing, the derivative \(2 F(a \mid \boldsymbol{x}) - 1\) is nondecreasing in \(a\),
                         so \(\rho(\cdot \mid \boldsymbol{x})\) is convex and every critical point is a global minimum. The minimizer is unique whenever
-                        \(F(\cdot \mid \boldsymbol{x})\) takes the value \(\tfrac{1}{2}\) at a single point, for instance when the posterior density is
-                        positive at the median.
+                        \(F(\cdot \mid \boldsymbol{x})\) takes the value \(\tfrac{1}{2}\) at a single point, for instance when the posterior has a
+                        density that is positive almost everywhere on an open interval around \(m^*\).
                     </p>
                 </div>
 
@@ -283,19 +284,21 @@ uses_python: false
                         The three most common Bayesian point estimators correspond to three distinct loss functions:
                     </p>
                     <ul style="padding-left: 40px;">
-                        <li><strong>Zero-one loss</strong> (or its continuous limit) &rarr; <strong>MAP estimate</strong> (posterior mode), the action
-                            that maximizes the posterior density at a single point.</li>
+                        <li><strong>Zero-one loss</strong> (or, for continuous \(\theta\) and under regularity conditions on the posterior density, its
+                            continuous limit) &rarr; <strong>MAP estimate</strong> (posterior mode), the action that maximizes the posterior density at a
+                            single point.</li>
                         <li><strong>Squared-error loss</strong> &rarr; <strong>posterior mean</strong>, the action that minimizes mean-squared deviation
                             across the posterior.</li>
                         <li><strong>Absolute-error loss</strong> &rarr; <strong>posterior median</strong>, robust to heavy-tailed posteriors.</li>
                     </ul>
                     <p>
-                        Far from being arbitrary heuristics, these three estimators are <em>uniquely determined</em> by the choice of loss function. In
-                        machine learning, this perspective explains why <strong>regression</strong> models trained with mean-squared error implicitly
-                        target the conditional mean \(\mathbb{E}[y \mid \boldsymbol{x}]\), while quantile regression trained with absolute-error loss
-                        targets the conditional median. The difference is not a matter of taste but a decision-theoretic consequence of the chosen loss.
-                        (The connection between minimizing posterior expected loss as in our theorems above and minimizing expected loss against the
-                        data-generating distribution as in machine learning practice is formalized in the next section.)
+                        Far from being arbitrary heuristics, these three estimators are <em>dictated</em> by the choice of loss function (a median or a
+                        mode need not be unique). In machine learning, this perspective explains why <strong>regression</strong> models trained with
+                        mean-squared error implicitly target the conditional mean \(\mathbb{E}[y \mid \boldsymbol{x}]\), while quantile regression
+                        trained with absolute-error loss targets the conditional median. The difference is not a matter of taste but a decision-theoretic
+                        consequence of the chosen loss. (The connection between minimizing posterior expected loss as in our theorems above and
+                        minimizing expected loss against the data-generating distribution as in machine learning practice is formalized in
+                        the next section.)
                     </p>
                 </div>
 
@@ -496,8 +499,8 @@ uses_python: false
                     r(p, \delta) = \int \int l(\theta, \delta(\boldsymbol{x})) \, p(\boldsymbol{x} \mid \theta) \, p(\theta) \, d\boldsymbol{x} \, d\theta.
                     \]
                     The next theorem, the central result of this section, shows that this minimization problem reduces to a pointwise one. For each fixed
-                    \(\boldsymbol{x}\), we choose the action that minimizes the posterior expected loss. This is the precise sense in which Bayesian and
-                    frequentist optimality coincide.
+                    \(\boldsymbol{x}\), we choose the action that minimizes the posterior expected loss. This is the precise sense in which, once a prior
+                    is fixed, Bayesian and frequentist optimality coincide.
                 </p>
 
                 <div class="theorem" id="T-bayes_risk_via_posterior">
@@ -510,8 +513,10 @@ uses_python: false
                         holds for any decision rule \(\delta\) we wish to evaluate (so that the Bayes risk \(r(p, \delta)\) is well-defined and Fubini's
                         theorem applies). Suppose further that the pointwise minimizer
                         \(a^*(\boldsymbol{x}) := \arg\min_{a \in \mathcal{A}} \rho(a \mid \boldsymbol{x})\) exists and is a measurable function of
-                        \(\boldsymbol{x}\) (this holds, for example, when \(\mathcal{A}\) is a compact subset of a Euclidean space and \(l\) is
-                        continuous in \(a\), by a measurable selection argument that we do not develop).
+                        \(\boldsymbol{x}\) (this holds, for example, when \(\mathcal{A}\) is a compact subset of a Euclidean space, \(l\) is continuous
+                        in \(a\), and \(|l(\theta, a)| \leq g(\theta)\) for some measurable \(g \geq 0\) with
+                        \(\int g(\theta)\, p(\theta \mid \boldsymbol{x})\, d\theta \lt \infty\) for every \(\boldsymbol{x}\), by a measurable selection
+                        argument that we do not develop).
                     </p>
                     <p>
                         Then minimizing the Bayes risk \(r(p, \delta)\) is equivalent to minimizing the posterior expected loss pointwise. A Bayes rule
@@ -949,9 +954,9 @@ uses_python: false
                 </ul>
                 
                 <p>
-                    By plotting TPR against FPR as an implicit function of \(\tau\), we obtain the <strong>ROC curve</strong>. 
+                    By plotting TPR against FPR as a parametric curve in \(\tau\), we obtain the <strong>ROC curve</strong>. 
                     The overall quality of a classifier is often summarized using the <strong>AUC (Area Under the Curve)</strong>. 
-                    A higher AUC indicates better discriminative ability across all threshold values, with a maximum of 1.0 for a 
+                    A higher AUC indicates better discriminative ability aggregated over all threshold values, with a maximum of 1.0 for a 
                     perfect classifier.
                 </p>
 
@@ -990,7 +995,7 @@ uses_python: false
                     The ROC curve provides a comprehensive view of the trade-off between TPR and FPR, but it can be useful to summarize this trade-off
                     with a single number. The <strong>equal error rate (EER)</strong> is the operating point where \(\text{FPR} = \text{FNR}\), the
                     threshold at which the two error rates are <em>symmetric</em>. EER is a practical operating-point summary that does not assume a
-                    particular cost structure or class prior. It simply identifies where the classifier treats both error types equally severely.
+                    particular cost structure or class prior. It is determined by the two error rates alone.
                 </p>
 
                 <p>
@@ -1000,8 +1005,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    EER is particularly useful in applications such as biometric authentication (fingerprint or face recognition), where false acceptance
-                    and false rejection carry comparable costs and a single interpretable operating point is desired for system reporting.
+                    EER is particularly useful in applications such as biometric authentication (fingerprint or face recognition), where a single
+                    interpretable operating point is desired for system reporting.
                 </p>
 
                 <p>
@@ -1102,8 +1107,8 @@ uses_python: false
 
                 <p>
                     A crucial difference between the ROC and PR curves is the <strong>baseline</strong> for a random classifier. While a random
-                    classifier always yields an AUC of 0.5 on an ROC curve, the baseline for a <strong>PR curve</strong> is the fraction of positive
-                    samples in the dataset:
+                    classifier yields an AUC of 0.5 in expectation on an ROC curve, the baseline for a <strong>PR curve</strong> is the fraction of
+                    positive samples in the dataset:
                     \[
                     y_{\text{baseline}} = \frac{P}{P + N}.
                     \]
@@ -1112,9 +1117,10 @@ uses_python: false
                 <p>
                     To see why, consider a random classifier that predicts positive with a constant probability \(q\) (independent of the input). On
                     average it achieves \(\text{TP} = qP\) and \(\text{FP} = qN\), so its precision is
-                    \(\text{TP}/(\text{TP}+\text{FP}) = qP/(qP + qN) = P/(P+N)\) regardless of \(q\). Varying \(q\) sweeps recall from \(0\) to \(1\)
-                    while precision stays constant, and so traces a horizontal line at this baseline. This makes the PR curve a much more informative
-                    evaluation tool for highly imbalanced datasets, as the "no-knowledge" score can be near zero while the "perfect" score remains 1.0.
+                    \(\text{TP}/(\text{TP}+\text{FP}) = qP/(qP + qN) = P/(P+N)\) regardless of \(q \in (0, 1]\). Varying \(q\) sweeps recall over
+                    \((0, 1]\) while precision stays constant, and so traces a horizontal line at this baseline. This makes the PR curve a much more
+                    informative evaluation tool for highly imbalanced datasets, as the "no-knowledge" score can be near zero while the "perfect"
+                    score remains 1.0.
                 </p>
 
                 <p>
@@ -1125,7 +1131,8 @@ uses_python: false
                     \mathcal{P}_{\text{interp}}(r) := \max_{r' \geq r} \mathcal{P}(r').
                     \]
                     One common definition of the <strong>average precision (AP)</strong> is the area under this interpolated PR curve. It provides a
-                    single-number summary that reflects the classifier's ability to maintain high precision as the recall threshold is lowered.
+                    single-number summary that reflects the classifier's ability to maintain high precision as recall increases (that is, as the decision
+                    threshold \(\tau\) is lowered).
                 </p>
 
                 <p>
@@ -1145,8 +1152,8 @@ uses_python: false
                 <h2>Class Imbalance</h2>
 
                 <p>
-                    In real-world applications, the class distribution is far from uniform. A dataset is considered <strong>imbalanced</strong> when one
-                    class has significantly fewer examples than the other, for instance 5% positive samples and 95% negative samples. In such cases,
+                    In many real-world applications, the class distribution is far from uniform. A dataset is considered <strong>imbalanced</strong> when
+                    one class has significantly fewer examples than the other, for instance 5% positive samples and 95% negative samples. In such cases,
                     naive metrics like accuracy can be highly misleading. A model that always predicts the majority class achieves high accuracy without
                     correctly identifying any minority class instances. How do ROC-AUC and PR-AP behave differently under class imbalance?
                 </p>
@@ -1217,9 +1224,8 @@ uses_python: false
                         increasingly important in safety-critical ML systems where abstaining from a prediction is preferable to making an error.
                     </p>
                 </div>
-
             </section>
 
         </div>
-</body>
+    </body>
 </html>
