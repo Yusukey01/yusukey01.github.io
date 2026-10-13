@@ -71,7 +71,7 @@ uses_python: false
                         though the input stays bounded. Thus, under the supremum norm, the differentiation operator is <strong>unbounded</strong>.
                     </p>
                     <p>
-                        <em>A profound lesson in functional analysis.</em> Boundedness depends entirely on the chosen norm. If we change the norm on
+                        <em>The role of the norm.</em> For a fixed mapping rule, boundedness depends on the chosen norms. If we change the norm on
                         the input space \(\mathcal{X}\) to \(\|f\|_{C^1} = \|f\|_\infty + \|f'\|_\infty\), then
                         \[
                         \|Tf\|_\infty = \|f'\|_\infty \leq \|f\|_\infty + \|f'\|_\infty = \|f\|_{C^1}.
@@ -122,8 +122,8 @@ uses_python: false
 
                 <p>
                     The following theorem is arguably the most important result on this page. It tells us that for linear maps, "bounded" and
-                    "continuous" are <strong>exactly the same concept</strong>. This is remarkable because boundedness is an algebraic/analytic
-                    condition, while continuity is a topological one.
+                    "continuous" are <strong>exactly the same concept</strong>. The equivalence links two different kinds of property. Boundedness is
+                    a metric condition, while continuity is a topological one.
                 </p>
 
                 <div class="theorem" id="T-bounded_iff_continuous">
@@ -187,7 +187,7 @@ uses_python: false
                 <h3>Finite Dimensions: Automatic Boundedness</h3>
                 <p>
                     Recall from <a href="intro_analysis.html#dimensions"><strong>Intro to Functional Analysis</strong></a> that in finite-dimensional spaces, 
-                    all norms are Lipschitz equivalent. Combined with a basis expansion, this yields a striking consequence:
+                    all norms are Lipschitz equivalent. Combined with a basis expansion, this yields the following consequence:
                 </p>
 
                 <div class="theorem" id="T-finite_dim_linear_bounded">
@@ -278,12 +278,11 @@ uses_python: false
                 <h3>Riesz's Lemma and the Geometry of Infinite-Dimensional Balls</h3>
 
                 <p>
-                    The finite-dimensional comfort we just described consists of compact unit balls, automatic boundedness, and equivalence of norms.
-                    All of it traces back to one geometric fact, the compactness of the Euclidean unit ball of \(\mathbb{F}^n\) (Heine-Borel),
-                    and compactness of the unit ball in fact characterizes finite-dimensional spaces. The reverse
-                    direction of this characterization is subtle and requires a careful geometric construction. The key is the following lemma, which
-                    shows that, given any proper closed subspace, one can always find a unit vector of the whole space "almost orthogonal" to the
-                    entire subspace.
+                    The finite-dimensional comfort we have been relying on consists of compact unit balls, automatic boundedness, and equivalence of
+                    norms. All of it traces back to one geometric fact, the compactness of the Euclidean unit ball of \(\mathbb{F}^n\) (Heine-Borel).
+                    In fact, compactness of the unit ball characterizes finite-dimensional spaces. The reverse direction of this characterization is
+                    subtle and requires a careful geometric construction. The key is the following lemma, which shows that, given any proper closed
+                    subspace, one can always find a unit vector of the whole space "almost orthogonal" to the entire subspace.
                 </p>
 
                 <div class="theorem" id="T-riesz_lemma">
@@ -514,7 +513,8 @@ uses_python: false
                         (since \(\boldsymbol{\Sigma}\) scales each basis vector independently).
                     </p>
                     <p>
-                        In this light, <strong>the operator norm is the infinite-dimensional generalization of the largest singular value</strong>.
+                        In this light, <strong>for operators between Hilbert spaces, the operator norm is the infinite-dimensional
+                        generalization of the largest singular value</strong>.
                     </p>
                 </div>
 
@@ -593,22 +593,29 @@ uses_python: false
                         is the diagonal matrix of the activation function's derivatives.
                     </p>
                     <p>
-                        ReLU and Tanh are 1-Lipschitz, so \(|\sigma'(t)| \leq 1\) wherever the derivative exists (for ReLU, any choice of
-                        \(\sigma'(0) \in [0, 1]\) keeps the bound), and the diagonal entries of \(\mathbf{D}_\ell\) are all at most 1 in absolute value, giving
-                        \(\|\mathbf{D}_\ell\|_{\text{op}} \leq 1\). By submultiplicativity, the norm of the entire gradient through \(L\) layers is
-                        bounded by:
+                        For a 1-Lipschitz activation function \(\sigma\), such as ReLU or Tanh, we have \(|\sigma'(t)| \leq 1\) wherever the
+                        derivative exists (for ReLU, any choice of \(\sigma'(0) \in [0, 1]\) keeps the bound). The diagonal entries of
+                        \(\mathbf{D}_\ell\) are therefore all at most 1 in absolute value, so \(\|\mathbf{D}_\ell\|_{\text{op}} \leq 1\). By
+                        submultiplicativity, the operator norm of the Jacobian \(\mathbf{J}_L \cdots \mathbf{J}_1\) of the whole \(L\)-layer map
+                        is bounded by:
                         \[
-                        \left\|\prod_{\ell=1}^{L} \mathbf{J}_\ell \right\|_{\text{op}} \leq \prod_{\ell=1}^{L} \|\mathbf{D}_\ell\|_{\text{op}} \|\mathbf{W}_\ell\|_{\text{op}} \leq \prod_{\ell=1}^{L} \|\mathbf{W}_\ell\|_{\text{op}}.
+                        \begin{align*}
+                        \|\mathbf{J}_L \cdots \mathbf{J}_1\|_{\text{op}}
+                        &\leq \prod_{\ell=1}^{L} \|\mathbf{D}_\ell\|_{\text{op}} \|\mathbf{W}_\ell\|_{\text{op}} \\\\
+                        &\leq \prod_{\ell=1}^{L} \|\mathbf{W}_\ell\|_{\text{op}}.
+                        \end{align*}
                         \]
+                        The transpose of this Jacobian, which propagates the loss gradient back to the input, has the same operator norm.
                     </p>
                     <p>
-                        This bound reveals a profound architectural beauty. <strong>The operator norms of the weight matrices \(\mathbf{W}_\ell\)
-                        control this upper bound, and with it the risk of exploding gradients.</strong> Vanishing gradients are a separate matter, since
-                        an upper bound cannot rule out the product becoming small (small entries of \(\mathbf{D}_\ell\) or small singular
-                        values of \(\mathbf{W}_\ell\) can drive it toward zero). Techniques like <strong>orthogonal
-                        initialization</strong> (\(\|\mathbf{W}_\ell\|_{\text{op}} = 1\) at initialization) and <strong>spectral normalization</strong> (which
-                        keeps \(\|\mathbf{W}_\ell\|_{\text{op}}\) at most about 1 during training) are direct applications of this bound, preventing
-                        the upper bound from growing exponentially with depth, though neither rules out vanishing gradients.
+                        This bound has a direct architectural consequence. <strong>The operator norms of the weight matrices \(\mathbf{W}_\ell\)
+                        control this upper bound, and with it the risk of exploding gradients.</strong> Vanishing gradients are a separate matter,
+                        since an upper bound cannot rule out the Jacobian product \(\mathbf{J}_L \cdots \mathbf{J}_1\) becoming small (small entries
+                        of \(\mathbf{D}_\ell\) or small singular values of \(\mathbf{W}_\ell\) can drive it toward zero). Techniques like
+                        <strong>orthogonal initialization</strong> (\(\|\mathbf{W}_\ell\|_{\text{op}} = 1\) at the start of training) and
+                        <strong>spectral normalization</strong> (which keeps \(\|\mathbf{W}_\ell\|_{\text{op}}\) at most about 1 during training) are
+                        direct applications of this bound. Both put these operator norms near 1, which limits how fast the upper bound can grow with
+                        depth, but neither prevents vanishing gradients.
                     </p>
                 </div>
             </section>
@@ -617,8 +624,8 @@ uses_python: false
                 <h2>The Space \(\mathcal{B}(\mathcal{X}, \mathcal{Y})\) & Completeness</h2>
 
                 <p>
-                    A remarkable feature of functional analysis is that <strong>operators themselves form a vector space</strong>. Just as we add and
-                    scale functions pointwise, we can add and scale operators:
+                    In functional analysis, <strong>operators themselves form a vector space</strong>. Just as we add and scale functions pointwise,
+                    we can add and scale operators:
                     \[
                     (S + T)(x) = S(x) + T(x), \quad (\alpha T)(x) = \alpha \cdot T(x).
                     \]
@@ -654,7 +661,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    The next theorem tells us <strong>when</strong> this space of operators is complete. The answer is elegant. The operators inherit
+                    The next theorem tells us <strong>when</strong> this space of operators is complete. The answer is that the operators inherit
                     completeness from their codomain.
                 </p>
 
