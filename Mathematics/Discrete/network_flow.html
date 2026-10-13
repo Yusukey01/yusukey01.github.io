@@ -300,9 +300,10 @@ uses_python: false
                         \(\prod_{e \in C} r(e) \gt 1\) (a profitable round-trip) becomes a negative-weight cycle with
                         \(\sum_{e \in C} w(e) \lt 0\). Thus, Bellman-Ford on the log-transformed graph detects
                         <strong>arbitrage opportunities</strong>, that is, sequences of currency exchanges that yield a net
-                        profit. The same principle applies to decentralized exchanges (DEXs) in DeFi, where token swap rates
-                        across liquidity pools form exactly such a weighted digraph, and arbitrage bots run variants of
-                        Bellman-Ford in real time.
+                        profit. Arbitrage detectors for decentralized exchanges (DEXs) in DeFi apply the same principle to the
+                        log-transformed digraph of marginal token swap rates across liquidity pools, whose negative cycles flag
+                        candidate arbitrage loops. Because these rates generally worsen with the size of a trade, the
+                        profitable trade size must then be optimized separately.
                     </p>
                 </div>
 
@@ -321,20 +322,22 @@ uses_python: false
                     the goal. Instead of extracting the vertex minimizing \(d[v]\), A* extracts the vertex minimizing
                     \(d[v] + h(v)\), directing the search toward the target. When \(h\) is <em>admissible</em> (never
                     overestimates true distance) and <em>consistent</em> (satisfies a triangle inequality), A* retains
-                    optimality while dramatically reducing the number of vertices explored. This makes A* the algorithm of
-                    choice for robotic path planning, autonomous navigation, and game AI. In these settings, spatial heuristics
-                    provide powerful guidance that pure Dijkstra cannot exploit.
+                    optimality, and with an informative heuristic it can dramatically reduce the number of vertices explored.
+                    This makes A* the algorithm of choice for robotic path planning, autonomous navigation, and game AI. In
+                    these settings, spatial heuristics provide powerful guidance that pure Dijkstra cannot exploit.
                 </p>
 
                 <div class="insight-box">
                     <h3>Shortest-Path Distances in Graph Learning</h3>
                     <p>
                         The shortest-path distance \(\delta(u,v)\) is a fundamental feature in graph-based machine learning. In
-                        <strong>Graph Neural Networks (GNNs)</strong>, Shortest Path Networks encode \(\delta(u,v)\) as
-                        positional features to overcome the limited expressiveness of message-passing architectures. The
-                        discriminative power of these architectures is bounded by the <strong>1-Weisfeiler-Lehman (1-WL)
-                        test</strong>, so standard GNNs cannot distinguish non-isomorphic graphs (or nodes) that 1-WL fails to
-                        separate. Shortest-path distances inject global structural information that breaks through this barrier.
+                        <strong>Graph Neural Networks (GNNs)</strong>, Shortest Path Networks aggregate messages separately
+                        over the vertices \(v\) at each hop distance \(\delta(u,v) = 1, \ldots, k\) from a vertex \(u\), up to
+                        a chosen radius \(k\), to overcome the limited expressiveness of standard message passing. The
+                        discriminative power of standard (one-hop) message-passing architectures is bounded by the
+                        <strong>1-Weisfeiler-Lehman (1-WL) test</strong>, so standard GNNs cannot distinguish non-isomorphic
+                        graphs (or nodes) that 1-WL fails to separate. Shortest-path distances inject structural information
+                        beyond the immediate neighborhood that breaks through this barrier.
                     </p>
                     <p>
                         In <strong>knowledge graph embeddings</strong>, translational models like TransE learn vector
@@ -425,19 +428,20 @@ uses_python: false
                 <p>
                     An <strong>augmenting path</strong> is a path from \(s\) to \(t\) in the residual graph \(G_f\). If such a
                     path \(P\) exists, we can increase the flow by \(\Delta = \min_{e \in P} c_f(e) \gt 0\) by pushing
-                    \(\Delta\) units along \(P\). An edge \((u,v)\) of \(G_f\) with \((u,v) \in E\) is a <strong>forward
-                    edge</strong>, and an edge \((v,u)\) of \(G_f\) with \((u,v) \in E\) is a <strong>backward edge</strong>,
-                    which corresponds to an original edge \((u,v)\) carrying positive flow. Pushing means that each forward edge
-                    \((u,v)\) of \(P\) has \(f(u,v)\) increased by \(\Delta\), and each backward edge \((v,u)\) of \(P\) has
-                    \(f(u,v)\) decreased by \(\Delta\). The result is again a flow, of value \(|f| + \Delta\). Since
-                    \(\Delta \leq c_f(e)\) for every \(e \in P\), each \(f(e)\) stays in \([0, c(e)]\). At each inner vertex of
-                    \(P\), the edge of \(P\) entering it raises the net inflow by \(\Delta\) (a forward edge adds flow into the
-                    vertex, a backward edge removes flow out of it), and the edge of \(P\) leaving it lowers the net inflow by
-                    \(\Delta\), so conservation is preserved. Finally, \(P\) leaves \(s\) along its first edge and never returns
-                    to \(s\), which raises \(|f|\) by \(\Delta\). When the augmenting path traverses a backward edge \((v,u)\),
-                    pushing flow along it effectively <em>cancels</em> previously assigned flow on \((u,v)\) and redirects that
-                    capacity to a more profitable route. This ability to "undo" earlier decisions is precisely what allows the
-                    method to escape locally suboptimal flow assignments and converge to a global maximum.
+                    \(\Delta\) units along \(P\). An edge \((u,v)\) of \(G_f\) with \((u,v) \in E\) is a
+                    <strong>forward edge</strong>, and an edge \((v,u)\) of \(G_f\) with \((u,v) \in E\) is a
+                    <strong>backward edge</strong>, which corresponds to an original edge \((u,v)\) carrying positive flow.
+                    Pushing means that each forward edge \((u,v)\) of \(P\) has \(f(u,v)\) increased by \(\Delta\), and each
+                    backward edge \((v,u)\) of \(P\) has \(f(u,v)\) decreased by \(\Delta\). The result is again a flow, of
+                    value \(|f| + \Delta\). Since \(\Delta \leq c_f(e)\) for every \(e \in P\), each \(f(e)\) stays in
+                    \([0, c(e)]\). At each inner vertex of \(P\), the edge of \(P\) entering it raises the net inflow by
+                    \(\Delta\) (a forward edge adds flow into the vertex, a backward edge removes flow out of it), and the edge
+                    of \(P\) leaving it lowers the net inflow by \(\Delta\), so conservation is preserved. Finally, \(P\)
+                    leaves \(s\) along its first edge and never returns to \(s\), which raises \(|f|\) by \(\Delta\). When the
+                    augmenting path traverses a backward edge \((v,u)\), pushing flow along it effectively <em>cancels</em>
+                    previously assigned flow on \((u,v)\) and redirects that capacity to a more profitable route. This ability
+                    to "undo" earlier decisions is precisely what allows the method to escape locally suboptimal flow
+                    assignments, so that whenever it terminates, it ends at a global maximum.
                 </p>
 
                 <div class="pseudocode">
@@ -458,12 +462,11 @@ uses_python: false
                 </div>
 
                 <p>
-                    The method terminates when no augmenting path exists in \(G_f\). The choice of augmenting path 
-                    determines both the algorithm's name and its complexity. When augmenting paths are found via 
-                    <strong>breadth-first search</strong> (choosing a shortest path in terms of number of edges), 
-                    the method is called the <strong>Edmonds-Karp algorithm</strong>, with 
-                    <a href="time_complexity.html#D-time_complexity" class="ref-link"><strong>running time</strong></a> 
-                    \(O(|V| \cdot |E|^2)\).
+                    The method terminates when no augmenting path exists in \(G_f\). The choice of augmenting path determines
+                    both the algorithm's name and its complexity. When augmenting paths are found via
+                    <strong>breadth-first search</strong> (choosing a shortest path in terms of number of edges), the method is
+                    called the <strong>Edmonds-Karp algorithm</strong>, whose running time is \(O(|V| \cdot |E|^2)\) elementary
+                    operations, each arithmetic operation on capacities counting as one step.
                 </p>
 
                 <p>
@@ -573,15 +576,16 @@ uses_python: false
                     <h3>Duality and the Combinatorial-Continuous Bridge</h3>
                     <p>
                         The max-flow min-cut theorem is an instance of
-                        <a href="../Calculus/duality.html"><strong>strong duality</strong></a>. The maximum flow problem can
-                        be formulated as the linear program that maximizes \(|f|\) subject to the capacity and conservation
+                        <a href="../Calculus/duality.html"><strong>strong duality</strong></a>. The maximum flow problem can be
+                        formulated as the linear program that maximizes \(|f|\) subject to the capacity and conservation
                         constraints. Its dual is a linear relaxation of the minimum cut problem that always has an optimal
                         solution given by a genuine cut, and strong duality guarantees that the two optima coincide. The
                         correspondence shows that combinatorial optimization on graphs and continuous optimization in
                         \(\mathbb{R}^n\) are often two views of the same mathematical structure. The same duality principle
                         underlies the <strong>min-cost flow problem</strong>, assignment problems, and the general theory of
-                        <strong>totally unimodular matrices</strong>, where linear programming relaxations automatically
-                        yield integer solutions.
+                        <strong>totally unimodular matrices</strong>, where, for integral right-hand sides, every nonempty face
+                        of the feasible region contains an integral point, so a linear programming relaxation that has
+                        an optimal solution has an integral one.
                     </p>
                 </div>
 
@@ -751,7 +755,7 @@ uses_python: false
                     \(1 = \lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n \geq -1\), so the eigenvalues of \(L_{\text{rw}}\)
                     are \(\mu_i = 1 - \lambda_i\) with \(0 = \mu_1 \leq \mu_2 \leq \cdots \leq \mu_n\). The eigenvalue 1 is
                     simple, since its eigenspace is one-dimensional by the uniqueness argument above, and the similarity to a
-                    symmetric matrix makes algebraic and geometric multiplicities agree. Moreover, and \(\lambda_n \gt -1\)
+                    symmetric matrix makes algebraic and geometric multiplicities agree. Moreover, \(\lambda_n \gt -1\)
                     exactly when \(G\) is non-bipartite. On a bipartite graph, by contrast, \(\lambda_n = -1\). A walk started
                     at a single vertex alternates between the two vertex classes with period 2, so its distribution does not
                     converge. This is the spectral signature of periodicity.
@@ -769,10 +773,12 @@ uses_python: false
                     \]
                     where \(\pi_{\min} = \min_v \pi_v\) and
                     \(\|\boldsymbol{\mu} - \boldsymbol{\nu}\|_{\text{TV}} = \frac{1}{2}\sum_{v} |\mu_v - \nu_v|\). The quantity
-                    \(1 - \bar{\lambda}\) is the <strong>absolute spectral gap</strong>. A large gap means rapid mixing, while a
-                    small gap means the walk remains trapped in local clusters for long periods. The characterization of
-                    \(\lambda_n = -1\) by bipartiteness and the mixing time bound belong to the standard theory of stochastic
-                    matrices and Markov chains, and we state them without proof.
+                    \(1 - \bar{\lambda}\) is the <strong>absolute spectral gap</strong>. A large gap means rapid mixing, while
+                    a small gap means slow mixing. Either \(\lambda_2\) is close to 1 and the walk remains trapped in local
+                    clusters for long periods, or \(\lambda_n\) is close to \(-1\) and the walk nearly alternates between two
+                    sides of an almost bipartite graph. The characterization of \(\lambda_n = -1\) by bipartiteness and the
+                    mixing time bound belong to the standard theory of stochastic matrices and Markov
+                    chains, and we state them without proof.
                 </p>
 
                 <h3>Hitting Time and Commute Time</h3>
@@ -802,7 +808,7 @@ uses_python: false
                     These vectors are the right eigenvectors of \(L_{\text{rw}}\), orthonormal with respect to the
                     \(D\)-weighted inner product
                     \(\langle \boldsymbol{\phi}_j, \boldsymbol{\phi}_k \rangle_D = \boldsymbol{\phi}_j^\top D\, \boldsymbol{\phi}_k = \delta_{jk}\).
-                    Under this normalization,
+                    Under this normalization, for distinct vertices \(u \neq v\),
                     \[
                     C(u,v) = 2m \sum_{k=2}^{n} \frac{1}{\mu_k}\bigl(\phi_k(u) - \phi_k(v)\bigr)^2,
                     \]
@@ -811,10 +817,11 @@ uses_python: false
 
                 <p>
                     The right-hand side is precisely the squared Euclidean distance in a spectral embedding weighted by
-                    \(1/\mu_k\). It forms a direct bridge between the combinatorial notion of "distance by random traversal" and
-                    the algebraic notion of "distance in eigenspace." This identity is the <strong>commute-time
-                    formula</strong>. We state it without proof, since the derivation requires the electrical-network
-                    interpretation of random walks, which is beyond the scope of this page.
+                    \(1/\mu_k\). It forms a direct bridge between the combinatorial notion of "distance by random traversal"
+                    and the algebraic notion of "distance in eigenspace." This identity is the
+                    <strong>commute-time formula</strong>. We state it without proof. It can be derived from the linear
+                    equations satisfied by the hitting times, or through the electrical-network interpretation of random walks,
+                    and either route is beyond the scope of this page.
                 </p>
 
                 <div class="theorem" id="T-cover_time_bound">
@@ -857,15 +864,15 @@ uses_python: false
                     </p>
                     <p>
                         In <strong>graph representation learning</strong>, random walks are the engine behind embedding
-                        algorithms. <strong>DeepWalk</strong> samples random walk sequences from a graph and feeds them to
-                        a Word2Vec-style skip-gram model, learning vertex embeddings that capture multi-hop neighborhood
+                        algorithms. <strong>DeepWalk</strong> samples random walk sequences from a graph and feeds them to a
+                        Word2Vec-style skip-gram model, learning vertex embeddings that capture multi-hop neighborhood
                         structure. <strong>Node2Vec</strong> generalizes this with biased random walks controlled by return
                         parameter \(p\) and in-out parameter \(q\), interpolating between breadth-first (local) and
                         depth-first (global) exploration. The connection to
-                        <a href="../Machine_learning/clustering.html#sp"><strong>spectral methods</strong></a> is deep. The
-                        DeepWalk objective can be shown to implicitly factorize a matrix built from powers of the
-                        transition matrix \(P\), which links these seemingly heuristic methods back to the spectral theory
-                        of graph Laplacians.
+                        <a href="../Machine_learning/clustering.html#sp"><strong>spectral methods</strong></a> is deep. For
+                        DeepWalk trained with negative sampling, the objective can be shown, in the limit of long walks, to
+                        implicitly factorize a matrix built from powers of the transition matrix \(P\), which links these
+                        seemingly heuristic methods back to the spectral theory of graph Laplacians.
                     </p>
                 </div>
             </section>
