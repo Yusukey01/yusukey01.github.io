@@ -41,7 +41,7 @@ uses_python: true
                 <p>
                     To see how this arises, consider a function \(f_L\) periodic with period \(2L\). Its complex Fourier series is:
                     \[
-                    f_L(x) = \sum_{n=-\infty}^{\infty} c_n e^{-i\frac{n\pi x}{L}}, \quad c_n = \frac{1}{2L}\int_{-L}^{L} f_L(x)e^{i\frac{n\pi x}{L}} \, dx.
+                    f_L(x) \sim \sum_{n=-\infty}^{\infty} c_n e^{-i\frac{n\pi x}{L}}, \quad c_n = \frac{1}{2L}\int_{-L}^{L} f_L(x)e^{i\frac{n\pi x}{L}} \, dx.
                     \]
                     As \(L \to \infty\), the discrete frequencies \(\omega_n = \frac{n\pi}{L}\) become densely packed with spacing 
                     \(\Delta\omega = \frac{\pi}{L} \to 0\), and the sum approaches an integral. This limiting process yields the 
@@ -143,7 +143,7 @@ uses_python: true
                         Fourier transform, and the single choice \(\sigma = 1\) gives a genuine eigenfunction, since
                         \(e^{-x^2/2}\) transforms to \(\sqrt{2\pi}\, e^{-\xi^2/2}\). Normalizing by \(\sqrt{2\pi}\)
                         therefore fixes \(e^{-x^2/2}\) outright, and the same unitary rescaling reappears in the discrete
-                        setting, where dividing the Fourier matrix by the square root of its size puts its eigenvalues
+                        setting, where dividing the DFT matrix (introduced below) by the square root of its size puts its eigenvalues
                         on the unit circle. This behavior makes Gaussians fundamental in uncertainty principles, quantum mechanics,
                         and signal processing.
                     </p>
@@ -574,9 +574,9 @@ uses_python: true
                         on \(\mathbb{R}^2\), being built from \(g\) and continuous maps. The Borel sets of
                         \(\mathbb{R}^2\) lie in the product \(\sigma\)-algebra of the Borel sets of \(\mathbb{R}\),
                         since every open subset of \(\mathbb{R}^2\) is a countable union of open rectangles with
-                        rational corners. Integrating in \(x\) and applying, Lebesgue measure being
-                        \(\sigma\)-finite,
-                        <a href="../Probability/limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>,
+                        rational corners. Integrating in \(x\) and applying
+                        <a href="../Probability/limit_theorems_product_measures.html#T-tonelli" class="ref-link"><strong>Tonelli's theorem</strong></a>
+                        (Lebesgue measure is \(\sigma\)-finite),
                         \[
                         \begin{align*}
                         \|g_\epsilon - g\|_p^p
@@ -807,7 +807,8 @@ uses_python: true
                 <p>
                     The differentiation property above shows that the Fourier transform simplifies differentiation. The convolution
                     theorem reveals an even more powerful algebraic simplification. It converts the integral operation of
-                    <strong>convolution</strong>, which costs \(O(n^2)\) to compute directly, into pointwise multiplication in the
+                    <strong>convolution</strong>, which for discrete signals of length \(n\) costs \(O(n^2)\) to compute directly, into
+                    pointwise multiplication in the
                     frequency domain. This single result is the reason FFT-based convolution outperforms direct convolution for
                     sufficiently long filters and large kernels, and it underlies frequency-domain filtering throughout signal
                     processing.
@@ -1030,9 +1031,9 @@ uses_python: true
                             The discrete Plancherel identity \(\|f\|_2 = \|Ff\|_2\) requires the normalized version. The map
                             \(F : \mathbb{C}^N \to \mathbb{C}^N\) is then a <strong>unitary</strong> operator
                             (\(F^*F = I\)), and all of \(L^2\)-based Fourier theory transfers to the discrete setting
-                            without rescaling. The clean eigenvalue structure \(\{\pm 1, \pm i\}\) derived above is a
-                            symptom of the fourth-power identity \(F^4 = I\), with unitarity forcing the roots onto
-                            the unit circle.</li>
+                            without rescaling. The clean eigenvalue structure \(\{\pm 1, \pm i\}\) derived above
+                            follows from the fourth-power identity \(F^4 = I\) alone, since every eigenvalue
+                            \(\lambda\) satisfies \(\lambda^4 = 1\). Unitarity is not needed for it.</li>
                         <li><strong>Quantum computation (normalized \(F\) is mandatory):</strong><br> The
                             <strong>Quantum Fourier Transform</strong>, the key subroutine behind Shor's algorithm and phase
                             estimation, is, in its standard definition, the matrix \(\overline{F} = F^{-1}\), the normalized DFT with
@@ -1127,7 +1128,7 @@ uses_python: true
                 </p>
                
                 <ul style="padding-left: 40px;">
-                    <li><strong>Bit-reversal permutation:</strong> required for the in-place Cooley-Tukey algorithm</li>
+                    <li><strong>Bit-reversal permutation.</strong> Used by the iterative in-place radix-2 Cooley-Tukey algorithm</li>
                     <li><strong>Twiddle factors.</strong> Precomputing \(\omega^k = e^{-2\pi ik/N}\) reduces trigonometric computations</li>
                     <li><strong>Cache optimization.</strong> FFTW uses self-tuning to optimize for specific hardware</li>
                     <li><strong>SIMD vectorization.</strong> Modern CPUs can compute multiple FFT butterflies in parallel</li>
@@ -1170,9 +1171,12 @@ uses_python: true
                         An FNO performs the following steps, repeating steps 2 to 4 in each Fourier layer:
                     </p>
                     <ol style="padding-left: 40px;">
-                        <li>Lift input to higher-dimensional channel space</li>
-                        <li>Apply spectral convolution: \(\mathcal{F}^{-1}(R \cdot \mathcal{F}(v))\) where \(R\) is a learnable weight matrix</li>
-                        <li>Add the pointwise linear term \(Wv\)</li>
+                        <li>Lift the input to a higher-dimensional channel space, giving a function \(v\)</li>
+                        <li>Apply spectral convolution: \(\mathcal{F}^{-1}(R \cdot \mathcal{F}(v))\) where \(R\), the frequency-domain kernel,
+                            is a learnable complex-valued tensor acting mode by mode. For each retained Fourier mode it is a complex matrix
+                            mixing the channels, and the modes above a cutoff are discarded.</li>
+                        <li>Add the pointwise linear term \(Wv\), where \(W\) is a learnable matrix acting on the channels (not the DFT
+                            matrix of the earlier sections)</li>
                         <li>Apply non-linearity (activation function), for example GELU</li>
                         <li>Project to output</li>
                     </ol>
@@ -1195,6 +1199,7 @@ uses_python: true
                     \[
                     \gamma(p) = \left[\sin(2^0 \pi p), \cos(2^0 \pi p), \ldots, \sin(2^{L-1} \pi p), \cos(2^{L-1} \pi p)\right]
                     \]
+                    where \(L\) is the number of frequency octaves (unrelated to the half-period \(L\) at the top of this page),
                     so that neural networks can capture fine geometric details. Tancik et al. (2020) gave a unified Neural Tangent
                     Kernel analysis explaining why such encodings tame spectral bias.
                 </p>
@@ -1225,13 +1230,16 @@ uses_python: true
                     <div class="demo-section" id="demo1d-pane">
                         <h3>1D Signal &amp; Frequency Spectrum</h3>
                         <p>
-                            This demo sums two sine waves and seeded Gaussian noise in the <strong>Time Domain</strong>
-                            and displays the single-sided amplitude spectrum (every bin from DC up to and including the
-                            Nyquist frequency \(f_s/2\)) in the <strong>Frequency Domain</strong>. Move the sliders to see
-                            how the two domains are linked in real time. Notice how the spectral peaks remain clearly
-                            visible above the noise floor. This is a basic illustration of how frequency-domain analysis separates
-                            deterministic structure from broadband noise. The noise is drawn from a seeded stream, so the picture is
-                            reproducible. <em>Regenerate noise</em> advances the stream to a fresh realization.
+                            This demo sums two sine waves and seeded Gaussian noise in the <strong>Time Domain</strong> and
+                            displays the single-sided amplitude spectrum (every bin from DC up to and including the Nyquist
+                            frequency \(f_s/2\), where \(f_s\) is the sampling rate) in the <strong>Frequency Domain</strong>.
+                            Move the sliders to see how the two domains are linked in real time. At the default settings both
+                            spectral peaks stand well clear of the noise floor. Turn the noise up and shrink either amplitude,
+                            and that peak eventually sinks into the floor. The higher the noise level, the larger the amplitude
+                            at which this happens. This is a basic illustration of how frequency-domain analysis separates
+                            deterministic structure from broadband noise. The noise is drawn from a seeded stream, so the
+                            picture is reproducible. <em>Regenerate noise</em> switches to the next seed, giving a fresh
+                            realization.
                         </p>
                         <p>
                             The frequency sliders move in 0.5 Hz steps for a reason. The record is exactly one second
@@ -1250,9 +1258,9 @@ uses_python: true
                         <p>
                             An image is a 2D signal. This demo converts the image to grayscale luminance and computes the 2D FFT to reveal
                             its <strong>magnitude spectrum</strong>. The center represents low frequencies (broad regions, gradients), while
-                            points farther from the center represent high frequencies (edges, fine textures). As established in the 
-                            <a href="#convolution"><strong>Convolution Theorem</strong></a> section, multiplication in the frequency 
-                            domain corresponds to convolution in the spatial domain, so reshaping the spectrum reshapes the image.
+                            points farther from the center represent high frequencies (edges, fine textures). By the discrete analogue 
+                            of the <a href="#convolution"><strong>Convolution Theorem</strong></a>, which the DFT inherits, multiplication 
+                            of the DFT corresponds to circular convolution in the spatial domain, so reshaping the spectrum reshapes the image.
                         </p>
                         <p>
                             The demo exposes one frequency-domain operation at a time:
@@ -1263,10 +1271,11 @@ uses_python: true
                             <li><strong>Notch (auto-remove periodic interference)</strong> detects magnitude spikes above the 99.7th
                                 percentile of the spectrum (with the DC region protected) and suppresses each one with an
                                 inverted-Gaussian notch that is deepest at the spike itself. Try it on the
-                                <em>Photo + interference</em> image, where the sinusoidal banding collapses to a handful of off-center
-                                spikes. Then try it on the <em>Pattern</em> image for an honest failure. A genuinely periodic image
-                                produces exactly the same kind of spectral spikes as interference does, and the notch cannot tell the
-                                two apart. It will eat your checkerboard as if it were interference.</li>
+                                <em>Photo + interference</em> image, where the sinusoidal banding concentrates in four blurred
+                                off-center peaks, placed symmetrically about the center. Then try it on the <em>Pattern</em> image
+                                for an honest failure. A genuinely periodic image also produces isolated off-center spectral
+                                peaks, and the notch cannot tell them apart from interference. It will eat your checkerboard as
+                                if it were interference.</li>
                             <li><strong>Compression</strong> retains only the top-\(k\%\) of Fourier coefficients by magnitude and zeroes
                                 the rest, illustrating the principle behind lossy transform compression. The readout shows the fraction
                                 of spectral energy the kept coefficients carry. By Parseval's identity, the discarded energy
