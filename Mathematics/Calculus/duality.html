@@ -42,13 +42,15 @@ uses_python: false
                         In constrained optimization, the <strong>primal problem</strong> is
                         \[
                         \begin{align*}
-                        p^* &= \inf_{\mathbf{x}} f(\mathbf{x}) \\\\
+                        p^* &= \inf_{\mathbf{x} \in \mathbb{R}^n} f(\mathbf{x}) \\\\
                         &\text{subject to} \quad g_i(\mathbf{x}) \leq 0, \quad h_j(\mathbf{x}) = 0,
                         \end{align*}
                         \]
-                        where \(f(\mathbf{x})\) is the objective function, \(g_i(\mathbf{x})\) are inequality constraints, and \(h_j(\mathbf{x})\)
-                        are equality constraints. The optimal value \(p^*\) is the infimum of \(f\) over the feasible set. It may or
-                        may not be attained.
+                        where \(f(\mathbf{x})\) is the objective function, \(g_i(\mathbf{x})\), \(i = 1, \ldots, m\), are inequality constraints,
+                        and \(h_j(\mathbf{x})\), \(j = 1, \ldots, p\), are equality constraints. We collect them as
+                        \(\mathbf{g} = (g_1, \ldots, g_m)^\top\) and \(\mathbf{h} = (h_1, \ldots, h_p)^\top\). The optimal value \(p^*\) is the
+                        infimum of \(f\) over the feasible set, with \(p^* = +\infty\) when the feasible set is empty. It may or may not be
+                        attained.
                     </p>
                 </div>
 
@@ -158,7 +160,8 @@ uses_python: false
                 <div class="theorem" id="T-strong_duality_slater">
                     <span class="theorem-title">Theorem: Strong Duality (Slater's Condition)</span>
                     <p>
-                        Suppose the primal problem is <em>convex</em>, that is, \(f\) and \(g_i\) are convex and \(h_j\) are affine.
+                        Suppose the primal problem is <em>convex</em>, that is, \(f, g_i : \mathbb{R}^n \to \mathbb{R}\) are convex and
+                        \(h_j : \mathbb{R}^n \to \mathbb{R}\) are affine.
                         If <strong>Slater's condition</strong> holds, meaning there exists a strictly feasible point \(\mathbf{x}\)
                         with
                         \[
@@ -170,47 +173,77 @@ uses_python: false
                         then <strong>strong duality</strong> holds: \(d^* = p^*\), and the dual optimum is attained when \(p^* \gt -\infty\).
                     </p>
                     <p>
-                        <em>Proof sketch.</em> Consider the set
-                        \(\mathcal{A} = \{(\mathbf{u}, t) : \exists \mathbf{x} \text{ with } g_i(\mathbf{x}) \leq u_i,\ h_j(\mathbf{x}) = 0,\ f(\mathbf{x}) \leq t\}\).
-                        Convexity of \(f\) and \(g_i\) plus affinity of \(h_j\) make \(\mathcal{A}\) convex, and \((\mathbf{0}, p^*)\)
-                        lies on its boundary. The supporting-hyperplane theorem then provides
-                        \((\boldsymbol{\lambda}, \mu_0) \in \mathbb{R}^m \times \mathbb{R}\), not both zero, such that
+                        <em>Proof sketch.</em> If \(p^* = -\infty\), weak duality gives \(d^* = -\infty = p^*\), so assume \(p^*\) is
+                        finite (Slater's point is feasible, so \(p^* \lt +\infty\)). Since each \(h_j\) is affine, we can write
+                        \(\mathbf{h}(\mathbf{x}) = C\mathbf{x} + \mathbf{h}(\mathbf{0})\) with \(C \in \mathbb{R}^{p \times n}\). We may
+                        assume that \(C\) has full row rank. Otherwise some equation is a linear combination of the others plus a constant,
+                        and the constant is \(0\) because Slater's point solves all of them, so dropping that equation changes neither the
+                        feasible set nor \(p^*\). Both dual functions agree when the dropped multiplier is \(0\), so a dual optimum of the
+                        reduced problem, extended by a zero multiplier, attains \(p^*\) and is therefore, by weak duality, a dual optimum
+                        of the original one. Consider the set
                         \[
-                        \boldsymbol{\lambda}^\top \mathbf{u} + \mu_0 t \geq \mu_0 p^* \quad \text{for all } (\mathbf{u}, t) \in \mathcal{A}.
+                        \begin{align*}
+                        \mathcal{A} = \{(\mathbf{u}, \mathbf{v}, t) \in \mathbb{R}^m \times \mathbb{R}^p \times \mathbb{R} :{}
+                        &\exists \mathbf{x} \in \mathbb{R}^n \text{ with } g_i(\mathbf{x}) \leq u_i \text{ for all } i, \\\\
+                        &\mathbf{h}(\mathbf{x}) = \mathbf{v},\ f(\mathbf{x}) \leq t\}.
+                        \end{align*}
+                        \]
+                        Convexity of \(f\) and \(g_i\) plus affinity of \(\mathbf{h}\) make \(\mathcal{A}\) convex. The point
+                        \((\mathbf{0}, \mathbf{0}, p^*)\) lies in the closure of \(\mathcal{A}\), because feasible points \(\mathbf{x}_k\) with
+                        \(f(\mathbf{x}_k) \to p^*\) give \((\mathbf{0}, \mathbf{0}, f(\mathbf{x}_k)) \in \mathcal{A}\), but not in its
+                        interior, since \((\mathbf{0}, \mathbf{0}, p^* - \varepsilon) \notin \mathcal{A}\) for every \(\varepsilon \gt 0\). The
+                        supporting-hyperplane theorem, which we use without proof, then provides
+                        \((\boldsymbol{\lambda}, \boldsymbol{\nu}, \mu_0) \in \mathbb{R}^m \times \mathbb{R}^p \times \mathbb{R}\), not all
+                        zero, such that
+                        \[
+                        \boldsymbol{\lambda}^\top \mathbf{u} + \boldsymbol{\nu}^\top \mathbf{v} + \mu_0 t \geq \mu_0 p^*
+                        \quad \text{for all } (\mathbf{u}, \mathbf{v}, t) \in \mathcal{A}.
                         \]
                         Since \(\mathcal{A}\) is unbounded in the positive \(\mathbf{u}\)- and \(t\)-directions (increasing any \(u_i\)
                         or \(t\) preserves membership), the coefficients must satisfy \(\boldsymbol{\lambda} \geq \mathbf{0}\) and
-                        \(\mu_0 \geq 0\). Otherwise the inequality could be driven to \(-\infty\).
-                    </p>
-                    <p>
-                        The key step is ruling out the degenerate case \(\mu_0 = 0\). Suppose \(\mu_0 = 0\). Then
-                        \(\boldsymbol{\lambda} \neq \mathbf{0}\), \(\boldsymbol{\lambda} \geq \mathbf{0}\), and the supporting inequality
-                        reduces to \(\boldsymbol{\lambda}^\top \mathbf{u} \geq 0\) for all \((\mathbf{u}, t) \in \mathcal{A}\). For every
-                        \(\mathbf{x}\) with \(h_j(\mathbf{x}) = 0\) for all \(j\) (in particular every feasible \(\mathbf{x}\)), the point
-                        \((\mathbf{g}(\mathbf{x}), f(\mathbf{x}))\) lies in \(\mathcal{A}\), so
-                        \(\boldsymbol{\lambda}^\top \mathbf{g}(\mathbf{x}) \geq 0\). Applying this at Slater's strictly feasible point
-                        \(\bar{\mathbf{x}}\), for which \(g_i(\bar{\mathbf{x}}) \lt 0\) for all \(i\),
+                        \(\mu_0 \geq 0\). Otherwise the inequality could be driven to \(-\infty\). Because \(f\) and every \(g_i\) are
+                        defined on all of \(\mathbb{R}^n\), the point \((\mathbf{g}(\mathbf{x}), \mathbf{h}(\mathbf{x}), f(\mathbf{x}))\)
+                        lies in \(\mathcal{A}\) for <em>every</em> \(\mathbf{x} \in \mathbb{R}^n\), so
                         \[
-                        \boldsymbol{\lambda}^\top \mathbf{g}(\bar{\mathbf{x}})  = \sum_i \lambda_i \, g_i(\bar{\mathbf{x}}) \lt  0,
+                        \boldsymbol{\lambda}^\top \mathbf{g}(\mathbf{x}) + \boldsymbol{\nu}^\top \mathbf{h}(\mathbf{x}) + \mu_0 f(\mathbf{x})
+                        \geq \mu_0 p^* \quad \text{for all } \mathbf{x} \in \mathbb{R}^n.
                         \]
-                        since \(\boldsymbol{\lambda} \geq \mathbf{0}\), \(\boldsymbol{\lambda} \neq \mathbf{0}\), and every
-                        \(g_i(\bar{\mathbf{x}}) \lt 0\). This strict inequality contradicts
-                        \(\boldsymbol{\lambda}^\top \mathbf{g}(\bar{\mathbf{x}}) \geq 0\). Hence \(\mu_0 \gt 0\).
                     </p>
                     <p>
-                        Normalizing \(\mu_0 = 1\), the supporting inequality yields \(g(\boldsymbol{\lambda}, \boldsymbol{\nu}) \geq p^*\)
-                        for an appropriate \(\boldsymbol{\nu} \in \mathbb{R}^p\), where the \(\boldsymbol{\nu}\) component is produced
-                        by the affine span of the equality constraints. This step requires the relative-interior refinement of Slater's
-                        condition, which treats affine \(h_j\) separately from nonlinear \(g_i\). Combined with weak duality, this
-                        gives \(d^* \geq p^*\), hence \(d^* = p^*\).
+                        The key step is ruling out the degenerate case \(\mu_0 = 0\). Suppose \(\mu_0 = 0\). At Slater's strictly
+                        feasible point \(\bar{\mathbf{x}}\) we have \(\mathbf{h}(\bar{\mathbf{x}}) = \mathbf{0}\), so the last inequality
+                        gives \(\boldsymbol{\lambda}^\top \mathbf{g}(\bar{\mathbf{x}}) \geq 0\). But
+                        \[
+                        \boldsymbol{\lambda}^\top \mathbf{g}(\bar{\mathbf{x}}) = \sum_i \lambda_i \, g_i(\bar{\mathbf{x}}) \leq 0,
+                        \]
+                        with equality only if \(\boldsymbol{\lambda} = \mathbf{0}\), since \(\boldsymbol{\lambda} \geq \mathbf{0}\) and every
+                        \(g_i(\bar{\mathbf{x}}) \lt 0\). Hence \(\boldsymbol{\lambda} = \mathbf{0}\), so \(\boldsymbol{\nu} \neq \mathbf{0}\)
+                        (if \(p = 0\), this is already a contradiction), and the inequality reduces to
+                        \[
+                        \begin{align*}
+                        \boldsymbol{\nu}^\top \mathbf{h}(\mathbf{x}) &= (C^\top \boldsymbol{\nu})^\top \mathbf{x} + \boldsymbol{\nu}^\top \mathbf{h}(\mathbf{0}) \\\\
+                        &\geq 0 \quad \text{for all } \mathbf{x} \in \mathbb{R}^n.
+                        \end{align*}
+                        \]
+                        An affine function bounded below on \(\mathbb{R}^n\) has zero linear part,
+                        so \(C^\top \boldsymbol{\nu} = \mathbf{0}\) with \(\boldsymbol{\nu} \neq \mathbf{0}\), contradicting the full row
+                        rank of \(C\). Hence \(\mu_0 \gt 0\).
+                    </p>
+                    <p>
+                        Dividing by \(\mu_0\) and putting \(\tilde{\boldsymbol{\lambda}} = \boldsymbol{\lambda}/\mu_0 \geq \mathbf{0}\),
+                        \(\tilde{\boldsymbol{\nu}} = \boldsymbol{\nu}/\mu_0\), the same inequality reads
+                        \(\mathcal{L}(\mathbf{x}, \tilde{\boldsymbol{\lambda}}, \tilde{\boldsymbol{\nu}}) \geq p^*\) for every
+                        \(\mathbf{x}\), that is, \(g(\tilde{\boldsymbol{\lambda}}, \tilde{\boldsymbol{\nu}}) \geq p^*\). Combined with
+                        weak duality, \(d^* \leq p^* \leq g(\tilde{\boldsymbol{\lambda}}, \tilde{\boldsymbol{\nu}}) \leq d^*\), so
+                        \(d^* = p^*\) and the pair \((\tilde{\boldsymbol{\lambda}}, \tilde{\boldsymbol{\nu}})\) attains the dual optimum.
                     </p>
                 </div>
 
                 <p>
                     Slater's condition is one of several sufficient conditions guaranteeing strong duality in the convex case. Others include
-                    linearity of all constraints, which, for an objective defined on all of \(\mathbb{R}^n\), needs feasibility but not strict
-                    feasibility, and various constraint qualifications. Non-convex problems may also enjoy strong duality in special cases, but
-                    it is the exception rather than the rule.
+                    various constraint qualifications, among them the case of all-affine constraints, in which, for an objective defined
+                    on all of \(\mathbb{R}^n\), feasibility suffices and strict feasibility is not needed. Non-convex problems may also
+                    enjoy strong duality in special cases, but it is the exception rather than the rule.
                 </p>
 
                 <p>
@@ -340,25 +373,37 @@ uses_python: false
                     need a <em>lower</em> curvature bound, captured by strong convexity.
                 </p>
 
+                <div class="theorem" id="D-strong_convexity">
+                    <span class="theorem-title">Definition: Strong Convexity</span>
+                    <p>
+                        Let \(m \gt 0\). A function \(f: \mathbb{R}^n \to \mathbb{R}\) is <strong>\(m\)-strongly convex</strong> if
+                        \(f(\mathbf{x}) - \tfrac{m}{2}\|\mathbf{x}\|^2\) is
+                        <a href="gradient.html#D-convex_function" class="ref-link"><strong>convex</strong></a>, where \(\|\cdot\|\) is the
+                        Euclidean norm. If \(f\) is \(C^2\), this is equivalent to \(\nabla^2 f(\mathbf{x}) \succeq m I\) for every
+                        \(\mathbf{x}\), by the
+                        <a href="gradient.html#T-convexity_multivariate_2nd_order" class="ref-link"><strong>second-order condition for convexity</strong></a>
+                        applied to \(f(\mathbf{x}) - \tfrac{m}{2}\|\mathbf{x}\|^2\), whose Hessian is \(\nabla^2 f(\mathbf{x}) - m I\).
+                    </p>
+                </div>
+
                 <p>
-                    For \(m \gt 0\), a function is <strong>\(m\)-strongly convex</strong> if \(f(\mathbf{x}) - \tfrac{m}{2}\|\mathbf{x}\|^2\) is convex,
-                    equivalently \(\nabla^2 f(\mathbf{x}) \succeq m I\) in the twice-differentiable case. When \(f\) is both \(L\)-smooth
-                    and \(m\)-strongly convex, it has a unique minimizer \(\mathbf{x}^*\), at which \(\nabla f(\mathbf{x}^*) = \mathbf{0}\)
-                    because \(f\) is differentiable and the minimum is unconstrained, and steepest descent admits the linear bound
+                    When \(f\) is both \(L\)-smooth and \(m\)-strongly convex, it has a unique minimizer \(\mathbf{x}^*\), at which
+                    \(\nabla f(\mathbf{x}^*) = \mathbf{0}\) because \(f\) is differentiable and the minimum is unconstrained, and
+                    steepest descent admits the linear bound
                     \[
                     \begin{align*}
                     f(\mathbf{x}_{t+1}) - f(\mathbf{x}^*) &\leq \mu \, \bigl(f(\mathbf{x}_t) - f(\mathbf{x}^*)\bigr), \\\\
-                    0 &\lt \mu \lt 1.
+                    0 &\leq \mu \lt 1.
                     \end{align*}
                     \]
                     The constant \(\mu\) is the <strong>convergence rate</strong>, and <em>it depends on the chosen step size</em>.
-                    With \(\alpha = 1/L\) the standard analysis gives \(\mu = 1 - m/L = 1 - 1/\kappa\) (Nesterov), while with \(\alpha = 2/(L + m)\)
+                    With \(\alpha = 1/L\) the standard analysis gives \(\mu = 1 - m/L = 1 - 1/\kappa\), while with \(\alpha = 2/(L + m)\)
                     the iterate contraction factor \(k = (\kappa-1)/(\kappa+1)\) yields a bound of the form
                     \[
                     \|\mathbf{x}_{t+1} - \mathbf{x}^*\| \leq k \|\mathbf{x}_t - \mathbf{x}^*\|.
                     \]
-                    For general \(f\) we take it and the existence of \(\mathbf{x}^*\) for granted. For the quadratic objective the
-                    bound is proved below.
+                    For general \(f\) we take both bounds and the existence of \(\mathbf{x}^*\) for granted. For the quadratic objective the
+                    iterate bound with \(\alpha = 2/(L + m)\) is proved below, together with the function-value rate \(\mu = k^2\).
                 </p>
 
                 <p>
@@ -669,9 +714,10 @@ uses_python: false
                     Rotating \(\mathbf{c}\) is where linear programming shows its character. The optimum does not drift continuously but
                     <em>hops</em> from vertex to vertex, and at the same moment \(\boldsymbol{\lambda}^*\) slides along the boundary of the dual
                     region. Active constraints are drawn thick. Watch a constraint light up whenever its multiplier \(\lambda_i\) is positive,
-                    and the complementary-slackness chips flip in real time. Try the presets. With positive costs the optimum sits at the corner
-                    \((1,1)\) and \(\boldsymbol{\lambda}^* = \mathbf{0}\) with \(\boldsymbol{\mu}^* = \mathbf{c}\), so the bound constraints do
-                    all the work. With the default constraints, rotate the objective until \(-\mathbf{c}\) points strictly between the two
+                    and the complementary-slackness chips flip in real time. Try the presets. With positive costs and the corner
+                    \((1,1)\) feasible, the optimum sits at that corner, and \(\boldsymbol{\lambda} = \mathbf{0}\) with
+                    \(\boldsymbol{\mu} = \mathbf{c}\) is dual optimal, so the bound constraints do all the work.
+                    With the default constraints, rotate the objective until \(-\mathbf{c}\) points strictly between the two
                     constraint normals, and the optimum jumps to the intersection of the two constraints, where \(\boldsymbol{\lambda}^*\)
                     becomes strictly positive and \(\boldsymbol{\mu}^*\) vanishes, exactly as complementary slackness dictates.
                 </p>
@@ -680,8 +726,11 @@ uses_python: false
                     Using the fine-tune sliders, setting a column of \(A\) to zero while the corresponding cost is negative makes the primal
                     unbounded whenever it is feasible (\(p^* = -\infty\)) with the dual reported infeasible, and shrinking \(b_1\) until the
                     primal is infeasible (\(p^* = +\infty\)) makes the dual unbounded, provided the dual is feasible, a condition that does not
-                    involve \(\mathbf{b}\). Weak duality forces the first pairing, since an unbounded primal leaves no dual-feasible point, and
-                    linear-programming duality accounts for the second.
+                    involve \(\mathbf{b}\). Weak duality forces the first pairing. An unbounded primal gives
+                    \(g(\boldsymbol{\lambda}, \boldsymbol{\mu}) = -\infty\) for every \(\boldsymbol{\lambda} \geq \mathbf{0}\),
+                    \(\boldsymbol{\mu} \geq \mathbf{0}\), while the constraints of the dual linear program single out exactly the
+                    multipliers at which \(g\) is finite, so the dual linear program has no feasible point.
+                    Linear-programming duality accounts for the second pairing.
                 </p>
 
                 <div id="duality-visualizer"></div>
