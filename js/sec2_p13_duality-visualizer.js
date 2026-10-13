@@ -419,7 +419,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = DualCore
 //     lambda* slide along the dual region's boundary in real time
 // Active constraints glow; the complementarity chips flip live.
 // Sliders remain available under a collapsed "fine-tune" panel.
-// All values come from certified DualCore (primal and dual solved
+// All values come from DualCore, gated by its self-tests (primal and dual solved
 // independently; the gap and the slackness products are live theorem checks).
 // Prefix: dv-. Dark island.
 // ============================================================================
