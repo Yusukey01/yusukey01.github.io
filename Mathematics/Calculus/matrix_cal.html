@@ -51,10 +51,10 @@ uses_python: false
                     \[
                     dF = F'(X)[\,dX\,]
                     \]
-                    is both cleaner and more honest. The differential \(F'(X)\) is a <em>linear map</em>
-                    \(\mathbb{R}^{n \times n} \to \mathbb{R}^{n \times n}\), applied to the input perturbation
-                    \(dX\), and its action may involve \(dX\) in multiple positions. We will read off
-                    \(F'(X)[\,\cdot\,]\) directly from the expansion of \(F(X + dX) - F(X)\).
+                    avoids choosing a vectorization of \(dX\). The differential \(F'(X)\) is a
+                    <em>linear map</em> \(\mathbb{R}^{n \times n} \to \mathbb{R}^{n \times n}\), applied to
+                    the input perturbation \(dX\), and its action may involve \(dX\) in multiple positions. We
+                    will read off \(F'(X)[\,\cdot\,]\) directly from the expansion of \(F(X + dX) - F(X)\).
                 </p>
 
                 <p>
@@ -190,18 +190,20 @@ uses_python: false
 
                 <p>
                     <a href="../Linear_algebra/matrix_algebra.html#D-LU_factorization" class="ref-link"><strong>LU decomposition</strong></a>
-                    factors a square matrix \(X\) as \(X = LU\), where \(L\) is unit lower triangular (diagonal entries equal
-                    to one) and \(U\) is upper triangular. Understanding how \(L\) and \(U\) change when \(X\) is
+                    factors a square matrix \(X\) as \(X = LU\), where \(L\) is unit lower triangular (diagonal entries
+                    equal to one) and \(U\) is upper triangular. Understanding how \(L\) and \(U\) change when \(X\) is
                     perturbed is fundamental for <strong>stability analysis</strong> in numerical linear algebra and
-                    for <strong>differentiable linear-algebra primitives</strong> in modern autodiff systems.
+                    for <strong>differentiable linear-algebra primitives</strong> in autodiff systems.
                 </p>
 
                 <p>
                     The usual condition that guarantees the existence and uniqueness of an LU decomposition is
-                    that all leading principal minors of \(X\) be nonzero, equivalently that all diagonal entries
-                    \(U_{ii}\) be nonzero, a fact we use without proof. Under that condition the entries of \(L\)
-                    and \(U\) are rational functions of the entries of \(X\) (Gaussian elimination divides only by
-                    the pivots \(U_{ii}\)), so both factors are differentiable functions of \(X\).
+                    that all leading principal minors of \(X\) be nonzero. Equivalently, Gaussian elimination
+                    without row interchanges runs to completion and every diagonal entry \(U_{ii}\) of the
+                    resulting \(U\) is nonzero. We use this fact without proof. Under that condition the entries
+                    of \(L\) and \(U\) are rational functions of the entries of \(X\), because Gaussian
+                    elimination divides only by the pivots \(U_{ii}\). Both factors are therefore differentiable
+                    functions of \(X\).
                 </p>
 
                 <p>
@@ -213,8 +215,12 @@ uses_python: false
                     strictly lower triangular (the unit-diagonal constraint freezes the diagonal of \(L\), so
                     \((dL)_{ii} = 0\)), and \(dU\) is upper triangular. Between them, \(dL\) and \(dU\) have exactly
                     \(n^2\) independent entries, the same count as \(dX\). Under the same condition the linear map
-                    \((dL, dU) \mapsto dX\) defined by \(dX = (dL)U + L(dU)\) is invertible, and this is what allows
-                    us to solve for \(dL\) and \(dU\) given \(dX\).
+                    \((dL, dU) \mapsto dX\) defined by \(dX = (dL)U + L(dU)\) is invertible. Indeed, \(L\) and \(U\)
+                    are invertible, since \(\det L = 1\) and \(\det U = \det X \neq 0\). Multiplying by \(L^{-1}\)
+                    on the left and by \(U^{-1}\) on the right gives \(L^{-1}(dX)U^{-1} = L^{-1}(dL) + (dU)U^{-1}\).
+                    The first term on the right is a lower triangular matrix times a strictly lower triangular one,
+                    hence strictly lower triangular. The second is upper triangular. A matrix splits uniquely into
+                    such a pair, so we can solve for \(dL\) and \(dU\) given \(dX\).
                 </p>
 
                 <h3>A \(2 \times 2\) worked example</h3>
@@ -269,18 +275,17 @@ uses_python: false
                 </p>
 
                 <p>
-                    This triangular-then-triangular solve pattern is exactly how the general LU-differentiation
-                    algorithm works at scale. The pivots \(U_{11}, \dots, U_{n-1,n-1}\) play the same role there, as the
-                    divisors that must be nonzero.
+                    The same row-by-row substitution extends to \(n \times n\) matrices. The pivots
+                    \(U_{11}, \ldots, U_{n-1,n-1}\) play the same role there, as the divisors that must be nonzero.
                 </p>
 
                 <div class="insight-box">
-                    <h3>Application: differentiable linear algebra in modern ML</h3>
+                    <h3>Application: differentiable linear algebra in ML</h3>
                     <p>
                         The identity \(dX = (dL)U + L(dU)\) is the starting point for <strong>reverse-mode autodiff
-                        through the LU factorization</strong>, and the same pattern (differentiate the defining
-                        identity, then solve triangular systems) yields the backward rules of other factorizations, such
-                        as the Cholesky factorization.
+                        through the LU factorization</strong>. The same pattern of differentiating the defining
+                        identity and then solving triangular systems yields the backward rules of other factorizations,
+                        such as the Cholesky factorization.
                     </p>
                     <p>
                         Given the upstream gradients \(\bar L\) and \(\bar U\) (the sensitivities of a downstream loss
