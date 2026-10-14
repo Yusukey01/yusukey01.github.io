@@ -424,38 +424,44 @@ uses_python: true
                     \]
                 </p>
                 <p>
-                    By the Leibniz rule (interchange of expectation and gradient, valid under mild regularity since \(q(z)\) does
-                    not depend on \(\boldsymbol{\theta}\)),
+                    Because the sampling distribution is fixed, the Leibniz rule (interchange of expectation and gradient) applies
+                    under mild regularity and gives
                     \(\mathbb{E}_{z^{(k)}}[\nabla_{\boldsymbol{\theta}}\, \ell(\boldsymbol{\theta}, z^{(k)})] = \nabla \mathcal{L}(\boldsymbol{\theta})\),
-                    so SGD follows the full gradient in expectation. Classical convergence theory, which goes back to Robbins and
-                    Monro and is not reproduced on this page, works with a diminishing step-size schedule
-                    \(\sum_k \eta^{(k)} = \infty\) and \(\sum_k (\eta^{(k)})^2 \lt \infty\), under which, given suitable smoothness
-                    and boundedness assumptions on \(\ell\) and with \(\mathcal{L}\) bounded below, the gradients
+                    so SGD follows the full gradient in expectation. The classical convergence theory of SGD goes back to Robbins
+                    and Monro and is not reproduced on this page. That theory works with a diminishing step-size schedule
+                    \(\sum_k \eta^{(k)} = \infty\) and \(\sum_k (\eta^{(k)})^2 \lt \infty\). Under such a schedule, given suitable
+                    smoothness and boundedness assumptions on \(\ell\) and with \(\mathcal{L}\) bounded below, the gradients
                     \(\nabla \mathcal{L}(\boldsymbol{\theta}^{(k)})\) tend to zero almost surely.
                 </p>
 
                 <p>
-                    In practice, computing the full-batch gradient on every step is prohibitive when the dataset size
-                    \(N\) is large. The <strong>mini-batch</strong> approach is the standard compromise. At each step, we
-                    draw a random subset \(B \subset \{1, \ldots, N\}\) of size \(|B|\), typically \(32\), \(64\), or
-                    \(128\), and use the batch-averaged gradient
+                    In practice, \(q\) is often the empirical distribution of a finite dataset of training examples
+                    \(z_1, \ldots, z_N\), so that \(\mathcal{L}\) is their average loss. Computing the full-batch gradient
+                    \(\nabla \mathcal{L}\) on every step is prohibitive when \(N\) is large. The
+                    <strong>mini-batch</strong> approach is the standard compromise. At each step, we draw a subset
+                    \(B \subset \{1, \ldots, N\}\) of size \(|B|\) uniformly at random, with \(|B|\) typically \(32\),
+                    \(64\), or \(128\), and use the batch-averaged gradient
                     \[
                     \hat{\mathbf{g}}^{(k)} = \frac{1}{|B|} \sum_{i \in B} \nabla_{\boldsymbol{\theta}}\, \ell(\boldsymbol{\theta}^{(k)}, z_i).
                     \]
-                    This is an unbiased estimator of \(\nabla \mathcal{L}\) with lower variance than a single-sample
-                    gradient. Mini-batching also maps cleanly onto GPU parallelism. Both properties make it the default in
-                    modern deep learning.
+                </p>
+
+                <p>
+                    The estimator \(\hat{\mathbf{g}}^{(k)}\) is unbiased for \(\nabla \mathcal{L}\), and its variance does not
+                    increase as \(|B|\) grows. Mini-batching also maps directly onto GPU parallelism.
                 </p>
 
                 <div class="pseudocode">
                     <span class="pseudocode-title">Algorithm 2: MINI_BATCH_SGD</span>
-                    <strong>Input:</strong> dataset \(X\), objective \(\ell\), tolerance \(\epsilon\), batch size \(|B|\), learning rate \(\eta\), max_epoch;<br>
+                    <strong>Input:</strong> dataset \(X = (z_1, \ldots, z_N)\), objective \(\ell\), tolerance \(\epsilon\),
+                        batch size \(|B|\), learning rate \(\eta\), max_epoch;<br>
                     <strong>Output:</strong> approximate stationary point \(\boldsymbol{\theta}^*\);<br>
                     <strong>begin</strong><br>
                     &emsp;\(k \leftarrow 0\); \(e \leftarrow 0\); choose an initial point \(\boldsymbol{\theta}^{(0)}\);<br>
                     &emsp;<strong>repeat</strong><br>
                     &emsp;&emsp;Shuffle \(X\) randomly;<br>
-                    &emsp;&emsp;Partition \(X\) into mini-batches \(\{B_1, B_2, \ldots, B_m\}\) of size \(|B|\) (the last possibly smaller);<br>
+                    &emsp;&emsp;Partition \(\{1, \ldots, N\}\), in the shuffled order of \(X\), into consecutive mini-batches
+                        \(\{B_1, B_2, \ldots, B_m\}\) of size \(|B|\) (the last possibly smaller);<br>
                     &emsp;&emsp;<strong>for</strong> each mini-batch \(B_j\):<br>
                     &emsp;&emsp;&emsp;\(\hat{\mathbf{g}}^{(k)} \leftarrow \frac{1}{|B_j|} \sum_{i \in B_j} \nabla_{\boldsymbol{\theta}}\, \ell(\boldsymbol{\theta}^{(k)}, z_i)\);<br>
                     &emsp;&emsp;&emsp;\(\boldsymbol{\theta}^{(k+1)} \leftarrow \boldsymbol{\theta}^{(k)} - \eta\, \hat{\mathbf{g}}^{(k)}\);<br>
@@ -468,10 +474,10 @@ uses_python: true
                 </div>
 
                 <p>
-                    One full pass over the shuffled dataset is called an <strong>epoch</strong>. Shuffling between epochs
-                    is important. Without it, the same mini-batches recur in the same order every epoch, so the gradient
-                    noise becomes a fixed periodic pattern rather than fresh randomness, and it is this randomness that is
-                    often credited with helping SGD escape shallow basins.
+                    One full pass over the shuffled dataset is called an <strong>epoch</strong>. Shuffling between epochs is
+                    important. Without it, the same mini-batches recur in the same order every epoch, so the gradient noise
+                    becomes a fixed periodic pattern rather than fresh randomness. That randomness is often credited with helping
+                    SGD escape shallow basins.
                 </p>
 
                 <p>
@@ -626,7 +632,7 @@ uses_python: true
                 </p>
 
                 <div class="insight-box">
-                    <h3>Why this matters for modern ML</h3>
+                    <h3>Why this matters for ML</h3>
                     <p>
                         The subdifferential underpins the practical use of non-smooth regularizers. Lasso's \(\ell_1\)
                         penalty, the SVM hinge loss, and the ReLU activation are all analyzed through their

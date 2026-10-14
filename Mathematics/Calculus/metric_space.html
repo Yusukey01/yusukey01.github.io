@@ -39,7 +39,7 @@ uses_python: false
                 </p>
 
                 <p>
-                    Consider a fundamental question. When we run <a href="gradient.html#gradient"><strong>gradient descent</strong></a>, we
+                    Consider a basic question. When we run <a href="gradient.html#gradient"><strong>gradient descent</strong></a>, we
                     assume that each step brings us closer to a solution and that iterating long enough will reach (or approach) a minimum.
                     But what guarantees this? The sequence of iterates \(\mathbf{x}_0, \mathbf{x}_1, \mathbf{x}_2, \ldots\) may get
                     arbitrarily close together without ever settling on an actual point unless the underlying space has the right structure.
@@ -96,12 +96,17 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Insight: Why the Axioms Matter in Practice</h3>
                     <p>
-                        We have already used non-Euclidean distances throughout this curriculum. In k-nearest neighbors, the choice between
-                        Euclidean distance, Manhattan distance, or cosine similarity fundamentally changes which points are considered
-                        "close." In kernel methods, the kernel function implicitly defines a distance in a high-dimensional feature space.
-                        Euclidean distance, Manhattan distance, and the feature-space distance are metrics. Cosine similarity is a
-                        similarity score rather than a distance, and the cosine distance \(1 - \cos\theta\), where \(\theta\) is the angle
-                        between the two vectors, violates the triangle inequality, so it is not a metric.
+                        Machine learning relies on distances other than the Euclidean one. In k-nearest neighbors, the choice among
+                        Euclidean distance, Manhattan distance, and cosine similarity changes which points are considered "close." In
+                        kernel methods, the kernel function implicitly defines a distance between two inputs, namely how far apart their
+                        images lie in a high-dimensional feature space.
+                    </p>
+                    <p>
+                        Euclidean distance and Manhattan distance are metrics. The kernel-induced distance is symmetric and satisfies the
+                        triangle inequality, but it is a metric only when distinct inputs have distinct images, since otherwise two
+                        different inputs are at distance zero. Cosine similarity is a similarity score rather than a distance. The cosine
+                        distance \(1 - \cos\theta\), where \(\theta\) is the angle between the two vectors being compared, violates the
+                        triangle inequality and is therefore not a metric.
                     </p>
                     <p>
                         The axioms are not arbitrary mathematical restrictions. They encode the minimal properties required for algorithms
@@ -157,18 +162,18 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Insight: The Completeness of \(\mathbb{R}\)</h3>
                     <p>
-                        Every nonempty bounded-above \(S \subseteq \mathbb{R}\) <em>has</em> a supremum, so the least upper bound exists as
-                        a real number. This is the <strong>completeness property</strong> of the real numbers, the foundational axiom
-                        distinguishing \(\mathbb{R}\) from \(\mathbb{Q}\). The set \(S = \{q \in \mathbb{Q} : q^2 \lt 2\}\) is bounded above
-                        in \(\mathbb{Q}\) (by \(3/2\), say) but has no rational least upper bound. Only when we pass to \(\mathbb{R}\) does
-                        \(\sup S = \sqrt{2}\) exist. Without this property, the infimum in our distance definition could fail to exist even
-                        when intuitively it should be well-defined.
+                        Every nonempty bounded-above \(S \subseteq \mathbb{R}\) <em>has</em> a supremum, so the least upper bound exists
+                        as a real number. This is the <strong>completeness property</strong> of the real numbers, the foundational axiom
+                        distinguishing \(\mathbb{R}\) from \(\mathbb{Q}\). The set \(S = \{q \in \mathbb{Q} : q^2 \lt 2\}\) is bounded
+                        above in \(\mathbb{Q}\) (by \(3/2\), say) but has no rational least upper bound. Only when we pass to
+                        \(\mathbb{R}\) does \(\sup S = \sqrt{2}\) exist. Without this property, the infimum in the distance definition
+                        below could fail to exist even when intuitively it should be well-defined.
                     </p>
                     <p>
-                        This order-theoretic completeness of \(\mathbb{R}\) is deeply connected to the <strong>metric-space
+                        This order-theoretic completeness of \(\mathbb{R}\) is closely related to the <strong>metric-space
                         completeness</strong> we will study later. There the analogous question becomes whether every Cauchy sequence
                         converges. In \(\mathbb{R}\), the two notions are equivalent. In general metric spaces, which may lack an order
-                        structure, only the Cauchy formulation survives. Both express the same intuition: <em>no holes</em>.
+                        structure, only the Cauchy formulation survives. Both formulations say that the space has <em>no holes</em>.
                     </p>
                     <p>
                         In optimization and machine learning, \(\inf\) and \(\sup\) appear throughout. The optimal value of a minimization
@@ -208,9 +213,9 @@ uses_python: false
                 </div>
 
                 <p>
-                    The complement of isolated points leads to a more important concept for our purposes: <strong>accumulation points</strong>.
-                    While isolated points stand alone with "room around them," accumulation points are surrounded by infinitely
-                    many other points from the set no matter how small a neighborhood we consider.
+                    Points of \(S\) that are not isolated lead to a more important concept for our purposes:
+                    <strong>accumulation points</strong>. While isolated points stand alone with "room around them," accumulation points
+                    are surrounded by infinitely many other points from the set no matter how small a neighborhood we consider.
                 </p>
 
                 <div class="theorem" id="D-accumulation_point">
@@ -235,14 +240,17 @@ uses_python: false
 
                 <p>
                     A nearest point need not exist in general. Take \(X = \mathbb{R}\), \(S = (0, 1)\), and \(z = 0\). Then
-                    \(\operatorname{dist}(z, S) = 0\), yet no member of \(S\) is at distance zero from \(z\), because \(S\) is open and
-                    excludes its boundary. Existence is guaranteed, however, when \(S\) has sufficient structure. The most notable case is
-                    that \(S\) is nonempty and <strong>compact</strong>, a notion we formalize on a later page. In \(\mathbb{R}^n\),
-                    compactness reduces to \(S\) being closed and bounded (Heine-Borel). Boundedness is not even needed there, since every
-                    nonempty closed subset of \(\mathbb{R}^n\) has a nearest point to each point of \(\mathbb{R}^n\). In an
-                    infinite-dimensional <a href="intro_analysis.html#D-Hilbert_space" class="ref-link"><strong>Hilbert space</strong></a>,
-                    closedness alone is not enough, but every nonempty closed convex set has exactly one nearest point to each point of the
-                    space, namely the projection of that point onto it.
+                    \(\operatorname{dist}(z, S) = 0\), yet no member of \(S\) is at distance zero from \(z\), because \(0 \notin S\).
+                </p>
+
+                <p>
+                    Existence is guaranteed, however, when \(S\) has sufficient structure. The standard sufficient condition is that \(S\)
+                    is nonempty and <strong>compact</strong>, a notion we formalize on a later page. In \(\mathbb{R}^n\), compactness
+                    reduces to \(S\) being closed and bounded (Heine-Borel). Boundedness is not even needed there, since every nonempty
+                    closed subset of \(\mathbb{R}^n\) has a nearest point to each point of \(\mathbb{R}^n\). In an infinite-dimensional
+                    <a href="intro_analysis.html#D-Hilbert_space" class="ref-link"><strong>Hilbert space</strong></a>, closedness alone is
+                    not enough, but every nonempty closed convex set has exactly one nearest point to each point of the space, namely the
+                    projection of that point onto it.
                 </p>
 
                 <div class="insight-box">
@@ -290,7 +298,7 @@ uses_python: false
                 </div>
 
                 <p>
-                    The concept of distance to a set is fundamental to <strong>margin-based classifiers</strong>
+                    The concept of distance to a set underlies <strong>margin-based classifiers</strong>
                     (like <a href="../Machine_learning/svm.html"><strong>SVMs</strong></a>),
                     where the goal is to maximize the distance between a decision boundary and the nearest data points.
                     Furthermore, the nearest point definition is the mathematical foundation of <strong>projection</strong>.
@@ -303,11 +311,11 @@ uses_python: false
             <section id="bound" class="section-content">
                 <h2>Boundary</h2>
                 <p>
-                    Having established how to measure distance to sets, we can now classify points by their relationship to
-                    a set and its complement. This classification is fundamental to <a href="constrained_opt.html"><strong>constrained optimization</strong></a>.
-                    When we solve problems like "minimize \(f(x)\) subject to \(g(x) \leq 0\),"
-                    the feasible region is a set \(S\), and the nature of optimal solutions depends heavily on whether they
-                    lie in the <strong>interior</strong> or on the <strong>boundary</strong> of \(S\).
+                    Having established how to measure distance to sets, we can now classify points by their relationship to a set and its
+                    complement. This classification is used throughout
+                    <a href="constrained_opt.html"><strong>constrained optimization</strong></a>. When we solve problems like "minimize
+                    \(f(x)\) subject to \(g(x) \leq 0\)," the feasible region is a set \(S\), and the nature of optimal solutions depends
+                    heavily on whether they lie in the <strong>interior</strong> or on the <strong>boundary</strong> of \(S\).
                 </p>
                 <div class="theorem" id="D-boundary_point">
                     <span class="theorem-title">Definition: Boundary Points</span>
@@ -393,7 +401,8 @@ uses_python: false
                         \overline{S} = X.
                         \]
                         Equivalently, every nonempty open subset of \(X\) contains at least one point of \(S\). Equivalently again, every
-                        point of \(X\) is the limit of a sequence drawn from \(S\).
+                        point of \(X\) is the limit of a sequence drawn from \(S\), with sequence convergence as defined in our treatment
+                        of <a href="limit_convergence.html">convergence and boundedness</a>.
                     </p>
                 </div>
 
@@ -405,10 +414,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    In function spaces, dense subsets play an even more decisive role. Trigonometric polynomials are dense in continuous
-                    periodic functions, and continuous compactly supported functions are dense in \(L^p\) for \(1 \leq p \lt \infty\).
-                    These density results are the engines behind the entire theory of Fourier analysis and \(L^p\) approximation, where we
-                    prove an identity for a "nice" dense subclass and then extend it to the whole space by continuity.
+                    In function spaces, a dense subset is typically a class of well-behaved functions that approximates every element of
+                    the space arbitrarily closely. Trigonometric polynomials are dense in continuous periodic functions, and continuous
+                    compactly supported functions are dense in \(L^p\) for \(1 \leq p \lt \infty\). These density results are the engines
+                    behind the entire theory of Fourier analysis and \(L^p\) approximation, where we prove an identity for a "nice" dense
+                    subclass and then extend it to the whole space by continuity.
                 </p>
 
                 <div class="theorem" id="D-topology_from_metric">
@@ -427,7 +437,7 @@ uses_python: false
                     Why do these classifications matter for optimization? If our search space is strictly <strong>open</strong> (for
                     example, \(0 \lt x \lt 1\)), an algorithm might iterate forever, approaching a boundary value without ever reaching it.
                     The limit point is excluded from the feasible set. A <strong>closed</strong> set contains its boundary, ensuring that
-                    edge solutions are valid. More fundamentally, the <strong>Extreme Value Theorem</strong> guarantees that a continuous
+                    edge solutions are valid. In addition, the <strong>Extreme Value Theorem</strong> guarantees that a continuous
                     real-valued function attains its maximum and minimum when its domain is nonempty and <strong>compact</strong>, which in
                     \(\mathbb{R}^n\) means closed and bounded.
                 </p>
@@ -519,7 +529,7 @@ uses_python: false
                     \[
                     \mathcal{B}[x; r) = \{y \in X \mid d(x, y) \lt r\} \subseteq X.
                     \]
-                    Let \(z \in \mathcal{B}\). Since \(d(x, z) \lt r\), we may choose
+                    Write \(\mathcal{B} = \mathcal{B}[x; r)\) and let \(z \in \mathcal{B}\). Since \(d(x, z) \lt r\), we may choose
                     \[
                     s := \tfrac{1}{2}\bigl(r - d(x, z)\bigr) \in (0, r),
                     \]
@@ -531,21 +541,20 @@ uses_python: false
                     \[
                     d(z, w) \geq d(w, x) - d(x, z) \gt r - (r - s) = s.
                     \]
-                    Since \(w\) is an arbitrary point in the complement \(X \setminus \mathcal{B}\),
-                    this inequality holds for all points outside the ball. This implies that the
+                    As \(w\) is an arbitrary point in the complement \(X \setminus \mathcal{B}\),
+                    this inequality holds for all points outside the ball. Hence the
                     "shortest distance" (infimum) from \(z\) to the outside of the ball is at least \(s\):
                     \[
                     \operatorname{dist}(z, X \setminus \mathcal{B}) = \inf \{d(z, w) \mid w \notin \mathcal{B}\} \geq s \gt 0.
                     \]
-                    Recall the definition of a <strong>boundary point</strong> requires the distance to the complement to be zero.
+                    Recall that the definition of a <strong>boundary point</strong> requires the distance to the complement to be zero.
                     Since the distance here is strictly positive, \(z \notin \partial \mathcal{B}\).
-                    Since \(z\) was chosen arbitrarily, we have \(\mathcal{B} \cap \partial \mathcal{B} = \emptyset\),
+                    Because \(z\) was chosen arbitrarily, we have \(\mathcal{B} \cap \partial \mathcal{B} = \emptyset\),
                     which is precisely the definition of \(\mathcal{B}\) being open. Equivalently, every point of
                     \(\mathcal{B}\) is an interior point, so
                     \[
                     \mathcal{B} = \mathcal{B}^{\circ}.
                     \]
-                    Therefore, \(\mathcal{B}\) is open.
                 </div>
 
                 <div class="theorem" id="T-open_balls_basis">
@@ -707,8 +716,8 @@ uses_python: false
                     for each \(a, b \in C\), the line segment \(\{ (1 - t)a + tb \mid t \in [0, 1] \}\) joining \(a\) and \(b\) is included in
                     \(C\).
                 </div>
-
             </section>
+            
         </div>
 
     </body>
