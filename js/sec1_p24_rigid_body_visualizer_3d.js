@@ -565,7 +565,8 @@ RigidCore.formatReadouts = function (roll, pitch, yaw, t, mode) {
       '<div class="rbv-layout">' +
       '<div class="rbv-viewcell"><div id="rbv-three"></div>' +
         '<div class="rbv-caption">hexagonal coin (circumradius 0.8) with body frame; world frame at the origin. ' +
-          'Drag = coin, shift+drag = camera, wheel = zoom.</div></div>' +
+          'Drag (mouse, pen, or one finger) = coin, shift+drag = camera, ' +
+          'wheel or pinch = zoom.</div></div>' +
       '<div class="rbv-side">' +
         '<div class="rbv-panel"><div class="rbv-paneltitle">Mode</div>' +
           '<div class="rbv-btnrow">' +
