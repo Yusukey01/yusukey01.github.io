@@ -468,8 +468,10 @@ uses_python: false
                 <div class="theorem" id="D-algebraic_connectivity">
                     <span class="theorem-title">Definition: Algebraic Connectivity</span>
                     <p>
-                        The second-smallest eigenvalue \(\lambda_1\) of the Laplacian \(\boldsymbol{L}\) is called the 
-                        <strong>algebraic connectivity</strong> (or <strong>Fiedler value</strong>) of the graph.
+                        For a graph with \(n \geq 2\) vertices, list the eigenvalues of the Laplacian \(\boldsymbol{L}\), counted
+                        with multiplicity, as \(0 = \lambda_0 \leq \lambda_1 \leq \cdots \leq \lambda_{n-1}\). The second-smallest
+                        eigenvalue \(\lambda_1\) in this list is called the <strong>algebraic connectivity</strong> (or 
+                        <strong>Fiedler value</strong>) of the graph.
                     </p>
                 </div>
 
@@ -524,7 +526,7 @@ uses_python: false
                         \]
                     </p>
                     <p>
-                        Let \(\lambda_1^{\mathrm{norm}}\) denote the second smallest eigenvalue of the
+                        Let \(\lambda_1^{\mathrm{norm}}\) denote the second-smallest eigenvalue, counted with multiplicity, of the
                         <strong>normalized Laplacian</strong> \(\mathcal{L}_{sym}\) (equivalently \(\mathcal{L}_{rw}\), since the two
                         share the same spectrum by
                         <a href="#T-normalized_laplacian_spectrum" class="ref-link"><strong>Spectrum of the Normalized Laplacians</strong></a>).
@@ -638,10 +640,10 @@ uses_python: false
                     </p>
                 </div>
                 <p>
-                    This identity shows that the Dirichlet energy of a signal equals the weighted sum of its 
-                    spectral components, where each frequency \(\lambda_k\) weights the corresponding 
-                    coefficient \(\hat{f}_k^2\). High-frequency components (large \(\lambda_k\)) contribute 
-                    more to the energy, which is why smooth signals have small Dirichlet energy.
+                    This identity shows that the Dirichlet energy of a signal equals the weighted sum of its spectral components, 
+                    where each frequency \(\lambda_k\) weights the corresponding coefficient \(\hat{f}_k^2\). Since each 
+                    \(\hat{f}_k^2\) is weighted by \(\lambda_k\), a signal with small Dirichlet energy has small coefficients at the 
+                    high frequencies (large \(\lambda_k\)).
                 </p>
             </section>
 
@@ -848,11 +850,11 @@ uses_python: false
                 </p>
                 <p>
                     The same diffusive process is also the formal explanation for the <strong>over-smoothing</strong> problem in deep
-                    GNNs. Repeated application of a smoothing operator such as \(e^{-t\boldsymbol{L}}\), or of the GCN propagation
-                    matrix introduced below, drives features toward the eigenspace for the eigenvalue \(1\) of that operator. For
-                    \(e^{-t\boldsymbol{L}}\), this eigenspace is \(\ker \boldsymbol{L}\), the signals that are constant on every connected
-                    component. Within each connected component, node representations therefore become indistinguishable (for the
-                    GCN matrix, up to a degree-dependent scale).
+                    GNNs. Repeated application of a smoothing operator such as \(e^{-t\boldsymbol{L}}\) with \(t \gt 0\), or of the
+                    GCN propagation matrix introduced below, drives features toward the eigenspace for the eigenvalue \(1\) of that
+                    operator. For \(e^{-t\boldsymbol{L}}\), this eigenspace is \(\ker \boldsymbol{L}\), the signals that are constant
+                    on every connected component. Within each connected component, node representations therefore become
+                    indistinguishable (for the GCN matrix, up to a degree-dependent scale).
                 </p>
                 <p>
                     More advanced models take this connection to its logical conclusion, explicitly modeling GNNs as continuous-time
@@ -872,16 +874,33 @@ uses_python: false
                     </p>
                     <p>
                         Replacing \(\boldsymbol{A}\) with \(\tilde{\boldsymbol{A}}\) (adding self-loops) serves two mathematical
-                        purposes. It preserves a node's own features during aggregation, and, critically, it <strong>controls the
-                        spectral radius</strong>. Without this, the operation
+                        purposes. It preserves a node's own features during aggregation, and, critically, it
+                        <strong>controls the spectral radius</strong>. Without the self-loops, the operation
                         \(\boldsymbol{I} + \boldsymbol{D}^{-1/2}\boldsymbol{A}\boldsymbol{D}^{-1/2}\) has eigenvalues in \([0, 2]\),
                         so repeated application can amplify some components, which can lead to numerical instability (exploding or
-                        vanishing gradients) in deep networks. After renormalization, the operator
+                        vanishing gradients) in deep networks.
+                    </p>
+                    <p>
+                        After renormalization, the operator
                         \(\tilde{\boldsymbol{D}}^{-1/2}\tilde{\boldsymbol{A}}\tilde{\boldsymbol{D}}^{-1/2}\) has all eigenvalues in
-                        \([-1, 1]\), with largest eigenvalue exactly \(1\) (the range follows from the same edge-sum arguments run on
-                        the graph with a self-loop at every vertex, and the eigenvector
-                        \(\tilde{\boldsymbol{D}}^{1/2}\boldsymbol{1}\) attains \(1\)), so repeated application never amplifies a
-                        component while the low-pass filtering effect is maintained.
+                        \((-1, 1]\), with its largest eigenvalue exactly \(1\), attained by the eigenvector
+                        \(\tilde{\boldsymbol{D}}^{1/2}\boldsymbol{1}\). Writing \(\boldsymbol{M}\) for this operator and, for
+                        \(\boldsymbol{g} \in \mathbb{R}^n\), \(\boldsymbol{y} = \tilde{\boldsymbol{D}}^{-1/2}\boldsymbol{g}\), the
+                        edge-sum expansion of the Dirichlet energy gives
+                        \[
+                        \begin{align*}
+                        \boldsymbol{g}^\top (\boldsymbol{I} - \boldsymbol{M}) \boldsymbol{g} &= \sum_{(i,j) \in E} w_{ij}(y_i - y_j)^2, \\\\
+                        \boldsymbol{g}^\top (\boldsymbol{I} + \boldsymbol{M}) \boldsymbol{g} &= \sum_{(i,j) \in E} w_{ij}(y_i + y_j)^2 \\\\
+                        &\quad + 2\sum_i y_i^2,
+                        \end{align*}
+                        \]
+                        where the last term comes from the self-loops. The first form is nonnegative and the second is positive for
+                        \(\boldsymbol{g} \neq \boldsymbol{0}\). Since \(\boldsymbol{M}\) is symmetric, each eigenvalue \(\mu\) of
+                        \(\boldsymbol{M}\) is real and has an eigenvector \(\boldsymbol{g} \in \mathbb{R}^n\) with
+                        \(\boldsymbol{g} \neq \boldsymbol{0}\), and for this \(\boldsymbol{g}\) the two forms equal
+                        \((1 - \mu)\|\boldsymbol{g}\|^2\) and \((1 + \mu)\|\boldsymbol{g}\|^2\), so \(1 - \mu \geq 0\) and
+                        \(1 + \mu \gt 0\), that is, \(-1 \lt \mu \leq 1\). Repeated application of \(\boldsymbol{M}\) therefore never
+                        amplifies a component, and every component outside the eigenvalue-\(1\) eigenspace decays.
                     </p>
                 </div>
 
@@ -920,14 +939,6 @@ uses_python: false
 
             <section id="ahead" class="section-content">
                 <h2>Looking Ahead</h2>
-
-                <p>
-                    The graph Laplacian closes the matrix-theoretic arc of our linear-algebra section. We began with linear systems, linear maps,
-                    and vector spaces, then developed the spectral theory of symmetric matrices. Now we have deployed that theory on
-                    a concrete combinatorial object, a graph, to recover connectivity, clustering, frequency, and diffusion, all
-                    from a single eigendecomposition. The static algebraic tools developed so far have come together into a
-                    dynamical, geometric picture.
-                </p>
 
                 <h3>Connection to the Incidence Matrix</h3>
 
@@ -969,27 +980,30 @@ uses_python: false
                     tangent structure and exponential maps connecting the two.
                 </p>
                 <p>
-                    We will find that the matrix exponential \(e^{tX}\) plays, in this continuous setting, exactly the role that the
-                    power \(P^t\) played for the stochastic matrices of the
-                    <a href="stochastic.html"><strong>previous page</strong></a>, and that the heat-diffusion kernel
-                    \(e^{-t\boldsymbol{L}}\) we derived above is the graph-theoretic shadow of the same construction. Lie theory will
-                    give us the vocabulary for rotation, rigid motion, and gauge symmetry. These are the geometric counterparts of the
-                    structures on which spectral clustering and the Fiedler vector are built.
+                    For every square matrix \(X\) and all real \(s, t\), the
+                    <a href="matrix_exponential.html"><strong>matrix exponential</strong></a> satisfies the law
+                    \(e^{(s+t)X} = e^{sX} e^{tX}\). This law is the continuous-parameter counterpart of the identity
+                    \(P^{m+k} = P^m P^k\) (for nonnegative integers \(m, k\)) obeyed by the powers of a stochastic matrix
+                    on the <a href="stochastic.html"><strong>previous page</strong></a>. The graph heat kernel
+                    \(e^{-t\boldsymbol{L}}\) derived above is \(e^{tX}\) with \(X = -\boldsymbol{L}\), so it obeys this
+                    law. <a href="lie_groups.html"><strong>Lie theory</strong></a> will give us the vocabulary for rotation
+                    and rigid motion.
                 </p>
 
                 <h3>Toward Geometric Deep Learning</h3>
 
                 <p>
                     The most immediate destination beyond this page is <strong>Graph Neural Networks</strong> and, more broadly,
-                    <strong>Geometric Deep Learning</strong>. Many architectural ideas in the <em>spectral</em> GNN family draw on the
-                    properties of the graph Laplacians developed on this page. These ideas include spectral filtering, Chebyshev polynomial
-                    approximations, the GCN renormalization trick, and heat-kernel diffusion. The same properties also explain
-                    over-smoothing and motivate graph differential equations. Spectral GNNs are, at their core, linear algebraic
-                    operators designed to act diagonally in the eigenbasis of a graph Laplacian (\(\boldsymbol{L}\), \(\mathcal{L}_{sym}\),
-                    or the renormalized \(\boldsymbol{I} - \tilde{\boldsymbol{D}}^{-1/2}\tilde{\boldsymbol{A}}\tilde{\boldsymbol{D}}^{-1/2}\)). Spatial or
-                    message-passing GNNs with a permutation-invariant aggregation (GAT, for example, whose aggregation weights depend on
-                    the features) are in general not filters of this form, but they still respect the graph's permutation symmetries,
-                    as spectral filters \(g(\boldsymbol{L})\) do.
+                    <a href="../Machine_learning/intro_gdl.html"><strong>Geometric Deep Learning</strong></a>. Many architectural
+                    ideas in the <em>spectral</em> GNN family draw on the properties of the graph Laplacians developed on this page.
+                    These ideas include spectral filtering, Chebyshev polynomial approximations, the GCN renormalization trick, and
+                    heat-kernel diffusion. The same properties also explain over-smoothing and motivate graph differential equations.
+                    Spectral GNNs are, at their core, linear algebraic operators designed to act diagonally in the eigenbasis of a
+                    graph Laplacian (\(\boldsymbol{L}\), \(\mathcal{L}_{sym}\), or the renormalized
+                    \(\boldsymbol{I} - \tilde{\boldsymbol{D}}^{-1/2}\tilde{\boldsymbol{A}}\tilde{\boldsymbol{D}}^{-1/2}\)). Spatial
+                    or message-passing GNNs with a permutation-invariant aggregation (GAT, for example, whose aggregation weights
+                    depend on the features) are in general not filters of this form, but they still respect the graph's permutation
+                    symmetries, as spectral filters \(g(\boldsymbol{L})\) do.
                 </p>
                 <p>
                     The same principle generalizes. On a smooth manifold, the relevant operator is the Laplace-Beltrami operator. On a

@@ -598,7 +598,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
   var ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
   var SEED2 = 2001, SEED3 = 3001;
 
-  function fmt(x, d) { return (Object.is(x, -0) ? 0 : x).toFixed(d); }
+  function fmt(x, d) { var s = x.toFixed(d); return /^-0(\.0+)?$/.test(s) ? s.slice(1) : s; }
   function fmtSm(x) {
     var a = Math.abs(x);
     return (a !== 0 && a < 1e-3) ? x.toExponential(1) : fmt(x, 4);
@@ -608,9 +608,9 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
     var out = '';
     for (var i = 0; i < pairs.length; i++) {
       var c = pairs[i][0], sym = pairs[i][1];
-      var mag = fmt(Math.abs(c), 3);
-      if (i === 0) out += (c < 0 ? '\u2212' : '') + mag + sym;
-      else out += (c < 0 ? ' \u2212 ' : ' + ') + mag + sym;
+      var s = fmt(c, 3), neg = s.charAt(0) === '-', mag = neg ? s.slice(1) : s;
+      if (i === 0) out += (neg ? '\u2212' : '') + mag + sym;
+      else out += (neg ? ' \u2212 ' : ' + ') + mag + sym;
     }
     return out;
   }
@@ -927,7 +927,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
         '</span> &nbsp; <span class="lrv-formula">MSE = ' + fmtSm(s.mse) + '</span></div>' +
         '<div><span class="lrv-formula">\u2016X\u1D40\u03B5\u0302\u2016 = ' + fmtSm(s.xtResidNorm) + '</span>' +
         ' <span class="lrv-sub">\u2014 the residual is orthogonal to Col X: the normal equations ' +
-        'X\u1D40X\u03B2\u0302 = X\u1D40Y hold, i.e. \u0177 = proj<sub>Col X</sub> Y.</span></div>';
+        'X\u1D40X\u03B2\u0302 = X\u1D40Y hold, i.e. \u0176 = proj<sub>Col X</sub> Y.</span></div>';
     }
 
     function updateReadouts2(s) {
@@ -1193,14 +1193,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LsqCore;
       if (s.empty) {
         html += '<div class="lrv-status-warn" style="margin-top:6px;">No data \u2014 generate a sample.</div>';
       } else if (!s.ok) {
-        if (s.reason === 'underdetermined') {
-          html += '<div class="lrv-status-warn" style="margin-top:6px;">n &lt; p: fewer points than parameters \u2014 ' +
-            'X\u1D40X is singular; infinitely many least-squares solutions (pseudo-inverse section). ' +
-            'Increase n or use the plane model.</div>';
-        } else {
-          html += '<div class="lrv-status-warn" style="margin-top:6px;">The columns of X are linearly dependent ' +
-            'for this sample (degenerate point configuration) \u2014 no unique least-squares solution. Generate a new sample.</div>';
-        }
+        html += '<div class="lrv-status-warn" style="margin-top:6px;">The columns of X are linearly dependent ' +
+          'for this sample (degenerate point configuration) \u2014 no unique least-squares solution. Generate a new sample.</div>';
       } else {
         html += '<div class="lrv-formula" style="margin-top:6px;">' + surfaceEquation(s.beta, state.model) + '</div>';
         html += metricsHtml(s);

@@ -62,7 +62,7 @@ uses_python: false
                     <p>
                         Directly inverting an \(n \times n\) matrix from scratch typically costs \(O(n^3)\) operations. 
                         However, the Woodbury identity is designed for <strong>incremental updates</strong>. 
-                        If we already possess the inverse \(A^{-1}\) and perform a "low-rank" update (where \(k \ll n\)), 
+                        If we already possess the inverse \(A^{-1}\) and perform a "low-rank" update \(UBV\) with inner dimension \(k \ll n\), 
                         the cost to find the new inverse is reduced to approximately <strong>\(O(n^2 k)\)</strong> operations.
                     </p>
                     <p>
@@ -265,8 +265,13 @@ uses_python: false
                         are always invertible.
                     </p>
                     <p>
-                        The middle factor \(D = \begin{pmatrix} A_{11} & 0 \\ 0 & S \end{pmatrix}\) is block diagonal. It is invertible if and only if both \(A_{11}\)
-                        and \(S\) are. Since we assumed \(A_{11}\) invertible, the condition reduces to invertibility of \(S\). When \(S\) is invertible,
+                        The middle factor \(D = \begin{pmatrix} A_{11} & 0 \\ 0 & S \end{pmatrix}\) is block diagonal. It is invertible if and only if both
+                        \(A_{11}\) and \(S\) are, because the
+                        <a href="#T-block_triangular_determinant" class="ref-link"><strong>Block Triangular Determinant Lemma</strong></a> gives
+                        \(\det(D) = \det(A_{11}) \det(S)\) and, by the
+                        <a href="determinants.html#T-invertible_matrix_theorem" class="ref-link"><strong>Invertible Matrix Theorem</strong></a>, a square matrix is
+                        invertible exactly when its determinant is nonzero. Since we assumed \(A_{11}\) invertible, the condition reduces to invertibility of
+                        \(S\). When \(S\) is invertible,
                         \[
                         D^{-1} = \begin{pmatrix} A_{11}^{-1} & 0 \\ 0 & S^{-1} \end{pmatrix}.
                         \]
@@ -326,8 +331,8 @@ uses_python: false
             <section id="wmi" class="section-content">
                 <h2>Woodbury Matrix Identity</h2>
                 <p>
-                    The <strong>Woodbury Matrix Identity</strong> computes the inverse of a matrix after a <strong>rank-k update</strong>, in which a large matrix
-                    \(A\) is modified by adding a product of smaller matrices \(UBV\).
+                    The <strong>Woodbury Matrix Identity</strong> computes the inverse of a matrix after a <strong>rank-\(k\) update</strong>. A rank-\(k\) update
+                    adds a product \(UBV\) of smaller matrices with inner dimension \(k\) to a large matrix \(A\), so that \(\operatorname{rank}(UBV) \le k\).
                 </p>
 
                 <div class="theorem" id="T-woodbury_identity">
@@ -430,8 +435,8 @@ uses_python: false
                 </div>
 
                 <p>
-                    When \(k = 1\), the matrices \(U\) and \(V\) reduce to vectors \(\mathbf{u}\) and \(\mathbf{v}\), and we obtain the <strong>Sherman-Morrison formula</strong>. 
-                    This special case is widely used for rank-1 updates.
+                    When \(k = 1\) and \(B = 1\), the matrices \(U\) and \(V\) reduce to a column vector \(\mathbf{u}\) and a row vector \(\mathbf{v}^\top\), and 
+                    we obtain the <strong>Sherman-Morrison formula</strong>. This special case is widely used for rank-1 updates.
                 </p>
 
                 <div class="theorem" id="T-sherman_morrison">
@@ -442,7 +447,7 @@ uses_python: false
                         \[
                         (A + \mathbf{u}\mathbf{v}^\top)^{-1} = A^{-1} - \frac{A^{-1} \mathbf{u}\mathbf{v}^\top A^{-1}}{1 + \mathbf{v}^\top A^{-1} \mathbf{u}}.
                         \]
-                        The corresponding rank-1 reduction formula (replacing \(\mathbf{u}\) by \(-\mathbf{u}\)), valid when
+                        The corresponding rank-1 reduction formula, obtained by replacing \(\mathbf{u}\) by \(-\mathbf{u}\), holds when
                         \(1 - \mathbf{v}^\top A^{-1} \mathbf{u} \neq 0\):
                         \[
                         (A - \mathbf{u}\mathbf{v}^\top)^{-1} = A^{-1} + \frac{A^{-1} \mathbf{u}\mathbf{v}^\top A^{-1}}{1 - \mathbf{v}^\top A^{-1} \mathbf{u}}.
@@ -512,7 +517,8 @@ uses_python: false
                         \[
                         \det(A + UBV) = \det(B^{-1} + VA^{-1}U) \det(B) \det(A).
                         \]
-                        In the special case of a <strong>rank-1 update</strong> (\(k=1\)) where \(\mathbf{u}, \mathbf{v} \in \mathbb{R}^n\):
+                        In the special case of a <strong>rank-1 update</strong> (\(k = 1\), \(B = 1\), \(U = \mathbf{u}\), \(V = \mathbf{v}^\top\)) where
+                        \(\mathbf{u}, \mathbf{v} \in \mathbb{R}^n\):
                         \[
                         \det(A + \mathbf{u}\mathbf{v}^\top) = (1 + \mathbf{v}^\top A^{-1} \mathbf{u}) \det(A).
                         \]
@@ -570,14 +576,16 @@ uses_python: false
             <section id="bfgs-connection" class="section-content">
                 <h2>Case Study: BFGS and Rank-2 Updates</h2>
                 <p>
-                    The <strong>BFGS algorithm</strong> (the most popular quasi-Newton method) provides a perfect example of the Woodbury identity in action. It
+                    The <strong>BFGS algorithm</strong> (a widely used quasi-Newton method) provides a concrete example of the Woodbury identity in action. It
                     maintains a Hessian approximation \(H_t \approx \nabla^2 f(\boldsymbol{\theta}_t)\) and updates it via a <strong>symmetric rank-2</strong>
-                    correction. What we ultimately need at each step is the inverse \(H_t^{-1}\), which the Sherman-Morrison machinery lets us update directly rather
-                    than recomputing it from scratch.
+                    correction. What we ultimately need at each step is the inverse \(H_t^{-1}\), which the Sherman-Morrison machinery lets us update directly
+                    rather than recomputing it from scratch.
                 </p>
                 <p>
-                    <em>Notation note.</em> In this section, \(H_t\) denotes the BFGS Hessian approximation. It is a different object from the matrix \(B\) appearing
-                    in the Woodbury identity above. We avoid the customary symbol \(B_t\) used in some references precisely to prevent that collision.
+                    <em>Notation note.</em> In this section, \(H_t\) denotes the BFGS Hessian approximation. It is a different object from the matrix \(B\)
+                    appearing in the Woodbury identity above. We avoid the customary symbol \(B_t\) used in some references precisely to prevent that collision.
+                    The BFGS derivation linked at the end of this section writes \(\mathbf{B}_t\) for the same approximation and \(\mathbf{C}_t\) for its inverse,
+                    and reserves \(\mathbf{H}_t\) for the exact Hessian of the objective.
                 </p>
 
                 <div class="insight-box">
@@ -605,7 +613,7 @@ uses_python: false
 
                 <p>
                     <a href="../Calculus/newton.html#BFGS">
-                        <strong>View Full Derivation on the BFGS Method page &rarr;</strong>
+                        <strong>View Full Derivation in the BFGS section of the Newton's method page &rarr;</strong>
                     </a>
                 </p>
             </section>

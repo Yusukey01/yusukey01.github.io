@@ -4,7 +4,7 @@ title: "Kronecker Product & Tensors"
 topic_id: linalg-11
 level: detail
 uses_math: true
-uses_python: true
+uses_python: false
 ---
 <!DOCTYPE html>
 <html>
@@ -93,8 +93,8 @@ uses_python: true
                         \[
                         \operatorname{vec}(ABC) = (C^\top \otimes A)\,\operatorname{vec}(B)
                         \]
-                        is a cornerstone for deriving closed-form solutions to matrix-valued optimization problems. (We prove this identity later in the next
-                        section, once the Kronecker product is in hand. See
+                        is a cornerstone for deriving closed-form solutions to matrix equations and matrix-valued optimization problems. (We prove this
+                        identity later in the next section, once the Kronecker product is in hand. See
                         <a href="#T-vec_abc_identity" class="ref-link"><strong>The vec-Kronecker Identity</strong></a>.)
                     </p>
                     <p>
@@ -124,9 +124,9 @@ uses_python: true
                     <p>
                         Consider the vector 
                         \[
-                        a = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \end{bmatrix}^\top.
+                        \mathbf{u} = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \end{bmatrix}^\top.
                         \]
-                        Reshaping \(a\) into a \(2 \times 3\) matrix yields different results depending on the convention:
+                        Reshaping \(\mathbf{u}\) into a \(2 \times 3\) matrix yields different results depending on the convention:
                     </p>
                     <p>
                         <strong>Row-major order</strong> (used by C, C++, and Python/NumPy by default). Elements fill each row before moving to the next.
@@ -151,7 +151,7 @@ uses_python: true
 
                     vector = np.array([1, 2, 3, 4, 5, 6])
 
-                    # Python offers two layouts (the default is row-major):
+                    # NumPy offers two layouts (the default is row-major):
 
                     matrix_r = vector.reshape((2, 3), order='C') # C stands for "C" programming language
                     matrix_c = vector.reshape((2, 3), order='F') # F stands for "F"ortran programming language
@@ -252,11 +252,12 @@ uses_python: true
                             \[
                             \lambda_i \mu_j \quad (i = 1, \ldots, m, \quad j = 1, \ldots, n).
                             \]
-                            In particular, if \(A \mathbf{v} = \lambda \mathbf{v}\) and \(B \mathbf{w} = \mu \mathbf{w}\), then 
+                            Moreover, if \(A \mathbf{v} = \lambda \mathbf{v}\) and \(B \mathbf{w} = \mu \mathbf{w}\), then 
                             \[
                             (A \otimes B)(\mathbf{v} \otimes \mathbf{w}) = \lambda\mu \, (\mathbf{v} \otimes \mathbf{w}).
                             \]
-                            Here \(\mathbf{v} \otimes \mathbf{w} \in \mathbb{R}^{mn}\) denotes the Kronecker product of column vectors, 
+                            Here \(\mathbf{v} \otimes \mathbf{w} \in \mathbb{C}^{mn}\) denotes the Kronecker product of column vectors (the same block 
+                            formula with complex entries), which lies in \(\mathbb{R}^{mn}\) when \(\mathbf{v}\) and \(\mathbf{w}\) are real and is then 
                             equivalently expressible as \(\mathbf{v} \otimes \mathbf{w} = \operatorname{vec}(\mathbf{w}\mathbf{v}^\top)\). 
                             (Note the order: with our column-major \(\operatorname{vec}\) convention, the rank-one matrix appears as \(\mathbf{w}\mathbf{v}^\top\), 
                             not \(\mathbf{v}\mathbf{w}^\top\). The special case \(\mathbf{v} = \mathbf{w} = \mathbf{x}\) recovers the identity 
@@ -385,13 +386,16 @@ uses_python: true
                         \(A \otimes B\) with eigenvector \(\mathbf{v}_i \otimes \mathbf{w}_j\).
                     </p>
                     <p>
-                        It remains to show this list is complete. By the basis-based
-                        <a href="#D-tensor_product_space" class="ref-link"><strong>tensor-product construction</strong></a> (extended to \(\mathbb{C}\)), the
-                        set \(\{\mathbf{v}_i \otimes \mathbf{w}_j : 1 \leq i \leq m, 1 \leq j \leq n\}\) is a basis of \(\mathbb{C}^{mn}\). It is the image of
-                        the standard tensor-product basis under the invertible change-of-basis induced by \(\{\mathbf{e}_i\} \mapsto \{\mathbf{v}_i\}\),
-                        \(\{\mathbf{f}_j\} \mapsto \{\mathbf{w}_j\}\). We have therefore exhibited \(mn\) linearly independent eigenvectors of \(A \otimes B\),
-                        so by the <a href="eigenvectors.html#T-diagonalization_criterion" class="ref-link"><strong>diagonalization criterion</strong></a>, read
-                        over \(\mathbb{C}\), the matrix \(A \otimes B\) is diagonalizable and those vectors are the columns of a change-of-basis matrix. The
+                        It remains to show this list is complete. Let \(P\) and \(Q\) be the invertible matrices with columns
+                        \(\mathbf{v}_1, \ldots, \mathbf{v}_m\) and \(\mathbf{w}_1, \ldots, \mathbf{w}_n\), and let \(\mathbf{e}_i\) and \(\mathbf{f}_j\) be
+                        the standard basis vectors of \(\mathbb{C}^m\) and \(\mathbb{C}^n\). The proofs of Properties 1 and 3 apply verbatim to complex
+                        matrices. By the definition of the Kronecker product, the \(mn\) vectors \(\mathbf{e}_i \otimes \mathbf{f}_j\) are the standard basis
+                        vectors of \(\mathbb{C}^{mn}\), and by the mixed-product property
+                        \((P \otimes Q)(\mathbf{e}_i \otimes \mathbf{f}_j) = \mathbf{v}_i \otimes \mathbf{w}_j\). Since \(P \otimes Q\) is invertible by
+                        Property 3, the set \(\{\mathbf{v}_i \otimes \mathbf{w}_j\}\) is a basis of \(\mathbb{C}^{mn}\). We have therefore exhibited \(mn\)
+                        linearly independent eigenvectors of \(A \otimes B\), so by the
+                        <a href="eigenvectors.html#T-diagonalization_criterion" class="ref-link"><strong>diagonalization criterion</strong></a>, read over
+                        \(\mathbb{C}\), the matrix \(A \otimes B\) is diagonalizable and those vectors are the columns of a change-of-basis matrix. The
                         diagonal form then carries exactly the \(mn\) products \(\lambda_i \mu_j\), and the list \(\{\lambda_i \mu_j\}_{i, j}\) (counted with
                         the algebraic multiplicities of \(\lambda_i\) and \(\mu_j\)) is the complete spectrum.
                     </p>
@@ -477,16 +481,18 @@ uses_python: true
                     <h3>Insight: Kronecker Products in Machine Learning</h3>
                     <p>
                         The mixed-product property \((A \otimes B)(C \otimes D) = (AC) \otimes (BD)\) is the algebraic foundation of
-                        <strong>Kronecker-factored approximations</strong>. The <strong>K-FAC</strong> optimizer approximates the Fisher Information Matrix of
-                        a layer as \(F \approx A \otimes G\), where \(A = \mathbb{E}[\mathbf{a}\mathbf{a}^\top]\) is the second-moment matrix of the layer's
-                        input activations \(\mathbf{a}\) and \(G\) is the corresponding second-moment matrix of the backpropagated gradients.
+                        <strong>Kronecker-factored approximations</strong>. The <strong>K-FAC</strong> optimizer approximates the Fisher information
+                        matrix of a layer as \(F \approx \Omega \otimes \Gamma\), where \(\Omega = \mathbb{E}[\mathbf{a}\mathbf{a}^\top]\) is the
+                        second-moment matrix of the layer's input activations \(\mathbf{a}\) and \(\Gamma\) is the corresponding second-moment matrix of
+                        the backpropagated gradients.
                     </p>
                     <p>
-                        By exploiting this structure, K-FAC replaces one inversion of cost \(O(n^3)\) on the full parameter space by two inversions of the
-                        factors. For a layer whose input and output dimensions are comparable, this is approximately \(O(n^{3/2})\). The
-                        <strong>eigenvalue property</strong> further enables efficient <strong>spectral preconditioning</strong>, since the eigenvectors and
-                        eigenvalues of \(A \otimes G\) come from those of the two small factors. Preconditioning with this Fisher approximation, a positive
-                        semidefinite proxy for curvature, often speeds up training in practice. K-FAC is treated in detail on the
+                        By exploiting this structure, K-FAC replaces one inversion of cost \(O(n^3)\) on the full space of the layer's \(n\) parameters by
+                        two inversions of the factors, when these are invertible. For a layer whose input and output dimensions are comparable, the cost of
+                        the two factor inversions is approximately \(O(n^{3/2})\). The <strong>eigenvalue property</strong> further enables efficient
+                        <strong>spectral preconditioning</strong>, since the eigenvectors and eigenvalues of \(\Omega \otimes \Gamma\) come from those of the
+                        two small factors. Preconditioning with this Fisher approximation, a positive semidefinite proxy for curvature, often speeds up
+                        training in practice. K-FAC is treated in detail on the
                         <a href="../Machine_learning/natural_gd.html#kfac"><strong>Natural Gradient Descent</strong></a> page.
                     </p>
                 </div>
@@ -494,8 +500,8 @@ uses_python: true
                 <p>
                     With the Kronecker product established, we now turn to <strong>tensors</strong>. Two views will appear in tension: the
                     <em>computational</em> view (a tensor is a multidimensional array, one that generalizes matrices to more than two indices) and the
-                    <em>algebraic</em> view (a tensor is an element of a tensor product of vector spaces). Reconciling them is what reveals the structure that
-                    has been quietly underlying everything in this page.
+                    <em>algebraic</em> view (a tensor is an element of a tensor product of vector spaces). Reconciling them reveals the structure that has
+                    quietly underlain everything on this page.
                 </p>
                 
             </section>
@@ -504,10 +510,10 @@ uses_python: true
                 <h2>Tensors</h2>
 
                 <p>
-                    So far, we have worked with scalars, vectors, and matrices, which are objects of dimension 0, 1, and 2 respectively. Many
-                    applications require data structures that extend beyond two dimensions. A <strong>tensor</strong> provides exactly this
-                    generalization. It is a multidimensional array that can be understood both as a computational data structure and as an element of a
-                    tensor product of vector spaces.
+                    So far, we have worked with scalars, vectors, and matrices, which are objects with 0, 1, and 2 indices respectively. Many
+                    applications require data structures with more than two indices. A <strong>tensor</strong> provides exactly this generalization.
+                    It is a multidimensional array that can be understood both as a computational data structure and as an element of a tensor product
+                    of vector spaces.
                 </p>
 
                 <div class="proof">
@@ -527,9 +533,9 @@ uses_python: true
                 </div>
 
                 <p>
-                    Higher-order tensors arise naturally in applications. For example, a color image is an order-3 tensor
-                    \(I \in \mathbb{R}^{H \times W \times C}\), where \(H\) is height, \(W\) is width, and \(C\) is the number of channels (for example,
-                    \(C = 3\) for RGB). A batch of \(N\) such images forms an order-4 tensor in \(\mathbb{R}^{N \times H \times W \times C}\).
+                    Higher-order tensors arise naturally in applications. For example, a color image is an order-3 tensor in
+                    \(\mathbb{R}^{H \times W \times C}\), where \(H\) is height, \(W\) is width, and \(C\) is the number of channels (for example, \(C = 3\)
+                    for RGB). A batch of \(N\) such images forms an order-4 tensor in \(\mathbb{R}^{N \times H \times W \times C}\).
                 </p>
 
                 <p>
@@ -557,7 +563,7 @@ uses_python: true
                         \]
                     </p>
                     <p>
-                        More generally, an <strong>order-\(r\) tensor</strong> is an element of
+                        More generally, an <strong>order-\(r\) tensor</strong> is an element
                         \[
                         T \in V_1 \otimes V_2 \otimes \cdots \otimes V_r,
                         \]
@@ -568,18 +574,18 @@ uses_python: true
                 </div>
 
                 <p>
-                    <em>Remark.</em> A basis-free definition exists via a <strong>universal property</strong>. The space \(V \otimes W\) is characterized,
-                    up to a unique isomorphism compatible with the bilinear maps, as a vector space \(U\) equipped with a bilinear map
+                    <em>Remark.</em> A basis-free definition exists via a <strong>universal property</strong>. The space \(V \otimes W\) is
+                    characterized, up to a unique isomorphism compatible with the bilinear maps, as a vector space \(U\) equipped with a bilinear map
                     \(\otimes : V \times W \to U\) such that every bilinear map \(\beta : V \times W \to Z\) into a vector space \(Z\) equals
-                    \(L \circ \otimes\) for a unique linear map \(L : U \to Z\). This formulation makes the tensor product independent of any basis choice
-                    and extends naturally to infinite-dimensional and more general settings. We will not need this level of generality here. The
-                    basis-based definition above suffices for everything we do here.
+                    \(L \circ \otimes\) for a unique linear map \(L : U \to Z\). This formulation makes the tensor product independent of any basis
+                    choice and extends naturally to infinite-dimensional and more general settings. The basis-based definition above suffices for
+                    everything on this page.
                 </p>
 
                 <p>
-                    Under this formal definition, the familiar objects of linear algebra are recovered as special cases. A scalar is an order-0
-                    tensor (an element of \(\mathbb{R}\)), a vector is an order-1 tensor (an element of \(V\)), and a matrix is an order-2 tensor (an
-                    element of \(V \otimes W\)).
+                    Under this formal definition, the familiar objects of linear algebra are recovered as special cases. A scalar is an order-0 tensor (an
+                    element of \(\mathbb{R}\), by the convention that the tensor product of no spaces is \(\mathbb{R}\)), a vector is an order-1 tensor (an
+                    element of \(V\)), and a matrix is an order-2 tensor (an element of \(V \otimes W\)).
                 </p>
                 
                 <p>
@@ -607,29 +613,36 @@ uses_python: true
                 </p>
 
                 <p>
-                    A complete treatment of how linear maps act on tensor products belongs to the language of <strong>representation theory</strong>, which
-                    we develop in a later page. The same language covers <strong>group actions</strong>, where a group \(G\) acts on \(V \otimes W\)
-                    compatibly with its actions on \(V\) and \(W\). That language, in turn, is what makes the next idea possible: building neural networks
-                    whose internal computations <em>respect symmetries of the data</em>.
+                    A systematic treatment of how linear maps act on tensor products belongs to the language of <strong>representation theory</strong>, which
+                    we develop in later pages. One of those pages constructs the
+                    <a href="representation_constructions.html">tensor product of two representations</a> explicitly. The same language covers
+                    <strong>group actions</strong>, where a group \(G\) acts on \(V \otimes W\) compatibly with its actions on \(V\) and \(W\). That
+                    language, in turn, is what makes the next idea possible: building neural networks whose internal computations
+                    <em>respect symmetries of the data</em>.
                 </p>
 
                 <div class="insight-box">
                     <h3>Insight: Tensors as the Language of Deep Learning</h3>
                     <p>
-                        While deep learning frameworks treat tensors primarily as multidimensional arrays, their algebraic power stems from their identity as
-                        <strong>multilinear maps</strong>. In Transformer architectures, the <strong>Attention mechanism</strong> is built from tensor
-                        contractions with a softmax in between. Queries and keys interact through bilinear operations to produce attention scores, a softmax
-                        turns the scores into weights, and a further contraction with the values produces the output.
+                        While deep learning frameworks treat tensors primarily as multidimensional arrays, the algebraic power of tensors stems from their
+                        identity as <strong>multilinear maps</strong>. In Transformer architectures, the <strong>attention mechanism</strong> is built from
+                        tensor contractions with a softmax in between. Queries and keys interact through bilinear operations to produce attention scores, a
+                        softmax turns the scores into weights, and a further contraction with the values produces the output.
                     </p>
                     <p>
-                        In the emerging field of <strong>Geometric Deep Learning</strong>, the way a tensor's components transform under coordinate changes, a
-                        consequence of its definition as an element of a tensor product, becomes critical. This enables the design of
-                        <strong>Equivariant Neural Networks</strong>, where internal representations (scalars, vectors, and higher-order tensors) transform
-                        consistently according to group representations. This ensures the model respects the underlying physical symmetries of the data, such
-                        as rotation and reflection invariance in 3D molecular modeling or medical imaging. The relevant symmetries are formalized through
-                        continuous matrix groups such as <a href="lie_groups.html#D-special_orthogonal_group" class="ref-link"><strong>\(SO(n)\)</strong></a>
-                        and \(O(n)\), developed in the Lie groups series later in our linear-algebra pages. The geometric flavor of these groups is previewed
-                        in <a href="dihedral_group.html#SOSE"><strong>Geometry of Symmetry</strong></a>.
+                        In the emerging field of <strong>Geometric Deep Learning</strong>, the way a tensor's components transform under coordinate changes,
+                        a consequence of its definition as an element of a tensor product, becomes critical. This transformation law enables the design of
+                        <strong>equivariant neural networks</strong>, where internal representations (scalars, vectors, and higher-order tensors) transform
+                        consistently according to group representations. Consistency at every layer ensures that the model as a whole is equivariant under
+                        the symmetries of the data, such as rotations and reflections in 3D molecular modeling or medical imaging. An output on which the
+                        symmetry group acts trivially, such as a molecular energy or a class label, is then invariant.
+                    </p>
+                    <p>
+                        The relevant symmetries are formalized through continuous matrix groups such as
+                        <a href="lie_groups.html#D-special_orthogonal_group" class="ref-link"><strong>\(SO(n)\)</strong></a> and
+                        <a href="lie_groups.html#D-orthogonal_group" class="ref-link"><strong>\(O(n)\)</strong></a>, developed in the Lie groups series later
+                        in our linear-algebra pages. The low-dimensional rotation groups \(SO(2)\) and \(SO(3)\) are previewed in
+                        <a href="dihedral_group.html#SOSE"><strong>Geometry of Symmetry</strong></a>.
                     </p>
                 </div>
 

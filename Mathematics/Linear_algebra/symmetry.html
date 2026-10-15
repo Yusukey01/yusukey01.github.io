@@ -123,10 +123,11 @@ uses_python: false
                         \]
                     </p>
                     <p>
-                        Since \(A\) is symmetric, it must be orthogonally diagonalizable. To ensure \(P\) is orthonormal, we need
-                        orthonormal eigenvectors. This can be achieved using the
+                        Since \(A\) is symmetric, it must be orthogonally diagonalizable. To replace \(P\) by an orthogonal matrix, we
+                        need orthonormal eigenvectors. This can be achieved using the
                         <a href="orthogonality.html#T-gram_schmidt" class="ref-link"><strong>Gram-Schmidt algorithm</strong></a> on the
-                        columns of \(P\). Since only \(\mathbf{v}_1 \cdot \mathbf{v}_2 \neq 0\) needs adjustment,
+                        columns \(\mathbf{v}_1, \mathbf{v}_2, \mathbf{v}_3\) of \(P\). Because \(\mathbf{v}_1 \cdot \mathbf{v}_2\) is the
+                        only nonzero inner product among them, we orthogonalize \(\mathbf{v}_2\) against \(\mathbf{v}_1\):
                         \[
                         \begin{align*}
                         \mathbf{v}'_2   &= \mathbf{v}_2 - \frac{\mathbf{v}_2 \cdot \mathbf{v}_1}{\mathbf{v}_1 \cdot \mathbf{v}_1}\mathbf{v}_1 \\\\
@@ -136,7 +137,9 @@ uses_python: false
                         \]
                     </p>
                     <p>
-                        After normalization, the orthonormal eigenvectors are:
+                        Since \(\mathbf{v}'_2\) is a nonzero linear combination of \(\mathbf{v}_1\) and \(\mathbf{v}_2\), which are both
+                        eigenvectors for the eigenvalue \(3\), it is again an eigenvector for \(3\). After normalization, the
+                        orthonormal eigenvectors are:
                         \[
                         \begin{align*}
                         \mathbf{u}_1 &= \begin{bmatrix} \frac{-1}{\sqrt{2}} \\ 0\\ \frac{1}{\sqrt{2}} \\ \end{bmatrix}, \\\\
@@ -348,9 +351,11 @@ uses_python: false
                 <h2>Singular Value Decomposition(SVD)</h2>
 
                 <p>
-                    While the spectral theorem applies only to real symmetric matrices, the Singular Value Decomposition extends orthogonal
-                    diagonalization to <em>any</em> real \(m \times n\) matrix. SVD is arguably the most important matrix factorization in
-                    applied mathematics, with applications ranging from data compression to solving ill-conditioned linear systems.
+                    Over \(\mathbb{R}\), the Spectral Theorem shows that orthogonal diagonalization is available only for symmetric
+                    matrices. The Singular Value Decomposition drops the requirement that a single orthogonal matrix act on both sides.
+                    Using one orthogonal matrix on \(\mathbb{R}^n\) and another on \(\mathbb{R}^m\), the SVD diagonalizes <em>any</em>
+                    real \(m \times n\) matrix. SVD is arguably the most important matrix factorization in applied mathematics, with
+                    applications ranging from data compression to solving ill-conditioned linear systems.
                 </p>
 
                 <p>
@@ -488,8 +493,8 @@ uses_python: false
                 <div class="theorem" id="D-condition_number">
                     <span class="theorem-title">Definition: Condition Number</span>
                     <p>
-                        For a matrix \(A \in \mathbb{R}^{m \times n}\) with rank \(r\), the <strong>condition number</strong> \(\kappa(A)\)
-                        is defined as the ratio of the largest to the smallest nonzero singular value:
+                        For a nonzero matrix \(A \in \mathbb{R}^{m \times n}\) with rank \(r\), the <strong>condition number</strong>
+                        \(\kappa(A)\) is defined as the ratio of the largest to the smallest nonzero singular value:
                         \[
                         \kappa(A) = \frac{\sigma_1}{\sigma_r}
                         \]
@@ -501,10 +506,28 @@ uses_python: false
                 </div>
 
                 <p>
-                    A matrix with \(\kappa(A) \gg 1\) is called <strong>ill-conditioned</strong>. Such a matrix is numerically unstable for
-                    solving linear systems because it is "almost singular," and from a CS perspective this is a critical numerical red flag.
-                    Solving \(A\mathbf{x}=\mathbf{b}\) for an ill-conditioned \(A\) can lead to highly inaccurate results, as small rounding
-                    errors in \(\mathbf{b}\) or \(A\) get magnified into large errors in the solution \(\mathbf{x}\).
+                    To see how \(\kappa(A)\) bounds the relative sensitivity of \(A\mathbf{x}\), let the columns of \(A\) be linearly
+                    independent, so that \(r = n\) and \(\kappa(A) = \sigma_1 / \sigma_n\). Write any \(\mathbf{y} \in \mathbb{R}^n\) as
+                    \(\mathbf{y} = \sum_{i=1}^n c_i \mathbf{v}_i\) with \(\mathbf{v}_i\) as in the definition of singular values. The
+                    vectors \(A\mathbf{v}_i\) are orthogonal with \(\|A\mathbf{v}_i\| = \sigma_i\), so
+                    \(\|A\mathbf{y}\|^2 = \sum_{i=1}^n \sigma_i^2 c_i^2\) lies between \(\sigma_n^2 \|\mathbf{y}\|^2\) and
+                    \(\sigma_1^2 \|\mathbf{y}\|^2\). Hence, for \(\mathbf{x} \neq \mathbf{0}\) and a change \(\Delta\mathbf{x}\) in the
+                    input, we obtain
+                    \[
+                    \begin{align*}
+                    \frac{\|A(\mathbf{x} + \Delta\mathbf{x}) - A\mathbf{x}\|}{\|A\mathbf{x}\|} &= \frac{\|A\Delta\mathbf{x}\|}{\|A\mathbf{x}\|} \\\\
+                        &\leq \frac{\sigma_1 \|\Delta\mathbf{x}\|}{\sigma_n \|\mathbf{x}\|} \\\\
+                        &= \kappa(A) \frac{\|\Delta\mathbf{x}\|}{\|\mathbf{x}\|}.
+                    \end{align*}
+                    \]
+                </p>
+
+                <p>
+                    A matrix with \(\kappa(A) \gg 1\) is called <strong>ill-conditioned</strong>. Linear systems with such a
+                    matrix are highly sensitive to perturbations because it is "almost singular," and from a CS perspective this
+                    is a critical numerical red flag. Solving \(A\mathbf{x}=\mathbf{b}\) for an ill-conditioned \(A\) can lead to
+                    highly inaccurate results, as small rounding errors in \(\mathbf{b}\) or \(A\) get magnified into large errors
+                    in the solution \(\mathbf{x}\).
                 </p>
 
             </section>            
@@ -513,15 +536,10 @@ uses_python: false
                 <h2>Pseudo-inverse via SVD</h2>
 
                 <p>
-                    The SVD provides the most numerically stable method for computing the 
+                    The SVD provides a numerically stable method for computing the 
                     <a href="leastsquares.html#D-moore_penrose_pseudoinverse" class="ref-link"><strong>Moore-Penrose pseudo-inverse</strong></a>. 
                     Unlike the <a href="leastsquares.html#T-normal_equations" class="ref-link">normal equations</a> approach \((A^\top A)^{-1}A^\top\), 
                     the SVD-based computation avoids squaring the condition number and naturally handles rank-deficient matrices.
-                </p>
-    
-                <p>
-                    The <strong>Moore-Penrose Pseudo-inverse (\(A^\dagger\))</strong> is most stably defined and computed 
-                    using the Singular Value Decomposition (SVD).
                 </p>
 
                 <p>
@@ -584,14 +602,15 @@ uses_python: false
                     components related to noise.
                 </p>
                 <p>
-                    The practical computation of the pseudo-inverse involves setting a <strong>tolerance</strong> \(\epsilon\). We treat any
-                    \(\sigma_i \lt \epsilon\) as zero.
+                    The practical computation of the pseudo-inverse involves setting a <strong>tolerance</strong> \(\epsilon\). We treat
+                    any \(\sigma_i \lt \epsilon\) as zero.
                     \[
                     (\sigma_i^\dagger) = \begin{cases} 1/\sigma_i & \text{if } \sigma_i \geq \epsilon \\ 0 & \text{if } \sigma_i \lt \epsilon \end{cases}
                     \]
                     This <strong>truncated SVD</strong> is the basis for <strong>Principal Component Regression (PCR)</strong> and is a
-                    powerful form of regularization. It explicitly discards the "directions" (singular vectors) that contribute least to the
-                    transformation and are most likely to be noise. The result is a more robust, lower-rank model.
+                    powerful form of regularization. It explicitly discards the "directions" (singular vectors) that contribute least
+                    to the transformation and are most likely to be noise. The result is a lower-rank model that is less sensitive to
+                    small singular values.
                 </p>
             </section>
 
@@ -625,10 +644,17 @@ uses_python: false
                     
                     <p>
                         <strong>Column Space.</strong><br>
-                        From the construction of the SVD,
-                        \(\{A\mathbf{v}_1, \ldots, A\mathbf{v}_r\} = \{\sigma_1 \mathbf{u}_1, \ldots, \sigma_r \mathbf{u}_r\}\) is an
-                        orthogonal basis for \(\operatorname{Col} A\). Since \(\sigma_i \gt 0\) for \(i \leq r\),
-                        \(\{\mathbf{u}_1, \ldots, \mathbf{u}_r\}\) is an orthonormal basis for \(\operatorname{Col} A\).
+                        Since \(V\) is orthogonal, multiplying \(A = U\Sigma V^\top\) on the right by \(V\) gives \(AV = U\Sigma\).
+                        Comparing columns, with \(\Sigma\) as in the SVD theorem, we read off \(A\mathbf{v}_i = \sigma_i \mathbf{u}_i\)
+                        for \(i \leq r\) and \(A\mathbf{v}_i = \mathbf{0}\) for \(i \gt r\). Because \(\sigma_i \gt 0\) for \(i \leq r\),
+                        each \(\mathbf{u}_i = \frac{1}{\sigma_i}A\mathbf{v}_i\) with \(i \leq r\) lies in \(\operatorname{Col} A\).
+                        Conversely, every \(\mathbf{x} \in \mathbb{R}^n\) expands as
+                        \(\mathbf{x} = \sum_{i=1}^n (\mathbf{x} \cdot \mathbf{v}_i)\mathbf{v}_i\) in the orthonormal columns of \(V\), so
+                        \(A\mathbf{x} = \sum_{i=1}^r (\mathbf{x} \cdot \mathbf{v}_i)\sigma_i \mathbf{u}_i\), which lies in
+                        \(\operatorname{Span}\{\mathbf{u}_1, \ldots, \mathbf{u}_r\}\). Hence
+                        \(\operatorname{Col} A = \operatorname{Span}\{\mathbf{u}_1, \ldots, \mathbf{u}_r\}\), and the set
+                        \(\{\mathbf{u}_1, \ldots, \mathbf{u}_r\}\), orthonormal as columns of the orthogonal matrix \(U\), is an
+                        orthonormal basis for \(\operatorname{Col} A\).
                     </p>
 
                     <p>
@@ -648,8 +674,8 @@ uses_python: false
 
                     <p>
                         <strong>Null Space.</strong><br>
-                        For \(i \gt r\), \(\sigma_i = 0\) implies \(\|A\mathbf{v}_i\| = \sigma_i = 0\), so \(A\mathbf{v}_i = \mathbf{0}\)
-                        and \(\mathbf{v}_i \in \operatorname{Nul} A\). The set \(\{\mathbf{v}_{r+1}, \ldots, \mathbf{v}_n\}\) is orthonormal
+                        For \(i \gt r\), the column relation \(A\mathbf{v}_i = \mathbf{0}\) from the first step gives
+                        \(\mathbf{v}_i \in \operatorname{Nul} A\). The set \(\{\mathbf{v}_{r+1}, \ldots, \mathbf{v}_n\}\) is orthonormal
                         (columns of the orthogonal matrix \(V\)) and has \(n - r\) elements. Since \(\operatorname{rank} A = r\),
                         <a href="vectorspaces.html#T-rank_nullity" class="ref-link">rank-nullity</a> gives
                         \(\dim(\operatorname{Nul} A) = n - r\). This set is therefore a basis for the
@@ -658,13 +684,14 @@ uses_python: false
 
                     <p>
                         <strong>Row Space.</strong><br>
-                        By part 3, \(\{\mathbf{v}_{r+1}, \ldots, \mathbf{v}_n\}\) is a basis for \(\operatorname{Nul} A\). Since \(V\) is
-                        orthogonal, the remaining columns \(\{\mathbf{v}_1, \ldots, \mathbf{v}_r\}\) are orthogonal to every
-                        \(\mathbf{v}_i\) with \(i \gt r\), hence orthogonal to \(\operatorname{Nul} A\). The
-                        <a href="orthogonality.html#T-orthocomp_row_col" class="ref-link"><strong>orthogonality property</strong></a> gives
-                        \((\operatorname{Row} A)^\perp = \operatorname{Nul} A\), and taking orthogonal complements in \(\mathbb{R}^n\)
-                        reverses this to \((\operatorname{Nul} A)^\perp = \operatorname{Col} A^\top = \operatorname{Row} A\). The vectors
-                        therefore lie in \(\operatorname{Row} A\).
+                        By the Null Space step, \(\{\mathbf{v}_{r+1}, \ldots, \mathbf{v}_n\}\) is a basis for \(\operatorname{Nul} A\).
+                        Since \(V\) is orthogonal, the remaining columns \(\{\mathbf{v}_1, \ldots, \mathbf{v}_r\}\) are orthogonal to
+                        every \(\mathbf{v}_i\) with \(i \gt r\), hence orthogonal to \(\operatorname{Nul} A\). The
+                        <a href="orthogonality.html#T-orthocomp_row_col" class="ref-link"><strong>orthogonality property</strong></a>
+                        gives \((\operatorname{Row} A)^\perp = \operatorname{Nul} A\), and taking orthogonal complements in
+                        \(\mathbb{R}^n\) reverses this to
+                        \((\operatorname{Nul} A)^\perp = \operatorname{Col} A^\top = \operatorname{Row} A\). The vectors therefore lie
+                        in \(\operatorname{Row} A\).
                     </p>
                     <p>
                         Conversely, take any \(\mathbf{x} \in \operatorname{Row} A = (\operatorname{Nul} A)^\perp\) and expand it in the
@@ -689,8 +716,8 @@ uses_python: false
                 <h3>Connection to the Invertible Matrix Theorem</h3>
 
                 <p>
-                    When \(A\) is an \(n \times n\) invertible matrix, the SVD characterization of fundamental 
-                    subspaces provides additional equivalent conditions for invertibility.
+                    For an \(n \times n\) matrix \(A\), the SVD characterization of the fundamental subspaces provides additional
+                    conditions equivalent to invertibility.
                 </p>
 
                 <div class="theorem" id="T-extra_invertibility_conditions">
@@ -714,8 +741,11 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Proof:</span>
                     <p>
-                        <strong>Forward direction.</strong> If \(A\) is invertible, then \(\operatorname{rank}(A) = n\) 
-                        (by the <a href="determinants.html#T-invertible_matrix_theorem" class="ref-link"><strong>IMT</strong></a>), which means \(r = n\) in the SVD. Therefore:
+                        <strong>Forward direction.</strong> If \(A\) is invertible, then \(A\mathbf{x} = \mathbf{0}\) has only the trivial
+                        solution (by the
+                        <a href="determinants.html#T-invertible_matrix_theorem" class="ref-link"><strong>Invertible Matrix Theorem</strong></a>
+                        (IMT)), so <a href="vectorspaces.html#T-rank_nullity" class="ref-link">rank-nullity</a> gives
+                        \(\operatorname{rank}(A) = n\), which means \(r = n\) in the SVD. Therefore:
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>\(\operatorname{Nul} A = \{\mathbf{0}\}\) (no vectors \(\mathbf{v}_{r+1}, \ldots, \mathbf{v}_n\) remain), so
@@ -727,7 +757,10 @@ uses_python: false
                         <li>All \(n\) singular values \(\sigma_1, \ldots, \sigma_n\) are nonzero, which is condition (4).</li>
                     </ul>
                     <p>
-                        <strong>Reverse direction.</strong> Each condition forces \(r = n\), hence \(\operatorname{rank}(A) = n\), which by the IMT means \(A\) is invertible:
+                        <strong>Reverse direction.</strong> If \(\operatorname{rank}(A) = n\), then rank-nullity gives
+                        \(\operatorname{Nul} A = \{\mathbf{0}\}\), so \(A\mathbf{x} = \mathbf{0}\) has only the trivial solution and \(A\)
+                        is invertible by the IMT. It therefore suffices that each condition forces \(r = n\), that is,
+                        \(\operatorname{rank}(A) = n\):
                     </p>
                     <ul style="padding-left: 40px;">
                         <li>(1) \((\operatorname{Col} A)^\perp = \{\mathbf{0}\}\) with \(\operatorname{Col} A \subseteq \mathbb{R}^n\) 

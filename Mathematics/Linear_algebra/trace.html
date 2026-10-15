@@ -157,28 +157,30 @@ uses_python: false
                     <ol style="padding-left: 40px; margin-bottom: 20px;">
                         <li>
                             <strong>Decoupling System and Data.</strong> 
-                            It separates the system matrix \(A\) from the data-dependent rank-1 matrix
-                            \(\mathbf{x} \mathbf{x}^\top\). In the original form, \(A\) is "sandwiched" between vectors,
-                            making it difficult to analyze the contribution of \(A\) and \(\mathbf{x}\) independently.
+                            The rewritten form separates the system matrix \(A\) from the data-dependent matrix
+                            \(\mathbf{x} \mathbf{x}^\top\) of rank at most 1. In the original form, \(A\) is "sandwiched"
+                            between vectors, which makes the contributions of \(A\) and \(\mathbf{x}\)
+                            difficult to analyze independently.
                         </li>
                         <li>
                             <strong>Computational Efficiency (The Summation Trick).</strong> 
                             Suppose we need to compute the average of quadratic forms over \(N\) data points. The trace trick lets
-                            us factor it through the <strong>second-moment matrix</strong> \(\Sigma\) (the covariance matrix when
-                            the data are centered):
+                            us factor it through the <strong>second-moment matrix</strong>
+                            \(K = \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i \mathbf{x}_i^\top\) (for centered data, the
+                            covariance of the empirical distribution, i.e. the sample covariance normalized by \(1/N\)):
                             \[
                             \begin{align*}
                             \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i^\top A \mathbf{x}_i
                             &= \operatorname{tr}\!\left( A \cdot \frac{1}{N} \sum_{i=1}^N \mathbf{x}_i \mathbf{x}_i^\top \right) \\\\
-                            &= \operatorname{tr}(A \Sigma).
+                            &= \operatorname{tr}(A K).
                             \end{align*}
                             \]
-                            Once \(\Sigma\) has been computed, the average for any further matrix \(A\) costs the single trace
-                            \(\operatorname{tr}(A\Sigma)\) instead of \(N\) vector-matrix-vector products.
+                            Once \(K\) has been computed, the average for any further matrix \(A\) costs the single trace
+                            \(\operatorname{tr}(AK)\) instead of \(N\) vector-matrix-vector products.
                         </li>
                         <li>
                             <strong>Structural Analysis.</strong> 
-                            This form is the gateway to advanced topics like the <strong>expectation of quadratic
+                            The rewritten form is the usual route to results such as the <strong>expectation of quadratic
                             forms</strong>. In statistics, \(\mathbb{E}[\mathbf{x}^\top A \mathbf{x}]\) simplifies to
                             \(\operatorname{tr}(A \, \mathbb{E}[\mathbf{x} \mathbf{x}^\top])\), which is awkward to
                             express without the trace trick.
@@ -195,12 +197,13 @@ uses_python: false
                     Property 4 deserves a closer look. Up to this point, the
                     <a href="orthogonality.html#D-inner_product" class="ref-link"><strong>inner product</strong></a> has
                     lived on \(\mathbb{R}^n\): a structure on arrows in \(n\)-dimensional space. But nothing in the
-                    defining axioms of an inner product (bilinearity, symmetry, positivity) is tied to \(\mathbb{R}^n\).
-                    Property 4 reveals more than a formula. <strong>The trace defines an inner product on an entirely
-                    different space, the space \(\mathbb{R}^{m \times n}\) of matrices.</strong> The formula
-                    \(\langle A, B \rangle_F = \operatorname{tr}(A^\top B)\) satisfies all the same axioms, since the
-                    double sum is the ordinary dot product of the \(mn\) entries, just with matrices playing the role
-                    that vectors played before. The notion of "inner product" survives the transplant intact.
+                    defining axioms of an inner product is tied to \(\mathbb{R}^n\): it must be linear in each argument,
+                    symmetric, and satisfy \(\langle \mathbf{u}, \mathbf{u} \rangle \gt 0\) for every
+                    \(\mathbf{u} \neq \mathbf{0}\). Property 4 reveals more than a formula. <strong>The trace defines an
+                    inner product on an entirely different space, the space \(\mathbb{R}^{m \times n}\) of matrices.</strong>
+                    The formula \(\langle A, B \rangle_F = \operatorname{tr}(A^\top B)\) satisfies all the same axioms,
+                    since the double sum is the ordinary dot product of the \(mn\) entries, just with matrices playing the
+                    role that vectors played before. The notion of "inner product" survives the transplant intact.
                 </p>
 
                 <p>
@@ -245,15 +248,15 @@ uses_python: false
                 <h2>Norms</h2>
 
                 <p>
-                    While the trace characterizes matrices through a single scalar, norms provide a way to measure the
+                    While the trace summarizes a square matrix by a single scalar, norms provide a way to measure the
                     "size" or "magnitude" of both vectors and matrices. In machine learning, norms are fundamental for
                     training stability, and they are used to scale data to a common range, so that no feature dominates
                     merely because of its units. This <strong>normalization</strong> process is important in distance-based
                     models such as
                     <a href="../Machine_learning/svm.html"><strong>support vector machines (SVMs)</strong></a> and
                     <strong>\(k\)-nearest neighbors (k-NN)</strong>. Norms also appear in
-                    <a href="../Machine_learning/regression.html"><strong>regularization</strong></a>, which penalizes model
-                    complexity to avoid overfitting and help the model <strong>generalize</strong> to new data.
+                    <a href="../Machine_learning/regression.html"><strong>regularization</strong></a>, which penalizes
+                    model complexity to avoid overfitting and help the model <strong>generalize</strong> to new data.
                 </p>
 
                 <p>
@@ -730,10 +733,11 @@ uses_python: false
 
                 <p>
                     Two things stand out in this definition. First, \(M\) is <em>any nonempty set</em>. It is not
-                    required to be a vector space, and it is not required to have any algebraic structure at all. Points
-                    could be matrices, functions, probability distributions, strings of DNA, or vertices of a graph.
-                    Second, the axioms are minimal. Often we just say "the metric space \(M\)" when \(d\) is understood
-                    from context.
+                    required to be a vector space, and it is not required to have any algebraic structure at all.
+                    Points could be matrices, functions, probability distributions, strings of DNA, or vertices of a
+                    graph. Second, the axioms ask for very little; the nonnegativity in the first axiom even follows
+                    from the others, since \(0 = d(a,a) \leq d(a,b) + d(b,a) = 2d(a,b)\). Often we just say "the
+                    metric space \(M\)" when \(d\) is understood from context.
                 </p>
 
                 <p>
