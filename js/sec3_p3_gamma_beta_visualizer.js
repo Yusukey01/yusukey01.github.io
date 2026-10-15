@@ -171,7 +171,9 @@ var GbCore = (function () {
     var mean = alpha / beta;
     var sd = Math.sqrt(alpha) / beta;
     var maxX = Math.max(mode * 3, mean + 3 * sd);
-    return { min: 0, max: Math.min(Math.max(maxX, 2), 30) };
+    // no fixed upper cap: on the slider box (alpha in [0.1, 10], beta in [0.1, 5])
+    // the range holds at least 97% of the mass and always contains mean + sd
+    return { min: 0, max: Math.max(maxX, 2) };
   }
 
   // ---------- special-case presets (single source for the UI buttons) ----------
@@ -433,7 +435,10 @@ var GbCore = (function () {
     // ---- T9: plotting range ----
     var r9 = gammaXRange(3, 1);
     check('T9 range covers mean + 3sd for Gamma(3,1)', r9.max >= 3 + 3 * Math.sqrt(3) - 1e-12);
-    check('T9 range bounded', gammaXRange(100, 0.1).max <= 30 && gammaXRange(0.2, 5).max >= 2);
+    var r9c = gammaXRange(10, 0.1);  // slider corner: mean 100, sd sqrt(10)/0.1
+    check('T9 range covers mean + 3sd at slider corner Gamma(10,0.1)',
+      isFinite(r9c.max) && r9c.max >= 100 + 3 * Math.sqrt(10) / 0.1 - 1e-9);
+    check('T9 range at least 2', gammaXRange(0.2, 5).max >= 2);
     check('T9 range starts at 0', r9.min === 0);
 
     // ---- T10: RNG determinism ----
@@ -686,7 +691,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GbCore; 
 
     function drawCurve(r, f, xMin, xMax, yMax, color, dashed, fill) {
       var N = 400;
-      ctx.setLineDash(dashed ? [6, 5] : []);
+      ctx.setLineDash(dashed ? [10, 3, 2, 3] : []);  // dash-dot: unlike the mean line
       ctx.beginPath();
       var started = false;
       var basePts = [];
@@ -785,7 +790,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GbCore; 
       var st = GbCore.gammaStats(al, be);
       // +-sigma band
       var lo = Math.max(range.min, st.mean - st.sd), hi = Math.min(range.max, st.mean + st.sd);
-      var bandOn = hi > lo;  // the band can lie entirely beyond the capped x-range
+      var bandOn = hi > lo;  // defensive: gammaXRange contains mean + sd
       if (bandOn) {
         ctx.fillStyle = C.sdBand;
         ctx.fillRect(xToPx(r, lo, range.min, range.max), r.y0,
@@ -806,7 +811,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GbCore; 
       if (st.mean <= range.max) leg.push([C.meanLine, 'mean \u03B1/\u03B2 (dashed)']);
       if (al > 1 && st.mode <= range.max) leg.push([C.modeLine, 'mode (\u03B1\u22121)/\u03B2 (dotted)']);
       if (bandOn) leg.push([C.sdBand, 'mean \u00B1 \u03C3 band']);
-      if (state.showCdf) leg.push([C.cdf, 'CDF (right axis)']);
+      if (state.showCdf) leg.push([C.cdf, 'CDF (right axis, dash-dot)']);
       setLegend(leg);
       container.dataset.gbvState = JSON.stringify({ tab: 'gamma', alpha: al, beta: be, cdf: state.showCdf });
     }
@@ -846,7 +851,7 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = GbCore; 
       readoutsEl.innerHTML = html;
       var leg = [[C.pdf, 'prior pdf f(x)'], [C.meanLine, 'mean (dashed)'], [C.sdBand, 'mean \u00B1 \u03C3 band']];
       if (st.mode !== null && a > 1 && b > 1) leg.splice(2, 0, [C.modeLine, 'mode (dotted)']);
-      if (state.showCdf) leg.push([C.cdf, 'CDF (right axis)']);
+      if (state.showCdf) leg.push([C.cdf, 'CDF (right axis, dash-dot)']);
       if (post) leg.push([C.posterior, 'posterior pdf (conjugate update)']);
       setLegend(leg);
       container.dataset.gbvState = JSON.stringify({

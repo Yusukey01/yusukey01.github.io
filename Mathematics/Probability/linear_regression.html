@@ -31,9 +31,9 @@ uses_python: false
 
                 <p>
                     With <a href="mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimation</strong></a> and
-                    <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a> in hand, we are ready to apply these tools to the most fundamental
-                    predictive model in statistics. Linear regression sits at the intersection of linear algebra and probability. The algebraic formulation leads
-                    to least-squares, while the probabilistic formulation leads to MLE. The two turn out to be equivalent under Gaussian noise.
+                    <a href="hypothesis_testing.html"><strong>hypothesis testing</strong></a> in hand, we are ready to apply these tools to a fundamental
+                    predictive model in statistics. Linear regression sits at the intersection of linear algebra and probability. The algebraic formulation
+                    leads to least-squares, while the probabilistic formulation leads to MLE. The two turn out to be equivalent under Gaussian noise.
                 </p>
 
                 <p>
@@ -49,7 +49,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    Here \(d\) is the number of features and \(n\) is the number of data points. The least-squares solution \(\hat{\boldsymbol{\beta}}\) must satisfy the 
+                    Here \(d\) is the number of columns of \(X\), that is, of coefficients (an intercept, when present, is a column of ones in \(X\)), and 
+                    \(n\) is the number of data points. The least-squares solution \(\hat{\boldsymbol{\beta}}\) must satisfy the 
                     <a href="../Linear_algebra/leastsquares.html#T-normal_equations" class="ref-link"><strong>normal equations</strong></a>:
                     \[
                     X^\top X\hat{\boldsymbol{\beta}} = X^\top \boldsymbol{y}.
@@ -246,12 +247,14 @@ uses_python: false
                 <h2>Interactive Statistical Regression Tool</h2>
                 <p>
                     The tool below fits the model of this page, either to uploaded or pasted CSV data or to the built-in samples, and adds the standard
-                    inference that the Gaussian noise model supports; those inferential formulas are stated here without derivation. The coefficients are
-                    computed by the QR route. Under the Gaussian noise model above, with \(n \gt p\), the entries of the coefficient table are exact
+                    inference that the Gaussian noise model supports. We state the inferential formulas without derivation. The coefficients are computed from
+                    a QR factorization of \(X\). Under the Gaussian noise model above, with \(n \gt d\), the entries of the coefficient table are exact
                     finite-sample inference. The standard error of each coefficient is the square root of the corresponding diagonal entry of
-                    \(\hat{\sigma}^2 (X^\top X)^{-1}\), with \(\hat{\sigma}^2 = \text{SSE}/(n - p)\) for \(p\) estimated coefficients, and the \(t\)-statistics
-                    with their two-sided \(p\)-values and the 95% confidence intervals are built from the \(t_{n-p}\) distribution. The critical value is
-                    computed for the actual sample size, not approximated by the large-sample 1.96.
+                    \(\hat{\sigma}^2 (X^\top X)^{-1}\), with \(\hat{\sigma}^2 = \text{SSE}/(n - d)\), where
+                    \(\text{SSE} = \| \boldsymbol{y} - X\hat{\boldsymbol{\beta}} \|_{2}^2\) and \(d\) counts every estimated coefficient, including the
+                    intercept (a column of ones in \(X\)) that the tool always fits. The \(t\)-statistics with their two-sided \(p\)-values and the 95%
+                    confidence intervals are built from the \(t_{n-d}\) distribution. The critical value is computed for the actual sample size, not
+                    approximated by the large-sample value 1.96.
                 </p>
                 <p>
                     The summary line reports \(R^2\), adjusted \(R^2\), and the overall \(F\)-test of the hypothesis that every non-intercept coefficient is
@@ -265,14 +268,17 @@ uses_python: false
                 <p>
                     The diagnostics panel checks the Gaussian assumption that made MLE equal least squares in the first place. The residuals-vs-fitted plot
                     exposes nonlinearity and heteroscedasticity (try the "Heteroscedastic" sample and watch the funnel), and the normal QQ plot puts the
-                    standardized residuals against Gaussian quantiles (try "Outliers" and watch the tails peel off the line). When predictors are exactly
-                    collinear or \(n \lt p\), the matrix \(X^\top X\) is singular, and the tool says so instead of printing meaningless coefficients. The check
-                    is a numerical version of the invertibility condition \(\operatorname{rank}(X) = d\) from the proof above: a column that is linearly
-                    dependent on the earlier ones up to a small relative tolerance counts as dependent, so designs that are singular to within that tolerance
-                    are declined as well. When \(n = p\) and \(X\) has full rank, \(X^\top X\) is invertible, but the fit interpolates the data exactly. The
-                    estimate \(\hat{\sigma}^2 = \text{SSE}/(n - p)\) is then undefined, so the tool reports the coefficients without standard errors or
-                    \(p\)-values. It does the same when \(n \gt p\) but the residuals vanish up to a small relative tolerance (as in a perfect fit, which
-                    includes a constant response), since \(\hat{\sigma}^2\) is then negligible.
+                    standardized residuals against Gaussian quantiles (try "Outliers" and watch the tails peel off the line).
+                </p>
+                <p>
+                    When predictors are exactly collinear or \(n \lt d\), the matrix \(X^\top X\) is singular, and the tool says so instead of printing
+                    meaningless coefficients. The singularity check is a numerical version of the invertibility condition \(\operatorname{rank}(X) = d\)
+                    from the proof above. A column that is linearly dependent on the earlier ones up to a small relative tolerance counts as dependent, so
+                    designs that are singular to within that tolerance are declined as well. When \(n = d\) and \(X\) has full rank, \(X^\top X\) is
+                    invertible, but the fit interpolates the data exactly. The estimate \(\hat{\sigma}^2 = \text{SSE}/(n - d)\) is then undefined, so the
+                    tool reports the coefficients without standard errors, \(p\)-values, bands, or diagnostic plots. The tool does the same when \(n \gt d\)
+                    but the residuals satisfy \(\| \boldsymbol{y} - X\hat{\boldsymbol{\beta}} \|_{2} \leq 10^{-10} \| \boldsymbol{y} \|_{2}\), since
+                    \(\hat{\sigma}^2\) is then negligible.
                 </p>
                 
                 <div id="statistical-regression-analyzer"></div>

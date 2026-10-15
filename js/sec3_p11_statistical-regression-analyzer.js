@@ -265,6 +265,12 @@ var StatCore = (function () {
       interpolating: df === 0,
       inference: df >= 1
     };
+    // residuals vanish up to a relative tolerance, ||y - X beta|| <= 1e-10 ||y||
+    // sigma-hat^2 is then negligible, so no inference is reported
+    if (df >= 1 && isFinite(sse) && sse <= 1e-20 * dot(y, y)) {
+      out.perfectFit = true;
+      out.inference = false;
+    }
     var mae = 0;
     for (var k3 = 0; k3 < n; k3++) mae += Math.abs(resid[k3]);
     out.mae = mae / n;
@@ -388,9 +394,17 @@ var StatCore = (function () {
       if (any >= 2 && good >= 0.8 * any) numericCols.push(j);
     }
     if (numericCols.length < 2) return { ok: false, reason: 'need at least two numeric columns' };
+    // numeric columns are looked up by header name: names must be non-empty and distinct
+    var seen = Object.create(null);
+    for (var jn = 0; jn < numericCols.length; jn++) {
+      var hn = headers[numericCols[jn]];
+      if (hn === '') return { ok: false, reason: 'a numeric column has an empty header' };
+      if (seen[hn]) return { ok: false, reason: 'duplicate column name "' + hn + '"' };
+      seen[hn] = true;
+    }
     var rows = [], dropped = 0;
     for (var r2 = 0; r2 < raw.length; r2++) {
-      var row = {}, good = true;
+      var row = Object.create(null), good = true;
       for (var jc = 0; jc < numericCols.length; jc++) {
         var cell2 = raw[r2][numericCols[jc]];
         if (cell2 === undefined || cell2 === '' || !isFinite(Number(cell2))) { good = false; break; }
@@ -399,6 +413,17 @@ var StatCore = (function () {
       if (good) rows.push(row); else dropped++;
     }
     if (rows.length < 3) return { ok: false, reason: 'fewer than 3 usable data rows' };
+    // magnitude bound: with polynomial degree <= 4, powers and their squares stay
+    // inside the normal double range (1e30^8 = 1e240, 1e-30^8 = 1e-240)
+    for (var r3 = 0; r3 < rows.length; r3++) {
+      for (var jm = 0; jm < numericCols.length; jm++) {
+        var av = Math.abs(rows[r3][headers[numericCols[jm]]]);
+        if (av > 1e30 || (av > 0 && av < 1e-30)) {
+          return { ok: false, reason: 'unsupported magnitude in column "' + headers[numericCols[jm]] +
+            '": nonzero values must have absolute value between 1e-30 and 1e30' };
+        }
+      }
+    }
     return {
       ok: true,
       headers: numericCols.map(function (j) { return headers[j]; }),
@@ -588,6 +613,11 @@ var StatCore = (function () {
     check('T8 n < p refused', fit(designPoly([1, 2], 3), [1, 2]).ok === false);
     var interp = fit(designPoly([1, 2], 1), [3, 5]);
     check('T8 n = p: interpolating, no inference', interp.ok && interp.interpolating && interp.inference === false);
+    var pf = fit(designPoly([1, 2, 3, 4, 5], 1), [3, 5, 7, 9, 11]);
+    check('T8 perfect fit: no inference', pf.ok && pf.perfectFit === true && pf.inference === false);
+    var cf = fit(designPoly([1, 2, 3, 4, 5], 1), [0.1, 0.1, 0.1, 0.1, 0.1]);
+    check('T8 constant response: no inference', cf.ok && cf.perfectFit === true && cf.inference === false);
+    check('T8 hand example keeps inference', hf.inference === true && !hf.perfectFit);
 
     // ---- T9: R2 / adjusted R2 / F ----
     check('T9 hand adjR2 = 1 - 0.4*4/3', close(hf.adjR2, 1 - 0.4 * 4 / 3, 1e-12), hf.adjR2);
@@ -642,6 +672,12 @@ var StatCore = (function () {
     check('T12 CRLF handled', parseCsv('a,b\r\n1,2\r\n3,4\r\n5,6\r\n').ok === true);
     check('T12 too-few-rows refused', parseCsv('a,b\n1,2\n').ok === false);
     check('T12 no numeric columns refused', parseCsv('a,b\nfoo,bar\nbaz,qux\nx,y').ok === false);
+    check('T12 duplicate numeric header refused', parseCsv('x,x,y\n1,2,3\n2,3,4\n3,5,6').ok === false);
+    var pc = parseCsv('__proto__,y\n1,2\n2,4\n3,7');
+    check('T12 __proto__ header read as data', pc.ok && pc.rows[1]['__proto__'] === 2);
+    check('T12 magnitude above 1e30 refused', parseCsv('x,y\n1,2\n2,3\n3,1e31').ok === false);
+    check('T12 nonzero magnitude below 1e-30 refused', parseCsv('x,y\n1,2\n2,3\n3,1e-31').ok === false);
+    check('T12 zero allowed', parseCsv('x,y\n0,2\n2,0\n3,1').ok === true);
 
     // ---- T13: QQ data ----
     var qq = qqData([1.2, -0.5, 0.3, -1.8, 0.9]);
@@ -706,6 +742,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = StatCore
   function fmtP(p) {
     if (p < 1e-4) return '&lt;0.0001';
     return fmt(p, 4);
+  }
+  // escape user-derived text (CSV headers, file names) before innerHTML
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
   function stars(p) {
     if (p < 0.001) return '***';
@@ -937,14 +978,23 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = StatCore
     }
     function loadParsed(parsed, label) {
       if (!parsed.ok) {
-        dataInfoEl.innerHTML = '<span class="sra-warn">Could not load data: ' + parsed.reason + '</span>';
+        // unload the previous data set so that no stale results stay on screen
+        state.headers = []; state.rows = [];
+        state.sourceNote = '<span class="sra-warn">Could not load data: ' + esc(parsed.reason) + '</span>';
+        state.yKey = null; state.xKeys = []; state.fit = null;
+        markActive(null);
+        rebuildSelectors();
+        resultsEl.innerHTML = '<div class="sra-warn">No data loaded.</div>';
+        container.dataset.sraSummary = JSON.stringify({ ok: false, reason: 'load-failed' });
+        drawCharts();
+        dataInfoEl.innerHTML = state.sourceNote;
         return;
       }
       state.headers = parsed.headers;
       state.rows = parsed.rows;
-      var note = label + ': n = ' + parsed.rows.length + ' rows';
+      var note = esc(label) + ': n = ' + parsed.rows.length + ' rows';
       if (parsed.dropped > 0) note += ', <span class="sra-warn">' + parsed.dropped + ' row(s) dropped (non-numeric cells)</span>';
-      if (parsed.excluded.length > 0) note += ', excluded non-numeric column(s): ' + parsed.excluded.join(', ');
+      if (parsed.excluded.length > 0) note += ', excluded non-numeric column(s): ' + parsed.excluded.map(esc).join(', ');
       state.sourceNote = note;
       markActive(null);
       state.yKey = parsed.headers[parsed.headers.length - 1];
@@ -958,16 +1008,16 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = StatCore
     function rebuildSelectors() {
       var opts = '';
       for (var i = 0; i < state.headers.length; i++) {
-        opts += '<option value="' + state.headers[i] + '"' +
-          (state.headers[i] === state.yKey ? ' selected' : '') + '>' + state.headers[i] + '</option>';
+        opts += '<option value="' + esc(state.headers[i]) + '"' +
+          (state.headers[i] === state.yKey ? ' selected' : '') + '>' + esc(state.headers[i]) + '</option>';
       }
       ySel.innerHTML = opts;
       var xs = '';
       for (var j = 0; j < state.headers.length; j++) {
         var h = state.headers[j];
         if (h === state.yKey) continue;
-        xs += '<label class="sra-toggle"><input type="checkbox" class="sra-xchk" value="' + h + '"' +
-          (state.xKeys.indexOf(h) >= 0 ? ' checked' : '') + '> ' + h + '</label>';
+        xs += '<label class="sra-toggle"><input type="checkbox" class="sra-xchk" value="' + esc(h) + '"' +
+          (state.xKeys.indexOf(h) >= 0 ? ' checked' : '') + '> ' + esc(h) + '</label>';
       }
       xList.innerHTML = xs;
       var chks = container.querySelectorAll('.sra-xchk');
@@ -987,7 +1037,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = StatCore
       degreeRow.style.display = state.xKeys.length === 1 ? 'flex' : 'none';
       if (!state.yKey || state.xKeys.length === 0) {
         state.fit = null;
-        resultsEl.innerHTML = '<div class="sra-warn">Select a response variable and at least one predictor.</div>';
+        resultsEl.innerHTML = '<div class="sra-warn">' + (state.rows.length === 0 ? 'No data loaded.' :
+          'Select a response variable and at least one predictor.') + '</div>';
         container.dataset.sraSummary = JSON.stringify({ ok: false, reason: 'no-model' });
         drawCharts();
         return;
@@ -1023,11 +1074,12 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = StatCore
       var html = '';
       if (!f.ok) {
         if (f.reason === 'underdetermined') {
-          html = '<div class="sra-warn">n &lt; p: fewer observations than parameters \u2014 X\u1D40X is singular and ' +
-            'there is no unique least-squares/MLE solution. Add data or remove terms.</div>';
+          html = '<div class="sra-warn">n &lt; d: fewer observations than parameters \u2014 X\u1D40X is singular and ' +
+            'there is no unique least-squares/MLE solution. Removing terms (a lower degree or fewer predictors) lowers d.</div>';
         } else {
-          html = '<div class="sra-warn">The design matrix has linearly dependent columns (collinear predictors ' +
-            'or repeated values) \u2014 X\u1D40X is singular; coefficients are not identifiable. Remove a redundant predictor.</div>';
+          html = '<div class="sra-warn">The column for the term "' + esc(state.terms[f.failedIndex]) + '" depends linearly ' +
+            'on the earlier columns up to a small relative tolerance (collinear predictors, a constant predictor, too few ' +
+            'distinct x-values for the polynomial degree, or a badly scaled polynomial) \u2014 X\u1D40X is singular or numerically singular. The coefficients are not identifiable.</div>';
         }
         resultsEl.innerHTML = html;
         container.dataset.sraSummary = JSON.stringify({ ok: false, reason: f.reason });
@@ -1035,22 +1087,25 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = StatCore
       }
       html += '<div><strong>\u0177 = X\u03B2\u0302</strong> <span class="sra-sub">' +
         '(MLE = least squares under Gaussian noise; solved by QR)</span></div>';
-      if (f.interpolating) {
-        html += '<div class="sra-warn" style="margin-top:6px;">n = p: exact interpolation \u2014 zero residual degrees of freedom, ' +
-          'so \u03C3\u0302\u00B2, standard errors, and p-values do not exist. Add data.</div>' +
+      if (f.interpolating || f.perfectFit) {
+        html += '<div class="sra-warn" style="margin-top:6px;">' + (f.perfectFit ?
+          'The residuals vanish up to a small relative tolerance (\u2016y \u2212 X\u03B2\u0302\u2016 \u2264 1e-10 \u00B7 \u2016y\u2016) \u2014 \u03C3\u0302\u00B2 is negligible, so standard errors, ' +
+          'p-values, and bands are not reported.' :
+          'n = d: exact interpolation \u2014 zero residual degrees of freedom, ' +
+          'so \u03C3\u0302\u00B2, standard errors, and p-values do not exist.') + '</div>' +
           '<table class="sra-table"><tr><th>term</th><th>\u03B2\u0302</th></tr>';
         for (var j0 = 0; j0 < f.beta.length; j0++) {
-          html += '<tr><td>' + state.terms[j0] + '</td><td>' + fmtNum(f.beta[j0]) + '</td></tr>';
+          html += '<tr><td>' + esc(state.terms[j0]) + '</td><td>' + fmtNum(f.beta[j0]) + '</td></tr>';
         }
         html += '</table>';
         resultsEl.innerHTML = html;
-        container.dataset.sraSummary = JSON.stringify({ ok: true, interpolating: true });
+        container.dataset.sraSummary = JSON.stringify({ ok: true, interpolating: !!f.interpolating, perfectFit: !!f.perfectFit });
         return;
       }
       html += '<table class="sra-table"><tr><th>term</th><th>\u03B2\u0302</th><th>SE</th><th>t</th><th>p</th><th>95% CI (t<sub>' +
         f.dfResid + '</sub>)</th><th></th></tr>';
       for (var j = 0; j < f.beta.length; j++) {
-        html += '<tr><td>' + state.terms[j] + '</td><td>' + fmtNum(f.beta[j]) + '</td><td>' + fmtNum(f.se[j]) +
+        html += '<tr><td>' + esc(state.terms[j]) + '</td><td>' + fmtNum(f.beta[j]) + '</td><td>' + fmtNum(f.se[j]) +
           '</td><td>' + fmt(f.tStat[j], 3) + '</td><td>' + fmtP(f.pValue[j]) + '</td><td>[' +
           fmtNum(f.ciLow[j]) + ', ' + fmtNum(f.ciHigh[j]) + ']</td><td>' + stars(f.pValue[j]) + '</td></tr>';
       }
@@ -1096,7 +1151,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = StatCore
       }
       // ----- chart 1 -----
       if (state.mode === 'single') {
-        t1.textContent = 'Data and fitted model' + (f.inference ? ' with 95% bands' : '');
+        var bandNames = [];
+        if (f.inference && ciChk.checked) bandNames.push('mean-response CI');
+        if (f.inference && piChk.checked) bandNames.push('prediction');
+        t1.textContent = 'Data and fitted model' + (bandNames.length === 0 ? '' :
+          ' with 95% ' + bandNames.join(' and ') + (bandNames.length > 1 ? ' bands' : ' band'));
         var xs = state.xsRaw, ys = state.ys;
         var xr = rangeOf(xs), yr0 = rangeOf(ys);
         // include band extremes in the y range
@@ -1191,7 +1250,8 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = StatCore
       }
       // ----- chart 2: diagnostics -----
       if (!f.inference) {
-        t2.textContent = 'Diagnostics unavailable (no residual degrees of freedom)';
+        t2.textContent = f.perfectFit ? 'Diagnostics unavailable (residuals vanish up to a small relative tolerance)' :
+          'Diagnostics unavailable (no residual degrees of freedom)';
         ctx2.clearRect(0, 0, state.w2, state.h2);
         ctx2.fillStyle = C.bg; ctx2.fillRect(0, 0, state.w2, state.h2);
         return;

@@ -39,14 +39,13 @@ uses_python: false
                 </p>
 
                 <p>
-                    The <strong>Gaussian Process (GP)</strong> is a fundamental example of a nonparametric Bayesian model. 
-                    Rather than placing a <a href="bayesian.html"><strong>prior distribution</strong></a> over a finite-dimensional parameter vector, 
-                    we place a prior directly over <em>functions</em> \(p(f)\), and update it after observing data to obtain the posterior \(p(f \mid \mathcal{D})\). 
-                    This function-space view builds on two key prerequisites: 
-                    the <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a>, 
-                    whose conditioning identities we will use to derive the predictive posterior, 
-                    and <a href="../Linear_algebra/symmetry.html#D-quadratic_form_classification" class="ref-link"><strong>positive definite matrices</strong></a>, which 
-                    ensure that our covariance structures are well-defined.
+                    The <strong>Gaussian Process (GP)</strong> is a fundamental example of a nonparametric Bayesian model. Rather than placing a 
+                    <a href="bayesian.html"><strong>prior distribution</strong></a> over a finite-dimensional parameter vector, we place a prior 
+                    directly over <em>functions</em> \(p(f)\), and update it after observing data to obtain the posterior 
+                    \(p(f \mid \mathcal{D})\). This function-space view builds on two key prerequisites: the 
+                    <a href="mvn.html#D-multivariate_normal" class="ref-link"><strong>multivariate normal distribution</strong></a>, and 
+                    <a href="../Linear_algebra/symmetry.html#D-quadratic_form_classification" class="ref-link"><strong>positive semi-definite matrices</strong></a>, 
+                    which ensure that our covariance structures are well-defined.
                 </p>
 
                 <p>
@@ -104,18 +103,18 @@ uses_python: false
 
                 <p>
                     For any finite collection of input points
-                    \(\boldsymbol{X} = \{\boldsymbol{x}_1, \boldsymbol{x}_2, \ldots, \boldsymbol{x}_N\}\), the corresponding function values follow
-                    a multivariate normal distribution:
+                    \(\boldsymbol{X} = \{\boldsymbol{x}_1, \boldsymbol{x}_2, \ldots, \boldsymbol{x}_N\}\), the corresponding function values
+                    follow a multivariate normal distribution:
                     \[
                         p(\boldsymbol{f}_X \mid \boldsymbol{X})
                         = \mathcal{N}(\boldsymbol{f}_X \mid \boldsymbol{\mu}_X, \boldsymbol{K}_{X,X}),
                     \]
                     where \(\boldsymbol{\mu}_X = [m(\boldsymbol{x}_1), m(\boldsymbol{x}_2), \ldots, m(\boldsymbol{x}_N)]^\top\) and
                     \((\boldsymbol{K}_{X,X})_{ij} = \mathcal{K}(\boldsymbol{x}_i, \boldsymbol{x}_j)\). When \(\boldsymbol{K}_{X,X}\) is strictly
-                    positive definite this is the multivariate normal distribution with the density above. When it is only positive semi-definite
-                    the distribution is degenerate, concentrated on a proper affine subspace, and has no density. The regression formulas below add
-                    observation noise, which makes the only matrix they invert invertible. The predictive distribution at the test inputs can still
-                    be degenerate in this sense, for example when two test inputs coincide.
+                    positive definite, this is the multivariate normal distribution with the density above. When it is only positive
+                    semi-definite, the distribution is degenerate, concentrated on a proper affine subspace, and has no density. The regression
+                    formulas below add observation noise, which makes the only matrix they invert invertible. The predictive distribution at the
+                    test inputs introduced later can still be degenerate in this sense, for example when two of them coincide.
                 </p>
             </section>
 
@@ -219,8 +218,8 @@ uses_python: false
                 </p>
 
                 <p>
-                    This motivates the <strong>Mat&eacute;rn kernels</strong>, a family of stationary kernels with an explicit smoothness parameter
-                    \(\nu \gt 0\). The family contains the RBF kernel as the limiting case \(\nu \to \infty\). By adjusting \(\nu\), we can
+                    This motivates the <strong>Mat&eacute;rn kernels</strong>, a family of stationary kernels with an explicit smoothness
+                    parameter \(\nu \gt 0\). The RBF kernel is the limit of the family as \(\nu \to \infty\). By adjusting \(\nu\), we can
                     interpolate between very rough kernels (like the exponential kernel) and infinitely smooth kernels (like the RBF).
                 </p>
 
@@ -235,9 +234,11 @@ uses_python: false
                 </p>
 
                 <p>
-                    The parameter \(\nu\) controls the smoothness of the resulting functions. Specifically, a zero-mean Gaussian process with this
-                    kernel is \(k\)-times <em>mean-square differentiable</em> if and only if \(\nu \gt k\). The sample paths themselves are almost
-                    surely \(\lceil \nu \rceil - 1\) times continuously differentiable, and not \(\lceil \nu \rceil\) times. This pathwise
+                    The parameter \(\nu\) controls the smoothness of the resulting functions. Specifically, a zero-mean Gaussian process \(f\)
+                    with this kernel is \(k\)-times <em>mean-square differentiable</em> if and only if \(\nu \gt k\). Moreover, \(f\) admits a
+                    version whose sample paths are almost surely \(\lceil \nu \rceil - 1\) times continuously differentiable, while at each fixed
+                    input the paths are almost surely not \(\lceil \nu \rceil\) times differentiable. A version of \(f\) is a process
+                    \(\tilde f\) with \(\tilde f(\boldsymbol{x}) = f(\boldsymbol{x})\) almost surely for every \(\boldsymbol{x}\). The pathwise
                     statement is stronger than mean-square differentiability and is stated here without proof. Common choices (up to the variance
                     factor \(\sigma^2\)) admit closed forms:
                 </p>
@@ -297,8 +298,8 @@ uses_python: false
                     y_n = f(\boldsymbol{x}_n) + \epsilon_n, \quad
                     \epsilon_n \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, \sigma_y^2),
                     \]
-                    and the noise \(\{\epsilon_n\}\), with \(\sigma_y^2 \gt 0\), is independent of the latent function \(f\). Under this model, the
-                    covariance of the noisy observations is
+                    and the noise \(\{\epsilon_n\}\), with \(\sigma_y^2 \gt 0\), is independent of the latent function \(f\). Under this model,
+                    the covariance of the noisy observations \(\boldsymbol{y} = [y_1, \ldots, y_N]^\top\) is
                     \[
                     \begin{align*}
                     \operatorname{Cov}[y_i, y_j]
@@ -391,17 +392,17 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Gaussian Processes in Machine Learning</h3>
                     <p>
-                        GPs occupy a unique position in the ML landscape. They provide <strong>closed-form uncertainty quantification</strong> in
-                        regression with Gaussian noise, without ensembles, dropout, or approximate inference. Such uncertainty estimates make GPs
-                        invaluable for <strong>Bayesian optimization</strong> (for example, hyperparameter tuning via acquisition functions like
-                        Expected Improvement), <strong>active learning</strong> (selecting the most informative data points to label), and
-                        <strong>safety-critical applications</strong> where knowing what the model <em>does not know</em> is as important as its
-                        predictions. The kernel framework also connects GPs to neural networks. Under suitable conditions on the random
-                        initialization, the parametrization and the activation function, the output of a randomly initialized neural network
-                        converges in distribution to a Gaussian process as its width tends to infinity. In the same regime, the <strong>Neural
-                        Tangent Kernel (NTK)</strong> shows that gradient-flow training with the squared loss reduces, up to the network's random
-                        initial output, to kernel regression with a fixed kernel. This gives a theoretical bridge between deep learning and
-                        nonparametric Bayesian modeling.
+                        GPs occupy a distinctive position in the ML landscape. They provide
+                        <strong>closed-form uncertainty quantification</strong> in regression with Gaussian noise, without ensembles, dropout, or
+                        approximate inference. Such uncertainty estimates make GPs invaluable for <strong>Bayesian optimization</strong> (for
+                        example, hyperparameter tuning via acquisition functions like Expected Improvement), <strong>active learning</strong>
+                        (selecting the most informative data points to label), and <strong>safety-critical applications</strong> where knowing
+                        what the model <em>does not know</em> is as important as its predictions. The kernel framework also connects GPs to
+                        neural networks. Under suitable conditions on the random initialization, the parametrization and the activation function,
+                        the output of a randomly initialized neural network converges in distribution to a Gaussian process as its width tends to
+                        infinity. In the same regime, the <strong>Neural Tangent Kernel (NTK)</strong> shows that gradient-flow training with the
+                        squared loss reduces, up to the network's random initial output, to kernel regression with a fixed kernel. This gives a
+                        theoretical bridge between deep learning and nonparametric Bayesian modeling.
                     </p>
                 </div>
             </section>

@@ -126,7 +126,7 @@ uses_python: false
                 <div class="proof">
                     <span class="proof-title">Example 1: Beta-Binomial Model</span>
                     <p>
-                        Consider tossing a coin \(N\) times. Let \(\theta \in [0, 1]\) be a chance of getting head. We record the outcomes as
+                        Consider tossing a coin \(N\) times. Let \(\theta \in [0, 1]\) be the probability of heads. We record the outcomes as
                         \(\mathcal{D} = \{y_n \in \{0, 1\} : n = 1, \ldots, N\}\). We assume the data are iid.
                     </p>
 
@@ -138,7 +138,7 @@ uses_python: false
                                                    &= \theta^{N_1}(1 - \theta)^{N_0}
                         \end{align*}
                         \]
-                        where \(N_1\) and \(N_0\) are the number of heads and tails respectively. (Sample size: \(N_1 + N_0 = N\))
+                        where \(N_1\) and \(N_0\) are the number of heads and tails respectively. (The sample size is \(N_1 + N_0 = N\).)
                     </p>
 
                     <p>
@@ -188,8 +188,8 @@ uses_python: false
                                                 &= \frac{\Gamma(a+b+N)}{\Gamma(a+y)\Gamma(b+N-y)}\theta^{a+y-1}(1-\theta)^{b+N-y-1}. \tag{2}
                         \end{align*}
                         \]
-                        Here, the posterior has the same functional form as the prior. Thus, the beta distribution is the <strong>conjugate prior</strong> for the
-                        binomial distribution.
+                        Here, the posterior has the same functional form as the prior. Thus, the beta distribution is a <strong>conjugate prior</strong> for
+                        the binomial distribution.
                     </p>
 
                     <p>
@@ -255,12 +255,12 @@ uses_python: false
                         get the exact marginal likelihood easily. Otherwise, we have to introduce some approximation methods.
                     </p>
                     <p>
-                        Finally, to make predictions for new observations, we use <strong>posterior predictive distribution</strong>:
+                        Finally, to make predictions for new observations, we use the <strong>posterior predictive distribution</strong>:
                         \[
-                        p(x_{\text{new}} \mid \mathcal{D}) = \int p(x_{\text{new}} \mid \theta) p(\theta \mid \mathcal{D}) d\theta.
+                        p(y_{\text{new}} \mid \mathcal{D}) = \int p(y_{\text{new}} \mid \theta) p(\theta \mid \mathcal{D}) d\theta.
                         \]
-                        Again, like computing the marginal likelihood, it is difficult to compute posterior predictive distribution, but in this case, we can get
-                        it easily due to the conjugate prior.
+                        Again, like computing the marginal likelihood, it is difficult to compute the posterior predictive distribution, but in this case, we
+                        can get it easily due to the conjugate prior.
                     </p>
                     <p>
                         For example, the probability of observing a head in the next coin toss is given by:
@@ -275,7 +275,7 @@ uses_python: false
                     </p>
                     <p>
                         <strong>Note.</strong> The hyper-parameters \(a\) and \(b\) are critical in the whole process of our inference. In practice, setting up
-                        hyper-parameters is one of the most challenging aspects of the project.
+                        hyper-parameters is one of the most challenging aspects of Bayesian modeling.
                     </p>
                 </div>
 
@@ -318,7 +318,8 @@ uses_python: false
                     <span class="proof-title">Example 2: Normal distribution model with known variance \(\sigma^2\)</span>
 
                     <p>
-                        In the case where \(\sigma^2\) is a known positive constant, the <strong>likelihood</strong> for \(\mu\) is given by
+                        In the case where \(\sigma^2\) is a known positive constant and the data \(\mathcal{D} = \{y_1, \ldots, y_N\}\) are conditionally iid
+                        \(\mathcal{N}(\mu, \sigma^2)\) given \(\mu\), the <strong>likelihood</strong> for \(\mu\) is given by
                         \[
                         \begin{align*}
                         p(\mathcal{D} \mid \mu) &= \prod_{n=1}^N \frac{1}{\sqrt{2\pi \sigma^2}} \exp \left(-\frac{(y_n - \mu)^2}{2\sigma^2}\right)\\\\
@@ -353,8 +354,8 @@ uses_python: false
                     </p>
 
                     <p>
-                        Let \(A = \left(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \right)\) and
-                        \(B = \left(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \right)\), and completing the square, we get:
+                        Setting \(A = \left(\frac{N}{\sigma^2}+\frac{1}{\sigma_0^2} \right)\) and
+                        \(B = \left(\frac{\sum y_n}{\sigma^2} +\frac{\mu_0}{\sigma_0^2} \right)\) and completing the square, we get:
                         \[
                         \begin{align*}
                         p(\mu \mid \, \mathcal{D}, \sigma^2)
@@ -394,8 +395,8 @@ uses_python: false
                     </p>
 
                     <p>
-                        Equivalently, this is a <strong>precision-weighted average</strong>. The posterior mean balances the prior mean \(\mu_0\) against the
-                        empirical mean \(\bar{y}\). The weights are the respective precisions \(1/\sigma_0^2\) and \(N/\sigma^2\). The posterior precision
+                        The formula for \(\mu_N\) is a <strong>precision-weighted average</strong>. The posterior mean balances the prior mean \(\mu_0\) against
+                        the empirical mean \(\bar{y}\). The weights are the respective precisions \(1/\sigma_0^2\) and \(N/\sigma^2\). The posterior precision
                         \(1/\sigma_N^2 = 1/\sigma_0^2 + N/\sigma^2\) is simply the sum of the prior and data precisions.
                     </p>
 
@@ -409,15 +410,15 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Online Learning via Sequential Updates</h3>
                     <p>
-                        The true power of conjugate priors in computer science is memory efficiency. In <strong>online learning</strong>, we do not need to store
-                        massive historical datasets in memory. When the observations are conditionally independent given \(\mu\), today's posterior simply
-                        becomes tomorrow's prior, and because the posterior stays in the prior's family, each update changes only a few numbers. For sequential
-                        data points \(y_1, y_2\), the update rule is structurally elegant:
+                        The true power of conjugate priors in computer science is memory efficiency. In <strong>online learning</strong>, we do not need to
+                        store massive historical datasets. When the observations are conditionally independent given \(\mu\), today's posterior simply becomes
+                        tomorrow's prior, and because the posterior stays in the prior's family, each update changes only a few numbers. For sequential data
+                        points \(y_1, y_2\), the update rule is recursive:
                         \[
                         p(\mu \mid y_1, y_2) \propto p(y_2 \mid \mu) p(\mu \mid y_1).
                         \]
-                        An ML system only needs to maintain the current sufficient statistics, such as \(\mu_N\) and \(\sigma_N^2\), and update them as new data
-                        streams in. Mathematical structure and computational limits meet exactly here.
+                        An ML system only needs to maintain the current sufficient statistics, such as \(\mu_N\) and \(\sigma_N^2\), and update them as new
+                        data streams in.
                     </p>  
                 </div>
 
@@ -425,7 +426,8 @@ uses_python: false
                     <span class="proof-title">Example 3: Normal distribution model with known mean \(\mu\)</span>
 
                     <p>
-                        In the case where \(\mu\) is a known constant, the <strong>likelihood</strong> for \(\sigma^2\) is given by
+                        In the case where \(\mu\) is a known constant and the data are conditionally iid \(\mathcal{N}(\mu, \sigma^2)\) given \(\sigma^2\), the
+                        <strong>likelihood</strong> for \(\sigma^2\) is given by
                         \[
                         \begin{align*}
                         p(\mathcal{D} \mid \sigma^2)
@@ -494,16 +496,16 @@ uses_python: false
                 <div class="insight-box">
                     <h3>Anomaly Detection and Uncertainty</h3>
                     <p>
-                        This model is a cornerstone for <strong>quality control</strong> and process monitoring. In industrial manufacturing, the "target" mean of
-                        a process is often known from historical data, while the variance represents the stability of the process.
+                        This model is used in <strong>quality control</strong> and process monitoring. In industrial manufacturing, the "target" mean of a
+                        process is often known from historical data, while the variance represents the stability of the process.
                     </p>
                     <p>
-                        In machine learning, this is the fundamental principle of <strong>anomaly detection</strong>. Unlike simple frequentist methods that use a
+                        In machine learning, this model is a common basis for <strong>anomaly detection</strong>. Unlike simple frequentist methods that use a
                         point estimate for variance, the Bayesian approach evaluates new data points against the
                         <strong>posterior predictive distribution</strong>. Integrating over the inverse-gamma posterior of \(\sigma^2\) yields a
                         <a href="student.html#D-student_t" class="ref-link"><strong>Student's t-distribution</strong></a>. That predictive distribution accounts
-                        for our uncertainty about the variance itself. The result is a far more robust system. With very little data the model is cautious, and it
-                        requires stronger evidence to flag a point as an anomaly.
+                        for our uncertainty about the variance itself. With very little data the model is cautious, and it requires stronger evidence to flag a
+                        point as an anomaly.
                     </p>
                 </div>
                 

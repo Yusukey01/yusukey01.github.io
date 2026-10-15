@@ -40,7 +40,8 @@ uses_python: false
                 <p>
                     <strong>Conventions.</strong> Throughout this page, \(\log\) denotes the natural logarithm (base \(e\)), so information is
                     measured in <strong>nats</strong>. The alternative base 2, giving <strong>bits</strong>, is standard in coding theory but less
-                    convenient for calculus-based optimization.
+                    convenient for calculus-based optimization. Except in the general statement of Jensen's inequality, every discrete random
+                    variable on this page takes finitely many values, so every sum over its values has finitely many terms.
                 </p>
                 <p>
                     We further adopt the limiting conventions
@@ -49,13 +50,14 @@ uses_python: false
                     0 \log 0 &:= 0 \\\\
                     0 \log \tfrac{0}{0} &:= 0 \\\\
                     0 \log \tfrac{0}{q} &:= 0 \quad (q \gt 0) \\\\
-                    p \log \tfrac{p}{0} &:= +\infty \quad (p \gt 0),
+                    p \log \tfrac{p}{0} &:= +\infty \quad (p \gt 0) \\\\
+                    -p \log 0 &:= +\infty \quad (p \gt 0),
                     \end{align*}
                     \]
-                    so that terms involving zero probabilities cause no ambiguity in the entropy and KL divergence formulas introduced below. The
-                    first three are justified either by the limit \(\lim_{x \to 0^+} x \log x = 0\) or by treating the indeterminate form
-                    \(\tfrac{0}{0}\) as 0 within probability-theoretic contexts. The fourth reflects that assigning zero probability to an event that
-                    actually occurs incurs infinite description cost.
+                    so that terms involving zero probabilities cause no ambiguity in the entropy, cross entropy, and KL divergence formulas
+                    introduced below. The first three are justified either by the limit \(\lim_{x \to 0^+} x \log x = 0\) or by treating the
+                    indeterminate form \(\tfrac{0}{0}\) as 0 within probability-theoretic contexts. The last two reflect that assigning zero
+                    probability to an event that actually occurs incurs infinite description cost.
                 </p>
                 <p>
                     Consider a number guessing game in which we must identify a natural number between 1 and 100. Learning that the number is not 1
@@ -117,7 +119,7 @@ uses_python: false
                 <div class="theorem" id="D-joint_entropy">
                     <span class="theorem-title">Definition: Joint Entropy</span>
                     <p>
-                        The <strong>joint entropy</strong> of two discrete random variables \(X\) and \(Y\) is
+                        The <strong>joint entropy</strong> of two random variables \(X\) and \(Y\) taking finitely many values is
                         \[
                         \mathbb{H}(X, Y) = -\sum_{x,\, y} p(x, y)\,\log p(x, y).
                         \]
@@ -127,7 +129,7 @@ uses_python: false
                 <div class="theorem" id="T-joint_entropy_bounds">
                     <span class="theorem-title">Theorem: Bounds on Joint Entropy</span>
                     <p>
-                        For discrete random variables \(X\) and \(Y\),
+                        For random variables \(X\) and \(Y\) taking finitely many values,
                         \[
                         \mathbb{H}(X) + \mathbb{H}(Y) \geq \mathbb{H}(X, Y) \geq \max\{\mathbb{H}(X),\, \mathbb{H}(Y)\} \geq 0,
                         \]
@@ -138,12 +140,13 @@ uses_python: false
                             \(\mathbb{H}(X) + \mathbb{H}(Y) = \mathbb{H}(X, Y)\) if and only if \(X\) and \(Y\) are independent.
                         </li>
                         <li>
-                            \(\mathbb{H}(X, Y) = \mathbb{H}(X)\) if and only if \(Y\) is a deterministic function of \(X\). Symmetrically,
-                            \(\mathbb{H}(X, Y) = \mathbb{H}(Y)\) if and only if \(X\) is a deterministic function of \(Y\).
+                            \(\mathbb{H}(X, Y) = \mathbb{H}(X)\) if and only if \(Y = g(X)\) with probability one for some
+                            function \(g\). Symmetrically, \(\mathbb{H}(X, Y) = \mathbb{H}(Y)\) if and only if \(X = h(Y)\)
+                            with probability one for some function \(h\).
                         </li>
                         <li>
-                            \(\mathbb{H}(X, Y) = 0\) if and only if both \(X\) and \(Y\) are constants, that is, the joint distribution is
-                            concentrated on a single outcome.
+                            \(\mathbb{H}(X, Y) = 0\) if and only if both \(X\) and \(Y\) are constant with probability one, that is, the joint
+                            distribution is concentrated on a single outcome.
                         </li>
                     </ul>
                 </div>
@@ -205,7 +208,7 @@ uses_python: false
                 <div class="theorem" id="T-conditional_entropy_decomposition">
                     <span class="theorem-title">Theorem: Joint-Conditional Decomposition</span>
                     <p>
-                        For discrete random variables \(X\) and \(Y\),
+                        For random variables \(X\) and \(Y\) taking finitely many values,
                         \[
                         \mathbb{H}(X, Y) = \mathbb{H}(X) + \mathbb{H}(Y \mid X),
                         \]
@@ -241,16 +244,28 @@ uses_python: false
                 <div class="theorem" id="T-conditional_entropy_extremes">
                     <span class="theorem-title">Theorem: Extremes of Conditional Entropy</span>
                     <p>
-                        For discrete random variables \(X\) and \(Y\),
+                        For random variables \(X\) and \(Y\) taking finitely many values,
                     </p>
                     <ul>
                         <li>
                             \(\mathbb{H}(Y \mid X) = \mathbb{H}(Y)\) if and only if \(X\) and \(Y\) are independent.
                         </li>
                         <li>
-                            \(\mathbb{H}(Y \mid X) = 0\) if and only if \(Y\) is a deterministic function of \(X\).
+                            \(\mathbb{H}(Y \mid X) = 0\) if and only if \(Y = g(X)\) with probability one for some function \(g\).
                         </li>
                     </ul>
+                </div>
+
+                <div class="proof">
+                    <span class="proof-title">Proof (second equivalence):</span>
+                    <p>
+                        Since \(-t \log t \gt 0\) for \(0 \lt t \lt 1\) and \(-t \log t = 0\) for \(t \in \{0, 1\}\), each
+                        \(\mathbb{H}(Y \mid X = x)\) is non-negative and vanishes if and only if the conditional distribution \(p(Y \mid X = x)\)
+                        is concentrated on a single value, which we call \(g(x)\). As the weights \(p(x)\) are positive on the support of \(X\),
+                        \(\mathbb{H}(Y \mid X) = 0\) if and only if this holds for every \(x\) in the support, that is, if and only if
+                        \(Y = g(X)\) with probability one. The first equivalence is proved in the mutual information section below, as the
+                        equality case of conditioning reducing entropy on average.
+                    </p>
                 </div>
 
                 <p>
@@ -260,11 +275,12 @@ uses_python: false
 
                 <p>
                     The inequality itself follows from <strong>non-negativity</strong>. Since
-                    \(\mathbb{H}(Y \mid X) = \sum_{x} p(x) \, \mathbb{H}(Y \mid X = x) \geq 0\) (each term is the entropy of a probability
-                    distribution), the decomposition gives \(\mathbb{H}(X, Y) = \mathbb{H}(X) + \mathbb{H}(Y \mid X) \geq \mathbb{H}(X)\), and
-                    symmetrically \(\mathbb{H}(X, Y) \geq \mathbb{H}(Y)\). The equality \(\mathbb{H}(X, Y) = \mathbb{H}(X)\) holds precisely when
-                    \(\mathbb{H}(Y \mid X) = 0\), which by the extremes above means \(Y\) is a deterministic function of \(X\). The same argument
-                    applies to \(\mathbb{H}(X, Y) = \mathbb{H}(Y)\).
+                    \(\mathbb{H}(Y \mid X) = \sum_{x} p(x) \, \mathbb{H}(Y \mid X = x) \geq 0\), the sum running over the support of \(X\) (each
+                    term is the entropy of a probability distribution), the decomposition gives
+                    \(\mathbb{H}(X, Y) = \mathbb{H}(X) + \mathbb{H}(Y \mid X) \geq \mathbb{H}(X)\), and symmetrically
+                    \(\mathbb{H}(X, Y) \geq \mathbb{H}(Y)\). The equality \(\mathbb{H}(X, Y) = \mathbb{H}(X)\) holds precisely when
+                    \(\mathbb{H}(Y \mid X) = 0\), which by the extremes above means \(Y = g(X)\) with probability one for some function \(g\). The
+                    same argument applies to \(\mathbb{H}(X, Y) = \mathbb{H}(Y)\).
                 </p>
 
                 <p>
@@ -275,7 +291,7 @@ uses_python: false
                 <div class="theorem" id="T-entropy_chain_rule">
                     <span class="theorem-title">Theorem: Chain Rule of Entropy</span>
                     <p>
-                        For discrete random variables \(X_1, \ldots, X_n\),
+                        For random variables \(X_1, \ldots, X_n\) taking finitely many values,
                         \[
                         \mathbb{H}(X_1, X_2, \ldots, X_n) = \mathbb{H}(X_1) + \sum_{i=2}^n \mathbb{H}(X_i \mid X_1, \ldots, X_{i-1}).
                         \]
@@ -319,10 +335,10 @@ uses_python: false
                 </div>
 
                 <p>
-                    In machine learning, cross entropy is the standard loss function, especially for
-                    <a href="../Machine_learning/intro_classification.html"><strong>classification</strong></a> with
-                    <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a>. It measures the discrepancy between the
-                    true label distribution and the model's predicted distribution. Smaller cross entropy means better predictions.
+                    In machine learning, cross entropy is the standard loss function for
+                    <a href="../Machine_learning/intro_classification.html"><strong>classification</strong></a>, especially with
+                    <a href="../Machine_learning/neural_networks.html"><strong>neural networks</strong></a>. It measures the discrepancy between
+                    the true label distribution and the model's predicted distribution. Smaller cross entropy means better predictions.
                 </p>
                 <p>
                     For example, consider <strong>binary classification</strong> (\(n = 2\)) with true label \(y \in \{0, 1\}\) and predicted
@@ -345,9 +361,9 @@ uses_python: false
                 <h2>KL Divergence (Relative Entropy, Information Gain)</h2>
 
                 <p>
-                    Cross entropy measures the cost of encoding data from \(p\) using the model \(q\). A natural follow-up: 
-                    how much <em>extra</em> cost does the wrong model incur beyond the irreducible entropy \(\mathbb{H}(p)\)? 
-                    This "excess cost" is precisely the <strong>Kullback-Leibler divergence</strong>.
+                    Cross entropy measures the cost of encoding data from \(p\) using the model \(q\). A natural follow-up: how much 
+                    <em>extra</em> cost does the wrong model incur beyond the irreducible entropy \(\mathbb{H}(p)\) of \(p\)? This "excess cost" 
+                    is precisely the <strong>Kullback-Leibler divergence</strong>.
                 </p>
 
                 <div class="theorem" id="D-kl_divergence">
@@ -467,18 +483,18 @@ uses_python: false
                     <p>
                         Write \(A = \sum_k a_k\) and \(B = \sum_k b_k\), and dispose first of the cases involving zeros, using the conventions
                         above. If \(A = 0\), every term on both sides vanishes, so equality holds, and \(a_k = 0 \cdot b_k\) for every \(k\). If
-                        \(A \gt 0\) and \(B = 0\), both sides equal \(+\infty\). If \(A, B \gt 0\) and some \(k\) has \(b_k = 0 \lt a_k\), the left
-                        side is \(+\infty\) while the right side is finite, so the inequality is strict; no constant \(c\) gives \(a_k = c\,b_k\)
-                        for that \(k\), and since \(B \gt 0\), not every \(b_k\) vanishes. It remains to treat \(A, B \gt 0\) with \(b_k \gt 0\)
-                        whenever \(a_k \gt 0\). Let \(S = \{k : a_k \gt 0\}\) and \(B_S = \sum_{k \in S} b_k\), so \(0 \lt B_S \leq B\). The terms
-                        with \(k \notin S\) vanish on the left, and since \(\log\) is increasing, \(A \log (A/B_S) \geq A \log (A/B)\), with
-                        equality if and only if \(B_S = B\), that is, \(b_k = 0\) for every \(k \notin S\). It therefore suffices to prove the
-                        inequality, with its equality case, for the terms indexed by \(S\), where all \(a_k, b_k \gt 0\). Relabelling, we assume
-                        henceforth that all \(a_k, b_k \gt 0\).
+                        \(A \gt 0\) and \(B = 0\), both sides equal \(+\infty\). If \(A, B \gt 0\) and some \(k\) has \(b_k = 0 \lt a_k\), the
+                        left side is \(+\infty\) while the right side is finite, so the inequality is strict. No constant \(c\) gives
+                        \(a_k = c\,b_k\) for that \(k\), and since \(B \gt 0\), not every \(b_k\) vanishes. It remains to treat \(A, B \gt 0\)
+                        with \(b_k \gt 0\) whenever \(a_k \gt 0\). Let \(S = \{k : a_k \gt 0\}\) and \(B_S = \sum_{k \in S} b_k\), so
+                        \(0 \lt B_S \leq B\). The terms with \(k \notin S\) vanish on the left, and since \(\log\) is strictly increasing,
+                        \(A \log (A/B_S) \geq A \log (A/B)\), with equality if and only if \(B_S = B\), that is, \(b_k = 0\) for every
+                        \(k \notin S\). It therefore suffices to prove the inequality, with its equality case, for the terms indexed by \(S\),
+                        where all \(a_k, b_k \gt 0\). Relabelling, we assume henceforth that all \(a_k, b_k \gt 0\).
                     </p>
                     <p>
                         The function \(f(x) = x \log x\) is strictly convex on \((0, \infty)\), since \(f''(x) = 1/x \gt 0\). Set
-                        \(\lambda_k = b_k / \sum_j b_j\), so \(\lambda_k \geq 0\) and \(\sum_k \lambda_k = 1\). Then
+                        \(\lambda_k = b_k / \sum_j b_j\), so \(\lambda_k \gt 0\) and \(\sum_k \lambda_k = 1\). Then
                         \[
                         \begin{align*}
                         \sum_{k=1}^n a_k \log \frac{a_k}{b_k}
@@ -491,9 +507,10 @@ uses_python: false
                         \]
                         Because \(f\) is strictly convex, the equality case of Jensen's inequality, applied to the random variable that takes the
                         value \(a_k / b_k\) with probability \(\lambda_k \gt 0\), shows that equality in the Jensen step holds if and only if all
-                        \(a_k / b_k\) are equal. Combining this with the reduction, equality holds in this remaining case if and only if \(b_k = 0\)
-                        whenever \(a_k = 0\) and the ratios \(a_k / b_k\) over \(k \in S\) are all equal, that is, if and only if \(a_k = c\,b_k\)
-                        for every \(k\) with \(c = A/B \gt 0\). Together with the cases treated first, this gives the stated equality condition.
+                        \(a_k / b_k\) are equal. Combining this criterion with the reduction, we see that equality holds in the remaining case if
+                        and only if \(b_k = 0\) whenever \(a_k = 0\) and the ratios \(a_k / b_k\) over \(k \in S\) are all equal, that is, if and
+                        only if \(a_k = c\,b_k\) for every \(k\) with \(c = A/B \gt 0\). Together with the cases treated first, this gives the
+                        stated equality condition.
                     </p>
                 </div>
 
@@ -590,7 +607,7 @@ uses_python: false
                 <div class="theorem" id="D-mutual_information">
                     <span class="theorem-title">Definition: Mutual Information</span>
                     <p>
-                        The <strong>mutual information</strong> between two discrete random variables \(X\) and \(Y\) is
+                        The <strong>mutual information</strong> between two random variables \(X\) and \(Y\) taking finitely many values is
                         \[
                         \begin{align*}
                         \mathbb{I}(X ; Y)
@@ -610,7 +627,7 @@ uses_python: false
                 <div class="theorem" id="T-mutual_information_entropy_forms">
                     <span class="theorem-title">Theorem: Entropy Expressions for Mutual Information</span>
                     <p>
-                        For discrete random variables \(X\) and \(Y\),
+                        For random variables \(X\) and \(Y\) taking finitely many values,
                         \[
                         \begin{align*}
                         \mathbb{I}(X; Y) &= \mathbb{H}(X) + \mathbb{H}(Y) - \mathbb{H}(X, Y) \\\\
@@ -672,15 +689,15 @@ uses_python: false
                     <h3>Connections to Machine Learning</h3>
                     <p>
                         Information-theoretic quantities are ubiquitous in machine learning. <strong>Cross-entropy loss</strong> is the standard
-                        training objective for <a href="../Machine_learning/intro_classification.html"><strong>classification</strong></a>. Minimizing
-                        it is equivalent to minimizing KL divergence from the true label distribution to the model's predictions, since
+                        training objective for <a href="../Machine_learning/intro_classification.html"><strong>classification</strong></a>.
+                        Minimizing it is equivalent to minimizing KL divergence from the true label distribution to the model's predictions, since
                         \(\mathbb{H}(p)\) is constant with respect to model parameters. <strong>Mutual information</strong> appears in feature
-                        selection (maximizing \(\mathbb{I}(\text{features}; \text{target})\)), in the information bottleneck method for deep learning,
-                        and in <a href="../Machine_learning/vae.html"><strong>variational autoencoders</strong></a> where the ELBO involves a KL
-                        divergence term. The <a href="fisher_info.html"><strong>Fisher information matrix</strong></a> connects to KL divergence
-                        through the local approximation
-                        \(D_{\mathbb{KL}}(p_\theta \| p_{\theta+\delta}) \approx \frac{1}{2}\delta^\top F(\theta)\delta\), linking information theory
-                        to the geometry of statistical models.
+                        selection (maximizing \(\mathbb{I}(\text{features}; \text{target})\)) and in the information bottleneck method for deep
+                        learning. KL divergence also appears directly in
+                        <a href="../Machine_learning/vae.html"><strong>variational autoencoders</strong></a>, whose ELBO contains a KL divergence
+                        term. The <a href="fisher_info.html"><strong>Fisher information matrix</strong></a> connects to KL divergence through the
+                        local approximation \(D_{\mathbb{KL}}(p_\theta \| p_{\theta+\delta}) \approx \frac{1}{2}\delta^\top F(\theta)\delta\),
+                        linking information theory to the geometry of statistical models.
                     </p>
                 </div>
 

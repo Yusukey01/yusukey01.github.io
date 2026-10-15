@@ -151,9 +151,9 @@ uses_python: true
                         In the undirected setting, the ordered Markov property is replaced by three Markov properties, the <strong>local</strong>,
                         <strong>pairwise</strong>, and <strong>global</strong> Markov properties, which describe conditional independence in terms of
                         graph neighborhoods or separating sets. The three are equivalent to one another under mild conditions. Under a positivity
-                        assumption on the joint density, the celebrated <strong>Hammersley-Clifford theorem</strong> guarantees that the joint factorizes
-                        as a product of potential functions over the <strong>cliques</strong> of the graph (rather than over parent sets). We will not
-                        pursue this direction here.
+                        assumption on the joint density, the <strong>Hammersley-Clifford theorem</strong> guarantees that a joint satisfying these Markov
+                        properties factorizes as a product of potential functions over the <strong>cliques</strong> of the graph (rather than over parent
+                        sets). We will not pursue this direction here.
                     </p>
                 </div>
 
@@ -226,33 +226,30 @@ uses_python: true
                 <p>
                     The function \(P(y_t \mid y_{t-1})\) is called the <strong>transition function</strong> (or <strong>transition kernel</strong>). The
                     latter name extends naturally to continuous state spaces, where the transition matrix introduced below is replaced by a Markov kernel
-                    between measurable spaces. In either form, the defining properties of a conditional distribution hold: \(P(y_t \mid y_{t-1}) \geq 0\) and
-                    \(\sum_{k=1}^K P(y_t = k \mid y_{t-1} = j) = 1\) for each state \(j\).
+                    between measurable spaces. In either form, the defining properties of a conditional distribution hold; in the finite-state setting
+                    they read \(P(y_t \mid y_{t-1}) \geq 0\) and \(\sum_{k=1}^K P(y_t = k \mid y_{t-1} = j) = 1\) for each state \(j\).
                 </p>
 
                 <p>
-                    We can compactly represent all transition probabilities using a <strong>row-stochastic matrix</strong> (also called a
-                    <strong>conditional probability table (CPT)</strong>):
+                    When the transition probabilities do not change with time, the model is said to be <strong>time-homogeneous</strong> (or
+                    <strong>time-invariant</strong>). For a time-homogeneous model, we can compactly represent all transition probabilities using a
+                    <strong>row-stochastic matrix</strong> (also called a <strong>conditional probability table (CPT)</strong>):
                     \[
-                    A_{jk} = P(y_t = k \mid y_{t-1} = j),
+                    A_{jk} = P(y_t = k \mid y_{t-1} = j) \quad \text{for all } t \geq 2,
                     \]
                     where each row of \(A\) sums to 1. (Linear algebra texts often adopt the
-                    <a href="../Linear_algebra/stochastic.html#D-stochastic_matrix" class="ref-link"><strong>column-stochastic convention</strong></a>, the
-                    transpose of ours. Both encode the same dynamics, and the linked page records the equivalence.)
+                    <a href="../Linear_algebra/stochastic.html#D-stochastic_matrix" class="ref-link"><strong>column-stochastic convention</strong></a>,
+                    the transpose of ours. Both encode the same dynamics, and the linked page records the equivalence.)
                 </p>
 
                 <p>
-                    When the transition probabilities do not change with time (that is, the same matrix \(A\) applies at every step), the model is said to be
-                    <strong>time-homogeneous</strong> (or <strong>time-invariant</strong>).
-                </p>
-
-                <p>
-                    The Markov assumption can be extended to consider the last \(M\) states (or memory length):
+                    The Markov assumption can be extended to consider the last \(M\) states, where \(M\) is called the memory length:
                     \[
                     P(y_{1:T}) = P(y_{1 : M}) \prod_{t = M + 1}^T P(y_t \mid y_{t - M : t - 1}).
                     \]
-                    This is known as an <strong>\(M\)-th order Markov model</strong>. In language modeling, this is equivalent to an \(M+1\)-gram model. For
-                    example, if \(M = 2\), each word depends on the two preceding words, and the model is a <strong>trigram model</strong>:
+                    This is known as an <strong>\(M\)-th order Markov model</strong>. In language modeling, an \(M\)-th order model is
+                    equivalent to an \((M+1)\)-gram model. For example, if \(M = 2\), each word depends on the two preceding words, and the
+                    model is a <strong>trigram model</strong>:
                     \[
                     P(y_t \mid y_{t-1}, y_{t-2}).
                     \]
@@ -275,12 +272,13 @@ uses_python: true
                 </p>
 
                 <p>
-                    With large vocabularies this exponential growth in state space makes dense tabulation and reliable estimation of higher-order n-gram
-                    models impractical, and modern approaches rely on <strong>neural language models</strong> (such as recurrent networks and
+                    With large vocabularies this exponential growth in state space makes dense tabulation and reliable estimation of higher-order
+                    n-gram models impractical, and modern approaches rely on <strong>neural language models</strong> (such as recurrent networks and
                     transformers) to capture long-range dependencies without explicit enumeration. Beyond language modeling, Markov chains are widely
-                    used in sequential data modeling across many domains. In Bayesian statistics, Markov Chain Monte Carlo (MCMC) methods exploit the
-                    Markov property to construct a stochastic process that converges to a target stationary distribution. Such a process allows efficient
-                    sampling from complex, high-dimensional posterior distributions.
+                    used in sequential data modeling across many domains. In Bayesian statistics,
+                    <a href="monte_carlo.html#MCMC">Markov Chain Monte Carlo (MCMC)</a> methods exploit the Markov property to construct a stochastic
+                    process that converges to a target stationary distribution. Such a process allows efficient sampling from complex,
+                    high-dimensional posterior distributions.
                 </p>
 
             </section>
@@ -289,10 +287,10 @@ uses_python: true
                 <h2>Parameter Estimation of Markov Models</h2>
 
                 <p>
-                    We now derive the <a href="mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimators</strong></a> for the parameters of a
-                    first-order Markov chain. Let the parameters be \(\boldsymbol{\theta} = (\pi, A)\), where \(\pi_j = P(x_1 = j)\) is the initial state
-                    distribution and \(A_{jk} = P(x_t = k \mid x_{t-1} = j)\) is the transition matrix. (We switch to the notation \(x\) for observed
-                    sequences to distinguish them from the language-model setting above.)
+                    We now derive the <a href="mle.html#D-MLE" class="ref-link"><strong>maximum likelihood estimators</strong></a> for the parameters of
+                    a time-homogeneous first-order Markov chain. We switch to the notation \(x_t\) for states and \(\mathbf{x}_i\) for observed sequences
+                    to distinguish them from the language-model setting above. Let the parameters be \(\boldsymbol{\theta} = (\pi, A)\), where
+                    \(\pi_j = P(x_1 = j)\) is the initial state distribution and \(A_{jk} = P(x_t = k \mid x_{t-1} = j)\) is the transition matrix.
                 </p>
 
                 <p>
@@ -304,8 +302,8 @@ uses_python: true
                                         (A_{jk})^{\mathbb{1}\{x_t=k,\, x_{t-1}=j\}}.
                     \end{align*}
                     \]
-                    The second line rewrites the same probability as a product over \((j, k)\) index pairs by introducing indicator functions, which will let
-                    us count transitions efficiently. Here \(\mathbb{1}\{\cdot\}\) denotes the <strong>indicator function</strong>.
+                    The second line uses the <strong>indicator function</strong> \(\mathbb{1}\{\cdot\}\) to rewrite the same probability as a product
+                    over \((j, k)\) index pairs, a form that will let us count transitions efficiently.
                 </p>
               
                 <p>
@@ -321,17 +319,18 @@ uses_python: true
                 </p>
 
                 <p>
-                    Assume the \(N\) sequences are independent given \(\boldsymbol{\theta}\). The <strong>log-likelihood</strong> of a set of sequences
-                    \(\mathcal{D} = (x_1, \ldots, x_N)\), where \(x_i = (x_{i\,1}, \ldots, x_{i \, T_{i}})\) is a sequence of length \(T_i\), is given by
+                    Assume the observed sequences are independent given \(\boldsymbol{\theta}\). The <strong>log-likelihood</strong> of a set of
+                    sequences \(\mathcal{D} = (\mathbf{x}_1, \ldots, \mathbf{x}_N)\), where \(\mathbf{x}_i = (x_{i,1}, \ldots, x_{i,T_i})\) is a sequence
+                    of length \(T_i\), is given by
                     \[
                     \begin{align*}
-                    \log P(\mathcal{D} \mid \boldsymbol{\theta}) &= \sum_{i=1}^N \log P(x_i \mid \boldsymbol{\theta}) \\\\
+                    \log P(\mathcal{D} \mid \boldsymbol{\theta}) &= \sum_{i=1}^N \log P(\mathbf{x}_i \mid \boldsymbol{\theta}) \\\\
                                                 &= \sum_j  N_j^1 \log \pi_j + \sum_j \sum_k N_{jk} \log A_{jk}.
                     \end{align*}
                     \]
-                    The second equality follows by substituting the indicator-power form of \(P(x_i \mid \boldsymbol{\theta})\) above, distributing the
-                    logarithm across the products, and exchanging the order of summation. The indicator sums over sequences and time steps then collapse into
-                    the counts defined below.
+                    The second equality follows by substituting the indicator-power form of \(P(\mathbf{x}_i \mid \boldsymbol{\theta})\) above,
+                    distributing the logarithm across the products, and exchanging the order of summation. The indicator sums over sequences and time
+                    steps then collapse into the counts defined below.
                 </p>
 
                 <p>
@@ -339,16 +338,19 @@ uses_python: true
                 </p>
 
                 <ul style="padding-left: 40px;">
-                    <li>How often symbol \(j\) is seen at the "start" of a sequence:</li>
-                    \[N_j^1 = \sum_{i=1}^N \mathbb{1}\{x_{i,1} = j\}\]
-                    <li>Count of transitions from \(j\) to \(k\):</li>
-                    \[N_{jk} = \sum_{i=1}^N \sum_{t=1}^{T_i - 1} \mathbb{1}\{x_{i,t} = j, x_{i, t+1} = k\}\]
-                    <li>Total number of transitions originating from state \(j\):</li>
-                    \[N_j = \sum_k N_{jk}\]   
+                    <li>Number of sequences that start in state \(j\):
+                        \[N_j^1 = \sum_{i=1}^N \mathbb{1}\{x_{i,1} = j\}\]
+                    </li>
+                    <li>Number of transitions from \(j\) to \(k\):
+                        \[N_{jk} = \sum_{i=1}^N \sum_{t=1}^{T_i - 1} \mathbb{1}\{x_{i,t} = j, x_{i, t+1} = k\}\]
+                    </li>
+                    <li>Total number of transitions originating from state \(j\):
+                        \[N_j = \sum_k N_{jk}\]   
+                    </li>
                 </ul>
 
                 <p>
-                    We want to obtain \(\hat{\pi}_j\) and \( \hat{A}_{jk}\) that are the maximum likelihood estimates under the constraints:
+                    We seek the maximum likelihood estimates \(\hat{\pi}_j\) and \( \hat{A}_{jk}\) under the constraints:
                     \[
                     \begin{align*}
                     &\sum_j \pi_j = 1  \\\\
@@ -356,8 +358,8 @@ uses_python: true
                     \end{align*}
                     \]
                     (We omit the non-negativity constraints \(\pi_j \geq 0\) and \(A_{jk} \geq 0\). They are automatically satisfied by the closed-form
-                    solutions below since the counts are non-negative.) Both objectives are concave, and the constraint sets (a simplex for \(\pi\), one
-                    simplex per row for \(A\)) are convex, so any point meeting the stationarity conditions below is a global maximizer.
+                    solutions below since the counts are non-negative.) Both sums in the log-likelihood are concave, and the constraint sets (a simplex
+                    for \(\pi\), one simplex per row for \(A\)) are convex, so any point meeting the stationarity conditions below is a global maximizer.
                 </p>
 
                 <p>
@@ -658,10 +660,10 @@ uses_python: true
                 </p>
 
                 <p>
-                    When \(\alpha = 1\) and \(N_j \gt 0\), however, the mode simplifies to \(\frac{N_{jk}}{N_j}\), which is exactly the maximum likelihood
-                    estimate. Using the MAP estimate with a uniform prior (\(\alpha = 1\)) therefore provides no smoothing, and the sparse data problem
-                    remains unresolved. Furthermore, in the large-sample regime the two estimates nearly coincide. This is why the estimator based on the
-                    posterior mean is commonly used and, for \(\alpha = 1\), is referred to as add-one smoothing.
+                    When \(\alpha = 1\) and \(N_j \gt 0\), however, the mode simplifies to \(\frac{N_{jk}}{N_j}\), which is exactly the maximum
+                    likelihood estimate. Using the MAP estimate with a uniform prior (\(\alpha = 1\)) therefore provides no smoothing, and the sparse
+                    data problem remains unresolved. This is why the estimator based on the posterior mean is commonly used and, for \(\alpha = 1\), is
+                    referred to as add-one smoothing.
                 </p>
 
                 <p>

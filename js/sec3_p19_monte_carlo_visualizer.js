@@ -39,7 +39,7 @@ var McCore = (function () {
     return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
   }
 
-  // ---------- special functions (certified patterns from prob-3 / prob-11) ----------
+  // ---------- special functions (pinned by the T1-T3 spot tests below) ----------
   function logGamma(z) {
     var c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
              -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
