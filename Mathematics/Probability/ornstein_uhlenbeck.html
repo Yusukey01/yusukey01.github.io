@@ -286,14 +286,17 @@ uses_python: false
                         = \mathcal{N} \bigl( \sqrt{ 1 - \beta_t }\, \mathbf{x}_{t-1},\ \beta_t \mathbf{I} \bigr)\).
                     </p>
                     <p>
-                        Consider the Ornstein-Uhlenbeck type equation with level \(m = 0\),
-                        time-dependent rate \(\tfrac{1}{2} \beta(t)\), and noise strength
-                        \(\sqrt{\beta(t)}\), run componentwise. Its unit-step Euler discretization
-                        updates \(\mathbf{x}_{t-1}\) to \(( 1 - \tfrac{1}{2} \beta_t ) \mathbf{x}_{t-1}\)
-                        plus Gaussian noise of covariance \(\beta_t \mathbf{I}\). Since
-                        \(\sqrt{ 1 - \beta_t } = 1 - \tfrac{1}{2} \beta_t + O ( \beta_t^2 )\), the
-                        kernel's mean factor agrees with the Euler factor up to an error of order
-                        \(\beta_t^2\) for the small step sizes used in practice.
+                        Consider the Ornstein-Uhlenbeck type equation with level \(m = 0\), time-dependent
+                        rate \(\tfrac{1}{2} \beta(t)\), and noise strength \(\sqrt{\beta(t)}\), run
+                        componentwise. Each component is driven by the matching coordinate of a standard
+                        <a href="brownian_motion.html#D-wiener_process" class="ref-link"><strong>Brownian motion</strong></a>
+                        \(\mathbf{w}_t\) of the same dimension, and the coordinates of \(\mathbf{w}_t\) are
+                        independent. The unit-step Euler discretization of the equation updates
+                        \(\mathbf{x}_{t-1}\) to \(( 1 - \tfrac{1}{2} \beta_t ) \mathbf{x}_{t-1}\) plus
+                        Gaussian noise of covariance \(\beta_t \mathbf{I}\). Since
+                        \(\sqrt{ 1 - \beta_t } = 1 - \tfrac{1}{2} \beta_t + O ( \beta_t^2 )\), the kernel's
+                        mean factor agrees with the Euler factor up to an error of order \(\beta_t^2\) for
+                        the small step sizes used in practice.
                     </p>
                     <p>
                         The
@@ -307,8 +310,9 @@ uses_python: false
                         \(1 - e^{- \int_0^t \beta(s)\, ds }\) per component. Thus \(\bar{\alpha}_t\) plays
                         the role of \(e^{- \int_0^t \beta(s)\, ds }\), the mean factor
                         \(\sqrt{\bar{\alpha}_t}\) the role of the decayed initial condition, and
-                        \(1 - \bar{\alpha}_t\) the saturating variance of the theorem. The noise schedule
-                        of a variance-preserving diffusion model is nothing but a reparametrized reversion rate.
+                        \(1 - \bar{\alpha}_t\) the saturating variance of the theorem. The noise
+                        schedule of a variance-preserving diffusion model thus plays the role of a
+                        reparametrized reversion rate.
                     </p>
                     <p>
                         The Langevin name carries a second connection, this one about sampling
@@ -316,25 +320,28 @@ uses_python: false
                         \(p\) on \(\mathbb{R}^d\) with
                         <a href="../Machine_learning/diffusion_models.html#D-score_function_data_gradient" class="ref-link"><strong>score function</strong></a>
                         \(\mathbf{s} = \nabla \log p\), the <strong>Langevin dynamics</strong>
+                        is the equation
                         \[
                         d \mathbf{x}_t = \tfrac{1}{2}\, \mathbf{s} ( \mathbf{x}_t )\, dt + d \mathbf{w}_t
                         \]
-                        is engineered so that, under regularity conditions on \(p\) that we do not state,
-                        \(p\) is its invariant density and long runs of the dynamics produce samples from
-                        \(p\). Knowing a density only through its score therefore suffices to sample from it,
-                        which is the continuous-time template behind score-based generative sampling.
+                        driven by a \(d\)-dimensional standard Brownian motion \(\mathbf{w}_t\). This
+                        equation is engineered so that, under regularity conditions on \(p\) that we do
+                        not state, \(p\) is its invariant density and long runs of the dynamics produce
+                        samples from \(p\). Knowing a density only through its score therefore suffices to
+                        sample from it. That observation is the continuous-time template behind
+                        score-based generative sampling.
                     </p>
                     <p>
                         With \(\sigma = 1\) and \(d = 1\), the mean-reverting equation is exactly the Langevin
                         dynamics of the Gaussian \(p = \mathcal{N} \bigl( m, 1 / ( 2 \theta ) \bigr)\), since then
-                        \(\tfrac{1}{2}\, \mathbf{s}(x) = \theta ( m - x )\). For general \(\sigma \neq 0\) it
-                        is the Langevin dynamics of \(\mathcal{N} \bigl( m, \sigma^2 / ( 2 \theta ) \bigr)\)
-                        with drift \(\tfrac{\sigma^2}{2}\, \mathbf{s}\) and noise \(\sigma\, dw_t\). This is
-                        the one case whose limiting law this page exhibits in closed form, as the limit of
-                        the laws computed above. Its invariance, like the invariance claim in general,
-                        belongs to the <a href="fokker_planck.html">Fokker-Planck circle of ideas</a>, where
-                        the equation governing the evolving density of an SDE is derived and the reverse-time
-                        machinery of diffusion models is built on top of it.
+                        \(\tfrac{1}{2}\, \mathbf{s}(x) = \theta ( m - x )\). For general \(\sigma \neq 0\) it is
+                        the Langevin dynamics of \(\mathcal{N} \bigl( m, \sigma^2 / ( 2 \theta ) \bigr)\) with
+                        drift \(\tfrac{\sigma^2}{2}\, \mathbf{s}\) and noise \(\sigma\, dw_t\). The mean-reverting
+                        equation is the one case whose limiting law this page exhibits in closed form, as the
+                        limit of the laws computed above. The invariance of that law, like the invariance claim in
+                        general, belongs to the <a href="fokker_planck.html">Fokker-Planck circle of ideas</a>,
+                        where the equation governing the evolving density of an SDE is derived and the
+                        reverse-time machinery of diffusion models is built on top of it.
                     </p>
                 </div>
             </section>
@@ -449,14 +456,15 @@ uses_python: false
                     \]
                 </p>
                 <p>
-                    an equation whose drift is genuinely nonlinear in the state and singular at the edge of
-                    its domain. Read from the present perspective, the logic ran backwards. None of the
-                    methods of these two pages could have produced \(R_t\) from its equation. The process
-                    came first, as a transformation of one already understood, and the It&ocirc; formula then
+                    an equation whose drift is nonlinear in \(R_t\) and singular at \(R = 0\). The noise
+                    coefficients of this equation involve the coordinates \(w_t^{(i)}\) rather than \(R_t\)
+                    alone. Read from the present perspective, the logic ran backwards. None of the methods
+                    of these two pages could have produced \(R_t\) from its equation. The process came
+                    first, as a transformation of one already understood, and the It&ocirc; formula then
                     disclosed which equation it solves. That reversed route is a solution method in its own
-                    right. Our heuristics were miniature instances of it. Each guessed a transformation under
-                    which the unknown becomes a process already in hand, the logarithm for geometric Brownian
-                    motion and an integrating factor for the other two equations.
+                    right. Our heuristics were miniature instances of it. Each guessed a transformation
+                    under which the unknown becomes a process already in hand, the logarithm for geometric
+                    Brownian motion and an integrating factor for the other two equations.
                 </p>
                 <p>
                     When no such transformation is available, one needs theorems, and the deterministic case,
@@ -475,18 +483,14 @@ uses_python: false
                     solution down, so uniqueness is not free either.
                 </p>
                 <p>
-                    The general theory answers both threats at once, and it is the destination of the next
-                    stretch of this track. For coefficients Lipschitz in the state and growing at most
-                    linearly, an iteration of Picard type produces a solution for every square-integrable
-                    initial condition independent of the driving noise, and a comparison inequality of
-                    Gronwall type shows there is only one.
+                    The general theory answers both threats at once. For coefficients Lipschitz in the state
+                    and growing at most linearly, an iteration of Picard type produces a solution for every
+                    square-integrable initial condition independent of the driving noise, and a comparison
+                    inequality of Gronwall type shows there is only one.
                 </p>
                 <p>
                     The two counterexamples above mark exactly where those hypotheses bite. Linear growth
-                    forbids finite-time escape, and the Lipschitz condition forbids branching. Once existence
-                    and uniqueness are in hand, the closed forms of these two pages stop being isolated
-                    trophies and become what they were always meant to be, the exactly solvable landmarks of
-                    a theory that covers the terrain between them.
+                    forbids finite-time escape, and the Lipschitz condition forbids branching.
                 </p>
             </section>
 
